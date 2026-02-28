@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.SeerrApi
+import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
@@ -111,12 +112,12 @@ object AppModule {
     @Singleton
     fun okHttpFactory(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
-    ) = OkHttpFactory(okHttpClient)
+    ) = CoroutineContextApiClientFactory(OkHttpFactory(okHttpClient))
 
     @Provides
     @Singleton
     fun jellyfin(
-        okHttpFactory: OkHttpFactory,
+        okHttpFactory: CoroutineContextApiClientFactory,
         @ApplicationContext context: Context,
         clientInfo: ClientInfo,
         deviceInfo: DeviceInfo,

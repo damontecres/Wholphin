@@ -528,7 +528,7 @@ class SeriesViewModel
                                     api.userLibraryApi
                                         .getItem(item.id)
                                         .content.people
-                                        ?.map { Person.fromDto(it, api) }
+                                        ?.map { Person.fromDto(context, it, api) }
                                         .orEmpty()
 
                                 PeopleInItem(item.id, list)

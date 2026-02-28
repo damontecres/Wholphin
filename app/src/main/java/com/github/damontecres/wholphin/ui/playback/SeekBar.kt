@@ -46,7 +46,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import com.github.damontecres.wholphin.ui.handleDPadKeyEvents
 import kotlinx.coroutines.FlowPreview
 import kotlin.time.Duration
 
@@ -80,15 +79,16 @@ fun SteppedSeekBarImpl(
         enabled = enabled,
         progress = progressToUse,
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        durationMs = durationMs,
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse - offset).coerceAtLeast(0f)
+            seekProgress = (progressToUse - offset * multiplier).coerceAtLeast(0f)
             hasSeeked = true
             seek(seekProgress)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse + offset).coerceAtMost(1f)
+            seekProgress = (progressToUse + offset * multiplier).coerceAtMost(1f)
             hasSeeked = true
             seek(seekProgress)
         },
@@ -126,16 +126,19 @@ fun IntervalSeekBarImpl(
         enabled = enabled,
         progress = (progressToUse.toDouble() / durationMs).toFloat(),
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        durationMs = durationMs,
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekPositionMs = (progressToUse - seekBack.inWholeMilliseconds).coerceAtLeast(0L)
+            seekPositionMs =
+                (progressToUse - seekBack.inWholeMilliseconds * multiplier).coerceAtLeast(0L)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
             seekPositionMs =
-                (progressToUse + seekForward.inWholeMilliseconds).coerceAtMost(durationMs)
+                (progressToUse + seekForward.inWholeMilliseconds * multiplier)
+                    .coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
@@ -148,8 +151,9 @@ fun IntervalSeekBarImpl(
 fun SeekBarDisplay(
     progress: Float,
     bufferedProgress: Float,
-    onLeft: () -> Unit,
-    onRight: () -> Unit,
+    durationMs: Long,
+    onLeft: (Int) -> Unit,
+    onRight: (Int) -> Unit,
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -158,14 +162,13 @@ fun SeekBarDisplay(
     val onSurface = MaterialTheme.colorScheme.onSurface
 
     val isFocused by interactionSource.collectIsFocusedAsState()
+    var leftHandledByRepeat by remember { mutableStateOf(false) }
+    var rightHandledByRepeat by remember { mutableStateOf(false) }
     val animatedIndicatorHeight by animateDpAsState(
         targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
     )
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Canvas(
             modifier =
                 Modifier
@@ -173,24 +176,79 @@ fun SeekBarDisplay(
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
                     .onPreviewKeyEvent { event ->
-                        val trigger =
-                            event.type == KeyEventType.KeyUp || event.nativeKeyEvent.repeatCount > 0
                         when (event.nativeKeyEvent.keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
-                                if (trigger) onLeft.invoke()
+                                when (event.type) {
+                                    KeyEventType.KeyDown -> {
+                                        val repeatCount = event.nativeKeyEvent.repeatCount
+                                        if (repeatCount > 0) {
+                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                                                leftHandledByRepeat = false
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            leftHandledByRepeat = true
+                                            onLeft.invoke(
+                                                calculateSeekAccelerationMultiplier(
+                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
+                                                    durationMs = durationMs,
+                                                ),
+                                            )
+                                        } else {
+                                            leftHandledByRepeat = false
+                                        }
+                                    }
+
+                                    KeyEventType.KeyUp -> {
+                                        if (!leftHandledByRepeat) {
+                                            onLeft.invoke(1)
+                                        }
+                                        leftHandledByRepeat = false
+                                    }
+
+                                    else -> {
+                                        return@onPreviewKeyEvent false
+                                    }
+                                }
                                 return@onPreviewKeyEvent true
                             }
 
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
-                                if (trigger) onRight.invoke()
+                                when (event.type) {
+                                    KeyEventType.KeyDown -> {
+                                        val repeatCount = event.nativeKeyEvent.repeatCount
+                                        if (repeatCount > 0) {
+                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                                                rightHandledByRepeat = false
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            rightHandledByRepeat = true
+                                            onRight.invoke(
+                                                calculateSeekAccelerationMultiplier(
+                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
+                                                    durationMs = durationMs,
+                                                ),
+                                            )
+                                        } else {
+                                            rightHandledByRepeat = false
+                                        }
+                                    }
+
+                                    KeyEventType.KeyUp -> {
+                                        if (!rightHandledByRepeat) {
+                                            onRight.invoke(1)
+                                        }
+                                        rightHandledByRepeat = false
+                                    }
+
+                                    else -> {
+                                        return@onPreviewKeyEvent false
+                                    }
+                                }
                                 return@onPreviewKeyEvent true
                             }
                         }
                         false
-                    }.handleDPadKeyEvents(
-                        onLeft = onLeft,
-                        onRight = onRight,
-                    ).focusable(enabled = enabled, interactionSource = interactionSource),
+                    }.focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(

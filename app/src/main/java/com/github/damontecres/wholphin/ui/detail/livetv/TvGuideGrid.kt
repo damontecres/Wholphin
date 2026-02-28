@@ -3,6 +3,8 @@ package com.github.damontecres.wholphin.ui.detail.livetv
 import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -140,7 +142,11 @@ fun TvGuideGrid(
                                     .fillMaxHeight(.30f),
                         )
                     }
-                    AnimatedVisibility(focusedPosition.row < 1) {
+                    AnimatedVisibility(
+                        focusedPosition.row < 1,
+                        enter = expandVertically(),
+                        exit = shrinkVertically(),
+                    ) {
                         ExpandableFaButton(
                             title = R.string.view_options,
                             iconStringRes = R.string.fa_sliders,

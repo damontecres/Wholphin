@@ -28,18 +28,16 @@ class ImageUrlService
             itemType: BaseItemKind,
             seriesId: UUID?,
             useSeriesForPrimary: Boolean,
-            imageTags: Map<ImageType, String?>,
             imageType: ImageType,
+            imageTags: Map<ImageType, String?>,
+            backdropTags: List<String>,
             parentThumbId: UUID? = null,
             parentBackdropId: UUID? = null,
-            backdropTags: List<String> = emptyList(),
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
             when (imageType) {
-                ImageType.BACKDROP,
-                ImageType.LOGO,
-                -> {
+                ImageType.LOGO -> {
                     if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
                         getItemImageUrl(
                             itemId = seriesId,
@@ -54,6 +52,27 @@ class ImageUrlService
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
                         )
+                    }
+                }
+
+                ImageType.BACKDROP,
+                -> {
+                    if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
+                        getItemImageUrl(
+                            itemId = seriesId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (backdropTags.isNotEmpty()) {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        null
                     }
                 }
 

@@ -95,7 +95,11 @@ data class BaseItem(
                 data.indexNumber?.let { "E$it" }
                     ?: data.premiereDate?.let(::formatDateTime),
             episodeUnplayedCornerText =
-                if (type == BaseItemKind.SERIES || type == BaseItemKind.SEASON || type == BaseItemKind.BOX_SET) {
+                if (type == BaseItemKind.SERIES ||
+                    type == BaseItemKind.SEASON ||
+                    type == BaseItemKind.EPISODE ||
+                    type == BaseItemKind.BOX_SET
+                ) {
                     data.indexNumber?.let { "E$it" }
                         ?: data.userData
                             ?.unplayedItemCount

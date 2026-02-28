@@ -42,8 +42,6 @@ class ServerRepository
         val apiClient: ApiClient,
         val userPreferencesDataStore: DataStore<AppPreferences>,
     ) {
-        private val sharedPreferences = getServerSharedPreferences(context)
-
         private var _current = EqualityMutableLiveData<CurrentUser?>(null)
         val current: LiveData<CurrentUser?> = _current
 
@@ -107,7 +105,7 @@ class ServerRepository
                     _current.value = CurrentUser(updatedServer, updatedUser)
                     _currentUserDto.value = userDto
                 }
-                sharedPreferences.edit(true) {
+                getServerSharedPreferences(context).edit(true) {
                     putString(SERVER_URL_KEY, updatedServer.url)
                     putString(ACCESS_TOKEN_KEY, updatedUser.accessToken)
                 }

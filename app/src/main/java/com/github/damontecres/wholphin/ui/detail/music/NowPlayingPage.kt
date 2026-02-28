@@ -23,6 +23,7 @@ import androidx.media3.common.util.UnstableApi
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -91,7 +92,13 @@ fun NowPlayingPage(
     val current = queue.getOrNull(state.currentIndex)
 
     val controllerViewState = viewModel.controllerViewState
-    val preferences by viewModel.userPreferencesService.flow.collectAsState(AppPreferences.getDefaultInstance())
+    val preferences =
+        viewModel.userPreferencesService.flow
+            .collectAsState(
+                UserPreferences(
+                    AppPreferences.getDefaultInstance(),
+                ),
+            ).value.appPreferences
 
     val keyHandler =
         remember(preferences) {
@@ -111,6 +118,7 @@ fun NowPlayingPage(
 //                    viewModel.navigationManager.goBack()
                 },
                 onPlaybackDialogTypeClick = { },
+                getDurationMs = { player.duration },
             )
         }
 

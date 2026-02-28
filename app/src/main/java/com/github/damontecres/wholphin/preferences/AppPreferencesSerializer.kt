@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.google.protobuf.InvalidProtocolBufferException
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -120,6 +121,20 @@ class AppPreferencesSerializer
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
+
+                                screensaverPreference =
+                                    ScreensaverPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                                            duration = ScreensaverPreference.DEFAULT_DURATION
+                                            animate = ScreensaverPreference.Animate.defaultValue
+                                            maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                            showClock = ScreensaverPreference.ShowClock.defaultValue
+                                            clearItemTypes()
+                                            addItemTypes(BaseItemKind.MOVIE.serialName)
+                                            addItemTypes(BaseItemKind.SERIES.serialName)
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -198,6 +213,11 @@ inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.B
 inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
     update {
         photoPreferences = photoPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

@@ -52,7 +52,7 @@ class BackdropService
                     if (item.type == BaseItemKind.GENRE) {
                         item.imageUrlOverride
                     } else {
-                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)!!
+                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                     }
                 submit(item.id.toString(), imageUrl)
             }

@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
@@ -35,6 +36,7 @@ class PreferencesViewModel
         val preferenceDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
         val backdropService: BackdropService,
+        val screensaverService: ScreensaverService,
         private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
         private val seerrServerRepository: SeerrServerRepository,

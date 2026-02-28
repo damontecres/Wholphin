@@ -186,7 +186,6 @@ fun PlaybackPageContent(
         }
     }
 
-    AmbientPlayerListener(player)
     var contentScale by remember(playerBackend) {
         mutableStateOf(
             if (playerBackend == PlayerBackend.MPV) {
@@ -236,6 +235,7 @@ fun PlaybackPageContent(
             skipWithLeftRight = true,
             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+            getDurationMs = { player.duration.coerceAtLeast(0L) },
             controllerViewState = controllerViewState,
             updateSkipIndicator = updateSkipIndicator,
             skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,

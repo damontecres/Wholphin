@@ -997,6 +997,12 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val ScreensaverSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.screensaver_settings,
+                destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
+            )
     }
 }
 
@@ -1011,6 +1017,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ScreensaverSettings,
                 ),
         ),
         PreferenceGroup(
@@ -1201,6 +1208,24 @@ val liveTvPreferences =
         AppPreference.LiveTvColorCodePrograms,
     )
 
+val screensaverPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.screensaver,
+            preferences =
+                listOf(
+                    ScreensaverPreference.Enabled,
+                    ScreensaverPreference.StartDelay,
+                    ScreensaverPreference.Duration,
+                    ScreensaverPreference.ShowClock,
+                    ScreensaverPreference.Animate,
+                    ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.ItemTypes,
+                    ScreensaverPreference.Start,
+                ),
+        ),
+    )
+
 data class AppSwitchPreference<Pref>(
     @get:StringRes override val title: Int,
     override val defaultValue: Boolean,
@@ -1255,8 +1280,6 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
-    val toSharedPrefs: (T) -> String,
-    val fromSharedPrefs: (String) -> T?,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

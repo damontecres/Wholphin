@@ -50,8 +50,10 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
+import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -128,6 +130,7 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
+            PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -135,6 +138,7 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
+            PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -283,7 +287,9 @@ fun PreferencesContent(
                                             if (movementSounds) playOnClickSound(context)
                                             if (release != null && updateAvailable) {
                                                 release?.let {
-                                                    viewModel.navigationManager.navigateTo(Destination.UpdateApp)
+                                                    viewModel.navigationManager.navigateTo(
+                                                        Destination.UpdateApp,
+                                                    )
                                                 }
                                             } else {
                                                 updateVM.init(preferences.updateUrl)
@@ -313,7 +319,8 @@ fun PreferencesContent(
                                     val summary =
                                         remember(cacheUsage) {
                                             cacheUsage.let {
-                                                val diskMB = it.imageDiskUsed / AppPreference.MEGA_BIT
+                                                val diskMB =
+                                                    it.imageDiskUsed / AppPreference.MEGA_BIT
                                                 val memoryUsedMB =
                                                     it.imageMemoryUsed / AppPreference.MEGA_BIT
                                                 val memoryMaxMB =
@@ -392,7 +399,10 @@ fun PreferencesContent(
                                             seerrDialogMode =
                                                 when (val conn = seerrConnection) {
                                                     is SeerrConnectionStatus.Error -> {
-                                                        SeerrDialogMode.Error(conn.serverUrl, conn.ex)
+                                                        SeerrDialogMode.Error(
+                                                            conn.serverUrl,
+                                                            conn.ex,
+                                                        )
                                                     }
 
                                                     SeerrConnectionStatus.NotConfigured -> {
@@ -409,9 +419,19 @@ fun PreferencesContent(
                                         modifier = Modifier,
                                         summary =
                                             when (seerrConnection) {
-                                                is SeerrConnectionStatus.Error -> stringResource(R.string.voice_error_server)
-                                                SeerrConnectionStatus.NotConfigured -> stringResource(R.string.add_server)
-                                                is SeerrConnectionStatus.Success -> stringResource(R.string.enabled)
+                                                is SeerrConnectionStatus.Error -> {
+                                                    stringResource(R.string.voice_error_server)
+                                                }
+
+                                                SeerrConnectionStatus.NotConfigured -> {
+                                                    stringResource(
+                                                        R.string.add_server,
+                                                    )
+                                                }
+
+                                                is SeerrConnectionStatus.Success -> {
+                                                    stringResource(R.string.enabled)
+                                                }
                                             },
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -426,6 +446,19 @@ fun PreferencesContent(
                                                 viewModel.resetQuickConnectStatus()
                                                 showQuickConnectDialog = true
                                             }
+                                        },
+                                        modifier = Modifier,
+                                        summary = pref.summary(context, null),
+                                        onLongClick = {},
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+
+                                ScreensaverPreference.Start -> {
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            viewModel.screensaverService.start()
                                         },
                                         modifier = Modifier,
                                         summary = pref.summary(context, null),
@@ -597,6 +630,7 @@ fun PreferencesPage(
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
+            PreferenceScreenOption.SCREENSAVER,
             -> {
                 PreferencesContent(
                     initialPreferences,
