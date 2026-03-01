@@ -355,7 +355,7 @@ fun NavDrawer(
                             interactionSource = interactionSource,
                             onClick = {
                                 viewModel.setIndex(NOW_PLAYING_INDEX)
-                                viewModel.navigationManager.navigateToFromDrawer(Destination.NowPlaying)
+                                viewModel.navigationManager.navigateTo(Destination.NowPlaying)
                             },
                             modifier =
                                 Modifier

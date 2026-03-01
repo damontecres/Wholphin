@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -69,10 +68,8 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -95,25 +92,24 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = ArtistViewModel.Factory::class)
 class ArtistViewModel
     @AssistedInject
     constructor(
-        private val api: ApiClient,
+        api: ApiClient,
+        musicService: MusicService,
+        navigationManager: NavigationManager,
         @param:ApplicationContext private val context: Context,
-        val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val mediaReportService: MediaReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
-        private val musicService: MusicService,
         @Assisted val itemId: UUID,
-    ) : ViewModel() {
+    ) : MusicViewModel(api, musicService, navigationManager) {
         @AssistedFactory
         interface Factory {
             fun create(itemId: UUID): ArtistViewModel
@@ -211,103 +207,6 @@ class ArtistViewModel
                     .let { BaseItem(it, false) }
             _state.update { it.copy(artist = artist) }
         }
-
-        fun playArtist(shuffled: Boolean) {
-            viewModelScope.launchIO {
-                Timber.v("Playing artist %s", itemId)
-                val request =
-                    GetItemsRequest(
-                        parentId = itemId,
-                        fields = DefaultItemFields,
-                        recursive = true,
-                        includeItemTypes = listOf(BaseItemKind.AUDIO),
-                        sortBy =
-                            listOf(
-                                ItemSortBy.PREMIERE_DATE,
-                                ItemSortBy.INDEX_NUMBER,
-                            ),
-                        sortOrder = listOf(SortOrder.DESCENDING, SortOrder.ASCENDING),
-                    )
-                val pager =
-                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
-                musicService.setQueue(pager, 0, shuffled)
-            }
-        }
-
-        fun addToQueue(
-            itemId: UUID,
-            index: Int,
-        ) {
-            viewModelScope.launchIO {
-                if (itemId == this@ArtistViewModel.itemId) {
-                    // TODO
-                } else {
-                }
-            }
-        }
-
-        fun startInstantMix() {
-            viewModelScope.launchIO {
-                Timber.v("Starting instant mix for %s", itemId)
-                musicService.startInstantMix(itemId)
-                navigationManager.navigateTo(Destination.NowPlaying)
-            }
-        }
-
-        fun play(item: BaseItem) {
-            viewModelScope.launchIO {
-                Timber.v("Playing %s %s", item.type, item.id)
-                when (item.type) {
-                    BaseItemKind.AUDIO -> {
-                        musicService.setQueue(listOf(item), false)
-                    }
-
-                    BaseItemKind.MUSIC_ALBUM -> {
-                        val pager = getPagerForAlbum(api, item.id)
-                        musicService.setQueue(pager, 0, false)
-                    }
-
-                    BaseItemKind.MUSIC_ARTIST -> {
-                        val pager = getPagerForArtist(api, item.id)
-                        musicService.setQueue(pager, 0, false)
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-
-        fun playNext(song: BaseItem) {
-            viewModelScope.launchDefault {
-                musicService.playNext(song)
-            }
-        }
-
-        fun addToQueue(
-            item: BaseItem,
-            index: Int,
-        ) {
-            viewModelScope.launchIO {
-                Timber.v("addToQueue %s %s", item.type, item.id)
-                when (item.type) {
-                    BaseItemKind.AUDIO -> {
-                        musicService.addAllToQueue(BlockingList.of(listOf(item)), 0)
-                    }
-
-                    BaseItemKind.MUSIC_ALBUM -> {
-                        val pager = getPagerForAlbum(api, itemId)
-                        musicService.addAllToQueue(pager, 0)
-                    }
-
-                    BaseItemKind.MUSIC_ARTIST -> {
-                        val pager = getPagerForArtist(api, item.id)
-                        musicService.addAllToQueue(pager, 0)
-                    }
-
-                    else -> {}
-                }
-            }
-        }
     }
 
 data class ArtistState(
@@ -403,8 +302,8 @@ fun ArtistDetailsPage(
                                 actions =
                                     remember {
                                         MusicButtonActions(
-                                            onClickPlay = { viewModel.playArtist(it) },
-                                            onClickInstantMix = viewModel::startInstantMix,
+                                            onClickPlay = { viewModel.play(artist) },
+                                            onClickInstantMix = { viewModel.startInstantMix(artist.id) },
                                             onClickFavorite = {
                                                 viewModel.setFavorite(
                                                     artist.id,

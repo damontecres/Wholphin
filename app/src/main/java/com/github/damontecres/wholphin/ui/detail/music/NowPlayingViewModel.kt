@@ -90,7 +90,7 @@ class NowPlayingViewModel
             val mediaItem =
                 onMain {
                     player.currentMediaItemIndex
-                        .takeIf { it >= 0 }
+                        .takeIf { it in 0..<player.mediaItemCount }
                         ?.let { player.getMediaItemAt(it) }
                 }
             return mediaItem?.localConfiguration?.tag as? AudioItem

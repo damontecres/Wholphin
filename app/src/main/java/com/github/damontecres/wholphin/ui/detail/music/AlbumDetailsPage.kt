@@ -35,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -61,10 +60,8 @@ import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -82,28 +79,26 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
-import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = AlbumViewModel.Factory::class)
 class AlbumViewModel
     @AssistedInject
     constructor(
-        private val api: ApiClient,
+        api: ApiClient,
+        musicService: MusicService,
+        navigationManager: NavigationManager,
         @param:ApplicationContext private val context: Context,
-        val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val mediaReportService: MediaReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
-        private val musicService: MusicService,
         @Assisted val itemId: UUID,
-    ) : ViewModel() {
+    ) : MusicViewModel(api, musicService, navigationManager) {
         @AssistedFactory
         interface Factory {
             fun create(itemId: UUID): AlbumViewModel
@@ -175,39 +170,8 @@ class AlbumViewModel
             shuffled: Boolean,
             startIndex: Int = 0,
         ) {
-            viewModelScope.launchIO {
-                Timber.v("Playing album %s from %s", itemId, startIndex)
-                val songs = state.value.songs as ApiRequestPager<*>
-                musicService.setQueue(songs, startIndex, shuffled)
-            }
-        }
-
-        fun playNext(song: BaseItem) {
-            viewModelScope.launchDefault {
-                musicService.playNext(song)
-            }
-        }
-
-        fun addToQueue(
-            item: BaseItem,
-            index: Int,
-        ) {
-            viewModelScope.launchIO {
-                val songs = state.value.songs as ApiRequestPager<*>
-                if (item.id == this@AlbumViewModel.itemId) {
-                    musicService.addAllToQueue(songs, 0)
-                } else if (item.type == BaseItemKind.AUDIO) {
-                    musicService.addToQueue(item)
-                }
-            }
-        }
-
-        fun startInstantMix() {
-            viewModelScope.launchIO {
-                Timber.v("Starting instant mix for %s", itemId)
-                musicService.startInstantMix(itemId)
-                navigationManager.navigateTo(Destination.NowPlaying)
-            }
+            val songs = state.value.songs as ApiRequestPager<*>
+            play(songs, startIndex, shuffled)
         }
     }
 
@@ -297,7 +261,7 @@ fun AlbumDetailsPage(
                                     remember {
                                         MusicButtonActions(
                                             onClickPlay = { viewModel.play(it, 0) },
-                                            onClickInstantMix = viewModel::startInstantMix,
+                                            onClickInstantMix = { viewModel.startInstantMix(album.id) },
                                             onClickFavorite = {
                                                 viewModel.setFavorite(
                                                     album.id,
