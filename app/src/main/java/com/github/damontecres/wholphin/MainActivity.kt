@@ -325,8 +325,8 @@ class MainActivity : AppCompatActivity() {
 //                                                                    ?: Destination.Home(),
                                                                     // TODO undo
                                                                     ?: Destination.MediaItem(
-                                                                        itemId = "bbc3e562-6045-5521-dfda-7effa56e14f2".toUUID(),
-                                                                        type = BaseItemKind.MUSIC_ARTIST,
+                                                                        itemId = "011ef0c7ca45684f2cd9dd3b020ca5f6".toUUID(),
+                                                                        type = BaseItemKind.MUSIC_ALBUM,
                                                                     ),
                                                             navigationManager = navigationManager,
                                                             preferences = preferences,

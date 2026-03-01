@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchDefault
+import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.mayakapps.kache.InMemoryKache
@@ -164,4 +165,9 @@ class NowPlayingViewModel
                 }
             }
         }
+
+        fun moveQueue(
+            index: Int,
+            direction: MoveDirection,
+        ) = viewModelScope.launchDefault { musicService.moveQueue(index, direction) }
     }

@@ -5,6 +5,8 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -131,7 +133,9 @@ fun NowPlayingPage(
             controllerViewState.hideControls()
         }
         AnimatedVisibility(
-            controllerViewState.controlsVisible,
+            visible = controllerViewState.controlsVisible,
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter),
@@ -142,6 +146,7 @@ fun NowPlayingPage(
                 current = current,
                 queue = queue,
                 controllerViewState = controllerViewState,
+                onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
                 modifier =
                     Modifier
                         .background(AppColors.TransparentBlack50)

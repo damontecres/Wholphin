@@ -726,5 +726,6 @@
     <string name="artist">Artist</string>
     <string name="album_artist">Album artist</string>
     <string name="album">Album</string>
+    <string name="popular_songs">Popular songs</string>
 
 </resources>

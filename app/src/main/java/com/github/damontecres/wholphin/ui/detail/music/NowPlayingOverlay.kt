@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -46,11 +48,13 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.PlaybackButtons
 import com.github.damontecres.wholphin.ui.playback.PlaybackFaButton
 import com.github.damontecres.wholphin.ui.playback.SeekBar
+import com.github.damontecres.wholphin.ui.preferences.MoveButton
 import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.launch
@@ -65,6 +69,7 @@ fun NowPlayingOverlay(
     current: AudioItem?,
     queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
+    onMoveQueue: (Int, MoveDirection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -228,23 +233,46 @@ fun NowPlayingOverlay(
                         },
             ) {
                 itemsIndexed(queue) { index, song ->
-                    SongListItem(
-                        title = song.title,
-                        artist = song.artistNames,
-                        indexNumber = index + 1,
-                        runtime = song.runtime?.roundSeconds,
-                        showArtist = true,
-                        isPlaying = current?.id == song.id,
-                        onClick = {
-                            player.seekTo(index, 0L)
-                        },
-                        onLongClick = {},
-                        modifier =
-                            Modifier.ifElse(
-                                index == 0,
-                                Modifier.focusRequester(firstFocusRequester),
-                            ),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        SongListItem(
+                            title = song.title,
+                            artist = song.artistNames,
+                            indexNumber = index + 1,
+                            runtime = song.runtime?.roundSeconds,
+                            showArtist = true,
+                            isPlaying = current?.id == song.id,
+                            onClick = {
+                                player.seekTo(index, 0L)
+                            },
+                            onLongClick = {},
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .ifElse(
+                                        index == 0,
+                                        Modifier.focusRequester(firstFocusRequester),
+                                    ),
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.wrapContentWidth(),
+                        ) {
+                            MoveButton(
+                                icon = R.string.fa_caret_up,
+                                enabled = index > 0,
+                                onClick = { onMoveQueue.invoke(index, MoveDirection.UP) },
+                            )
+                            MoveButton(
+                                icon = R.string.fa_caret_down,
+                                enabled = index < queue.lastIndex,
+                                onClick = { onMoveQueue.invoke(index, MoveDirection.DOWN) },
+                            )
+                        }
+                    }
                 }
             }
         }

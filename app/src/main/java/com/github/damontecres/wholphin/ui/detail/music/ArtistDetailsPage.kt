@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,9 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,9 +61,11 @@ import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -149,9 +154,40 @@ class ArtistViewModel
                             loading = LoadingState.Success,
                         )
                     }
-                    backdropService.submit(artist)
+
+                    viewModelScope.launchIO {
+                        val request =
+                            GetItemsRequest(
+                                parentId = itemId,
+                                fields = DefaultItemFields,
+                                recursive = true,
+                                includeItemTypes = listOf(BaseItemKind.AUDIO),
+                                minCommunityRating = 1.0,
+                                sortBy =
+                                    listOf(
+                                        ItemSortBy.COMMUNITY_RATING,
+                                    ),
+                                sortOrder = listOf(SortOrder.DESCENDING),
+                                limit = 10,
+                            )
+                        val topSongs =
+                            GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                        if (topSongs.isNotEmpty()) {
+                            _state.update {
+                                it.copy(topSongs = topSongs)
+                            }
+                        }
+                    }
                 } catch (ex: Exception) {
                     _state.update { it.copy(loading = LoadingState.Error(ex)) }
+                }
+            }
+        }
+
+        fun init() {
+            viewModelScope.launchDefault {
+                state.value.artist?.let {
+                    backdropService.submit(it)
                 }
             }
         }
@@ -169,14 +205,25 @@ class ArtistViewModel
             _state.update { it.copy(artist = artist) }
         }
 
-        fun play(
-            shuffled: Boolean,
-            startIndex: Int = 0,
-        ) {
+        fun play(shuffled: Boolean) {
             viewModelScope.launchIO {
-                Timber.v("Playing artist %s from %s", itemId, startIndex)
-                val songs = state.value.topSongs as ApiRequestPager<*>
-                musicService.setQueue(songs, startIndex, shuffled)
+                Timber.v("Playing artist %s", itemId)
+                val request =
+                    GetItemsRequest(
+                        parentId = itemId,
+                        fields = DefaultItemFields,
+                        recursive = true,
+                        includeItemTypes = listOf(BaseItemKind.AUDIO),
+                        sortBy =
+                            listOf(
+                                ItemSortBy.PREMIERE_DATE,
+                                ItemSortBy.INDEX_NUMBER,
+                            ),
+                        sortOrder = listOf(SortOrder.DESCENDING, SortOrder.ASCENDING),
+                    )
+                val pager =
+                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+                musicService.setQueue(pager, 0, shuffled)
             }
         }
 
@@ -197,6 +244,12 @@ class ArtistViewModel
                 Timber.v("Starting instant mix for %s", itemId)
                 musicService.startInstantMix(itemId)
                 navigationManager.navigateTo(Destination.NowPlaying)
+            }
+        }
+
+        fun playSong(song: BaseItem) {
+            viewModelScope.launchDefault {
+                musicService.setQueue(listOf(song), false)
             }
         }
     }
@@ -233,7 +286,7 @@ fun ArtistDetailsPage(
         remember {
             MusicMoreDialogActions(
                 onNavigate = { viewModel.navigationManager.navigateTo(it) },
-                onClickPlay = { index, _ -> viewModel.play(false, index) },
+                onClickPlay = { index, song -> TODO() },
                 onClickAddToQueue = { index, itemId -> viewModel.addToQueue(itemId, index) },
                 onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
                 onClickAddPlaylist = {},
@@ -254,7 +307,10 @@ fun ArtistDetailsPage(
         LoadingState.Success -> {
             val artist = state.artist!!
             val focusRequester = remember { FocusRequester() }
-            LaunchedEffect(Unit) { focusRequester.requestFocus() }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+                viewModel.init()
+            }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
             Box(modifier = modifier) {
                 LazyColumn(
@@ -284,7 +340,7 @@ fun ArtistDetailsPage(
                                 actions =
                                     remember {
                                         MusicButtonActions(
-                                            onClickPlay = { viewModel.play(it, 0) },
+                                            onClickPlay = { viewModel.play(it) },
                                             onClickInstantMix = viewModel::startInstantMix,
                                             onClickFavorite = {
                                                 viewModel.setFavorite(
@@ -320,13 +376,16 @@ fun ArtistDetailsPage(
                     if (state.topSongs.isNotEmpty()) {
                         item {
                             Text(
-                                text = stringResource(R.string.songs),
+                                text = stringResource(R.string.popular_songs),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(start = 8.dp),
                             )
                         }
                         itemsIndexed(state.topSongs) { index, song ->
                             SongListItem(
                                 song = song,
-                                onClick = { viewModel.play(false, index) },
+                                onClick = { song?.let { viewModel.playSong(it) } },
                                 onLongClick = {
                                     if (song != null) {
                                         moreDialog =
@@ -403,7 +462,11 @@ fun ArtistHeader(
         AsyncImage(
             model = imageUrl,
             contentDescription = null,
-            modifier = Modifier.fillMaxWidth(.25f),
+            contentScale = ContentScale.FillWidth,
+            modifier =
+                Modifier
+                    .fillMaxWidth(.20f)
+                    .clip(RoundedCornerShape(16.dp)),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),

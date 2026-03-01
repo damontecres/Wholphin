@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.music
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,7 +23,6 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.enableMarquee
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -98,51 +98,66 @@ fun SongListItem(
         modifier = modifier,
     ) {
         val focused by interactionSource.collectIsFocusedAsState()
-        ListItem(
-            selected = isPlaying,
-            onClick = onClick,
-            onLongClick = onLongClick,
-            interactionSource = interactionSource,
-            leadingContent = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = indexNumber?.toString() ?: "",
+        val leadingContent: @Composable (BoxScope.() -> Unit) = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = indexNumber?.toString() ?: "",
+                )
+                if (isPlaying) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
                     )
-                    if (isPlaying) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                        )
-                    }
                 }
-            },
-            headlineContent = {
-                Text(
-                    text = title ?: "",
-                    maxLines = 1,
-                    modifier = Modifier.enableMarquee(focused),
-                )
-            },
-            supportingContent =
-                if (showArtist && artist.isNotNullOrBlank()) {
-                    {
-                        Text(
-                            text = artist,
-                        )
-                    }
-                } else {
-                    null
+            }
+        }
+        val headlineContent = @Composable {
+            Text(
+                text = title ?: "",
+                maxLines = 1,
+                modifier = Modifier.enableMarquee(focused),
+            )
+        }
+        val trailingContent = @Composable {
+            Text(
+                text = runtime.toString(),
+            )
+        }
+
+        if (showArtist) {
+            // TODO use dense?
+            ListItem(
+                selected = isPlaying,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                interactionSource = interactionSource,
+                leadingContent = leadingContent,
+                headlineContent = headlineContent,
+                supportingContent = {
+                    Text(
+                        text = artist ?: "",
+                    )
                 },
-            trailingContent = {
-                Text(
-                    text = runtime.toString(),
-                )
-            },
-            scale = ListItemDefaults.scale(1f, 1f, .95f),
-            modifier = Modifier.weight(1f),
-        )
+                trailingContent = trailingContent,
+                scale = ListItemDefaults.scale(1f, 1f, .95f),
+                modifier = Modifier,
+            )
+        } else {
+            ListItem(
+                selected = isPlaying,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                interactionSource = interactionSource,
+                leadingContent = leadingContent,
+                headlineContent = headlineContent,
+                supportingContent = null,
+                trailingContent = trailingContent,
+                scale = ListItemDefaults.scale(1f, 1f, .95f),
+                modifier = Modifier,
+            )
+        }
     }
 }
 

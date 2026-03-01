@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.BlockingList
@@ -199,6 +200,14 @@ class MusicService
                     it.copy(queueSize = player.mediaItemCount)
                 }
             }
+        }
+
+        suspend fun moveQueue(
+            index: Int,
+            direction: MoveDirection,
+        ) = withContext(Dispatchers.Main) {
+            player.moveMediaItem(index, if (direction == MoveDirection.UP) index - 1 else index + 1)
+            updateQueueSize()
         }
     }
 
