@@ -1,10 +1,8 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,8 +30,9 @@ import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedMusic
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
-import com.github.damontecres.wholphin.ui.data.VideoSortOptions
+import com.github.damontecres.wholphin.ui.data.AlbumSortOptions
+import com.github.damontecres.wholphin.ui.data.ArtistSortOptions
+import com.github.damontecres.wholphin.ui.data.SongSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -77,8 +76,8 @@ fun CollectionFolderMusic(
     ) {
         AnimatedVisibility(
             showHeader,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+            enter = expandVertically(),
+            exit = shrinkVertically(),
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
@@ -125,7 +124,7 @@ fun CollectionFolderMusic(
                         ),
                     showTitle = false,
                     recursive = true,
-                    sortOptions = MovieSortOptions,
+                    sortOptions = AlbumSortOptions,
                     defaultViewOptions = ViewOptionsSquare,
                     modifier =
                         Modifier
@@ -157,7 +156,7 @@ fun CollectionFolderMusic(
                         ),
                     showTitle = false,
                     recursive = true,
-                    sortOptions = VideoSortOptions,
+                    sortOptions = ArtistSortOptions,
                     defaultViewOptions = ViewOptionsSquare,
                     modifier =
                         Modifier
@@ -201,7 +200,7 @@ fun CollectionFolderMusic(
                         ),
                     showTitle = false,
                     recursive = true,
-                    sortOptions = MovieSortOptions,
+                    sortOptions = SongSortOptions,
                     defaultViewOptions = ViewOptionsSquare,
                     modifier =
                         Modifier

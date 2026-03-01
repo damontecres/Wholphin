@@ -724,5 +724,7 @@
     <string name="mixer">Mixer</string>
     <string name="creator">Creator</string>
     <string name="artist">Artist</string>
+    <string name="album_artist">Album artist</string>
+    <string name="album">Album</string>
 
 </resources>
