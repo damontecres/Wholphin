@@ -432,4 +432,18 @@
     <string name="play_videos_during_slideshow">Videos während der Diashow abspielen</string>
     <string name="max_days_next_up">Maximale Tage in \"Als nächstes\"</string>
     <string name="quick_connect">Quick Connect</string>
+    <plurals name="minutes">
+        <item quantity="one">%s Minute</item>
+        <item quantity="other">%s Minuten</item>
+    </plurals>
+    <string name="interlaced">Interlaced</string>
+    <string name="nal">NAL</string>
+    <string name="quick_connect_summary">Gewähre anderen Geräten Zugriff auf deinen Account</string>
+    <string name="quick_connect_code">Eingabe Quick Connect Code</string>
+    <string name="no_limit">Keine Beschränkung</string>
+    <string name="add_row">Reihe hinzufügen</string>
+    <string name="genres_in">Genres in %1$s</string>
+    <string name="recently_released_in">kürzlich veröffentlicht in %1$s</string>
+    <string name="height">Höhe</string>
+    <string name="apply_all_rows">Auf alle Reihen anwenden</string>
 </resources>
