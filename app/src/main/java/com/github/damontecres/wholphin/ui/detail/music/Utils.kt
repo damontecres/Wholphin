@@ -6,17 +6,26 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.nav.Destination
-import org.jellyfin.sdk.model.UUID
+import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import java.util.UUID
 
 data class MusicMoreDialogActions(
     val onNavigate: (Destination) -> Unit,
-    val onClickPlay: (Int, UUID) -> Unit,
-    val onClickAddToQueue: (Int, UUID) -> Unit,
+    val onClickPlay: (Int, BaseItem) -> Unit,
+    val onClickPlayNext: (Int, BaseItem) -> Unit,
+    val onClickAddToQueue: (Int, BaseItem) -> Unit,
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
     val onClickGoToAlbum: (UUID) -> Unit = {
@@ -40,7 +49,16 @@ fun buildMoreDialogForMusic(
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
             ) {
-                actions.onClickPlay(index, item.id)
+                actions.onClickPlay(index, item)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.play_next),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlayNext(index, item)
             },
         )
         add(
@@ -48,7 +66,7 @@ fun buildMoreDialogForMusic(
                 context.getString(R.string.add_to_queue),
                 Icons.Default.Add,
             ) {
-                actions.onClickAddToQueue(index, item.id)
+                actions.onClickAddToQueue(index, item)
             },
         )
         add(
@@ -93,3 +111,43 @@ fun buildMoreDialogForMusic(
             )
         }
     }
+
+suspend fun ViewModel.getPagerForAlbum(
+    api: ApiClient,
+    albumId: UUID,
+): ApiRequestPager<GetItemsRequest> {
+    val request =
+        GetItemsRequest(
+            parentId = albumId,
+            includeItemTypes = listOf(BaseItemKind.AUDIO),
+            fields = DefaultItemFields,
+            sortBy =
+                listOf(
+                    ItemSortBy.PARENT_INDEX_NUMBER,
+                    ItemSortBy.INDEX_NUMBER,
+                    ItemSortBy.SORT_NAME,
+                ),
+        )
+    return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+}
+
+suspend fun ViewModel.getPagerForArtist(
+    api: ApiClient,
+    artistId: UUID,
+): ApiRequestPager<GetItemsRequest> {
+    val request =
+        GetItemsRequest(
+            parentId = artistId,
+            recursive = true,
+            includeItemTypes = listOf(BaseItemKind.AUDIO),
+            fields = DefaultItemFields,
+            // TODO better sort
+            sortBy =
+                listOf(
+                    ItemSortBy.PARENT_INDEX_NUMBER,
+                    ItemSortBy.INDEX_NUMBER,
+                    ItemSortBy.SORT_NAME,
+                ),
+        )
+    return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+}

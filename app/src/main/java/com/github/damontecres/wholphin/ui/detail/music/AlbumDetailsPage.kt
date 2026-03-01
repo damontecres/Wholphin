@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,20 +50,23 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -80,8 +84,7 @@ import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 
@@ -121,22 +124,7 @@ class AlbumViewModel
                                 .content
                                 .let { BaseItem(it, false) }
                         }
-                    val songsDeferred =
-                        async {
-                            val request =
-                                GetItemsRequest(
-                                    parentId = itemId,
-                                    includeItemTypes = listOf(BaseItemKind.AUDIO),
-                                    fields = DefaultItemFields,
-                                    sortBy =
-                                        listOf(
-                                            ItemSortBy.PARENT_INDEX_NUMBER,
-                                            ItemSortBy.INDEX_NUMBER,
-                                            ItemSortBy.SORT_NAME,
-                                        ),
-                                )
-                            ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
-                        }
+                    val songsDeferred = async { getPagerForAlbum(api, itemId) }
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
@@ -194,18 +182,22 @@ class AlbumViewModel
             }
         }
 
+        fun playNext(song: BaseItem) {
+            viewModelScope.launchDefault {
+                musicService.playNext(song)
+            }
+        }
+
         fun addToQueue(
-            itemId: UUID,
+            item: BaseItem,
             index: Int,
         ) {
             viewModelScope.launchIO {
                 val songs = state.value.songs as ApiRequestPager<*>
-                if (itemId == this@AlbumViewModel.itemId) {
+                if (item.id == this@AlbumViewModel.itemId) {
                     musicService.addAllToQueue(songs, 0)
-                } else {
-                    songs.getBlocking(index)?.let {
-                        musicService.addToQueue(it)
-                    }
+                } else if (item.type == BaseItemKind.AUDIO) {
+                    musicService.addToQueue(item)
                 }
             }
         }
@@ -238,21 +230,28 @@ fun AlbumDetailsPage(
         hiltViewModel<AlbumViewModel, AlbumViewModel.Factory>(
             creationCallback = { it.create(itemId) },
         ),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val currentMusic by viewModel.currentMusic.collectAsState()
 
+    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     val moreDialogActions =
         remember {
             MusicMoreDialogActions(
                 onNavigate = { viewModel.navigationManager.navigateTo(it) },
                 onClickPlay = { index, _ -> viewModel.play(false, index) },
-                onClickAddToQueue = { index, itemId -> viewModel.addToQueue(itemId, index) },
+                onClickPlayNext = { _, song -> viewModel.playNext(song) },
+                onClickAddToQueue = { index, item -> viewModel.addToQueue(item, index) },
                 onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
-                onClickAddPlaylist = {},
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.AUDIO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
             )
         }
 
@@ -375,6 +374,23 @@ fun AlbumDetailsPage(
             onDismissRequest = { moreDialog = null },
             dismissOnClick = true,
             waitToLoad = params.fromLongClick,
+        )
+    }
+    showPlaylistDialog.compose { itemId ->
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = playlistState,
+            onDismissRequest = { showPlaylistDialog.makeAbsent() },
+            onClick = {
+                playlistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            elevation = 3.dp,
         )
     }
 }

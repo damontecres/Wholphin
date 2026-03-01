@@ -209,6 +209,12 @@ class MusicService
             player.moveMediaItem(index, if (direction == MoveDirection.UP) index - 1 else index + 1)
             updateQueueSize()
         }
+
+        suspend fun playNext(song: BaseItem) {
+            val mediaItem = convert(song)
+            onMain { player.addMediaItem(state.value.currentIndex + 1, mediaItem) }
+            updateQueueSize()
+        }
     }
 
 @Stable
