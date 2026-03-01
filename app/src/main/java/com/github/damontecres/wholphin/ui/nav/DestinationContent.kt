@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.music.AlbumDetailsPage
+import com.github.damontecres.wholphin.ui.detail.music.ArtistDetailsPage
 import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
@@ -220,6 +221,14 @@ fun DestinationContent(
                 BaseItemKind.MUSIC_ALBUM -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     AlbumDetailsPage(
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.MUSIC_ARTIST -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    ArtistDetailsPage(
                         itemId = destination.itemId,
                         modifier = modifier,
                     )
