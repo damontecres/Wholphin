@@ -22,7 +22,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -55,7 +54,6 @@ fun CollectionFolderMusic(
             stringResource(R.string.recommended),
             stringResource(R.string.albums),
             stringResource(R.string.artists),
-            stringResource(R.string.playlists),
             stringResource(R.string.genres),
             stringResource(R.string.songs),
         )
@@ -173,14 +171,8 @@ fun CollectionFolderMusic(
                 )
             }
 
-            // Playlists
-            3 -> {
-                // TODO
-                Text("TODO")
-            }
-
             // Genres
-            4 -> {
+            3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM, BaseItemKind.AUDIO),
@@ -192,7 +184,7 @@ fun CollectionFolderMusic(
             }
 
             // Songs
-            5 -> {
+            4 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = { _, item ->

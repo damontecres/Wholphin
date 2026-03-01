@@ -104,6 +104,7 @@ fun NowPlayingPage(
                     modifier = Modifier,
                 ) {
                     LyricsContent(
+                        synced = true,
                         lyrics = state.lyrics,
                         currentLyricPosition = state.currentLyricIndex,
                         onClick = {},
