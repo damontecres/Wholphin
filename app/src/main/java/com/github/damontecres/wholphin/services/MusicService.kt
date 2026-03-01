@@ -208,9 +208,10 @@ data class MusicServiceState(
     val currentIndex: Int,
     val currentItemId: UUID?,
     val isPlaying: Boolean,
+    val currentItemTitle: String?,
 ) {
     companion object {
-        val EMPTY = MusicServiceState(0, 0, null, false)
+        val EMPTY = MusicServiceState(0, 0, null, false, null)
     }
 }
 
@@ -263,9 +264,12 @@ private class MusicPlayerListener(
         state.update { state ->
             player.currentMediaItemIndex.takeIf { it >= 0 }?.let { currentMediaItemIndex ->
                 if (currentMediaItemIndex in (0..<player.mediaItemCount)) {
+                    val item =
+                        player.getMediaItemAt(currentMediaItemIndex).localConfiguration?.tag as? AudioItem
                     state.copy(
                         currentIndex = currentMediaItemIndex,
                         currentItemId = player.getMediaItemAt(currentMediaItemIndex).mediaId.toUUIDOrNull(),
+                        currentItemTitle = item?.title,
                     )
                 } else {
                     state

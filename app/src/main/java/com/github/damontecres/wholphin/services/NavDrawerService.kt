@@ -76,18 +76,24 @@ class NavDrawerService
                     _state.update { it.copy(discoverEnabled = discoverActive) }
                 }.launchIn(coroutineScope)
             coroutineScope.launchDefault {
-                musicService.state.collectLatest {
+                musicService.state.collectLatest { music ->
                     Timber.v("MusicService updated")
-                    if (it.isPlaying) {
+                    if (music.isPlaying) {
                         _state.update {
-                            it.copy(nowPlayingEnabled = true)
+                            it.copy(
+                                nowPlayingEnabled = true,
+                                nowPlayingTitle = music.currentItemTitle,
+                            )
                         }
                     } else {
                         // Don't immediately remove the now playing
                         // TODO need better now playing state to distinguish between paused & stopped
                         delay(30_000)
                         _state.update {
-                            it.copy(nowPlayingEnabled = false)
+                            it.copy(
+                                nowPlayingEnabled = false,
+                                nowPlayingTitle = null,
+                            )
                         }
                     }
                 }
@@ -203,9 +209,10 @@ data class NavDrawerItemState(
     val moreItems: List<NavDrawerItem>,
     val discoverEnabled: Boolean,
     val nowPlayingEnabled: Boolean,
+    val nowPlayingTitle: String?,
 ) {
     companion object {
-        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false, false)
+        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false, false, null)
     }
 }
 

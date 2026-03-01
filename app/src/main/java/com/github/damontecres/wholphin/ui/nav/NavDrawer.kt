@@ -2,9 +2,12 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -337,6 +340,31 @@ fun NavDrawer(
                         },
                         modifier = Modifier,
                     )
+                    AnimatedVisibility(
+                        visible = state.nowPlayingEnabled,
+                        enter = expandVertically(expandFrom = Alignment.Top),
+                        exit = shrinkVertically(shrinkTowards = Alignment.Top),
+                    ) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        IconNavItem(
+                            text = stringResource(R.string.now_playing),
+                            subtext = state.nowPlayingTitle,
+                            icon = Icons.Default.PlayArrow,
+                            selected = selectedIndex == NOW_PLAYING_INDEX,
+                            drawerOpen = isOpen,
+                            interactionSource = interactionSource,
+                            onClick = {
+                                viewModel.setIndex(NOW_PLAYING_INDEX)
+                                viewModel.navigationManager.navigateToFromDrawer(Destination.NowPlaying)
+                            },
+                            modifier =
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == NOW_PLAYING_INDEX,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
+                        )
+                    }
                     LazyColumn(
                         state = navDrawerListState,
                         contentPadding = PaddingValues(0.dp),
@@ -375,28 +403,6 @@ fun NavDrawer(
                                             Modifier.focusRequester(focusRequester),
                                         ),
                             )
-                        }
-                        if (state.nowPlayingEnabled) {
-                            item {
-                                val interactionSource = remember { MutableInteractionSource() }
-                                IconNavItem(
-                                    text = stringResource(R.string.now_playing),
-                                    icon = Icons.Default.PlayArrow,
-                                    selected = selectedIndex == NOW_PLAYING_INDEX,
-                                    drawerOpen = isOpen,
-                                    interactionSource = interactionSource,
-                                    onClick = {
-                                        viewModel.setIndex(NOW_PLAYING_INDEX)
-                                        viewModel.navigationManager.navigateToFromDrawer(Destination.NowPlaying)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .ifElse(
-                                                selectedIndex == NOW_PLAYING_INDEX,
-                                                Modifier.focusRequester(focusRequester),
-                                            ).animateItem(),
-                                )
-                            }
                         }
                         item {
                             val interactionSource = remember { MutableInteractionSource() }

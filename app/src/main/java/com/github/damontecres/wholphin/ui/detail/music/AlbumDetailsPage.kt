@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -122,6 +123,7 @@ class AlbumViewModel
                             val request =
                                 GetItemsRequest(
                                     parentId = itemId,
+                                    includeItemTypes = listOf(BaseItemKind.AUDIO),
                                     fields = DefaultItemFields,
                                     sortBy =
                                         listOf(
@@ -196,11 +198,7 @@ class AlbumViewModel
             viewModelScope.launchIO {
                 val songs = state.value.songs as ApiRequestPager<*>
                 if (itemId == this@AlbumViewModel.itemId) {
-                    songs.indices.forEach {
-                        songs.getBlocking(it)?.let {
-                            musicService.addToQueue(it)
-                        }
-                    }
+                    musicService.addAllToQueue(songs, 0)
                 } else {
                     songs.getBlocking(index)?.let {
                         musicService.addToQueue(it)
