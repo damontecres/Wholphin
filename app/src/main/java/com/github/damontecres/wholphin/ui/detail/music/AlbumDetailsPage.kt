@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -123,9 +124,20 @@ class AlbumViewModel
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
+                    val allArtists =
+                        album.data.artists.orEmpty() +
+                            album.data.albumArtists
+                                ?.map { it.name }
+                                .orEmpty()
+                    val isVariousArtists =
+                        allArtists.firstOrNull { it?.lowercase() == "various artists" } != null ||
+                            album.data.artists
+                                .orEmpty()
+                                .size > 1
                     _state.update {
                         AlbumState(
                             album = album,
+                            isVariousArtists = isVariousArtists,
                             imageUrl = imageUrl,
                             songs = songs,
                             loading = LoadingState.Success,
@@ -177,12 +189,13 @@ class AlbumViewModel
 
 data class AlbumState(
     val album: BaseItem?,
+    val isVariousArtists: Boolean,
     val imageUrl: String?,
     val songs: List<BaseItem?>,
     val loading: LoadingState,
 ) {
     companion object {
-        val EMPTY = AlbumState(null, null, emptyList(), LoadingState.Pending)
+        val EMPTY = AlbumState(null, false, null, emptyList(), LoadingState.Pending)
     }
 }
 
@@ -302,29 +315,38 @@ fun AlbumDetailsPage(
                         )
                     }
                     itemsIndexed(state.songs) { index, song ->
-                        SongListItem(
-                            song = song,
-                            onClick = { viewModel.play(false, index) },
-                            onLongClick = {
-                                if (song != null) {
-                                    moreDialog =
-                                        DialogParams(
-                                            fromLongClick = true,
-                                            title = song.name ?: "",
-                                            items =
-                                                buildMoreDialogForMusic(
-                                                    context = context,
-                                                    actions = moreDialogActions,
-                                                    item = song,
-                                                    index = index,
-                                                ),
-                                        )
-                                }
-                            },
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            showArtist = false,
-                            isPlaying = song != null && currentMusic.currentItemId == song.id,
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            SongListItem(
+                                song = song,
+                                onClick = { viewModel.play(false, index) },
+                                onLongClick = {
+                                    if (song != null) {
+                                        moreDialog =
+                                            DialogParams(
+                                                fromLongClick = true,
+                                                title = song.name ?: "",
+                                                items =
+                                                    buildMoreDialogForMusic(
+                                                        context = context,
+                                                        actions = moreDialogActions,
+                                                        item = song,
+                                                        index = index,
+                                                    ),
+                                            )
+                                    }
+                                },
+                                showArtist = state.isVariousArtists,
+                                isPlaying = song != null && currentMusic.currentItemId == song.id,
+                                modifier =
+                                    Modifier
+//                                    .padding(horizontal = 16.dp)
+                                        .fillMaxWidth(.75f)
+                                        .align(Alignment.Center),
+                            )
+                        }
                     }
                 }
             }

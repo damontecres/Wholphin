@@ -79,6 +79,13 @@ class NowPlayingViewModel
                     state.update { it.copy(musicServiceState = musicServiceState) }
                 }
             }
+            viewModelScope.launchDefault {
+                viewModelScope
+                    .launchDefault {
+                        controllerViewState.observe()
+                    }.join()
+                controllerViewState.pulseControls()
+            }
             playbackLoop()
         }
 
@@ -170,4 +177,9 @@ class NowPlayingViewModel
             index: Int,
             direction: MoveDirection,
         ) = viewModelScope.launchDefault { musicService.moveQueue(index, direction) }
+
+        fun stop() {
+            player.stop()
+            navigationManager.goBack()
+        }
     }

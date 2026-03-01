@@ -251,7 +251,9 @@ fun NowPlayingOverlay(
                             modifier =
                                 Modifier
                                     .weight(1f)
-                                    .ifElse(
+                                    .onFocusChanged {
+                                        controllerViewState.pulseControls()
+                                    }.ifElse(
                                         index == 0,
                                         Modifier.focusRequester(firstFocusRequester),
                                     ),

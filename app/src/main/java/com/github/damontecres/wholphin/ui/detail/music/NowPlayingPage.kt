@@ -32,12 +32,11 @@ import androidx.media3.common.util.UnstableApi
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -67,17 +66,19 @@ fun NowPlayingPage(
             PlaybackKeyHandler(
                 player = player,
                 controlsEnabled = true,
-                skipWithLeftRight = true,
-                seekForward = preferences.playbackPreferences.skipForwardMs.milliseconds,
-                seekBack = preferences.playbackPreferences.skipBackMs.milliseconds,
+                skipWithLeftRight = false,
+                seekForward = 30.seconds,
+                seekBack = 10.seconds,
+//                seekForward = preferences.playbackPreferences.skipForwardMs.milliseconds,
+//                seekBack = preferences.playbackPreferences.skipBackMs.milliseconds,
                 controllerViewState = controllerViewState,
                 updateSkipIndicator = {},
-                skipBackOnResume = preferences.playbackPreferences.skipBackOnResume,
+                skipBackOnResume = null,
+//                skipBackOnResume = preferences.playbackPreferences.skipBackOnResume,
                 onInteraction = viewModel::reportInteraction,
                 oneClickPause = preferences.playbackPreferences.oneClickPause,
                 onStop = {
-                    player.stop()
-//                    viewModel.navigationManager.goBack()
+                    viewModel.stop()
                 },
                 onPlaybackDialogTypeClick = { },
                 getDurationMs = { player.duration },
