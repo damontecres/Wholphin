@@ -12,6 +12,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -28,6 +29,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -69,6 +72,34 @@ class MusicService
                 }
         }
 
+        private val mutex = Mutex()
+        var mediaSession: MediaSession? = null
+            private set
+
+        suspend fun start() {
+            if (mediaSession == null) {
+                mutex.withLock {
+                    if (mediaSession == null) {
+                        Timber.i("Starting music MediaSession")
+                        mediaSession = MediaSession.Builder(context, player).build()
+                    }
+                }
+            }
+            onMain { player.play() }
+        }
+
+        suspend fun stop() {
+            mutex.withLock {
+                Timber.i("Stopping music")
+                if (mediaSession == null) {
+                    Timber.w("Stopping but no MediaSession")
+                }
+                mediaSession?.release()
+                mediaSession = null
+                onMain { player.stop() }
+            }
+        }
+
         /**
          * Fetches instant mix items, replaces the queue, and begins playback
          */
@@ -100,8 +131,8 @@ class MusicService
             withContext(Dispatchers.Main) {
                 player.setMediaItems(emptyList())
                 player.shuffleModeEnabled = shuffled
-                player.play()
             }
+            start()
             addAllToQueue(items, startIndex)
         }
 
@@ -110,6 +141,7 @@ class MusicService
             shuffled: Boolean,
         ) {
             Timber.d("setQueue: %s items, shuffled=%s", items.size, shuffled)
+            start()
             val mediaItems =
                 items
                     .filter { it.type == BaseItemKind.AUDIO }
@@ -118,7 +150,6 @@ class MusicService
                 updateQueueSize()
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
-                player.play()
             }
         }
 
@@ -202,6 +233,7 @@ class MusicService
                     it.copy(queueSize = player.mediaItemCount)
                 }
             }
+            start()
         }
 
         suspend fun moveQueue(
