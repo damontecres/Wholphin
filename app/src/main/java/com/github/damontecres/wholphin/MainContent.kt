@@ -21,7 +21,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
@@ -41,7 +40,7 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 
 @Composable
 fun MainContent(
-    backStack: MutableList<NavKey>,
+    backStack: MutableList<SetupDestination>,
     navigationManager: NavigationManager,
     appPreferences: AppPreferences,
     backdropService: BackdropService,
