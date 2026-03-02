@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -50,16 +49,12 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
-import com.github.damontecres.wholphin.ui.playback.PlaybackAction
-import com.github.damontecres.wholphin.ui.playback.PlaybackButtons
-import com.github.damontecres.wholphin.ui.playback.PlaybackFaButton
 import com.github.damontecres.wholphin.ui.playback.SeekBar
 import com.github.damontecres.wholphin.ui.preferences.MoveButton
 import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -133,69 +128,15 @@ fun NowPlayingOverlay(
                 Modifier
                     .align(Alignment.CenterHorizontally),
         ) {
-            Row(
+            NowPlayingButtons(
+                player = player,
+                controllerViewState = controllerViewState,
+                initialFocusRequester = focusRequester,
                 modifier =
                     Modifier
+                        .fillMaxWidth()
                         .align(Alignment.CenterHorizontally),
-            ) {
-                PlaybackButtons(
-                    player = player,
-                    initialFocusRequester = focusRequester,
-                    onControllerInteraction = { controllerViewState.pulseControls() },
-                    onPlaybackActionClick = {
-                        when (it) {
-                            PlaybackAction.Next -> {
-                                nextState.onClick()
-                            }
-
-                            PlaybackAction.Previous -> {
-                                previousState.onClick()
-                            }
-
-                            is PlaybackAction.ToggleCaptions -> {
-                                TODO()
-                            }
-
-                            else -> {}
-                        }
-                    },
-                    showPlay = playPauseState.showPlay,
-                    previousEnabled = previousState.isEnabled,
-                    nextEnabled = nextState.isEnabled,
-                    seekBack = 10.seconds,
-                    skipBackOnResume = null,
-                    seekForward = 30.seconds, // TODO
-                )
-                PlaybackFaButton(
-                    iconRes = R.string.fa_shuffle,
-                    onClick = {
-                        shuffleState.onClick()
-                    },
-                    onControllerInteraction = { controllerViewState.pulseControls() },
-                    textColor =
-                        if (shuffleState.shuffleOn) {
-                            MaterialTheme.colorScheme.secondary
-                        } else {
-                            Color.Unspecified
-                        },
-                )
-                PlaybackFaButton(
-                    iconRes = R.string.fa_repeat,
-                    onClick = {
-                        repeatState.onClick()
-                    },
-                    onControllerInteraction = { controllerViewState.pulseControls() },
-                    textColor =
-                        when (repeatState.repeatModeState) {
-                            Player.REPEAT_MODE_ALL -> MaterialTheme.colorScheme.secondary
-
-                            // TODO
-                            Player.REPEAT_MODE_ONE -> MaterialTheme.colorScheme.tertiary
-
-                            else -> Color.Unspecified
-                        },
-                )
-            }
+            )
         }
         if (queue.isEmpty()) {
             Text("No items")

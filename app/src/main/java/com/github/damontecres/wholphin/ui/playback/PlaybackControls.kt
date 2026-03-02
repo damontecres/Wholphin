@@ -290,7 +290,7 @@ fun SeekBar(
     }
 }
 
-private val buttonSpacing = 12.dp
+val buttonSpacing = 12.dp
 
 @Composable
 fun LeftPlaybackButtons(
