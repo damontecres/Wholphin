@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -101,6 +102,20 @@ class BasicUiTests {
 
         every { jellyfin.createApi(any(), any(), any(), any(), any()) } returns api
         every { jellyfin.discovery } returns discovery
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    /**
+     * Tests successfully entering and submitting a server URL
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun test_enter_server_url_success() {
         coEvery { discovery.getRecommendedServers("localhost") } returns
             listOf(
                 RecommendedServerInfo(
@@ -117,17 +132,6 @@ class BasicUiTests {
                         ),
                 ),
             )
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
-    @OptIn(ExperimentalTestApi::class)
-    @Test
-    fun `Test enter server address`() {
         val quickConnectApi = mockk<QuickConnectApi>()
         every { api.quickConnectApi } returns quickConnectApi
         coEvery { quickConnectApi.getQuickConnectEnabled() } returns successResponse(true)
@@ -148,7 +152,10 @@ class BasicUiTests {
         composeTestRule.onNodeWithTag("add_server").performKeyInput {
             pressKey(Key.DirectionDown) // TODO fix focus
         }
-        composeTestRule.onNodeWithTag("add_server").performClickEnter()
+        composeTestRule
+            .onNodeWithTag("add_server")
+            .assertIsFocused()
+            .performClickEnter()
 
         composeTestRule.onNodeWithText("Discovered Servers").assertIsDisplayed()
         composeTestRule.onNodeWithText("Enter server address").performClickEnter()
@@ -166,5 +173,66 @@ class BasicUiTests {
 //        coVerify(exactly = 1) { discovery.getRecommendedServers("localhost") }
         Assert.assertEquals(1, setupNavigationManager.backStack.size)
         Assert.assertTrue(setupNavigationManager.backStack.last() is SetupDestination.UserList)
+    }
+
+    /**
+     * Tests entering and submitting a server URL that returns an error
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun test_enter_server_url_error() {
+        coEvery { discovery.getRecommendedServers("localhost") } returns
+            listOf(
+                RecommendedServerInfo(
+                    address = "localhost",
+                    responseTime = 50,
+                    score = RecommendedServerInfoScore.GREAT,
+                    issues = emptyList(),
+                    systemInfo =
+                        Result.success(
+                            PublicSystemInfo(
+                                id = null, // Invalid
+                                startupWizardCompleted = false,
+                            ),
+                        ),
+                ),
+            )
+        val quickConnectApi = mockk<QuickConnectApi>()
+        every { api.quickConnectApi } returns quickConnectApi
+        coEvery { quickConnectApi.getQuickConnectEnabled() } returns successResponse(true)
+
+        composeTestRule.setContent {
+            WholphinTheme {
+                switchServerViewModel = hiltViewModel()
+                SwitchServerContent(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = switchServerViewModel,
+                )
+            }
+        }
+
+        TestModule.testDispatcher.scheduler.advanceUntilIdle()
+
+        composeTestRule.onNodeWithText("Add Server").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("add_server").performKeyInput {
+            pressKey(Key.DirectionDown) // TODO fix focus
+        }
+        composeTestRule
+            .onNodeWithTag("add_server")
+            .assertIsFocused()
+            .performClickEnter()
+
+        composeTestRule.onNodeWithText("Discovered Servers").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Enter server address").performClickEnter()
+        composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
+        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+
+        TestModule.testDispatcher.scheduler.advanceUntilIdle()
+
+        Assert.assertTrue(switchServerViewModel.addServerState.value is LoadingState.Error)
+
+        composeTestRule.onNodeWithText("Server returned invalid response").assertIsDisplayed()
     }
 }
