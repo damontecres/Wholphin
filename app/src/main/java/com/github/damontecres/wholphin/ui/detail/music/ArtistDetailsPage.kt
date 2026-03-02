@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -85,6 +86,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -92,6 +94,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = ArtistViewModel.Factory::class)
@@ -181,6 +184,41 @@ class ArtistViewModel
                             }
                         }
                     }
+                    if (state.value.similar.isEmpty()) {
+                        viewModelScope.launchIO {
+                            val similar =
+                                api.libraryApi
+                                    .getSimilarItems(
+                                        GetSimilarItemsRequest(
+                                            userId = serverRepository.currentUser.value?.id,
+                                            itemId = itemId,
+                                            excludeArtistIds = listOf(itemId),
+                                            fields = SlimItemFields,
+                                            limit = 25,
+                                        ),
+                                    ).content.items
+                                    .map { BaseItem.from(it, api) }
+                            _state.update { it.copy(similar = similar) }
+                        }
+                    }
+                    viewModelScope.launchIO {
+                        val request =
+                            GetItemsRequest(
+                                userId = serverRepository.currentUser.value?.id,
+                                artistIds = listOf(itemId),
+                                parentId = null,
+                                fields = DefaultItemFields,
+                                recursive = true,
+                                includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
+                            )
+                        val musicVideos =
+                            GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                        if (musicVideos.isNotEmpty()) {
+                            _state.update {
+                                it.copy(musicVideos = musicVideos)
+                            }
+                        }
+                    }
                 } catch (ex: Exception) {
                     _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
@@ -214,11 +252,21 @@ data class ArtistState(
     val imageUrl: String?,
     val topSongs: List<BaseItem?>,
     val albums: List<BaseItem?>,
-    val similar: List<BaseItem?>,
+    val similar: List<BaseItem>,
     val loading: LoadingState,
+    val musicVideos: List<BaseItem?>,
 ) {
     companion object {
-        val EMPTY = ArtistState(null, null, emptyList(), emptyList(), emptyList(), LoadingState.Pending)
+        val EMPTY =
+            ArtistState(
+                null,
+                null,
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                LoadingState.Pending,
+                emptyList(),
+            )
     }
 }
 
@@ -391,6 +439,56 @@ fun ArtistDetailsPage(
                                 )
                             },
                         )
+                    }
+                    if (state.musicVideos.isNotEmpty()) {
+                        item {
+                            ItemRow(
+                                title = stringResource(R.string.music_videos),
+                                items = state.musicVideos,
+                                onClickItem = { index, item ->
+                                    viewModel.navigationManager.navigateTo(item.destination())
+                                },
+                                onLongClickItem = { index, item ->
+                                    // TODO
+                                },
+                                cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                                    BannerCardWithTitle(
+                                        title = item?.name,
+                                        subtitle = item?.data?.productionYear?.toString(),
+                                        item = item,
+                                        onClick = onClick,
+                                        onLongClick = onLongClick,
+                                        aspectRatio = AspectRatios.WIDE,
+                                        modifier = mod,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                    if (state.similar.isNotEmpty()) {
+                        item {
+                            ItemRow(
+                                title = stringResource(R.string.more_like_this),
+                                items = state.similar,
+                                onClickItem = { index, item ->
+                                    viewModel.navigationManager.navigateTo(item.destination())
+                                },
+                                onLongClickItem = { index, item ->
+                                    // TODO
+                                },
+                                cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                                    BannerCardWithTitle(
+                                        title = item?.name,
+                                        subtitle = item?.data?.productionYear?.toString(),
+                                        item = item,
+                                        onClick = onClick,
+                                        onLongClick = onLongClick,
+                                        aspectRatio = AspectRatios.SQUARE,
+                                        modifier = mod,
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
             }

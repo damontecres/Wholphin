@@ -37,11 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.compose.state.rememberNextButtonState
-import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
-import androidx.media3.ui.compose.state.rememberPreviousButtonState
-import androidx.media3.ui.compose.state.rememberRepeatButtonState
-import androidx.media3.ui.compose.state.rememberShuffleButtonState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -70,11 +65,6 @@ fun NowPlayingOverlay(
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-    val playPauseState = rememberPlayPauseButtonState(player)
-    val previousState = rememberPreviousButtonState(player)
-    val nextState = rememberNextButtonState(player)
-    val shuffleState = rememberShuffleButtonState(player)
-    val repeatState = rememberRepeatButtonState(player)
 
     var queueHasFocus by remember { mutableStateOf(false) }
     val height by animateFloatAsState(

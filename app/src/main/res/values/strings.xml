@@ -728,5 +728,6 @@
     <string name="album">Album</string>
     <string name="popular_songs">Popular songs</string>
     <string name="play_next">Play next</string>
+    <string name="music_videos">Music videos</string>
 
 </resources>

@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +53,11 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
+import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -61,10 +69,14 @@ import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.toBaseItems
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -79,9 +91,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = AlbumViewModel.Factory::class)
@@ -135,7 +151,7 @@ class AlbumViewModel
                                 .orEmpty()
                                 .size > 1
                     _state.update {
-                        AlbumState(
+                        it.copy(
                             album = album,
                             isVariousArtists = isVariousArtists,
                             imageUrl = imageUrl,
@@ -158,6 +174,41 @@ class AlbumViewModel
                             ).content.items
                             .firstOrNull()
                             ?.let { backdropService.submit(BaseItem(it, false)) }
+                    }
+                    if (state.value.similar.isEmpty()) {
+                        viewModelScope.launchIO {
+                            val similar =
+                                api.libraryApi
+                                    .getSimilarItems(
+                                        GetSimilarItemsRequest(
+                                            userId = serverRepository.currentUser.value?.id,
+                                            itemId = itemId,
+                                            excludeArtistIds = album.data.albumArtists?.map { it.id },
+                                            fields = SlimItemFields,
+                                            limit = 25,
+                                        ),
+                                    ).content.items
+                                    .map { BaseItem.from(it, api) }
+                            _state.update { it.copy(similar = similar) }
+                        }
+                    }
+                    viewModelScope.launchIO {
+                        val request =
+                            GetItemsRequest(
+                                userId = serverRepository.currentUser.value?.id,
+                                albumIds = listOf(itemId),
+                                parentId = null,
+                                fields = DefaultItemFields,
+                                recursive = true,
+                                includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
+                            )
+                        val musicVideos =
+                            GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                        if (musicVideos.isNotEmpty()) {
+                            _state.update {
+                                it.copy(musicVideos = musicVideos)
+                            }
+                        }
                     }
                 } catch (ex: Exception) {
                     _state.update { it.copy(loading = LoadingState.Error(ex)) }
@@ -192,10 +243,12 @@ data class AlbumState(
     val isVariousArtists: Boolean,
     val imageUrl: String?,
     val songs: List<BaseItem?>,
+    val similar: List<BaseItem>,
     val loading: LoadingState,
+    val musicVideos: List<BaseItem?> = emptyList(),
 ) {
     companion object {
-        val EMPTY = AlbumState(null, false, null, emptyList(), LoadingState.Pending)
+        val EMPTY = AlbumState(null, false, null, emptyList(), emptyList(), LoadingState.Pending)
     }
 }
 
@@ -246,10 +299,27 @@ fun AlbumDetailsPage(
         LoadingState.Success -> {
             val album = state.album!!
             val focusRequester = remember { FocusRequester() }
+            val firstFocusRequester = remember { FocusRequester() }
+            val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             LaunchedEffect(Unit) { focusRequester.requestFocus() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
+            val listState = rememberLazyListState()
+            val itemsBefore = 2
+            val backHandlerActive by remember {
+                derivedStateOf {
+                    listState.firstVisibleItemIndex > itemsBefore
+                }
+            }
+            BackHandler(backHandlerActive) {
+                scope.launch {
+                    listState.animateScrollToItem(itemsBefore)
+                    firstBringIntoViewRequester.bringIntoView()
+                    firstFocusRequester.tryRequestFocus()
+                }
+            }
             Box(modifier = modifier) {
                 LazyColumn(
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -344,7 +414,63 @@ fun AlbumDetailsPage(
                                     Modifier
 //                                    .padding(horizontal = 16.dp)
                                         .fillMaxWidth(.75f)
-                                        .align(Alignment.Center),
+                                        .align(Alignment.Center)
+                                        .ifElse(
+                                            index == 0,
+                                            Modifier
+                                                .focusRequester(firstFocusRequester)
+                                                .bringIntoViewRequester(firstBringIntoViewRequester),
+                                        ),
+                            )
+                        }
+                    }
+                    if (state.musicVideos.isNotEmpty()) {
+                        item {
+                            ItemRow(
+                                title = stringResource(R.string.music_videos),
+                                items = state.musicVideos,
+                                onClickItem = { index, item ->
+                                    viewModel.navigationManager.navigateTo(item.destination())
+                                },
+                                onLongClickItem = { index, item ->
+                                    // TODO
+                                },
+                                cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                                    BannerCardWithTitle(
+                                        title = item?.name,
+                                        subtitle = item?.data?.productionYear?.toString(),
+                                        item = item,
+                                        onClick = onClick,
+                                        onLongClick = onLongClick,
+                                        aspectRatio = AspectRatios.WIDE,
+                                        modifier = mod,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                    if (state.similar.isNotEmpty()) {
+                        item {
+                            ItemRow(
+                                title = stringResource(R.string.more_like_this),
+                                items = state.similar,
+                                onClickItem = { index, item ->
+                                    viewModel.navigationManager.navigateTo(item.destination())
+                                },
+                                onLongClickItem = { index, item ->
+                                    // TODO
+                                },
+                                cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                                    BannerCardWithTitle(
+                                        title = item?.name,
+                                        subtitle = item?.data?.productionYear?.toString(),
+                                        item = item,
+                                        onClick = onClick,
+                                        onLongClick = onLongClick,
+                                        aspectRatio = AspectRatios.SQUARE,
+                                        modifier = mod,
+                                    )
+                                },
                             )
                         }
                     }
