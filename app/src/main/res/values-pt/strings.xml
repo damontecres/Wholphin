@@ -121,7 +121,7 @@
     <string name="top_unwatched">Mais Votados Não Assistidos</string>
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
-        <item quantity="one">Trailers</item>
+        <item quantity="one">Trailer</item>
         <item quantity="many">Trailers</item>
         <item quantity="other">Trailers</item>
     </plurals>
@@ -553,7 +553,7 @@
     <string name="no_subtitles_found">Não foram encontradas legendas remotas</string>
     <string name="series_continueing">Em curso</string>
     <string name="in_app_screensaver">Usar protetor de ecrã da aplicação</string>
-    <string name="actor">Actor</string>
+    <string name="actor">Ator</string>
     <string name="composer">Compositor</string>
     <string name="writer">Argumentista</string>
     <string name="guest_star">Convidado especial</string>
