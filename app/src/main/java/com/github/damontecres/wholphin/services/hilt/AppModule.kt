@@ -185,7 +185,7 @@ object AppModule {
     @Provides
     @Singleton
     @DefaultCoroutineScope
-    fun defaultCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    fun defaultCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Provides
     @Singleton
