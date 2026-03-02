@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.BlockingList
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -71,18 +72,19 @@ class MusicService
         /**
          * Fetches instant mix items, replaces the queue, and begins playback
          */
-        suspend fun startInstantMix(itemId: UUID) {
-            val items =
-                api.instantMixApi
-                    .getInstantMixFromItem(
-                        userId = serverRepository.currentUser.value?.id,
-                        itemId = itemId,
-                        limit = 200,
-                        fields = DefaultItemFields,
-                    ).content.items
-                    .map { BaseItem(it, false) }
-            setQueue(items, false)
-        }
+        suspend fun startInstantMix(itemId: UUID) =
+            loading {
+                val items =
+                    api.instantMixApi
+                        .getInstantMixFromItem(
+                            userId = serverRepository.currentUser.value?.id,
+                            itemId = itemId,
+                            limit = 200,
+                            fields = DefaultItemFields,
+                        ).content.items
+                        .map { BaseItem(it, false) }
+                setQueue(items, false)
+            }
 
         /**
          * Replace the queue with the given list and starting playing the song as startIndex as soon as its ready
@@ -144,7 +146,7 @@ class MusicService
         suspend fun addAllToQueue(
             list: BlockingList<BaseItem?>,
             startIndex: Int,
-        ) {
+        ) = loading {
             var remaining = startIndex
             list.indices
                 .chunked(25)
@@ -215,6 +217,13 @@ class MusicService
             onMain { player.addMediaItem(state.value.currentIndex + 1, mediaItem) }
             updateQueueSize()
         }
+
+        private suspend fun <T> loading(block: suspend () -> T): T {
+            _state.update { it.copy(loadingState = LoadingState.Loading) }
+            val result = block.invoke()
+            _state.update { it.copy(loadingState = LoadingState.Success) }
+            return result
+        }
     }
 
 @Stable
@@ -224,6 +233,7 @@ data class MusicServiceState(
     val currentItemId: UUID?,
     val isPlaying: Boolean,
     val currentItemTitle: String?,
+    val loadingState: LoadingState = LoadingState.Pending,
 ) {
     companion object {
         val EMPTY = MusicServiceState(0, 0, null, false, null)

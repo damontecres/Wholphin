@@ -86,7 +86,7 @@ fun NowPlayingOverlay(
         if (queueHasFocus) {
             1f
         } else {
-            .5f
+            .33f
         },
         animationSpec = tween(durationMillis = 500),
     )
@@ -111,24 +111,6 @@ fun NowPlayingOverlay(
                 .padding(16.dp)
                 .fillMaxHeight(height),
     ) {
-        current?.title?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-        current?.albumTitle?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
-        current?.artistNames?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
         SeekBar(
             player = player,
             controllerViewState = controllerViewState,
