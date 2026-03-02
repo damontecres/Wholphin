@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -382,7 +383,10 @@ fun AddServerCard(
         Surface(
             onClick = onClick,
             interactionSource = interactionSource,
-            modifier = Modifier.size(cardSize),
+            modifier =
+                Modifier
+                    .size(cardSize)
+                    .testTag("add_server"),
             shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
             colors =
                 ClickableSurfaceDefaults.colors(

@@ -62,12 +62,6 @@ object AppModule {
             version = BuildConfig.VERSION_NAME,
         )
 
-    @Provides
-    @Singleton
-    fun deviceInfo(
-        @ApplicationContext context: Context,
-    ): DeviceInfo = androidDevice(context)
-
     @StandardOkHttpClient
     @Provides
     @Singleton
@@ -198,4 +192,14 @@ object AppModule {
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DeviceModule {
+    @Provides
+    @Singleton
+    fun deviceInfo(
+        @ApplicationContext context: Context,
+    ): DeviceInfo = androidDevice(context)
 }
