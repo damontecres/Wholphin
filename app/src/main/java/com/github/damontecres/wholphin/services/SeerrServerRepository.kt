@@ -165,7 +165,7 @@ class SeerrServerRepository
                     apiKey,
                     okHttpClient
                         .newBuilder()
-                        .connectTimeout(5.seconds)
+                        .connectTimeout(2.seconds)
                         .readTimeout(6.seconds)
                         .build(),
                 )
