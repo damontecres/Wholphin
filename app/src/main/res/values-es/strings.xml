@@ -80,7 +80,7 @@
     <string name="create_playlist">Crear nueva lista de reproducción</string>
     <string name="add_to_playlist">Agregar a la lista de reproducción</string>
     <string name="one_click_pause">Pausar con un clic</string>
-    <string name="one_click_pause_summary_on">Presiona el centro del D-Pad para pausar/reproducir</string>
+    <string name="one_click_pause_summary_on">Pulsa el botón central de la cruceta para reproducir/pausar</string>
     <string name="success">Éxito</string>
     <string name="runtime_sort">Duración</string>
     <string name="extras">Extras</string>
@@ -567,4 +567,5 @@
     <string name="artist">Artista</string>
     <string name="delete_item">¿Estás seguro de que quieres eliminar este elemento?</string>
     <string name="show_media_management">Mostrar opciones de gestión de medios</string>
+    <string name="search_for">Buscar %s</string>
 </resources>
