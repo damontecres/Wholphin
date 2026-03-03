@@ -556,4 +556,6 @@
     <string name="mixer">Karıştırıcı</string>
     <string name="creator">Yaratıcı</string>
     <string name="artist">Sanatçı</string>
+    <string name="delete_item">Bu öğeyi silmek istediğinizden emin misiniz?</string>
+    <string name="show_media_management">Medya yönetim seçeneklerini göster</string>
 </resources>
