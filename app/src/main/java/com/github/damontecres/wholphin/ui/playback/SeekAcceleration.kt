@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
-internal const val HOLD_TO_SEEK_REPEAT_START_COUNT = 12
+internal const val HOLD_TO_SEEK_REPEAT_START_COUNT = 8
 
 /**
  * Shared seek acceleration profile for hold-to-seek behavior.

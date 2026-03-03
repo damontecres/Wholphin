@@ -182,14 +182,10 @@ fun SeekBarDisplay(
                                     KeyEventType.KeyDown -> {
                                         val repeatCount = event.nativeKeyEvent.repeatCount
                                         if (repeatCount > 0) {
-                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
-                                                leftHandledByRepeat = false
-                                                return@onPreviewKeyEvent true
-                                            }
                                             leftHandledByRepeat = true
                                             onLeft.invoke(
                                                 calculateSeekAccelerationMultiplier(
-                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
+                                                    repeatCount = repeatCount,
                                                     durationMs = durationMs,
                                                 ),
                                             )
@@ -217,14 +213,10 @@ fun SeekBarDisplay(
                                     KeyEventType.KeyDown -> {
                                         val repeatCount = event.nativeKeyEvent.repeatCount
                                         if (repeatCount > 0) {
-                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
-                                                rightHandledByRepeat = false
-                                                return@onPreviewKeyEvent true
-                                            }
                                             rightHandledByRepeat = true
                                             onRight.invoke(
                                                 calculateSeekAccelerationMultiplier(
-                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
+                                                    repeatCount = repeatCount,
                                                     durationMs = durationMs,
                                                 ),
                                             )
