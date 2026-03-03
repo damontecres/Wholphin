@@ -106,7 +106,10 @@ class SwitchSeerrViewModel
 
         fun removeServer() {
             viewModelScope.launchIO {
-                seerrServerRepository.removeServer()
+                val result = seerrServerRepository.removeServerForCurrentUser()
+                if (!result) {
+                    showToast(context, "Could not remove server")
+                }
             }
         }
 

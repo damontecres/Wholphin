@@ -25,6 +25,7 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
@@ -172,10 +173,11 @@ class SeerrServerRepository
             return LoadingState.Success
         }
 
-        suspend fun removeServer() {
-            val current = (_connection.value as? SeerrConnectionStatus.Success)?.current ?: return
-            seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
+        suspend fun removeServerForCurrentUser(): Boolean {
+            val current = current.firstOrNull() ?: return false
+            val rows = seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
             clear()
+            return rows > 0
         }
     }
 
