@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import android.media.audiofx.Visualizer
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -43,6 +44,8 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+import kotlin.math.min
 
 @OptIn(UnstableApi::class)
 @Singleton
@@ -54,9 +57,11 @@ class MusicService
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
-    ) {
+    ) : Visualizer.OnDataCaptureListener {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
+
+        val viz = MutableStateFlow<IntArray>(IntArray(0))
 
         val player: Player by lazy {
             ExoPlayer
@@ -71,6 +76,12 @@ class MusicService
                 }
         }
 
+        private val visualizer by lazy {
+            Visualizer(player.audioSessionId).apply {
+                captureSize = Visualizer.getCaptureSizeRange()[1]
+            }
+        }
+
         private val mutex = Mutex()
         var mediaSession: MediaSession? = null
             private set
@@ -81,6 +92,15 @@ class MusicService
                     if (mediaSession == null) {
                         Timber.i("Starting music MediaSession")
                         mediaSession = MediaSession.Builder(context, player).build()
+                        onMain {
+                            visualizer.setDataCaptureListener(
+                                this@MusicService,
+                                Visualizer.getMaxCaptureRate() / 2,
+                                true,
+                                false,
+                            )
+                            visualizer.enabled = true
+                        }
                     }
                 }
             }
@@ -102,6 +122,7 @@ class MusicService
                     player.stop()
                     player.setMediaItems(emptyList())
                 }
+                visualizer.enabled = false
                 _state.update {
                     MusicServiceState.EMPTY
                 }
@@ -286,6 +307,37 @@ class MusicService
             val result = block.invoke()
             _state.update { it.copy(loadingState = LoadingState.Success) }
             return result
+        }
+
+        override fun onFftDataCapture(
+            visualizer: Visualizer,
+            fft: ByteArray,
+            samplingRate: Int,
+        ) {
+        }
+
+        override fun onWaveFormDataCapture(
+            visualizer: Visualizer,
+            waveform: ByteArray,
+            samplingRate: Int,
+        ) {
+            val resolution = 64
+            val processed = IntArray(resolution)
+            val captureSize =
+                Visualizer.getCaptureSizeRange()[1]
+            val groupSize = captureSize / resolution
+//            val groupSize = captureSize / resolution.toFloat()
+            for (i in 0 until resolution) {
+                processed[i] =
+                    waveform
+                        .map { abs(it.toInt()) }
+//                        .map { it.toInt() }
+                        .subList(i * groupSize, min((i + 1) * groupSize, waveform.size))
+                        .average()
+                        .toInt()
+//                processed[i] = abs(waveform[ceil(i * finder).toInt()].toInt())
+            }
+            viz.update { processed }
         }
     }
 

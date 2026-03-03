@@ -66,6 +66,8 @@ class NowPlayingViewModel
         val state = MutableStateFlow(NowPlayingState(musicService.state.value))
         val player get() = musicService.player
 
+        val viz = musicService.viz
+
         private val lyricCache =
             InMemoryKache<UUID, LyricDto>(20) {
                 creationScope = CoroutineScope(Dispatchers.IO)

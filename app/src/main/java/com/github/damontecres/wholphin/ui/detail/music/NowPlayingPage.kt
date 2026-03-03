@@ -74,6 +74,7 @@ fun NowPlayingPage(
             state.musicServiceState.queueSize,
         )
     val current = queue.getOrNull(state.musicServiceState.currentIndex)
+    val viz by viewModel.viz.collectAsState()
 
     val controllerViewState = viewModel.controllerViewState
     val preferences =
@@ -165,11 +166,17 @@ fun NowPlayingPage(
                             .fillMaxSize()
                             .weight(1f),
                 ) {
-                    AsyncImage(
-                        contentDescription = null,
-                        model = current?.imageUrl,
-                        modifier = Modifier.fillMaxSize(.7f),
-                    )
+                    Box(modifier = Modifier.fillMaxSize(.7f)) {
+                        AsyncImage(
+                            contentDescription = null,
+                            model = current?.imageUrl,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        BarVisualizer(
+                            data = viz,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     current?.title?.let {
                         Text(
                             text = it,
