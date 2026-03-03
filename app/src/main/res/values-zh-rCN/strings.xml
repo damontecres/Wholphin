@@ -529,4 +529,6 @@
     <string name="mixer">混音</string>
     <string name="creator">主创</string>
     <string name="artist">艺人</string>
+    <string name="show_media_management">显示媒体管理选项</string>
+    <string name="delete_item">是否确定要删除此项目？</string>
 </resources>
