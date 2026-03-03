@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -91,10 +92,25 @@ fun SearchForContent(
             }
         }
     }
+    val titleRes =
+        remember {
+            when (searchType) {
+                BaseItemKind.BOX_SET -> R.string.collections
+                BaseItemKind.PLAYLIST -> R.string.playlists
+                else -> null
+            }
+        }
+    val title = titleRes?.let { stringResource(it) } ?: ""
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        Text(
+            text = stringResource(R.string.search_for, title),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -190,16 +206,8 @@ fun SearchForContent(
                         text = stringResource(R.string.no_results),
                     )
                 } else {
-                    val titleRes =
-                        remember {
-                            when (searchType) {
-                                BaseItemKind.BOX_SET -> R.string.collections
-                                BaseItemKind.PLAYLIST -> R.string.playlists
-                                else -> null
-                            }
-                        }
                     ItemRow(
-                        title = titleRes?.let { stringResource(it) } ?: "",
+                        title = "",
                         items = st.items,
                         onClickItem = { _, item -> onClick.invoke(item) },
                         onLongClickItem = { _, _ -> },
