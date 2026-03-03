@@ -656,6 +656,9 @@ fun chooseStream(
                     )
                     add(
                         DialogItem(
+                            leadingContent = {
+                                SelectedLeadingContent(currentIndex == TrackIndex.ONLY_FORCED)
+                            },
                             headlineContent = {
                                 Text(text = stringResource(R.string.only_forced_subtitles))
                             },

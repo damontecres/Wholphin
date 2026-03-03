@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.AppScreensaverContent
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -69,16 +70,18 @@ class WholphinDreamService :
                     }
                     prefs?.let { prefs ->
                         WholphinTheme(appThemeColors = prefs.appPreferences.interfacePreferences.appThemeColors) {
-                            val screensaverPrefs =
-                                prefs.appPreferences.interfacePreferences.screensaverPreference
-                            val currentItem by itemFlow.collectAsState(null)
-                            AppScreensaverContent(
-                                currentItem = currentItem,
-                                showClock = screensaverPrefs.showClock,
-                                duration = screensaverPrefs.duration.milliseconds,
-                                animate = screensaverPrefs.animate,
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                            ProvideLocalClock {
+                                val screensaverPrefs =
+                                    prefs.appPreferences.interfacePreferences.screensaverPreference
+                                val currentItem by itemFlow.collectAsState(null)
+                                AppScreensaverContent(
+                                    currentItem = currentItem,
+                                    showClock = screensaverPrefs.showClock,
+                                    duration = screensaverPrefs.duration.milliseconds,
+                                    animate = screensaverPrefs.animate,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
                         }
                     }
                 }
