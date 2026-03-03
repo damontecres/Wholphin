@@ -44,7 +44,7 @@ android {
         targetSdk = 36
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
     }
 
     signingConfigs {
@@ -138,6 +138,12 @@ android {
     sourceSets {
         getByName("main") {
             kotlin.directories += "$buildDir/generated/seerr_api/src/main/kotlin"
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -254,6 +260,7 @@ dependencies {
     implementation(libs.androidx.room.testing)
     implementation(libs.androidx.palette.ktx)
     implementation(libs.androidx.media3.effect)
+    implementation(libs.androidx.runner)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
@@ -292,4 +299,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.core.testing)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.ui.test.manifest)
 }
