@@ -165,6 +165,7 @@ fun AppScreensaverContent(
             ) {
                 Text(
                     text = currentItem?.title ?: "",
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.displaySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
