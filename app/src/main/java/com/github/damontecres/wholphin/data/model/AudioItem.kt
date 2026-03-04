@@ -7,6 +7,7 @@ import kotlin.time.Duration
 
 @Stable
 data class AudioItem(
+    val key: Long = keyTracker++,
     val id: UUID,
     val albumId: UUID?,
     val artistId: UUID?,
@@ -18,6 +19,8 @@ data class AudioItem(
     val hasLyrics: Boolean,
 ) {
     companion object {
+        private var keyTracker = 0L
+
         fun from(
             item: BaseItem,
             imageUrl: String?,

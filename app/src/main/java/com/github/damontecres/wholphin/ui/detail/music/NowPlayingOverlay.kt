@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,11 +22,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,14 +86,10 @@ fun NowPlayingOverlay(
         animationSpec = tween(durationMillis = 500),
     )
     val listState = rememberLazyListState()
-    val hideButtons by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0
-        }
-    }
+    var showButtons by remember { mutableStateOf(true) }
 
     val firstFocusRequester = remember { FocusRequester() }
-    BackHandler(hideButtons) {
+    BackHandler(!showButtons) {
         scope.launch {
             listState.animateScrollToItem(0)
             firstFocusRequester.tryRequestFocus()
@@ -120,7 +117,7 @@ fun NowPlayingOverlay(
                     .fillMaxWidth(.95f),
         )
         AnimatedVisibility(
-            visible = !hideButtons,
+            visible = showButtons,
             enter = expandVertically(),
             exit = shrinkVertically(),
             modifier =
@@ -144,6 +141,7 @@ fun NowPlayingOverlay(
             Text(
                 text = stringResource(R.string.queue),
                 style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp),
             )
             LazyColumn(
                 state = listState,
@@ -155,10 +153,16 @@ fun NowPlayingOverlay(
                             queueHasFocus = it.hasFocus
                         },
             ) {
-                itemsIndexed(queue) { index, song ->
+                itemsIndexed(queue, key = { _, song -> song.key }) { index, song ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = .75f),
+                                    shape = RoundedCornerShape(8.dp),
+                                ).animateItem(),
                     ) {
                         SongListItem(
                             title = song.title,
@@ -173,6 +177,7 @@ fun NowPlayingOverlay(
                                 Modifier
                                     .weight(1f)
                                     .onFocusChanged {
+                                        if (it.isFocused) showButtons = index < 3
                                         controllerViewState.pulseControls()
                                     }.ifElse(
                                         index == 0,
