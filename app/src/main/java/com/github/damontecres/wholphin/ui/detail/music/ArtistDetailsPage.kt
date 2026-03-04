@@ -64,12 +64,16 @@ import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.toBaseItems
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -270,6 +274,12 @@ data class ArtistState(
     }
 }
 
+private const val HEADER_ROW = 0
+private const val SONG_ROW = HEADER_ROW + 1
+private const val ALBUM_ROW = SONG_ROW + 1
+private const val MUSIC_VIDEO_ROW = ALBUM_ROW + 1
+private const val SIMILAR_ROW = MUSIC_VIDEO_ROW + 1
+
 @Composable
 fun ArtistDetailsPage(
     itemId: UUID,
@@ -316,10 +326,17 @@ fun ArtistDetailsPage(
         }
 
         LoadingState.Success -> {
+            var position by rememberPosition(0, 0)
             val artist = state.artist!!
-            val focusRequester = remember { FocusRequester() }
+            val focusRequesters =
+                remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+            val songFocusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
+                if (position.row == SONG_ROW) {
+                    songFocusRequester.tryRequestFocus()
+                } else {
+                    focusRequesters.getOrNull(position.row)?.tryRequestFocus()
+                }
                 viewModel.init()
             }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -378,13 +395,16 @@ fun ArtistDetailsPage(
                                     },
                                 favorite = artist.favorite,
                                 buttonOnFocusChanged = {
-                                    if (it.isFocused) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    if (it.isFocused) {
+                                        position = RowColumn(HEADER_ROW, 0)
+                                        scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    }
                                 },
                                 modifier =
                                     Modifier
                                         .onFocusChanged {
                                             if (it.hasFocus) scope.launch { bringIntoViewRequester.bringIntoView() }
-                                        }.focusRequester(focusRequester),
+                                        }.focusRequester(focusRequesters[HEADER_ROW]),
                             )
                         }
                     }
@@ -400,7 +420,10 @@ fun ArtistDetailsPage(
                         itemsIndexed(state.topSongs) { index, song ->
                             SongListItem(
                                 song = song,
-                                onClick = { song?.let { viewModel.play(it) } },
+                                onClick = {
+                                    position = RowColumn(SONG_ROW, index)
+                                    song?.let { viewModel.play(it) }
+                                },
                                 onLongClick = {
                                     if (song != null) {
                                         moreDialog =
@@ -418,9 +441,15 @@ fun ArtistDetailsPage(
                                             )
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth(.75f),
                                 showArtist = false,
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth(.75f)
+                                        .ifElse(
+                                            position.row == SONG_ROW && position.column == index,
+                                            Modifier.focusRequester(songFocusRequester),
+                                        ),
                             )
                         }
                     }
@@ -429,6 +458,7 @@ fun ArtistDetailsPage(
                             title = stringResource(R.string.albums),
                             items = state.albums,
                             onClickItem = { index, album ->
+                                position = RowColumn(ALBUM_ROW, index)
                                 viewModel.navigationManager.navigateTo(album.destination())
                             },
                             onLongClickItem = { index, album ->
@@ -444,6 +474,7 @@ fun ArtistDetailsPage(
                                     aspectRatio = AspectRatios.SQUARE,
                                 )
                             },
+                            modifier = Modifier.focusRequester(focusRequesters[ALBUM_ROW]),
                         )
                     }
                     if (state.musicVideos.isNotEmpty()) {
@@ -452,6 +483,7 @@ fun ArtistDetailsPage(
                                 title = stringResource(R.string.music_videos),
                                 items = state.musicVideos,
                                 onClickItem = { index, item ->
+                                    position = RowColumn(MUSIC_VIDEO_ROW, index)
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
@@ -468,6 +500,7 @@ fun ArtistDetailsPage(
                                         modifier = mod,
                                     )
                                 },
+                                modifier = Modifier.focusRequester(focusRequesters[MUSIC_VIDEO_ROW]),
                             )
                         }
                     }
@@ -477,6 +510,7 @@ fun ArtistDetailsPage(
                                 title = stringResource(R.string.more_like_this),
                                 items = state.similar,
                                 onClickItem = { index, item ->
+                                    position = RowColumn(SIMILAR_ROW, index)
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
@@ -493,6 +527,7 @@ fun ArtistDetailsPage(
                                         modifier = mod,
                                     )
                                 },
+                                modifier = Modifier.focusRequester(focusRequesters[SIMILAR_ROW]),
                             )
                         }
                     }

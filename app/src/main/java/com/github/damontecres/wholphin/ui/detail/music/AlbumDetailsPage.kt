@@ -67,11 +67,14 @@ import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -159,22 +162,7 @@ class AlbumViewModel
                             loading = LoadingState.Success,
                         )
                     }
-                    if (album.data.imageTags?.contains(ImageType.BACKDROP) == true) {
-                        backdropService.submit(album)
-                    } else {
-                        val artistIds =
-                            album.data.albumArtists
-                                ?.shuffled()
-                                ?.take(50)
-                                ?.map { it.id }
-                        api.itemsApi
-                            .getItems(
-                                ids = artistIds,
-                                imageTypes = listOf(ImageType.BACKDROP),
-                            ).content.items
-                            .firstOrNull()
-                            ?.let { backdropService.submit(BaseItem(it, false)) }
-                    }
+                    updateBackDrop()
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
                             val similar =
@@ -216,6 +204,29 @@ class AlbumViewModel
             }
         }
 
+        fun updateBackDrop() {
+            state.value.album?.let { album ->
+                viewModelScope.launchDefault {
+                    if (album.data.imageTags?.contains(ImageType.BACKDROP) == true) {
+                        backdropService.submit(album)
+                    } else {
+                        val artistIds =
+                            album.data.albumArtists
+                                ?.shuffled()
+                                ?.take(50)
+                                ?.map { it.id }
+                        api.itemsApi
+                            .getItems(
+                                ids = artistIds,
+                                imageTypes = listOf(ImageType.BACKDROP),
+                            ).content.items
+                            .firstOrNull()
+                            ?.let { backdropService.submit(BaseItem(it, false)) }
+                    }
+                }
+            }
+        }
+
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
@@ -252,6 +263,11 @@ data class AlbumState(
     }
 }
 
+private const val HEADER_ROW = 0
+private const val SONG_ROW = HEADER_ROW + 1
+private const val MUSIC_VIDEO_ROW = SONG_ROW + 1
+private const val SIMILAR_ROW = MUSIC_VIDEO_ROW + 1
+
 @Composable
 fun AlbumDetailsPage(
     itemId: UUID,
@@ -285,7 +301,6 @@ fun AlbumDetailsPage(
                 onClickRemoveFromQueue = {},
             )
         }
-
     when (val loading = state.loading) {
         is LoadingState.Error -> {
             ErrorMessage(loading, modifier)
@@ -299,13 +314,24 @@ fun AlbumDetailsPage(
 
         LoadingState.Success -> {
             val album = state.album!!
-            val focusRequester = remember { FocusRequester() }
+            var position by rememberPosition(0, 0)
+
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
-            LaunchedEffect(Unit) { focusRequester.requestFocus() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
             val listState = rememberLazyListState()
             val itemsBefore = 2
+            val focusRequesters =
+                remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+            val songFocusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) {
+                if (position.row == SONG_ROW) {
+                    songFocusRequester.tryRequestFocus()
+                } else {
+                    focusRequesters.getOrNull(position.row)?.tryRequestFocus()
+                }
+                viewModel.updateBackDrop()
+            }
             val backHandlerActive by remember {
                 derivedStateOf {
                     listState.firstVisibleItemIndex > itemsBefore
@@ -371,13 +397,16 @@ fun AlbumDetailsPage(
                                     },
                                 favorite = album.favorite,
                                 buttonOnFocusChanged = {
-                                    if (it.isFocused) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    if (it.isFocused) {
+                                        position = RowColumn(HEADER_ROW, 0)
+                                        scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    }
                                 },
                                 modifier =
                                     Modifier
                                         .onFocusChanged {
                                             if (it.hasFocus) scope.launch { bringIntoViewRequester.bringIntoView() }
-                                        }.focusRequester(focusRequester),
+                                        }.focusRequester(focusRequesters[HEADER_ROW]),
                             )
                         }
                     }
@@ -396,7 +425,10 @@ fun AlbumDetailsPage(
                         ) {
                             SongListItem(
                                 song = song,
-                                onClick = { viewModel.play(false, index) },
+                                onClick = {
+                                    position = RowColumn(SONG_ROW, index)
+                                    viewModel.play(false, index)
+                                },
                                 onLongClick = {
                                     if (song != null) {
                                         moreDialog =
@@ -424,6 +456,9 @@ fun AlbumDetailsPage(
                                             Modifier
                                                 .focusRequester(firstFocusRequester)
                                                 .bringIntoViewRequester(firstBringIntoViewRequester),
+                                        ).ifElse(
+                                            position.row == SONG_ROW && position.column == index,
+                                            Modifier.focusRequester(songFocusRequester),
                                         ),
                             )
                         }
@@ -434,6 +469,7 @@ fun AlbumDetailsPage(
                                 title = stringResource(R.string.music_videos),
                                 items = state.musicVideos,
                                 onClickItem = { index, item ->
+                                    position = RowColumn(MUSIC_VIDEO_ROW, index)
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
@@ -450,6 +486,7 @@ fun AlbumDetailsPage(
                                         modifier = mod,
                                     )
                                 },
+                                modifier = Modifier.focusRequester(focusRequesters[MUSIC_VIDEO_ROW]),
                             )
                         }
                     }
@@ -459,6 +496,7 @@ fun AlbumDetailsPage(
                                 title = stringResource(R.string.more_like_this),
                                 items = state.similar,
                                 onClickItem = { index, item ->
+                                    position = RowColumn(SIMILAR_ROW, index)
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
@@ -475,6 +513,7 @@ fun AlbumDetailsPage(
                                         modifier = mod,
                                     )
                                 },
+                                modifier = Modifier.focusRequester(focusRequesters[SIMILAR_ROW]),
                             )
                         }
                     }
