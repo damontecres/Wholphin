@@ -62,4 +62,32 @@ class TestSeerr {
             )
         Assert.assertEquals(expected, urls)
     }
+
+    @Test
+    fun testCreateUrls5() {
+        val urls =
+            createUrls("10.0.0.2:443")
+                .map { it.toString() }
+
+        val expected =
+            listOf(
+                "http://10.0.0.2:443/api/v1",
+                "https://10.0.0.2/api/v1",
+            )
+        Assert.assertEquals(expected, urls)
+    }
+
+    @Test
+    fun testCreateUrls6() {
+        val urls =
+            createUrls("10.0.0.2:8080")
+                .map { it.toString() }
+
+        val expected =
+            listOf(
+                "http://10.0.0.2:8080/api/v1",
+                "https://10.0.0.2:8080/api/v1",
+            )
+        Assert.assertEquals(expected, urls)
+    }
 }

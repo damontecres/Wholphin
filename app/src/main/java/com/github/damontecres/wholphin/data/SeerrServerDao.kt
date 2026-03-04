@@ -47,7 +47,7 @@ interface SeerrServerDao {
     suspend fun deleteUser(
         serverId: Int,
         jellyfinUserRowId: Int,
-    )
+    ): Int
 
     suspend fun deleteUser(user: SeerrUser) = deleteUser(user.serverId, user.jellyfinUserRowId)
 
