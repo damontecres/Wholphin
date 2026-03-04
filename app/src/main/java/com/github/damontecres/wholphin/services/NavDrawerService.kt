@@ -36,6 +36,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.minutes
 
 @Singleton
 class NavDrawerService
@@ -80,22 +81,33 @@ class NavDrawerService
             coroutineScope.launchDefault {
                 musicService.state.collectLatest { music ->
                     Timber.v("MusicService updated")
-                    if (music.isPlaying) {
-                        _state.update {
-                            it.copy(
-                                nowPlayingEnabled = true,
-                                nowPlayingTitle = music.currentItemTitle,
-                            )
+                    when (music.status) {
+                        NowPlayingStatus.PLAYING -> {
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = true,
+                                    nowPlayingTitle = music.currentItemTitle,
+                                )
+                            }
                         }
-                    } else {
-                        // Don't immediately remove the now playing
-                        // TODO need better now playing state to distinguish between paused & stopped
-                        delay(30_000)
-                        _state.update {
-                            it.copy(
-                                nowPlayingEnabled = false,
-                                nowPlayingTitle = null,
-                            )
+
+                        NowPlayingStatus.IDLE -> {
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = false,
+                                    nowPlayingTitle = null,
+                                )
+                            }
+                        }
+
+                        NowPlayingStatus.PAUSED -> {
+                            delay(2.minutes)
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = false,
+                                    nowPlayingTitle = null,
+                                )
+                            }
                         }
                     }
                 }

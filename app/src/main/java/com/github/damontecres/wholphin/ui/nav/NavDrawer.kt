@@ -76,6 +76,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
@@ -108,6 +109,7 @@ class NavDrawerViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
+        private val musicService: MusicService,
     ) : ViewModel() {
         val state = navDrawerService.state
 
@@ -202,6 +204,13 @@ class NavDrawerViewModel
                         }
                     }
                 }
+            }
+        }
+
+        fun navigateToSetup(userList: SetupDestination) {
+            viewModelScope.launchDefault {
+                musicService.stop()
+                setupNavigationManager.navigateTo(userList)
             }
         }
     }
@@ -334,7 +343,7 @@ fun NavDrawer(
                         drawerOpen = isOpen,
                         interactionSource = interactionSource,
                         onClick = {
-                            viewModel.setupNavigationManager.navigateTo(
+                            viewModel.navigateToSetup(
                                 SetupDestination.UserList(server),
                             )
                         },

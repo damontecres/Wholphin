@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.music
 import androidx.annotation.OptIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +71,7 @@ fun NowPlayingButtons(
 
     val onControllerInteraction = remember { { controllerViewState.pulseControls() } }
     Box(
-        modifier = modifier,
+        modifier = modifier.focusGroup(),
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(buttonSpacing),

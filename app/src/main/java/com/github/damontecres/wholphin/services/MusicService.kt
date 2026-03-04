@@ -96,7 +96,13 @@ class MusicService
                 }
                 mediaSession?.release()
                 mediaSession = null
-                onMain { player.stop() }
+                onMain {
+                    player.stop()
+                    player.setMediaItems(emptyList())
+                }
+                _state.update {
+                    MusicServiceState.EMPTY
+                }
             }
         }
 
@@ -236,7 +242,6 @@ class MusicService
                     )
                 }
             }
-            start()
         }
 
         suspend fun moveQueue(
@@ -256,7 +261,10 @@ class MusicService
         }
 
         suspend fun playIndex(index: Int) {
-            onMain { player.seekTo(index, 0L) }
+            onMain {
+                player.seekTo(index, 0L)
+                player.play()
+            }
             // MusicPlayerListener will update state
         }
 
@@ -285,13 +293,19 @@ data class MusicServiceState(
     val queueSize: Int,
     val currentIndex: Int,
     val currentItemId: UUID?,
-    val isPlaying: Boolean,
+    val status: NowPlayingStatus,
     val currentItemTitle: String?,
     val loadingState: LoadingState = LoadingState.Pending,
 ) {
     companion object {
-        val EMPTY = MusicServiceState(0L, 0, 0, null, false, null)
+        val EMPTY = MusicServiceState(0L, 0, 0, null, NowPlayingStatus.IDLE, null)
     }
+}
+
+enum class NowPlayingStatus {
+    PLAYING,
+    PAUSED,
+    IDLE,
 }
 
 /**
@@ -307,7 +321,7 @@ private class MusicPlayerListener(
             it.copy(
                 queueSize = player.mediaItemCount,
                 currentIndex = player.currentMediaItemIndex,
-                isPlaying = player.isPlaying,
+                status = if (player.isPlaying) NowPlayingStatus.PLAYING else NowPlayingStatus.IDLE,
             )
         }
     }
@@ -316,7 +330,7 @@ private class MusicPlayerListener(
         Timber.v("MusicPlayerListener onIsPlayingChanged")
         state.update {
             it.copy(
-                isPlaying = isPlaying,
+                status = if (isPlaying) NowPlayingStatus.PLAYING else NowPlayingStatus.PAUSED,
             )
         }
     }

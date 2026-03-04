@@ -34,7 +34,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
@@ -151,6 +153,10 @@ fun NowPlayingOverlay(
                         .fillMaxSize()
                         .onFocusChanged {
                             queueHasFocus = it.hasFocus
+                        }.focusProperties {
+                            onExit = {
+                                if (requestedFocusDirection == FocusDirection.Up) focusRequester.requestFocus()
+                            }
                         },
             ) {
                 itemsIndexed(queue, key = { _, song -> song.key }) { index, song ->
@@ -162,7 +168,10 @@ fun NowPlayingOverlay(
                                 .background(
                                     color = MaterialTheme.colorScheme.surface.copy(alpha = .75f),
                                     shape = RoundedCornerShape(8.dp),
-                                ).animateItem(),
+                                ).onFocusChanged {
+                                    if (it.hasFocus) showButtons = index < 3
+                                    controllerViewState.pulseControls()
+                                }.animateItem(),
                     ) {
                         SongListItem(
                             title = song.title,
@@ -176,10 +185,7 @@ fun NowPlayingOverlay(
                             modifier =
                                 Modifier
                                     .weight(1f)
-                                    .onFocusChanged {
-                                        if (it.isFocused) showButtons = index < 3
-                                        controllerViewState.pulseControls()
-                                    }.ifElse(
+                                    .ifElse(
                                         index == 0,
                                         Modifier.focusRequester(firstFocusRequester),
                                     ),
