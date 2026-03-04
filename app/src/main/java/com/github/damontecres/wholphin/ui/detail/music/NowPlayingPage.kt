@@ -231,6 +231,7 @@ fun NowPlayingPage(
                 onClickSong = { index, _ -> viewModel.play(index) },
                 onClickMoreItem = { index, song -> showContextForItem.invoke(false, index, song) },
                 onLongClickSong = { index, song -> showContextForItem.invoke(true, index, song) },
+                onClickStop = { viewModel.stop() },
                 modifier =
                     Modifier
                         .background(AppColors.TransparentBlack50)

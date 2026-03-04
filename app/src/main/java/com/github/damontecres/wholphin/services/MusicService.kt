@@ -68,7 +68,6 @@ class MusicService
                 ).build()
                 .also {
                     it.addListener(MusicPlayerListener(it, _state))
-                    it.prepare()
                 }
         }
 
@@ -85,7 +84,10 @@ class MusicService
                     }
                 }
             }
-            onMain { player.play() }
+            onMain {
+                player.prepare()
+                player.play()
+            }
         }
 
         suspend fun stop() {

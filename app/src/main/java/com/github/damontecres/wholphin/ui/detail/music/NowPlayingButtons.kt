@@ -61,6 +61,7 @@ fun NowPlayingButtons(
     controllerViewState: ControllerViewState,
     initialFocusRequester: FocusRequester,
     onClickMore: () -> Unit,
+    onClickStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val playPauseState = rememberPlayPauseButtonState(player)
@@ -82,6 +83,15 @@ fun NowPlayingButtons(
                 onClick = {
                     onControllerInteraction.invoke()
                     onClickMore.invoke()
+                },
+                enabled = true,
+                onControllerInteraction = onControllerInteraction,
+                modifier = Modifier,
+            )
+            PlaybackButton(
+                iconRes = R.drawable.baseline_stop_24,
+                onClick = {
+                    onClickStop.invoke()
                 },
                 enabled = true,
                 onControllerInteraction = onControllerInteraction,

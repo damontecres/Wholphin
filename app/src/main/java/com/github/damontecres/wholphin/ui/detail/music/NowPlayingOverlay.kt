@@ -72,6 +72,7 @@ fun NowPlayingOverlay(
     onClickMore: () -> Unit,
     onMoveQueue: (Int, MoveDirection) -> Unit,
     onClickMoreItem: (Int, AudioItem) -> Unit,
+    onClickStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -131,6 +132,7 @@ fun NowPlayingOverlay(
                 controllerViewState = controllerViewState,
                 initialFocusRequester = focusRequester,
                 onClickMore = onClickMore,
+                onClickStop = onClickStop,
                 modifier =
                     Modifier
                         .fillMaxWidth()

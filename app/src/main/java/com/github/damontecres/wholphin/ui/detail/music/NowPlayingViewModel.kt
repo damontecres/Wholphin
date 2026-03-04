@@ -185,7 +185,9 @@ class NowPlayingViewModel
         fun removeFromQueue(index: Int) = viewModelScope.launchDefault { musicService.removeFromQueue(index) }
 
         fun stop() {
-            player.stop()
-            navigationManager.goBack()
+            viewModelScope.launchDefault {
+                musicService.stop()
+                navigationManager.goBack()
+            }
         }
     }
