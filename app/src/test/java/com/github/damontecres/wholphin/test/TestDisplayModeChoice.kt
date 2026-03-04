@@ -244,4 +244,29 @@ class TestDisplayModeChoice {
             )
         Assert.assertEquals(HD_24.modeId, result?.modeId)
     }
+
+    @Test
+    fun `Test prefer refresh rate over resolution2`() {
+        val streamWidth = 1280
+        val streamHeight = 720
+        val streamRealFrameRate = 30f
+
+        // 720@60 is an acceptable refresh rate, but want to prioritize exact refresh rate
+        val displayModes =
+            listOf(
+                HD_30,
+                HD720_60,
+            )
+
+        val result =
+            RefreshRateService.findDisplayMode(
+                displayModes = displayModes,
+                streamWidth = streamWidth,
+                streamHeight = streamHeight,
+                targetFrameRate = streamRealFrameRate,
+                refreshRateSwitch = true,
+                resolutionSwitch = true,
+            )
+        Assert.assertEquals(HD_30.modeId, result?.modeId)
+    }
 }
