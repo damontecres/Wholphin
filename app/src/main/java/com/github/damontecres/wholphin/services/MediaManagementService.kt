@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -40,11 +41,16 @@ class MediaManagementService
         val deletedItemFlow: SharedFlow<DeletedItem> = _deletedItemFlow
 
         suspend fun canDelete(item: BaseItem): Boolean {
+            val appPreferences = userPreferencesService.getCurrent().appPreferences
+            return canDelete(item, appPreferences)
+        }
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean {
             Timber.v("canDelete %s: %s", item.id, item.canDelete)
-            val enabled =
-                userPreferencesService
-                    .getCurrent()
-                    .appPreferences.interfacePreferences.enableMediaManagement
+            val enabled = appPreferences.interfacePreferences.enableMediaManagement
             return enabled &&
                 item.canDelete &&
                 if (item.type == BaseItemKind.RECORDING) {

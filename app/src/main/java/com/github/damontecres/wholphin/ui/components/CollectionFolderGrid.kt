@@ -57,6 +57,7 @@ import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -65,6 +66,7 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -84,6 +86,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.FilterUtils
@@ -204,16 +207,33 @@ class CollectionFolderViewModel
             }
             viewModelScope.launchDefault {
                 mediaManagementService.deletedItemFlow.collect { deletedItem ->
-                    val pager =
-                        ((loading.value as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
-                    position.let {
-                        Timber.v("Item deleted: position=%s, id=%s", it, deletedItem.item.id)
-                        val item = pager?.get(it)
-                        if (item?.id == deletedItem.item.id) {
-                            pager.refreshPagesAfter(position)
-                        }
+                    try {
+                        refreshAfterDelete(position, deletedItem.item.id)
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error refreshing after deleted item %s", deletedItem.item.id)
+                        showToast(context, "Error refreshing after item deleted")
                     }
                 }
+            }
+        }
+
+        private suspend fun refreshAfterDelete(
+            position: Int,
+            itemId: UUID,
+        ) {
+            try {
+                val pager =
+                    ((loading.value as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                position.let {
+                    Timber.v("Item deleted: position=%s, id=%s", it, itemId)
+                    val item = pager?.get(it)
+                    if (item?.id == itemId) {
+                        pager.refreshPagesAfter(position)
+                    }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error refreshing after deleted item %s", itemId)
+                showToast(context, "Error refreshing after item deleted")
             }
         }
 
@@ -491,6 +511,22 @@ class CollectionFolderViewModel
                 }
             }
         }
+
+        fun deleteItem(
+            index: Int,
+            item: BaseItem,
+        ) {
+            deleteItem(context, mediaManagementService, item) {
+                viewModelScope.launchDefault {
+                    refreshAfterDelete(index, item.id)
+                }
+            }
+        }
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
     }
 
 /**
@@ -578,6 +614,7 @@ fun CollectionFolderGrid(
 
     var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    var showDeleteDialog by remember { mutableStateOf<PositionItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
@@ -713,6 +750,7 @@ fun CollectionFolderGrid(
                     playbackPosition = item.playbackPosition,
                     watched = item.played,
                     favorite = item.favorite,
+                    canDelete = viewModel.canDelete(item, preferences.appPreferences),
                     actions =
                         MoreDialogActions(
                             navigateTo = { viewModel.navigateTo(it) },
@@ -727,6 +765,9 @@ fun CollectionFolderGrid(
                                 showPlaylistDialog.makePresent(it)
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                            onClickDelete = {
+                                showDeleteDialog = PositionItem(position, item)
+                            },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
@@ -749,6 +790,16 @@ fun CollectionFolderGrid(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { (position, item) ->
+        ConfirmDeleteDialog(
+            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(position, item)
+                showDeleteDialog = null
+            },
         )
     }
 }

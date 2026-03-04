@@ -29,7 +29,7 @@ data class MoreDialogActions(
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
     val onSendMediaInfo: (UUID) -> Unit,
-    val onClickDelete: (BaseItem) -> Unit = {},
+    val onClickDelete: (BaseItem) -> Unit,
 )
 
 enum class ClearChosenStreams {
@@ -63,7 +63,7 @@ fun buildMoreDialogItems(
     watched: Boolean,
     favorite: Boolean,
     canClearChosenStreams: Boolean,
-    canDelete: Boolean = false,
+    canDelete: Boolean,
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
@@ -236,7 +236,7 @@ fun buildMoreDialogItemsForHome(
     playbackPosition: Duration,
     watched: Boolean,
     favorite: Boolean,
-    canDelete: Boolean = false,
+    canDelete: Boolean,
     actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {

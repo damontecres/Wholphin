@@ -12,11 +12,13 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -54,6 +56,7 @@ class EpisodeViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
+        private val mediaManagementService: MediaManagementService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -64,6 +67,9 @@ class EpisodeViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val item = MutableLiveData<BaseItem?>(null)
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+
+        var canDelete: Boolean = false
+            private set
 
         init {
             init()
@@ -95,6 +101,7 @@ class EpisodeViewModel
             ) {
                 val prefs = userPreferencesService.getCurrent()
                 val item = fetchAndSetItem().await()
+                canDelete = mediaManagementService.canDelete(item)
                 val result = itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
                 withContext(Dispatchers.Main) {
                     this@EpisodeViewModel.item.value = item
@@ -197,6 +204,12 @@ class EpisodeViewModel
                         )
                     this@EpisodeViewModel.chosenStreams.setValueOnMain(result)
                 }
+            }
+        }
+
+        fun deleteItem(item: BaseItem) {
+            deleteItem(context, mediaManagementService, item) {
+                navigationManager.goBack()
             }
         }
     }

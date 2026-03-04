@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
@@ -62,6 +63,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.FocusableItemRow
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.RowColumnItem
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
@@ -116,6 +118,7 @@ fun HomePage(
         LoadingState.Success -> {
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
+            var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             var position by rememberPosition()
             HomePageContent(
@@ -136,6 +139,7 @@ fun HomePage(
                             playbackPosition = item.playbackPosition,
                             watched = item.played,
                             favorite = item.favorite,
+                            canDelete = viewModel.canDelete(item, preferences.appPreferences),
                             actions =
                                 MoreDialogActions(
                                     navigateTo = viewModel.navigationManager::navigateTo,
@@ -150,6 +154,9 @@ fun HomePage(
                                         showPlaylistDialog = itemId
                                     },
                                     onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                    onClickDelete = {
+                                        showDeleteDialog = RowColumnItem(position, item)
+                                    },
                                 ),
                         )
                     dialog =
@@ -188,6 +195,16 @@ fun HomePage(
                         showPlaylistDialog = null
                     },
                     elevation = 3.dp,
+                )
+            }
+            showDeleteDialog?.let { (position, item) ->
+                ConfirmDeleteDialog(
+                    itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
+                    onCancel = { showDeleteDialog = null },
+                    onConfirm = {
+                        viewModel.deleteItem(position, item)
+                        showDeleteDialog = null
+                    },
                 )
             }
         }

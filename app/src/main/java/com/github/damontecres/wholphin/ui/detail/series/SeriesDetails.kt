@@ -584,6 +584,7 @@ fun SeriesDetailsContent(
                                         watched = item.played,
                                         favorite = item.favorite,
                                         actions = moreActions,
+                                        canDelete = false,
                                     )
                                 moreDialog =
                                     DialogParams(
