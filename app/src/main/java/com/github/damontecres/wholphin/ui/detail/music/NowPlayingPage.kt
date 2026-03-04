@@ -205,6 +205,7 @@ fun NowPlayingPage(
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
                 onClickMore = { showMoreDialog = true },
                 onClickSong = { index, _ -> viewModel.play(index) },
+                onClickRemove = { index, _ -> viewModel.removeFromQueue(index) },
                 onLongClickSong = { index, song ->
                     itemMoreDialog =
                         DialogParams(

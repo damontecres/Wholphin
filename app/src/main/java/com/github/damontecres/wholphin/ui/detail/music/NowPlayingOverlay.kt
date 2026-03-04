@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -37,10 +40,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.AudioItem
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
@@ -63,6 +68,7 @@ fun NowPlayingOverlay(
     onLongClickSong: (Int, AudioItem) -> Unit,
     onClickMore: () -> Unit,
     onMoveQueue: (Int, MoveDirection) -> Unit,
+    onClickRemove: (Int, AudioItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -188,6 +194,16 @@ fun NowPlayingOverlay(
                                 enabled = index < queue.lastIndex,
                                 onClick = { onMoveQueue.invoke(index, MoveDirection.DOWN) },
                             )
+                            Button(
+                                onClick = { onClickRemove.invoke(index, song) },
+                                enabled = true,
+                                modifier = Modifier.size(32.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.remove_from_queue),
+                                )
+                            }
                         }
                     }
                 }
