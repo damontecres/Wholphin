@@ -22,7 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -68,7 +68,7 @@ fun NowPlayingOverlay(
     onLongClickSong: (Int, AudioItem) -> Unit,
     onClickMore: () -> Unit,
     onMoveQueue: (Int, MoveDirection) -> Unit,
-    onClickRemove: (Int, AudioItem) -> Unit,
+    onClickMoreItem: (Int, AudioItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -195,13 +195,13 @@ fun NowPlayingOverlay(
                                 onClick = { onMoveQueue.invoke(index, MoveDirection.DOWN) },
                             )
                             Button(
-                                onClick = { onClickRemove.invoke(index, song) },
+                                onClick = { onClickMoreItem.invoke(index, song) },
                                 enabled = true,
                                 modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.remove_from_queue),
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = stringResource(R.string.more),
                                 )
                             }
                         }

@@ -39,6 +39,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
@@ -184,6 +185,24 @@ fun NowPlayingPage(
                 }
             }
         }
+        val showContextForItem =
+            remember {
+                { fromLongClick: Boolean, index: Int, song: AudioItem ->
+                    itemMoreDialog =
+                        DialogParams(
+                            title = song.title ?: "",
+                            fromLongClick = fromLongClick,
+                            items =
+                                buildMoreDialogForMusicQueue(
+                                    context = context,
+                                    actions = actions,
+                                    item = song,
+                                    index = index,
+                                    canRemove = true,
+                                ),
+                        )
+                }
+            }
 
         BackHandler(controllerViewState.controlsVisible) {
             controllerViewState.hideControls()
@@ -205,22 +224,8 @@ fun NowPlayingPage(
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
                 onClickMore = { showMoreDialog = true },
                 onClickSong = { index, _ -> viewModel.play(index) },
-                onClickRemove = { index, _ -> viewModel.removeFromQueue(index) },
-                onLongClickSong = { index, song ->
-                    itemMoreDialog =
-                        DialogParams(
-                            title = song.title ?: "",
-                            fromLongClick = true,
-                            items =
-                                buildMoreDialogForMusicQueue(
-                                    context = context,
-                                    actions = actions,
-                                    item = song,
-                                    index = index,
-                                    canRemove = true,
-                                ),
-                        )
-                },
+                onClickMoreItem = { index, song -> showContextForItem.invoke(false, index, song) },
+                onLongClickSong = { index, song -> showContextForItem.invoke(true, index, song) },
                 modifier =
                     Modifier
                         .background(AppColors.TransparentBlack50)
