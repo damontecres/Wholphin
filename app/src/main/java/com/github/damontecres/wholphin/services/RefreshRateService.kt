@@ -158,32 +158,57 @@ class RefreshRateService
                     if (refreshRateSwitch) {
                         displayModes
                             .filterNot { it.physicalHeight < streamHeight || it.physicalWidth < streamWidth }
-                            .filter {
-                                it.refreshRateRounded % streamRate == 0 || // Exact multiple
-                                    it.refreshRateRounded == (streamRate * 2.5).roundToInt() // eg 24 & 60fps
-                            }
+                            .filter { frameRateMatches(it.refreshRateRounded, streamRate) }
                     } else {
                         displayModes
                             .filterNot { it.physicalHeight < streamHeight || it.physicalWidth < streamWidth }
                     }
 //                Timber.v("display modes candidates: %s", candidates.joinToString("\n"))
                 return if (!resolutionSwitch) {
-                    candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
+                    candidates
+                        .filter { it.refreshRateRounded == streamRate }
+                        .maxByOrNull { it.physicalWidth * it.physicalHeight }
+                        ?: candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
                 } else {
+                    // Exact resolution & frame rate
                     candidates.firstOrNull {
                         it.physicalWidth == streamWidth &&
                             it.physicalHeight == streamHeight &&
                             it.refreshRateRounded == streamRate
                     }
-                        ?: candidates.firstOrNull {
-                            it.physicalWidth == streamWidth &&
+                        // Next highest resolution, exact frame rate
+                        ?: candidates.lastOrNull {
+                            it.physicalWidth >= streamWidth &&
                                 it.physicalHeight >= streamHeight &&
                                 it.refreshRateRounded == streamRate
                         }
+                        // Exact resolution, acceptable frame rate
+                        ?: candidates.lastOrNull {
+                            it.physicalWidth == streamWidth &&
+                                it.physicalHeight == streamHeight &&
+                                frameRateMatches(it.refreshRateRounded, streamRate)
+                        }
+                        // Next highest resolution, acceptable frame rate
+                        ?: candidates.lastOrNull {
+                            it.physicalWidth >= streamWidth &&
+                                it.physicalHeight >= streamHeight &&
+                                frameRateMatches(it.refreshRateRounded, streamRate)
+                        }
+                        // Fall back to largest resolution, exact frame rate
                         ?: candidates
                             .filter { it.refreshRateRounded == streamRate }
                             .maxByOrNull { it.physicalWidth * it.physicalHeight }
+                        // Finally, just the highest resolution
+                        ?: candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
                 }
+            }
+
+            fun frameRateMatches(
+                refreshRateRounded: Int,
+                streamRate: Int,
+            ): Boolean {
+                return refreshRateRounded % streamRate == 0 || // Exact multiple
+                    refreshRateRounded == (streamRate * 2.5).roundToInt() // eg 24 & 60fps
             }
         }
     }
