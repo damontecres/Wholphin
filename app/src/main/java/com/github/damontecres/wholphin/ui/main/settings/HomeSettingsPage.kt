@@ -240,6 +240,7 @@ fun HomeSettingsPage(
                                     onClick = { type ->
                                         addRow { viewModel.addFavoriteRow(type) }
                                     },
+                                    modifier = destModifier,
                                 )
                             }
 

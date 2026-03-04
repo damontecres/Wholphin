@@ -17,7 +17,7 @@ import javax.inject.Singleton
 class SetupNavigationManager
     @Inject
     constructor() {
-        var backStack: MutableList<NavKey> = mutableStateListOf(SetupDestination.Loading)
+        var backStack: MutableList<SetupDestination> = mutableStateListOf(SetupDestination.Loading)
 
         /**
          * Go to the specified [SetupDestination]

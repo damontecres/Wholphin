@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -352,6 +353,7 @@ fun SwitchServerContent(
                                 ),
                             modifier =
                                 Modifier
+                                    .testTag("server_url_text")
                                     .focusRequester(textBoxFocusRequester)
                                     .fillMaxWidth(),
                         )
