@@ -88,6 +88,8 @@ fun SeriesOverviewContent(
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
     personOnClick: (Person) -> Unit,
+    canDelete: (BaseItem) -> Boolean,
+    deleteOnClick: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -294,6 +296,8 @@ fun SeriesOverviewContent(
                                 }
                             }
                         },
+                        canDelete = canDelete.invoke(ep),
+                        deleteOnClick = { deleteOnClick.invoke(ep) },
                         modifier =
                             Modifier
                                 .padding(top = 4.dp)

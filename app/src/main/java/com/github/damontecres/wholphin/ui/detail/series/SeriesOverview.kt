@@ -383,6 +383,8 @@ fun SeriesOverview(
                             ),
                         )
                     },
+                    canDelete = { viewModel.canDelete(it, preferences.appPreferences) },
+                    deleteOnClick = { showDeleteDialog = it },
                     modifier = modifier,
                 )
             }

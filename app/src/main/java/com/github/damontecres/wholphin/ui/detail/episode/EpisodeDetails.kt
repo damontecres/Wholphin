@@ -228,6 +228,8 @@ fun EpisodeDetails(
                     favoriteOnClick = {
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
+                    canDelete = viewModel.canDelete,
+                    deleteOnClick = { showDeleteDialog = ep },
                     modifier = modifier,
                 )
             }
@@ -304,6 +306,8 @@ fun EpisodeDetailsContent(
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    canDelete: Boolean,
+    deleteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -361,6 +365,8 @@ fun EpisodeDetailsContent(
                         },
                         trailers = null,
                         trailerOnClick = {},
+                        canDelete = canDelete,
+                        deleteOnClick = deleteOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

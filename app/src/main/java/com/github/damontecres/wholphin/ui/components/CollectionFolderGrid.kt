@@ -79,6 +79,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
@@ -103,6 +104,9 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -205,21 +209,17 @@ class CollectionFolderViewModel
                     loading.setValueOnMain(DataLoadingState.Error(ex))
                 }
             }
-            viewModelScope.launchDefault {
-                mediaManagementService.deletedItemFlow.collect { deletedItem ->
-                    try {
-                        refreshAfterDelete(position, deletedItem.item.id)
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Error refreshing after deleted item %s", deletedItem.item.id)
-                        showToast(context, "Error refreshing after item deleted")
-                    }
-                }
-            }
+            mediaManagementService.deletedItemFlow
+                .onEach { deletedItem ->
+                    refreshAfterDelete(position, deletedItem.item)
+                }.catch { ex ->
+                    Timber.e(ex, "Error refreshing after deleted item")
+                }.launchIn(viewModelScope)
         }
 
         private suspend fun refreshAfterDelete(
             position: Int,
-            itemId: UUID,
+            deletedItem: BaseItem,
         ) {
             try {
                 val pager =
@@ -227,8 +227,11 @@ class CollectionFolderViewModel
                 position.let {
                     Timber.v("Item deleted: position=%s, id=%s", it, itemId)
                     val item = pager?.get(it)
-                    if (item?.id == itemId) {
-                        pager.refreshPagesAfter(position)
+                    // Exact item deleted (eg a movie) or deleted item was within the series
+                    if (item?.id == deletedItem.id ||
+                        equalsNotNull(item?.data?.id, deletedItem.data.seriesId)
+                    ) {
+                        pager?.refreshPagesAfter(position)
                     }
                 }
             } catch (ex: Exception) {
@@ -518,7 +521,7 @@ class CollectionFolderViewModel
         ) {
             deleteItem(context, mediaManagementService, item) {
                 viewModelScope.launchDefault {
-                    refreshAfterDelete(index, item.id)
+                    refreshAfterDelete(index, item)
                 }
             }
         }

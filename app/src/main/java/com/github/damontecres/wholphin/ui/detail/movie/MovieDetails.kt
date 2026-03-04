@@ -315,6 +315,8 @@ fun MovieDetails(
                     onClickDiscover = { index, item ->
                         viewModel.navigateTo(item.destination)
                     },
+                    canDelete = viewModel.canDelete,
+                    deleteOnClick = { showDeleteDialog = movie },
                     modifier = modifier,
                 )
             }
@@ -410,6 +412,8 @@ fun MovieDetailsContent(
     onLongClickSimilar: (Int, BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    canDelete: Boolean,
+    deleteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -472,6 +476,8 @@ fun MovieDetailsContent(
                             position = TRAILER_ROW
                             trailerOnClick.invoke(it)
                         },
+                        canDelete = canDelete,
+                        deleteOnClick = deleteOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
