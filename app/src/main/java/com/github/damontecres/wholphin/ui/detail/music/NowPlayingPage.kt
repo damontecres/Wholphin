@@ -66,7 +66,12 @@ fun NowPlayingPage(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val player = viewModel.player
-    val queue = rememberQueue(player, state.musicServiceState.queueSize)
+    val queue =
+        rememberQueue(
+            player,
+            state.musicServiceState.queueVersion,
+            state.musicServiceState.queueSize,
+        )
     val current = queue.getOrNull(state.musicServiceState.currentIndex)
 
     val controllerViewState = viewModel.controllerViewState

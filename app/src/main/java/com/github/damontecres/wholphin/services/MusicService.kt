@@ -230,7 +230,10 @@ class MusicService
         private suspend fun updateQueueSize() {
             withContext(Dispatchers.Main) {
                 _state.update {
-                    it.copy(queueSize = player.mediaItemCount)
+                    it.copy(
+                        queueVersion = it.queueVersion + 1,
+                        queueSize = player.mediaItemCount,
+                    )
                 }
             }
             start()
@@ -278,6 +281,7 @@ class MusicService
 
 @Stable
 data class MusicServiceState(
+    val queueVersion: Long,
     val queueSize: Int,
     val currentIndex: Int,
     val currentItemId: UUID?,
@@ -286,7 +290,7 @@ data class MusicServiceState(
     val loadingState: LoadingState = LoadingState.Pending,
 ) {
     companion object {
-        val EMPTY = MusicServiceState(0, 0, null, false, null)
+        val EMPTY = MusicServiceState(0L, 0, 0, null, false, null)
     }
 }
 
@@ -357,9 +361,10 @@ private class MusicPlayerListener(
 @Composable
 fun rememberQueue(
     player: Player,
+    queueVersion: Long,
     queueSize: Int,
 ): List<AudioItem> =
-    remember(queueSize) {
+    remember(queueVersion, queueSize) {
         object : AbstractList<AudioItem>() {
             override val size: Int
                 get() = player.mediaItemCount
