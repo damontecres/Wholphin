@@ -9,6 +9,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -18,6 +19,8 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SuggestionService
 import com.github.damontecres.wholphin.services.SuggestionsResource
+import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -31,6 +34,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -88,7 +92,15 @@ class RecommendedMusicViewModel
                         ?.maxItemsPerRow
                         ?: AppPreference.HomePageItems.defaultValue.toInt()
 
-                update(R.string.recently_released) {
+                val jobs = mutableListOf<Deferred<HomeRowLoadingState>>()
+                val viewOptions =
+                    HomeRowViewOptions(
+                        aspectRatio = AspectRatio.SQUARE,
+                        heightDp = Cards.HEIGHT_EPISODE,
+                        showTitles = true,
+                    )
+
+                update(R.string.recently_released, viewOptions) {
                     val request =
                         GetItemsRequest(
                             parentId = parentId,
@@ -103,9 +115,9 @@ class RecommendedMusicViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
-                update(R.string.recently_added) {
+                update(R.string.recently_added, viewOptions) {
                     val request =
                         GetItemsRequest(
                             parentId = parentId,
@@ -120,9 +132,9 @@ class RecommendedMusicViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
-                update(R.string.top_unwatched) {
+                update(R.string.top_unwatched, viewOptions) {
                     val request =
                         GetItemsRequest(
                             parentId = parentId,
@@ -138,7 +150,7 @@ class RecommendedMusicViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
@@ -181,8 +193,13 @@ class RecommendedMusicViewModel
                     }
                 }
 
-                if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
-                    loading.setValueOnMain(LoadingState.Success)
+                for (i in 0..<jobs.size) {
+                    val result = jobs[i].await()
+                    if (result.completed) {
+                        Timber.v("First success")
+                        loading.setValueOnMain(LoadingState.Success)
+                    }
+                    break
                 }
             }
         }

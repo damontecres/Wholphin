@@ -20,10 +20,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
@@ -33,16 +37,35 @@ import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
 import com.github.damontecres.wholphin.ui.data.AlbumSortOptions
 import com.github.damontecres.wholphin.ui.data.ArtistSortOptions
 import com.github.damontecres.wholphin.ui.data.SongSortOptions
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.model.api.BaseItemKind
+import javax.inject.Inject
+
+@HiltViewModel
+class CollectionFolderMusicViewModel
+    @Inject
+    constructor(
+        private val musicService: MusicService,
+    ) : ViewModel() {
+        fun play(item: BaseItem) {
+            if (item.type == BaseItemKind.AUDIO) {
+                viewModelScope.launchDefault {
+                    musicService.setQueue(listOf(item), false)
+                }
+            }
+        }
+    }
 
 @Composable
 fun CollectionFolderMusic(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
+    viewModel: CollectionFolderMusicViewModel = hiltViewModel(),
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     val rememberedTabIndex =
@@ -174,7 +197,7 @@ fun CollectionFolderMusic(
             3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
-                    includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM, BaseItemKind.AUDIO),
+                    includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -187,7 +210,7 @@ fun CollectionFolderMusic(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = { _, item ->
-                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                        viewModel.play(item)
                     },
                     itemId = destination.itemId,
                     viewModelKey = "${destination.itemId}_songs",

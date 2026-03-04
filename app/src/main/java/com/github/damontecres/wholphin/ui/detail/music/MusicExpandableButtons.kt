@@ -11,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
@@ -24,6 +26,7 @@ import kotlin.time.Duration
 fun MusicExpandableButtons(
     actions: MusicButtonActions,
     favorite: Boolean,
+    buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
@@ -43,7 +46,8 @@ fun MusicExpandableButtons(
                 onClick = { actions.onClickPlay.invoke(false) },
                 modifier =
                     Modifier
-                        .focusRequester(firstFocus),
+                        .focusRequester(firstFocus)
+                        .onFocusChanged(buttonOnFocusChanged),
             )
         }
         item("shuffle") {
@@ -51,7 +55,7 @@ fun MusicExpandableButtons(
                 title = R.string.shuffle,
                 iconStringRes = R.string.fa_shuffle,
                 onClick = { actions.onClickPlay.invoke(true) },
-                modifier = Modifier,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
         item("instant_mix") {
@@ -59,7 +63,7 @@ fun MusicExpandableButtons(
                 title = R.string.instant_mix,
                 iconStringRes = R.string.fa_compass,
                 onClick = actions.onClickInstantMix,
-                modifier = Modifier,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
         item("favorite") {
@@ -68,7 +72,7 @@ fun MusicExpandableButtons(
                 iconStringRes = R.string.fa_heart,
                 onClick = actions.onClickFavorite,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
-                modifier = Modifier,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
         item("more") {
@@ -77,7 +81,7 @@ fun MusicExpandableButtons(
                 resume = Duration.ZERO,
                 icon = Icons.Default.MoreVert,
                 onClick = { actions.onClickMore.invoke() },
-                modifier = Modifier,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
     }

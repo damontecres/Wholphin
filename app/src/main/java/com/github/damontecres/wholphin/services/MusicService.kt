@@ -149,15 +149,15 @@ class MusicService
             shuffled: Boolean,
         ) {
             Timber.d("setQueue: %s items, shuffled=%s", items.size, shuffled)
-            start()
             val mediaItems =
                 items
                     .filter { it.type == BaseItemKind.AUDIO }
                     .map(::convert)
             withContext(Dispatchers.Main) {
-                updateQueueSize()
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
+                updateQueueSize()
+                start()
             }
         }
 

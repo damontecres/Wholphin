@@ -370,6 +370,9 @@ fun AlbumDetailsPage(
                                         )
                                     },
                                 favorite = album.favorite,
+                                buttonOnFocusChanged = {
+                                    if (it.isFocused) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                },
                                 modifier =
                                     Modifier
                                         .onFocusChanged {
@@ -389,7 +392,7 @@ fun AlbumDetailsPage(
                     itemsIndexed(state.songs) { index, song ->
                         Box(
                             modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.TopStart,
                         ) {
                             SongListItem(
                                 song = song,
@@ -415,9 +418,7 @@ fun AlbumDetailsPage(
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
                                 modifier =
                                     Modifier
-//                                    .padding(horizontal = 16.dp)
                                         .fillMaxWidth(.75f)
-                                        .align(Alignment.Center)
                                         .ifElse(
                                             index == 0,
                                             Modifier

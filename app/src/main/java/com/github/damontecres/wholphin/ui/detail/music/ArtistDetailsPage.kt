@@ -377,6 +377,9 @@ fun ArtistDetailsPage(
                                         )
                                     },
                                 favorite = artist.favorite,
+                                buttonOnFocusChanged = {
+                                    if (it.isFocused) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                },
                                 modifier =
                                     Modifier
                                         .onFocusChanged {
@@ -415,7 +418,7 @@ fun ArtistDetailsPage(
                                             )
                                     }
                                 },
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                                modifier = Modifier.fillMaxWidth(.75f),
                                 showArtist = false,
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
                             )
