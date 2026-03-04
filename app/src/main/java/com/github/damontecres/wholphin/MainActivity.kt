@@ -68,6 +68,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -213,7 +214,12 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         val requestedDestination =
                             remember(intent) {
-                                intent?.let(::extractDestination) ?: Destination.Home()
+                                intent?.let(::extractDestination) ?: // Destination.Home()
+                                    // TODO
+                                    Destination.MediaItem(
+                                        itemId = "011ef0c7ca45684f2cd9dd3b020ca5f6".toUUID(),
+                                        type = BaseItemKind.MUSIC_ALBUM,
+                                    )
                             }
                         MainContent(
                             backStack = setupNavigationManager.backStack,

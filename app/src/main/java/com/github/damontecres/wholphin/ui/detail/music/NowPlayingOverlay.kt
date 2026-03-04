@@ -59,6 +59,7 @@ fun NowPlayingOverlay(
     current: AudioItem?,
     queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
+    onClickMore: () -> Unit,
     onMoveQueue: (Int, MoveDirection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -122,6 +123,7 @@ fun NowPlayingOverlay(
                 player = player,
                 controllerViewState = controllerViewState,
                 initialFocusRequester = focusRequester,
+                onClickMore = onClickMore,
                 modifier =
                     Modifier
                         .fillMaxWidth()

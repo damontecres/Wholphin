@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
+import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
@@ -21,23 +22,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.playback.BottomDialog
+import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
@@ -90,6 +97,10 @@ fun NowPlayingPage(
             )
         }
 
+    var showMoreDialog by remember { mutableStateOf(false) }
+    var lyricsActive by remember { mutableStateOf(true) }
+    var showDebugInfo by remember { mutableStateOf(true) }
+
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Box(modifier) {
@@ -106,7 +117,7 @@ fun NowPlayingPage(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 AnimatedVisibility(
-                    visible = state.lyrics != null && state.lyrics?.lyrics?.isNotEmpty() == true,
+                    visible = lyricsActive && state.hasLyrics,
                     enter = expandHorizontally(expandFrom = Alignment.Start),
                     exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
                     modifier = Modifier,
@@ -177,6 +188,7 @@ fun NowPlayingPage(
                 queue = queue,
                 controllerViewState = controllerViewState,
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
+                onClickMore = { showMoreDialog = true },
                 modifier =
                     Modifier
                         .background(AppColors.TransparentBlack50)
@@ -187,4 +199,50 @@ fun NowPlayingPage(
             LoadingPage(focusEnabled = false)
         }
     }
+    if (showMoreDialog) {
+        NowPlayingBottomDialog(
+            showDebugInfo = showDebugInfo,
+            lyricsActive = lyricsActive,
+            songHasLyrics = state.hasLyrics,
+            onDismissRequest = { showMoreDialog = false },
+            onClickShowDebug = { showDebugInfo = !showDebugInfo },
+            onClickLyrics = { lyricsActive = !lyricsActive },
+        )
+    }
+}
+
+@Composable
+fun NowPlayingBottomDialog(
+    showDebugInfo: Boolean,
+    lyricsActive: Boolean,
+    songHasLyrics: Boolean,
+    onDismissRequest: () -> Unit,
+    onClickShowDebug: () -> Unit,
+    onClickLyrics: () -> Unit,
+) {
+    val choices =
+        mapOf(
+            BottomDialogItem(
+                data = 0,
+                headline = stringResource(if (showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
+                supporting = null,
+            ) to onClickShowDebug,
+            BottomDialogItem(
+                data = 0,
+                headline = stringResource(if (lyricsActive) R.string.hide_lyrics else R.string.show_lyrics),
+                supporting = if (songHasLyrics) stringResource(R.string.song_has_lyrics) else null,
+            ) to onClickLyrics,
+        )
+
+    BottomDialog(
+        choices = choices.keys.toList(),
+        onDismissRequest = {
+            onDismissRequest.invoke()
+        },
+        onSelectChoice = { _, choice ->
+            choices[choice]?.invoke()
+            onDismissRequest.invoke()
+        },
+        gravity = Gravity.START,
+    )
 }

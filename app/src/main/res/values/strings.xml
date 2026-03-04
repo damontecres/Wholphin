@@ -733,6 +733,10 @@
     <string name="popular_songs">Popular songs</string>
     <string name="play_next">Play next</string>
     <string name="music_videos">Music videos</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="hide_lyrics">Hide lyrics</string>
+    <string name="show_lyrics">Show lyrics</string>
+    <string name="song_has_lyrics">Song has lyrics</string>
 
 
 </resources>
