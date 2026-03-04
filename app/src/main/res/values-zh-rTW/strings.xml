@@ -529,4 +529,7 @@
     <string name="mixer">混音師</string>
     <string name="creator">創作者</string>
     <string name="artist">演出者</string>
+    <string name="delete_item">確定要刪除此項目嗎？</string>
+    <string name="show_media_management">顯示媒體管理選項</string>
+    <string name="search_for">搜尋 %s</string>
 </resources>
