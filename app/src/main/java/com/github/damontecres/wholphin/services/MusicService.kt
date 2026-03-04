@@ -244,9 +244,27 @@ class MusicService
             updateQueueSize()
         }
 
+        suspend fun moveQueue(
+            index: Int,
+            newIndex: Int,
+        ) = withContext(Dispatchers.Main) {
+            player.moveMediaItem(index, newIndex)
+            updateQueueSize()
+        }
+
+        suspend fun playIndex(index: Int) {
+            onMain { player.seekTo(index, 0L) }
+            // MusicPlayerListener will update state
+        }
+
         suspend fun playNext(song: BaseItem) {
             val mediaItem = convert(song)
             onMain { player.addMediaItem(state.value.currentIndex + 1, mediaItem) }
+            updateQueueSize()
+        }
+
+        suspend fun removeFromQueue(index: Int) {
+            onMain { player.removeMediaItem(index) }
             updateQueueSize()
         }
 
@@ -333,17 +351,6 @@ private class MusicPlayerListener(
                 }
             } ?: state
         }
-    }
-}
-
-data class PlayerMediaItemList(
-    private val player: Player,
-) {
-    val size: Int get() = player.mediaItemCount
-
-    operator fun get(index: Int): AudioItem {
-//        Timber.v("get %s", index)
-        return player.getMediaItemAt(index).localConfiguration?.tag as AudioItem
     }
 }
 

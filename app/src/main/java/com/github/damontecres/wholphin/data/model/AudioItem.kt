@@ -9,6 +9,7 @@ import kotlin.time.Duration
 data class AudioItem(
     val id: UUID,
     val albumId: UUID?,
+    val artistId: UUID?,
     val title: String?,
     val albumTitle: String?,
     val artistNames: String?,
@@ -24,6 +25,10 @@ data class AudioItem(
             AudioItem(
                 id = item.id,
                 albumId = item.data.albumId,
+                artistId =
+                    item.data.artistItems
+                        ?.firstOrNull()
+                        ?.id,
                 title = item.title,
                 albumTitle = item.data.album,
                 artistNames = item.data.albumArtist,

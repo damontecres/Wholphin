@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.DialogItem
@@ -34,6 +36,7 @@ data class MusicMoreDialogActions(
     val onClickGoToArtist: (UUID) -> Unit = {
         onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
     },
+    val onClickRemoveFromQueue: (Int) -> Unit,
 )
 
 fun buildMoreDialogForMusic(
@@ -41,6 +44,7 @@ fun buildMoreDialogForMusic(
     actions: MusicMoreDialogActions,
     item: BaseItem,
     index: Int,
+    canRemove: Boolean,
 ): List<DialogItem> =
     buildList {
         add(
@@ -61,6 +65,16 @@ fun buildMoreDialogForMusic(
                 actions.onClickPlayNext(index, item)
             },
         )
+        if (canRemove) {
+            add(
+                DialogItem(
+                    context.getString(R.string.remove_from_queue),
+                    Icons.Default.Delete,
+                ) {
+                    actions.onClickRemoveFromQueue(index)
+                },
+            )
+        }
         add(
             DialogItem(
                 context.getString(R.string.add_to_queue),
@@ -107,6 +121,77 @@ fun buildMoreDialogForMusic(
                             .first()
                             .id,
                     )
+                },
+            )
+        }
+    }
+
+data class MusicQueueDialogActions(
+    val onNavigate: (Destination) -> Unit,
+    val onClickPlay: (Int, AudioItem) -> Unit,
+    val onClickPlayNext: (Int, AudioItem) -> Unit,
+    val onClickGoToAlbum: (UUID) -> Unit = {
+        onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ALBUM))
+    },
+    val onClickGoToArtist: (UUID) -> Unit = {
+        onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
+    },
+    val onClickRemoveFromQueue: (Int, AudioItem) -> Unit,
+)
+
+fun buildMoreDialogForMusicQueue(
+    context: Context,
+    actions: MusicQueueDialogActions,
+    item: AudioItem,
+    index: Int,
+    canRemove: Boolean,
+): List<DialogItem> =
+    buildList {
+        add(
+            DialogItem(
+                context.getString(R.string.play),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlay(index, item)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.play_next),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlayNext(index, item)
+            },
+        )
+        if (canRemove) {
+            add(
+                DialogItem(
+                    context.getString(R.string.remove_from_queue),
+                    Icons.Default.Delete,
+                ) {
+                    actions.onClickRemoveFromQueue(index, item)
+                },
+            )
+        }
+        if (item.albumId != null) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    Icons.Default.ArrowForward,
+                ) {
+                    actions.onClickGoToAlbum.invoke(item.albumId)
+                },
+            )
+        }
+        if (item.artistId != null) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    Icons.Default.ArrowForward,
+                ) {
+                    actions.onClickGoToArtist.invoke(item.artistId)
                 },
             )
         }

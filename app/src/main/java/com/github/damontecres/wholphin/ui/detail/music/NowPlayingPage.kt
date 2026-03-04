@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,6 +43,8 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.components.DialogParams
+import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.playback.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
@@ -59,6 +62,7 @@ fun NowPlayingPage(
             creationCallback = { it.create() },
         ),
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val player = viewModel.player
     val queue = rememberQueue(player, state.musicServiceState.queueSize)
@@ -97,9 +101,20 @@ fun NowPlayingPage(
             )
         }
 
+    val actions =
+        remember {
+            MusicQueueDialogActions(
+                onNavigate = { viewModel.navigationManager.navigateTo(it) },
+                onClickPlay = { index, _ -> viewModel.play(index) },
+                onClickPlayNext = { index, _ -> viewModel.playNext(index) },
+                onClickRemoveFromQueue = { index, _ -> viewModel.removeFromQueue(index) },
+            )
+        }
+
     var showMoreDialog by remember { mutableStateOf(false) }
     var lyricsActive by remember { mutableStateOf(true) }
     var showDebugInfo by remember { mutableStateOf(true) }
+    var itemMoreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -189,6 +204,22 @@ fun NowPlayingPage(
                 controllerViewState = controllerViewState,
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
                 onClickMore = { showMoreDialog = true },
+                onClickSong = { index, _ -> viewModel.play(index) },
+                onLongClickSong = { index, song ->
+                    itemMoreDialog =
+                        DialogParams(
+                            title = song.title ?: "",
+                            fromLongClick = true,
+                            items =
+                                buildMoreDialogForMusicQueue(
+                                    context = context,
+                                    actions = actions,
+                                    item = song,
+                                    index = index,
+                                    canRemove = true,
+                                ),
+                        )
+                },
                 modifier =
                     Modifier
                         .background(AppColors.TransparentBlack50)
@@ -198,6 +229,16 @@ fun NowPlayingPage(
         if (state.musicServiceState.loadingState is LoadingState.Loading) {
             LoadingPage(focusEnabled = false)
         }
+    }
+    itemMoreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { itemMoreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
     }
     if (showMoreDialog) {
         NowPlayingBottomDialog(

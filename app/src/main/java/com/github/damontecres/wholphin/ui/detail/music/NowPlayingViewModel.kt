@@ -44,7 +44,7 @@ class NowPlayingViewModel
     constructor(
         private val api: ApiClient,
         @param:ApplicationContext private val context: Context,
-        private val navigationManager: NavigationManager,
+        val navigationManager: NavigationManager,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
@@ -127,7 +127,7 @@ class NowPlayingViewModel
                                 } else {
                                     null
                                 }
-                            Timber.v("lyricIndex=$lyricIndex")
+//                            Timber.v("lyricIndex=$lyricIndex")
                             state.update {
                                 it.copy(
                                     lyrics = lyrics,
@@ -177,6 +177,12 @@ class NowPlayingViewModel
             index: Int,
             direction: MoveDirection,
         ) = viewModelScope.launchDefault { musicService.moveQueue(index, direction) }
+
+        fun play(index: Int) = viewModelScope.launchDefault { musicService.playIndex(index) }
+
+        fun playNext(index: Int) = viewModelScope.launchDefault { musicService.moveQueue(index, 1) }
+
+        fun removeFromQueue(index: Int) = viewModelScope.launchDefault { musicService.removeFromQueue(index) }
 
         fun stop() {
             player.stop()

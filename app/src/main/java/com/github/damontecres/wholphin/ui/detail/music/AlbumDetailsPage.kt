@@ -282,6 +282,7 @@ fun AlbumDetailsPage(
                     playlistViewModel.loadPlaylists(MediaType.AUDIO)
                     showPlaylistDialog.makePresent(itemId)
                 },
+                onClickRemoveFromQueue = {},
             )
         }
 
@@ -362,6 +363,7 @@ fun AlbumDetailsPage(
                                                                 actions = moreDialogActions,
                                                                 item = album,
                                                                 index = 0,
+                                                                canRemove = false,
                                                             ),
                                                     )
                                             },
@@ -404,6 +406,7 @@ fun AlbumDetailsPage(
                                                         actions = moreDialogActions,
                                                         item = song,
                                                         index = index,
+                                                        canRemove = false,
                                                     ),
                                             )
                                     }

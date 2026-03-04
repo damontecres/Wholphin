@@ -59,6 +59,8 @@ fun NowPlayingOverlay(
     current: AudioItem?,
     queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
+    onClickSong: (Int, AudioItem) -> Unit,
+    onLongClickSong: (Int, AudioItem) -> Unit,
     onClickMore: () -> Unit,
     onMoveQueue: (Int, MoveDirection) -> Unit,
     modifier: Modifier = Modifier,
@@ -159,10 +161,8 @@ fun NowPlayingOverlay(
                             runtime = song.runtime?.roundSeconds,
                             showArtist = true,
                             isPlaying = current?.id == song.id,
-                            onClick = {
-                                player.seekTo(index, 0L)
-                            },
-                            onLongClick = {},
+                            onClick = { onClickSong.invoke(index, song) },
+                            onLongClick = { onLongClickSong.invoke(index, song) },
                             modifier =
                                 Modifier
                                     .weight(1f)

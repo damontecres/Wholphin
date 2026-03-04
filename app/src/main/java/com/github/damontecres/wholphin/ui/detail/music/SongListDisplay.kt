@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -68,11 +69,13 @@ fun SongListItem(
     artist = if (showArtist) song?.data?.albumArtist else null,
     indexNumber = song?.data?.indexNumber,
     runtime =
-        song
-            ?.data
-            ?.runTimeTicks
-            ?.ticks
-            ?.roundMinutes,
+        remember(song) {
+            song
+                ?.data
+                ?.runTimeTicks
+                ?.ticks
+                ?.roundSeconds
+        },
     onClick = onClick,
     onLongClick = onLongClick,
     modifier = modifier,

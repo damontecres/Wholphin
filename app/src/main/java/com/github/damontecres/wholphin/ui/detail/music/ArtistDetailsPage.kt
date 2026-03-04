@@ -300,6 +300,7 @@ fun ArtistDetailsPage(
                     playlistViewModel.loadPlaylists(MediaType.AUDIO)
                     showPlaylistDialog.makePresent(itemId)
                 },
+                onClickRemoveFromQueue = {},
             )
         }
 
@@ -369,6 +370,7 @@ fun ArtistDetailsPage(
                                                                 actions = moreDialogActions,
                                                                 item = artist,
                                                                 index = 0,
+                                                                canRemove = false,
                                                             ),
                                                     )
                                             },
@@ -408,6 +410,7 @@ fun ArtistDetailsPage(
                                                         actions = moreDialogActions,
                                                         item = song,
                                                         index = index,
+                                                        canRemove = false,
                                                     ),
                                             )
                                     }
