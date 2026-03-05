@@ -72,12 +72,14 @@ fun ExpandablePlayButtons(
     resumePosition: Duration,
     watched: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     trailers: List<Trailer>?,
     playOnClick: (position: Duration) -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
+    deleteOnClick: () -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -155,6 +157,16 @@ fun ExpandablePlayButtons(
                     trailers = trailers,
                     trailerOnClick = trailerOnClick,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        }
+        if (canDelete) {
+            item("delete") {
+                DeleteButton(
+                    onClick = deleteOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged),
                 )
             }
         }
@@ -424,6 +436,8 @@ private fun ExpandablePlayButtonsPreview() {
             buttonOnFocusChanged = {},
             trailers = listOf(),
             trailerOnClick = {},
+            canDelete = true,
+            deleteOnClick = {},
             modifier = Modifier,
         )
     }

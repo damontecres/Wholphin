@@ -19,11 +19,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -31,6 +34,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -51,6 +55,7 @@ abstract class RecommendedViewModel(
     val favoriteWatchManager: FavoriteWatchManager,
     val mediaReportService: MediaReportService,
     private val backdropService: BackdropService,
+    private val mediaManagementService: MediaManagementService,
 ) : ViewModel() {
     abstract fun init()
 
@@ -117,6 +122,25 @@ abstract class RecommendedViewModel(
                 }
             update(title, row)
         }
+
+    fun deleteItem(
+        position: RowColumn,
+        item: BaseItem,
+    ) {
+        deleteItem(context, mediaManagementService, item) {
+            viewModelScope.launchDefault {
+                val row = rows.value.getOrNull(position.row)
+                if (row is HomeRowLoadingState.Success) {
+                    (row.items as? ApiRequestPager<*>)?.refreshPagesAfter(position.column)
+                }
+            }
+        }
+    }
+
+    fun canDelete(
+        item: BaseItem,
+        appPreferences: AppPreferences,
+    ): Boolean = mediaManagementService.canDelete(item, appPreferences)
 }
 
 @Composable
@@ -130,6 +154,7 @@ fun RecommendedContent(
     val context = LocalContext.current
     var moreDialog by remember { mutableStateOf<Optional<RowColumnItem>>(Optional.absent()) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     OneTimeLaunchedEffect {
@@ -196,6 +221,7 @@ fun RecommendedContent(
                     playbackPosition = item.playbackPosition,
                     watched = item.played,
                     favorite = item.favorite,
+                    canDelete = viewModel.canDelete(item, preferences.appPreferences),
                     actions =
                         MoreDialogActions(
                             navigateTo = { viewModel.navigationManager.navigateTo(it) },
@@ -210,6 +236,7 @@ fun RecommendedContent(
                                 showPlaylistDialog.makePresent(it)
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                            onClickDelete = { showDeleteDialog = RowColumnItem(position, item) },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
@@ -234,9 +261,19 @@ fun RecommendedContent(
             elevation = 3.dp,
         )
     }
+    showDeleteDialog?.let { (position, item) ->
+        ConfirmDeleteDialog(
+            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(position, item)
+                showDeleteDialog = null
+            },
+        )
+    }
 }
 
-private data class RowColumnItem(
+data class RowColumnItem(
     val position: RowColumn,
     val item: BaseItem,
 )
