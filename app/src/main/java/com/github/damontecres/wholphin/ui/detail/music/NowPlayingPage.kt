@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -166,12 +167,19 @@ fun NowPlayingPage(
                             .fillMaxSize()
                             .weight(1f),
                 ) {
-                    Box(modifier = Modifier.fillMaxSize(.7f)) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(.75f),
+                    ) {
                         AsyncImage(
                             contentDescription = null,
                             model = current?.imageUrl,
                             modifier = Modifier.fillMaxSize(),
                         )
+
                         BarVisualizer(
                             data = viz,
                             modifier = Modifier.fillMaxSize(),

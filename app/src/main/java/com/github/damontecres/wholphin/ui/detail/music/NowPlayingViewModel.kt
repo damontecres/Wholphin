@@ -1,15 +1,13 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
 import android.content.Context
+import android.media.audiofx.Visualizer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.FavoriteWatchManager
-import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -35,6 +33,8 @@ import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
+import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -45,16 +45,20 @@ class NowPlayingViewModel
         private val api: ApiClient,
         @param:ApplicationContext private val context: Context,
         val navigationManager: NavigationManager,
-        private val favoriteWatchManager: FavoriteWatchManager,
-        private val backdropService: BackdropService,
-        private val imageUrlService: ImageUrlService,
         private val musicService: MusicService,
         val userPreferencesService: UserPreferencesService,
     ) : ViewModel(),
+        Visualizer.OnDataCaptureListener,
         Player.Listener {
         @AssistedFactory
         interface Factory {
             fun create(): NowPlayingViewModel
+        }
+
+        private val visualizer by lazy {
+            Visualizer(player.audioSessionId).apply {
+                captureSize = Visualizer.getCaptureSizeRange()[1]
+            }
         }
 
         val controllerViewState =
@@ -66,7 +70,7 @@ class NowPlayingViewModel
         val state = MutableStateFlow(NowPlayingState(musicService.state.value))
         val player get() = musicService.player
 
-        val viz = musicService.viz
+        val viz = MutableStateFlow<IntArray>(IntArray(0))
 
         private val lyricCache =
             InMemoryKache<UUID, LyricDto>(20) {
@@ -75,7 +79,18 @@ class NowPlayingViewModel
 
         init {
             player.addListener(this)
-            addCloseable { player.removeListener(this) }
+            visualizer.setDataCaptureListener(
+                this,
+                Visualizer.getMaxCaptureRate() / 2,
+                true,
+                false,
+            )
+            visualizer.enabled = true
+
+            addCloseable {
+                player.removeListener(this)
+                visualizer.release()
+            }
             viewModelScope.launchDefault {
                 musicService.state.collectLatest { musicServiceState ->
                     state.update { it.copy(musicServiceState = musicServiceState) }
@@ -191,5 +206,37 @@ class NowPlayingViewModel
                 musicService.stop()
                 navigationManager.goBack()
             }
+        }
+
+        override fun onFftDataCapture(
+            visualizer: Visualizer,
+            fft: ByteArray,
+            samplingRate: Int,
+        ) {
+        }
+
+        override fun onWaveFormDataCapture(
+            visualizer: Visualizer,
+            waveform: ByteArray,
+            samplingRate: Int,
+        ) {
+            val resolution = 64
+            val processed = IntArray(resolution)
+            val captureSize =
+                Visualizer.getCaptureSizeRange()[1]
+//            val groupSize = captureSize / resolution
+            val groupSize = captureSize / resolution.toFloat()
+            for (i in 0 until resolution) {
+//                processed[i] =
+//                    waveform
+//                        .map { abs(it.toInt()) }
+//                        .map { it.toInt() }
+//                        .subList(i * groupSize, min((i + 1) * groupSize, waveform.size))
+//                        .average()
+//                        .toInt()
+                val v = abs(waveform[ceil(i * groupSize).toInt()].toInt())
+                processed[i] = v * v / (128)
+            }
+            viz.update { processed }
         }
     }

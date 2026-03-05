@@ -40,7 +40,7 @@ fun BoxScope.BarVisualizer(
 
         data.forEachIndexed { index, data ->
             val height by animateDpAsState(
-                targetValue = size.height * data / 128f / 1.5f,
+                targetValue = size.height * data / 128f,
                 animationSpec = tween(easing = LinearEasing),
             )
             Box(
