@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SuggestionService
@@ -63,12 +64,14 @@ class RecommendedMovieViewModel
         favoriteWatchManager: FavoriteWatchManager,
         mediaReportService: MediaReportService,
         backdropService: BackdropService,
+        mediaManagementService: MediaManagementService,
     ) : RecommendedViewModel(
             context,
             navigationManager,
             favoriteWatchManager,
             mediaReportService,
             backdropService,
+            mediaManagementService,
         ) {
         @AssistedFactory
         interface Factory {

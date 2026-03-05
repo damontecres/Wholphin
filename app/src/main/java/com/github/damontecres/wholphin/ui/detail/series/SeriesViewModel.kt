@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -56,6 +57,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -229,6 +233,20 @@ class SeriesViewModel
                         discovered.update { results }
                     }
                 }
+                mediaManagementService.deletedItemFlow
+                    .onEach { deletedItem ->
+                        if (deletedItem.item.data.seriesId == seriesId) {
+                            Timber.d(
+                                "Item %s deleted from series %s",
+                                deletedItem.item.id,
+                                seriesId,
+                            )
+                            val seasons = getSeasons(item, seasonEpisodeIds?.seasonNumber).await()
+                            this@SeriesViewModel.seasons.setValueOnMain(seasons)
+                        }
+                    }.catch { ex ->
+                        Timber.e(ex, "Error refreshing after deleted item")
+                    }.launchIn(viewModelScope)
             }
         }
 
@@ -614,6 +632,11 @@ class SeriesViewModel
         }
 
         suspend fun canDelete(item: BaseItem): Boolean = mediaManagementService.canDelete(item)
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
     }
 
 sealed interface EpisodeList {

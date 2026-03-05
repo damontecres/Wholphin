@@ -4,7 +4,6 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,15 +65,19 @@ fun AddSeerrServerApiKey(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
+        val labelWidth = 90.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
                 text = stringResource(R.string.url),
-                modifier = Modifier.padding(end = 8.dp),
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = url,
@@ -105,7 +108,10 @@ fun AddSeerrServerApiKey(
         ) {
             Text(
                 text = stringResource(R.string.api_key),
-                modifier = Modifier.padding(end = 8.dp),
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = apiKey,
@@ -173,7 +179,7 @@ fun AddSeerrServerUsername(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         val labelWidth = 90.dp
         Row(

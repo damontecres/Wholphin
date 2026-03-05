@@ -554,6 +554,7 @@ fun PreferencesContent(
                     currentUsername = currentUser?.name,
                     status = status,
                     onSubmit = seerrVm::submitServer,
+                    onResetStatus = seerrVm::resetStatus,
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }

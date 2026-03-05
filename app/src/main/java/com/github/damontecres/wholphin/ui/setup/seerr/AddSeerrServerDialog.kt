@@ -1,12 +1,16 @@
 package com.github.damontecres.wholphin.ui.setup.seerr
 
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.ui.components.BasicDialog
@@ -20,6 +24,7 @@ fun AddSeerServerDialog(
     currentUsername: String?,
     status: LoadingState,
     onSubmit: (url: String, username: String, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
+    onResetStatus: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     var authMethod by remember { mutableStateOf<SeerrAuthMethod?>(null) }
@@ -34,6 +39,7 @@ fun AddSeerServerDialog(
         -> {
             BasicDialog(
                 onDismissRequest = { authMethod = null },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
             ) {
                 AddSeerrServerUsername(
                     onSubmit = { url, username, password ->
@@ -41,6 +47,7 @@ fun AddSeerServerDialog(
                     },
                     username = currentUsername ?: "",
                     status = status,
+                    modifier = Modifier.widthIn(min = 320.dp),
                 )
             }
         }
@@ -54,6 +61,7 @@ fun AddSeerServerDialog(
                         onSubmit.invoke(url, "", apiKey, SeerrAuthMethod.API_KEY)
                     },
                     status = status,
+                    modifier = Modifier.widthIn(min = 320.dp),
                 )
             }
         }
@@ -61,7 +69,10 @@ fun AddSeerServerDialog(
         null -> {
             ChooseSeerrLoginType(
                 onDismissRequest = onDismissRequest,
-                onChoose = { authMethod = it },
+                onChoose = {
+                    onResetStatus.invoke()
+                    authMethod = it
+                },
             )
         }
     }
