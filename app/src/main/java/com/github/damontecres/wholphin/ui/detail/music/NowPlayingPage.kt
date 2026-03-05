@@ -8,7 +8,6 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,8 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -43,7 +45,6 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
-import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -234,8 +235,17 @@ fun NowPlayingPage(
                 onClickStop = { viewModel.stop() },
                 modifier =
                     Modifier
-                        .background(AppColors.TransparentBlack50)
-                        .align(Alignment.BottomCenter),
+                        .align(Alignment.BottomCenter)
+                        .drawBehind {
+                            drawRect(
+                                brush =
+                                    Brush.verticalGradient(
+                                        colors = listOf(Color.Transparent, Color.Black),
+                                        startY = 0f,
+                                        endY = size.height,
+                                    ),
+                            )
+                        },
             )
         }
         if (state.musicServiceState.loadingState is LoadingState.Loading) {
