@@ -446,4 +446,19 @@
     <string name="recently_released_in">kürzlich veröffentlicht in %1$s</string>
     <string name="height">Höhe</string>
     <string name="apply_all_rows">Auf alle Reihen anwenden</string>
+    <string name="add_row_for">Reihe hinzufügen für %1$s</string>
+    <string name="overwrite_server_settings">Überschreibe Einstellungen auf dem Server?</string>
+    <string name="overwrite_local_settings">Überschreibe lokale Einstellungen?</string>
+    <string name="suggestions_for">Vorschläge für %1$s</string>
+    <string name="send_media_info_log_to_server">Sende Media Info Log zum Server</string>
+    <string name="customize_home">Anpassung Homepage</string>
+    <string name="for_episodes">Für Episoden</string>
+    <string name="display_presets_description">Vorlagen um schnell alle Reihen zu gestalten</string>
+    <string name="customize_home_summary">Wähle Reihen und Bilder auf der Homepage</string>
+    <string name="start_after">Starte anschließend</string>
+    <string name="display_preset_series_thumb">Serien Thumbnails</string>
+    <string name="display_preset_episode_thumbnails">Episoden Thumbnail</string>
+    <string name="seerr_login">Einloggen zum Seerr Server</string>
+    <string name="seerr_jellyfin_user">Jellyfin User</string>
+    <string name="show_media_management">Zeige Media Management Optionen</string>
 </resources>
