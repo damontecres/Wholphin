@@ -168,9 +168,10 @@ fun NowPlayingOverlay(
                             Modifier
                                 .fillMaxWidth()
                                 .background(
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = .75f),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = .5f),
                                     shape = RoundedCornerShape(8.dp),
-                                ).onFocusChanged {
+                                ).padding(end = 8.dp)
+                                .onFocusChanged {
                                     if (it.hasFocus) showButtons = index < 3
                                     controllerViewState.pulseControls()
                                 }.animateItem(),

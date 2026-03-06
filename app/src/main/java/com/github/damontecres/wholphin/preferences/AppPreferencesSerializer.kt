@@ -152,6 +152,15 @@ class AppPreferencesSerializer
                                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
                                 slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
                             }.build()
+
+                    musicPreferences =
+                        MusicPreferences
+                            .newBuilder()
+                            .apply {
+                                showBackdrop = true
+                                showLyrics = true
+                                showAlbumArt = true
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {

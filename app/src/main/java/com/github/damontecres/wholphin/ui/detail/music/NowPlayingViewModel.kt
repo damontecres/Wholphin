@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
-import android.content.Context
 import android.media.audiofx.Visualizer
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
@@ -13,9 +12,9 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.NowPlayingStatus
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
@@ -25,7 +24,6 @@ import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -51,12 +49,10 @@ class NowPlayingViewModel
     @AssistedInject
     constructor(
         private val api: ApiClient,
-        @param:ApplicationContext private val context: Context,
-        val navigationManager: NavigationManager,
         private val musicService: MusicService,
-        private val imageUrlService: ImageUrlService,
         private val backdropService: BackdropService,
         private val preferencesDataStore: DataStore<AppPreferences>,
+        val navigationManager: NavigationManager,
         val userPreferencesService: UserPreferencesService,
     ) : ViewModel(),
         Visualizer.OnDataCaptureListener,
@@ -66,15 +62,11 @@ class NowPlayingViewModel
             fun create(): NowPlayingViewModel
         }
 
-        private val visualizer by lazy {
-            Visualizer(player.audioSessionId).apply {
-                captureSize = Visualizer.getCaptureSizeRange()[1]
-            }
-        }
+        private var visualizer: Visualizer? = null
 
         val controllerViewState =
             ControllerViewState(
-                AppPreference.Companion.ControllerTimeout.defaultValue,
+                AppPreference.ControllerTimeout.defaultValue,
                 true,
             )
 
@@ -90,20 +82,32 @@ class NowPlayingViewModel
 
         init {
             player.addListener(this)
-            visualizer.setDataCaptureListener(
-                this,
-                Visualizer.getMaxCaptureRate() / 2,
-                true,
-                false,
-            )
-            visualizer.enabled = true
 
             addCloseable {
                 player.removeListener(this)
-                visualizer.release()
+                visualizer?.release()
             }
             viewModelScope.launchDefault {
                 musicService.state.collectLatest { musicServiceState ->
+                    if (musicServiceState.status != NowPlayingStatus.IDLE) {
+                        viewModelScope.launchDefault {
+                            if (visualizer == null) {
+                                visualizer =
+                                    Visualizer(onMain { player.audioSessionId }).apply {
+                                        captureSize = Visualizer.getCaptureSizeRange()[1]
+                                        setDataCaptureListener(
+                                            this@NowPlayingViewModel,
+                                            Visualizer.getMaxCaptureRate() / 2,
+                                            true,
+                                            false,
+                                        )
+                                    }
+                            }
+                            visualizer?.enabled =
+                                musicServiceState.status == NowPlayingStatus.PLAYING
+                        }
+                    }
+
                     state.update { it.copy(musicServiceState = musicServiceState) }
                 }
             }
@@ -265,18 +269,10 @@ class NowPlayingViewModel
             val processed = IntArray(resolution)
             val captureSize =
                 Visualizer.getCaptureSizeRange()[1]
-//            val groupSize = captureSize / resolution
             val groupSize = captureSize / resolution.toFloat()
             for (i in 0 until resolution) {
-//                processed[i] =
-//                    waveform
-//                        .map { abs(it.toInt()) }
-//                        .map { it.toInt() }
-//                        .subList(i * groupSize, min((i + 1) * groupSize, waveform.size))
-//                        .average()
-//                        .toInt()
                 val v = abs(waveform[ceil(i * groupSize).toInt()].toInt())
-                processed[i] = v * v / (128)
+                processed[i] = abs(v * v / (128) - 128)
             }
             viz.update { processed }
         }

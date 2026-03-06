@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
+import com.github.damontecres.wholphin.preferences.updateMusicPreferences
 import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
@@ -260,6 +261,16 @@ suspend fun upgradeApp(
                 clearItemTypes()
                 addItemTypes(BaseItemKind.MOVIE.serialName)
                 addItemTypes(BaseItemKind.SERIES.serialName)
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.5.2-1=g0"))) {
+        appPreferences.updateData {
+            it.updateMusicPreferences {
+                showBackdrop = true
+                showLyrics = true
+                showAlbumArt = true
             }
         }
     }

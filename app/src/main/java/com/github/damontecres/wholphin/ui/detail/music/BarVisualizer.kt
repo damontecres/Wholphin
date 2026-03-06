@@ -49,7 +49,6 @@ fun BoxScope.BarVisualizer(
                     .width(width)
                     .padding(start = if (index == 0) 0.dp else padding)
                     .background(MaterialTheme.colorScheme.border),
-//                    .align(Alignment.Bottom),
             )
         }
     }

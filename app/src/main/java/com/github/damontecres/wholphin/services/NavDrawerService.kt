@@ -36,7 +36,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.hours
 
 @Singleton
 class NavDrawerService
@@ -101,7 +101,7 @@ class NavDrawerService
                         }
 
                         NowPlayingStatus.PAUSED -> {
-                            delay(2.minutes)
+                            delay(2.hours)
                             _state.update {
                                 it.copy(
                                     nowPlayingEnabled = false,
