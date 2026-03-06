@@ -220,6 +220,11 @@ inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPrefere
         screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        musicPreferences = musicPreferences.toBuilder().apply(block).build()
+    }
+
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
