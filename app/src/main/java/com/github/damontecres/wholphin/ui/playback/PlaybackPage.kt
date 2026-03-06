@@ -45,7 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
@@ -327,13 +327,13 @@ fun PlaybackPageContent(
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
-            var playerSize by remember { mutableStateOf(IntSize.Zero) }
+            var playerSurfaceSize by remember { mutableStateOf(IntSize.Zero) }
             PlayerSurface(
                 player = player,
                 surfaceType = SURFACE_TYPE_SURFACE_VIEW,
                 modifier =
-                    scaledModifier.onGloballyPositioned {
-                        playerSize = it.size
+                    scaledModifier.onSizeChanged {
+                        playerSurfaceSize = it
                     },
             )
             if (presentationState.coverSurface) {
@@ -427,7 +427,7 @@ fun PlaybackPageContent(
                 remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
-            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
                 val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
                 AndroidView(
@@ -462,14 +462,14 @@ fun PlaybackPageContent(
                         it.children.firstOrNull { it is AssSubtitleView }?.let {
                             (it as? AssSubtitleView)?.apply {
                                 val resized =
-                                    layoutParams.let { it.width != playerSize.width || it.height != playerSize.height }
+                                    layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
                                 if (resized) {
-                                    Timber.v("Resizing AssSubtitleView: $playerSize")
+                                    Timber.v("Resizing AssSubtitleView: $playerSurfaceSize")
                                     layoutParams =
                                         FrameLayout
                                             .LayoutParams(
-                                                playerSize.width,
-                                                playerSize.height,
+                                                playerSurfaceSize.width,
+                                                playerSurfaceSize.height,
                                             ).apply { gravity = Gravity.CENTER }
                                 }
                             }
