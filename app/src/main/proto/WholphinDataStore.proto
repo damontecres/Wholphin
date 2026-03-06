@@ -182,6 +182,7 @@ message MusicPreferences {
   bool show_lyrics = 1;
   bool show_visualizer = 2;
   bool show_album_Art = 3;
+  bool show_backdrop = 4;
 }
 
 message AppPreferences {

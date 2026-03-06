@@ -207,21 +207,8 @@ class AlbumViewModel
         fun updateBackDrop() {
             state.value.album?.let { album ->
                 viewModelScope.launchDefault {
-                    if (album.data.imageTags?.contains(ImageType.BACKDROP) == true) {
-                        backdropService.submit(album)
-                    } else {
-                        val artistIds =
-                            album.data.albumArtists
-                                ?.shuffled()
-                                ?.take(50)
-                                ?.map { it.id }
-                        api.itemsApi
-                            .getItems(
-                                ids = artistIds,
-                                imageTypes = listOf(ImageType.BACKDROP),
-                            ).content.items
-                            .firstOrNull()
-                            ?.let { backdropService.submit(BaseItem(it, false)) }
+                    getBackdropItemForAlbum(api, album)?.let {
+                        backdropService.submit(it)
                     }
                 }
             }
@@ -248,6 +235,28 @@ class AlbumViewModel
             play(songs, startIndex, shuffled)
         }
     }
+
+suspend fun getBackdropItemForAlbum(
+    api: ApiClient,
+    album: BaseItem,
+): BaseItem? {
+    if (album.data.backdropImageTags?.isNotEmpty() == true) {
+        return album
+    } else {
+        val artistIds =
+            album.data.albumArtists
+                ?.shuffled()
+                ?.take(50)
+                ?.map { it.id }
+        return api.itemsApi
+            .getItems(
+                ids = artistIds,
+                imageTypes = listOf(ImageType.BACKDROP),
+            ).content.items
+            .firstOrNull()
+            ?.let { BaseItem(it, false) }
+    }
+}
 
 data class AlbumState(
     val album: BaseItem?,

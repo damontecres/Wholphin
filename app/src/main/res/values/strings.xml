@@ -738,6 +738,9 @@
     <string name="show_lyrics">Show lyrics</string>
     <string name="song_has_lyrics">Song has lyrics</string>
     <string name="remove_from_queue">Remove from queue</string>
+    <string name="show_album_cover">Show album cover</string>
+    <string name="show_visualizer">Show visualizer</string>
+    <string name="show_backdrop">Show backdrop</string>
 
 
 </resources>

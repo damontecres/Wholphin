@@ -4,6 +4,7 @@ import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
@@ -12,10 +13,10 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -85,6 +86,7 @@ fun NowPlayingPage(
                     AppPreferences.getDefaultInstance(),
                 ),
             ).value.appPreferences
+    val musicPrefs = preferences.musicPreferences
 
     val keyHandler =
         remember(preferences) {
@@ -120,9 +122,7 @@ fun NowPlayingPage(
             )
         }
 
-    var showMoreDialog by remember { mutableStateOf(false) }
-    var lyricsActive by remember { mutableStateOf(true) }
-    var showDebugInfo by remember { mutableStateOf(true) }
+    var showViewOptionsDialog by remember { mutableStateOf(false) }
     var itemMoreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     val focusRequester = remember { FocusRequester() }
@@ -136,55 +136,25 @@ fun NowPlayingPage(
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize(),
+            AnimatedVisibility(
+                musicPrefs.showAlbumArt,
+                modifier =
+                    Modifier
+                        .padding(32.dp)
+                        .fillMaxWidth(.5f)
+                        .align(Alignment.CenterStart),
             ) {
-                AnimatedVisibility(
-                    visible = lyricsActive && state.hasLyrics,
-                    enter = expandHorizontally(expandFrom = Alignment.Start),
-                    exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
-                    modifier = Modifier,
-                ) {
-                    LyricsContent(
-                        synced = true,
-                        lyrics = state.lyrics,
-                        currentLyricPosition = state.currentLyricIndex,
-                        onClick = {},
-                        modifier =
-                            Modifier
-                                .padding(vertical = 120.dp, horizontal = 32.dp)
-                                .fillMaxHeight()
-                                .width(320.dp),
-                    )
-                }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier =
-                        Modifier
-                            .padding(40.dp)
-                            .fillMaxSize()
-                            .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
+                    AsyncImage(
+                        contentDescription = null,
+                        model = current?.imageUrl,
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(.75f),
-                    ) {
-                        AsyncImage(
-                            contentDescription = null,
-                            model = current?.imageUrl,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-
-                        BarVisualizer(
-                            data = viz,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
+                                .height(320.dp),
+                    )
                     current?.title?.let {
                         Text(
                             text = it,
@@ -203,6 +173,50 @@ fun NowPlayingPage(
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
+                }
+            }
+            AnimatedVisibility(
+                musicPrefs.showVisualizer,
+                modifier =
+                    Modifier
+                        .padding(horizontal = 32.dp)
+                        .fillMaxHeight(.75f)
+                        .align(Alignment.CenterStart),
+            ) {
+                val visualizerWidth by animateFloatAsState(if (musicPrefs.showLyrics && state.hasLyrics) .5f else 1f)
+                BarVisualizer(
+                    data = viz,
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(visualizerWidth)
+                            .align(Alignment.CenterStart),
+                )
+            }
+            AnimatedVisibility(
+                visible = musicPrefs.showLyrics && state.hasLyrics,
+                enter = expandHorizontally(expandFrom = Alignment.End),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.End),
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(.5f)
+                            .fillMaxHeight(),
+                ) {
+                    LyricsContent(
+                        synced = true,
+                        lyrics = state.lyrics,
+                        currentLyricPosition = state.currentLyricIndex,
+                        onClick = {},
+                        modifier =
+                            Modifier
+                                .padding(vertical = 120.dp)
+                                .fillMaxHeight()
+                                .width(320.dp),
+                    )
                 }
             }
         }
@@ -243,7 +257,7 @@ fun NowPlayingPage(
                 queue = queue,
                 controllerViewState = controllerViewState,
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
-                onClickMore = { showMoreDialog = true },
+                onClickMore = { showViewOptionsDialog = true },
                 onClickSong = { index, _ -> viewModel.play(index) },
                 onClickMoreItem = { index, song -> showContextForItem.invoke(false, index, song) },
                 onLongClickSong = { index, song -> showContextForItem.invoke(true, index, song) },
@@ -277,14 +291,11 @@ fun NowPlayingPage(
             waitToLoad = params.fromLongClick,
         )
     }
-    if (showMoreDialog) {
-        NowPlayingBottomDialog(
-            showDebugInfo = showDebugInfo,
-            lyricsActive = lyricsActive,
-            songHasLyrics = state.hasLyrics,
-            onDismissRequest = { showMoreDialog = false },
-            onClickShowDebug = { showDebugInfo = !showDebugInfo },
-            onClickLyrics = { lyricsActive = !lyricsActive },
+    if (showViewOptionsDialog) {
+        MusicViewOptionsDialog(
+            appPreferences = preferences,
+            onDismissRequest = { showViewOptionsDialog = false },
+            onViewOptionsChange = { viewModel.updatePreferences(it) },
         )
     }
 }

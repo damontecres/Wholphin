@@ -2,12 +2,18 @@ package com.github.damontecres.wholphin.ui.detail.music
 
 import android.content.Context
 import android.media.audiofx.Visualizer
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.data.model.AudioItem
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -29,6 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.lyricsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -38,6 +45,7 @@ import kotlin.math.ceil
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
+@UnstableApi
 @HiltViewModel(assistedFactory = NowPlayingViewModel.Factory::class)
 class NowPlayingViewModel
     @AssistedInject
@@ -46,6 +54,9 @@ class NowPlayingViewModel
         @param:ApplicationContext private val context: Context,
         val navigationManager: NavigationManager,
         private val musicService: MusicService,
+        private val imageUrlService: ImageUrlService,
+        private val backdropService: BackdropService,
+        private val preferencesDataStore: DataStore<AppPreferences>,
         val userPreferencesService: UserPreferencesService,
     ) : ViewModel(),
         Visualizer.OnDataCaptureListener,
@@ -102,6 +113,9 @@ class NowPlayingViewModel
                         controllerViewState.observe()
                     }.join()
                 controllerViewState.pulseControls()
+            }
+            viewModelScope.launchDefault {
+                updateBackdrop(getCurrent())
             }
             playbackLoop()
         }
@@ -163,9 +177,10 @@ class NowPlayingViewModel
             mediaItem: MediaItem?,
             reason: Int,
         ) {
+            val audio = mediaItem?.localConfiguration?.tag as? AudioItem
+            Timber.v("onMediaItemTransition to %s", audio?.id)
+            updateBackdrop(audio)
             viewModelScope.launchDefault {
-                val audio = mediaItem?.localConfiguration?.tag as? AudioItem
-                Timber.v("onMediaItemTransition to %s", audio?.id)
                 state.update {
                     it.copy(
                         lyrics = null,
@@ -186,6 +201,32 @@ class NowPlayingViewModel
                             )
                         }
                     }
+                }
+            }
+        }
+
+        private fun updateBackdrop(audio: AudioItem?) {
+            viewModelScope.launchDefault {
+                val showBackdrop =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.musicPreferences.showBackdrop
+                if (audio?.albumId != null && showBackdrop) {
+                    try {
+                        api.userLibraryApi.getItem(audio.albumId).content.let {
+                            val backdropItem = getBackdropItemForAlbum(api, BaseItem(it, false))
+                            if (backdropItem != null) {
+                                backdropService.submit(backdropItem)
+                            } else {
+                                backdropService.clearBackdrop()
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error fetching backdrop")
+                        backdropService.clearBackdrop()
+                    }
+                } else {
+                    backdropService.clearBackdrop()
                 }
             }
         }
@@ -238,5 +279,23 @@ class NowPlayingViewModel
                 processed[i] = v * v / (128)
             }
             viz.update { processed }
+        }
+
+        fun updatePreferences(prefs: AppPreferences) {
+            viewModelScope.launchDefault {
+                var backdropChanged = false
+                preferencesDataStore.updateData {
+                    backdropChanged =
+                        it.musicPreferences.showBackdrop != prefs.musicPreferences.showBackdrop
+                    prefs
+                }
+                if (backdropChanged) {
+                    if (prefs.musicPreferences.showBackdrop) {
+                        updateBackdrop(getCurrent())
+                    } else {
+                        backdropService.clearBackdrop()
+                    }
+                }
+            }
         }
     }
