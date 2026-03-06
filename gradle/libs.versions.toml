@@ -40,7 +40,6 @@ preferenceKtx = "1.2.1"
 tvprovider = "1.1.0"
 workRuntimeKtx = "2.11.1"
 paletteKtx = "1.0.0"
-assMedia = "0.4.0"
 kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
 openapi-generator = "7.20.0"
@@ -134,8 +133,6 @@ androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", versi
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
-
-ass-media = { group = "io.github.peerless2012", name = "ass-media", version.ref = "assMedia" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
