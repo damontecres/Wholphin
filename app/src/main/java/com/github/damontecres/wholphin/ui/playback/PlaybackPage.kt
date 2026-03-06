@@ -461,13 +461,17 @@ fun PlaybackPageContent(
                             .apply(it)
                         it.children.firstOrNull { it is AssSubtitleView }?.let {
                             (it as? AssSubtitleView)?.apply {
-                                Timber.v("Resize: $playerSize")
-                                layoutParams =
-                                    FrameLayout
-                                        .LayoutParams(
-                                            playerSize.width,
-                                            playerSize.height,
-                                        ).apply { gravity = Gravity.CENTER }
+                                val resized =
+                                    layoutParams.let { it.width != playerSize.width || it.height != playerSize.height }
+                                if (resized) {
+                                    Timber.v("Resizing AssSubtitleView: $playerSize")
+                                    layoutParams =
+                                        FrameLayout
+                                            .LayoutParams(
+                                                playerSize.width,
+                                                playerSize.height,
+                                            ).apply { gravity = Gravity.CENTER }
+                                }
                             }
                         }
                     },
