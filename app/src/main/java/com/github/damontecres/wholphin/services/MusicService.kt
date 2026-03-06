@@ -5,6 +5,8 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -38,6 +40,7 @@ import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
@@ -67,6 +70,13 @@ class MusicService
                     ),
                 ).build()
                 .also {
+                    it.setAudioAttributes(
+                        AudioAttributes
+                            .Builder()
+                            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                            .build(),
+                        false,
+                    )
                     it.addListener(MusicPlayerListener(it, _state))
                 }
         }
@@ -236,11 +246,24 @@ class MusicService
         }
 
         private suspend fun updateQueueSize() {
+//            val ids =
+//                withContext(Dispatchers.Default) {
+//                    (0..<player.mediaItemCount).map { player.getMediaItemAt(it).mediaId.toUUID() }
+//                }
+            val timeline = onMain { player.currentTimeline }
+            val window = Timeline.Window()
+            val ids =
+                (0..<timeline.windowCount)
+                    .map {
+                        timeline.getWindow(it, window)
+                        window.mediaItem.mediaId.toUUID()
+                    }.toSet()
             withContext(Dispatchers.Main) {
                 _state.update {
                     it.copy(
                         queueVersion = it.queueVersion + 1,
                         queueSize = player.mediaItemCount,
+                        queuedIds = ids,
                     )
                 }
             }
@@ -298,9 +321,20 @@ data class MusicServiceState(
     val status: NowPlayingStatus,
     val currentItemTitle: String?,
     val loadingState: LoadingState = LoadingState.Pending,
+    val queuedIds: Set<UUID>,
 ) {
     companion object {
-        val EMPTY = MusicServiceState(0L, 0, 0, null, NowPlayingStatus.IDLE, null)
+        val EMPTY =
+            MusicServiceState(
+                0L,
+                0,
+                0,
+                null,
+                NowPlayingStatus.IDLE,
+                null,
+                LoadingState.Pending,
+                emptySet(),
+            )
     }
 }
 

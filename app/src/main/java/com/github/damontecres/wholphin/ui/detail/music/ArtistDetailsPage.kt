@@ -443,6 +443,7 @@ fun ArtistDetailsPage(
                                 },
                                 showArtist = false,
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
+                                isQueued = song != null && song.id in currentMusic.queuedIds,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth(.75f)

@@ -421,7 +421,7 @@ fun AlbumDetailsPage(
                     }
                     item {
                         Text(
-                            text = stringResource(R.string.songs),
+                            text = stringResource(R.string.songs) + " (${state.songs.size})",
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(start = 8.dp),
@@ -457,6 +457,7 @@ fun AlbumDetailsPage(
                                 },
                                 showArtist = state.isVariousArtists,
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
+                                isQueued = song != null && song.id in currentMusic.queuedIds,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth(.75f)
