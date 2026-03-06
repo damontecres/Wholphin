@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
@@ -124,9 +125,20 @@ fun NowPlayingPage(
 
     var showViewOptionsDialog by remember { mutableStateOf(false) }
     var itemMoreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var lyricsHaveFocus by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+
+    LaunchedEffect(lyricsHaveFocus) {
+        if (lyricsHaveFocus) {
+            controllerViewState.hideControls()
+        }
+    }
+    BackHandler(lyricsHaveFocus) {
+        focusRequester.tryRequestFocus()
+    }
+
     Box(modifier) {
         Box(
             modifier =
@@ -193,31 +205,38 @@ fun NowPlayingPage(
                             .align(Alignment.CenterStart),
                 )
             }
-            AnimatedVisibility(
-                visible = musicPrefs.showLyrics && state.hasLyrics,
-                enter = expandHorizontally(expandFrom = Alignment.End),
-                exit = shrinkHorizontally(shrinkTowards = Alignment.End),
-                modifier = Modifier.align(Alignment.CenterEnd),
+        }
+        AnimatedVisibility(
+            visible = musicPrefs.showLyrics && state.hasLyrics,
+            enter = expandHorizontally(expandFrom = Alignment.End),
+            exit = shrinkHorizontally(shrinkTowards = Alignment.End),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.5f)
+                        .fillMaxHeight(),
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
+                LyricsContent(
+                    synced = true,
+                    lyrics = state.lyrics,
+                    currentLyricPosition = state.currentLyricIndex,
+                    lyricsHaveFocus = lyricsHaveFocus,
+                    onFocusLyrics = { lyricsHaveFocus = it },
+                    onClick = {
+                        it.start
+                            ?.ticks
+                            ?.inWholeMilliseconds
+                            ?.let { player.seekTo(it) }
+                    },
                     modifier =
                         Modifier
-                            .fillMaxWidth(.5f)
-                            .fillMaxHeight(),
-                ) {
-                    LyricsContent(
-                        synced = true,
-                        lyrics = state.lyrics,
-                        currentLyricPosition = state.currentLyricIndex,
-                        onClick = {},
-                        modifier =
-                            Modifier
-                                .padding(vertical = 120.dp)
-                                .fillMaxHeight()
-                                .width(320.dp),
-                    )
-                }
+                            .padding(vertical = 120.dp)
+                            .fillMaxHeight()
+                            .width(320.dp),
+                )
             }
         }
         val showContextForItem =

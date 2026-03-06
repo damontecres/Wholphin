@@ -3,12 +3,9 @@ package com.github.damontecres.wholphin.ui.detail.music
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,27 +21,38 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.api.LyricLine
 
 @Composable
 fun LyricsContent(
+    lyricsHaveFocus: Boolean,
     synced: Boolean,
     lyrics: LyricDto?,
     currentLyricPosition: Int?,
     onClick: (LyricLine) -> Unit,
+    onFocusLyrics: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusRequesters =
+        remember(lyrics) { List(lyrics?.lyrics.orEmpty().size) { FocusRequester() } }
     val listState = rememberLazyListState(currentLyricPosition ?: 0)
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     if (synced) {
         LaunchedEffect(currentLyricPosition) {
-            if (currentLyricPosition != null) {
+            if (currentLyricPosition != null && !lyricsHaveFocus) {
                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let {
                     if (currentLyricPosition !in 0..it) {
                         listState.animateScrollToItem(currentLyricPosition)
@@ -58,11 +66,30 @@ fun LyricsContent(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .focusProperties {
+                        onEnter = {
+                            if (currentLyricPosition != null) {
+                                currentLyricPosition.let {
+                                    focusRequesters
+                                        .getOrNull(currentLyricPosition)
+                                        ?.tryRequestFocus()
+                                }
+                            } else {
+                                focusRequesters.getOrNull(0)?.tryRequestFocus()
+                            }
+                        }
+                    }.onFocusChanged {
+                        onFocusLyrics.invoke(it.hasFocus)
+                    },
         ) {
             if (lyrics?.lyrics?.isNotEmpty() == true) {
                 itemsIndexed(lyrics.lyrics) { index, lyric ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val focused by interactionSource.collectIsFocusedAsState()
                     val color by animateColorAsState(
                         if (index == currentLyricPosition || currentLyricPosition == null) {
                             MaterialTheme.colorScheme.onSurface
@@ -71,28 +98,32 @@ fun LyricsContent(
                         },
                         animationSpec = tween(durationMillis = 500, easing = LinearEasing),
                     )
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val focused by interactionSource.collectIsFocusedAsState()
-                    Box(
+                    Surface(
+                        onClick = { onClick.invoke(lyric) },
+                        interactionSource = interactionSource,
+                        colors =
+                            ClickableSurfaceDefaults.colors(
+                                containerColor = Color.Transparent,
+                                focusedContainerColor = MaterialTheme.colorScheme.border.copy(alpha = .33f),
+                            ),
+                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                        scale =
+                            ClickableSurfaceDefaults.scale(
+                                focusedScale = 1f,
+                                pressedScale = .9f,
+                            ),
                         modifier =
                             Modifier
-                                .background(
-                                    color = if (focused) MaterialTheme.colorScheme.border.copy(alpha = .66f) else Color.Unspecified,
-                                    shape = RoundedCornerShape(8.dp),
-                                ),
+                                .focusRequester(focusRequesters[index]),
                     ) {
                         Text(
                             text = lyric.text,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = color,
+                            color = if (focused) MaterialTheme.colorScheme.onSurface else color,
                             modifier =
                                 Modifier
-                                    .padding(4.dp)
-                                    .clickable(
-                                        enabled = !synced,
-                                        onClick = { onClick.invoke(lyric) },
-                                        interactionSource = interactionSource,
-                                    ).ifElse(
+                                    .padding(8.dp)
+                                    .ifElse(
                                         index == currentLyricPosition,
                                         Modifier.bringIntoViewRequester(bringIntoViewRequester),
                                     ),
