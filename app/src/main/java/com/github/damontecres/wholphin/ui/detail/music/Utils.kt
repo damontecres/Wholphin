@@ -104,7 +104,7 @@ fun buildMoreDialogForMusic(
             add(
                 DialogItem(
                     context.getString(R.string.go_to_album),
-                    Icons.Default.ArrowForward,
+                    R.string.fa_compact_disc,
                 ) {
                     actions.onClickGoToAlbum.invoke(item.data.albumId!!)
                 },
@@ -114,7 +114,7 @@ fun buildMoreDialogForMusic(
             add(
                 DialogItem(
                     context.getString(R.string.go_to_artist),
-                    Icons.Default.ArrowForward,
+                    R.string.fa_user,
                 ) {
                     actions.onClickGoToArtist.invoke(
                         item.data.artistItems!!
