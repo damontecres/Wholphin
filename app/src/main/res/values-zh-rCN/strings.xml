@@ -208,7 +208,7 @@
     <string name="check_for_updates">检查更新</string>
     <string name="combine_continue_next_summary">仅适用于电视剧</string>
     <string name="combine_continue_next"><![CDATA[合并继续观看与即将播放]]></string>
-    <string name="direct_play_ass">直接播放 ASS 字幕</string>
+    <string name="direct_play_ass">使用 libass 处理 ASS 字幕</string>
     <string name="direct_play_pgs">直接播放 PGS 字幕</string>
     <string name="downmix_stereo">始终降混为立体声</string>
     <string name="ffmpeg_extension_pref">使用 FFmpeg 解码模块</string>
