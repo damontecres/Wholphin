@@ -227,7 +227,7 @@
         <item quantity="other">Kurzvideos</item>
     </plurals>
     <string name="combine_continue_next_summary">Trifft nur auf Serien zu</string>
-    <string name="direct_play_ass">Direktwiedergabe ASS Untertitel</string>
+    <string name="direct_play_ass">Libass für ASS Untertitel verwenden</string>
     <string name="direct_play_pgs">Direktwiedergabe PGS Untertitel</string>
     <string name="downmix_stereo">Immer zu Stereo heruntermischen</string>
     <string name="ffmpeg_extension_pref">FFmpeg decoder Modul verwenden</string>
