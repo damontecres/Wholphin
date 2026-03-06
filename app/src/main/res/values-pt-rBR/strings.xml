@@ -65,8 +65,8 @@
     <string name="more">Mais</string>
     <plurals name="movies">
         <item quantity="one">Filmes</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Nome</string>
     <string name="next_up">A Seguir</string>
@@ -81,8 +81,8 @@
     <string name="path">Caminho</string>
     <plurals name="people">
         <item quantity="one">Pessoas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Contagem de Reproduções</string>
     <string name="play_from_here">Reproduzir a partir daqui</string>
@@ -152,8 +152,8 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailers</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Agenda do DVR</string>
     <string name="tv_guide">Guia</string>
@@ -161,8 +161,8 @@
     <string name="tv_seasons">Temporadas</string>
     <plurals name="tv_shows">
         <item quantity="one">Programas de TV</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Desconhecido</string>
@@ -190,53 +190,53 @@
     <string name="extras">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Outro</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Por Trás das Cenas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Músicas Tema</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vídeos Tema</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clipes</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Cenas Deletadas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Entrevistas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Cenas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Amostras</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Curtas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="favorite_items">Favoritar %s</string>
     <plurals name="downloads">
