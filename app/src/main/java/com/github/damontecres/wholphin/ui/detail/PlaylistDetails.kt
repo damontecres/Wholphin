@@ -82,6 +82,7 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -102,6 +103,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
@@ -135,6 +137,7 @@ class PlaylistViewModel
                 ),
             )
         val musicState = musicService.state
+        val playlistMediaType = MutableStateFlow(MediaType.UNKNOWN)
 
         fun init(playlistId: UUID) {
             loading.value = LoadingState.Loading
@@ -153,73 +156,110 @@ class PlaylistViewModel
                         ItemSortBy.DEFAULT,
                         SortOrder.ASCENDING,
                     )
-                loadItems(filter, sortAndDirection)
+                loadItems(filter, sortAndDirection).join()
+                determineMediaType()
             }
         }
 
         fun loadItems(
             filter: GetItemsFilter,
             sortAndDirection: SortAndDirection,
-        ) {
-            viewModelScope.launchIO {
-                backdropService.clearBackdrop()
-                loading.setValueOnMain(LoadingState.Loading)
-                this@PlaylistViewModel.filterAndSort.update {
-                    FilterAndSort(filter, sortAndDirection)
-                }
+        ) = viewModelScope.launchIO {
+            backdropService.clearBackdrop()
+            loading.setValueOnMain(LoadingState.Loading)
+            this@PlaylistViewModel.filterAndSort.update {
+                FilterAndSort(filter, sortAndDirection)
+            }
 
-                serverRepository.currentUser.value?.let { user ->
-                    val playlistId = item.value!!.id
-                    viewModelScope.launchIO {
-                        val libraryDisplayInfo =
-                            libraryDisplayInfoDao.getItem(user, itemId)?.copy(
-                                filter = filter,
+            serverRepository.currentUser.value?.let { user ->
+                val playlistId = item.value!!.id
+                viewModelScope.launchIO {
+                    val libraryDisplayInfo =
+                        libraryDisplayInfoDao.getItem(user, itemId)?.copy(
+                            filter = filter,
+                            sort = sortAndDirection.sort,
+                            direction = sortAndDirection.direction,
+                        )
+                            ?: LibraryDisplayInfo(
+                                userId = user.rowId,
+                                itemId = itemId,
                                 sort = sortAndDirection.sort,
                                 direction = sortAndDirection.direction,
+                                filter = filter,
+                                viewOptions = null,
                             )
-                                ?: LibraryDisplayInfo(
-                                    userId = user.rowId,
-                                    itemId = itemId,
-                                    sort = sortAndDirection.sort,
-                                    direction = sortAndDirection.direction,
-                                    filter = filter,
-                                    viewOptions = null,
-                                )
-                        libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                }
+
+                val request =
+                    filter.applyTo(
+                        GetItemsRequest(
+                            parentId = playlistId,
+                            userId = user.id,
+                            fields = DefaultItemFields,
+                            sortBy = listOf(sortAndDirection.sort),
+                            sortOrder = listOf(sortAndDirection.direction),
+                        ),
+                    )
+                try {
+                    val pager =
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                        ).init()
+
+                    withContext(Dispatchers.Main) {
+                        items.value = pager
+                        loading.value = LoadingState.Success
                     }
-
-                    val request =
-                        filter.applyTo(
-                            GetItemsRequest(
-                                parentId = playlistId,
-                                userId = user.id,
-                                fields = DefaultItemFields,
-                                sortBy = listOf(sortAndDirection.sort),
-                                sortOrder = listOf(sortAndDirection.direction),
-                            ),
-                        )
-                    try {
-                        val pager =
-                            ApiRequestPager(
-                                api,
-                                request,
-                                GetItemsRequestHandler,
-                                viewModelScope,
-                            ).init()
-
-                        withContext(Dispatchers.Main) {
-                            items.value = pager
-                            loading.value = LoadingState.Success
-                        }
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Error fetching playlist %s", itemId)
-                        withContext(Dispatchers.Main) {
-                            items.value = listOf()
-                            loading.value = LoadingState.Error(ex)
-                        }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching playlist %s", itemId)
+                    withContext(Dispatchers.Main) {
+                        items.value = listOf()
+                        loading.value = LoadingState.Error(ex)
                     }
                 }
             }
+        }
+
+        private suspend fun determineMediaType() {
+            var mediaType =
+                super.item.value
+                    ?.data
+                    ?.mediaType ?: MediaType.UNKNOWN
+            mediaType =
+                if (mediaType == MediaType.UNKNOWN) {
+                    val pager = (this@PlaylistViewModel.items.value as? ApiRequestPager<*>)
+                    if (pager != null && pager.size < 50) {
+                        val types =
+                            (0..<50).groupBy { index ->
+                                val pagerItem = pager.getBlocking(index)
+                                when (pagerItem?.type) {
+                                    BaseItemKind.AUDIO -> MediaType.AUDIO
+
+                                    BaseItemKind.VIDEO,
+                                    BaseItemKind.EPISODE,
+                                    BaseItemKind.MOVIE,
+                                    BaseItemKind.BOX_SET,
+                                    -> MediaType.VIDEO
+
+                                    else -> MediaType.UNKNOWN
+                                }
+                            }
+                        if (types.keys.size == 1) {
+                            types.keys.first()
+                        } else {
+                            MediaType.UNKNOWN
+                        }
+                    } else {
+                        MediaType.UNKNOWN
+                    }
+                } else {
+                    mediaType
+                }
+            playlistMediaType.update { mediaType }
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
@@ -233,6 +273,17 @@ class PlaylistViewModel
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
                 backdropService.submit(item)
+            }
+        }
+
+        fun playMusic(
+            index: Int,
+            shuffle: Boolean,
+        ) {
+            viewModelScope.launchDefault {
+                (items.value as? ApiRequestPager<*>)?.let {
+                    musicService.setQueue(it, index, shuffle)
+                }
             }
         }
     }
@@ -258,11 +309,41 @@ fun PlaylistDetails(
     val items by viewModel.items.observeAsState(listOf())
     val filterAndSort by viewModel.filterAndSort.collectAsState()
     val musicState by viewModel.musicState.collectAsState()
+    val playlistMediaType by viewModel.playlistMediaType.collectAsState()
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showConfirmTypeDialog by remember { mutableStateOf(false) }
 
     val goToString = stringResource(R.string.go_to)
     val playFromHereString = stringResource(R.string.play_from_here)
+
+    fun play(
+        index: Int,
+        shuffle: Boolean,
+        mediaTypeOverride: MediaType? = null,
+    ) {
+        when (mediaTypeOverride ?: playlistMediaType) {
+            MediaType.VIDEO -> {
+                viewModel.navigationManager.navigateTo(
+                    Destination.PlaybackList(
+                        itemId = destination.itemId,
+                        startIndex = index,
+                        shuffle = shuffle,
+                        filter = filterAndSort.filter,
+                        sortAndDirection = filterAndSort.sortAndDirection,
+                    ),
+                )
+            }
+
+            MediaType.AUDIO -> {
+                viewModel.playMusic(index, shuffle)
+            }
+
+            else -> {
+                showConfirmTypeDialog = true
+            }
+        }
+    }
 
     PlaylistDetailsContent(
         loadingState = loading,
@@ -270,27 +351,11 @@ fun PlaylistDetails(
         items = items,
         musicState = musicState,
         onChangeBackdrop = viewModel::updateBackdrop,
-        onClickIndex = { index, _ ->
-            viewModel.navigationManager.navigateTo(
-                Destination.PlaybackList(
-                    itemId = destination.itemId,
-                    startIndex = index,
-                    shuffle = false,
-                    filter = filterAndSort.filter,
-                    sortAndDirection = filterAndSort.sortAndDirection,
-                ),
-            )
+        onClickIndex = { index, item ->
+            play(index, false)
         },
         onClickPlay = { shuffle ->
-            viewModel.navigationManager.navigateTo(
-                Destination.PlaybackList(
-                    itemId = destination.itemId,
-                    startIndex = 0,
-                    shuffle = shuffle,
-                    filter = filterAndSort.filter,
-                    sortAndDirection = filterAndSort.sortAndDirection,
-                ),
-            )
+            play(0, shuffle)
         },
         onLongClickIndex = { index, item ->
             longClickDialog =
@@ -309,15 +374,7 @@ fun PlaylistDetails(
                                 playFromHereString,
                                 Icons.Default.PlayArrow,
                             ) {
-                                viewModel.navigationManager.navigateTo(
-                                    Destination.PlaybackList(
-                                        itemId = destination.itemId,
-                                        startIndex = index,
-                                        shuffle = false,
-                                        filter = filterAndSort.filter,
-                                        sortAndDirection = filterAndSort.sortAndDirection,
-                                    ),
-                                )
+                                play(index, false)
                             },
                         ),
                 )
