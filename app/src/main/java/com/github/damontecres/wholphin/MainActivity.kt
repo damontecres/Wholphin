@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
@@ -212,24 +213,25 @@ class MainActivity : AppCompatActivity() {
                         true,
                         appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                     ) {
-                        val requestedDestination =
-                            remember(intent) {
-                                intent?.let(::extractDestination) ?: // Destination.Home()
-                                    // TODO
-                                    Destination.MediaItem(
-                                        itemId = "011ef0c7ca45684f2cd9dd3b020ca5f6".toUUID(),
-                                        type = BaseItemKind.MUSIC_ALBUM,
-                                    )
-                            }
-                        MainContent(
-                            backStack = setupNavigationManager.backStack,
-                            navigationManager = navigationManager,
-                            appPreferences = appPreferences,
-                            backdropService = backdropService,
-                            screensaverService = screensaverService,
-                            requestedDestination = requestedDestination,
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        ProvideLocalClock {
+                            val requestedDestination =
+                                remember(intent) {
+                                    intent?.let(::extractDestination) // ?: Destination.Home()
+                                        ?: Destination.MediaItem(
+                                            itemId = "011ef0c7ca45684f2cd9dd3b020ca5f6".toUUID(),
+                                            type = BaseItemKind.MUSIC_ALBUM,
+                                        )
+                                }
+                            MainContent(
+                                backStack = setupNavigationManager.backStack,
+                                navigationManager = navigationManager,
+                                appPreferences = appPreferences,
+                                backdropService = backdropService,
+                                screensaverService = screensaverService,
+                                requestedDestination = requestedDestination,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                 }
             }

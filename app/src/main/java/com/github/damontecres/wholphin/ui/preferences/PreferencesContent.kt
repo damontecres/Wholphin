@@ -153,7 +153,7 @@ fun PreferencesContent(
             try {
                 System.loadLibrary("mpv")
                 System.loadLibrary("player")
-            } catch (ex: Exception) {
+            } catch (ex: UnsatisfiedLinkError) {
                 Timber.w(ex, "Could not load libmpv")
                 showToast(context, "MPV is not supported on this device")
                 viewModel.preferenceDataStore.updateData {
