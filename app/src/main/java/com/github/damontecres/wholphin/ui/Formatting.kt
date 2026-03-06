@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
@@ -76,7 +77,7 @@ val BaseItemDto.seriesProductionYears: String?
                 append(productionYear.toString())
                 if (status == "Continuing") {
                     append(" - ")
-                    append("Present")
+                    append(WholphinApplication.instance.getString(R.string.series_continueing))
                 } else if (status == "Ended") {
                     endDate?.let {
                         if (it.year != productionYear) {
@@ -167,19 +168,19 @@ fun listToDotString(
         strings.forEachIndexed { index, string ->
             append(string)
             if (index != strings.lastIndex) dot()
-            communityRating?.let {
-                dot()
-                append(String.format(Locale.getDefault(), "%.1f", it))
-                appendInlineContent(id = "star")
-            }
-            criticRating?.let {
-                dot()
-                append("${it.toInt()}%")
-                if (it >= 60f) {
-                    appendInlineContent(id = "fresh")
-                } else {
-                    appendInlineContent(id = "rotten")
-                }
+        }
+        communityRating?.let {
+            dot()
+            append(String.format(Locale.getDefault(), "%.1f", it))
+            appendInlineContent(id = "star")
+        }
+        criticRating?.let {
+            dot()
+            append("${it.toInt()}%")
+            if (it >= 60f) {
+                appendInlineContent(id = "fresh")
+            } else {
+                appendInlineContent(id = "rotten")
             }
         }
     }

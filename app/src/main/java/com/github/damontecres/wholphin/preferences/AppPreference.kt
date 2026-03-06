@@ -186,6 +186,45 @@ sealed interface AppPreference<Pref, T> {
                 summarizer = { value -> value?.toString() },
             )
 
+        val MaxDaysNextUpOptions = listOf(7, 14, 30, 60, 90, 180, 365)
+        val MaxDaysNextUp =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.max_days_next_up,
+                defaultValue = -1,
+                min = 0,
+                // Max is "no limit" stored as -1
+                max = MaxDaysNextUpOptions.lastIndex + 1L,
+                interval = 1,
+                getter = {
+                    MaxDaysNextUpOptions
+                        .indexOf(it.homePagePreferences.maxDaysNextUp)
+                        .takeIf { it in MaxDaysNextUpOptions.indices }
+                        ?.toLong()
+                        ?: MaxDaysNextUpOptions.size.toLong()
+                },
+                setter = { prefs, index ->
+                    prefs.updateHomePagePreferences {
+                        maxDaysNextUp = MaxDaysNextUpOptions.getOrNull(index.toInt()) ?: -1
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val v = MaxDaysNextUpOptions.getOrNull(value.toInt()) ?: -1
+                        if (v == -1) {
+                            WholphinApplication.instance.getString(R.string.no_limit)
+                        } else {
+                            WholphinApplication.instance.resources.getQuantityString(
+                                R.plurals.days,
+                                v,
+                                v.toString(),
+                            )
+                        }
+                    } else {
+                        null
+                    }
+                },
+            )
+
         val CombineContinueNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.combine_continue_next,
@@ -617,6 +656,13 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val CustomizeHome =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.customize_home,
+                destination = Destination.HomeSettings,
+                summary = R.string.customize_home_summary,
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -695,6 +741,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val ManageMedia =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_media_management,
+                defaultValue = false,
+                getter = { it.interfacePreferences.enableMediaManagement },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { enableMediaManagement = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -710,7 +768,7 @@ sealed interface AppPreference<Pref, T> {
         val SubtitleStyle =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.subtitle_style,
-                destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
+                destination = Destination.SubtitleSettings(false),
             )
 
         val RefreshRateSwitching =
@@ -903,6 +961,60 @@ sealed interface AppPreference<Pref, T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val QuickConnect =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.quick_connect,
+                summary = R.string.quick_connect_summary,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
+        val SlideshowDuration =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.slideshow_duration,
+                defaultValue = 5_000,
+                min = 1_000,
+                max = 30.seconds.inWholeMilliseconds,
+                interval = 250,
+                getter = {
+                    it.photoPreferences.slideshowDuration
+                },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences {
+                        slideshowDuration = value
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val seconds = value / 1000.0
+                        WholphinApplication.instance.resources.getString(
+                            R.string.decimal_seconds,
+                            seconds,
+                        )
+                    } else {
+                        null
+                    }
+                },
+            )
+
+        val SlideshowPlayVideos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.play_videos_during_slideshow,
+                defaultValue = false,
+                getter = { it.photoPreferences.slideshowPlayVideos },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences { slideshowPlayVideos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val ScreensaverSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.screensaver_settings,
+                destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
+            )
     }
 }
 
@@ -913,13 +1025,11 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.HomePageItems,
-                    AppPreference.CombineContinueNext,
-                    AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ScreensaverSettings,
                 ),
         ),
         PreferenceGroup(
@@ -946,6 +1056,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.RequireProfilePin,
+                    AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
@@ -968,8 +1079,6 @@ val basicPreferences =
                 ),
         ),
     )
-
-val uiPreferences = listOf<PreferenceGroup>()
 
 private val ExoPlayerSettings =
     listOf(
@@ -1013,10 +1122,14 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ManageMedia,
+                        AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
+                        AppPreference.SlideshowDuration,
+                        AppPreference.SlideshowPlayVideos,
                     ),
             ),
         )
@@ -1088,6 +1201,7 @@ val advancedPreferences =
                 title = R.string.more,
                 preferences =
                     listOf(
+                        AppPreference.QuickConnect,
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,
@@ -1105,6 +1219,24 @@ val liveTvPreferences =
         AppPreference.LiveTvFavoriteChannelsBeginning,
         AppPreference.LiveTvChannelSortByWatched,
         AppPreference.LiveTvColorCodePrograms,
+    )
+
+val screensaverPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.screensaver,
+            preferences =
+                listOf(
+                    ScreensaverPreference.Enabled,
+                    ScreensaverPreference.StartDelay,
+                    ScreensaverPreference.Duration,
+                    ScreensaverPreference.ShowClock,
+                    ScreensaverPreference.Animate,
+                    ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.ItemTypes,
+                    ScreensaverPreference.Start,
+                ),
+        ),
     )
 
 data class AppSwitchPreference<Pref>(
@@ -1161,8 +1293,6 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
-    val toSharedPrefs: (T) -> String,
-    val fromSharedPrefs: (String) -> T?,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

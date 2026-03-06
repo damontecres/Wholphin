@@ -11,12 +11,15 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.hilt.DefaultDispatcher
+import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -42,6 +45,8 @@ class SwitchServerViewModel
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
         val navigationManager: SetupNavigationManager,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         val servers = MutableLiveData<List<JellyfinServer>>(listOf())
         val serverStatus = MutableLiveData<Map<UUID, ServerConnectionStatus>>(mapOf())

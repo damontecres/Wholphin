@@ -1,13 +1,11 @@
 package com.github.damontecres.wholphin.ui.detail
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -40,9 +38,7 @@ fun CollectionFolderBoxSet(
         recursive = recursive,
         sortOptions = BoxSetSortOptions,
         initialSortAndDirection = SortAndDirection(ItemSortBy.DEFAULT, SortOrder.ASCENDING),
-        modifier =
-            modifier
-                .padding(start = 16.dp),
+        modifier = modifier,
         positionCallback = { columns, position ->
             showHeader = position < columns
         },

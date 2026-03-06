@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -82,6 +83,7 @@ fun EpisodeDetails(
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     val moreActions =
@@ -97,17 +99,19 @@ fun EpisodeDetails(
                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                 showPlaylistDialog.makePresent(itemId)
             },
+            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+            onClickDelete = { showDeleteDialog = it },
         )
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
@@ -214,6 +218,7 @@ fun EpisodeDetails(
                                         onClearChosenStreams = {
                                             viewModel.clearChosenStreams(chosenStreams)
                                         },
+                                        canDelete = viewModel.canDelete,
                                     ),
                             )
                     },
@@ -223,6 +228,8 @@ fun EpisodeDetails(
                     favoriteOnClick = {
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
+                    canDelete = viewModel.canDelete,
+                    deleteOnClick = { showDeleteDialog = ep },
                     modifier = modifier,
                 )
             }
@@ -275,6 +282,16 @@ fun EpisodeDetails(
             elevation = 3.dp,
         )
     }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(item)
+                showDeleteDialog = null
+            },
+        )
+    }
 }
 
 private const val HEADER_ROW = 0
@@ -289,6 +306,8 @@ fun EpisodeDetailsContent(
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    canDelete: Boolean,
+    deleteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -303,7 +322,7 @@ fun EpisodeDetailsContent(
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
@@ -346,6 +365,8 @@ fun EpisodeDetailsContent(
                         },
                         trailers = null,
                         trailerOnClick = {},
+                        canDelete = canDelete,
+                        deleteOnClick = deleteOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

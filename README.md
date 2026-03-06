@@ -24,12 +24,14 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 </p>
 
-<img width="1280" height="720" alt="0_3_5_home" src="https://github.com/user-attachments/assets/a485c015-ec21-442d-a757-1f18381bf799" />
+![v0_5_1_home](https://github.com/user-attachments/assets/62bb1703-abdf-4154-9054-e00b6ceb57b5)
 
 ## Features
 
 ### User interface
 
+- Customize the home page to see the content you are interested in
+    - Use poster or thumb images, show/hide titles, add/remove/re-order different types of rows!
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
 - Integration with [Jellyseerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
 - Option to combine Continue Watching & Next Up rows
@@ -112,14 +114,21 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 
 ## Additional screenshots
 
+### Customized home page
+![customize_home_example](https://github.com/user-attachments/assets/9a4f04b7-9604-4ea7-b352-50f2b15dc2f1)
+
 ### Movie library browsing
-<img width="1280" height="771" alt="0 3 0_movies" src="https://github.com/user-attachments/assets/a49829b5-bc2c-4af9-8d5d-2f7d0973ce01" />
+![v0_5_1_library](https://github.com/user-attachments/assets/fad0424b-0631-4438-a8bc-d4fbb95a5bf3)
 
 ### Movie page
-<img width="1280" height="720" alt="0_3_5_movie" src="https://github.com/user-attachments/assets/86af5889-6761-426a-8649-422f9d0a1dc0" />
+![v0_5_1_movie](https://github.com/user-attachments/assets/849aad34-49d5-4864-8de7-005bbcb68ac6)
 
 ### Series page
-<img width="1280" height="720" alt="0_3_5_series" src="https://github.com/user-attachments/assets/2dcb2260-53ce-49d6-9088-72cbd4563c48" />
+![v0_5_1_series](https://github.com/user-attachments/assets/655389e1-6a6f-43bc-85e1-e2feffb20429)
+
+### Genres in library
+![v0_5_1_genres](https://github.com/user-attachments/assets/5bbcbeb6-edc9-42c7-a1d8-d92fa432a498)
+
 
 ### Playlist
-<img width="1280" height="771" alt="0 3 0_playlist" src="https://github.com/user-attachments/assets/7ca589ab-9c88-483a-b769-35ffb5663d9e" />
+![v0_5_1_playlist](https://github.com/user-attachments/assets/98268f7d-479d-41c6-b47b-3e67bbe661bc)

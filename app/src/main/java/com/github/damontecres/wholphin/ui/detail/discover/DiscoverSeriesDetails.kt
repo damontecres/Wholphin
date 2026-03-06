@@ -105,13 +105,13 @@ fun DiscoverSeriesDetails(
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
@@ -463,7 +463,7 @@ fun DiscoverSeriesDetailsHeader(
         ) {
             val padding = 4.dp
             val details =
-                remember(series) {
+                remember(series, rating) {
                     buildList {
                         series.firstAirDate?.let(::add)
                         series.episodeRunTime

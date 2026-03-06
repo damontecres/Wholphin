@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services.hilt
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.work.WorkManager
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -9,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.SeerrApi
+import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
@@ -16,6 +18,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,6 +46,18 @@ annotation class StandardOkHttpClient
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultCoroutineScope
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class IoDispatcher
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultDispatcher
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -55,12 +70,6 @@ object AppModule {
             name = context.getString(R.string.app_name),
             version = BuildConfig.VERSION_NAME,
         )
-
-    @Provides
-    @Singleton
-    fun deviceInfo(
-        @ApplicationContext context: Context,
-    ): DeviceInfo = androidDevice(context)
 
     @StandardOkHttpClient
     @Provides
@@ -106,12 +115,12 @@ object AppModule {
     @Singleton
     fun okHttpFactory(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
-    ) = OkHttpFactory(okHttpClient)
+    ) = CoroutineContextApiClientFactory(OkHttpFactory(okHttpClient))
 
     @Provides
     @Singleton
     fun jellyfin(
-        okHttpFactory: OkHttpFactory,
+        okHttpFactory: CoroutineContextApiClientFactory,
         @ApplicationContext context: Context,
         clientInfo: ClientInfo,
         deviceInfo: DeviceInfo,
@@ -173,12 +182,47 @@ object AppModule {
 
     @Provides
     @Singleton
+    @IoDispatcher
+    fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+    @Provides
+    @Singleton
     @IoCoroutineScope
-    fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    fun ioCoroutineScope(
+        @IoDispatcher dispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+
+    @Provides
+    @Singleton
+    @DefaultDispatcher
+    fun defaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    @Singleton
+    @DefaultCoroutineScope
+    fun defaultCoroutineScope(
+        @DefaultDispatcher dispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+
+    @Provides
+    @Singleton
+    fun workManager(
+        @ApplicationContext context: Context,
+    ): WorkManager = WorkManager.getInstance(context)
 
     @Provides
     @Singleton
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DeviceModule {
+    @Provides
+    @Singleton
+    fun deviceInfo(
+        @ApplicationContext context: Context,
+    ): DeviceInfo = androidDevice(context)
 }

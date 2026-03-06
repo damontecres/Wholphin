@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.api.seerr.model.PublicSettings
 import com.github.damontecres.wholphin.api.seerr.model.User
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.SeerrServer
@@ -24,8 +25,10 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.supervisorScope
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import javax.inject.Inject
@@ -44,18 +47,33 @@ class SeerrServerRepository
         private val serverRepository: ServerRepository,
         @param:StandardOkHttpClient private val okHttpClient: OkHttpClient,
     ) {
-        private val _current = MutableStateFlow<CurrentSeerr?>(null)
-        val current: StateFlow<CurrentSeerr?> = _current
-        val currentServer: Flow<SeerrServer?> = current.map { it?.server }
-        val currentUser: Flow<SeerrUser?> = current.map { it?.user }
+        private val _connection =
+            MutableStateFlow<SeerrConnectionStatus>(SeerrConnectionStatus.NotConfigured)
+        val connection: StateFlow<SeerrConnectionStatus> = _connection
+
+        val current: Flow<CurrentSeerr?> =
+            _connection.map { (it as? SeerrConnectionStatus.Success)?.current }
+        val currentServer: Flow<SeerrServer?> =
+            connection.map { (it as? SeerrConnectionStatus.Success)?.current?.server }
+        val currentUser: Flow<SeerrUser?> =
+            connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
 
         /**
          * Whether Seerr integration is currently active of not
          */
-        val active: Flow<Boolean> = current.map { it != null && seerrApi.active }
+        val active: Flow<Boolean> =
+            connection.map { it is SeerrConnectionStatus.Success && seerrApi.active }
 
         fun clear() {
-            _current.update { null }
+            _connection.update { SeerrConnectionStatus.NotConfigured }
+            seerrApi.update("", null)
+        }
+
+        fun error(
+            serverUrl: String,
+            exception: Exception,
+        ) {
+            _connection.update { SeerrConnectionStatus.Error(serverUrl, exception) }
             seerrApi.update("", null)
         }
 
@@ -65,8 +83,10 @@ class SeerrServerRepository
             userConfig: SeerrUserConfig,
         ) {
             val publicSettings = seerrApi.api.settingsApi.settingsPublicGet()
-            _current.update {
-                CurrentSeerr(server, user, userConfig, publicSettings)
+            _connection.update {
+                SeerrConnectionStatus.Success(
+                    CurrentSeerr(server, user, userConfig, publicSettings),
+                )
             }
         }
 
@@ -145,7 +165,7 @@ class SeerrServerRepository
                     apiKey,
                     okHttpClient
                         .newBuilder()
-                        .connectTimeout(5.seconds)
+                        .connectTimeout(2.seconds)
                         .readTimeout(6.seconds)
                         .build(),
                 )
@@ -153,10 +173,11 @@ class SeerrServerRepository
             return LoadingState.Success
         }
 
-        suspend fun removeServer() {
-            val current = _current.value ?: return
-            seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
+        suspend fun removeServerForCurrentUser(): Boolean {
+            val current = current.firstOrNull() ?: return false
+            val rows = seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
             clear()
+            return rows > 0
         }
     }
 
@@ -164,6 +185,19 @@ class SeerrServerRepository
  * A [SeerrUser] config
  */
 typealias SeerrUserConfig = User
+
+sealed interface SeerrConnectionStatus {
+    data object NotConfigured : SeerrConnectionStatus
+
+    data class Error(
+        val serverUrl: String,
+        val ex: Exception,
+    ) : SeerrConnectionStatus
+
+    data class Success(
+        val current: CurrentSeerr,
+    ) : SeerrConnectionStatus
+}
 
 data class CurrentSeerr(
     val server: SeerrServer,
@@ -226,6 +260,7 @@ class UserSwitchListener
         private val seerrServerRepository: SeerrServerRepository,
         private val seerrServerDao: SeerrServerDao,
         private val seerrApi: SeerrApi,
+        private val homeSettingsService: HomeSettingsService,
     ) {
         init {
             context as AppCompatActivity
@@ -233,43 +268,58 @@ class UserSwitchListener
                 serverRepository.currentUser.asFlow().collect { user ->
                     Timber.d("New user")
                     seerrServerRepository.clear()
+                    homeSettingsService.currentSettings.update { HomePageResolvedSettings.EMPTY }
                     if (user != null) {
-                        seerrServerDao
-                            .getUsersByJellyfinUser(user.rowId)
-                            .firstOrNull()
-                            ?.let { seerrUser ->
-                                val server = seerrServerDao.getServer(seerrUser.serverId)?.server
-                                if (server != null) {
-                                    Timber.i("Found a seerr user & server")
-                                    seerrApi.update(server.url, seerrUser.credential)
-                                    val userConfig =
-                                        if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
-                                            try {
-                                                login(
-                                                    seerrApi.api,
-                                                    seerrUser.authMethod,
-                                                    seerrUser.username,
-                                                    seerrUser.password,
-                                                )
-                                            } catch (ex: Exception) {
-                                                Timber.w(ex, "Error logging into %s", server.url)
-                                                seerrServerRepository.clear()
-                                                return@let
-                                            }
-                                        } else {
-                                            try {
-                                                seerrApi.api.usersApi.authMeGet()
-                                            } catch (ex: Exception) {
-                                                Timber.w(ex, "Error logging into %s", server.url)
-                                                seerrServerRepository.clear()
-                                                return@let
-                                            }
-                                        }
-                                    seerrServerRepository.set(server, seerrUser, userConfig)
-                                }
-                            }
+                        switchUser(user)
                     }
                 }
             }
         }
+
+        private suspend fun switchUser(user: JellyfinUser) =
+            supervisorScope {
+                // Check for home settings
+                launchIO {
+                    homeSettingsService.loadCurrentSettings(user.id)
+                }
+                // Check for seerr server
+                launchIO {
+                    seerrServerDao
+                        .getUsersByJellyfinUser(user.rowId)
+                        .lastOrNull()
+                        ?.let { seerrUser ->
+                            val server =
+                                seerrServerDao.getServer(seerrUser.serverId)?.server
+                            if (server != null) {
+                                Timber.i("Found a seerr user & server")
+                                try {
+                                    seerrApi.update(server.url, seerrUser.credential)
+                                    val userConfig =
+                                        if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
+                                            login(
+                                                seerrApi.api,
+                                                seerrUser.authMethod,
+                                                seerrUser.username,
+                                                seerrUser.password,
+                                            )
+                                        } else {
+                                            seerrApi.api.usersApi.authMeGet()
+                                        }
+                                    seerrServerRepository.set(
+                                        server,
+                                        seerrUser,
+                                        userConfig,
+                                    )
+                                } catch (ex: Exception) {
+                                    Timber.w(
+                                        ex,
+                                        "Error logging into %s",
+                                        server.url,
+                                    )
+                                    seerrServerRepository.error(server.url, ex)
+                                }
+                            }
+                        }
+                }
+            }
     }

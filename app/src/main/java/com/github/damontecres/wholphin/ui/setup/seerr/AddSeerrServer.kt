@@ -4,7 +4,6 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -62,19 +61,23 @@ fun AddSeerrServerApiKey(
         val passwordFocusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
         Text(
-            text = "Enter URL & API Key",
+            text = stringResource(R.string.enter_url_api_key),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
+        val labelWidth = 90.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "URL",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.url),
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = url,
@@ -104,8 +107,11 @@ fun AddSeerrServerApiKey(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "API Key",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.api_key),
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = apiKey,
@@ -173,7 +179,7 @@ fun AddSeerrServerUsername(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         val labelWidth = 90.dp
         Row(

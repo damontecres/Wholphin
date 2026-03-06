@@ -171,35 +171,35 @@
     <string name="extras">Επιπρόσθετα</string>
     <plurals name="other_extras">
         <item quantity="one">Άλλο</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Παρασκήνια</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Αποσπάσματα</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Διαγραμμένες σκηνές</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Συνεντεύξεις</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Σκηνές</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Δείγματα</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Χαρακτηριστικά</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="auto_check_for_updates">Αυτόματος έλεγχος για ενημερώσεις</string>
     <string name="auto_play_next_delay">Καθυστέρηση πριν την έναρξη του επόμενου</string>

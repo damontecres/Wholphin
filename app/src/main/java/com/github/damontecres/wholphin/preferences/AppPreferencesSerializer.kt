@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.google.protobuf.InvalidProtocolBufferException
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -82,6 +83,7 @@ class AppPreferencesSerializer
                                 maxItemsPerRow = AppPreference.HomePageItems.defaultValue.toInt()
                                 enableRewatchingNextUp = AppPreference.RewatchNextUp.defaultValue
                                 combineContinueNext = AppPreference.CombineContinueNext.defaultValue
+                                maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
                             }.build()
                     interfacePreferences =
                         InterfacePreferences
@@ -100,6 +102,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+                                hdrSubtitlesPreferences =
+                                    SubtitlePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            resetSubtitles()
+                                        }.build()
 
                                 liveTvPreferences =
                                     LiveTvPreferences
@@ -113,6 +121,20 @@ class AppPreferencesSerializer
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
+
+                                screensaverPreference =
+                                    ScreensaverPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                                            duration = ScreensaverPreference.DEFAULT_DURATION
+                                            animate = ScreensaverPreference.Animate.defaultValue
+                                            maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                            showClock = ScreensaverPreference.ShowClock.defaultValue
+                                            clearItemTypes()
+                                            addItemTypes(BaseItemKind.MOVIE.serialName)
+                                            addItemTypes(BaseItemKind.SERIES.serialName)
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -121,6 +143,14 @@ class AppPreferencesSerializer
                             .apply {
                                 imageDiskCacheSizeBytes =
                                     AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                            }.build()
+
+                    photoPreferences =
+                        PhotoPreferences
+                            .newBuilder()
+                            .apply {
+                                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+                                slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
                             }.build()
                 }.build()
 
@@ -180,6 +210,16 @@ inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.B
         advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        photoPreferences = photoPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
+    }
+
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
@@ -193,4 +233,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
     margin = SubtitleSettings.Margin.defaultValue.toInt()
     edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+    imageSubtitleOpacity = SubtitleSettings.ImageOpacity.defaultValue.toInt()
 }

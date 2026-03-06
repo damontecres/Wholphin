@@ -10,7 +10,7 @@ runs:
     - name: Load ffmpeg module cache
       id: cache_ffmpeg_module
       if: ${{ inputs.cache }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: |
           app/libs
@@ -18,7 +18,7 @@ runs:
     - name: Load libmpv module cache
       id: cache_libmpv_module
       if: ${{ inputs.cache }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: |
           app/src/main/libs
@@ -43,7 +43,7 @@ runs:
         ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
     - name: Save ffmpeg module cache
       id: cache_ffmpeg_module_save
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           app/libs
@@ -75,7 +75,7 @@ runs:
         #ln -s libs jniLibs
     - name: Save libmpv module cache
       id: cache_libmpv_module_save
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           app/src/main/libs

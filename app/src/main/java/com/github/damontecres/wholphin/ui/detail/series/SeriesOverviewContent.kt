@@ -88,6 +88,8 @@ fun SeriesOverviewContent(
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
     personOnClick: (Person) -> Unit,
+    canDelete: (BaseItem) -> Boolean,
+    deleteOnClick: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -127,14 +129,14 @@ fun SeriesOverviewContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(vertical = 16.dp)
                     .focusGroup()
                     .nestedScroll(scrollConnection)
                     .verticalScroll(scrollState)
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier =
                     Modifier
                         .focusGroup()
@@ -142,9 +144,9 @@ fun SeriesOverviewContent(
             ) {
                 val paddingValues =
                     if (preferences.appPreferences.interfacePreferences.showClock) {
-                        PaddingValues(start = 16.dp, end = 100.dp)
+                        PaddingValues(start = 0.dp, end = 184.dp)
                     } else {
-                        PaddingValues(start = 16.dp, end = 16.dp)
+                        PaddingValues(start = 0.dp, end = 16.dp)
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
@@ -159,9 +161,10 @@ fun SeriesOverviewContent(
                         Modifier
                             .focusRequester(tabRowFocusRequester)
                             .padding(paddingValues)
+                            .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier)
+                SeriesName(series.name, Modifier.padding(start = 8.dp))
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
@@ -266,6 +269,7 @@ fun SeriesOverviewContent(
                                             },
                                     interactionSource = interactionSource,
                                     cardHeight = 120.dp,
+                                    useSeriesForPrimary = false,
                                 )
                             }
                         }
@@ -292,10 +296,12 @@ fun SeriesOverviewContent(
                                 }
                             }
                         },
+                        canDelete = canDelete.invoke(ep),
+                        deleteOnClick = { deleteOnClick.invoke(ep) },
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp),
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }

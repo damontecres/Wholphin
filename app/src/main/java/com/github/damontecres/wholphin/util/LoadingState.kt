@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.util
 
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 
 /**
  * Generic state for loading something from the API
@@ -48,6 +49,9 @@ sealed interface RowLoadingState {
 sealed interface HomeRowLoadingState {
     val title: String
 
+    val completed: Boolean
+        get() = this is Success || this is Error
+
     data class Pending(
         override val title: String,
     ) : HomeRowLoadingState
@@ -59,6 +63,7 @@ sealed interface HomeRowLoadingState {
     data class Success(
         override val title: String,
         val items: List<BaseItem?>,
+        val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowLoadingState
 
     data class Error(

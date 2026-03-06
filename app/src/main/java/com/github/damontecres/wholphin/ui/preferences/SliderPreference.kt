@@ -65,7 +65,7 @@ fun SliderPreference(
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
@@ -77,7 +77,6 @@ fun SliderPreference(
                 max = preference.max,
                 interval = preference.interval,
                 onChange = onChange,
-                color = MaterialTheme.colorScheme.border,
                 enableWrapAround = false,
                 interactionSource = interactionSource,
                 modifier = Modifier.weight(1f),

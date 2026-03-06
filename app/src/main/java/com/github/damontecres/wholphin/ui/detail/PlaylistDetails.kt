@@ -373,7 +373,6 @@ fun PlaylistDetailsContent(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier =
                     Modifier
-                        .padding(horizontal = 8.dp)
                         .fillMaxWidth(),
             ) {
                 PlaylistDetailsHeader(
@@ -386,7 +385,7 @@ fun PlaylistDetailsContent(
                     getPossibleFilterValues = getPossibleFilterValues,
                     modifier =
                         Modifier
-                            .padding(start = 16.dp, top = 80.dp)
+                            .padding(top = 80.dp)
                             .fillMaxWidth(.25f),
                 )
                 when (loadingState) {

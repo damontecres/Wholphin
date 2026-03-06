@@ -25,6 +25,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
+import java.util.UUID
 import kotlin.time.Duration
 
 @Serializable
@@ -32,6 +33,8 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
+    val imageUrlOverride: String? = null,
+    val destinationOverride: Destination? = null,
 ) : CardGridItem {
     val id get() = data.id
 
@@ -69,6 +72,8 @@ data class BaseItem(
         }
     }
 
+    val canDelete: Boolean get() = data.canDelete == true
+
     @Transient
     val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
@@ -91,12 +96,20 @@ data class BaseItem(
             episodeCornerText =
                 data.indexNumber?.let { "E$it" }
                     ?: data.premiereDate?.let(::formatDateTime),
-            episdodeUnplayedCornerText =
-                data.indexNumber?.let { "E$it" }
-                    ?: data.userData
-                        ?.unplayedItemCount
-                        ?.takeIf { it > 0 }
-                        ?.let { abbreviateNumber(it) },
+            episodeUnplayedCornerText =
+                if (type == BaseItemKind.SERIES ||
+                    type == BaseItemKind.SEASON ||
+                    type == BaseItemKind.EPISODE ||
+                    type == BaseItemKind.BOX_SET
+                ) {
+                    data.indexNumber?.let { "E$it" }
+                        ?: data.userData
+                            ?.unplayedItemCount
+                            ?.takeIf { it > 0 }
+                            ?.let { abbreviateNumber(it) }
+                } else {
+                    null
+                },
             quickDetails =
                 buildAnnotatedString {
                     val details =
@@ -106,6 +119,12 @@ data class BaseItem(
                                 data.premiereDate?.let { add(DateFormatter.format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
+                            } else if (type == BaseItemKind.PHOTO) {
+                                if (data.productionYear != null) {
+                                    add(data.productionYear!!.toString())
+                                } else if (data.premiereDate != null) {
+                                    add(data.premiereDate!!.toLocalDate().toString())
+                                }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -154,7 +173,8 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
-    fun destination(): Destination {
+    fun destination(index: Int? = null): Destination {
+        if (destinationOverride != null) return destinationOverride
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -174,6 +194,25 @@ data class BaseItem(
                         BaseItemKind.SERIES,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
+
+                BaseItemKind.TV_CHANNEL -> {
+                    Destination.Playback(
+                        itemId = id,
+                        positionMs = 0L,
+                    )
+                }
+
+                BaseItemKind.PROGRAM -> {
+                    val channelId = data.channelId
+                    if (channelId != null) {
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 else -> {
@@ -201,6 +240,31 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 @Immutable
 data class BaseItemUi(
     val episodeCornerText: String?,
-    val episdodeUnplayedCornerText: String?,
+    val episodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
+)
+
+fun createGenreDestination(
+    genreId: UUID,
+    genreName: String,
+    parentId: UUID,
+    parentName: String?,
+    includeItemTypes: List<BaseItemKind>?,
+) = Destination.FilteredCollection(
+    itemId = parentId,
+    filter =
+        CollectionFolderFilter(
+            nameOverride =
+                listOfNotNull(
+                    genreName,
+                    parentName,
+                ).joinToString(" "),
+            filter =
+                GetItemsFilter(
+                    genres = listOf(genreId),
+                    includeItemTypes = includeItemTypes,
+                ),
+            useSavedLibraryDisplayInfo = false,
+        ),
+    recursive = true,
 )

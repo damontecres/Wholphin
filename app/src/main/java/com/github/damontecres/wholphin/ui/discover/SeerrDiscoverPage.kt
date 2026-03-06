@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.discover
 
 import android.content.Context
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +26,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -47,6 +51,7 @@ import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -186,6 +191,7 @@ data class DiscoverState(
     val upcomingTv: DiscoverRowData = DiscoverRowData.EMPTY,
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SeerrDiscoverPage(
     preferences: UserPreferences,
@@ -249,28 +255,41 @@ fun SeerrDiscoverPage(
                     .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
                     .fillMaxHeight(.25f),
         )
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 40.dp),
-            modifier =
-                Modifier
-                    .focusRestorer()
-                    .fillMaxSize(),
+        val density = LocalDensity.current
+        val spaceAbovePx =
+            with(density) {
+                // The size of the row titles & spacing
+                50.dp.toPx()
+            }
+        val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+        CompositionLocalProvider(
+            LocalBringIntoViewSpec provides ScrollToTopBringIntoViewSpec(spaceAbovePx),
         ) {
-            itemsIndexed(rows) { rowIndex, row ->
-                DiscoverRow(
-                    row = row,
-                    onClickItem = { index, item ->
-                        position = RowColumn(rowIndex, index)
-                        viewModel.navigationManager.navigateTo(item.destination)
-                    },
-                    onLongClickItem = { index, item -> },
-                    onCardFocus = { index -> position = RowColumn(rowIndex, index) },
-                    focusRequester = focusRequesters[rowIndex],
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
-                )
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 40.dp),
+                modifier =
+                    Modifier
+                        .focusRestorer()
+                        .fillMaxSize(),
+            ) {
+                itemsIndexed(rows) { rowIndex, row ->
+                    CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
+                        DiscoverRow(
+                            row = row,
+                            onClickItem = { index, item ->
+                                position = RowColumn(rowIndex, index)
+                                viewModel.navigationManager.navigateTo(item.destination)
+                            },
+                            onLongClickItem = { index, item -> },
+                            onCardFocus = { index -> position = RowColumn(rowIndex, index) },
+                            focusRequester = focusRequesters[rowIndex],
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth(),
+                        )
+                    }
+                }
             }
         }
     }

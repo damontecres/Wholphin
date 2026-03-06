@@ -2,11 +2,15 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +21,7 @@ import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -34,12 +39,16 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -63,12 +72,14 @@ fun ExpandablePlayButtons(
     resumePosition: Duration,
     watched: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     trailers: List<Trailer>?,
     playOnClick: (position: Duration) -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
+    deleteOnClick: () -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -149,6 +160,16 @@ fun ExpandablePlayButtons(
                 )
             }
         }
+        if (canDelete) {
+            item("delete") {
+                DeleteButton(
+                    onClick = deleteOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        }
 
         // More button
         item("more") {
@@ -180,6 +201,63 @@ fun ExpandablePlayButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     mirrorIcon: Boolean = false,
     enabled: Boolean = true,
+) = ExpandablePlayButton(
+    title = title,
+    resume = resume,
+    icon = {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+        )
+    },
+    onClick = onClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+    enabled = enabled,
+)
+
+@Composable
+fun ExpandablePlayButton(
+    @StringRes title: Int,
+    resume: Duration,
+    icon: Painter,
+    onClick: (position: Duration) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    mirrorIcon: Boolean = false,
+    enabled: Boolean = true,
+) = ExpandablePlayButton(
+    title = title,
+    resume = resume,
+    icon = {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+        )
+    },
+    onClick = onClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+    enabled = enabled,
+)
+
+@Composable
+fun ExpandablePlayButton(
+    @StringRes title: Int,
+    resume: Duration,
+    icon: @Composable BoxScope.() -> Unit,
+    onClick: (position: Duration) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
@@ -195,19 +273,13 @@ fun ExpandablePlayButton(
         interactionSource = interactionSource,
     ) {
         Box(
+            contentAlignment = Alignment.Center,
             modifier =
                 Modifier
-                    .padding(start = 2.dp, top = 2.dp)
+                    .padding(start = 2.dp)
                     .height(MinButtonSize),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(28.dp)
-                        .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
-            )
+            icon.invoke(this)
         }
         AnimatedVisibility(isFocused) {
             Spacer(Modifier.size(8.dp))
@@ -307,6 +379,48 @@ fun TrailerButton(
     }
 }
 
+@Composable
+fun DeleteButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val iconTint by
+        animateColorAsState(
+            targetValue =
+                if (focused) {
+                    Color.Red.copy(alpha = .8f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.8f,
+                    )
+                },
+            animationSpec =
+                tween(
+                    easing = LinearEasing,
+                ),
+        )
+    ExpandablePlayButton(
+        title = R.string.delete,
+        resume = Duration.ZERO,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = null,
+                tint = if (iconTint.isSpecified) iconTint else LocalContentColor.current,
+                modifier =
+                    Modifier
+                        .padding(start = 2.dp)
+                        .size(24.dp),
+            )
+        },
+        onClick = { onClick.invoke() },
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
 @PreviewTvSpec
 @Composable
 private fun ExpandablePlayButtonsPreview() {
@@ -322,6 +436,8 @@ private fun ExpandablePlayButtonsPreview() {
             buttonOnFocusChanged = {},
             trailers = listOf(),
             trailerOnClick = {},
+            canDelete = true,
+            deleteOnClick = {},
             modifier = Modifier,
         )
     }
@@ -343,6 +459,13 @@ private fun ViewOptionsPreview() {
                 onClick = {},
                 interactionSource = source,
             )
+            ExpandablePlayButton(
+                title = R.string.play,
+                resume = Duration.ZERO,
+                icon = painterResource(R.drawable.baseline_pause_24),
+                onClick = {},
+                interactionSource = source,
+            )
             ExpandableFaButton(
                 title = R.string.play,
                 iconStringRes = R.string.fa_eye,
@@ -358,12 +481,19 @@ private fun ViewOptionsPreview() {
                     onClick = {},
                     modifier = Modifier,
                 )
+                DeleteButton(
+                    onClick = {},
+                )
                 SortByButton(
                     sortOptions = listOf(),
                     current = SortAndDirection(ItemSortBy.DEFAULT, SortOrder.ASCENDING),
                     onSortChange = {},
                 )
             }
+            DeleteButton(
+                onClick = {},
+                interactionSource = source,
+            )
         }
     }
 }

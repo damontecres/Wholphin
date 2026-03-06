@@ -107,6 +107,7 @@ void *event_thread(void *arg)
         case MPV_EVENT_END_FILE:
             mp_end_file = (mpv_event_end_file*)mp_event->data;
             sendEndFileEventToJava(env, mp_end_file);
+            break;
         default:
             ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
             sendEventToJava(env, mp_event->event_id);

@@ -7,7 +7,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
@@ -45,42 +44,9 @@ android {
         targetSdk = 36
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            isDebuggable = false
-        }
-        debug {
-            isMinifyEnabled = false
-            isDebuggable = true
-            applicationIdSuffix = ".debug"
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true
-    }
-    kotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
-            javaParameters = true
-        }
-    }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
-    room {
-        schemaDirectory("$projectDir/schemas")
-    }
     signingConfigs {
         if (shouldSign) {
             create("ci") {
@@ -98,14 +64,15 @@ android {
             }
         }
     }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            isDebuggable = false
             if (shouldSign) {
                 signingConfig = signingConfigs.getByName("ci")
             } else {
@@ -120,10 +87,11 @@ android {
                 }
             }
         }
+
         debug {
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            }
+            isMinifyEnabled = false
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
         }
 
         applicationVariants.all {
@@ -138,6 +106,25 @@ android {
                 }
         }
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+    kotlin {
+        compilerOptions {
+            languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
+            jvmTarget = JvmTarget.JVM_11
+            javaParameters = true
+        }
+    }
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 
     splits {
         abi {
@@ -150,7 +137,13 @@ android {
 
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("$buildDir/generated/seerr_api/src/main/kotlin")
+            kotlin.directories += "$buildDir/generated/seerr_api/src/main/kotlin"
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -223,6 +216,7 @@ dependencies {
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
@@ -266,6 +260,8 @@ dependencies {
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.testing)
     implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.media3.effect)
+    implementation(libs.androidx.runner)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
@@ -284,6 +280,8 @@ dependencies {
     ksp(libs.auto.service.ksp)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
+    implementation(libs.kache)
+    implementation(libs.kache.file)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -299,5 +297,12 @@ dependencies {
 
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.core.testing)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.ui.test.manifest)
 }

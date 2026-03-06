@@ -25,9 +25,11 @@ import kotlin.time.Duration.Companion.seconds
 
 data class MoreDialogActions(
     val navigateTo: (Destination) -> Unit,
-    var onClickWatch: (UUID, Boolean) -> Unit,
-    var onClickFavorite: (UUID, Boolean) -> Unit,
-    var onClickAddPlaylist: (UUID) -> Unit,
+    val onClickWatch: (UUID, Boolean) -> Unit,
+    val onClickFavorite: (UUID, Boolean) -> Unit,
+    val onClickAddPlaylist: (UUID) -> Unit,
+    val onSendMediaInfo: (UUID) -> Unit,
+    val onClickDelete: (BaseItem) -> Unit,
 )
 
 enum class ClearChosenStreams {
@@ -61,6 +63,7 @@ fun buildMoreDialogItems(
     watched: Boolean,
     favorite: Boolean,
     canClearChosenStreams: Boolean,
+    canDelete: Boolean,
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
@@ -138,6 +141,17 @@ fun buildMoreDialogItems(
                 actions.onClickAddPlaylist.invoke(item.id)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
@@ -205,6 +219,14 @@ fun buildMoreDialogItems(
                 )
             },
         )
+        add(
+            DialogItem(
+                text = R.string.send_media_info_log_to_server,
+                iconStringRes = R.string.fa_file_video,
+            ) {
+                actions.onSendMediaInfo.invoke(item.id)
+            },
+        )
     }
 
 fun buildMoreDialogItemsForHome(
@@ -214,6 +236,7 @@ fun buildMoreDialogItemsForHome(
     playbackPosition: Duration,
     watched: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {
@@ -281,6 +304,17 @@ fun buildMoreDialogItemsForHome(
                 actions.onClickAddPlaylist.invoke(itemId)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
@@ -314,6 +348,14 @@ fun buildMoreDialogItemsForHome(
                 },
             )
         }
+        add(
+            DialogItem(
+                text = R.string.send_media_info_log_to_server,
+                iconStringRes = R.string.fa_file_video,
+            ) {
+                actions.onSendMediaInfo.invoke(itemId)
+            },
+        )
     }
 
 fun buildMoreDialogItemsForPerson(
