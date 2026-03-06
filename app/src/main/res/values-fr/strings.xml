@@ -221,8 +221,8 @@
     <string name="font_opacity">Opacité de la police</string>
     <string name="edge_style">Style des contours</string>
     <string name="edge_color">Couleur des contours</string>
-    <string name="background_opacity">Opacité de l’arrière-plan</string>
-    <string name="background_style">Style de l’arrière-plan</string>
+    <string name="background_opacity">Opacité de l\'arrière-plan</string>
+    <string name="background_style">Style de l\'arrière-plan</string>
     <string name="subtitle_style">Style des sous-titres</string>
     <string name="background_color">Couleur de fond</string>
     <string name="reset">Réinitialiser</string>
@@ -234,10 +234,10 @@
     <string name="exoplayer_options">Options ExoPlayer</string>
     <string name="skip_segment_unknown">Passer le segment</string>
     <string name="skip_segment_commercial">Passer les publicités</string>
-    <string name="skip_segment_preview">Passer l’aperçu</string>
+    <string name="skip_segment_preview">Passer l\'aperçu</string>
     <string name="skip_segment_recap">Passer le récapitulatif</string>
     <string name="skip_segment_outro">Passer le générique de fin</string>
-    <string name="skip_segment_intro">Passer l’intro</string>
+    <string name="skip_segment_intro">Passer l\'intro</string>
     <string name="played">Lu</string>
     <string name="filter">Filtre</string>
     <string name="year">Année</string>
@@ -275,7 +275,7 @@
     <string name="play_theme_music">Lire la musique de thème</string>
     <string name="skip_back_on_resume_preference">Revenir en arrière à la reprise de la lecture</string>
     <string name="skip_commercials_behavior">Comportement de saut des publicités</string>
-    <string name="skip_intro_behavior">Comportement de saut de l’intro</string>
+    <string name="skip_intro_behavior">Comportement de saut de l\'intro</string>
     <string name="skip_outro_behavior">Comportement de saut du générique de fin</string>
     <string name="skip_previews_behavior">Comportement de saut des aperçus</string>
     <string name="skip_recap_behavior">Comportement de saut du récapitulatif</string>
@@ -289,7 +289,7 @@
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
-    <string name="combine_continue_next"><![CDATA[Combiner "Continuer à regarder" & "À suivre"]]></string>
+    <string name="combine_continue_next"><![CDATA[Combiner \"Continuer à regarder\" & \"À suivre\"]]></string>
     <string name="download_and_update"><![CDATA[Télécharger & Mettre à jour]]></string>
     <string name="search_and_download"><![CDATA[Rechercher & Télécharger]]></string>
     <string name="tv_dvr_schedule">Calendrier du DVR</string>
@@ -544,12 +544,12 @@
     <string name="image_type_thumb">Miniature</string>
     <string name="backdrop_style_dynamic">Image avec couleur dynamique</string>
     <string name="backdrop_style_image">Image uniquement</string>
-    <string name="enter_url_api_key">&lt; ![CDATA[Entrez l\'URL et la clé API]]&gt;</string>
+    <string name="enter_url_api_key">Entrez l\'URL et la clé API</string>
     <string name="api_key">Clé API</string>
     <string name="seerr_login">Se connecter au serveur Seerr</string>
     <string name="seerr_jellyfin_user">Utilisateur Jellyfin</string>
     <string name="seerr_local_user">Utilisateur local</string>
-    <string name="search_and_download_subtitles">&lt; ![CDATA[Rechercher et télécharger des sous-titres]]&gt;</string>
+    <string name="search_and_download_subtitles">Rechercher et télécharger des sous-titres</string>
     <string name="no_subtitles_found">Aucun sous-titre distant n\'a été trouvé</string>
     <string name="series_continueing">Présent</string>
     <string name="in_app_screensaver">Utiliser l\'économiseur d\'écran intégré</string>
