@@ -39,7 +39,6 @@ import org.jellyfin.sdk.model.api.LyricLine
 @Composable
 fun LyricsContent(
     lyricsHaveFocus: Boolean,
-    synced: Boolean,
     lyrics: LyricDto?,
     currentLyricPosition: Int?,
     onClick: (LyricLine) -> Unit,
@@ -50,11 +49,11 @@ fun LyricsContent(
         remember(lyrics) { List(lyrics?.lyrics.orEmpty().size) { FocusRequester() } }
     val listState = rememberLazyListState(currentLyricPosition ?: 0)
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    if (synced) {
+    if (!lyricsHaveFocus) {
         LaunchedEffect(currentLyricPosition) {
-            if (currentLyricPosition != null && !lyricsHaveFocus) {
+            if (currentLyricPosition != null) {
                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let {
-                    if (currentLyricPosition !in 0..it) {
+                    if (currentLyricPosition !in listState.firstVisibleItemIndex..it) {
                         listState.animateScrollToItem(currentLyricPosition)
                     }
                 }

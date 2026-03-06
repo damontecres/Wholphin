@@ -220,7 +220,6 @@ fun NowPlayingPage(
                         .fillMaxHeight(),
             ) {
                 LyricsContent(
-                    synced = true,
                     lyrics = state.lyrics,
                     currentLyricPosition = state.currentLyricIndex,
                     lyricsHaveFocus = lyricsHaveFocus,
