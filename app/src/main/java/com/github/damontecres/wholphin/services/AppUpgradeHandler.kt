@@ -251,7 +251,7 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.5.0-6-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.5.3-0-g0"))) {
         appPreferences.updateData {
             it.updateScreensaverPreferences {
                 startDelay = ScreensaverPreference.DEFAULT_START_DELAY

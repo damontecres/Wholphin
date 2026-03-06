@@ -1,8 +1,5 @@
 package com.github.damontecres.wholphin.ui.playback
 
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
@@ -45,18 +42,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
@@ -88,7 +83,6 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
-import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -133,7 +127,8 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val playerState by viewModel.currentPlayer.collectAsState()
             PlaybackPageContent(
-                playerState = playerState!!,
+                player = playerState!!.player,
+                playerBackend = playerState!!.backend,
                 preferences = preferences,
                 destination = destination,
                 viewModel = viewModel,
@@ -146,15 +141,13 @@ fun PlaybackPage(
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackPageContent(
-    playerState: PlayerState,
+    player: Player,
+    playerBackend: PlayerBackend,
     preferences: UserPreferences,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel,
 ) {
-    val player = playerState.player
-    val playerBackend = playerState.backend
-
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -327,14 +320,10 @@ fun PlaybackPageContent(
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
-            var playerSurfaceSize by remember { mutableStateOf(IntSize.Zero) }
             PlayerSurface(
                 player = player,
                 surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                modifier =
-                    scaledModifier.onSizeChanged {
-                        playerSurfaceSize = it
-                    },
+                modifier = scaledModifier,
             )
             if (presentationState.coverSurface) {
                 Box(
@@ -427,7 +416,7 @@ fun PlaybackPageContent(
                 remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
-            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface) {
+            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
                 val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
                 AndroidView(
@@ -438,42 +427,12 @@ fun PlaybackPageContent(
                                 setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                                 setBottomPaddingFraction(it.margin.toFloat() / 100f)
                             }
-                            playerState.assHandler?.let { assHandler ->
-                                if (prefs.overrides.directPlayAss) {
-                                    Timber.v("Adding AssSubtitleView")
-                                    addView(
-                                        AssSubtitleView(context, assHandler).apply {
-                                            layoutParams =
-                                                FrameLayout
-                                                    .LayoutParams(
-                                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                                    ).apply { gravity = Gravity.CENTER }
-                                        },
-                                    )
-                                }
-                            }
                         }
                     },
                     update = {
                         it.setCues(cues)
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(it)
-                        it.children.firstOrNull { it is AssSubtitleView }?.let {
-                            (it as? AssSubtitleView)?.apply {
-                                val resized =
-                                    layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
-                                if (resized) {
-                                    Timber.v("Resizing AssSubtitleView: $playerSurfaceSize")
-                                    layoutParams =
-                                        FrameLayout
-                                            .LayoutParams(
-                                                playerSurfaceSize.width,
-                                                playerSurfaceSize.height,
-                                            ).apply { gravity = Gravity.CENTER }
-                                }
-                            }
-                        }
                     },
                     onReset = {
                         it.setCues(null)
