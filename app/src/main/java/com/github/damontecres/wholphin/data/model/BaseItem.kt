@@ -8,6 +8,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
+import com.github.damontecres.wholphin.ui.detail.music.artistsString
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
@@ -57,6 +58,7 @@ data class BaseItem(
             when (type) {
                 BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
                 BaseItemKind.SERIES -> data.seriesProductionYears
+                BaseItemKind.AUDIO -> listOfNotNull(data.album, artistsString).joinToString(" - ")
                 else -> data.productionYear?.toString()
             }
 

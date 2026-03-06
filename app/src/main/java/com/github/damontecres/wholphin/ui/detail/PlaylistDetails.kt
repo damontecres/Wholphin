@@ -61,6 +61,8 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.MusicService
+import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.TimeFormatter
@@ -117,6 +119,7 @@ class PlaylistViewModel
         private val backdropService: BackdropService,
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
+        private val musicService: MusicService,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
@@ -131,6 +134,7 @@ class PlaylistViewModel
                         ),
                 ),
             )
+        val musicState = musicService.state
 
         fun init(playlistId: UUID) {
             loading.value = LoadingState.Loading
@@ -253,6 +257,7 @@ fun PlaylistDetails(
     val playlist by viewModel.item.observeAsState(null)
     val items by viewModel.items.observeAsState(listOf())
     val filterAndSort by viewModel.filterAndSort.collectAsState()
+    val musicState by viewModel.musicState.collectAsState()
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
 
@@ -263,6 +268,7 @@ fun PlaylistDetails(
         loadingState = loading,
         playlist = playlist,
         items = items,
+        musicState = musicState,
         onChangeBackdrop = viewModel::updateBackdrop,
         onClickIndex = { index, _ ->
             viewModel.navigationManager.navigateTo(
@@ -333,6 +339,7 @@ fun PlaylistDetails(
 fun PlaylistDetailsContent(
     playlist: BaseItem?,
     items: List<BaseItem?>,
+    musicState: MusicServiceState,
     onClickIndex: (Int, BaseItem) -> Unit,
     onLongClickIndex: (Int, BaseItem) -> Unit,
     onClickPlay: (shuffle: Boolean) -> Unit,
@@ -592,14 +599,12 @@ fun PlaylistItem(
         headlineContent = {
             Text(
                 text = item?.title ?: "",
-                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.enableMarquee(focused),
             )
         },
         supportingContent = {
             Text(
                 text = item?.subtitle ?: "",
-                style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.enableMarquee(focused),
             )
         },
@@ -615,10 +620,12 @@ fun PlaylistItem(
                     Text(
                         text = duration.toString(),
                     )
-                    Text(
-                        text = stringResource(R.string.ends_at, endTimeStr),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    if (item.type != BaseItemKind.AUDIO) {
+                        Text(
+                            text = stringResource(R.string.ends_at, endTimeStr),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             }
         },
@@ -631,18 +638,20 @@ fun PlaylistItem(
                     text = "${index + 1}.",
                     style = MaterialTheme.typography.labelLarge,
                 )
-                ItemCardImage(
-                    item = item,
-                    name = item?.name,
-                    showOverlay = true,
-                    favorite = item?.data?.userData?.isFavorite ?: false,
-                    watched = item?.data?.userData?.played ?: false,
-                    unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
-                    watchedPercent = 0.0,
-                    numberOfVersions = item?.data?.mediaSourceCount ?: 0,
-                    modifier = Modifier.width(160.dp),
-                    useFallbackText = false,
-                )
+                if (item?.type != BaseItemKind.AUDIO) {
+                    ItemCardImage(
+                        item = item,
+                        name = item?.name,
+                        showOverlay = true,
+                        favorite = item?.data?.userData?.isFavorite ?: false,
+                        watched = item?.data?.userData?.played ?: false,
+                        unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
+                        watchedPercent = 0.0,
+                        numberOfVersions = item?.data?.mediaSourceCount ?: 0,
+                        modifier = Modifier.width(160.dp),
+                        useFallbackText = false,
+                    )
+                }
             }
         },
         modifier = modifier,
