@@ -20,7 +20,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
-import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
@@ -77,11 +76,9 @@ class PlayerFactory
                     PlayerBackend.EXO_PLAYER,
                     PlayerBackend.UNRECOGNIZED,
                     -> {
-                        val extensions = prefs?.overrides?.mediaExtensionsEnabled
-                        val directPlayAss =
-                            prefs?.overrides?.directPlayAss
-                                ?: AppPreference.DirectPlayAss.defaultValue
-                        val decodeAv1 = prefs?.overrides?.decodeAv1 == true
+                        val extensions = prefs.overrides.mediaExtensionsEnabled
+                        val directPlayAss = prefs.overrides.directPlayAss
+                        val decodeAv1 = prefs.overrides.decodeAv1
                         Timber.v("extensions=$extensions, directPlayAss=$directPlayAss")
                         val rendererMode =
                             when (extensions) {
