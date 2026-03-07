@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import kotlinx.coroutines.flow.first
@@ -122,6 +123,18 @@ class SeerrService
                             }
                         }
                     }.orEmpty()
+            } else {
+                null
+            }
+
+        suspend fun getTvSeries(item: BaseItem): TvDetails? =
+            if (active.first()) {
+                item.data.providerIds
+                    ?.get("Tmdb")
+                    ?.toIntOrNull()
+                    ?.let { tvId ->
+                        api.tvApi.tvTvIdGet(tvId = tvId)
+                    }
             } else {
                 null
             }
