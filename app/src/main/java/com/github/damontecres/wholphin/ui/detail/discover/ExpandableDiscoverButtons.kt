@@ -110,6 +110,21 @@ fun ExpandableDiscoverButtons(
                         .onFocusChanged(buttonOnFocusChanged),
             )
         }
+        if (availability == SeerrAvailability.PARTIALLY_AVAILABLE) {
+            item("request_partial") {
+                ExpandableFaButton(
+                    title = R.string.request,
+                    iconStringRes = R.string.fa_download,
+                    onClick = {
+                        requestOnClick.invoke()
+                    },
+                    enabled = availability == SeerrAvailability.PARTIALLY_AVAILABLE,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        }
 
         if (canCancel) {
             item("cancel") {
