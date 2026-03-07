@@ -719,5 +719,6 @@
     <string name="creator">Creator</string>
     <string name="artist">Artist</string>
     <string name="search_for">Search %s</string>
+    <string name="select_all">Select all</string>
 
 </resources>

@@ -98,6 +98,7 @@ class SwitchSeerrViewModel
                             )
                         }
                     }
+                    serverConnectionStatus.update { LoadingState.Success }
                 } else {
                     val message =
                         results

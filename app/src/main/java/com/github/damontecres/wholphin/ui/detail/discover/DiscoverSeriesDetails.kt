@@ -35,7 +35,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.api.seerr.model.Season
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
@@ -99,6 +98,7 @@ fun DiscoverSeriesDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showRequestSeasonDialog by remember { mutableStateOf(false) }
 
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
@@ -159,26 +159,7 @@ fun DiscoverSeriesDetails(
                     trailers = trailers,
                     requestOnClick = {
                         item.id?.let { id ->
-                            if (request4kEnabled) {
-                                moreDialog =
-                                    DialogParams(
-                                        fromLongClick = false,
-                                        title = item.name ?: "",
-                                        items =
-                                            listOf(
-                                                DialogItem(
-                                                    text = requestStr,
-                                                    onClick = { viewModel.request(id, false) },
-                                                ),
-                                                DialogItem(
-                                                    text = request4kStr,
-                                                    onClick = { viewModel.request(id, true) },
-                                                ),
-                                            ),
-                                    )
-                            } else {
-                                viewModel.request(id, false)
-                            }
+                            showRequestSeasonDialog = true
                         }
                     },
                     cancelOnClick = {
@@ -218,6 +199,18 @@ fun DiscoverSeriesDetails(
             waitToLoad = params.fromLongClick,
         )
     }
+    if (showRequestSeasonDialog) {
+        RequestSeasonsDialog(
+            title = item?.name ?: "",
+            seasons = seasons,
+            request4kEnabled = request4kEnabled,
+            onSubmit = { seasons, is4k ->
+                item?.id?.let { viewModel.request(it, seasons, is4k) }
+                showRequestSeasonDialog = false
+            },
+            onDismissRequest = { showRequestSeasonDialog = false },
+        )
+    }
 }
 
 private const val HEADER_ROW = 0
@@ -234,7 +227,7 @@ fun DiscoverSeriesDetailsContent(
     series: TvDetails,
     rating: DiscoverRating?,
     canCancel: Boolean,
-    seasons: List<Season>,
+    seasons: List<RequestSeason>,
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
     trailers: List<Trailer>,

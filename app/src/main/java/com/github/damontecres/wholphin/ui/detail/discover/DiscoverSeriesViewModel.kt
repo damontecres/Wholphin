@@ -6,12 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
 import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
-import com.github.damontecres.wholphin.api.seerr.model.Season
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -63,7 +63,7 @@ class DiscoverSeriesViewModel
         val tvSeries = MutableLiveData<TvDetails?>(null)
         val rating = MutableLiveData<DiscoverRating?>(null)
 
-        val seasons = MutableLiveData<List<Season>>(listOf())
+        val seasons = MutableLiveData<List<RequestSeason>>(listOf())
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<DiscoverItem>>(listOf())
         val similar = MutableLiveData<List<DiscoverItem>>()
@@ -103,6 +103,7 @@ class DiscoverSeriesViewModel
                 val discoveredItem = DiscoverItem(tv)
                 backdropService.submit(discoveredItem)
 
+                updateSeasonStatus()
                 updateCanCancel()
 
                 withContext(Dispatchers.Main) {
@@ -157,6 +158,39 @@ class DiscoverSeriesViewModel
             navigationManager.navigateTo(destination)
         }
 
+        private suspend fun updateSeasonStatus() {
+            tvSeries.value?.let { tv ->
+                val seasonStatus = mutableMapOf<Int, SeerrAvailability>()
+                tv.seasons?.forEach {
+                    it.seasonNumber?.let {
+                        seasonStatus[it] = SeerrAvailability.UNKNOWN
+                    }
+                }
+                tv.mediaInfo
+                    ?.requests
+                    ?.forEach {
+                        it.seasons?.mapNotNull { season ->
+                            season.seasonNumber?.let {
+                                val current = seasonStatus[season.seasonNumber]
+                                val new =
+                                    SeerrAvailability.from(season.status)
+                                        ?: SeerrAvailability.UNKNOWN
+                                if (current == null || new.status > current.status) {
+                                    seasonStatus[season.seasonNumber] = new
+                                }
+                            }
+                        }
+                    }
+                val requestSeasons =
+                    seasonStatus.mapNotNull { (seasonNumber, availability) ->
+                        tv.seasons?.firstOrNull { it.seasonNumber == seasonNumber }?.let {
+                            RequestSeason(it, availability)
+                        }
+                    }
+                seasons.setValueOnMain(requestSeasons)
+            }
+        }
+
         private suspend fun updateCanCancel() {
             val user = userConfig.firstOrNull()
             val canCancel = canUserCancelRequest(user, tvSeries.value?.mediaInfo?.requests)
@@ -165,6 +199,7 @@ class DiscoverSeriesViewModel
 
         fun request(
             id: Int,
+            seasons: Set<Int>,
             is4k: Boolean,
         ) {
             viewModelScope.launchIO {
@@ -174,10 +209,11 @@ class DiscoverSeriesViewModel
                             is4k = is4k,
                             mediaId = id,
                             mediaType = RequestPostRequest.MediaType.TV,
-                            seasons = RequestPostRequest.Seasons.ALL, // TODO handle picking seasons
+                            seasons = seasons.toList(),
                         ),
                     )
                 fetchAndSetItem().await()
+                updateSeasonStatus()
                 updateCanCancel()
             }
         }
