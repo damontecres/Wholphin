@@ -256,7 +256,7 @@
     <string name="check_for_updates">Güncellemeleri kontrol et</string>
     <string name="combine_continue_next_summary">Yalnızca diziler için geçerlidir</string>
     <string name="combine_continue_next"><![CDATA[İzlemeye Devam Et ve Sıradaki Bölümleri Birleştir]]></string>
-    <string name="direct_play_ass">ASS altyazıları için libass kullan</string>
+    <string name="direct_play_ass">ASS altyazıları doğrudan oynat</string>
     <string name="direct_play_pgs">PGS altyazıları doğrudan oynat</string>
     <string name="downmix_stereo">Her zaman Stereo\'ya dönüştür</string>
     <string name="ffmpeg_extension_pref">FFmpeg kod çözücü kullan</string>
