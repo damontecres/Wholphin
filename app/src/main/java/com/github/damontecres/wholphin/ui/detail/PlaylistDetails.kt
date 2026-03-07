@@ -27,6 +27,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -75,9 +77,11 @@ import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SortByButton
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.music.MusicMoreDialogActions
@@ -131,6 +135,7 @@ class PlaylistViewModel
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val mediaReportService: MediaReportService,
         @Assisted val itemId: UUID,
     ) : MusicViewModel(api, musicService, navigationManager) {
         @AssistedFactory
@@ -312,6 +317,10 @@ class PlaylistViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
         }
+
+        fun sendMediaReport(itemId: UUID) {
+            viewModelScope.launchDefault { mediaReportService.sendReportFor(itemId) }
+        }
     }
 
 @Immutable
@@ -344,6 +353,7 @@ fun PlaylistDetails(
         hiltViewModel<PlaylistViewModel, PlaylistViewModel.Factory>(
             creationCallback = { it.create(destination.itemId) },
         ),
+    addToPlaylistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -351,6 +361,8 @@ fun PlaylistDetails(
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showConfirmTypeDialog by remember { mutableStateOf<Triple<Int, BaseItem, Boolean>?>(null) }
+    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    val addPlaylistState by addToPlaylistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     fun play(
         index: Int,
@@ -387,17 +399,23 @@ fun PlaylistDetails(
             onClickPlay = { index, item -> play(index, item, false, MediaType.AUDIO) },
             onClickPlayNext = { index, item -> viewModel.playNext(item) },
             onClickAddToQueue = { index, item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
-            onClickFavorite = { id, favorite -> },
-            onClickAddPlaylist = {},
+            onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
+            onClickAddPlaylist = { itemId ->
+                addToPlaylistViewModel.loadPlaylists(MediaType.AUDIO)
+                showPlaylistDialog.makePresent(itemId)
+            },
             onClickRemoveFromQueue = {},
         )
     val moreActions =
         MoreDialogActions(
             navigateTo = { viewModel.navigationManager.navigateTo(it) },
-            onClickWatch = { id, watched -> },
-            onClickFavorite = { id, favorite -> },
-            onClickAddPlaylist = {},
-            onSendMediaInfo = {},
+            onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
+            onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
+            onClickAddPlaylist = { itemId ->
+                addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
+                showPlaylistDialog.makePresent(itemId)
+            },
+            onSendMediaInfo = viewModel::sendMediaReport,
             onClickDelete = {},
         )
 
@@ -458,6 +476,23 @@ fun PlaylistDetails(
         ConfirmMediaTypeDialog(
             onConfirm = { mediaType -> play(index, item, shuffle, mediaType) },
             onCancel = { showConfirmTypeDialog = null },
+        )
+    }
+    showPlaylistDialog.compose { itemId ->
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = addPlaylistState,
+            onDismissRequest = { showPlaylistDialog.makeAbsent() },
+            onClick = {
+                addToPlaylistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                addToPlaylistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            elevation = 3.dp,
         )
     }
 }
@@ -738,12 +773,6 @@ fun PlaylistItem(
                 text = item?.title ?: "",
                 modifier = Modifier.enableMarquee(focused),
             )
-            if (item?.type == BaseItemKind.AUDIO) {
-                MusicQueueMarker(
-                    isPlaying = isPlaying,
-                    isQueued = isQueued,
-                )
-            }
         },
         supportingContent = {
             Text(
@@ -781,7 +810,12 @@ fun PlaylistItem(
                     text = "${index + 1}.",
                     style = MaterialTheme.typography.labelLarge,
                 )
-                if (item?.type != BaseItemKind.AUDIO) {
+                if (item?.type == BaseItemKind.AUDIO) {
+                    MusicQueueMarker(
+                        isPlaying = isPlaying,
+                        isQueued = isQueued,
+                    )
+                } else {
                     ItemCardImage(
                         item = item,
                         name = item?.name,
