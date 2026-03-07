@@ -21,14 +21,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
@@ -63,6 +60,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -70,7 +68,6 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -83,7 +80,10 @@ import com.github.damontecres.wholphin.ui.components.SortByButton
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.detail.music.MusicMoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.music.MusicQueueMarker
+import com.github.damontecres.wholphin.ui.detail.music.MusicViewModel
+import com.github.damontecres.wholphin.ui.detail.music.buildMoreDialogForMusic
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
@@ -92,21 +92,24 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
-import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.FilterUtils
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
@@ -115,55 +118,55 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.time.Duration
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = PlaylistViewModel.Factory::class)
 class PlaylistViewModel
-    @Inject
+    @AssistedInject
     constructor(
         api: ApiClient,
-        val navigationManager: NavigationManager,
+        navigationManager: NavigationManager,
+        musicService: MusicService,
         private val backdropService: BackdropService,
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
-        private val musicService: MusicService,
-    ) : ItemViewModel(api) {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val items = MutableLiveData<List<BaseItem?>>(listOf())
-        val filterAndSort =
-            MutableStateFlow<FilterAndSort>(
-                FilterAndSort(
-                    filter = GetItemsFilter(),
-                    sortAndDirection =
-                        SortAndDirection(
+        private val favoriteWatchManager: FavoriteWatchManager,
+        @Assisted val itemId: UUID,
+    ) : MusicViewModel(api, musicService, navigationManager) {
+        @AssistedFactory
+        interface Factory {
+            fun create(itemId: UUID): PlaylistViewModel
+        }
+
+        val state = MutableStateFlow(PlaylistDetailsState())
+        val musicState = musicService.state
+
+        init {
+            state.update { it.copy(loading = LoadingState.Loading) }
+            viewModelScope.launchDefault {
+                try {
+                    val playlist =
+                        api.userLibraryApi
+                            .getItem(itemId)
+                            .content
+                            .let { BaseItem(it, false) }
+                    state.update { it.copy(playlist = playlist) }
+                    val libraryDisplayInfo =
+                        serverRepository.currentUser.value?.let { user ->
+                            libraryDisplayInfoDao.getItem(user, itemId)
+                        }
+                    val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
+                    val sortAndDirection =
+                        libraryDisplayInfo?.sortAndDirection ?: SortAndDirection(
                             ItemSortBy.DEFAULT,
                             SortOrder.ASCENDING,
-                        ),
-                ),
-            )
-        val musicState = musicService.state
-        val playlistMediaType = MutableStateFlow(MediaType.UNKNOWN)
-
-        fun init(playlistId: UUID) {
-            loading.value = LoadingState.Loading
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(loading, "Failed to fetch playlist $playlistId"),
-            ) {
-                val playlist = fetchItem(playlistId)
-                val libraryDisplayInfo =
-                    serverRepository.currentUser.value?.let { user ->
-                        libraryDisplayInfoDao.getItem(user, itemId)
-                    }
-                val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
-                val sortAndDirection =
-                    libraryDisplayInfo?.sortAndDirection ?: SortAndDirection(
-                        ItemSortBy.DEFAULT,
-                        SortOrder.ASCENDING,
-                    )
-                loadItems(filter, sortAndDirection).join()
-                determineMediaType()
+                        )
+                    loadItems(filter, sortAndDirection).join()
+                    determineMediaType()
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching playlist %s", itemId)
+                    state.update { it.copy(loading = LoadingState.Error(ex)) }
+                }
             }
         }
 
@@ -172,13 +175,14 @@ class PlaylistViewModel
             sortAndDirection: SortAndDirection,
         ) = viewModelScope.launchIO {
             backdropService.clearBackdrop()
-            loading.setValueOnMain(LoadingState.Loading)
-            this@PlaylistViewModel.filterAndSort.update {
-                FilterAndSort(filter, sortAndDirection)
+            state.update {
+                it.copy(
+                    loading = LoadingState.Loading,
+                    filterAndSort = FilterAndSort(filter, sortAndDirection),
+                )
             }
 
             serverRepository.currentUser.value?.let { user ->
-                val playlistId = item.value!!.id
                 viewModelScope.launchIO {
                     val libraryDisplayInfo =
                         libraryDisplayInfoDao.getItem(user, itemId)?.copy(
@@ -188,7 +192,7 @@ class PlaylistViewModel
                         )
                             ?: LibraryDisplayInfo(
                                 userId = user.rowId,
-                                itemId = itemId,
+                                itemId = itemId.toServerString(),
                                 sort = sortAndDirection.sort,
                                 direction = sortAndDirection.direction,
                                 filter = filter,
@@ -200,7 +204,7 @@ class PlaylistViewModel
                 val request =
                     filter.applyTo(
                         GetItemsRequest(
-                            parentId = playlistId,
+                            parentId = itemId,
                             userId = user.id,
                             fields = DefaultItemFields,
                             sortBy = listOf(sortAndDirection.sort),
@@ -215,16 +219,19 @@ class PlaylistViewModel
                             GetItemsRequestHandler,
                             viewModelScope,
                         ).init()
-
-                    withContext(Dispatchers.Main) {
-                        items.value = pager
-                        loading.value = LoadingState.Success
+                    state.update {
+                        it.copy(
+                            items = pager,
+                            loading = LoadingState.Success,
+                        )
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error fetching playlist %s", itemId)
-                    withContext(Dispatchers.Main) {
-                        items.value = listOf()
-                        loading.value = LoadingState.Error(ex)
+                    state.update {
+                        it.copy(
+                            items = emptyList(),
+                            loading = LoadingState.Error(ex),
+                        )
                     }
                 }
             }
@@ -238,13 +245,13 @@ class PlaylistViewModel
         private suspend fun determineMediaType() {
             // Use the type the server says
             var mediaType =
-                super.item.value
+                state.value.playlist
                     ?.data
                     ?.mediaType ?: MediaType.UNKNOWN
             mediaType =
                 if (mediaType == MediaType.UNKNOWN) {
                     // Otherwise, if a most of the list is one type, we can assume that type
-                    val pager = (this@PlaylistViewModel.items.value as? ApiRequestPager<*>)
+                    val pager = (state.value.items as? ApiRequestPager<*>)
                     if (pager != null && pager.size <= 50) {
                         val types =
                             (0..<50.coerceAtMost(pager.size)).groupBy { index ->
@@ -273,14 +280,16 @@ class PlaylistViewModel
                     mediaType
                 }
             Timber.d("mediaType=%s", mediaType)
-            playlistMediaType.update { mediaType }
+            state.update {
+                it.copy(mediaType = mediaType)
+            }
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
             FilterUtils.getFilterOptionValues(
                 api,
                 serverRepository.currentUser.value?.id,
-                itemUuid,
+                itemId,
                 filterOption,
             )
 
@@ -290,15 +299,18 @@ class PlaylistViewModel
             }
         }
 
-        fun playMusic(
-            index: Int,
-            shuffle: Boolean,
-        ) {
-            viewModelScope.launchDefault {
-                (items.value as? ApiRequestPager<*>)?.let {
-                    musicService.setQueue(it, index, shuffle)
-                }
-            }
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setWatched(itemId, played)
+        }
+
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setFavorite(itemId, favorite)
         }
     }
 
@@ -308,68 +320,100 @@ data class FilterAndSort(
     val sortAndDirection: SortAndDirection,
 )
 
+data class PlaylistDetailsState(
+    val playlist: BaseItem? = null,
+    val mediaType: MediaType = MediaType.UNKNOWN,
+    val items: List<BaseItem?> = emptyList(),
+    val filterAndSort: FilterAndSort =
+        FilterAndSort(
+            filter = GetItemsFilter(),
+            sortAndDirection =
+                SortAndDirection(
+                    ItemSortBy.DEFAULT,
+                    SortOrder.ASCENDING,
+                ),
+        ),
+    val loading: LoadingState = LoadingState.Pending,
+)
+
 @Composable
 fun PlaylistDetails(
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
-    viewModel: PlaylistViewModel = hiltViewModel(),
+    viewModel: PlaylistViewModel =
+        hiltViewModel<PlaylistViewModel, PlaylistViewModel.Factory>(
+            creationCallback = { it.create(destination.itemId) },
+        ),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        viewModel.init(destination.itemId)
-    }
-    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val playlist by viewModel.item.observeAsState(null)
-    val items by viewModel.items.observeAsState(listOf())
-    val filterAndSort by viewModel.filterAndSort.collectAsState()
+    val state by viewModel.state.collectAsState()
     val musicState by viewModel.musicState.collectAsState()
-    val playlistMediaType by viewModel.playlistMediaType.collectAsState()
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
-    var showConfirmTypeDialog by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
-
-    val goToString = stringResource(R.string.go_to)
-    val playFromHereString = stringResource(R.string.play_from_here)
+    var showConfirmTypeDialog by remember { mutableStateOf<Triple<Int, BaseItem, Boolean>?>(null) }
 
     fun play(
         index: Int,
+        item: BaseItem,
         shuffle: Boolean,
         mediaTypeOverride: MediaType? = null,
     ) {
-        when (mediaTypeOverride ?: playlistMediaType) {
+        when (mediaTypeOverride ?: state.mediaType) {
             MediaType.VIDEO -> {
                 viewModel.navigationManager.navigateTo(
                     Destination.PlaybackList(
                         itemId = destination.itemId,
                         startIndex = index,
                         shuffle = shuffle,
-                        filter = filterAndSort.filter,
-                        sortAndDirection = filterAndSort.sortAndDirection,
+                        filter = state.filterAndSort.filter,
+                        sortAndDirection = state.filterAndSort.sortAndDirection,
                     ),
                 )
             }
 
             MediaType.AUDIO -> {
-                viewModel.playMusic(index, shuffle)
+                viewModel.play(item, index, shuffle)
             }
 
             else -> {
-                showConfirmTypeDialog = Pair(index, shuffle)
+                showConfirmTypeDialog = Triple(index, item, shuffle)
             }
         }
     }
 
+    val musicMoreActions =
+        MusicMoreDialogActions(
+            onNavigate = { viewModel.navigationManager.navigateTo(it) },
+            onClickPlay = { index, item -> play(index, item, false, MediaType.AUDIO) },
+            onClickPlayNext = { index, item -> viewModel.playNext(item) },
+            onClickAddToQueue = { index, item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
+            onClickFavorite = { id, favorite -> },
+            onClickAddPlaylist = {},
+            onClickRemoveFromQueue = {},
+        )
+    val moreActions =
+        MoreDialogActions(
+            navigateTo = { viewModel.navigationManager.navigateTo(it) },
+            onClickWatch = { id, watched -> },
+            onClickFavorite = { id, favorite -> },
+            onClickAddPlaylist = {},
+            onSendMediaInfo = {},
+            onClickDelete = {},
+        )
+
     PlaylistDetailsContent(
-        loadingState = loading,
-        playlist = playlist,
-        items = items,
+        loadingState = state.loading,
+        playlist = state.playlist,
+        items = state.items,
         musicState = musicState,
         onChangeBackdrop = viewModel::updateBackdrop,
         onClickIndex = { index, item ->
-            play(index, false)
+            play(index, item, false)
         },
         onClickPlay = { shuffle ->
-            play(0, shuffle)
+            state.playlist?.let {
+                play(0, it, shuffle)
+            }
         },
         onLongClickIndex = { index, item ->
             longClickDialog =
@@ -377,23 +421,29 @@ fun PlaylistDetails(
                     fromLongClick = true,
                     title = item.name ?: "",
                     items =
-                        listOf(
-                            DialogItem(
-                                goToString,
-                                Icons.Default.ArrowForward,
-                            ) {
-                                viewModel.navigationManager.navigateTo(item.destination())
-                            },
-                            DialogItem(
-                                playFromHereString,
-                                Icons.Default.PlayArrow,
-                            ) {
-                                play(index, false)
-                            },
-                        ),
+                        if (item.type == BaseItemKind.AUDIO) {
+                            buildMoreDialogForMusic(
+                                context = context,
+                                actions = musicMoreActions,
+                                item = item,
+                                index = index,
+                                canRemove = false,
+                            )
+                        } else {
+                            buildMoreDialogItemsForHome(
+                                context = context,
+                                item = item,
+                                seriesId = item.data.seriesId,
+                                playbackPosition = item.playbackPosition,
+                                watched = item.played,
+                                favorite = item.favorite,
+                                canDelete = false,
+                                actions = moreActions,
+                            )
+                        },
                 )
         },
-        filterAndSort = filterAndSort,
+        filterAndSort = state.filterAndSort,
         onFilterAndSortChange = viewModel::loadItems,
         getPossibleFilterValues = viewModel::getFilterOptionValues,
         modifier = modifier,
@@ -404,9 +454,9 @@ fun PlaylistDetails(
             onDismissRequest = { longClickDialog = null },
         )
     }
-    showConfirmTypeDialog?.let { (index, shuffle) ->
+    showConfirmTypeDialog?.let { (index, item, shuffle) ->
         ConfirmMediaTypeDialog(
-            onConfirm = { mediaType -> play(index, shuffle, mediaType) },
+            onConfirm = { mediaType -> play(index, item, shuffle, mediaType) },
             onCancel = { showConfirmTypeDialog = null },
         )
     }

@@ -265,7 +265,7 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.5.2-1=g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.5.3-1-g0"))) {
         appPreferences.updateData {
             it.updateMusicPreferences {
                 showBackdrop = true
