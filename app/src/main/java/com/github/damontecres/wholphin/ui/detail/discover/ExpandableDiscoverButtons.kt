@@ -37,6 +37,7 @@ fun ExpandableDiscoverButtons(
     trailerOnClick: (Trailer) -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
+    pendingOnClick: () -> Unit = {},
 ) {
     val firstFocus = remember { FocusRequester() }
     LazyRow(
@@ -89,7 +90,7 @@ fun ExpandableDiscoverButtons(
                         SeerrAvailability.PENDING,
                         SeerrAvailability.PROCESSING,
                         -> {
-                            // TODO?
+                            pendingOnClick.invoke()
                         }
 
                         SeerrAvailability.PARTIALLY_AVAILABLE,

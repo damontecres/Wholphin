@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
 import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
+import com.github.damontecres.wholphin.api.seerr.model.RequestRequestIdPutRequest
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -166,6 +168,8 @@ class DiscoverSeriesViewModel
                         seasonStatus[it] = SeerrAvailability.UNKNOWN
                     }
                 }
+                val tvStatus =
+                    SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN
                 tv.mediaInfo
                     ?.requests
                     ?.forEach {
@@ -173,14 +177,16 @@ class DiscoverSeriesViewModel
                             season.seasonNumber?.let {
                                 val current = seasonStatus[season.seasonNumber]
                                 val new =
-                                    SeerrAvailability.from(season.status)
-                                        ?: SeerrAvailability.UNKNOWN
+                                    SeerrAvailability
+                                        .from(season.status)
+                                        ?.takeIf { it != SeerrAvailability.UNKNOWN } ?: tvStatus
                                 if (current == null || new.status > current.status) {
                                     seasonStatus[season.seasonNumber] = new
                                 }
                             }
                         }
                     }
+                Timber.v("seasonStatus=%s", seasonStatus)
                 val requestSeasons =
                     seasonStatus.mapNotNull { (seasonNumber, availability) ->
                         tv.seasons?.firstOrNull { it.seasonNumber == seasonNumber }?.let {
@@ -203,18 +209,39 @@ class DiscoverSeriesViewModel
             is4k: Boolean,
         ) {
             viewModelScope.launchIO {
-                val request =
-                    seerrService.api.requestApi.requestPost(
-                        RequestPostRequest(
-                            is4k = is4k,
-                            mediaId = id,
-                            mediaType = RequestPostRequest.MediaType.TV,
-                            seasons = seasons.toList(),
-                        ),
-                    )
-                fetchAndSetItem().await()
-                updateSeasonStatus()
-                updateCanCancel()
+                tvSeries.value?.let { tv ->
+                    val currentRequest =
+                        tv.mediaInfo?.requests?.firstOrNull {
+                            it.requestedBy?.id ==
+                                seerrServerRepository.currentUserId.first()
+                        }
+                    if (currentRequest != null) {
+                        Timber.v("User has pending request, will update")
+                        seerrService.api.requestApi.requestRequestIdPut(
+                            requestId = currentRequest.id.toString(),
+                            requestRequestIdPutRequest =
+                                RequestRequestIdPutRequest(
+                                    is4k = is4k,
+                                    mediaType = RequestRequestIdPutRequest.MediaType.TV,
+                                    seasons = seasons.toList(),
+                                ),
+                        )
+                    } else {
+                        Timber.v("New request for %s seasons", seasons.size)
+                        seerrService.api.requestApi.requestPost(
+                            RequestPostRequest(
+                                is4k = is4k,
+                                mediaId = id,
+                                mediaType = RequestPostRequest.MediaType.TV,
+                                seasons = seasons.toList(),
+                            ),
+                        )
+                    }
+
+                    fetchAndSetItem().await()
+                    updateSeasonStatus()
+                    updateCanCancel()
+                }
             }
         }
 

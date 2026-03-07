@@ -56,7 +56,19 @@ fun RequestSeasons(
     modifier: Modifier,
 ) {
     val allSeasonNumbers = remember(seasons) { seasons.mapNotNull { it.season.seasonNumber }.toSet() }
-    val selected = remember { mutableStateSetOf<Int>() }
+    val selected =
+        remember {
+            mutableStateSetOf<Int>(
+                *seasons
+                    .mapNotNull {
+                        if (it.availability > SeerrAvailability.UNKNOWN) {
+                            it.season.seasonNumber
+                        } else {
+                            null
+                        }
+                    }.toTypedArray(),
+            )
+        }
     var is4k by remember { mutableStateOf(false) }
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),

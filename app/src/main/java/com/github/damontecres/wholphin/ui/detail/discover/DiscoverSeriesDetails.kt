@@ -292,6 +292,7 @@ fun DiscoverSeriesDetailsContent(
                                 SeerrAvailability.from(series.mediaInfo?.status)
                                     ?: SeerrAvailability.UNKNOWN,
                             requestOnClick = requestOnClick,
+                            pendingOnClick = requestOnClick,
                             cancelOnClick = cancelOnClick,
                             moreOnClick = moreOnClick,
                             goToOnClick = goToOnClick,
