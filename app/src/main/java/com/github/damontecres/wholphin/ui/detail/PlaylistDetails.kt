@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -67,6 +69,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -77,9 +80,12 @@ import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SortByButton
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.detail.music.MusicQueueMarker
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -224,17 +230,24 @@ class PlaylistViewModel
             }
         }
 
+        /**
+         * This method tries to determine the [MediaType] of a playlist
+         *
+         * In theory, the server will set the type, but sometime it doesn't
+         */
         private suspend fun determineMediaType() {
+            // Use the type the server says
             var mediaType =
                 super.item.value
                     ?.data
                     ?.mediaType ?: MediaType.UNKNOWN
             mediaType =
                 if (mediaType == MediaType.UNKNOWN) {
+                    // Otherwise, if a most of the list is one type, we can assume that type
                     val pager = (this@PlaylistViewModel.items.value as? ApiRequestPager<*>)
-                    if (pager != null && pager.size < 50) {
+                    if (pager != null && pager.size <= 50) {
                         val types =
-                            (0..<50).groupBy { index ->
+                            (0..<50.coerceAtMost(pager.size)).groupBy { index ->
                                 val pagerItem = pager.getBlocking(index)
                                 when (pagerItem?.type) {
                                     BaseItemKind.AUDIO -> MediaType.AUDIO
@@ -259,6 +272,7 @@ class PlaylistViewModel
                 } else {
                     mediaType
                 }
+            Timber.d("mediaType=%s", mediaType)
             playlistMediaType.update { mediaType }
         }
 
@@ -312,7 +326,7 @@ fun PlaylistDetails(
     val playlistMediaType by viewModel.playlistMediaType.collectAsState()
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
-    var showConfirmTypeDialog by remember { mutableStateOf(false) }
+    var showConfirmTypeDialog by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
 
     val goToString = stringResource(R.string.go_to)
     val playFromHereString = stringResource(R.string.play_from_here)
@@ -340,7 +354,7 @@ fun PlaylistDetails(
             }
 
             else -> {
-                showConfirmTypeDialog = true
+                showConfirmTypeDialog = Pair(index, shuffle)
             }
         }
     }
@@ -388,6 +402,12 @@ fun PlaylistDetails(
         DialogPopup(
             params = params,
             onDismissRequest = { longClickDialog = null },
+        )
+    }
+    showConfirmTypeDialog?.let { (index, shuffle) ->
+        ConfirmMediaTypeDialog(
+            onConfirm = { mediaType -> play(index, shuffle, mediaType) },
+            onCancel = { showConfirmTypeDialog = null },
         )
     }
 }
@@ -513,10 +533,18 @@ fun PlaylistDetailsContent(
                                                     onLongClickIndex.invoke(index, item)
                                                 }
                                             },
+                                            isPlaying =
+                                                equalsNotNull(
+                                                    musicState.currentItemId,
+                                                    item?.id,
+                                                ),
+                                            isQueued = item?.id in musicState.queuedIds,
                                             modifier =
                                                 Modifier
-                                                    .height(80.dp)
                                                     .ifElse(
+                                                        item?.type != BaseItemKind.AUDIO,
+                                                        Modifier.height(80.dp),
+                                                    ).ifElse(
                                                         index == savedIndex,
                                                         Modifier.focusRequester(focus),
                                                     ).onFocusChanged {
@@ -646,6 +674,8 @@ fun PlaylistItem(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    isPlaying: Boolean = false,
+    isQueued: Boolean = false,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     ListItem(
@@ -658,6 +688,12 @@ fun PlaylistItem(
                 text = item?.title ?: "",
                 modifier = Modifier.enableMarquee(focused),
             )
+            if (item?.type == BaseItemKind.AUDIO) {
+                MusicQueueMarker(
+                    isPlaying = isPlaying,
+                    isQueued = isQueued,
+                )
+            }
         },
         supportingContent = {
             Text(
@@ -713,4 +749,48 @@ fun PlaylistItem(
         },
         modifier = modifier,
     )
+}
+
+@Composable
+fun ConfirmMediaTypeDialog(
+    onConfirm: (MediaType) -> Unit,
+    onCancel: () -> Unit,
+) {
+    BasicDialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(),
+        elevation = 3.dp,
+    ) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier.wrapContentSize(),
+        ) {
+            item {
+                Text(
+                    text = stringResource(R.string.play_as_type),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillParentMaxWidth(),
+                )
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(
+                        stringRes = R.string.audio,
+                        onClick = { onConfirm.invoke(MediaType.AUDIO) },
+                    )
+                    TextButton(
+                        stringRes = R.string.video,
+                        onClick = { onConfirm.invoke(MediaType.VIDEO) },
+                    )
+                }
+            }
+        }
+    }
 }

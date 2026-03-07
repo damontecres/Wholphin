@@ -741,6 +741,7 @@
     <string name="show_album_cover">Show album cover</string>
     <string name="show_visualizer">Show visualizer</string>
     <string name="show_backdrop">Show backdrop</string>
+    <string name="play_as_type">Play as?</string>
 
 
 </resources>

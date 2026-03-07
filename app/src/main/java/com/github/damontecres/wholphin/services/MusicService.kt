@@ -186,7 +186,7 @@ class MusicService
                     updateQueueSize()
                     if (player.mediaItemCount == 1) {
                         // Start playing if this was the first time added
-                        player.play()
+                        start()
                     }
                 }
             }
@@ -295,7 +295,12 @@ class MusicService
 
         suspend fun playNext(song: BaseItem) {
             val mediaItem = convert(song)
-            onMain { player.addMediaItem(state.value.currentIndex + 1, mediaItem) }
+            onMain {
+                player.addMediaItem(state.value.currentIndex + 1, mediaItem)
+                if (player.mediaItemCount == 1) {
+                    start()
+                }
+            }
             updateQueueSize()
         }
 

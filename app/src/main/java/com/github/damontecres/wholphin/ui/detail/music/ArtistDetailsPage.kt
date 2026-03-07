@@ -441,6 +441,23 @@ fun ArtistDetailsPage(
                                             )
                                     }
                                 },
+                                onClickMore = {
+                                    if (song != null) {
+                                        moreDialog =
+                                            DialogParams(
+                                                fromLongClick = false,
+                                                title = song.name ?: "",
+                                                items =
+                                                    buildMoreDialogForMusic(
+                                                        context = context,
+                                                        actions = moreDialogActions,
+                                                        item = song,
+                                                        index = index,
+                                                        canRemove = false,
+                                                    ),
+                                            )
+                                    }
+                                },
                                 showArtist = false,
                                 isPlaying = song != null && currentMusic.currentItemId == song.id,
                                 isQueued = song != null && song.id in currentMusic.queuedIds,
