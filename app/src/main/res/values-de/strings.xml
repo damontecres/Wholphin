@@ -183,7 +183,7 @@
     <string name="live_tv">Live TV</string>
     <string name="outro">Outro</string>
     <string name="play_count">Wiedergabe Anzahl</string>
-    <string name="playback_debug_info">Zeige Wiedergabe Debug infos</string>
+    <string name="playback_debug_info">Wiedergabe Debug Infos anzeigen</string>
     <string name="playlist">Wiedergabeliste</string>
     <string name="playlists">Wiedergabelisten</string>
     <string name="show_next_up_when">Zeige als nächstes</string>
@@ -250,10 +250,10 @@
     <string name="update_url">Aktualisierungs-URL</string>
     <string name="font_size">Schriftgröße</string>
     <string name="font_color">Schriftfarbe</string>
-    <string name="font_opacity">Schriftart Deckkraft</string>
+    <string name="font_opacity">Deckkraft der Schrift</string>
     <string name="edge_style">Stil der Umrandung</string>
     <string name="edge_color">Farbe der Umrandung</string>
-    <string name="background_opacity">Hintergrund Deckktraft</string>
+    <string name="background_opacity">Deckkraft des Hintergrundes</string>
     <string name="background_style">Hintergrund Stil</string>
     <string name="subtitle_style">Untertitel Stil</string>
     <string name="background_color">Hintergrundfarbe</string>
@@ -406,7 +406,7 @@
     <string name="resolution_switching">Auflösungswechsel</string>
     <string name="guest_stars">Gaststars</string>
     <string name="slideshow_at_beginning">Ab Anfang</string>
-    <string name="no_more_images">keine Fotos</string>
+    <string name="no_more_images">Keine Fotos</string>
     <string name="rotate_left">Links Rotieren</string>
     <string name="rotate_right">Rechts Rotieren</string>
     <string name="red">Rot</string>
@@ -548,7 +548,7 @@
     <string name="enter_url_api_key"><![CDATA[URL & API Key eingeben]]></string>
     <string name="search_and_download_subtitles"><![CDATA[Untertitel suchen & herunterladen]]></string>
     <string name="creator">Ersteller</string>
-    <string name="background_style_wrap">Gestreckt</string>
-    <string name="background_style_boxed">Zentriert</string>
+    <string name="background_style_wrap">Textmarker</string>
+    <string name="background_style_boxed">Kasten</string>
     <string name="mixer">Mischer</string>
 </resources>
