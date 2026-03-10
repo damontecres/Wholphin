@@ -141,7 +141,7 @@ class SlideshowViewModel
                             parentId = slideshowSettings.parentId,
                             includeItemTypes = includeItemTypes,
                             fields = PhotoItemFields,
-                            recursive = true,
+                            recursive = slideshowSettings.recursive,
                             sortBy = listOf(slideshowSettings.sortAndDirection.sort),
                             sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
                         ),
@@ -193,7 +193,8 @@ class SlideshowViewModel
             _pager.value?.let { pager ->
                 viewModelScope.launchIO {
                     try {
-                        val image = pager.getBlocking(position)
+                        val image =
+                            if (position in pager.indices) pager.getBlocking(position) else null
                         Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
                             this@SlideshowViewModel.position.setValueOnMain(position)
