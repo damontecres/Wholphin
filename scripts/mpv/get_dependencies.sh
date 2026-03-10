@@ -30,7 +30,7 @@ clone "https://gitlab.freedesktop.org/freetype/freetype.git" "VER-2-14-1" freety
 
 clone "https://github.com/libass/libass" "0.17.4" libass
 
-clone "https://github.com/haasn/libplacebo" "v7.351.0" libplacebo --recurse-submodules
+clone "https://github.com/haasn/libplacebo" "master" libplacebo --recurse-submodules
 
 clone "https://github.com/mpv-player/mpv" "v0.41.0" mpv
 
