@@ -2,6 +2,7 @@
 
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.runtime.Stable
 import com.github.damontecres.wholphin.api.seerr.model.CreditCast
 import com.github.damontecres.wholphin.api.seerr.model.CreditCrew
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
@@ -74,6 +75,7 @@ enum class SeerrAvailability(
 /**
  * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well.
  */
+@Stable
 @Serializable
 data class DiscoverItem(
     val id: Int,

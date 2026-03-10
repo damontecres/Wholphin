@@ -57,6 +57,7 @@ class SeerrServerRepository
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.server }
         val currentUser: Flow<SeerrUser?> =
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
+        val currentUserId: Flow<Int?> = current.map { it?.config?.id }
 
         /**
          * Whether Seerr integration is currently active of not

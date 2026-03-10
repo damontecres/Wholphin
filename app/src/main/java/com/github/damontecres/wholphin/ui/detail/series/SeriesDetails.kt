@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -120,6 +123,7 @@ fun SeriesDetails(
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val discovered by viewModel.discovered.collectAsState()
+    val discoverSeries by viewModel.discoverSeries.collectAsState()
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
@@ -229,6 +233,12 @@ fun SeriesDetails(
                     },
                     onClickExtra = { _, extra ->
                         viewModel.navigateTo(extra.destination)
+                    },
+                    discoverSeries = discoverSeries,
+                    onClickDiscoverSeries = {
+                        discoverSeries?.let {
+                            viewModel.navigateTo(Destination.DiscoveredItem(it))
+                        }
                     },
                     discovered = discovered,
                     onClickDiscover = { index, item ->
@@ -350,6 +360,8 @@ fun SeriesDetailsContent(
     onClickExtra: (Int, ExtrasItem) -> Unit,
     moreActions: MoreDialogActions,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    discoverSeries: DiscoverItem?,
+    onClickDiscoverSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -485,6 +497,25 @@ fun SeriesDetailsContent(
                                                 }
                                             }
                                         },
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = discoverSeries != null,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            ExpandableFaButton(
+                                title = R.string.discover,
+                                iconStringRes = R.string.fa_magnifying_glass_plus,
+                                onClick = onClickDiscoverSeries,
+                                modifier =
+                                    Modifier.onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(ExceptionHandler()) {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
+                                        }
+                                    },
                             )
                         }
                     }
