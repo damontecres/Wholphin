@@ -209,7 +209,7 @@ fun DestinationContent(
                     CollectionFolderPhotoAlbum(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        recursive = true,
+                        recursive = false,
                         modifier = modifier,
                     )
                 }
@@ -387,10 +387,19 @@ fun CollectionFolder(
         }
 
         CollectionType.HOMEVIDEOS,
+        CollectionType.PHOTOS,
+        -> {
+            CollectionFolderPhotoAlbum(
+                preferences = preferences,
+                itemId = destination.itemId,
+                recursive = recursiveOverride ?: false,
+                modifier = modifier,
+            )
+        }
+
         CollectionType.MUSICVIDEOS,
         CollectionType.MUSIC,
         CollectionType.BOOKS,
-        CollectionType.PHOTOS,
         -> {
             CollectionFolderGeneric(
                 preferences,
