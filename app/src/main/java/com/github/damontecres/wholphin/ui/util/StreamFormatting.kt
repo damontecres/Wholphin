@@ -92,14 +92,12 @@ object StreamFormatting {
                 context.getString(R.string.dolby_atmos)
             }
 
-            profile?.contains("DTS:", true) == true ||
-            profile?.contains("DTS-", true) == true -> {
-                if (profile.contains("X", true)) {
-                    context.getString(R.string.dts_x)
-                } else if (profile.contains("MA", true)) {
-                    context.getString(R.string.dts_hd_ma)
-                } else {
-                    context.getString(R.string.dts_hd)
+            profile?.contains("DTS", true) == true -> {
+                when {
+                    profile.contains("X", true) -> context.getString(R.string.dts_x)
+                    profile.contains("MA", true) -> context.getString(R.string.dts_hd_ma)
+                    profile.contains("HD", true) -> context.getString(R.string.dts_hd)
+                    else -> context.getString(R.string.dts)
                 }
             }
 
