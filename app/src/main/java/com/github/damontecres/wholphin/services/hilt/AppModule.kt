@@ -171,7 +171,7 @@ object AppModule {
             if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {
                 scope.launch(ExceptionHandler()) {
                     appPreference.updateData {
-                        preferences.appPreferences.updateInterfacePreferences {
+                        it.updateInterfacePreferences {
                             putRememberedTabs(key(itemId), tabIndex)
                         }
                     }
