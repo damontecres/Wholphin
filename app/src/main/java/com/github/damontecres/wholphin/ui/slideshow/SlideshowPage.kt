@@ -53,13 +53,16 @@ import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
-import coil3.request.crossfade
+import coil3.request.transitionFactory
 import coil3.size.Size
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -70,12 +73,14 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "ImagePage"
 private const val DEBUG = false
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(UnstableApi::class)
+@kotlin.OptIn(ExperimentalCoilApi::class)
 @Composable
 fun SlideshowPage(
     slideshow: Destination.Slideshow,
@@ -402,7 +407,8 @@ fun SlideshowPage(
                                     .Builder(LocalContext.current)
                                     .data(imageState.url)
                                     .size(Size.ORIGINAL)
-                                    .crossfade(!showLoadingThumbnail)
+                                    .transitionFactory(CrossFadeFactory(750.milliseconds))
+                                    .useExistingImageAsPlaceholder(true)
                                     .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
@@ -414,14 +420,6 @@ fun SlideshowPage(
                                             .align(Alignment.Center),
                                     text = "Error loading image",
                                     color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            loading = {
-                                ImageLoadingPlaceholder(
-                                    thumbnailUrl = imageState.thumbnailUrl,
-                                    showThumbnail = showLoadingThumbnail,
-                                    colorFilter = colorFilter,
-                                    modifier = Modifier.fillMaxSize(),
                                 )
                             },
                             // Ensure that if an image takes a long time to load, it won't be skipped
