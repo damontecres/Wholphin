@@ -400,7 +400,7 @@ fun PreferencesContent(
                                                 when (val conn = seerrConnection) {
                                                     is SeerrConnectionStatus.Error -> {
                                                         SeerrDialogMode.Error(
-                                                            conn.serverUrl,
+                                                            conn.server.url,
                                                             conn.ex,
                                                         )
                                                     }
