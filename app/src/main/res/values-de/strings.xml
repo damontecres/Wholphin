@@ -551,4 +551,5 @@
     <string name="background_style_wrap">Textmarker</string>
     <string name="background_style_boxed">Kasten</string>
     <string name="mixer">Mischer</string>
+    <string name="select_all">Alle auswählen</string>
 </resources>
