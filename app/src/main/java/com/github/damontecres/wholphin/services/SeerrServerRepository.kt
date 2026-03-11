@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -332,3 +333,24 @@ class UserSwitchListener
                 }
             }
     }
+
+fun CurrentSeerr?.imageUrlBuilder(
+    imageType: ImageType,
+    path: String?,
+): String? {
+    if (this == null) return null
+    val cacheImages = serverConfig.cacheImages == true
+    val base =
+        if (cacheImages) {
+            server.url.removeSuffix("/") + "/imageproxy/tmdb"
+        } else {
+            "https://image.tmdb.org"
+        }
+    val prefix =
+        when (imageType) {
+            ImageType.PRIMARY -> "/t/p/w500"
+            ImageType.BACKDROP -> "/t/p/w1920_and_h1080_multi_faces"
+            else -> throw IllegalArgumentException("Image type not supported: $imageType")
+        }
+    return "${base}${prefix}$path"
+}
