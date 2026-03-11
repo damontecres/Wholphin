@@ -236,3 +236,21 @@ suspend fun ViewModel.getPagerForArtist(
         )
     return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
 }
+
+suspend fun ViewModel.getPagerForPlaylist(
+    api: ApiClient,
+    playlistId: UUID,
+): ApiRequestPager<GetItemsRequest> {
+    val request =
+        GetItemsRequest(
+            parentId = playlistId,
+            recursive = true,
+            includeItemTypes = listOf(BaseItemKind.AUDIO),
+            fields = DefaultItemFields,
+            sortBy =
+                listOf(
+                    ItemSortBy.DEFAULT,
+                ),
+        )
+    return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+}

@@ -53,7 +53,14 @@ abstract class MusicViewModel(
                     musicService.setQueue(pager, startIndex, shuffled)
                 }
 
-                else -> {}
+                BaseItemKind.PLAYLIST -> {
+                    val pager = getPagerForPlaylist(api, item.id)
+                    musicService.setQueue(pager, startIndex, shuffled)
+                }
+
+                else -> {
+                    Timber.w("Unknown item type to play for music: %s", item.type)
+                }
             }
         }
     }
@@ -85,7 +92,14 @@ abstract class MusicViewModel(
                     musicService.addAllToQueue(pager, 0)
                 }
 
-                else -> {}
+                BaseItemKind.PLAYLIST -> {
+                    val pager = getPagerForPlaylist(api, item.id)
+                    musicService.addAllToQueue(pager, 0)
+                }
+
+                else -> {
+                    Timber.w("Unknown item type to queue for music: %s", item.type)
+                }
             }
         }
     }
