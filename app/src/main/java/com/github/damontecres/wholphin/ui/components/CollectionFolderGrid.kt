@@ -771,6 +771,9 @@ fun CollectionFolderGrid(
                             onClickDelete = {
                                 showDeleteDialog = PositionItem(position, item)
                             },
+                            onClickGoTo = {
+                                onClickItem.invoke(position, it)
+                            },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
