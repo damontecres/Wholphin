@@ -451,6 +451,7 @@
     <string name="clear_track_choices">Clear track choices</string>
     <string name="dts_x">DTS:X</string>
     <string name="dts_hd">DTS:HD</string>
+    <string name="dts_hd_ma">DTS:HD MA</string>
     <string name="truehd">TrueHD</string>
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
