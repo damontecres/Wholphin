@@ -94,9 +94,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var updateChecker: UpdateChecker
 
     @Inject
-    lateinit var appUpgradeHandler: AppUpgradeHandler
-
-    @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
 
     @Inject
@@ -136,11 +133,7 @@ class MainActivity : AppCompatActivity() {
         instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
-        if (savedInstanceState == null) {
-            lifecycleScope.launchIO {
-                appUpgradeHandler.copySubfont(false)
-            }
-        }
+
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
                 window?.setFlags(
@@ -249,7 +242,6 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onResume")
         lifecycleScope.launchDefault {
             screensaverService.pulse()
-            appUpgradeHandler.run()
         }
     }
 
@@ -384,10 +376,13 @@ class MainActivityViewModel
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
+        private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
         fun appStart() {
             viewModelScope.launchIO {
                 try {
+                    appUpgradeHandler.run()
+                    appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true

@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
@@ -163,7 +164,7 @@ class SeerrServerRepository
             val apiKey = passwordOrApiKey.takeIf { authMethod == SeerrAuthMethod.API_KEY }
             val api =
                 SeerrApiClient(
-                    url,
+                    createSeerrApiUrl(url),
                     apiKey,
                     okHttpClient
                         .newBuilder()
