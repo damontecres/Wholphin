@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.api.LyricLine
 
@@ -48,6 +50,9 @@ fun LyricsContent(
     val focusRequesters =
         remember(lyrics) { List(lyrics?.lyrics.orEmpty().size) { FocusRequester() } }
     val listState = rememberLazyListState(currentLyricPosition ?: 0)
+
+    val scrollConnection = rememberDelayedNestedScroll(yDelay = .66f)
+
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     if (!lyricsHaveFocus) {
         LaunchedEffect(currentLyricPosition) {
@@ -61,7 +66,10 @@ fun LyricsContent(
             }
         }
     }
-    Column(modifier) {
+    Column(
+        modifier
+            .nestedScroll(scrollConnection),
+    ) {
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(),
@@ -115,8 +123,10 @@ fun LyricsContent(
                             Modifier
                                 .focusRequester(focusRequesters[index]),
                     ) {
+                        val text =
+                            remember(lyric.text) { lyric.text.ifBlank { "                " } }
                         Text(
-                            text = lyric.text,
+                            text = text,
                             style = MaterialTheme.typography.bodyLarge,
                             color = if (focused) MaterialTheme.colorScheme.onSurface else color,
                             modifier =
