@@ -59,6 +59,8 @@ val favoriteOptions by lazy {
         BaseItemKind.VIDEO to R.string.videos,
         BaseItemKind.PLAYLIST to R.string.playlists,
         BaseItemKind.PERSON to R.string.people,
+        BaseItemKind.MUSIC_ARTIST to R.string.artists,
+        BaseItemKind.MUSIC_ALBUM to R.string.albums,
     )
 }
 val favoriteOptionsList by lazy { favoriteOptions.keys.toList() }
