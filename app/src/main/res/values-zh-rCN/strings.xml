@@ -533,4 +533,5 @@
     <string name="show_media_management">显示媒体管理选项</string>
     <string name="delete_item">是否确定要删除此项目？</string>
     <string name="search_for">搜索 %s</string>
+    <string name="select_all">全选</string>
 </resources>
