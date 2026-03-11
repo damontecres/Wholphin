@@ -9,6 +9,7 @@ data class NowPlayingState(
     val musicServiceState: MusicServiceState,
     val lyrics: LyricDto? = null,
     val currentLyricIndex: Int? = null,
+    val visualizerPermissions: Boolean = false,
 ) {
     val hasLyrics: Boolean get() = lyrics != null && lyrics.lyrics.isNotEmpty()
 }

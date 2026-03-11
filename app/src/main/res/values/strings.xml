@@ -742,6 +742,8 @@
     <string name="show_visualizer">Show visualizer</string>
     <string name="show_backdrop">Show backdrop</string>
     <string name="play_as_type">Play as?</string>
+    <string name="visualizer_rationale">Visualizing the currently playing audio requires permission to record audio.</string>
+    <string name="continue_string">Continue</string>
 
 
 </resources>

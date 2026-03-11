@@ -1,6 +1,10 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.media.audiofx.Visualizer
+import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.updateMusicPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -24,13 +29,17 @@ import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.lyricsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -48,6 +57,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class NowPlayingViewModel
     @AssistedInject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val musicService: MusicService,
         private val backdropService: BackdropService,
@@ -62,6 +72,7 @@ class NowPlayingViewModel
             fun create(): NowPlayingViewModel
         }
 
+        private val visualizerMutex = Mutex()
         private var visualizer: Visualizer? = null
 
         val controllerViewState =
@@ -87,25 +98,16 @@ class NowPlayingViewModel
                 player.removeListener(this)
                 visualizer?.release()
             }
+            val visualizerPermissions =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO,
+                ) == PackageManager.PERMISSION_GRANTED
+            startVisualizer(visualizerPermissions, false)
             viewModelScope.launchDefault {
                 musicService.state.collectLatest { musicServiceState ->
                     if (musicServiceState.status != NowPlayingStatus.IDLE) {
-                        viewModelScope.launchDefault {
-                            if (visualizer == null) {
-                                visualizer =
-                                    Visualizer(onMain { player.audioSessionId }).apply {
-                                        captureSize = Visualizer.getCaptureSizeRange()[1]
-                                        setDataCaptureListener(
-                                            this@NowPlayingViewModel,
-                                            Visualizer.getMaxCaptureRate() / 2,
-                                            true,
-                                            false,
-                                        )
-                                    }
-                            }
-                            visualizer?.enabled =
-                                musicServiceState.status == NowPlayingStatus.PLAYING
-                        }
+                        visualizer?.enabled = musicServiceState.status == NowPlayingStatus.PLAYING
                     }
 
                     state.update { it.copy(musicServiceState = musicServiceState) }
@@ -292,6 +294,51 @@ class NowPlayingViewModel
                         backdropService.clearBackdrop()
                     }
                 }
+            }
+        }
+
+        private fun initVisualizer() {
+            viewModelScope.launchDefault {
+                visualizerMutex.withLock {
+                    val prefs = preferencesDataStore.data.first()
+                    if (visualizer == null &&
+                        state.value.visualizerPermissions &&
+                        prefs.musicPreferences.showVisualizer
+                    ) {
+                        Timber.v("Creating visualizer")
+                        visualizer =
+                            Visualizer(onMain { player.audioSessionId }).apply {
+                                captureSize = Visualizer.getCaptureSizeRange()[1]
+                                setDataCaptureListener(
+                                    this@NowPlayingViewModel,
+                                    Visualizer.getMaxCaptureRate() / 2,
+                                    true,
+                                    false,
+                                )
+                                enabled = true
+                            }
+                    }
+                }
+            }
+        }
+
+        fun startVisualizer(
+            permissionGranted: Boolean,
+            updatePreferences: Boolean,
+        ) {
+            Timber.v("startVisualizer: permissionGranted=%s", permissionGranted)
+            state.update {
+                it.copy(
+                    visualizerPermissions = permissionGranted,
+                )
+            }
+            viewModelScope.launchDefault {
+                if (updatePreferences || !permissionGranted) {
+                    preferencesDataStore.updateData {
+                        it.updateMusicPreferences { showVisualizer = permissionGranted }
+                    }
+                }
+                initVisualizer()
             }
         }
     }

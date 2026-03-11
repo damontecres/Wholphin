@@ -1,7 +1,10 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
+import android.Manifest
 import android.view.Gravity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -41,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
@@ -49,9 +53,11 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.playback.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
@@ -140,6 +146,14 @@ fun NowPlayingPage(
     BackHandler(lyricsHaveFocus) {
         focusRequester.tryRequestFocus()
     }
+
+    var showRationaleDialog by remember { mutableStateOf(false) }
+    val launcher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            viewModel.startVisualizer(isGranted, true)
+        }
 
     Box(modifier) {
         Box(
@@ -317,6 +331,34 @@ fun NowPlayingPage(
             appPreferences = preferences,
             onDismissRequest = { showViewOptionsDialog = false },
             onViewOptionsChange = { viewModel.updatePreferences(it) },
+            onEnableVisualizer = {
+                val showRationale =
+                    context
+                        .findActivity()
+                        ?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == true
+                when {
+                    !state.visualizerPermissions && showRationale -> {
+                        showRationaleDialog = true
+                    }
+
+                    !state.visualizerPermissions -> {
+                        launcher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+
+                    else -> {
+                        viewModel.startVisualizer(true, true)
+                    }
+                }
+            },
+        )
+    }
+    if (showRationaleDialog) {
+        RecordAudioRationaleDialog(
+            onDismissRequest = { showRationaleDialog = false },
+            onClick = {
+                showRationaleDialog = false
+                launcher.launch(Manifest.permission.RECORD_AUDIO)
+            },
         )
     }
 }
@@ -355,4 +397,32 @@ fun NowPlayingBottomDialog(
         },
         gravity = Gravity.START,
     )
+}
+
+@Composable
+private fun RecordAudioRationaleDialog(
+    onDismissRequest: () -> Unit,
+    onClick: () -> Unit,
+) {
+    BasicDialog(
+        onDismissRequest = onDismissRequest,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.visualizer_rationale),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Button(
+                onClick = onClick,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    text = stringResource(R.string.continue_string),
+                )
+            }
+        }
+    }
 }
