@@ -72,3 +72,12 @@ The `AppPreference` objects are used to create the UI for configuring settings u
 4. Update `AppPreferencesSerializer` to set the default value for new installs
 5. If needed, update `AppUpgradeHandler` to set the default value for app upgrades
     - Since preferences use proto3, the [default values](https://protobuf.dev/programming-guides/proto3/#default) are zero, false, or the first enum, so only need this step if the default value is different
+
+## SyncPlay design note
+
+The first SyncPlay rollout should stay intentionally narrow:
+
+- support only a single active SyncPlay group at a time
+- prioritize foundation-first delivery before broader UX or multi-group features
+- model SyncPlay state with `StateFlow` as the primary state mechanism
+- do not add Room persistence in the initial implementation
