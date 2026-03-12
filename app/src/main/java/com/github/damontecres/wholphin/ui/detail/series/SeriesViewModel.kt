@@ -387,12 +387,6 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
-                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
-                    (episodes as? EpisodeList.Success)
-                        ?.let {
-                            it.episodes.getOrNull(it.initialEpisodeIndex)
-                        }?.let { lookupPeopleInEpisode(it) }
-                }
             }
         }
 
