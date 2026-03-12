@@ -168,3 +168,9 @@ fun createSeerrApiUrl(url: String): String =
             .build()
             .toString()
     }
+
+fun migrateSeerrUrl(url: String): String {
+    var url = url.removeSuffix("/api/v1/").removeSuffix("/api/v1")
+    if (!url.endsWith("/")) url += "/"
+    return url
+}

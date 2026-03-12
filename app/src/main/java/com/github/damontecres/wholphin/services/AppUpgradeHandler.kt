@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -275,9 +276,7 @@ class AppUpgradeHandler
                 seerrServerDao.getServers().forEach {
                     val server = it.server
                     seerrServerDao.updateServer(
-                        server.copy(
-                            url = server.url.replace("/api/v1", "/"),
-                        ),
+                        server.copy(url = migrateSeerrUrl(server.url)),
                     )
                 }
             }
