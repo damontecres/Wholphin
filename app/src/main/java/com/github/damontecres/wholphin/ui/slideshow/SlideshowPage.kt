@@ -395,8 +395,9 @@ fun SlideshowPage(
                             ImageRequest
                                 .Builder(LocalContext.current)
                                 .data(imageState.url)
-                                .size(Size.ORIGINAL)
-                                .transitionFactory(CrossFadeFactory(750.milliseconds))
+                                .apply {
+                                    if (isZoomed) size(Size.ORIGINAL)
+                                }.transitionFactory(CrossFadeFactory(750.milliseconds))
                                 .useExistingImageAsPlaceholder(true)
                                 .build(),
                         contentDescription = null,
