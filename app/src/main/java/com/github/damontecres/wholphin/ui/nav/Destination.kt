@@ -130,6 +130,9 @@ sealed class Destination(
     ) : Destination(false)
 
     @Serializable
+    data object NowPlaying : Destination(true)
+
+    @Serializable
     data object UpdateApp : Destination(true)
 
     @Serializable

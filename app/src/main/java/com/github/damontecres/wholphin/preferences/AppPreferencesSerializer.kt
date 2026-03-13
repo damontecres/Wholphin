@@ -152,6 +152,15 @@ class AppPreferencesSerializer
                                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
                                 slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
                             }.build()
+
+                    musicPreferences =
+                        MusicPreferences
+                            .newBuilder()
+                            .apply {
+                                showBackdrop = true
+                                showLyrics = true
+                                showAlbumArt = true
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -218,6 +227,11 @@ inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder
 inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
     updateInterfacePreferences {
         screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        musicPreferences = musicPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

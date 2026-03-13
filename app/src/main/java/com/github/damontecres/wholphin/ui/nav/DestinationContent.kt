@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderMusic
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPhotoAlbum
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
@@ -28,6 +29,9 @@ import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
+import com.github.damontecres.wholphin.ui.detail.music.AlbumDetailsPage
+import com.github.damontecres.wholphin.ui.detail.music.ArtistDetailsPage
+import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
@@ -214,6 +218,22 @@ fun DestinationContent(
                     )
                 }
 
+                BaseItemKind.MUSIC_ALBUM -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    AlbumDetailsPage(
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.MUSIC_ARTIST -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    ArtistDetailsPage(
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}", modifier)
@@ -265,6 +285,10 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
+        Destination.NowPlaying -> {
+            NowPlayingPage(modifier)
         }
 
         Destination.UpdateApp -> {
@@ -386,6 +410,14 @@ fun CollectionFolder(
             )
         }
 
+        CollectionType.MUSIC -> {
+            CollectionFolderMusic(
+                preferences,
+                destination,
+                modifier,
+            )
+        }
+
         CollectionType.HOMEVIDEOS,
         CollectionType.PHOTOS,
         -> {
@@ -398,7 +430,6 @@ fun CollectionFolder(
         }
 
         CollectionType.MUSICVIDEOS,
-        CollectionType.MUSIC,
         CollectionType.BOOKS,
         -> {
             CollectionFolderGeneric(

@@ -5,10 +5,10 @@ package com.github.damontecres.wholphin.ui.playback
 import android.view.Gravity
 import androidx.annotation.DrawableRes
 import androidx.annotation.OptIn
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -37,14 +36,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -60,6 +63,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
@@ -286,7 +290,7 @@ fun SeekBar(
     }
 }
 
-private val buttonSpacing = 12.dp
+val buttonSpacing = 12.dp
 
 @Composable
 fun LeftPlaybackButtons(
@@ -463,6 +467,54 @@ fun PlaybackButton(
 }
 
 @Composable
+fun PlaybackFaButton(
+    @StringRes iconRes: Int,
+    onClick: () -> Unit,
+    onControllerInteraction: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
+    textColor: Color = Color.Unspecified,
+) {
+    val selectedColor = MaterialTheme.colorScheme.border
+    Button(
+        enabled = enabled,
+        onClick = onClick,
+//        shape = ButtonDefaults.shape(CircleShape),
+        colors =
+            ClickableSurfaceDefaults.colors(
+                containerColor = AppColors.TransparentBlack25,
+                focusedContainerColor = selectedColor,
+            ),
+        contentPadding = PaddingValues(4.dp),
+        interactionSource = interactionSource,
+        modifier =
+            modifier
+                .size(36.dp, 36.dp)
+                .onFocusChanged { onControllerInteraction.invoke() },
+    ) {
+        Text(
+            text = stringResource(iconRes),
+            fontSize = 18.sp,
+            fontFamily = FontAwesome,
+            textAlign = TextAlign.Center,
+            color =
+                if (textColor.isSpecified) {
+                    textColor
+                } else if (LocalTheme.current == AppThemeColors.OLED_BLACK) {
+                    LocalContentColor.current
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterVertically),
+        )
+    }
+}
+
+@Composable
 fun <T> BottomDialog(
     choices: List<BottomDialogItem<T>>,
     onDismissRequest: () -> Unit,
@@ -545,11 +597,17 @@ data class BottomDialogItem<T>(
 @Composable
 private fun ButtonPreview() {
     WholphinTheme {
-        Row {
+        Row(Modifier.background(Color.Red)) {
             PlaybackButton(
                 iconRes = R.drawable.baseline_play_arrow_24,
                 onClick = {},
                 onControllerInteraction = {},
+            )
+            PlaybackFaButton(
+                iconRes = R.string.fa_shuffle,
+                onClick = {},
+                onControllerInteraction = {},
+                textColor = Color.Green,
             )
         }
     }
