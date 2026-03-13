@@ -6,6 +6,7 @@ import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
@@ -21,6 +22,7 @@ import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -35,9 +37,14 @@ class AppUpgradeHandler
     constructor(
         @param:ApplicationContext private val context: Context,
         private val appPreferences: DataStore<AppPreferences>,
+        private val seerrServerDao: SeerrServerDao,
     ) {
         suspend fun run() {
-            val pkgInfo = WholphinApplication.instance.packageManager.getPackageInfo(WholphinApplication.instance.packageName, 0)
+            val pkgInfo =
+                WholphinApplication.instance.packageManager.getPackageInfo(
+                    WholphinApplication.instance.packageName,
+                    0,
+                )
             val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             val previousVersion = prefs.getString(VERSION_NAME_CURRENT_KEY, null)
             val previousVersionCode = prefs.getLong(VERSION_CODE_CURRENT_KEY, -1)
@@ -62,14 +69,16 @@ class AppUpgradeHandler
                 try {
                     copySubfont(true)
                     upgradeApp(
-                        context,
-                        Version.Companion.fromString(previousVersion ?: "0.0.0"),
-                        Version.Companion.fromString(newVersion),
+                        Version.fromString(previousVersion ?: "0.0.0"),
+                        Version.fromString(newVersion),
                         appPreferences,
                     )
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception during app upgrade")
                 }
+                Timber.i("App upgrade complete")
+            } else {
+                Timber.d("No app update needed")
             }
         }
 
@@ -100,110 +109,108 @@ class AppUpgradeHandler
             const val VERSION_NAME_CURRENT_KEY = "version.current.name"
             const val VERSION_CODE_CURRENT_KEY = "version.current.code"
         }
-    }
 
-suspend fun upgradeApp(
-    context: Context,
-    previous: Version,
-    current: Version,
-    appPreferences: DataStore<AppPreferences>,
-) {
-    if (previous.isEqualOrBefore(Version.fromString("0.1.0-2-g0"))) {
-        appPreferences.updateData {
-            it.updatePlaybackOverrides {
-                ac3Supported = AppPreference.Ac3Supported.defaultValue
-                downmixStereo = AppPreference.DownMixStereo.defaultValue
-                directPlayAss = AppPreference.DirectPlayAss.defaultValue
-                directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
-            }
-        }
-    }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.3-6-g0"))) {
-        appPreferences.updateData {
-            it.updateInterfacePreferences {
-                navDrawerSwitchOnFocus = AppPreference.NavDrawerSwitchOnFocus.defaultValue
-            }
-        }
-    }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.5-11-g0"))) {
-        appPreferences.updateData {
-            it.updateInterfacePreferences {
-                showClock = AppPreference.ShowClock.defaultValue
-            }
-        }
-    }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
-        PreferencesViewModel.resetSubtitleSettings(appPreferences)
-    }
-    if (previous.isEqualOrBefore(Version.fromString("0.3.2-4-g0"))) {
-        appPreferences.updateData {
-            it.updateSubtitlePreferences {
-                margin = SubtitleSettings.Margin.defaultValue.toInt()
-            }
-        }
-    }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.4"))) {
-        appPreferences.updateData {
-            it.updateAdvancedPreferences {
-                if (imageDiskCacheSizeBytes < (AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT)) {
-                    imageDiskCacheSizeBytes =
-                        AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+        suspend fun upgradeApp(
+            previous: Version,
+            current: Version,
+            appPreferences: DataStore<AppPreferences>,
+        ) {
+            if (previous.isEqualOrBefore(Version.fromString("0.1.0-2-g0"))) {
+                appPreferences.updateData {
+                    it.updatePlaybackOverrides {
+                        ac3Supported = AppPreference.Ac3Supported.defaultValue
+                        downmixStereo = AppPreference.DownMixStereo.defaultValue
+                        directPlayAss = AppPreference.DirectPlayAss.defaultValue
+                        directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
+                    }
                 }
             }
-        }
-    }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.4-2-g0"))) {
-        appPreferences.updateData {
-            it.updateMpvOptions {
-                useGpuNext = AppPreference.MpvGpuNext.defaultValue
-            }
-        }
-    }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.4-4-g0"))) {
-        appPreferences.updateData {
-            it.update {
-                signInAutomatically = AppPreference.SignInAuto.defaultValue
-            }
-        }
-    }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.5-0-g0"))) {
-        appPreferences.updateData {
-            it.updateSubtitlePreferences {
-                if (edgeThickness < 1) {
-                    edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+            if (previous.isEqualOrBefore(Version.fromString("0.2.3-6-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        navDrawerSwitchOnFocus = AppPreference.NavDrawerSwitchOnFocus.defaultValue
+                    }
                 }
             }
-        }
-    }
-    if (previous.isEqualOrBefore(Version.fromString("0.3.5-56-g0"))) {
-        appPreferences.updateData {
-            it.updateLiveTvPreferences {
-                showHeader = AppPreference.LiveTvShowHeader.defaultValue
-                favoriteChannelsAtBeginning =
-                    AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
-                sortByRecentlyWatched =
-                    AppPreference.LiveTvChannelSortByWatched.defaultValue
-                colorCodePrograms =
-                    AppPreference.LiveTvColorCodePrograms.defaultValue
-            }
-        }
-    }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
-        if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
-            appPreferences.updateData {
-                it.updateMpvOptions {
-                    useGpuNext = false
+            if (previous.isEqualOrBefore(Version.fromString("0.2.5-11-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        showClock = AppPreference.ShowClock.defaultValue
+                    }
                 }
             }
-        }
-    }
+            if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
+                PreferencesViewModel.resetSubtitleSettings(appPreferences)
+            }
+            if (previous.isEqualOrBefore(Version.fromString("0.3.2-4-g0"))) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        margin = SubtitleSettings.Margin.defaultValue.toInt()
+                    }
+                }
+            }
 
-    // TODO temporarily disabled until some MPV bugs are fixed
+            if (previous.isEqualOrBefore(Version.fromString("0.3.4"))) {
+                appPreferences.updateData {
+                    it.updateAdvancedPreferences {
+                        if (imageDiskCacheSizeBytes < (AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT)) {
+                            imageDiskCacheSizeBytes =
+                                AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                        }
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.3.4-2-g0"))) {
+                appPreferences.updateData {
+                    it.updateMpvOptions {
+                        useGpuNext = AppPreference.MpvGpuNext.defaultValue
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.3.4-4-g0"))) {
+                appPreferences.updateData {
+                    it.update {
+                        signInAutomatically = AppPreference.SignInAuto.defaultValue
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.3.5-0-g0"))) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        if (edgeThickness < 1) {
+                            edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+                        }
+                    }
+                }
+            }
+            if (previous.isEqualOrBefore(Version.fromString("0.3.5-56-g0"))) {
+                appPreferences.updateData {
+                    it.updateLiveTvPreferences {
+                        showHeader = AppPreference.LiveTvShowHeader.defaultValue
+                        favoriteChannelsAtBeginning =
+                            AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
+                        sortByRecentlyWatched =
+                            AppPreference.LiveTvChannelSortByWatched.defaultValue
+                        colorCodePrograms =
+                            AppPreference.LiveTvColorCodePrograms.defaultValue
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
+                if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
+                    appPreferences.updateData {
+                        it.updateMpvOptions {
+                            useGpuNext = false
+                        }
+                    }
+                }
+            }
+
+            // TODO temporarily disabled until some MPV bugs are fixed
 //    if (previous.isEqualOrBefore(Version.fromString("0.4.0-1-g0"))) {
 //        appPreferences.updateData {
 //            it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
@@ -211,56 +218,67 @@ suspend fun upgradeApp(
 //        showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
 //    }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
-        appPreferences.updateData {
-            it.updateMpvOptions {
-                useGpuNext = false
+            if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+                appPreferences.updateData {
+                    it.updateMpvOptions {
+                        useGpuNext = false
+                    }
+                }
             }
-        }
-    }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.1-6-g0"))) {
-        appPreferences.updateData {
-            it.updateInterfacePreferences {
-                subtitlesPreferences =
-                    subtitlesPreferences
-                        .toBuilder()
-                        .apply {
-                            imageSubtitleOpacity = SubtitleSettings.ImageOpacity.defaultValue.toInt()
-                        }.build()
-                // Copy current subtitle prefs as HDR ones
-                hdrSubtitlesPreferences = subtitlesPreferences.toBuilder().build()
+            if (previous.isEqualOrBefore(Version.fromString("0.4.1-6-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        subtitlesPreferences =
+                            subtitlesPreferences
+                                .toBuilder()
+                                .apply {
+                                    imageSubtitleOpacity =
+                                        SubtitleSettings.ImageOpacity.defaultValue.toInt()
+                                }.build()
+                        // Copy current subtitle prefs as HDR ones
+                        hdrSubtitlesPreferences = subtitlesPreferences.toBuilder().build()
+                    }
+                }
             }
-        }
-    }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.1-7-g0"))) {
-        appPreferences.updateData {
-            it.updatePhotoPreferences {
-                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+            if (previous.isEqualOrBefore(Version.fromString("0.4.1-7-g0"))) {
+                appPreferences.updateData {
+                    it.updatePhotoPreferences {
+                        slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+                    }
+                }
             }
-        }
-    }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.1-14-g0"))) {
-        appPreferences.updateData {
-            it.updateHomePagePreferences {
-                maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
+            if (previous.isEqualOrBefore(Version.fromString("0.4.1-14-g0"))) {
+                appPreferences.updateData {
+                    it.updateHomePagePreferences {
+                        maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
+                    }
+                }
             }
-        }
-    }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.5.3-0-g0"))) {
-        appPreferences.updateData {
-            it.updateScreensaverPreferences {
-                startDelay = ScreensaverPreference.DEFAULT_START_DELAY
-                duration = ScreensaverPreference.DEFAULT_DURATION
-                animate = ScreensaverPreference.Animate.defaultValue
-                maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
-                clearItemTypes()
-                addItemTypes(BaseItemKind.MOVIE.serialName)
-                addItemTypes(BaseItemKind.SERIES.serialName)
+            if (previous.isEqualOrBefore(Version.fromString("0.5.3-0-g0"))) {
+                appPreferences.updateData {
+                    it.updateScreensaverPreferences {
+                        startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                        duration = ScreensaverPreference.DEFAULT_DURATION
+                        animate = ScreensaverPreference.Animate.defaultValue
+                        maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                        clearItemTypes()
+                        addItemTypes(BaseItemKind.MOVIE.serialName)
+                        addItemTypes(BaseItemKind.SERIES.serialName)
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.5.4-0-g0"))) {
+                seerrServerDao.getServers().forEach {
+                    val server = it.server
+                    seerrServerDao.updateServer(
+                        server.copy(url = migrateSeerrUrl(server.url)),
+                    )
+                }
             }
         }
     }
-}

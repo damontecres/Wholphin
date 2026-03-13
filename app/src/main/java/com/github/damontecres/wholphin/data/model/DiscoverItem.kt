@@ -3,25 +3,16 @@
 package com.github.damontecres.wholphin.data.model
 
 import androidx.compose.runtime.Stable
-import com.github.damontecres.wholphin.api.seerr.model.CreditCast
-import com.github.damontecres.wholphin.api.seerr.model.CreditCrew
-import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieMovieIdRatingsGet200Response
-import com.github.damontecres.wholphin.api.seerr.model.MovieResult
-import com.github.damontecres.wholphin.api.seerr.model.TvDetails
-import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.api.seerr.model.TvTvIdRatingsGet200Response
-import com.github.damontecres.wholphin.services.SeerrSearchResult
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.toLocalDate
 import com.github.damontecres.wholphin.util.LocalDateSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.time.LocalDate
 import java.util.UUID
 
@@ -85,16 +76,13 @@ data class DiscoverItem(
     val overview: String?,
     val availability: SeerrAvailability,
     @Serializable(LocalDateSerializer::class) val releaseDate: LocalDate?,
-    val posterPath: String?,
-    val backdropPath: String?,
+    val posterUrl: String?,
+    val backDropUrl: String?,
     val jellyfinItemId: UUID?,
 ) : CardGridItem {
     override val gridId: String get() = id.toString()
     override val playable: Boolean = false
     override val sortName: String get() = title ?: ""
-
-    val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h1080_multi_faces$it" }
-    val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
 
     val destination: Destination
         get() {
@@ -114,103 +102,6 @@ data class DiscoverItem(
                 Destination.DiscoveredItem(this)
             }
         }
-
-    constructor(movie: MovieResult) : this(
-        id = movie.id,
-        type = SeerrItemType.MOVIE,
-        title = movie.title,
-        subtitle = null,
-        overview = movie.overview,
-        availability = SeerrAvailability.from(movie.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(movie.releaseDate),
-        posterPath = movie.posterPath,
-        backdropPath = movie.backdropPath,
-        jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(movie: MovieDetails) : this(
-        id = movie.id ?: -1,
-        type = SeerrItemType.MOVIE,
-        title = movie.title,
-        subtitle = null,
-        overview = movie.overview,
-        availability = SeerrAvailability.from(movie.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(movie.releaseDate),
-        posterPath = movie.posterPath,
-        backdropPath = movie.backdropPath,
-        jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(tv: TvResult) : this(
-        id = tv.id!!,
-        type = SeerrItemType.TV,
-        title = tv.name,
-        subtitle = null,
-        overview = tv.overview,
-        availability = SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(tv.firstAirDate),
-        posterPath = tv.posterPath,
-        backdropPath = tv.backdropPath,
-        jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(tv: TvDetails) : this(
-        id = tv.id!!,
-        type = SeerrItemType.TV,
-        title = tv.name,
-        subtitle = null,
-        overview = tv.overview,
-        availability = SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(tv.firstAirDate),
-        posterPath = tv.posterPath,
-        backdropPath = tv.backdropPath,
-        jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(search: SeerrSearchResult) : this(
-        id = search.id,
-        type = SeerrItemType.fromString(search.mediaType),
-        title = search.title ?: search.name,
-        subtitle = null,
-        overview = search.overview,
-        availability =
-            SeerrAvailability.from(search.mediaInfo?.status)
-                ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(search.releaseDate ?: search.firstAirDate),
-        posterPath = search.posterPath,
-        backdropPath = search.backdropPath,
-        jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(credit: CreditCast) : this(
-        id = credit.id!!,
-        type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
-        title = credit.name ?: credit.title,
-        subtitle = credit.character,
-        overview = credit.overview,
-        availability =
-            SeerrAvailability.from(credit.mediaInfo?.status)
-                ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(credit.firstAirDate),
-        posterPath = credit.posterPath ?: credit.profilePath,
-        backdropPath = credit.backdropPath,
-        jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
-
-    constructor(credit: CreditCrew) : this(
-        id = credit.id!!,
-        type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
-        title = credit.name ?: credit.title,
-        subtitle = credit.job,
-        overview = credit.overview,
-        availability =
-            SeerrAvailability.from(credit.mediaInfo?.status)
-                ?: SeerrAvailability.UNKNOWN,
-        releaseDate = toLocalDate(credit.firstAirDate),
-        posterPath = credit.posterPath ?: credit.profilePath,
-        backdropPath = credit.backdropPath,
-        jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
-    )
 }
 
 data class DiscoverRating(

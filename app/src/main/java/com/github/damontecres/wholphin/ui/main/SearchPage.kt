@@ -165,7 +165,7 @@ class SearchViewModel
                     val results =
                         seerrService
                             .search(query)
-                            .map { DiscoverItem(it) }
+                            .map { seerrService.createDiscoverItem(it) }
                             .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
                     seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
                 }
