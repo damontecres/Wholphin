@@ -181,4 +181,3 @@ Use split responsibility.
 - This design assumes SyncPlay state becomes app-owned and authoritative only after SDK responses and websocket updates are mapped into Wholphin models.
 - Existing playback behavior must remain unchanged until a later implementation PR explicitly moves a behavior boundary.
 - Any later PR should keep non-SyncPlay playback working with the current local `Playlist` flow unless that PR is specifically scoped to unify those flows.
-
