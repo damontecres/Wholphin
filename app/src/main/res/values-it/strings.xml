@@ -569,4 +569,5 @@
     <string name="search_for">Cerca %s</string>
     <string name="delete_item">Sei sicuro di voler cancellare questo elemento?</string>
     <string name="show_media_management">Mostra opzioni di gestione dei media</string>
+    <string name="select_all">Seleziona tutti</string>
 </resources>
