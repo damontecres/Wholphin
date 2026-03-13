@@ -146,17 +146,17 @@ class ApiRequestPager<T>(
         position: Int,
         itemId: UUID,
     ) {
-        val item =
-            api.userLibraryApi.getItem(itemId).content.let {
-                BaseItem.from(
-                    it,
-                    api,
-                    useSeriesForPrimary,
-                )
-            }
-        val pageNumber = position / pageSize
-        val index = position - pageNumber * pageSize
         mutex.withLock {
+            val item =
+                api.userLibraryApi.getItem(itemId).content.let {
+                    BaseItem.from(
+                        it,
+                        api,
+                        useSeriesForPrimary,
+                    )
+                }
+            val pageNumber = position / pageSize
+            val index = position - pageNumber * pageSize
             val page = cachedPages.getIfPresent(pageNumber)
             if (page != null && index in page.indices) {
                 page[index] = item
