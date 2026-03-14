@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -163,7 +165,7 @@ class SeerrServerRepository
             val apiKey = passwordOrApiKey.takeIf { authMethod == SeerrAuthMethod.API_KEY }
             val api =
                 SeerrApiClient(
-                    url,
+                    createSeerrApiUrl(url),
                     apiKey,
                     okHttpClient
                         .newBuilder()
@@ -331,3 +333,24 @@ class UserSwitchListener
                 }
             }
     }
+
+fun CurrentSeerr?.imageUrlBuilder(
+    imageType: ImageType,
+    path: String?,
+): String? {
+    if (this == null) return null
+    val cacheImages = serverConfig.cacheImages == true
+    val base =
+        if (cacheImages) {
+            server.url.removeSuffix("/") + "/imageproxy/tmdb"
+        } else {
+            "https://image.tmdb.org"
+        }
+    val prefix =
+        when (imageType) {
+            ImageType.PRIMARY -> "/t/p/w500"
+            ImageType.BACKDROP -> "/t/p/w1920_and_h1080_multi_faces"
+            else -> throw IllegalArgumentException("Image type not supported: $imageType")
+        }
+    return "${base}${prefix}$path"
+}

@@ -711,6 +711,8 @@ components:
           type: boolean
         series4kEnabled:
           type: boolean
+        cacheImages:
+          type: boolean
     MovieResult:
       type: object
       required:

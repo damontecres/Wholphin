@@ -103,7 +103,7 @@ class DiscoverMovieViewModel
             ) {
                 Timber.v("Init for movie %s", item.id)
                 val movie = fetchAndSetItem().await()
-                val discoveredItem = DiscoverItem(movie)
+                val discoveredItem = seerrService.createDiscoverItem(movie)
                 backdropService.submit(discoveredItem)
 
                 updateCanCancel()
@@ -121,7 +121,7 @@ class DiscoverMovieViewModel
                             seerrService.api.moviesApi
                                 .movieMovieIdSimilarGet(movieId = item.id, page = 1)
                                 .results
-                                ?.map(::DiscoverItem)
+                                ?.map { seerrService.createDiscoverItem(it) }
                                 .orEmpty()
                         similar.setValueOnMain(result)
                     }
@@ -130,7 +130,7 @@ class DiscoverMovieViewModel
                             seerrService.api.moviesApi
                                 .movieMovieIdRecommendationsGet(movieId = item.id, page = 1)
                                 .results
-                                ?.map(::DiscoverItem)
+                                ?.map { seerrService.createDiscoverItem(it) }
                                 .orEmpty()
                         recommended.setValueOnMain(result)
                     }
@@ -138,11 +138,11 @@ class DiscoverMovieViewModel
                 val people =
                     movie.credits
                         ?.cast
-                        ?.map(::DiscoverItem)
+                        ?.map { seerrService.createDiscoverItem(it) }
                         .orEmpty() +
                         movie.credits
                             ?.crew
-                            ?.map(::DiscoverItem)
+                            ?.map { seerrService.createDiscoverItem(it) }
                             .orEmpty()
                 this@DiscoverMovieViewModel.people.setValueOnMain(people)
                 val trailers =
