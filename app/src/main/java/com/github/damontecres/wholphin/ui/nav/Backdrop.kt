@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoilApi::class)
+
 package com.github.damontecres.wholphin.ui.nav
 
 import androidx.compose.animation.animateColorAsState
@@ -24,11 +26,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
+import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.preferences.BackdropStyle
+import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -38,8 +44,31 @@ fun Backdrop(
     viewModel: ApplicationContentViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     enableTopScrim: Boolean = true,
+    useExistingImageAsPlaceholder: Boolean = false,
+    crossfadeDuration: Duration = 800.milliseconds,
 ) {
     val backdrop by viewModel.backdropService.backdropFlow.collectAsStateWithLifecycle()
+    Backdrop(
+        backdrop = backdrop,
+        drawerIsOpen = drawerIsOpen,
+        backdropStyle = backdropStyle,
+        modifier = modifier,
+        enableTopScrim = enableTopScrim,
+        useExistingImageAsPlaceholder = useExistingImageAsPlaceholder,
+        crossfadeDuration = crossfadeDuration,
+    )
+}
+
+@Composable
+fun Backdrop(
+    backdrop: BackdropResult,
+    drawerIsOpen: Boolean,
+    backdropStyle: BackdropStyle,
+    modifier: Modifier = Modifier,
+    enableTopScrim: Boolean = true,
+    useExistingImageAsPlaceholder: Boolean = false,
+    crossfadeDuration: Duration = 800.milliseconds,
+) {
     val baseBackgroundColor = MaterialTheme.colorScheme.background
     if (backdrop.hasColors &&
         (backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR || backdropStyle == BackdropStyle.UNRECOGNIZED)
@@ -117,7 +146,8 @@ fun Backdrop(
                     ImageRequest
                         .Builder(LocalContext.current)
                         .data(backdrop.imageUrl)
-                        .transitionFactory(CrossFadeFactory(800.milliseconds))
+                        .useExistingImageAsPlaceholder(useExistingImageAsPlaceholder)
+                        .transitionFactory(CrossFadeFactory(crossfadeDuration))
                         .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,

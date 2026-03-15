@@ -54,6 +54,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.components.BasicDialog
@@ -61,6 +62,7 @@ import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.findActivity
+import com.github.damontecres.wholphin.ui.nav.Backdrop
 import com.github.damontecres.wholphin.ui.playback.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
@@ -159,6 +161,15 @@ fun NowPlayingPage(
         }
 
     Box(modifier) {
+        Backdrop(
+            backdrop = state.backdropResult,
+            drawerIsOpen = false,
+            backdropStyle = BackdropStyle.BACKDROP_DYNAMIC_COLOR,
+            modifier = Modifier.fillMaxSize(),
+            enableTopScrim = false,
+            useExistingImageAsPlaceholder = true,
+            crossfadeDuration = 1.5.seconds,
+        )
         Box(
             modifier =
                 Modifier

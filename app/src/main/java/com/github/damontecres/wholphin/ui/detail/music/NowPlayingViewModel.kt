@@ -16,7 +16,9 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateMusicPreferences
+import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.NowPlayingStatus
@@ -45,6 +47,7 @@ import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.lyricsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -63,6 +66,7 @@ class NowPlayingViewModel
         private val api: ApiClient,
         private val musicService: MusicService,
         private val backdropService: BackdropService,
+        private val imageUrlService: ImageUrlService,
         private val preferencesDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
         val userPreferencesService: UserPreferencesService,
@@ -123,6 +127,7 @@ class NowPlayingViewModel
                 controllerViewState.pulseControls()
             }
             viewModelScope.launchDefault {
+                backdropService.clearBackdrop()
                 updateBackdrop(getCurrent())
             }
             playbackLoop()
@@ -230,19 +235,18 @@ class NowPlayingViewModel
                                     val backdropItem =
                                         getBackdropItemForAlbum(api, BaseItem(it, false))
                                     if (backdropItem != null) {
-                                        backdropService.submit(backdropItem)
+                                        doUpdateBackdrop(backdropItem)
                                     } else {
-                                        backdropService.clearBackdrop()
+                                        clearBackdrop()
                                     }
                                 }
                             } catch (ex: Exception) {
                                 Timber.e(ex, "Error fetching backdrop")
-                                backdropService.clearBackdrop()
+                                clearBackdrop()
                             }
                         } else {
-                            backdropService.clearBackdrop()
+                            clearBackdrop()
                         }
-                        // TODO needs smoother transition
                         delay(60.seconds)
                         try {
                             val index = Random.nextInt(state.value.musicServiceState.queueSize)
@@ -255,6 +259,27 @@ class NowPlayingViewModel
                         }
                     }
                 }
+        }
+
+        private suspend fun doUpdateBackdrop(item: BaseItem) {
+            val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+            val (primaryColor, secondaryColor, tertiaryColor) =
+                backdropService.extractColorsFromBackdrop(
+                    imageUrl,
+                )
+            val backdropResult =
+                BackdropResult(
+                    itemId = item.id.toString(),
+                    imageUrl = imageUrl,
+                    primaryColor = primaryColor,
+                    secondaryColor = secondaryColor,
+                    tertiaryColor = tertiaryColor,
+                )
+            state.update { it.copy(backdropResult = backdropResult) }
+        }
+
+        private fun clearBackdrop() {
+            state.update { it.copy(backdropResult = BackdropResult.NONE) }
         }
 
         fun moveQueue(
