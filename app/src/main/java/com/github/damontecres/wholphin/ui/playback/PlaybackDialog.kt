@@ -14,9 +14,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -32,6 +35,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
@@ -397,6 +402,14 @@ fun StreamChoiceBottomDialog(
     gravity: Int,
     currentChoice: Int? = null,
 ) {
+    val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
+    if (currentChoice != null) {
+        LaunchedEffect(Unit) {
+            choices.indexOfFirstOrNull { it.index == currentChoice }?.let {
+                focusRequesters.getOrNull(it)?.tryRequestFocus()
+            }
+        }
+    }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -447,6 +460,7 @@ fun StreamChoiceBottomDialog(
                             if (choice.streamTitle != null) Text(choice.displayTitle)
                         },
                         interactionSource = interactionSource,
+                        modifier = Modifier.focusRequester(focusRequesters[index]),
                     )
                 }
             }
