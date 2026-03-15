@@ -30,8 +30,10 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -47,8 +49,10 @@ import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @UnstableApi
 @HiltViewModel(assistedFactory = NowPlayingViewModel.Factory::class)
@@ -209,30 +213,48 @@ class NowPlayingViewModel
             }
         }
 
+        private var backDropJob: Job? = null
+
         private fun updateBackdrop(audio: AudioItem?) {
-            viewModelScope.launchDefault {
-                val showBackdrop =
-                    userPreferencesService
-                        .getCurrent()
-                        .appPreferences.musicPreferences.showBackdrop
-                if (audio?.albumId != null && showBackdrop) {
-                    try {
-                        api.userLibraryApi.getItem(audio.albumId).content.let {
-                            val backdropItem = getBackdropItemForAlbum(api, BaseItem(it, false))
-                            if (backdropItem != null) {
-                                backdropService.submit(backdropItem)
-                            } else {
+            backDropJob?.cancel()
+            backDropJob =
+                viewModelScope.launchDefault {
+                    val showBackdrop =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.musicPreferences.showBackdrop
+                    if (showBackdrop) {
+                        if (audio?.albumId != null) {
+                            try {
+                                api.userLibraryApi.getItem(audio.albumId).content.let {
+                                    val backdropItem =
+                                        getBackdropItemForAlbum(api, BaseItem(it, false))
+                                    if (backdropItem != null) {
+                                        backdropService.submit(backdropItem)
+                                    } else {
+                                        backdropService.clearBackdrop()
+                                    }
+                                }
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Error fetching backdrop")
                                 backdropService.clearBackdrop()
                             }
+                        } else {
+                            backdropService.clearBackdrop()
                         }
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Error fetching backdrop")
-                        backdropService.clearBackdrop()
+                        // TODO needs smoother transition
+                        delay(60.seconds)
+                        try {
+                            val index = Random.nextInt(state.value.musicServiceState.queueSize)
+                            val newAudio =
+                                onMain { player.getMediaItemAt(index) }.localConfiguration?.tag as? AudioItem
+                            updateBackdrop(newAudio)
+                        } catch (_: CancellationException) {
+                        } catch (ex: Exception) {
+                            Timber.w(ex, "Error getting random audio")
+                        }
                     }
-                } else {
-                    backdropService.clearBackdrop()
                 }
-            }
         }
 
         fun moveQueue(
