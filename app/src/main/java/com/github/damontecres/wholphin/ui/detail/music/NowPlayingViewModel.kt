@@ -47,8 +47,6 @@ import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
-import kotlin.math.abs
-import kotlin.math.ceil
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -267,15 +265,16 @@ class NowPlayingViewModel
             waveform: ByteArray,
             samplingRate: Int,
         ) {
-            val resolution = 64
-            val processed = IntArray(resolution)
+            val resolution = 96
             val captureSize =
                 Visualizer.getCaptureSizeRange()[1]
-            val groupSize = captureSize / resolution.toFloat()
-            for (i in 0 until resolution) {
-                val v = abs(waveform[ceil(i * groupSize).toInt()].toInt())
-                processed[i] = abs(v * v / (128) - 128)
-            }
+            val groupSize = (captureSize / resolution.toFloat()).toInt()
+            val processed =
+                waveform
+                    .toList()
+                    .chunked(groupSize)
+                    .map { it.average().toInt() + 128 }
+                    .toIntArray()
             viz.update { processed }
         }
 
@@ -311,7 +310,7 @@ class NowPlayingViewModel
                                 captureSize = Visualizer.getCaptureSizeRange()[1]
                                 setDataCaptureListener(
                                     this@NowPlayingViewModel,
-                                    Visualizer.getMaxCaptureRate() / 2,
+                                    Visualizer.getMaxCaptureRate() / 3,
                                     true,
                                     false,
                                 )
