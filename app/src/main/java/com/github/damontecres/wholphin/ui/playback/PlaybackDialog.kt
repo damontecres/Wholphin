@@ -54,6 +54,7 @@ data class PlaybackSettings(
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
     val hasSubtitleDownloadPermission: Boolean,
+    val playbackSpeedEnabled: Boolean,
 )
 
 @Composable
@@ -137,6 +138,7 @@ fun PlaybackDialog(
                             data = PlaybackDialogType.PLAYBACK_SPEED,
                             headline = stringResource(R.string.playback_speed),
                             supporting = settings.playbackSpeed.toString(),
+                            enabled = settings.playbackSpeedEnabled,
                         ),
                     )
                     if (enableVideoScale) {

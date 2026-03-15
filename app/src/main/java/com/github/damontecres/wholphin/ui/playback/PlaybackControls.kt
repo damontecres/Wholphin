@@ -8,7 +8,6 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -37,7 +35,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -470,6 +467,7 @@ fun <T> BottomDialog(
     gravity: Int,
     currentChoice: BottomDialogItem<T>? = null,
 ) {
+    val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -504,6 +502,7 @@ fun <T> BottomDialog(
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
                         selected = choice == currentChoice,
+                        enabled = choice.enabled,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
@@ -524,6 +523,7 @@ fun <T> BottomDialog(
                             }
                         },
                         interactionSource = interactionSource,
+                        modifier = Modifier.focusRequester(focusRequesters[index]),
                     )
                 }
             }
@@ -539,6 +539,7 @@ data class BottomDialogItem<T>(
     val data: T,
     val headline: String,
     val supporting: String?,
+    val enabled: Boolean = true,
 )
 
 @PreviewTvSpec
