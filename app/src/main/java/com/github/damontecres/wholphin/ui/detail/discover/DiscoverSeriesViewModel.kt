@@ -102,7 +102,7 @@ class DiscoverSeriesViewModel
             ) {
                 Timber.v("Init for tv %s", item.id)
                 val tv = fetchAndSetItem().await()
-                val discoveredItem = DiscoverItem(tv)
+                val discoveredItem = seerrService.createDiscoverItem(tv)
                 backdropService.submit(discoveredItem)
 
                 updateSeasonStatus()
@@ -121,7 +121,7 @@ class DiscoverSeriesViewModel
                             seerrService.api.tvApi
                                 .tvTvIdSimilarGet(tvId = item.id, page = 1)
                                 .results
-                                ?.map(::DiscoverItem)
+                                ?.map { seerrService.createDiscoverItem(it) }
                                 .orEmpty()
                         similar.setValueOnMain(result)
                     }
@@ -130,7 +130,7 @@ class DiscoverSeriesViewModel
                             seerrService.api.tvApi
                                 .tvTvIdRecommendationsGet(tvId = item.id, page = 1)
                                 .results
-                                ?.map(::DiscoverItem)
+                                ?.map { seerrService.createDiscoverItem(it) }
                                 .orEmpty()
                         recommended.setValueOnMain(result)
                     }
@@ -138,11 +138,11 @@ class DiscoverSeriesViewModel
                 val people =
                     tv.credits
                         ?.cast
-                        ?.map(::DiscoverItem)
+                        ?.map { seerrService.createDiscoverItem(it) }
                         .orEmpty() +
                         tv.credits
                             ?.crew
-                            ?.map(::DiscoverItem)
+                            ?.map { seerrService.createDiscoverItem(it) }
                             .orEmpty()
                 this@DiscoverSeriesViewModel.people.setValueOnMain(people)
 

@@ -127,37 +127,50 @@ class SwitchSeerrViewModel
     }
 
 fun createUrls(url: String): List<HttpUrl> {
-    val urls = mutableListOf<String>()
+    val urls = mutableListOf<HttpUrl>()
     if (url.startsWith("http://") || url.startsWith("https://")) {
-        urls.add(url)
         val httpUrl = url.toHttpUrl()
+        urls.add(httpUrl)
         if (HttpUrl.defaultPort(httpUrl.scheme) == httpUrl.port) {
-            urls.add("$url:5055")
+            urls.add(httpUrl.newBuilder().port(5055).build())
         }
     } else {
-        urls.add("http://$url")
         val httpUrl = "http://$url".toHttpUrl()
+        urls.add(httpUrl)
         if (httpUrl.port == 80) {
-            urls.add("https://$url")
-            urls.add("http://$url:5055")
-            urls.add("https://$url:5055")
+            urls.add(httpUrl.newBuilder().scheme("https").build())
+            urls.add(httpUrl.newBuilder().port(5055).build())
+            urls.add(
+                httpUrl
+                    .newBuilder()
+                    .scheme("https")
+                    .port(5055)
+                    .build(),
+            )
         } else {
-            urls.add("https://$url")
+            urls.add(httpUrl.newBuilder().scheme("https").build())
         }
     }
-    return urls.map { cleanUrl(it).toHttpUrl() }
+    return urls
 }
 
-private fun cleanUrl(url: String) =
-    if (!url.endsWith("/api/v1")) {
+fun createSeerrApiUrl(url: String): String =
+    if (url.isBlank()) {
+        url
+    } else if (url.endsWith("/api/v1") || url.endsWith("/api/v1/")) {
+        url
+    } else {
         url
             .toHttpUrl()
             .newBuilder()
-            .apply {
-                addPathSegment("api")
-                addPathSegment("v1")
-            }.build()
+            .addPathSegment("api")
+            .addPathSegment("v1")
+            .build()
             .toString()
-    } else {
-        url
     }
+
+fun migrateSeerrUrl(url: String): String {
+    var url = url.removeSuffix("/api/v1/").removeSuffix("/api/v1")
+    if (!url.endsWith("/")) url += "/"
+    return url
+}

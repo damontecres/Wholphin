@@ -85,13 +85,13 @@ class SeerrRequestsViewModel
                                                     seerrService.api.moviesApi
                                                         .movieMovieIdGet(
                                                             movieId = request.media.tmdbId,
-                                                        ).let { DiscoverItem(it) }
+                                                        ).let { seerrService.createDiscoverItem(it) }
                                                 }
 
                                                 SeerrItemType.TV -> {
                                                     seerrService.api.tvApi
                                                         .tvTvIdGet(tvId = request.media.tmdbId)
-                                                        .let { DiscoverItem(it) }
+                                                        .let { seerrService.createDiscoverItem(it) }
                                                 }
 
                                                 SeerrItemType.PERSON -> {

@@ -239,7 +239,9 @@ class SeriesViewModel
                             val tv =
                                 if (active) {
                                     try {
-                                        seerrService.getTvSeries(item)?.let { DiscoverItem(it) }
+                                        seerrService
+                                            .getTvSeries(item)
+                                            ?.let { seerrService.createDiscoverItem(it) }
                                     } catch (ex: Exception) {
                                         Timber.e(ex)
                                         null
@@ -386,12 +388,6 @@ class SeriesViewModel
                     }
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
-                }
-                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
-                    (episodes as? EpisodeList.Success)
-                        ?.let {
-                            it.episodes.getOrNull(it.initialEpisodeIndex)
-                        }?.let { lookupPeopleInEpisode(it) }
                 }
             }
         }

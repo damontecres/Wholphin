@@ -14,7 +14,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.services.UpdateChecker.Companion.ASSET_NAME
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.showToast
@@ -51,9 +53,8 @@ class UpdateChecker
         @param:StandardOkHttpClient private val okHttpClient: OkHttpClient,
     ) {
         companion object {
-            // TODO apk names
-            private const val ASSET_NAME = "Wholphin"
-            private const val APK_NAME = "$ASSET_NAME.apk"
+            const val ASSET_NAME = "Wholphin"
+            const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
 
@@ -118,11 +119,6 @@ class UpdateChecker
 
         suspend fun getLatestRelease(updateUrl: String): Release? {
             return withContext(Dispatchers.IO) {
-                val preferRelease =
-                    PreferenceManager
-                        .getDefaultSharedPreferences(context)
-                        .getBoolean("updatePreferRelease", true)
-
                 val request =
                     Request
                         .Builder()
@@ -140,7 +136,7 @@ class UpdateChecker
                         val downloadUrl =
                             result.jsonObject["assets"]
                                 ?.jsonArray
-                                ?.let { assets -> getDownloadUrl(assets, preferRelease) }
+                                ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
                         Timber.v("version=$version, downloadUrl=$downloadUrl")
                         if (version != null) {
                             val notes =
@@ -163,35 +159,6 @@ class UpdateChecker
                     return@use null
                 }
             }
-        }
-
-        private fun getDownloadUrl(
-            assets: JsonArray,
-            preferRelease: Boolean,
-        ): String? {
-            val abiSuffix = Build.SUPPORTED_ABIS.firstOrNull().let { if (it != null) "-$it" else "" }
-            val releaseSuffix = if (preferRelease) "-release" else "-debug"
-            val preferredNames =
-                listOf(
-                    "$ASSET_NAME${releaseSuffix}$abiSuffix.apk",
-                    "$ASSET_NAME$releaseSuffix.apk",
-                    "$ASSET_NAME.apk",
-                )
-            var preferredAsset: JsonObject? = null
-            outer@ for (name in preferredNames) {
-                for (asset in assets) {
-                    val assetName =
-                        asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                    if (name == assetName) {
-                        preferredAsset = asset.jsonObject
-                        break@outer
-                    }
-                }
-            }
-            return preferredAsset
-                ?.get("browser_download_url")
-                ?.jsonPrimitive
-                ?.contentOrNull
         }
 
         suspend fun installRelease(
@@ -386,4 +353,34 @@ suspend fun copyTo(
         bytes = input.read(buffer)
     }
     return bytesCopied
+}
+
+fun getDownloadUrl(
+    assets: JsonArray,
+    debug: Boolean,
+    supportedAbis: List<String> = Build.SUPPORTED_ABIS.toList(),
+): String? {
+    val abiSuffix = supportedAbis.firstOrNull().let { if (it != null) "-$it" else "" }
+    val releaseSuffix = if (debug) "-debug" else "-release"
+    val preferredNames =
+        buildList {
+            add("$ASSET_NAME${releaseSuffix}$abiSuffix.apk")
+            add("$ASSET_NAME$releaseSuffix.apk")
+            if (!debug) add("$ASSET_NAME.apk")
+        }
+    var preferredAsset: JsonObject? = null
+    outer@ for (name in preferredNames) {
+        for (asset in assets) {
+            val assetName =
+                asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+            if (name == assetName) {
+                preferredAsset = asset.jsonObject
+                break@outer
+            }
+        }
+    }
+    return preferredAsset
+        ?.get("browser_download_url")
+        ?.jsonPrimitive
+        ?.contentOrNull
 }
