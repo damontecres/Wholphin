@@ -9,6 +9,8 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -16,12 +18,13 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -163,96 +166,115 @@ fun NowPlayingPage(
                     .onPreviewKeyEvent(keyHandler::onKeyEvent)
                     .focusRequester(focusRequester)
                     .focusable(),
-        ) {
-            AnimatedVisibility(
-                musicPrefs.showAlbumArt,
-                modifier =
-                    Modifier
-                        .padding(32.dp)
-                        .fillMaxWidth(.5f)
-                        .align(Alignment.CenterStart),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    AsyncImage(
-                        contentDescription = null,
-                        model = current?.imageUrl,
-                        modifier =
-                            Modifier
-                                .height(320.dp)
-                                .clip(RoundedCornerShape(16.dp)),
-                    )
-                    current?.title?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    }
-                    current?.albumTitle?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
-                    current?.artistNames?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
-                }
-            }
-            AnimatedVisibility(
-                musicPrefs.showVisualizer,
-                modifier =
-                    Modifier
-                        .padding(horizontal = 32.dp)
-                        .fillMaxHeight(.75f)
-                        .align(Alignment.CenterStart),
-            ) {
-                val visualizerWidth by animateFloatAsState(if (musicPrefs.showLyrics && state.hasLyrics) .5f else 1f)
-                BarVisualizer(
-                    data = viz,
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(visualizerWidth)
-                            .align(Alignment.CenterStart),
-                )
-            }
-        }
-        AnimatedVisibility(
-            visible = musicPrefs.showLyrics && state.hasLyrics,
-            enter = expandHorizontally(expandFrom = Alignment.End),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.End),
-            modifier = Modifier.align(Alignment.CenterEnd),
+        )
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize(),
         ) {
             Box(
-                contentAlignment = Alignment.Center,
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.5f)
-                        .fillMaxHeight(),
+                modifier = Modifier.wrapContentWidth(),
             ) {
-                LyricsContent(
-                    lyrics = state.lyrics,
-                    currentLyricPosition = state.currentLyricIndex,
-                    lyricsHaveFocus = lyricsHaveFocus,
-                    onFocusLyrics = { lyricsHaveFocus = it },
-                    onClick = {
-                        it.start
-                            ?.ticks
-                            ?.inWholeMilliseconds
-                            ?.let { player.seekTo(it) }
-                    },
+                val enter =
+                    remember {
+                        expandHorizontally(expandFrom = Alignment.Start) + fadeIn()
+                    }
+                val exit =
+                    remember {
+                        shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut()
+                    }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = musicPrefs.showAlbumArt,
+                    enter = enter,
+                    exit = exit,
                     modifier =
                         Modifier
-                            .padding(vertical = 120.dp)
-                            .fillMaxHeight()
-                            .width(320.dp),
-                )
+                            .padding(32.dp),
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(.5f),
+                    ) {
+                        AsyncImage(
+                            contentDescription = null,
+                            model = current?.imageUrl,
+                            modifier =
+                                Modifier
+                                    .size(320.dp)
+                                    .clip(RoundedCornerShape(16.dp)),
+                        )
+                        current?.title?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
+                        current?.albumTitle?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        current?.artistNames?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                    }
+                }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = musicPrefs.showVisualizer,
+                    enter = enter,
+                    exit = exit,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 32.dp)
+                            .align(Alignment.CenterStart),
+                ) {
+                    val visualizerWidth by animateFloatAsState(if (musicPrefs.showLyrics && state.hasLyrics) .5f else 1f)
+                    BarVisualizer(
+                        data = viz,
+                        modifier =
+                            Modifier
+                                .fillMaxHeight(.75f)
+                                .fillMaxWidth(visualizerWidth)
+                                .align(Alignment.CenterStart),
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = musicPrefs.showLyrics && state.hasLyrics,
+                enter = expandHorizontally(expandFrom = Alignment.End),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.End),
+                modifier = Modifier,
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 32.dp, vertical = 100.dp)
+                            .fillMaxHeight(),
+                ) {
+                    LyricsContent(
+                        lyrics = state.lyrics,
+                        currentLyricPosition = state.currentLyricIndex,
+                        lyricsHaveFocus = lyricsHaveFocus,
+                        onFocusLyrics = { lyricsHaveFocus = it },
+                        onClick = {
+                            it.start
+                                ?.ticks
+                                ?.inWholeMilliseconds
+                                ?.let { player.seekTo(it) }
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxSize(),
+//                                .width(360.dp),
+                    )
+                }
             }
         }
         val showContextForItem =

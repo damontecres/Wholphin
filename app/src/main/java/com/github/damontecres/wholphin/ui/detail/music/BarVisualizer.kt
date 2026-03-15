@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 
 @Composable
-fun BoxScope.BarVisualizer(
+fun BarVisualizer(
     data: IntArray,
     modifier: Modifier,
 ) {
