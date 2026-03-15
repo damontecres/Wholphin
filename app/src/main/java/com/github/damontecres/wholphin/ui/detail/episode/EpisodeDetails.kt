@@ -86,6 +86,13 @@ fun EpisodeDetails(
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
+    val preferredSubtitleLanguage =
+        viewModel.serverRepository.currentUserDto
+            .observeAsState()
+            .value
+            ?.configuration
+            ?.subtitleLanguagePreference
+
     val moreActions =
         MoreDialogActions(
             navigateTo = viewModel::navigateTo,
@@ -200,6 +207,7 @@ fun EpisodeDetails(
                                                                     type,
                                                                 )
                                                             },
+                                                            preferredSubtitleLanguage = preferredSubtitleLanguage,
                                                         )
                                                 }
                                         },

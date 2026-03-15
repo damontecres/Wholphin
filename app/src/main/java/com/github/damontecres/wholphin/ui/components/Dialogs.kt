@@ -632,6 +632,7 @@ fun chooseStream(
     streams: List<MediaStream>,
     currentIndex: Int?,
     type: MediaStreamType,
+    preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
@@ -669,22 +670,32 @@ fun chooseStream(
                     )
                 }
                 addAll(
-                    streams.filter { it.type == type }.mapIndexed { index, stream ->
-                        val simpleStream = SimpleMediaStream.from(context, stream, true)
-                        DialogItem(
-                            selected = currentIndex == stream.index,
-                            leadingContent = {
-                                SelectedLeadingContent(currentIndex == stream.index)
-                            },
-                            headlineContent = {
-                                Text(text = simpleStream.streamTitle ?: simpleStream.displayTitle)
-                            },
-                            supportingContent = {
-                                if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
-                            },
-                            onClick = { onClick.invoke(stream.index) },
-                        )
-                    },
+                    streams
+                        .filter { it.type == type }
+                        .let {
+                            if (type == MediaStreamType.SUBTITLE && preferredSubtitleLanguage.isNotNullOrBlank()) {
+                                it.sortedByDescending { it.language != null && it.language == preferredSubtitleLanguage }
+                            } else {
+                                it
+                            }
+                        }.mapIndexed { index, stream ->
+                            val simpleStream = SimpleMediaStream.from(context, stream, true)
+                            DialogItem(
+                                selected = currentIndex == stream.index,
+                                leadingContent = {
+                                    SelectedLeadingContent(currentIndex == stream.index)
+                                },
+                                headlineContent = {
+                                    Text(
+                                        text = simpleStream.streamTitle ?: simpleStream.displayTitle,
+                                    )
+                                },
+                                supportingContent = {
+                                    if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
+                                },
+                                onClick = { onClick.invoke(stream.index) },
+                            )
+                        },
                 )
             },
     )
