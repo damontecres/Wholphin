@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 class TrackActivityPlaybackListener(
     private val api: ApiClient,
     private val player: Player,
-    private val getState: () -> PlaybackItemState,
+    private val getState: () -> PlaybackItemState?,
 ) : Player.Listener {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val task: TimerTask =
@@ -51,46 +51,50 @@ class TrackActivityPlaybackListener(
 
     fun init() {
         launch("reportPlaybackStart") {
-            val state = getState.invoke()
-            Timber.v("reportPlaybackStart for ${state.itemId}")
-            api.playStateApi.reportPlaybackStart(
-                PlaybackStartInfo(
-                    canSeek = true,
-                    itemId = state.itemId,
-                    isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
-                    playMethod = state.playMethod,
-                    repeatMode = RepeatMode.REPEAT_NONE,
-                    playbackOrder = PlaybackOrder.DEFAULT,
-                    isMuted = false,
-                    audioStreamIndex = state.audioStreamIndex,
-                    subtitleStreamIndex = state.subtitleStreamIndex,
-                    playSessionId = state.playSessionId,
-                    liveStreamId = state.liveStreamId,
-                ),
-            )
-            val delay = 5.seconds.inWholeMilliseconds
-            // Every x seconds, check if the video is playing
-            TIMER.schedule(task, delay, delay)
-            initialized = true
+            getState.invoke()?.let { state ->
+                Timber.v("reportPlaybackStart for ${state.itemId}")
+                api.playStateApi.reportPlaybackStart(
+                    PlaybackStartInfo(
+                        canSeek = true,
+                        itemId = state.itemId,
+                        isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
+                        playMethod = state.playMethod,
+                        repeatMode = RepeatMode.REPEAT_NONE,
+                        playbackOrder = PlaybackOrder.DEFAULT,
+                        isMuted = false,
+                        audioStreamIndex = state.audioStreamIndex,
+                        subtitleStreamIndex = state.subtitleStreamIndex,
+                        playSessionId = state.playSessionId,
+                        liveStreamId = state.liveStreamId,
+                    ),
+                )
+
+                val delay = 5.seconds.inWholeMilliseconds
+                // Every x seconds, check if the video is playing
+                TIMER.schedule(task, delay, delay)
+                initialized = true
+            }
         }
     }
 
     fun release() {
+//        player.removeListener(this)
         task.cancel()
         TIMER.purge()
         val position = player.currentPosition.milliseconds
         launch("reportPlaybackStopped") {
-            val state = getState.invoke()
-            Timber.v("reportPlaybackStopped for ${state.itemId} at $position")
-            api.playStateApi.reportPlaybackStopped(
-                PlaybackStopInfo(
-                    itemId = state.itemId,
-                    positionTicks = position.inWholeTicks,
-                    failed = false,
-                    playSessionId = state.playSessionId,
-                    liveStreamId = state.liveStreamId,
-                ),
-            )
+            getState.invoke()?.let { state ->
+                Timber.v("reportPlaybackStopped for ${state.itemId} at $position")
+                api.playStateApi.reportPlaybackStopped(
+                    PlaybackStopInfo(
+                        itemId = state.itemId,
+                        positionTicks = position.inWholeTicks,
+                        failed = false,
+                        playSessionId = state.playSessionId,
+                        liveStreamId = state.liveStreamId,
+                    ),
+                )
+            }
         }
     }
 
@@ -111,30 +115,31 @@ class TrackActivityPlaybackListener(
 
     private fun saveActivity(position: Long) {
         launch("saveActivity") {
-            val state = getState.invoke()
-            val calcPosition =
-                withContext(Dispatchers.Main) {
-                    (if (position >= 0) position else player.currentPosition)
+            getState.invoke()?.let { state ->
+                val calcPosition =
+                    withContext(Dispatchers.Main) {
+                        (if (position >= 0) position else player.currentPosition)
+                    }
+                if (calcPosition > 0) {
+                    val isPaused = withContext(Dispatchers.Main) { !player.isPlaying }
+                    Timber.v("saveActivity: itemId=${state.itemId}, pos=$calcPosition")
+                    api.playStateApi.reportPlaybackProgress(
+                        PlaybackProgressInfo(
+                            itemId = state.itemId,
+                            positionTicks = calcPosition.milliseconds.inWholeTicks,
+                            canSeek = true,
+                            isPaused = isPaused,
+                            isMuted = false,
+                            playMethod = state.playMethod,
+                            repeatMode = RepeatMode.REPEAT_NONE,
+                            playbackOrder = PlaybackOrder.DEFAULT,
+                            audioStreamIndex = state.audioStreamIndex,
+                            subtitleStreamIndex = state.subtitleStreamIndex,
+                            playSessionId = state.playSessionId,
+                            liveStreamId = state.liveStreamId,
+                        ),
+                    )
                 }
-            if (calcPosition > 0) {
-                val isPaused = withContext(Dispatchers.Main) { !player.isPlaying }
-                Timber.v("saveActivity: itemId=${state.itemId}, pos=$calcPosition")
-                api.playStateApi.reportPlaybackProgress(
-                    PlaybackProgressInfo(
-                        itemId = state.itemId,
-                        positionTicks = calcPosition.milliseconds.inWholeTicks,
-                        canSeek = true,
-                        isPaused = isPaused,
-                        isMuted = false,
-                        playMethod = state.playMethod,
-                        repeatMode = RepeatMode.REPEAT_NONE,
-                        playbackOrder = PlaybackOrder.DEFAULT,
-                        audioStreamIndex = state.audioStreamIndex,
-                        subtitleStreamIndex = state.subtitleStreamIndex,
-                        playSessionId = state.playSessionId,
-                        liveStreamId = state.liveStreamId,
-                    ),
-                )
             }
         }
     }

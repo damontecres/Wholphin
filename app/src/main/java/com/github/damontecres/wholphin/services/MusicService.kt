@@ -19,17 +19,27 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
+import com.github.damontecres.wholphin.ui.seekBack
+import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PlaybackItemState
+import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -38,14 +48,20 @@ import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
+import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.PlayMethod
+import org.jellyfin.sdk.model.api.PlaystateCommand
+import org.jellyfin.sdk.model.api.PlaystateMessage
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
 @Singleton
@@ -54,6 +70,7 @@ class MusicService
     constructor(
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
+        @param:DefaultCoroutineScope private val defaultScope: CoroutineScope,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
@@ -84,6 +101,8 @@ class MusicService
         private val mutex = Mutex()
         var mediaSession: MediaSession? = null
             private set
+        private var activityTracker: TrackActivityPlaybackListener? = null
+        private var websocketJob: Job? = null
 
         suspend fun start() {
             if (mediaSession == null) {
@@ -91,6 +110,17 @@ class MusicService
                     if (mediaSession == null) {
                         Timber.i("Starting music MediaSession")
                         mediaSession = MediaSession.Builder(context, player).build()
+                        activityTracker =
+                            TrackActivityPlaybackListener(api, player) {
+                                state.value.currentItemId?.let { itemId ->
+                                    PlaybackItemState(
+                                        itemId = itemId,
+                                        playMethod = PlayMethod.DIRECT_PLAY,
+//                                        playSessionId = mediaSession?.id,
+                                    )
+                                }
+                            }.also { player.addListener(it) }
+                        websocketJob = subscribe()
                     }
                 }
             }
@@ -109,6 +139,13 @@ class MusicService
                 mediaSession?.release()
                 mediaSession = null
                 onMain {
+                    websocketJob?.cancel()
+                    websocketJob = null
+                    activityTracker?.let {
+                        it.release()
+                        player.removeListener(it)
+                    }
+                    activityTracker = null
                     player.stop()
                     player.setMediaItems(emptyList())
                 }
@@ -315,6 +352,59 @@ class MusicService
             _state.update { it.copy(loadingState = LoadingState.Success) }
             return result
         }
+
+        fun subscribe(): Job =
+            api.webSocket
+                .subscribe<PlaystateMessage>()
+                .onEach { message ->
+                    message.data?.let {
+                        withContext(Dispatchers.Main) {
+                            when (it.command) {
+                                PlaystateCommand.STOP -> {
+                                    stop()
+                                }
+
+                                PlaystateCommand.PAUSE -> {
+                                    player.pause()
+                                }
+
+                                PlaystateCommand.UNPAUSE -> {
+                                    player.play()
+                                }
+
+                                PlaystateCommand.NEXT_TRACK -> {
+                                    player.seekToNext()
+                                }
+
+                                PlaystateCommand.PREVIOUS_TRACK -> {
+                                    player.seekToPrevious()
+                                }
+
+                                PlaystateCommand.SEEK -> {
+                                    it.seekPositionTicks?.ticks?.let {
+                                        player.seekTo(
+                                            it.inWholeMilliseconds,
+                                        )
+                                    }
+                                }
+
+                                PlaystateCommand.REWIND -> {
+                                    player.seekBack(10.seconds)
+                                }
+
+                                PlaystateCommand.FAST_FORWARD -> {
+                                    player.seekForward(30.seconds)
+                                }
+
+                                PlaystateCommand.PLAY_PAUSE -> {
+                                    if (player.isPlaying) player.pause() else player.play()
+                                }
+                            }
+                        }
+                    }
+                }.catch { ex ->
+                    Timber.e(ex, "Error in websocket subscription")
+                }.launchIn(defaultScope)
     }
 
 @Stable
