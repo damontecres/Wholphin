@@ -569,4 +569,5 @@
     <string name="delete_item">Êtes-vous sûr de vouloir supprimer cet élément ?</string>
     <string name="show_media_management">Afficher les options de gestion des médias</string>
     <string name="search_for">Recherche %s</string>
+    <string name="select_all">Tout sélectionner</string>
 </resources>
