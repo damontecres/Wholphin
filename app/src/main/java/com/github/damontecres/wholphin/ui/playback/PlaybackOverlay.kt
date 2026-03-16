@@ -1,10 +1,17 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -50,6 +57,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
@@ -119,36 +129,20 @@ fun PlaybackOverlay(
     var seekProgressMs by remember(seekBarFocused) { mutableLongStateOf(playerControls.currentPosition) }
     var seekProgressPercent = (seekProgressMs.toDouble() / playerControls.duration).toFloat()
 
-    val chapterInteractionSources =
-        remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
-
     val density = LocalDensity.current
 
     val titleHeight =
-        remember {
+        remember(item?.title) {
             if (item?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
         }
     val subtitleHeight =
-        remember {
+        remember(item?.subtitleLong) {
             if (item?.subtitleLong.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
         }
 
     // This will be calculated after composition
     var controllerHeight by remember { mutableStateOf(0.dp) }
     var state by remember { mutableStateOf(OverlayViewState.CONTROLLER) }
-
-    // Background scrim for OSD readability
-    val scrimBrush =
-        remember {
-            Brush.verticalGradient(
-                colors =
-                    listOf(
-                        Color.Transparent,
-                        Color.Black.copy(alpha = 0.5f),
-                        Color.Black.copy(alpha = 0.80f),
-                    ),
-            )
-        }
 
     Box(
         modifier = modifier,
@@ -160,6 +154,18 @@ fun PlaybackOverlay(
             exit = fadeOut(),
             modifier = Modifier.matchParentSize(),
         ) {
+            // Background scrim for OSD readability
+            val scrimBrush =
+                remember {
+                    Brush.verticalGradient(
+                        colors =
+                            listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.5f),
+                                Color.Black.copy(alpha = 0.80f),
+                            ),
+                    )
+                }
             Box(
                 modifier =
                     Modifier
@@ -169,10 +175,16 @@ fun PlaybackOverlay(
         }
 
         AnimatedVisibility(
-            state == OverlayViewState.CONTROLLER,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+            visible = controllerViewState.controlsVisible && state == OverlayViewState.CONTROLLER,
+            enter = slideInVertically { it / 2 } + fadeIn(),
+            exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
+            if (seekBarFocused) {
+                LaunchedEffect(Unit) {
+                    seekProgressPercent =
+                        (playerControls.currentPosition.toFloat() / playerControls.duration)
+                }
+            }
             val nextState =
                 if (chapters.isNotEmpty()) {
                     OverlayViewState.CHAPTERS
@@ -253,11 +265,13 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
-            state == OverlayViewState.CHAPTERS,
+            visible = controllerViewState.controlsVisible && state == OverlayViewState.CHAPTERS,
             enter = slideInVertically { it / 2 } + fadeIn(),
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
             if (chapters.isNotEmpty()) {
+                val chapterInteractionSources =
+                    remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
                 val bringIntoViewRequester = remember { BringIntoViewRequester() }
                 val chapterIndex =
                     remember {
@@ -368,7 +382,7 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
-            state == OverlayViewState.QUEUE,
+            visible = controllerViewState.controlsVisible && state == OverlayViewState.QUEUE,
             enter = slideInVertically { it / 2 } + fadeIn(),
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
@@ -441,15 +455,17 @@ fun PlaybackOverlay(
             }
         }
 
-        if (seekBarInteractionSource.collectIsFocusedAsState().value) {
-            LaunchedEffect(Unit) {
-                seekProgressPercent =
-                    (playerControls.currentPosition.toFloat() / playerControls.duration)
-            }
-        }
-
+        // Trickplay
         AnimatedVisibility(
-            seekProgressPercent >= 0 && seekBarFocused,
+            visible = controllerViewState.controlsVisible && seekProgressPercent >= 0 && seekBarFocused,
+            enter =
+                expandVertically(
+                    spring(
+                        stiffness = Spring.StiffnessMedium,
+                        visibilityThreshold = IntSize.VisibilityThreshold,
+                    ),
+                ) + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
         ) {
             Box(
                 modifier =
@@ -496,9 +512,13 @@ fun PlaybackOverlay(
                 }
             }
         }
+
+        // Top
         val logoImageUrl = LocalImageUrlService.current.rememberImageUrl(item, ImageType.LOGO)
         AnimatedVisibility(
-            !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            visible = !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            enter = slideIn { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeIn(),
+            exit = slideOut { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeOut(),
             modifier =
                 Modifier
                     .align(Alignment.TopStart),
@@ -514,7 +534,9 @@ fun PlaybackOverlay(
             )
         }
         AnimatedVisibility(
-            !showDebugInfo && showClock && controllerViewState.controlsVisible,
+            visible = !showDebugInfo && showClock && controllerViewState.controlsVisible,
+            enter = slideIn { IntOffset(x = it.width / 2, y = -it.height / 2) } + fadeIn(),
+            exit = slideOut { IntOffset(x = it.width / 2, y = -it.height / 2) } + fadeOut(),
             modifier =
                 Modifier
                     .align(Alignment.TopEnd),
@@ -522,7 +544,9 @@ fun PlaybackOverlay(
             TimeDisplay()
         }
         AnimatedVisibility(
-            showDebugInfo && controllerViewState.controlsVisible,
+            visible = showDebugInfo && controllerViewState.controlsVisible,
+            enter = slideInVertically() + fadeIn(),
+            exit = slideOutVertically() + fadeOut(),
             modifier =
                 Modifier
                     .align(Alignment.TopStart),
@@ -578,6 +602,11 @@ fun Controller(
     val verticalOffset by animateDpAsState(
         targetValue = if (seekBarFocused) (-32).dp else 0.dp,
         label = "TitleBumpOffset",
+        animationSpec =
+            spring(
+                stiffness = Spring.StiffnessMediumLow,
+                visibilityThreshold = Dp.VisibilityThreshold,
+            ),
     )
 
     Column(
