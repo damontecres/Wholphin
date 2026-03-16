@@ -359,4 +359,22 @@
     </plurals>
     <string name="nav_drawer_pins_summary">Vel standardelementa som skal visast, andre vert skjulde</string>
     <string name="ends_at">Sluttar %1$s</string>
+    <string name="only_forced_subtitles">Berre påtvinga undertekstar</string>
+    <string name="voice_search">Stemmesøk</string>
+    <string name="voice_starting">Startar</string>
+    <string name="voice_search_prompt">Snakk for å søkje</string>
+    <string name="processing">Jobbar</string>
+    <string name="press_back_to_cancel">Trykk tilbake for å avbryta</string>
+    <string name="voice_error_audio">Lydopptaksfeil</string>
+    <string name="voice_error_client">Feil med talegjenkjenning</string>
+    <string name="voice_error_permissions">Treng mikrofontilgang</string>
+    <string name="voice_error_network">Nettverksfeil</string>
+    <string name="voice_error_network_timeout">Tidsavbrot på nettverket</string>
+    <string name="voice_error_no_match">Fann inga tale</string>
+    <string name="voice_error_busy">Talegjenkjenning er oppteken</string>
+    <string name="voice_error_server">Tenarfeil</string>
+    <string name="voice_error_speech_timeout">Inga tale funne</string>
+    <string name="voice_error_unknown">Ukjend feil</string>
+    <string name="voice_error_start_failed">Klarte ikkje starta talegjenkjenning</string>
+    <string name="voice_error_timeout">Tidsavbrot for talegjenkjenning</string>
 </resources>
