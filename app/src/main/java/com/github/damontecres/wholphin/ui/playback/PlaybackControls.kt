@@ -68,6 +68,7 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
@@ -522,6 +523,14 @@ fun <T> BottomDialog(
     gravity: Int,
     currentChoice: BottomDialogItem<T>? = null,
 ) {
+    val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
+    if (currentChoice != null) {
+        LaunchedEffect(Unit) {
+            choices.indexOfFirstOrNull { it == currentChoice }?.let {
+                focusRequesters.getOrNull(it)?.tryRequestFocus()
+            }
+        }
+    }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -556,6 +565,7 @@ fun <T> BottomDialog(
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
                         selected = choice == currentChoice,
+                        enabled = choice.enabled,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
@@ -576,6 +586,7 @@ fun <T> BottomDialog(
                             }
                         },
                         interactionSource = interactionSource,
+                        modifier = Modifier.focusRequester(focusRequesters[index]),
                     )
                 }
             }
@@ -591,6 +602,7 @@ data class BottomDialogItem<T>(
     val data: T,
     val headline: String,
     val supporting: String?,
+    val enabled: Boolean = true,
 )
 
 @PreviewTvSpec

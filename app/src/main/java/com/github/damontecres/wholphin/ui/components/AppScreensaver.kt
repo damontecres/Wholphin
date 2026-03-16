@@ -135,7 +135,6 @@ fun AppScreensaverContent(
         )
 
         var logoError by remember(currentItem) { mutableStateOf(false) }
-        val alignment = listOf(Alignment.BottomStart, Alignment.BottomEnd).random()
         if (!logoError) {
             AsyncImage(
                 model =
@@ -150,7 +149,7 @@ fun AppScreensaverContent(
                 },
                 modifier =
                     Modifier
-                        .align(alignment)
+                        .align(Alignment.BottomStart)
                         .size(width = 240.dp, height = 120.dp)
                         .padding(16.dp),
             )
@@ -158,7 +157,7 @@ fun AppScreensaverContent(
             Box(
                 modifier =
                     Modifier
-                        .align(alignment)
+                        .align(Alignment.BottomStart)
                         .padding(16.dp)
                         .fillMaxWidth(.5f)
                         .fillMaxHeight(.3f),
@@ -169,7 +168,7 @@ fun AppScreensaverContent(
                     style = MaterialTheme.typography.displaySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(alignment),
+                    modifier = Modifier.align(Alignment.BottomStart),
                 )
             }
         }

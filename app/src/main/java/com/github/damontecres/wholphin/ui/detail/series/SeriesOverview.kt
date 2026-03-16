@@ -138,6 +138,13 @@ fun SeriesOverview(
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
+    val preferredSubtitleLanguage =
+        viewModel.serverRepository.currentUserDto
+            .observeAsState()
+            .value
+            ?.configuration
+            ?.subtitleLanguagePreference
+
     when (val state = loading) {
         is LoadingState.Error -> {
             ErrorMessage(state, modifier)
@@ -252,6 +259,7 @@ fun SeriesOverview(
                                                             type,
                                                         )
                                                     },
+                                                    preferredSubtitleLanguage = preferredSubtitleLanguage,
                                                 )
                                         }
                                 },
