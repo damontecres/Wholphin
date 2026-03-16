@@ -63,6 +63,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -737,12 +738,12 @@ class PlaybackViewModel
                         player.removeListener(it)
                     }
 
+                    val playbackItemState = PlaybackItemState(playback, currentItemPlayback)
                     val activityListener =
                         TrackActivityPlaybackListener(
                             api = api,
                             player = player,
-                            playback = playback,
-                            itemPlayback = currentItemPlayback,
+                            getState = { playbackItemState },
                         )
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
