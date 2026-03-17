@@ -27,6 +27,12 @@ AV1_MODULE_PATH="$MEDIA_PATH/libraries/decoder_av1/src/main"
 HOST="$(uname -s | tr '[:upper:]' '[:lower:]')"
 HOST_PLATFORM="$HOST-x86_64"
 
+if [[ "$2" == "--clean" ]]; then
+  rm -rf ffmpeg_decoder
+  rm -f "$TARGET_PATH/lib-decoder-ffmpeg-release.aar"
+  rm -f "$TARGET_PATH/lib-decoder-av1-release.aar"
+fi
+
 mkdir -p "$TARGET_PATH"
 mkdir -p ffmpeg_decoder
 
@@ -38,14 +44,16 @@ pushd ffmpeg_decoder || exit
 
 if [[ -d media ]]; then
   pushd media || exit
-  git checkout --force "$media_version"
+  git fetch origin "$media_version" --depth 1
+  git checkout --force FETCH_HEAD
 else
   git clone https://github.com/androidx/media.git --depth 1 --single-branch -b "$media_version" media
 fi
 
 if [[ -d ffmpeg ]]; then
   pushd ffmpeg || exit
-  git checkout --force "$FFMPEG_BRANCH"
+  git fetch origin "$FFMPEG_BRANCH" --depth 1
+  git checkout --force FETCH_HEAD
 else
   git clone https://github.com/FFmpeg/FFmpeg --depth 1 --single-branch -b "$FFMPEG_BRANCH" ffmpeg
 fi
@@ -68,7 +76,8 @@ pushd "$AV1_MODULE_PATH/jni" || exit
 
 if [[ -d dav1d ]]; then
   pushd dav1d || exit
-  git checkout --force "$DAV1D_BRANCH"
+  git fetch origin "$DAV1D_BRANCH" --depth 1
+  git checkout --force FETCH_HEAD
 else
   git clone https://code.videolan.org/videolan/dav1d --depth 1 --single-branch -b "$DAV1D_BRANCH" dav1d
 fi
