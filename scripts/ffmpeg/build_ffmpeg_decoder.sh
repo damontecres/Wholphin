@@ -27,6 +27,22 @@ AV1_MODULE_PATH="$MEDIA_PATH/libraries/decoder_av1/src/main"
 HOST="$(uname -s | tr '[:upper:]' '[:lower:]')"
 HOST_PLATFORM="$HOST-x86_64"
 
+checkout() {
+  local object="$1"
+  local ref="$2"
+
+  if !  git checkout --force "$ref"; then
+    if ! git fetch origin refs/"$object"s/"$ref":refs/"$object"s/"$ref"; then
+      echo "Error trying to fetch $ref in $PWD."
+      exit 1
+    fi
+    if ! git checkout --force "$ref"; then
+      echo "Error trying to checkout $ref in $PWD."
+      exit 1
+    fi
+  fi
+}
+
 mkdir -p "$TARGET_PATH"
 mkdir -p ffmpeg_decoder
 
@@ -38,14 +54,14 @@ pushd ffmpeg_decoder || exit
 
 if [[ -d media ]]; then
   pushd media || exit
-  git checkout --force "$media_version"
+  checkout tag "$media_version"
 else
   git clone https://github.com/androidx/media.git --depth 1 --single-branch -b "$media_version" media
 fi
 
 if [[ -d ffmpeg ]]; then
   pushd ffmpeg || exit
-  git checkout --force "$FFMPEG_BRANCH"
+  checkout head "$FFMPEG_BRANCH"
 else
   git clone https://github.com/FFmpeg/FFmpeg --depth 1 --single-branch -b "$FFMPEG_BRANCH" ffmpeg
 fi
@@ -68,7 +84,7 @@ pushd "$AV1_MODULE_PATH/jni" || exit
 
 if [[ -d dav1d ]]; then
   pushd dav1d || exit
-  git checkout --force "$DAV1D_BRANCH"
+  checkout tag "$DAV1D_BRANCH"
 else
   git clone https://code.videolan.org/videolan/dav1d --depth 1 --single-branch -b "$DAV1D_BRANCH" dav1d
 fi
