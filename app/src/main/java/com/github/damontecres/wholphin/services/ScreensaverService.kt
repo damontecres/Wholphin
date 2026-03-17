@@ -161,27 +161,32 @@ class ScreensaverService
                 if (pager.isEmpty()) {
                     emit(null)
                 } else {
+                    val duration =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences
+                            .interfacePreferences.screensaverPreference.duration.milliseconds
                     while (true) {
-                        val item = pager.getBlocking(index)
-                        Timber.v("Next index=%s, item=%s", index, item?.id)
-                        if (item != null) {
-                            val backdropUrl =
-                                if (item.type == BaseItemKind.PHOTO) {
-                                    api.libraryApi.getDownloadUrl(item.id)
-                                } else {
-                                    imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-                                }
-                            val title =
-                                if (item.type == BaseItemKind.PHOTO) {
-                                    item.data.premiereDate?.let {
-                                        formatDate(it.toLocalDate())
+                        try {
+                            val item = pager.getBlocking(index)
+                            Timber.v("Next index=%s, item=%s", index, item?.id)
+                            if (item != null) {
+                                val backdropUrl =
+                                    if (item.type == BaseItemKind.PHOTO) {
+                                        api.libraryApi.getDownloadUrl(item.id)
+                                    } else {
+                                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                                     }
-                                } else {
-                                    item.title
-                                }
-                            val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
-                            if (backdropUrl != null) {
-                                try {
+                                val title =
+                                    if (item.type == BaseItemKind.PHOTO) {
+                                        item.data.premiereDate?.let {
+                                            formatDate(it.toLocalDate())
+                                        }
+                                    } else {
+                                        item.title
+                                    }
+                                val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
+                                if (backdropUrl != null) {
                                     context.imageLoader
                                         .enqueue(
                                             ImageRequest
@@ -191,18 +196,17 @@ class ScreensaverService
                                         ).job
                                         .await()
                                     emit(CurrentItem(item, backdropUrl, logoUrl, title ?: ""))
-                                } catch (_: CancellationException) {
-                                    break
+                                    delay(duration)
                                 }
-                                val duration =
-                                    userPreferencesService
-                                        .getCurrent()
-                                        .appPreferences
-                                        .interfacePreferences.screensaverPreference.duration.milliseconds
-                                delay(duration)
                             }
+                        } catch (_: CancellationException) {
+                            break
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error fetching next item")
+                            delay(duration)
                         }
                         index++
+                        if (index > pager.lastIndex) index = 0
                     }
                 }
             }.flowOn(Dispatchers.Default).cancellable()

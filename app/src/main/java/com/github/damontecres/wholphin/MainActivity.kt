@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
@@ -91,9 +92,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var updateChecker: UpdateChecker
-
-    @Inject
-    lateinit var appUpgradeHandler: AppUpgradeHandler
 
     @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
@@ -135,11 +133,7 @@ class MainActivity : AppCompatActivity() {
         instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
-        if (savedInstanceState == null) {
-            lifecycleScope.launchIO {
-                appUpgradeHandler.copySubfont(false)
-            }
-        }
+
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
                 window?.setFlags(
@@ -211,19 +205,21 @@ class MainActivity : AppCompatActivity() {
                         true,
                         appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                     ) {
-                        val requestedDestination =
-                            remember(intent) {
-                                intent?.let(::extractDestination) ?: Destination.Home()
-                            }
-                        MainContent(
-                            backStack = setupNavigationManager.backStack,
-                            navigationManager = navigationManager,
-                            appPreferences = appPreferences,
-                            backdropService = backdropService,
-                            screensaverService = screensaverService,
-                            requestedDestination = requestedDestination,
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        ProvideLocalClock {
+                            val requestedDestination =
+                                remember(intent) {
+                                    intent?.let(::extractDestination) ?: Destination.Home()
+                                }
+                            MainContent(
+                                backStack = setupNavigationManager.backStack,
+                                navigationManager = navigationManager,
+                                appPreferences = appPreferences,
+                                backdropService = backdropService,
+                                screensaverService = screensaverService,
+                                requestedDestination = requestedDestination,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                 }
             }
@@ -246,7 +242,6 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onResume")
         lifecycleScope.launchDefault {
             screensaverService.pulse()
-            appUpgradeHandler.run()
         }
     }
 
@@ -381,10 +376,13 @@ class MainActivityViewModel
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
+        private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
         fun appStart() {
             viewModelScope.launchIO {
                 try {
+                    appUpgradeHandler.run()
+                    appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true

@@ -30,6 +30,7 @@ data class MoreDialogActions(
     val onClickAddPlaylist: (UUID) -> Unit,
     val onSendMediaInfo: (UUID) -> Unit,
     val onClickDelete: (BaseItem) -> Unit,
+    val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
 )
 
 enum class ClearChosenStreams {
@@ -246,7 +247,7 @@ fun buildMoreDialogItemsForHome(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                actions.navigateTo(item.destination())
+                actions.onClickGoTo(item)
             },
         )
         if (item.type in supportedPlayableTypes) {

@@ -96,39 +96,37 @@ fun MainContent(
                                 backdropService.clearBackdrop()
                             }
                             val current = key.current
-                            ProvideLocalClock {
-                                val preferences =
-                                    remember(appPreferences) {
-                                        UserPreferences(appPreferences)
-                                    }
-                                var showContent by remember {
-                                    mutableStateOf(true)
+                            val preferences =
+                                remember(appPreferences) {
+                                    UserPreferences(appPreferences)
                                 }
-                                LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                                    if (!appPreferences.signInAutomatically) {
-                                        showContent = false
-                                    }
+                            var showContent by remember {
+                                mutableStateOf(true)
+                            }
+                            LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                                if (!appPreferences.signInAutomatically) {
+                                    showContent = false
                                 }
+                            }
 
-                                if (showContent) {
-                                    ApplicationContent(
-                                        user = current.user,
-                                        server = current.server,
-                                        startDestination = requestedDestination,
-                                        navigationManager = navigationManager,
-                                        preferences = preferences,
-                                        modifier = Modifier.fillMaxSize(),
+                            if (showContent) {
+                                ApplicationContent(
+                                    user = current.user,
+                                    server = current.server,
+                                    startDestination = requestedDestination,
+                                    navigationManager = navigationManager,
+                                    preferences = preferences,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.size(200.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = MaterialTheme.colorScheme.border,
+                                        modifier = Modifier.align(Alignment.Center),
                                     )
-                                } else {
-                                    Box(
-                                        modifier = Modifier.size(200.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        CircularProgressIndicator(
-                                            color = MaterialTheme.colorScheme.border,
-                                            modifier = Modifier.align(Alignment.Center),
-                                        )
-                                    }
                                 }
                             }
                         }

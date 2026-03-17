@@ -449,11 +449,20 @@ class PlaybackViewModel
 
                 // Create the correct player for the media
                 createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
-
+                val subtitleLanguagePreference =
+                    serverRepository.currentUserDto.value
+                        ?.configuration
+                        ?.subtitleLanguagePreference
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map {
+                        .let {
+                            if (subtitleLanguagePreference.isNotNullOrBlank()) {
+                                it?.sortedByDescending { it.language != null && subtitleLanguagePreference == it.language }
+                            } else {
+                                it
+                            }
+                        }?.map {
                             SimpleMediaStream.from(context, it, true)
                         }.orEmpty()
 

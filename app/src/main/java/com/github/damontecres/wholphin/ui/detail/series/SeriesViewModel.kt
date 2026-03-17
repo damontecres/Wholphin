@@ -58,6 +58,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -123,6 +124,7 @@ class SeriesViewModel
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
+        val discoverSeries = MutableStateFlow<DiscoverItem?>(null)
 
         val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
 
@@ -231,6 +233,24 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val results = seerrService.similar(item).orEmpty()
                         discovered.update { results }
+                    }
+                    viewModelScope.launchIO {
+                        seerrService.active.collectLatest { active ->
+                            val tv =
+                                if (active) {
+                                    try {
+                                        seerrService
+                                            .getTvSeries(item)
+                                            ?.let { seerrService.createDiscoverItem(it) }
+                                    } catch (ex: Exception) {
+                                        Timber.e(ex)
+                                        null
+                                    }
+                                } else {
+                                    null
+                                }
+                            discoverSeries.update { tv }
+                        }
                     }
                 }
                 mediaManagementService.deletedItemFlow
@@ -368,12 +388,6 @@ class SeriesViewModel
                     }
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
-                }
-                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
-                    (episodes as? EpisodeList.Success)
-                        ?.let {
-                            it.episodes.getOrNull(it.initialEpisodeIndex)
-                        }?.let { lookupPeopleInEpisode(it) }
                 }
             }
         }

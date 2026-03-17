@@ -19,17 +19,19 @@ import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,6 +59,7 @@ class SeerrServerRepository
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.server }
         val currentUser: Flow<SeerrUser?> =
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
+        val currentUserId: Flow<Int?> = current.map { it?.config?.id }
 
         /**
          * Whether Seerr integration is currently active of not
@@ -70,10 +73,11 @@ class SeerrServerRepository
         }
 
         fun error(
-            serverUrl: String,
+            server: SeerrServer,
+            user: SeerrUser,
             exception: Exception,
         ) {
-            _connection.update { SeerrConnectionStatus.Error(serverUrl, exception) }
+            _connection.update { SeerrConnectionStatus.Error(server, user, exception) }
             seerrApi.update("", null)
         }
 
@@ -161,7 +165,7 @@ class SeerrServerRepository
             val apiKey = passwordOrApiKey.takeIf { authMethod == SeerrAuthMethod.API_KEY }
             val api =
                 SeerrApiClient(
-                    url,
+                    createSeerrApiUrl(url),
                     apiKey,
                     okHttpClient
                         .newBuilder()
@@ -174,8 +178,13 @@ class SeerrServerRepository
         }
 
         suspend fun removeServerForCurrentUser(): Boolean {
-            val current = current.firstOrNull() ?: return false
-            val rows = seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
+            val user =
+                when (val conn = connection.first()) {
+                    SeerrConnectionStatus.NotConfigured -> return false
+                    is SeerrConnectionStatus.Error -> conn.user
+                    is SeerrConnectionStatus.Success -> conn.current.user
+                }
+            val rows = seerrServerDao.deleteUser(user)
             clear()
             return rows > 0
         }
@@ -190,7 +199,8 @@ sealed interface SeerrConnectionStatus {
     data object NotConfigured : SeerrConnectionStatus
 
     data class Error(
-        val serverUrl: String,
+        val server: SeerrServer,
+        val user: SeerrUser,
         val ex: Exception,
     ) : SeerrConnectionStatus
 
@@ -316,10 +326,31 @@ class UserSwitchListener
                                         "Error logging into %s",
                                         server.url,
                                     )
-                                    seerrServerRepository.error(server.url, ex)
+                                    seerrServerRepository.error(server, seerrUser, ex)
                                 }
                             }
                         }
                 }
             }
     }
+
+fun CurrentSeerr?.imageUrlBuilder(
+    imageType: ImageType,
+    path: String?,
+): String? {
+    if (this == null) return null
+    val cacheImages = serverConfig.cacheImages == true
+    val base =
+        if (cacheImages) {
+            server.url.removeSuffix("/") + "/imageproxy/tmdb"
+        } else {
+            "https://image.tmdb.org"
+        }
+    val prefix =
+        when (imageType) {
+            ImageType.PRIMARY -> "/t/p/w500"
+            ImageType.BACKDROP -> "/t/p/w1920_and_h1080_multi_faces"
+            else -> throw IllegalArgumentException("Image type not supported: $imageType")
+        }
+    return "${base}${prefix}$path"
+}

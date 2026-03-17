@@ -125,20 +125,6 @@ fun SeriesOverview(
     var rowFocused by rememberInt()
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
-    LaunchedEffect(episodes) {
-        episodes?.let { episodes ->
-            if (episodes is EpisodeList.Success) {
-                if (episodes.episodes.isNotEmpty()) {
-                    // TODO focus on first episode when changing seasons?
-//            firstItemFocusRequester.requestFocus()
-                    episodes.episodes.getOrNull(position.episodeRowIndex)?.let {
-                        viewModel.refreshEpisode(it.id, position.episodeRowIndex)
-                    }
-                }
-            }
-        }
-    }
-
     LaunchedEffect(position, episodes) {
         val focusedEpisode =
             (episodes as? EpisodeList.Success)
@@ -151,6 +137,13 @@ fun SeriesOverview(
         }
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
+
+    val preferredSubtitleLanguage =
+        viewModel.serverRepository.currentUserDto
+            .observeAsState()
+            .value
+            ?.configuration
+            ?.subtitleLanguagePreference
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -266,6 +259,7 @@ fun SeriesOverview(
                                                             type,
                                                         )
                                                     },
+                                                    preferredSubtitleLanguage = preferredSubtitleLanguage,
                                                 )
                                         }
                                 },

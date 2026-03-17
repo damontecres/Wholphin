@@ -711,6 +711,8 @@ components:
           type: boolean
         series4kEnabled:
           type: boolean
+        cacheImages:
+          type: boolean
     MovieResult:
       type: object
       required:
@@ -1086,6 +1088,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Episode'
+        status:
+          type: integer
+          example: 0
+          description: Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 = DECLINED
+          readOnly: true
     TvDetails:
       type: object
       properties:
@@ -1268,6 +1275,10 @@ components:
           type: string
         type:
           type: string
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Season'
       required:
         - id
         - status
@@ -6135,16 +6146,10 @@ paths:
                   type: integer
                   example: 123
                 seasons:
-                  # oneOf:
-                  #   - type: array
-                  #     items:
-                  #       type: integer
-                  #       minimum: 0
-                  #   - type: string
-                  #     enum: [all]
-                  # TODO
-                  type: string
-                  enum: [all]
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 0
                   nullable: true
                 is4k:
                   type: boolean
