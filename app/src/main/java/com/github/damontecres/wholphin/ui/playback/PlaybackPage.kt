@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.collectAsState
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
@@ -169,6 +170,8 @@ fun PlaybackPageContent(
 
     val nextUp by viewModel.nextUp.observeAsState(null)
     val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
+    val contentWarningTags by viewModel.contentWarningTags.collectAsState()
+    val contentWarningRating by viewModel.contentWarningRating.collectAsState()
 
     val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
     val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
@@ -445,6 +448,18 @@ fun PlaybackPageContent(
                             .ifElse(isImageSubtitles, Modifier.alpha(subtitleImageOpacity)),
                 )
             }
+        }
+        if (contentWarningTags.isNotEmpty() || contentWarningRating.isNotBlank()) {
+            ContentWarningPill(
+                rating = contentWarningRating,
+                warnings = contentWarningTags,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(
+                        start = 40.dp,
+                        top = 32.dp,
+                    ),
+            )
         }
 
         // Ask to skip intros, etc button

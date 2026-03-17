@@ -184,6 +184,9 @@ class PlaybackViewModel
         private var isPlaylist = false
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
+         val contentWarningTags = MutableStateFlow<List<String>>(emptyList())
+         val contentWarningRating = MutableStateFlow<String>("")
+         val showContentWarning = MutableStateFlow(false)
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
@@ -346,6 +349,23 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
 
             val item = BaseItem.from(base, api)
+            val cwTags = base.tags
+                ?.filter { it.startsWith("CW:", ignoreCase = true) }
+                ?.map { it.removePrefix("CW:").removePrefix("cw:") }
+                ?: emptyList()
+            val rating = base.officialRating ?: ""
+
+            if (cwTags.isNotEmpty() || rating.isNotBlank()) {
+                contentWarningTags.value = cwTags
+                contentWarningRating.value = rating
+                showContentWarning.value = true
+                // Auto-dismiss after 7 seconds (pill handles its own animation,
+                // but we also flip the state here for cleanliness)
+                viewModelScope.launchIO {
+                    delay(8_000L)
+                    showContentWarning.value = false
+                }
+            }
             val played =
                 play(
                     item,
