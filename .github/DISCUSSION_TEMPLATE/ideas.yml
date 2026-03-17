@@ -1,6 +1,4 @@
-name: "Feature Request"
-description: Request a new feature
-title: "[FEA] - <title>"
+title: "<title>"
 labels: [
   "enhancement"
 ]

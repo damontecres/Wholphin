@@ -50,63 +50,74 @@ class SwitchSeerrViewModel
                         serverConnectionStatus.update { LoadingState.Error("Invalid URL", ex) }
                         return@launchIO
                     }
-                var result: LoadingState = LoadingState.Error("No url")
+                Timber.v("Urls to try: %s", urls)
+                val results = mutableMapOf<HttpUrl, LoadingState>()
                 for (url in urls) {
                     Timber.d("Trying %s", url)
-                    result =
-                        try {
-                            seerrServerRepository.testConnection(
-                                authMethod = authMethod,
-                                url = url.toString(),
-                                username = username.takeIf { authMethod != SeerrAuthMethod.API_KEY },
-                                passwordOrApiKey = passwordOrApiKey,
-                            )
-                        } catch (ex: ClientException) {
-                            Timber.w(ex, "ClientException logging in")
-                            if (ex.statusCode == 401 || ex.statusCode == 403) {
-                                showToast(context, "Invalid credentials")
-                                result = LoadingState.Error("Invalid credentials", ex)
-                                break
-                            } else {
-                                LoadingState.Error("Could not connect with URL")
-                            }
-                        } catch (ex: Exception) {
-                            Timber.w(ex, "Exception logging in")
-                            LoadingState.Error(ex)
-                        }
-                    if (result is LoadingState.Success) {
-                        when (authMethod) {
-                            SeerrAuthMethod.LOCAL,
-                            SeerrAuthMethod.JELLYFIN,
-                            -> {
-                                seerrServerRepository.addAndChangeServer(
-                                    url.toString(),
-                                    authMethod,
-                                    username,
-                                    passwordOrApiKey,
-                                )
-                            }
-
-                            SeerrAuthMethod.API_KEY -> {
-                                seerrServerRepository.addAndChangeServer(
-                                    url.toString(),
-                                    passwordOrApiKey,
-                                )
-                            }
-                        }
+                    try {
+                        seerrServerRepository.testConnection(
+                            authMethod = authMethod,
+                            url = url.toString(),
+                            username = username.takeIf { authMethod != SeerrAuthMethod.API_KEY },
+                            passwordOrApiKey = passwordOrApiKey,
+                        )
+                        results[url] = LoadingState.Success
                         break
+                    } catch (ex: ClientException) {
+                        Timber.w(ex, "ClientException logging in %s", url)
+                        if (ex.statusCode == 401 || ex.statusCode == 403) {
+                            showToast(context, "Invalid credentials")
+                            results[url] = LoadingState.Error("Invalid credentials", ex)
+                        } else {
+                            results[url] = LoadingState.Error("Could not connect with URL")
+                        }
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "ClientException logging in %s", url)
+                        results[url] = LoadingState.Error(ex)
                     }
                 }
-                if (result is LoadingState.Error) {
-                    showToast(context, "Error: ${result.message}")
+                val result = results.filter { (url, state) -> state is LoadingState.Success }
+                if (result.isNotEmpty()) {
+                    val url = result.keys.first()
+                    when (authMethod) {
+                        SeerrAuthMethod.LOCAL,
+                        SeerrAuthMethod.JELLYFIN,
+                        -> {
+                            seerrServerRepository.addAndChangeServer(
+                                url.toString(),
+                                authMethod,
+                                username,
+                                passwordOrApiKey,
+                            )
+                        }
+
+                        SeerrAuthMethod.API_KEY -> {
+                            seerrServerRepository.addAndChangeServer(
+                                url.toString(),
+                                passwordOrApiKey,
+                            )
+                        }
+                    }
+                    serverConnectionStatus.update { LoadingState.Success }
+                } else {
+                    val message =
+                        results
+                            .map { (url, state) ->
+                                val s = state as? LoadingState.Error
+                                "$url - ${s?.localizedMessage}"
+                            }.joinToString("\n")
+                    showToast(context, "Could not connect")
+                    serverConnectionStatus.update { LoadingState.Error(message) }
                 }
-                serverConnectionStatus.update { result }
             }
         }
 
         fun removeServer() {
             viewModelScope.launchIO {
-                seerrServerRepository.removeServer()
+                val result = seerrServerRepository.removeServerForCurrentUser()
+                if (!result) {
+                    showToast(context, "Could not remove server")
+                }
             }
         }
 
@@ -116,37 +127,50 @@ class SwitchSeerrViewModel
     }
 
 fun createUrls(url: String): List<HttpUrl> {
-    val urls = mutableListOf<String>()
+    val urls = mutableListOf<HttpUrl>()
     if (url.startsWith("http://") || url.startsWith("https://")) {
-        urls.add(url)
         val httpUrl = url.toHttpUrl()
+        urls.add(httpUrl)
         if (HttpUrl.defaultPort(httpUrl.scheme) == httpUrl.port) {
-            urls.add("$url:5055")
+            urls.add(httpUrl.newBuilder().port(5055).build())
         }
     } else {
-        urls.add("http://$url")
         val httpUrl = "http://$url".toHttpUrl()
+        urls.add(httpUrl)
         if (httpUrl.port == 80) {
-            urls.add("https://$url")
-            urls.add("http://$url:5055")
-            urls.add("https://$url:5055")
+            urls.add(httpUrl.newBuilder().scheme("https").build())
+            urls.add(httpUrl.newBuilder().port(5055).build())
+            urls.add(
+                httpUrl
+                    .newBuilder()
+                    .scheme("https")
+                    .port(5055)
+                    .build(),
+            )
         } else {
-            urls.add("https://$url")
+            urls.add(httpUrl.newBuilder().scheme("https").build())
         }
     }
-    return urls.map { cleanUrl(it).toHttpUrl() }
+    return urls
 }
 
-private fun cleanUrl(url: String) =
-    if (!url.endsWith("/api/v1")) {
+fun createSeerrApiUrl(url: String): String =
+    if (url.isBlank()) {
+        url
+    } else if (url.endsWith("/api/v1") || url.endsWith("/api/v1/")) {
+        url
+    } else {
         url
             .toHttpUrl()
             .newBuilder()
-            .apply {
-                addPathSegment("api")
-                addPathSegment("v1")
-            }.build()
+            .addPathSegment("api")
+            .addPathSegment("v1")
+            .build()
             .toString()
-    } else {
-        url
     }
+
+fun migrateSeerrUrl(url: String): String {
+    var url = url.removeSuffix("/api/v1/").removeSuffix("/api/v1")
+    if (!url.endsWith("/")) url += "/"
+    return url
+}

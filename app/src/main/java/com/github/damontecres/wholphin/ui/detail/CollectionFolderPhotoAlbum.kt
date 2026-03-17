@@ -59,13 +59,13 @@ fun CollectionFolderPhotoAlbum(
                         index = index,
                         filter = CollectionFolderFilter(filter = viewModel.filter.value ?: GetItemsFilter()),
                         sortAndDirection = viewModel.sortAndDirection.value ?: SortAndDirection.DEFAULT,
-                        recursive = true,
+                        recursive = recursive,
                         startSlideshow = false,
                     )
                 } else {
                     item.destination(index)
                 }
-            viewModel.navigationManager.navigateTo(destination)
+            viewModel.navigateTo(destination)
         },
         itemId = itemId.toServerString(),
         initialFilter = filter,

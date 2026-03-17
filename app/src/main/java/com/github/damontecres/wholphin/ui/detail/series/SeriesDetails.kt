@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,12 +28,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +59,9 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -76,6 +84,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -102,21 +111,26 @@ fun SeriesDetails(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
+    val canDelete by viewModel.canDeleteSeries.collectAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
     val extras by viewModel.extras.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val discovered by viewModel.discovered.collectAsState()
+    val discoverSeries by viewModel.discoverSeries.collectAsState()
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -150,6 +164,7 @@ fun SeriesDetails(
                     similar = similar,
                     played = played,
                     favorite = item.data.userData?.isFavorite ?: false,
+                    canDelete = canDelete,
                     modifier = modifier,
                     onClickItem = { index, item ->
                         viewModel.navigateTo(item.destination())
@@ -163,23 +178,29 @@ fun SeriesDetails(
                         )
                     },
                     onLongClickItem = { index, season ->
-                        seasonDialog =
-                            buildDialogForSeason(
-                                context = context,
-                                s = season,
-                                onClickItem = { viewModel.navigateTo(it.destination()) },
-                                markPlayed = { played ->
-                                    viewModel.setSeasonWatched(season.id, played)
-                                },
-                                onClickPlay = { shuffle ->
-                                    viewModel.navigateTo(
-                                        Destination.PlaybackList(
-                                            itemId = season.id,
-                                            shuffle = shuffle,
-                                        ),
-                                    )
-                                },
-                            )
+                        scope.launchDefault {
+                            seasonDialog =
+                                buildDialogForSeason(
+                                    context = context,
+                                    s = season,
+                                    canDelete = viewModel.canDelete(season),
+                                    onClickItem = { viewModel.navigateTo(it.destination()) },
+                                    markPlayed = { played ->
+                                        viewModel.setSeasonWatched(season.id, played)
+                                    },
+                                    onClickPlay = { shuffle ->
+                                        viewModel.navigateTo(
+                                            Destination.PlaybackList(
+                                                itemId = season.id,
+                                                shuffle = shuffle,
+                                            ),
+                                        )
+                                    },
+                                    onClickDelete = {
+                                        showDeleteDialog = it
+                                    },
+                                )
+                        }
                     },
                     overviewOnClick = {
                         overviewDialog =
@@ -213,6 +234,12 @@ fun SeriesDetails(
                     onClickExtra = { _, extra ->
                         viewModel.navigateTo(extra.destination)
                     },
+                    discoverSeries = discoverSeries,
+                    onClickDiscoverSeries = {
+                        discoverSeries?.let {
+                            viewModel.navigateTo(Destination.DiscoveredItem(it))
+                        }
+                    },
                     discovered = discovered,
                     onClickDiscover = { index, item ->
                         viewModel.navigateTo(item.destination)
@@ -231,6 +258,9 @@ fun SeriesDetails(
                                 showPlaylistDialog.makePresent(itemId)
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                            onClickDelete = {
+                                showDeleteDialog = it
+                            },
                         ),
                 )
                 if (showWatchConfirmation) {
@@ -283,6 +313,19 @@ fun SeriesDetails(
             elevation = 3.dp,
         )
     }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                if (seasons?.lastOrNull()?.id == item.id) {
+                    focusManager.moveFocus(FocusDirection.Previous)
+                }
+                viewModel.deleteItem(item)
+                showDeleteDialog = null
+            },
+        )
+    }
 }
 
 private const val HEADER_ROW = 0
@@ -305,6 +348,7 @@ fun SeriesDetailsContent(
     discovered: List<DiscoverItem>,
     played: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -316,6 +360,8 @@ fun SeriesDetailsContent(
     onClickExtra: (Int, ExtrasItem) -> Unit,
     moreActions: MoreDialogActions,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    discoverSeries: DiscoverItem?,
+    onClickDiscoverSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -436,6 +482,42 @@ fun SeriesDetailsContent(
                                     }
                                 },
                         )
+                        if (canDelete) {
+                            DeleteButton(
+                                onClick = {
+                                    position = HEADER_ROW
+                                    moreActions.onClickDelete.invoke(series)
+                                },
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            if (it.isFocused) {
+                                                scope.launch(ExceptionHandler()) {
+                                                    bringIntoViewRequester.bringIntoView()
+                                                }
+                                            }
+                                        },
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = discoverSeries != null,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            ExpandableFaButton(
+                                title = R.string.discover,
+                                iconStringRes = R.string.fa_magnifying_glass_plus,
+                                onClick = onClickDiscoverSeries,
+                                modifier =
+                                    Modifier.onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(ExceptionHandler()) {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
+                                        }
+                                    },
+                            )
+                        }
                     }
                 }
                 item {
@@ -533,6 +615,7 @@ fun SeriesDetailsContent(
                                         watched = item.played,
                                         favorite = item.favorite,
                                         actions = moreActions,
+                                        canDelete = false,
                                     )
                                 moreDialog =
                                     DialogParams(
@@ -621,7 +704,7 @@ fun SeriesDetailsHeader(
         ) {
             QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 12.dp))
+                GenreText(it, Modifier.padding(start = 8.dp, bottom = 8.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
@@ -638,9 +721,11 @@ fun SeriesDetailsHeader(
 fun buildDialogForSeason(
     context: Context,
     s: BaseItem,
+    canDelete: Boolean,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
     onClickPlay: (Boolean) -> Unit,
+    onClickDelete: (BaseItem) -> Unit,
 ): DialogParams {
     val items =
         buildList {
@@ -679,6 +764,17 @@ fun buildDialogForSeason(
                     onClickPlay.invoke(true)
                 },
             )
+            if (canDelete) {
+                add(
+                    DialogItem(
+                        context.getString(R.string.delete),
+                        Icons.Default.Delete,
+                        iconColor = Color.Red.copy(alpha = .8f),
+                    ) {
+                        onClickDelete.invoke(s)
+                    },
+                )
+            }
         }
     return DialogParams(
         title = s.name ?: context.getString(R.string.tv_season),

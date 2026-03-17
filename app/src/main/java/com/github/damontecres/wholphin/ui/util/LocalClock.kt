@@ -34,7 +34,7 @@ data class Clock(
 fun ProvideLocalClock(content: @Composable () -> Unit) {
     val clock = remember { Clock() }
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             while (isActive) {
                 val now = LocalDateTime.now()
                 val time = TimeFormatter.format(now)

@@ -20,6 +20,7 @@ class PlaybackKeyHandler(
     private val skipWithLeftRight: Boolean,
     private val seekBack: Duration,
     private val seekForward: Duration,
+    private val getDurationMs: () -> Long,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
     private val skipBackOnResume: Duration?,
@@ -28,15 +29,22 @@ class PlaybackKeyHandler(
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
 ) {
+    private var leftHandledByRepeat = false
+    private var rightHandledByRepeat = false
+
     fun onKeyEvent(it: KeyEvent): Boolean {
         if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
 
-        var result = true
         if (!controlsEnabled) {
-            result = false
+            return false
+        } else if (handleHoldSkip(it)) {
+            return true
         } else if (it.type != KeyEventType.KeyUp) {
-            result = false
-        } else if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
+            return false
+        }
+
+        var result = true
+        if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
                     updateSkipIndicator(-seekBack.inWholeMilliseconds)
@@ -111,4 +119,84 @@ class PlaybackKeyHandler(
         }
         return result
     }
+
+    private fun handleHoldSkip(event: KeyEvent): Boolean {
+        if (
+            controllerViewState.controlsVisible ||
+            !skipWithLeftRight ||
+            (!isSkipBack(event) && !isSkipForward(event))
+        ) {
+            return false
+        }
+
+        val isBack = isSkipBack(event)
+        return when (event.type) {
+            KeyEventType.KeyDown -> {
+                val repeatCount = event.nativeKeyEvent.repeatCount
+                if (repeatCount > 0) {
+                    if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                        setHandledByRepeat(isBack = isBack, handled = false)
+                        return true
+                    }
+                    val multiplier =
+                        calculateSeekAccelerationMultiplier(
+                            repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
+                            durationMs = normalizedDurationMs(),
+                        )
+                    setHandledByRepeat(isBack = isBack, handled = true)
+                    seekWithMultiplier(isBack = isBack, multiplier = multiplier)
+                } else {
+                    setHandledByRepeat(isBack = isBack, handled = false)
+                }
+                true
+            }
+
+            KeyEventType.KeyUp -> {
+                if (!handledByRepeat(isBack = isBack)) {
+                    seekWithMultiplier(isBack = isBack, multiplier = 1)
+                }
+                setHandledByRepeat(isBack = isBack, handled = false)
+                true
+            }
+
+            else -> {
+                false
+            }
+        }
+    }
+
+    private fun seekWithMultiplier(
+        isBack: Boolean,
+        multiplier: Int,
+    ) {
+        if (isBack) {
+            val skipDuration = seekBack * multiplier
+            player.seekBack(skipDuration)
+            updateSkipIndicator(-skipDuration.inWholeMilliseconds)
+        } else {
+            val skipDuration = seekForward * multiplier
+            player.seekForward(skipDuration)
+            updateSkipIndicator(skipDuration.inWholeMilliseconds)
+        }
+    }
+
+    private fun setHandledByRepeat(
+        isBack: Boolean,
+        handled: Boolean,
+    ) {
+        if (isBack) {
+            leftHandledByRepeat = handled
+        } else {
+            rightHandledByRepeat = handled
+        }
+    }
+
+    private fun handledByRepeat(isBack: Boolean): Boolean =
+        if (isBack) {
+            leftHandledByRepeat
+        } else {
+            rightHandledByRepeat
+        }
+
+    private fun normalizedDurationMs(): Long = getDurationMs().coerceAtLeast(0L)
 }

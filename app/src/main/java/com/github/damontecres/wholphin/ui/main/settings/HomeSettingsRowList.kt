@@ -137,7 +137,7 @@ fun HomeSettingsRowList(
                         position = 2
                         onClickPresets.invoke()
                     },
-                    modifier = Modifier.focusRequester(focusRequesters[1]),
+                    modifier = Modifier.focusRequester(focusRequesters[2]),
                 )
             }
             item {

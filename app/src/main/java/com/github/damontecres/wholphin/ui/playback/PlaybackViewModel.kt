@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -140,6 +141,7 @@ class PlaybackViewModel
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
         private val imageUrlService: ImageUrlService,
+        private val screensaverService: ScreensaverService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -189,7 +191,10 @@ class PlaybackViewModel
 
         init {
             viewModelScope.launchIO {
-                addCloseable { disconnectPlayer() }
+                addCloseable {
+                    screensaverService.keepScreenOn(false)
+                    disconnectPlayer()
+                }
                 init()
             }
         }
@@ -441,11 +446,20 @@ class PlaybackViewModel
 
                 // Create the correct player for the media
                 createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
-
+                val subtitleLanguagePreference =
+                    serverRepository.currentUserDto.value
+                        ?.configuration
+                        ?.subtitleLanguagePreference
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map {
+                        .let {
+                            if (subtitleLanguagePreference.isNotNullOrBlank()) {
+                                it?.sortedByDescending { it.language != null && subtitleLanguagePreference == it.language }
+                            } else {
+                                it
+                            }
+                        }?.map {
                             SimpleMediaStream.from(context, it, true)
                         }.orEmpty()
 
@@ -1423,6 +1437,10 @@ class PlaybackViewModel
                     }
                 }
             }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            screensaverService.keepScreenOn(isPlaying)
         }
     }
 

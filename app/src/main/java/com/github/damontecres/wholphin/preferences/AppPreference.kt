@@ -775,6 +775,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val ManageMedia =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_media_management,
+                defaultValue = false,
+                getter = { it.interfacePreferences.enableMediaManagement },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { enableMediaManagement = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -1031,6 +1043,12 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val ScreensaverSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.screensaver_settings,
+                destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
+            )
     }
 }
 
@@ -1045,6 +1063,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ScreensaverSettings,
                 ),
         ),
         PreferenceGroup(
@@ -1138,6 +1157,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
@@ -1236,6 +1256,24 @@ val liveTvPreferences =
         AppPreference.LiveTvColorCodePrograms,
     )
 
+val screensaverPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.screensaver,
+            preferences =
+                listOf(
+                    ScreensaverPreference.Enabled,
+                    ScreensaverPreference.StartDelay,
+                    ScreensaverPreference.Duration,
+                    ScreensaverPreference.ShowClock,
+                    ScreensaverPreference.Animate,
+                    ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.ItemTypes,
+                    ScreensaverPreference.Start,
+                ),
+        ),
+    )
+
 data class AppSwitchPreference<Pref>(
     @get:StringRes override val title: Int,
     override val defaultValue: Boolean,
@@ -1295,8 +1333,6 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
-    val toSharedPrefs: (T) -> String,
-    val fromSharedPrefs: (String) -> T?,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

@@ -102,7 +102,7 @@ fun DownloadSubtitlesContent(
                         .padding(PaddingValues(24.dp)),
             ) {
                 Text(
-                    text = "Search & download subtitles",
+                    text = stringResource(R.string.search_and_download_subtitles),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -113,7 +113,7 @@ fun DownloadSubtitlesContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Language",
+                        text = stringResource(R.string.language),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -137,7 +137,7 @@ fun DownloadSubtitlesContent(
                 }
                 if (dialogItems.isEmpty()) {
                     Text(
-                        text = "No remote subtitles were found",
+                        text = stringResource(R.string.no_subtitles_found),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )

@@ -68,6 +68,7 @@ fun BannerCard(
     interactionSource: MutableInteractionSource? = null,
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
+    useSeriesForPrimary: Boolean = true,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
@@ -82,7 +83,7 @@ fun BannerCard(
             }
         }
     val imageUrl =
-        remember(item, fillHeight, imageType) {
+        remember(item, fillHeight, imageType, useSeriesForPrimary) {
             if (item != null) {
                 item.imageUrlOverride
                     ?: imageUrlService.getItemImageUrl(
@@ -90,6 +91,7 @@ fun BannerCard(
                         imageType,
                         fillWidth = null,
                         fillHeight = fillHeight,
+                        useSeriesForPrimary = useSeriesForPrimary,
                     )
             } else {
                 null
@@ -208,6 +210,7 @@ fun BannerCardWithTitle(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
+    useSeriesForPrimary: Boolean = item?.useSeriesForPrimary ?: true,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -234,6 +237,7 @@ fun BannerCardWithTitle(
             interactionSource = interactionSource,
             imageType = imageType,
             imageContentScale = imageContentScale,
+            useSeriesForPrimary = useSeriesForPrimary,
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),

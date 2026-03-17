@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
+import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -14,6 +15,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
+import com.github.damontecres.wholphin.ui.playback.getTypeFor
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
@@ -567,6 +569,7 @@ class HomeSettingsService
             userDto: UserDto,
             libraries: List<Library>,
             limit: Int = prefs.maxItemsPerRow,
+            isRefresh: Boolean,
         ): HomeRowLoadingState =
             when (row) {
                 is HomeRowConfig.ContinueWatching -> {
@@ -647,25 +650,42 @@ class HomeSettingsService
                     val genreImages =
                         getGenreImageMap(
                             api = api,
+                            userId = serverRepository.currentUser.value?.id,
                             scope = scope,
                             imageUrlService = imageUrlService,
                             genres = genreIds,
                             parentId = row.parentId,
                             includeItemTypes = null,
                             cardWidthPx = null,
+                            useCache = isRefresh,
                         )
-                    val genres =
-                        items.map {
-                            BaseItem(it, false, genreImages[it.id])
-                        }
-
-                    val name =
+                    val library =
                         libraries
                             .firstOrNull { it.itemId == row.parentId }
-                            ?.name
+
                     val title =
-                        name?.let { context.getString(R.string.genres_in, it) }
+                        library?.name?.let { context.getString(R.string.genres_in, it) }
                             ?: context.getString(R.string.genres)
+                    val genres =
+                        items.map {
+                            BaseItem(
+                                it,
+                                false,
+                                genreImages[it.id],
+                                createGenreDestination(
+                                    genreId = it.id,
+                                    genreName = it.name ?: "",
+                                    parentId = row.parentId,
+                                    parentName = library?.name,
+                                    includeItemTypes =
+                                        library?.collectionType?.let {
+                                            getTypeFor(it)?.let {
+                                                listOf(it)
+                                            }
+                                        },
+                                ),
+                            )
+                        }
 
                     Success(
                         title,

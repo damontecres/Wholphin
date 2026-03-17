@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
@@ -67,6 +68,7 @@ class SlideshowViewModel
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
         private val userPreferencesService: UserPreferencesService,
+        private val screensaverService: ScreensaverService,
         @Assisted val slideshowSettings: Destination.Slideshow,
     ) : ViewModel(),
         Player.Listener {
@@ -110,6 +112,7 @@ class SlideshowViewModel
 
         init {
             addCloseable {
+                screensaverService.keepScreenOn(false)
                 player.removeListener(this@SlideshowViewModel)
                 player.release()
             }
@@ -138,7 +141,7 @@ class SlideshowViewModel
                             parentId = slideshowSettings.parentId,
                             includeItemTypes = includeItemTypes,
                             fields = PhotoItemFields,
-                            recursive = true,
+                            recursive = slideshowSettings.recursive,
                             sortBy = listOf(slideshowSettings.sortAndDirection.sort),
                             sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
                         ),
@@ -190,7 +193,8 @@ class SlideshowViewModel
             _pager.value?.let { pager ->
                 viewModelScope.launchIO {
                     try {
-                        val image = pager.getBlocking(position)
+                        val image =
+                            if (position in pager.indices) pager.getBlocking(position) else null
                         Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
                             this@SlideshowViewModel.position.setValueOnMain(position)
@@ -282,6 +286,7 @@ class SlideshowViewModel
         private var slideshowJob: Job? = null
 
         fun startSlideshow() {
+            screensaverService.keepScreenOn(true)
             _slideshow.update {
                 SlideshowState(enabled = true, paused = false)
             }
@@ -295,6 +300,7 @@ class SlideshowViewModel
         }
 
         fun stopSlideshow() {
+            screensaverService.keepScreenOn(false)
             slideshowJob?.cancel()
             _slideshow.update {
                 SlideshowState(enabled = false, paused = false)

@@ -6,16 +6,21 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
+import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -52,6 +57,7 @@ class HomeViewModel
         private val datePlayedService: DatePlayedService,
         private val backdropService: BackdropService,
         private val userPreferencesService: UserPreferencesService,
+        private val mediaManagementService: MediaManagementService,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeState.EMPTY)
         val state: StateFlow<HomeState> = _state
@@ -78,6 +84,8 @@ class HomeViewModel
                         // Refreshing if a load has already occurred and the rows haven't significantly changed
                         val refresh =
                             state.loadingState == LoadingState.Success && state.settings == settings
+                        Timber.v("refresh=$refresh, state.loadingState=${state.loadingState}")
+                        _state.update { it.copy(settings = settings) }
 
                         val semaphore = Semaphore(4)
 
@@ -102,6 +110,7 @@ class HomeViewModel
                                                     userDto = userDto,
                                                     libraries = libraries,
                                                     limit = prefs.maxItemsPerRow,
+                                                    isRefresh = refresh,
                                                 )
                                             } catch (ex: Exception) {
                                                 Timber.e(ex, "Error on row %s", row)
@@ -186,6 +195,36 @@ class HomeViewModel
                 backdropService.submit(item)
             }
         }
+
+        fun deleteItem(
+            position: RowColumn,
+            item: BaseItem,
+        ) {
+            deleteItem(context, mediaManagementService, item) {
+                viewModelScope.launchDefault {
+                    val row = state.value.homeRows.getOrNull(position.row)
+                    if (row is HomeRowLoadingState.Success) {
+                        _state.update {
+                            val newRow =
+                                row.items.toMutableList().apply {
+                                    removeAt(position.column)
+                                }
+                            it.copy(
+                                homeRows =
+                                    it.homeRows.toMutableList().apply {
+                                        set(position.row, row.copy(items = newRow))
+                                    },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
     }
 
 data class HomeState(

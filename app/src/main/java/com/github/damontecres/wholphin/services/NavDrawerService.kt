@@ -11,15 +11,19 @@ import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -60,7 +64,11 @@ class NavDrawerService
                     if (user != null && userDto != null && user.id == userDto.id) {
                         updateNavDrawer(user, userDto)
                     }
+                }.catch { ex ->
+                    Timber.e(ex, "Error updating nav drawer")
+                    showToast(context, "Error fetching user's views")
                 }.launchIn(coroutineScope)
+
             seerrServerRepository.active
                 .onEach { discoverActive ->
                     _state.update { it.copy(discoverEnabled = discoverActive) }
@@ -143,7 +151,9 @@ class NavDrawerService
             val allItems = builtins + libraries
 
             val navDrawerPins =
-                serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
+                withContext(Dispatchers.IO) {
+                    serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
+                }
 
             val items = mutableListOf<NavDrawerItem>()
             val moreItems = mutableListOf<NavDrawerItem>()

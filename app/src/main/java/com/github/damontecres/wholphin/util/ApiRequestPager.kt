@@ -146,17 +146,17 @@ class ApiRequestPager<T>(
         position: Int,
         itemId: UUID,
     ) {
-        val item =
-            api.userLibraryApi.getItem(itemId).content.let {
-                BaseItem.from(
-                    it,
-                    api,
-                    useSeriesForPrimary,
-                )
-            }
-        val pageNumber = position / pageSize
-        val index = position - pageNumber * pageSize
         mutex.withLock {
+            val item =
+                api.userLibraryApi.getItem(itemId).content.let {
+                    BaseItem.from(
+                        it,
+                        api,
+                        useSeriesForPrimary,
+                    )
+                }
+            val pageNumber = position / pageSize
+            val index = position - pageNumber * pageSize
             val page = cachedPages.getIfPresent(pageNumber)
             if (page != null && index in page.indices) {
                 page[index] = item
@@ -164,6 +164,22 @@ class ApiRequestPager<T>(
                 items = ItemList(totalCount, pageSize, cachedPages.asMap())
             }
         }
+    }
+
+    /**
+     * Dumps the cache for all the pages at or after the given position and fetches a new page
+     */
+    suspend fun refreshPagesAfter(position: Int) {
+        val pageNumber = position / pageSize
+        cachedPages.asMap().apply {
+            keys.forEach { pageKey ->
+                if (pageKey >= pageNumber) {
+                    if (DEBUG) Timber.v("refreshPagesAfter: dropping %s", pageKey)
+                    remove(pageKey)
+                }
+            }
+        }
+        fetchPageBlocking(position, true)
     }
 
     companion object {

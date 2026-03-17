@@ -6,6 +6,8 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -17,11 +19,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,9 +35,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,8 +64,12 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
+import com.github.damontecres.wholphin.ui.playback.isDown
+import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -259,31 +271,65 @@ fun DialogPopupContent(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
+        val scope = rememberCoroutineScope()
+        val listState = rememberLazyListState()
+        val focusRequesters = remember { List(dialogItems.size) { FocusRequester() } }
         LazyColumn(
+            state = listState,
             modifier = Modifier,
         ) {
-            items(dialogItems) {
-                when (it) {
+            itemsIndexed(dialogItems) { index, item ->
+                when (item) {
                     is DialogItemDivider -> {
                         HorizontalDivider(Modifier.height(16.dp))
                     }
 
                     is DialogItem -> {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
                         ListItem(
-                            selected = it.selected,
-                            enabled = !waiting && it.enabled,
+                            selected = item.selected,
+                            enabled = !waiting && item.enabled,
                             onClick = {
                                 if (dismissOnClick) {
                                     onDismissRequest.invoke()
                                 }
-                                it.onClick.invoke()
+                                item.onClick.invoke()
                             },
-                            headlineContent = it.headlineContent,
-                            overlineContent = it.overlineContent,
-                            supportingContent = it.supportingContent,
-                            leadingContent = it.leadingContent,
-                            trailingContent = it.trailingContent,
-                            modifier = Modifier,
+                            headlineContent = item.headlineContent,
+                            overlineContent = item.overlineContent,
+                            supportingContent = item.supportingContent,
+                            leadingContent = item.leadingContent,
+                            trailingContent = item.trailingContent,
+                            interactionSource = interactionSource,
+                            modifier =
+                                Modifier
+                                    .focusRequester(focusRequesters[index])
+                                    .ifElse(
+                                        index == 0,
+                                        Modifier.onKeyEvent {
+                                            if (focused && isUp(it) && it.type == KeyEventType.KeyDown) {
+                                                scope.launch {
+                                                    listState.animateScrollToItem(dialogItems.lastIndex)
+                                                    focusRequesters[dialogItems.lastIndex].tryRequestFocus()
+                                                }
+                                                return@onKeyEvent true
+                                            }
+                                            false
+                                        },
+                                    ).ifElse(
+                                        index == dialogItems.lastIndex,
+                                        Modifier.onKeyEvent {
+                                            if (focused && isDown(it) && it.type == KeyEventType.KeyDown) {
+                                                scope.launch {
+                                                    listState.animateScrollToItem(0)
+                                                    focusRequesters[0].tryRequestFocus()
+                                                }
+                                                return@onKeyEvent true
+                                            }
+                                            false
+                                        },
+                                    ),
                         )
                     }
                 }
@@ -471,6 +517,80 @@ fun ConfirmDialogContent(
     }
 }
 
+@Composable
+fun ConfirmDeleteDialog(
+    itemTitle: String,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    BasicDialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        LazyColumn(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier.wrapContentWidth(),
+        ) {
+            item {
+                Text(
+                    text = stringResource(R.string.delete_item),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            item {
+                Text(
+                    text = itemTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .padding(bottom = 8.dp),
+                )
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    modifier = Modifier,
+                ) {
+                    Button(
+                        onClick = onCancel,
+                        modifier = Modifier.width(72.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cancel),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Button(
+                        onClick = onConfirm,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = Color.Red.copy(alpha = .8f),
+                                modifier = Modifier,
+                            )
+                            Text(
+                                text = stringResource(R.string.confirm),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fun chooseVersionParams(
     context: Context,
     sources: List<MediaSourceInfo>,
@@ -512,6 +632,7 @@ fun chooseStream(
     streams: List<MediaStream>,
     currentIndex: Int?,
     type: MediaStreamType,
+    preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
@@ -536,6 +657,9 @@ fun chooseStream(
                     )
                     add(
                         DialogItem(
+                            leadingContent = {
+                                SelectedLeadingContent(currentIndex == TrackIndex.ONLY_FORCED)
+                            },
                             headlineContent = {
                                 Text(text = stringResource(R.string.only_forced_subtitles))
                             },
@@ -546,22 +670,32 @@ fun chooseStream(
                     )
                 }
                 addAll(
-                    streams.filter { it.type == type }.mapIndexed { index, stream ->
-                        val simpleStream = SimpleMediaStream.from(context, stream, true)
-                        DialogItem(
-                            selected = currentIndex == stream.index,
-                            leadingContent = {
-                                SelectedLeadingContent(currentIndex == stream.index)
-                            },
-                            headlineContent = {
-                                Text(text = simpleStream.streamTitle ?: simpleStream.displayTitle)
-                            },
-                            supportingContent = {
-                                if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
-                            },
-                            onClick = { onClick.invoke(stream.index) },
-                        )
-                    },
+                    streams
+                        .filter { it.type == type }
+                        .let {
+                            if (type == MediaStreamType.SUBTITLE && preferredSubtitleLanguage.isNotNullOrBlank()) {
+                                it.sortedByDescending { it.language != null && it.language == preferredSubtitleLanguage }
+                            } else {
+                                it
+                            }
+                        }.mapIndexed { index, stream ->
+                            val simpleStream = SimpleMediaStream.from(context, stream, true)
+                            DialogItem(
+                                selected = currentIndex == stream.index,
+                                leadingContent = {
+                                    SelectedLeadingContent(currentIndex == stream.index)
+                                },
+                                headlineContent = {
+                                    Text(
+                                        text = simpleStream.streamTitle ?: simpleStream.displayTitle,
+                                    )
+                                },
+                                supportingContent = {
+                                    if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
+                                },
+                                onClick = { onClick.invoke(stream.index) },
+                            )
+                        },
                 )
             },
     )

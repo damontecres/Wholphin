@@ -25,6 +25,8 @@ fun FocusedEpisodeFooter(
     moreOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
+    canDelete: Boolean,
+    deleteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
     buttonOnFocusChanged: (FocusState) -> Unit = {},
 ) {
@@ -47,6 +49,8 @@ fun FocusedEpisodeFooter(
             buttonOnFocusChanged = buttonOnFocusChanged,
             trailers = null,
             trailerOnClick = {},
+            canDelete = canDelete,
+            deleteOnClick = deleteOnClick,
             modifier = Modifier.fillMaxWidth(),
         )
     }

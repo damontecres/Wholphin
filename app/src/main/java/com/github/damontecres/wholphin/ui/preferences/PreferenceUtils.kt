@@ -35,6 +35,7 @@ enum class PreferenceScreenOption {
     ADVANCED,
     EXO_PLAYER,
     MPV,
+    SCREENSAVER,
     ;
 
     companion object {

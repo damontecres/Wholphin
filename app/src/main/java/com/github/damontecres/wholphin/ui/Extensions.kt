@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.media.AudioManager
 import android.view.KeyEvent
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
@@ -46,7 +45,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -296,7 +294,7 @@ fun Arrangement.spacedByWithFooter(space: Dp) =
     }
 
 /**
- * Tries to find the [Activity] for the given [Context]. Often used for [keepScreenOn].
+ * Tries to find the [Activity] for the given [Context]
  */
 fun Context.findActivity(): Activity? {
     if (this is Activity) {
@@ -308,18 +306,6 @@ fun Context.findActivity(): Activity? {
         context = context.baseContext
     }
     return null
-}
-
-/**
- * Keep the screen on for an [Activity]. Often used with [findActivity].
- */
-fun Activity.keepScreenOn(keep: Boolean) {
-    Timber.v("Keep screen on: $keep")
-    if (keep) {
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    } else {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    }
 }
 
 /**
@@ -441,12 +427,6 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
     api: ApiClient,
     useSeriesForPrimary: Boolean,
 ) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
-
-@Composable
-fun rememberBackDropImage(item: BaseItem): String? {
-    val imageUrlService = LocalImageUrlService.current
-    return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
-}
 
 /**
  * Check if this, coalescing nulls to zero, is greater than that
