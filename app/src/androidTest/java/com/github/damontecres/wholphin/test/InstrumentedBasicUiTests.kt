@@ -9,7 +9,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import androidx.navigation3.runtime.NavBackStack
 import com.github.damontecres.wholphin.MainContent
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ScreensaverState
 import com.github.damontecres.wholphin.services.SetupDestination
@@ -43,16 +45,17 @@ class InstrumentedBasicUiTests {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun myTest() {
+        val navigationManager = NavigationManager()
+        navigationManager.backStack = NavBackStack(Destination.Home())
         // Start the app
         composeTestRule.setContent {
             WholphinTheme {
                 MainContent(
                     backStack = mutableListOf(SetupDestination.ServerList),
-                    navigationManager = mockk(relaxed = true),
+                    navigationManager = navigationManager,
                     appPreferences = mockk(relaxed = true),
                     backdropService = mockk(relaxed = true),
                     screensaverService = screensaverService,
-                    requestedDestination = Destination.Home(),
                     modifier = Modifier,
                 )
             }

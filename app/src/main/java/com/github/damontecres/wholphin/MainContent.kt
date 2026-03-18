@@ -33,10 +33,8 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
-import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 
 @Composable
 fun MainContent(
@@ -45,7 +43,6 @@ fun MainContent(
     appPreferences: AppPreferences,
     backdropService: BackdropService,
     screensaverService: ScreensaverService,
-    requestedDestination: Destination,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -113,7 +110,6 @@ fun MainContent(
                                 ApplicationContent(
                                     user = current.user,
                                     server = current.server,
-                                    startDestination = requestedDestination,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
                                     modifier = Modifier.fillMaxSize(),

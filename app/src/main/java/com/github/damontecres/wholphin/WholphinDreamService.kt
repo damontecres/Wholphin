@@ -22,9 +22,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
-import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.AppScreensaverContent
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -33,6 +31,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -61,6 +60,7 @@ class WholphinDreamService :
 
     override fun onCreate() {
         super.onCreate()
+        Timber.d("onCreate")
 
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
@@ -74,6 +74,7 @@ class WholphinDreamService :
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        Timber.d("onAttachedToWindow")
         val itemFlow = screensaverService.createItemFlow(lifecycleScope)
         setContentView(
             ComposeView(this).apply {
@@ -109,11 +110,13 @@ class WholphinDreamService :
 
     override fun onDreamingStarted() {
         super.onDreamingStarted()
+        Timber.d("onDreamingStarted")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
     }
 
     override fun onDreamingStopped() {
         super.onDreamingStopped()
+        Timber.d("onDreamingStopped")
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
     }
 }
