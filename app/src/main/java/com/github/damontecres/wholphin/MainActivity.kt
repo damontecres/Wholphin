@@ -144,7 +144,14 @@ class MainActivity : AppCompatActivity() {
         val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
         if (backStackStr != null) {
             Timber.d("Restoring back stack")
-            val backStack = json.decodeFromString<List<Destination>>(backStackStr)
+            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
+            val lastDest = backStack.lastOrNull()
+            if (lastDest is Destination.Playback ||
+                lastDest is Destination.PlaybackList ||
+                lastDest is Destination.Slideshow
+            ) {
+                backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+            }
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
             val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
