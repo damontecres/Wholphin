@@ -40,7 +40,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -58,6 +57,7 @@ import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
+import org.slf4j.MDC.put
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -75,6 +75,7 @@ class HomeSettingsService
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
+        private val displayPreferencesService: DisplayPreferencesService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -94,19 +95,11 @@ class HomeSettingsService
         suspend fun saveToServer(
             userId: UUID,
             settings: HomePageSettings,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
         ) {
-            val current = getDisplayPreferences(userId, DISPLAY_PREF_ID)
-            val customPrefs =
-                current.customPrefs.toMutableMap().apply {
-                    put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
-                }
-            api.displayPreferencesApi.updateDisplayPreferences(
-                displayPreferencesId = displayPreferencesId,
-                userId = userId,
-                client = context.getString(R.string.app_name),
-                data = current.copy(customPrefs = customPrefs),
-            )
+            displayPreferencesService.updateDisplayPreferences(userId, displayPreferencesId) {
+                put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
+            }
         }
 
         /**
@@ -118,24 +111,15 @@ class HomeSettingsService
          */
         suspend fun loadFromServer(
             userId: UUID,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
-        ): HomePageSettings? {
-            val current = getDisplayPreferences(userId, displayPreferencesId)
-            return current.customPrefs[CUSTOM_PREF_ID]?.let {
-                val jsonElement = jsonParser.parseToJsonElement(it)
-                decode(jsonElement)
-            }
-        }
-
-        private suspend fun getDisplayPreferences(
-            userId: UUID,
-            displayPreferencesId: String,
-        ) = api.displayPreferencesApi
-            .getDisplayPreferences(
-                userId = userId,
-                displayPreferencesId = displayPreferencesId,
-                client = context.getString(R.string.app_name),
-            ).content
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
+        ): HomePageSettings? =
+            displayPreferencesService
+                .getDisplayPreferences(userId, displayPreferencesId)
+                .customPrefs[CUSTOM_PREF_ID]
+                ?.let {
+                    val jsonElement = jsonParser.parseToJsonElement(it)
+                    decode(jsonElement)
+                }
 
         /**
          * Computes the filename for locally saved [HomePageSettings]
@@ -319,12 +303,12 @@ class HomeSettingsService
 
         suspend fun parseFromWebConfig(userId: UUID): HomePageResolvedSettings? {
             val customPrefs =
-                api.displayPreferencesApi
+                displayPreferencesService
                     .getDisplayPreferences(
                         displayPreferencesId = "usersettings",
                         userId = userId,
                         client = "emby",
-                    ).content.customPrefs
+                    ).customPrefs
             val userDto by api.userApi.getUserById(userId)
             val config = userDto.configuration ?: DefaultUserConfiguration
             val libraries =
@@ -954,7 +938,6 @@ class HomeSettingsService
             }
 
         companion object {
-            const val DISPLAY_PREF_ID = "default"
             const val CUSTOM_PREF_ID = "home_settings"
         }
     }

@@ -20,7 +20,6 @@ import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.timeRemaining
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -76,8 +75,7 @@ data class BaseItem(
 
     val canDelete: Boolean get() = data.canDelete == true
 
-    @Transient
-    val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
+    val aspectRatio: Float? get() = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
     val indexNumber get() = data.indexNumber
 
@@ -89,11 +87,9 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    @Transient
-    val timeRemainingOrRuntime: Duration? = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
 
-    @Transient
-    val ui =
+    val ui by lazy {
         BaseItemUi(
             episodeCornerText =
                 data.indexNumber?.let { "E$it" }
@@ -166,6 +162,7 @@ data class BaseItem(
                     }
                 },
         )
+    }
 
     private fun dateAsIndex(): Int? =
         data.premiereDate
