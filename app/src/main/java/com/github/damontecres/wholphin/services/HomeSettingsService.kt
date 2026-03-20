@@ -57,7 +57,6 @@ import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
-import org.slf4j.MDC.put
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -564,6 +563,7 @@ class HomeSettingsService
                         title = context.getString(R.string.continue_watching),
                         items = resume,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -582,6 +582,7 @@ class HomeSettingsService
                         title = context.getString(R.string.next_up),
                         items = nextUp,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -611,6 +612,7 @@ class HomeSettingsService
                                 nextUp,
                             ),
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -670,6 +672,7 @@ class HomeSettingsService
                         title,
                         genres,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -697,6 +700,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     latest
@@ -729,6 +733,7 @@ class HomeSettingsService
                                 title,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -757,6 +762,7 @@ class HomeSettingsService
                                 name ?: context.getString(R.string.collection),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -784,6 +790,7 @@ class HomeSettingsService
                                 row.name,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -834,6 +841,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     }
@@ -858,6 +866,7 @@ class HomeSettingsService
                                 context.getString(R.string.active_recordings),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -882,6 +891,7 @@ class HomeSettingsService
                                 context.getString(R.string.live_tv),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -899,6 +909,7 @@ class HomeSettingsService
                                 context.getString(R.string.channels),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -921,12 +932,14 @@ class HomeSettingsService
                             title,
                             suggestions.items,
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else if (suggestions is SuggestionsResource.Empty) {
                         Success(
                             title,
                             listOf(),
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else {
                         Error(

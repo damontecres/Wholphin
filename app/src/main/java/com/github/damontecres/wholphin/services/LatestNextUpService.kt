@@ -205,12 +205,14 @@ class LatestNextUpService
         suspend fun updateRemovedFromNextUp(userId: UUID) {
             val removed = getRemovedFromNextUp(userId)
             val newRemoved = removed.toMutableMap()
+            var changed = false
             removed.forEach { (seriesId, timestamp) ->
                 val item =
                     api.itemsApi
                         .getItems(
                             userId = userId,
                             parentId = seriesId,
+                            recursive = true,
                             includeItemTypes = listOf(BaseItemKind.EPISODE),
                             sortBy = listOf(ItemSortBy.DATE_PLAYED),
                             sortOrder = listOf(SortOrder.DESCENDING),
@@ -219,17 +221,25 @@ class LatestNextUpService
                         .firstOrNull()
                 if (item != null) {
                     val lastPlayed = item.userData?.lastPlayedDate
-                    if (lastPlayed != null && lastPlayed > timestamp) newRemoved.remove(seriesId)
+                    if (lastPlayed != null && lastPlayed > timestamp) {
+                        Timber.v("Updating removed next up for series %s", seriesId)
+                        newRemoved.remove(seriesId)
+                        changed = true
+                    }
                 } else {
                     // Series doesn't exist anymore
+                    Timber.v("Updating removed next up for missing series %s", seriesId)
                     newRemoved.remove(seriesId)
+                    changed = true
                 }
             }
-            displayPreferencesService.updateDisplayPreferences(userId) {
-                put(
-                    REMOVED_KEY,
-                    Json.encodeToString(RemovedSeriesIds(newRemoved)),
-                )
+            if (changed) {
+                displayPreferencesService.updateDisplayPreferences(userId) {
+                    put(
+                        REMOVED_KEY,
+                        Json.encodeToString(RemovedSeriesIds(newRemoved)),
+                    )
+                }
             }
         }
 

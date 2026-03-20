@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
@@ -112,6 +113,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
+
+    @Inject
+    lateinit var latestNextUpSchedulerService: LatestNextUpSchedulerService
 
     @Inject
     lateinit var backdropService: BackdropService

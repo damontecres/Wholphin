@@ -747,5 +747,6 @@
     <string name="continue_string">Continue</string>
     <string name="select_all">Select all</string>
     <string name="remove_continue_watching">Remove from continue watching</string>
+    <string name="remove_next_up">Remove series from next up</string>
 
 </resources>
