@@ -140,6 +140,7 @@ fun HomePage(
                             watched = item.played,
                             favorite = item.favorite,
                             canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                            canRemoveContinueWatching = true,
                             actions =
                                 MoreDialogActions(
                                     navigateTo = viewModel.navigationManager::navigateTo,

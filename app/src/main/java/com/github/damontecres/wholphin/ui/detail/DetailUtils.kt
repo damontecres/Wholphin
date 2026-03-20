@@ -271,6 +271,7 @@ fun buildMoreDialogItemsForHome(
     favorite: Boolean,
     canDelete: Boolean,
     actions: MoreDialogActions,
+    canRemoveContinueWatching: Boolean = false,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -345,6 +346,16 @@ fun buildMoreDialogItemsForHome(
                     iconColor = Color.Red.copy(alpha = .8f),
                 ) {
                     actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        if (canRemoveContinueWatching && !watched && playbackPosition > Duration.ZERO) {
+            add(
+                DialogItem(
+                    text = R.string.mark_unwatched,
+                    iconStringRes = R.string.fa_eye,
+                ) {
+                    actions.onClickWatch.invoke(itemId, false)
                 },
             )
         }
