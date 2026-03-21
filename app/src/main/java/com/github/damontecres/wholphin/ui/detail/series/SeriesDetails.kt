@@ -132,6 +132,14 @@ fun SeriesDetails(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
+    LifecycleResumeEffect(destination.itemId) {
+        viewModel.refresh()
+
+        onPauseOrDispose {
+            viewModel.release()
+        }
+    }
+
     when (val state = loading) {
         is LoadingState.Error -> {
             ErrorMessage(state, modifier)
@@ -148,9 +156,7 @@ fun SeriesDetails(
                 LifecycleResumeEffect(destination.itemId) {
                     viewModel.onResumePage()
 
-                    onPauseOrDispose {
-                        viewModel.release()
-                    }
+                    onPauseOrDispose {}
                 }
 
                 val played = item.data.userData?.played ?: false

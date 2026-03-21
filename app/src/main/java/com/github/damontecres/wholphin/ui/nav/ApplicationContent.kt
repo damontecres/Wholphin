@@ -4,18 +4,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.runtime.serialization.NavBackStackSerializer
-import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.rememberDrawerState
@@ -53,22 +48,12 @@ class ApplicationContentViewModel
 fun ApplicationContent(
     server: JellyfinServer,
     user: JellyfinUser,
-    startDestination: Destination,
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
     enableTopScrim: Boolean = true,
     viewModel: ApplicationContentViewModel = hiltViewModel(),
 ) {
-    val backStack: MutableList<NavKey> =
-        rememberSerializable(
-            server,
-            user,
-            serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer()),
-        ) {
-            NavBackStack(startDestination)
-        }
-    navigationManager.backStack = backStack
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     Box(
         modifier = modifier,
