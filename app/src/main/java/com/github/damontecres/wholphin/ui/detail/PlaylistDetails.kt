@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
@@ -60,8 +61,10 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
@@ -70,6 +73,7 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -108,6 +112,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -128,16 +133,18 @@ import kotlin.time.Duration
 class PlaylistViewModel
     @AssistedInject
     constructor(
+        @ApplicationContext context: Context,
         api: ApiClient,
         navigationManager: NavigationManager,
         musicService: MusicService,
+        mediaManagementService: MediaManagementService,
         private val backdropService: BackdropService,
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaReportService: MediaReportService,
-        @Assisted val itemId: UUID,
-    ) : MusicViewModel(api, musicService, navigationManager) {
+        @Assisted itemId: UUID,
+    ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
             fun create(itemId: UUID): PlaylistViewModel
@@ -147,6 +154,10 @@ class PlaylistViewModel
         val musicState = musicService.state
 
         init {
+            init()
+        }
+
+        override fun init() {
             state.update { it.copy(loading = LoadingState.Loading) }
             viewModelScope.launchDefault {
                 try {
@@ -347,6 +358,7 @@ data class PlaylistDetailsState(
 
 @Composable
 fun PlaylistDetails(
+    preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: PlaylistViewModel =
@@ -392,7 +404,7 @@ fun PlaylistDetails(
             }
         }
     }
-
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val musicMoreActions =
         MusicMoreDialogActions(
             onNavigate = { viewModel.navigationManager.navigateTo(it) },
@@ -405,6 +417,7 @@ fun PlaylistDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onClickRemoveFromQueue = {},
+            onClickDelete = { showDeleteDialog = it },
         )
     val moreActions =
         MoreDialogActions(
@@ -416,7 +429,7 @@ fun PlaylistDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel::sendMediaReport,
-            onClickDelete = {},
+            onClickDelete = { showDeleteDialog = it },
         )
 
     PlaylistDetailsContent(
@@ -446,6 +459,7 @@ fun PlaylistDetails(
                                 item = item,
                                 index = index,
                                 canRemove = false,
+                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
                             )
                         } else {
                             buildMoreDialogItemsForHome(
@@ -455,7 +469,7 @@ fun PlaylistDetails(
                                 playbackPosition = item.playbackPosition,
                                 watched = item.played,
                                 favorite = item.favorite,
-                                canDelete = false,
+                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
                                 actions = moreActions,
                             )
                         },
@@ -493,6 +507,16 @@ fun PlaylistDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(item)
+                showDeleteDialog = null
+            },
         )
     }
 }

@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,9 +45,11 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -56,6 +59,7 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -106,18 +110,19 @@ import java.util.UUID
 class ArtistViewModel
     @AssistedInject
     constructor(
+        @ApplicationContext context: Context,
         api: ApiClient,
         musicService: MusicService,
         navigationManager: NavigationManager,
-        @param:ApplicationContext private val context: Context,
+        mediaManagementService: MediaManagementService,
         val serverRepository: ServerRepository,
         val mediaReportService: MediaReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
-        @Assisted val itemId: UUID,
-    ) : MusicViewModel(api, musicService, navigationManager) {
+        @Assisted itemId: UUID,
+    ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
             fun create(itemId: UUID): ArtistViewModel
@@ -129,6 +134,10 @@ class ArtistViewModel
         val currentMusic = musicService.state
 
         init {
+            init()
+        }
+
+        override fun init() {
             viewModelScope.launchIO {
                 try {
                     val itemDeferred =
@@ -230,7 +239,7 @@ class ArtistViewModel
             }
         }
 
-        fun init() {
+        fun refresh() {
             viewModelScope.launchDefault {
                 state.value.artist?.let {
                     backdropService.submit(it)
@@ -283,6 +292,7 @@ private const val SIMILAR_ROW = MUSIC_VIDEO_ROW + 1
 
 @Composable
 fun ArtistDetailsPage(
+    preferences: UserPreferences,
     itemId: UUID,
     modifier: Modifier = Modifier,
     viewModel: ArtistViewModel =
@@ -292,13 +302,18 @@ fun ArtistDetailsPage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val currentMusic by viewModel.currentMusic.collectAsState()
+    var position by rememberPosition(0, 0)
+    val focusRequesters =
+        remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
 
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val moreDialogActions =
         remember {
             MusicMoreDialogActions(
@@ -312,6 +327,7 @@ fun ArtistDetailsPage(
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onClickRemoveFromQueue = {},
+                onClickDelete = { showDeleteDialog = it },
             )
         }
 
@@ -327,10 +343,7 @@ fun ArtistDetailsPage(
         }
 
         LoadingState.Success -> {
-            var position by rememberPosition(0, 0)
             val artist = state.artist!!
-            val focusRequesters =
-                remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
             val songFocusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
                 if (position.row == SONG_ROW) {
@@ -338,7 +351,7 @@ fun ArtistDetailsPage(
                 } else {
                     focusRequesters.getOrNull(position.row)?.tryRequestFocus()
                 }
-                viewModel.init()
+                viewModel.refresh()
             }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
             Box(modifier = modifier) {
@@ -389,6 +402,11 @@ fun ArtistDetailsPage(
                                                                 item = artist,
                                                                 index = 0,
                                                                 canRemove = false,
+                                                                canDelete =
+                                                                    viewModel.canDelete(
+                                                                        artist,
+                                                                        preferences.appPreferences,
+                                                                    ),
                                                             ),
                                                     )
                                             },
@@ -438,6 +456,11 @@ fun ArtistDetailsPage(
                                                         item = song,
                                                         index = index,
                                                         canRemove = false,
+                                                        canDelete =
+                                                            viewModel.canDelete(
+                                                                song,
+                                                                preferences.appPreferences,
+                                                            ),
                                                     ),
                                             )
                                     }
@@ -455,6 +478,11 @@ fun ArtistDetailsPage(
                                                         item = song,
                                                         index = index,
                                                         canRemove = false,
+                                                        canDelete =
+                                                            viewModel.canDelete(
+                                                                song,
+                                                                preferences.appPreferences,
+                                                            ),
                                                     ),
                                             )
                                     }
@@ -482,7 +510,24 @@ fun ArtistDetailsPage(
                                 viewModel.navigationManager.navigateTo(album.destination())
                             },
                             onLongClickItem = { index, album ->
-                                // TODO
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = true,
+                                        title = album.name ?: "",
+                                        items =
+                                            buildMoreDialogForMusic(
+                                                context = context,
+                                                actions = moreDialogActions,
+                                                item = album,
+                                                index = index,
+                                                canRemove = false,
+                                                canDelete =
+                                                    viewModel.canDelete(
+                                                        album,
+                                                        preferences.appPreferences,
+                                                    ),
+                                            ),
+                                    )
                             },
                             cardContent = { index: Int, album: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
                                 BannerCardWithTitle(
@@ -534,7 +579,24 @@ fun ArtistDetailsPage(
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
-                                    // TODO
+                                    moreDialog =
+                                        DialogParams(
+                                            fromLongClick = true,
+                                            title = item.name ?: "",
+                                            items =
+                                                buildMoreDialogForMusic(
+                                                    context = context,
+                                                    actions = moreDialogActions,
+                                                    item = item,
+                                                    index = index,
+                                                    canRemove = false,
+                                                    canDelete =
+                                                        viewModel.canDelete(
+                                                            item,
+                                                            preferences.appPreferences,
+                                                        ),
+                                                ),
+                                        )
                                 },
                                 cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
                                     BannerCardWithTitle(
@@ -580,6 +642,17 @@ fun ArtistDetailsPage(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(item)
+                focusRequesters.getOrNull(position.row)?.tryRequestFocus()
+                showDeleteDialog = null
+            },
         )
     }
 }

@@ -1,10 +1,14 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -17,9 +21,12 @@ import timber.log.Timber
 import java.util.UUID
 
 abstract class MusicViewModel(
+    internal val itemId: UUID,
+    internal val context: Context,
     internal val api: ApiClient,
     internal val musicService: MusicService,
     internal val navigationManager: NavigationManager,
+    internal val mediaManagementService: MediaManagementService,
 ) : ViewModel() {
     fun play(
         pager: ApiRequestPager<*>,
@@ -115,4 +122,21 @@ abstract class MusicViewModel(
             navigationManager.navigateTo(Destination.NowPlaying)
         }
     }
+
+    fun canDelete(
+        item: BaseItem,
+        appPreferences: AppPreferences,
+    ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+    fun deleteItem(item: BaseItem) {
+        deleteItem(context, mediaManagementService, item) {
+            if (item.id == itemId) {
+                navigationManager.goBack()
+            } else {
+                init()
+            }
+        }
+    }
+
+    internal abstract fun init()
 }

@@ -37,6 +37,7 @@ data class MusicMoreDialogActions(
         onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
     },
     val onClickRemoveFromQueue: (Int) -> Unit,
+    val onClickDelete: (BaseItem) -> Unit,
 )
 
 fun buildMoreDialogForMusic(
@@ -45,6 +46,7 @@ fun buildMoreDialogForMusic(
     item: BaseItem,
     index: Int,
     canRemove: Boolean,
+    canDelete: Boolean,
 ): List<DialogItem> =
     buildList {
         add(
@@ -91,6 +93,17 @@ fun buildMoreDialogForMusic(
                 actions.onClickAddPlaylist.invoke(item.id)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (item.favorite) R.string.remove_favorite else R.string.add_favorite,

@@ -158,6 +158,7 @@ fun DestinationContent(
                 BaseItemKind.PLAYLIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PlaylistDetails(
+                        preferences = preferences,
                         destination = destination,
                         modifier = modifier,
                     )
@@ -221,6 +222,7 @@ fun DestinationContent(
                 BaseItemKind.MUSIC_ALBUM -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     AlbumDetailsPage(
+                        preferences = preferences,
                         itemId = destination.itemId,
                         modifier = modifier,
                     )
@@ -229,6 +231,7 @@ fun DestinationContent(
                 BaseItemKind.MUSIC_ARTIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     ArtistDetailsPage(
+                        preferences = preferences,
                         itemId = destination.itemId,
                         modifier = modifier,
                     )
