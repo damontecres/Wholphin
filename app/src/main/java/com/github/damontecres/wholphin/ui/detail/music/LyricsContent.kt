@@ -101,7 +101,7 @@ fun LyricsContent(
                         if (index == currentLyricPosition || currentLyricPosition == null) {
                             MaterialTheme.colorScheme.onSurface
                         } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = .4f)
                         },
                         animationSpec = tween(durationMillis = 500, easing = LinearEasing),
                     )

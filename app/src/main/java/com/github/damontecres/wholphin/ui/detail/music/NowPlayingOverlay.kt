@@ -73,6 +73,7 @@ fun NowPlayingOverlay(
     onMoveQueue: (Int, MoveDirection) -> Unit,
     onClickMoreItem: (Int, AudioItem) -> Unit,
     onClickStop: () -> Unit,
+    lyricsFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -116,6 +117,7 @@ fun NowPlayingOverlay(
             seekForward = Duration.ZERO,
             modifier =
                 Modifier
+                    .align(Alignment.CenterHorizontally)
                     .padding(top = 8.dp)
                     .fillMaxWidth(.95f),
         )

@@ -41,7 +41,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -66,6 +68,7 @@ import com.github.damontecres.wholphin.ui.nav.Backdrop
 import com.github.damontecres.wholphin.ui.playback.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
+import com.github.damontecres.wholphin.ui.playback.isUp
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import org.jellyfin.sdk.model.extensions.ticks
@@ -142,6 +145,8 @@ fun NowPlayingPage(
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    val lyricsFocusRequester = remember { FocusRequester() }
+    val hasLyrics = musicPrefs.showLyrics && state.hasLyrics
 
     LaunchedEffect(lyricsHaveFocus) {
         if (lyricsHaveFocus) {
@@ -174,8 +179,18 @@ fun NowPlayingPage(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .onPreviewKeyEvent(keyHandler::onKeyEvent)
-                    .focusRequester(focusRequester)
+                    .onPreviewKeyEvent { key ->
+                        if (!controllerViewState.controlsVisible &&
+                            key.type == KeyEventType.KeyUp &&
+                            isUp(key) &&
+                            hasLyrics
+                        ) {
+                            lyricsFocusRequester.tryRequestFocus()
+                            true
+                        } else {
+                            keyHandler.onKeyEvent(key)
+                        }
+                    }.focusRequester(focusRequester)
                     .focusable(),
         )
         Row(
@@ -212,7 +227,7 @@ fun NowPlayingPage(
                             model = current?.imageUrl,
                             modifier =
                                 Modifier
-                                    .size(320.dp)
+                                    .size(240.dp)
                                     .clip(RoundedCornerShape(16.dp)),
                         )
                         current?.title?.let {
@@ -260,7 +275,9 @@ fun NowPlayingPage(
                 visible = musicPrefs.showLyrics && state.hasLyrics,
                 enter = expandHorizontally(expandFrom = Alignment.End),
                 exit = shrinkHorizontally(shrinkTowards = Alignment.End),
-                modifier = Modifier,
+                modifier =
+                    Modifier
+                        .focusRequester(lyricsFocusRequester),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -330,8 +347,10 @@ fun NowPlayingPage(
                 onClickMoreItem = { index, song -> showContextForItem.invoke(false, index, song) },
                 onLongClickSong = { index, song -> showContextForItem.invoke(true, index, song) },
                 onClickStop = { viewModel.stop() },
+                lyricsFocusRequester = lyricsFocusRequester,
                 modifier =
                     Modifier
+                        .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .drawBehind {
                             drawRect(

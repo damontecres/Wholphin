@@ -430,7 +430,7 @@ fun AlbumDetailsPage(
                     itemsIndexed(state.songs) { index, song ->
                         Box(
                             modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.TopStart,
+                            contentAlignment = Alignment.Center,
                         ) {
                             SongListItem(
                                 song = song,
