@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import androidx.navigation3.runtime.NavBackStack
 import com.github.damontecres.wholphin.ui.nav.Destination
 import org.acra.ACRA
 import timber.log.Timber
@@ -13,7 +14,7 @@ import javax.inject.Singleton
 class NavigationManager
     @Inject
     constructor() {
-        var backStack: MutableList<Destination> = mutableListOf()
+        var backStack: MutableList<Destination> = NavBackStack(Destination.Home())
 
         /**
          * Go to the specified [com.github.damontecres.wholphin.ui.nav.Destination]
