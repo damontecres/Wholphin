@@ -235,7 +235,7 @@ suspend fun ViewModel.getPagerForArtist(
 ): ApiRequestPager<GetItemsRequest> {
     val request =
         GetItemsRequest(
-            parentId = artistId,
+            artistIds = listOf(artistId),
             recursive = true,
             includeItemTypes = listOf(BaseItemKind.AUDIO),
             fields = DefaultItemFields,

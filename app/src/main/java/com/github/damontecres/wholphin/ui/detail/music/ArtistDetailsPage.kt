@@ -178,7 +178,7 @@ class ArtistViewModel
                     viewModelScope.launchIO {
                         val request =
                             GetItemsRequest(
-                                parentId = itemId,
+                                artistIds = listOf(itemId),
                                 fields = DefaultItemFields,
                                 recursive = true,
                                 includeItemTypes = listOf(BaseItemKind.AUDIO),
@@ -382,7 +382,9 @@ fun ArtistDetailsPage(
                                 actions =
                                     remember {
                                         MusicButtonActions(
-                                            onClickPlay = { viewModel.play(artist) },
+                                            onClickPlay = { shuffled ->
+                                                viewModel.play(artist, shuffled = shuffled)
+                                            },
                                             onClickInstantMix = { viewModel.startInstantMix(artist.id) },
                                             onClickFavorite = {
                                                 viewModel.setFavorite(
@@ -437,68 +439,72 @@ fun ArtistDetailsPage(
                             )
                         }
                         itemsIndexed(state.topSongs) { index, song ->
-                            SongListItem(
-                                song = song,
-                                onClick = {
-                                    position = RowColumn(SONG_ROW, index)
-                                    song?.let { viewModel.play(it) }
-                                },
-                                onLongClick = {
-                                    if (song != null) {
-                                        moreDialog =
-                                            DialogParams(
-                                                fromLongClick = true,
-                                                title = song.name ?: "",
-                                                items =
-                                                    buildMoreDialogForMusic(
-                                                        context = context,
-                                                        actions = moreDialogActions,
-                                                        item = song,
-                                                        index = index,
-                                                        canRemove = false,
-                                                        canDelete =
-                                                            viewModel.canDelete(
-                                                                song,
-                                                                preferences.appPreferences,
-                                                            ),
-                                                    ),
-                                            )
-                                    }
-                                },
-                                onClickMore = {
-                                    if (song != null) {
-                                        moreDialog =
-                                            DialogParams(
-                                                fromLongClick = false,
-                                                title = song.name ?: "",
-                                                items =
-                                                    buildMoreDialogForMusic(
-                                                        context = context,
-                                                        actions = moreDialogActions,
-                                                        item = song,
-                                                        index = index,
-                                                        canRemove = false,
-                                                        canDelete =
-                                                            viewModel.canDelete(
-                                                                song,
-                                                                preferences.appPreferences,
-                                                            ),
-                                                    ),
-                                            )
-                                    }
-                                },
-                                showArtist = false,
-                                isPlaying = song != null && currentMusic.currentItemId == song.id,
-                                isQueued = song != null && song.id in currentMusic.queuedIds,
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .fillMaxWidth(.75f)
-                                        .ifElse(
-                                            position.row == SONG_ROW && position.column == index,
-                                            Modifier.focusRequester(songFocusRequester),
-                                        ),
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                SongListItem(
+                                    song = song,
+                                    onClick = {
+                                        position = RowColumn(SONG_ROW, index)
+                                        song?.let { viewModel.play(it) }
+                                    },
+                                    onLongClick = {
+                                        if (song != null) {
+                                            moreDialog =
+                                                DialogParams(
+                                                    fromLongClick = true,
+                                                    title = song.name ?: "",
+                                                    items =
+                                                        buildMoreDialogForMusic(
+                                                            context = context,
+                                                            actions = moreDialogActions,
+                                                            item = song,
+                                                            index = index,
+                                                            canRemove = false,
+                                                            canDelete =
+                                                                viewModel.canDelete(
+                                                                    song,
+                                                                    preferences.appPreferences,
+                                                                ),
+                                                        ),
+                                                )
+                                        }
+                                    },
+                                    onClickMore = {
+                                        if (song != null) {
+                                            moreDialog =
+                                                DialogParams(
+                                                    fromLongClick = false,
+                                                    title = song.name ?: "",
+                                                    items =
+                                                        buildMoreDialogForMusic(
+                                                            context = context,
+                                                            actions = moreDialogActions,
+                                                            item = song,
+                                                            index = index,
+                                                            canRemove = false,
+                                                            canDelete =
+                                                                viewModel.canDelete(
+                                                                    song,
+                                                                    preferences.appPreferences,
+                                                                ),
+                                                        ),
+                                                )
+                                        }
+                                    },
+                                    showArtist = false,
+                                    isPlaying = song != null && currentMusic.currentItemId == song.id,
+                                    isQueued = song != null && song.id in currentMusic.queuedIds,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth(.75f)
+                                            .ifElse(
+                                                position.row == SONG_ROW && position.column == index,
+                                                Modifier.focusRequester(songFocusRequester),
+                                            ),
+                                )
+                            }
                         }
                     }
                     item {
