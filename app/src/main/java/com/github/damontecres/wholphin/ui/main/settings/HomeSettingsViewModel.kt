@@ -122,19 +122,23 @@ class HomeSettingsViewModel
                     state.value
                         .let { state ->
                             state.rows
-                                .map { it.config }
                                 .map { row ->
                                     viewModelScope.async(Dispatchers.IO) {
                                         semaphore.withPermit {
-                                            homeSettingsService.fetchDataForRow(
-                                                row = row,
-                                                scope = viewModelScope,
-                                                prefs = prefs,
-                                                userDto = userDto,
-                                                libraries = state.libraries,
-                                                limit = limit,
-                                                isRefresh = false,
-                                            )
+                                            try {
+                                                homeSettingsService.fetchDataForRow(
+                                                    row = row.config,
+                                                    scope = viewModelScope,
+                                                    prefs = prefs,
+                                                    userDto = userDto,
+                                                    libraries = state.libraries,
+                                                    limit = limit,
+                                                    isRefresh = false,
+                                                )
+                                            } catch (ex: Exception) {
+                                                Timber.e(ex, "Error on row %s", row)
+                                                HomeRowLoadingState.Error(row.title, exception = ex)
+                                            }
                                         }
                                     }
                                 }
@@ -195,7 +199,12 @@ class HomeSettingsViewModel
             viewModelScope.launchIO {
                 updateState {
                     val rows = it.rows.toMutableList().apply { removeAt(index) }
-                    val rowData = it.rowData.toMutableList().apply { removeAt(index) }
+                    val rowData =
+                        if (index in it.rowData.indices) {
+                            it.rowData.toMutableList().apply { removeAt(index) }
+                        } else {
+                            it.rowData
+                        }
                     it.copy(
                         rows = rows,
                         rowData = rowData,
