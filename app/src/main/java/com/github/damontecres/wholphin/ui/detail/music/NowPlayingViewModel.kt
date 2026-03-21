@@ -32,7 +32,6 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,14 +44,16 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.lyricsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.LyricDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
-import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -99,7 +100,6 @@ class NowPlayingViewModel
 
         init {
             player.addListener(this)
-
             addCloseable {
                 player.removeListener(this)
                 visualizer?.release()
@@ -229,36 +229,52 @@ class NowPlayingViewModel
                             .getCurrent()
                             .appPreferences.musicPreferences.showBackdrop
                     if (showBackdrop) {
-                        if (audio?.albumId != null) {
-                            try {
-                                api.userLibraryApi.getItem(audio.albumId).content.let {
-                                    val backdropItem =
-                                        getBackdropItemForAlbum(api, BaseItem(it, false))
-                                    if (backdropItem != null) {
-                                        doUpdateBackdrop(backdropItem)
-                                    } else {
-                                        clearBackdrop()
+                        var backdropItem: BaseItem? = null
+                        try {
+                            if (audio?.artistId != null) {
+                                api.userLibraryApi.getItem(audio.artistId).content.let {
+                                    if (it.backdropImageTags?.isNotEmpty() == true) {
+                                        backdropItem = BaseItem(it, false)
                                     }
                                 }
-                            } catch (ex: Exception) {
-                                Timber.e(ex, "Error fetching backdrop")
-                                clearBackdrop()
                             }
-                        } else {
-                            clearBackdrop()
+                            if (backdropItem == null && audio?.albumId != null) {
+                                api.userLibraryApi.getItem(audio.albumId).content.let {
+                                    backdropItem =
+                                        getBackdropItemForAlbum(api, BaseItem(it, false))
+                                }
+                            }
+                            if (backdropItem != null) {
+                                doUpdateBackdrop(backdropItem)
+                            } else {
+                                doUpdateBackdropRandom()
+                            }
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error fetching backdrop")
+                            doUpdateBackdropRandom()
                         }
                         delay(60.seconds)
-                        try {
-                            val index = Random.nextInt(state.value.musicServiceState.queueSize)
-                            val newAudio =
-                                onMain { player.getMediaItemAt(index) }.localConfiguration?.tag as? AudioItem
-                            updateBackdrop(newAudio)
-                        } catch (_: CancellationException) {
-                        } catch (ex: Exception) {
-                            Timber.w(ex, "Error getting random audio")
-                        }
+                        doUpdateBackdropRandom()
                     }
                 }
+        }
+
+        private suspend fun doUpdateBackdropRandom() {
+            val randomArtist =
+                api.itemsApi
+                    .getItems(
+                        recursive = true,
+                        imageTypes = listOf(ImageType.BACKDROP),
+                        includeItemTypes = listOf(BaseItemKind.MUSIC_ARTIST),
+                        sortBy = listOf(ItemSortBy.RANDOM),
+                        limit = 1,
+                    ).content.items
+                    .firstOrNull()
+            if (randomArtist != null) {
+                doUpdateBackdrop(BaseItem(randomArtist))
+            } else {
+                clearBackdrop()
+            }
         }
 
         private suspend fun doUpdateBackdrop(item: BaseItem) {
@@ -337,7 +353,7 @@ class NowPlayingViewModel
                     if (prefs.musicPreferences.showBackdrop) {
                         updateBackdrop(getCurrent())
                     } else {
-                        backdropService.clearBackdrop()
+                        clearBackdrop()
                     }
                 }
             }
