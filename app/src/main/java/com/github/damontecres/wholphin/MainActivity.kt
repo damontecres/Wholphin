@@ -24,6 +24,7 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import androidx.navigation3.runtime.NavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
@@ -67,6 +68,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -127,12 +129,34 @@ class MainActivity : AppCompatActivity() {
 
     private var signInAuto = true
 
+    private val json =
+        Json {
+            classDiscriminator = "_type"
+        }
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
+
+        val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
+        if (backStackStr != null) {
+            Timber.d("Restoring back stack")
+            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
+            val lastDest = backStack.lastOrNull()
+            if (lastDest is Destination.Playback ||
+                lastDest is Destination.PlaybackList ||
+                lastDest is Destination.Slideshow
+            ) {
+                backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+            }
+            navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
+        } else {
+            val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
+            navigationManager.backStack = NavBackStack(startDestination)
+        }
 
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
@@ -206,17 +230,12 @@ class MainActivity : AppCompatActivity() {
                         appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                     ) {
                         ProvideLocalClock {
-                            val requestedDestination =
-                                remember(intent) {
-                                    intent?.let(::extractDestination) ?: Destination.Home()
-                                }
                             MainContent(
                                 backStack = setupNavigationManager.backStack,
                                 navigationManager = navigationManager,
                                 appPreferences = appPreferences,
                                 backdropService = backdropService,
                                 screensaverService = screensaverService,
-                                requestedDestination = requestedDestination,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
@@ -287,6 +306,8 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Timber.d("onSaveInstanceState")
+        val str = json.encodeToString(navigationManager.backStack.toList())
+        outState.putString(KEY_BACK_STACK, str)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -361,6 +382,8 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_EPISODE_NUMBER = "epNum"
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
+
+        private const val KEY_BACK_STACK = "backStack"
 
         lateinit var instance: MainActivity
             private set
