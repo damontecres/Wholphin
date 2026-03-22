@@ -533,4 +533,5 @@
     <string name="delete_item">確定要刪除此項目嗎？</string>
     <string name="show_media_management">顯示媒體管理選項</string>
     <string name="search_for">搜尋 %s</string>
+    <string name="select_all">全選</string>
 </resources>
