@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,14 +24,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -43,6 +44,8 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import kotlin.time.Duration
 
@@ -88,7 +91,10 @@ fun CollectionRows(
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
                 ) {
                     val endPadding =
                         16.dp + if (state.sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
@@ -153,11 +159,30 @@ fun CollectionRows(
                     }
                 }
             }
-            val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
-            val density = LocalDensity.current
+            val cardViewOptions = state.viewOptions.cardViewOptions
             val homeRows =
-                remember(state.separateItems) {
-                    state.separateItems.values.toList()
+                remember(state.separateItems, cardViewOptions) {
+                    state.separateItems.map { (type, row) ->
+                        if (row is HomeRowLoadingState.Success) {
+                            // TODO not great to do this in the UI
+                            val viewOptions =
+                                if (type == BaseItemKind.EPISODE) {
+                                    HomeRowViewOptions(
+                                        heightDp = Cards.HEIGHT_EPISODE,
+                                        episodeAspectRatio = AspectRatio.WIDE,
+                                        showTitles = cardViewOptions.showTitles,
+                                        useSeries = false,
+                                    )
+                                } else {
+                                    HomeRowViewOptions(
+                                        showTitles = cardViewOptions.showTitles,
+                                    )
+                                }
+                            row.copy(viewOptions = viewOptions)
+                        } else {
+                            row
+                        }
+                    }
                 }
             HomePageContent(
                 homeRows = homeRows,

@@ -9,7 +9,6 @@ import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
-import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -114,11 +113,16 @@ class CollectionViewModel
         private fun listenForStateUpdates() =
             viewModelScope.launchDefault {
                 state
-                    .map { Triple(it.sortAndDirection, it.itemFilter, it.viewOptions.mixed) }
-                    .distinctUntilChanged()
-                    .collectLatest { (sort, filter, mixed) ->
+                    .map {
+                        Triple(
+                            it.sortAndDirection,
+                            it.itemFilter,
+                            it.viewOptions.separateTypes,
+                        )
+                    }.distinctUntilChanged()
+                    .collectLatest { (sort, filter, separateTypes) ->
                         try {
-                            updateData(sort, filter, mixed)
+                            updateData(sort, filter, separateTypes)
                         } catch (ex: Exception) {
                             Timber.e(
                                 ex,
@@ -133,13 +137,14 @@ class CollectionViewModel
         private suspend fun updateData(
             sort: SortAndDirection,
             filter: GetItemsFilter,
-            mixed: Boolean,
+            separateTypes: Boolean,
         ) {
             _state.update { it.copy(loadingState = LoadingState.Loading) }
-            if (mixed) {
+            if (!separateTypes) {
                 val result = fetchItems(sort, filter, typesInCollection)
                 _state.update { it.copy(items = result) }
             } else {
+                val cardViewOptions = state.value.viewOptions.cardViewOptions
                 supervisorScope {
                     val jobs =
                         typesInCollection.map { type ->
@@ -147,20 +152,8 @@ class CollectionViewModel
                                 val title = context.getString(formatTypeName(type))
                                 val result =
                                     try {
-                                        val pager =
-                                            fetchItems(null, null, listOf(type))
-                                        // TODO view options
-                                        val viewOptions =
-                                            if (type == BaseItemKind.EPISODE) {
-                                                HomeRowViewOptions.genreDefault
-                                            } else {
-                                                HomeRowViewOptions()
-                                            }
-                                        HomeRowLoadingState.Success(
-                                            title,
-                                            pager,
-                                            viewOptions,
-                                        )
+                                        val pager = fetchItems(null, null, listOf(type))
+                                        HomeRowLoadingState.Success(title, pager)
                                     } catch (ex: Exception) {
                                         Timber.e(
                                             ex,
@@ -168,10 +161,7 @@ class CollectionViewModel
                                             type,
                                             itemId,
                                         )
-                                        HomeRowLoadingState.Error(
-                                            title,
-                                            exception = ex,
-                                        )
+                                        HomeRowLoadingState.Error(title, exception = ex)
                                     }
                                 type to result
                             }

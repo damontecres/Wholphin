@@ -55,6 +55,8 @@ fun CollectionViewOptionsDialog(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     val columnState = rememberLazyListState()
+    val options =
+        if (viewOptions.separateTypes) CollectionViewOptions.SeparateOptions else CollectionViewOptions.MixedOptions
     Dialog(
         onDismissRequest = onDismissRequest,
         properties =
@@ -90,11 +92,11 @@ fun CollectionViewOptionsDialog(
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 item {
-                    val pref = CollectionViewOptions.MixedGrid
+                    val pref = CollectionViewOptions.SeparateTypes
                     val interactionSource = remember { MutableInteractionSource() }
                     ComposablePreference(
                         preference = pref,
-                        value = viewOptions.mixed,
+                        value = viewOptions.separateTypes,
                         onNavigate = {},
                         onValueChange = { newValue ->
                             onViewOptionsChange.invoke(pref.setter(viewOptions, newValue))
@@ -104,7 +106,7 @@ fun CollectionViewOptionsDialog(
                         onClickPreference = {},
                     )
                 }
-                items(ViewOptions.OPTIONS) { pref ->
+                items(options, key = { it.title }) { pref ->
                     pref as AppPreference<ViewOptions, Any>
                     val interactionSource = remember { MutableInteractionSource() }
                     val value = pref.getter.invoke(viewOptions.cardViewOptions)
@@ -118,7 +120,7 @@ fun CollectionViewOptionsDialog(
                             onViewOptionsChange.invoke(viewOptions.copy(cardViewOptions = newCardViewOptions))
                         },
                         interactionSource = interactionSource,
-                        modifier = Modifier,
+                        modifier = Modifier.animateItem(),
                         onClickPreference = { pref ->
                             if (pref == ViewOptionsReset) {
                                 onViewOptionsChange.invoke(defaultViewOptions)
@@ -132,16 +134,16 @@ fun CollectionViewOptionsDialog(
 }
 
 data class CollectionViewOptions(
-    val mixed: Boolean = true,
+    val separateTypes: Boolean = false,
     val cardViewOptions: ViewOptions = ViewOptions(),
 ) {
     companion object {
-        val MixedGrid =
+        val SeparateTypes =
             AppSwitchPreference<CollectionViewOptions>(
                 title = R.string.separate_types,
                 defaultValue = false,
-                getter = { it.mixed },
-                setter = { vo, value -> vo.copy(mixed = value) },
+                getter = { it.separateTypes },
+                setter = { vo, value -> vo.copy(separateTypes = value) },
             )
 
         val MixedOptions =
@@ -158,7 +160,6 @@ data class CollectionViewOptions(
 
         val SeparateOptions =
             listOf(
-                MixedGrid,
                 ViewOptionsDetailHeader,
                 ViewOptionsShowTitles,
                 ViewOptionsReset,

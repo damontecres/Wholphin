@@ -150,7 +150,22 @@ fun CollectionDetails(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth(.85f),
                 )
-                if (state.viewOptions.mixed) {
+                if (state.viewOptions.separateTypes) {
+                    CollectionRows(
+                        preferences = preferences,
+                        state = state,
+                        onClickItem = onClickItem,
+                        onLongClickItem = onLongClickItem,
+                        onSortChange = onSortChange,
+                        onClickPlay = onClickPlay,
+                        onClickPlayAll = onClickPlayAll,
+                        onChangeBackdrop = onChangeBackdrop,
+                        onFilterChange = onFilterChange,
+                        getPossibleFilterValues = viewModel::getPossibleFilterValues,
+                        onClickViewOptions = onClickViewOptions,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
                     CollectionMixedGrid(
                         preferences = preferences,
                         state = state,
@@ -163,21 +178,6 @@ fun CollectionDetails(
                         onFilterChange = onFilterChange,
                         getPossibleFilterValues = viewModel::getPossibleFilterValues,
                         letterPosition = viewModel::letterPosition,
-                        onClickViewOptions = onClickViewOptions,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    CollectionRows(
-                        preferences = preferences,
-                        state = state,
-                        onClickItem = onClickItem,
-                        onLongClickItem = onLongClickItem,
-                        onSortChange = onSortChange,
-                        onClickPlay = onClickPlay,
-                        onClickPlayAll = onClickPlayAll,
-                        onChangeBackdrop = onChangeBackdrop,
-                        onFilterChange = onFilterChange,
-                        getPossibleFilterValues = viewModel::getPossibleFilterValues,
                         onClickViewOptions = onClickViewOptions,
                         modifier = Modifier.fillMaxSize(),
                     )
