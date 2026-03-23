@@ -11,7 +11,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
-import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
@@ -23,6 +22,7 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
@@ -142,11 +142,9 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionFolderBoxSet(
+                    CollectionDetails(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        recursive = false,
-                        playEnabled = true,
                         modifier = modifier,
                     )
                 }

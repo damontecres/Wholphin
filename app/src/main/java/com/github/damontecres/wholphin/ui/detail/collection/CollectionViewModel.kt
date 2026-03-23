@@ -3,7 +3,10 @@ package com.github.damontecres.wholphin.ui.detail.collection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -13,6 +16,7 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +34,10 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import java.util.UUID
-import javax.inject.Inject
 
 @HiltViewModel(assistedFactory = CollectionViewModel.Factory::class)
 class CollectionViewModel
-    @Inject
+    @AssistedInject
     constructor(
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
@@ -66,24 +69,39 @@ class CollectionViewModel
                 }
 
                 viewModelScope.launchIO {
-                    state.map { Pair(it.sortAndDirection, it.viewOptions.mixed) }.distinctUntilChanged().collectLatest { (sort, mixed) ->
-                        _state.update { it.copy(loadingState = LoadingState.Loading) }
-                        if (mixed) {
-                            // TODO types
-                            val result = fetchItems(sort, listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES))
-                            _state.update { it.copy(items = result) }
-                        } else {
-                            val jobs = mutableListOf<Deferred<Unit>>()
-                            supervisorScope {
-                                async(Dispatchers.IO) {
-                                    val result = fetchItems(sort, listOf(BaseItemKind.MOVIE))
-                                    _state.update { it.copy(movies = HomeRowLoadingState.Success("", result)) }
-                                }.also { jobs.add(it) }
-                                jobs.awaitAll()
+                    state
+                        .map { Pair(it.sortAndDirection, it.viewOptions.mixed) }
+                        .distinctUntilChanged()
+                        .collectLatest { (sort, mixed) ->
+                            _state.update { it.copy(loadingState = LoadingState.Loading) }
+                            if (mixed) {
+                                // TODO types
+                                val result =
+                                    fetchItems(
+                                        sort,
+                                        listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
+                                    )
+                                _state.update { it.copy(items = result) }
+                            } else {
+                                val jobs = mutableListOf<Deferred<Unit>>()
+                                supervisorScope {
+                                    async(Dispatchers.IO) {
+                                        val result = fetchItems(sort, listOf(BaseItemKind.MOVIE))
+                                        _state.update {
+                                            it.copy(
+                                                movies =
+                                                    HomeRowLoadingState.Success(
+                                                        "",
+                                                        result,
+                                                    ),
+                                            )
+                                        }
+                                    }.also { jobs.add(it) }
+                                    jobs.awaitAll()
+                                }
                             }
+                            _state.update { it.copy(loadingState = LoadingState.Success) }
                         }
-                        _state.update { it.copy(loadingState = LoadingState.Success) }
-                    }
                 }
             }
         }
@@ -111,21 +129,25 @@ class CollectionViewModel
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
             _state.update { it.copy(viewOptions = viewOptions) }
         }
+
+        suspend fun getPossibleFilterValues(filterBy: ItemFilterBy<*>): List<FilterValueOption> {
+            TODO()
+        }
+
+        suspend fun letterPosition(letter: Char): Int {
+            TODO()
+        }
     }
 
 data class CollectionState(
     val loadingState: LoadingState = LoadingState.Pending,
     val collection: BaseItem? = null,
     val sortAndDirection: SortAndDirection = SortAndDirection.DEFAULT,
+    val itemFilter: GetItemsFilter = GetItemsFilter(),
     val viewOptions: CollectionViewOptions = CollectionViewOptions(),
     val items: List<BaseItem?> = emptyList(),
     val movies: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
     val series: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
     val episodes: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
     val collections: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
-)
-
-data class CollectionViewOptions(
-    val showDetails: Boolean = true,
-    val mixed: Boolean = true,
 )
