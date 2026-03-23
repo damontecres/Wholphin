@@ -3,15 +3,19 @@ package com.github.damontecres.wholphin.ui.detail.collection
 import android.content.Context
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -36,15 +40,19 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -65,6 +73,8 @@ class CollectionViewModel
         private val mediaManagementService: MediaManagementService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
+        private val keyValueService: KeyValueService,
+        private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         val mediaReportService: MediaReportService,
         @Assisted private val itemId: UUID,
     ) : ViewModel() {
@@ -72,6 +82,12 @@ class CollectionViewModel
         interface Factory {
             fun create(itemId: UUID): CollectionViewModel
         }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val viewOptionsFlow =
+            serverRepository.currentUser.asFlow().filterNotNull().flatMapLatest {
+                keyValueService.get(it.id, VIEW_OPTIONS_KEY, CollectionViewOptions())
+            }
 
         private val _state = MutableStateFlow(CollectionState())
         val state: StateFlow<CollectionState> = _state
@@ -84,14 +100,29 @@ class CollectionViewModel
                         .getItem(itemId)
                         .content
                         .let { BaseItem(it, false) }
-
-                // TODO fetch view options
-                val viewOptions = CollectionViewOptions()
-                _state.update {
-                    it.copy(
-                        collection = collection,
-                        viewOptions = viewOptions,
-                    )
+                val libraryDisplayInfo =
+                    serverRepository.currentUser.value?.let { user ->
+                        withContext(Dispatchers.IO) {
+                            libraryDisplayInfoDao.getItem(user, itemId)
+                        }
+                    }
+                if (libraryDisplayInfo != null) {
+                    // Only use filter & sort per collection
+                    // View options will be global, set below
+                    Timber.v("Got libraryDisplayInfo for collection %s", itemId)
+                    _state.update {
+                        it.copy(
+                            collection = collection,
+                            itemFilter = libraryDisplayInfo.filter,
+                            sortAndDirection = libraryDisplayInfo.sortAndDirection,
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            collection = collection,
+                        )
+                    }
                 }
                 listenForStateUpdates()
                 themeSongPlayer.playThemeFor(
@@ -100,6 +131,15 @@ class CollectionViewModel
                         .getCurrent()
                         .appPreferences.interfacePreferences.playThemeSongs,
                 )
+            }
+            viewModelScope.launchDefault {
+                // Get global per-user view options for collections
+                viewOptionsFlow.collectLatest { viewOptions ->
+                    Timber.v("Updated view options")
+                    _state.update {
+                        it.copy(viewOptions = viewOptions)
+                    }
+                }
             }
         }
 
@@ -139,12 +179,12 @@ class CollectionViewModel
             filter: GetItemsFilter,
             separateTypes: Boolean,
         ) {
+            Timber.d("Begin updateData for %s", itemId)
             _state.update { it.copy(loadingState = LoadingState.Loading) }
             if (!separateTypes) {
                 val result = fetchItems(sort, filter, typesInCollection)
                 _state.update { it.copy(items = result) }
             } else {
-                val cardViewOptions = state.value.viewOptions.cardViewOptions
                 supervisorScope {
                     val jobs =
                         typesInCollection.map { type ->
@@ -179,6 +219,7 @@ class CollectionViewModel
                 }
             }
             _state.update { it.copy(loadingState = LoadingState.Success) }
+            Timber.d("End updateData for %s", itemId)
         }
 
         private suspend fun fetchItems(
@@ -215,16 +256,51 @@ class CollectionViewModel
 
         fun changeSort(sortAndDirection: SortAndDirection) {
             _state.update { it.copy(sortAndDirection = sortAndDirection) }
-            // TODO persist
+            viewModelScope.launchDefault {
+                val user = serverRepository.currentUser.value
+                val state = _state.value
+                if (user != null) {
+                    libraryDisplayInfoDao.saveItem(
+                        LibraryDisplayInfo(
+                            user = user,
+                            itemId = itemId,
+                            sort = sortAndDirection.sort,
+                            direction = sortAndDirection.direction,
+                            filter = state.itemFilter,
+                            viewOptions = null,
+                        ),
+                    )
+                }
+            }
         }
 
         fun changeFilter(filter: GetItemsFilter) {
             _state.update { it.copy(itemFilter = filter) }
-            // TODO persist
+            viewModelScope.launchDefault {
+                val user = serverRepository.currentUser.value
+                val state = _state.value
+                if (user != null) {
+                    libraryDisplayInfoDao.saveItem(
+                        LibraryDisplayInfo(
+                            user = user,
+                            itemId = itemId,
+                            sort = state.sortAndDirection.sort,
+                            direction = state.sortAndDirection.direction,
+                            filter = filter,
+                            viewOptions = null,
+                        ),
+                    )
+                }
+            }
         }
 
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
             _state.update { it.copy(viewOptions = viewOptions) }
+            viewModelScope.launchDefault {
+                serverRepository.currentUser.value?.id?.let { userId ->
+                    keyValueService.save(userId, VIEW_OPTIONS_KEY, viewOptions)
+                }
+            }
         }
 
         suspend fun getPossibleFilterValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
@@ -294,6 +370,8 @@ class CollectionViewModel
                     BaseItemKind.EPISODE,
                     BaseItemKind.BOX_SET,
                 )
+
+            const val VIEW_OPTIONS_KEY = "CollectionViewOptions"
         }
     }
 
