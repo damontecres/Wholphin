@@ -29,7 +29,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -40,7 +39,6 @@ import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.SortByButton
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.HomePageContent
@@ -81,13 +79,12 @@ fun CollectionRows(
                 (state.separateItems[it] as? HomeRowLoadingState.Success)?.items?.getOrNull(position.column)
             }
         }
-    if (state.viewOptions.cardViewOptions.showDetails) {
-        LaunchedEffect(focusedItem) {
-            focusedItem?.let(onChangeBackdrop)
-        }
+    LaunchedEffect(focusedItem) {
+        focusedItem?.let(onChangeBackdrop)
     }
-    val sortOptions = MovieSortOptions
-    val filterOptions = DefaultFilterOptions
+    // TODO enable sort & filter?
+    val sortOptions = emptyList<ItemSortBy>() // MovieSortOptions
+    val filterOptions = emptyList<ItemFilterBy<*>>() // DefaultFilterOptions
 
     Box(modifier = modifier) {
         Column(
@@ -114,37 +111,36 @@ fun CollectionRows(
                                 .fillMaxWidth()
                                 .focusRequester(headerRowFocusRequester),
                     ) {
-                        if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier,
-                            ) {
-                                if (sortOptions.isNotEmpty()) {
-                                    SortByButton(
-                                        sortOptions = sortOptions,
-                                        current = state.sortAndDirection,
-                                        onSortChange = onSortChange,
-                                        modifier = Modifier,
-                                    )
-                                }
-                                if (filterOptions.isNotEmpty()) {
-                                    FilterByButton(
-                                        filterOptions = filterOptions,
-                                        current = state.itemFilter,
-                                        onFilterChange = onFilterChange,
-                                        getPossibleValues = getPossibleFilterValues,
-                                        modifier = Modifier,
-                                    )
-                                }
-                                ExpandableFaButton(
-                                    title = R.string.view_options,
-                                    iconStringRes = R.string.fa_sliders,
-                                    onClick = onClickViewOptions,
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier,
+                        ) {
+                            if (sortOptions.isNotEmpty()) {
+                                SortByButton(
+                                    sortOptions = sortOptions,
+                                    current = state.sortAndDirection,
+                                    onSortChange = onSortChange,
                                     modifier = Modifier,
                                 )
                             }
+                            if (filterOptions.isNotEmpty()) {
+                                FilterByButton(
+                                    filterOptions = filterOptions,
+                                    current = state.itemFilter,
+                                    onFilterChange = onFilterChange,
+                                    getPossibleValues = getPossibleFilterValues,
+                                    modifier = Modifier,
+                                )
+                            }
+                            ExpandableFaButton(
+                                title = R.string.view_options,
+                                iconStringRes = R.string.fa_sliders,
+                                onClick = onClickViewOptions,
+                                modifier = Modifier,
+                            )
                         }
+
                         if (state.items.isNotEmpty()) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -169,7 +165,7 @@ fun CollectionRows(
             }
             val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
             val density = LocalDensity.current
-            AnimatedVisibility(state.viewOptions.cardViewOptions.showDetails) {
+            AnimatedVisibility(false && state.viewOptions.cardViewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
                     modifier =
@@ -179,7 +175,6 @@ fun CollectionRows(
                             .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
                 )
             }
-            val cardViewOptions = state.viewOptions.cardViewOptions
             val homeRows =
                 remember(state.separateItems) {
                     state.separateItems.values.toList()
@@ -187,7 +182,9 @@ fun CollectionRows(
             HomePageContent(
                 homeRows = homeRows,
                 position = position,
-                onFocusPosition = {},
+                onFocusPosition = { position ->
+                    showHeader = position.row <= 0
+                },
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
                 onClickPlay = onClickPlay,

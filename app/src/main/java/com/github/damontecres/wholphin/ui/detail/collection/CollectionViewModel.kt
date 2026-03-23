@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -18,6 +19,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.formatTypeName
@@ -92,7 +94,7 @@ class CollectionViewModel
                         viewOptions = viewOptions,
                     )
                 }
-                updateData().join()
+                listenForStateUpdates()
                 themeSongPlayer.playThemeFor(
                     itemId,
                     preferencesService
@@ -106,92 +108,133 @@ class CollectionViewModel
             themeSongPlayer.stop()
         }
 
-        private fun updateData() =
+        /**
+         * Collects on [state] and fetches data when needed
+         */
+        private fun listenForStateUpdates() =
             viewModelScope.launchDefault {
                 state
-                    .map { Pair(it.sortAndDirection, it.viewOptions.mixed) }
+                    .map { Triple(it.sortAndDirection, it.itemFilter, it.viewOptions.mixed) }
                     .distinctUntilChanged()
-                    .collectLatest { (sort, mixed) ->
-                        _state.update { it.copy(loadingState = LoadingState.Loading) }
-                        if (mixed) {
-                            val result = fetchItems(sort, typesInCollection)
-                            _state.update { it.copy(items = result) }
-                        } else {
-                            supervisorScope {
-                                val jobs =
-                                    typesInCollection.map { type ->
-                                        async(Dispatchers.IO) {
-                                            val title = context.getString(formatTypeName(type))
-                                            val result =
-                                                try {
-                                                    val pager = fetchItems(sort, listOf(type))
-                                                    // TODO view options
-                                                    HomeRowLoadingState.Success(title, pager)
-                                                } catch (ex: Exception) {
-                                                    Timber.e(
-                                                        ex,
-                                                        "Error fetching %s for collection %s",
-                                                        type,
-                                                        itemId,
-                                                    )
-                                                    HomeRowLoadingState.Error(
-                                                        title,
-                                                        exception = ex,
-                                                    )
-                                                }
-                                            type to result
-                                        }
-                                    }
-                                jobs.forEach { job ->
-                                    val (type, row) = job.await()
-                                    _state.update {
-                                        val separateItems =
-                                            it.separateItems.toMutableMap().apply {
-                                                put(type, row)
-                                            }
-                                        it.copy(separateItems = separateItems)
-                                    }
-                                }
-                            }
+                    .collectLatest { (sort, filter, mixed) ->
+                        try {
+                            updateData(sort, filter, mixed)
+                        } catch (ex: Exception) {
+                            Timber.e(
+                                ex,
+                                "Error fetching data for collection %s",
+                                itemId,
+                            )
+                            _state.update { it.copy(loadingState = LoadingState.Error(ex)) }
                         }
-                        _state.update { it.copy(loadingState = LoadingState.Success) }
                     }
             }
 
-        private suspend fun fetchItems(
+        private suspend fun updateData(
             sort: SortAndDirection,
+            filter: GetItemsFilter,
+            mixed: Boolean,
+        ) {
+            _state.update { it.copy(loadingState = LoadingState.Loading) }
+            if (mixed) {
+                val result = fetchItems(sort, filter, typesInCollection)
+                _state.update { it.copy(items = result) }
+            } else {
+                supervisorScope {
+                    val jobs =
+                        typesInCollection.map { type ->
+                            async(Dispatchers.IO) {
+                                val title = context.getString(formatTypeName(type))
+                                val result =
+                                    try {
+                                        val pager =
+                                            fetchItems(null, null, listOf(type))
+                                        // TODO view options
+                                        val viewOptions =
+                                            if (type == BaseItemKind.EPISODE) {
+                                                HomeRowViewOptions.genreDefault
+                                            } else {
+                                                HomeRowViewOptions()
+                                            }
+                                        HomeRowLoadingState.Success(
+                                            title,
+                                            pager,
+                                            viewOptions,
+                                        )
+                                    } catch (ex: Exception) {
+                                        Timber.e(
+                                            ex,
+                                            "Error fetching %s for collection %s",
+                                            type,
+                                            itemId,
+                                        )
+                                        HomeRowLoadingState.Error(
+                                            title,
+                                            exception = ex,
+                                        )
+                                    }
+                                type to result
+                            }
+                        }
+                    jobs.forEach { job ->
+                        val (type, row) = job.await()
+                        _state.update {
+                            val separateItems =
+                                it.separateItems.toMutableMap().apply {
+                                    put(type, row)
+                                }
+                            it.copy(separateItems = separateItems)
+                        }
+                    }
+                }
+            }
+            _state.update { it.copy(loadingState = LoadingState.Success) }
+        }
+
+        private suspend fun fetchItems(
+            sort: SortAndDirection?,
+            filter: GetItemsFilter?,
             types: List<BaseItemKind>,
         ): ApiRequestPager<GetItemsRequest> {
+            val includeItemTypes: List<BaseItemKind>?
+            val excludeItemTypes: List<BaseItemKind>?
+            // Workaround for https://github.com/jellyfin/jellyfin/issues/16454
+            if (types.size == 1 && types.first() == BaseItemKind.BOX_SET) {
+                includeItemTypes = null
+                excludeItemTypes =
+                    typesInCollection.toMutableList().apply { remove(BaseItemKind.BOX_SET) }
+            } else {
+                includeItemTypes = types
+                excludeItemTypes = null
+            }
             val request =
                 GetItemsRequest(
                     userId = serverRepository.currentUser.value?.id,
                     parentId = itemId,
-                    includeItemTypes = types,
-                    recursive = true,
-                    sortBy = listOf(sort.sort),
-                    sortOrder = listOf(sort.direction),
-                )
+                    includeItemTypes = includeItemTypes,
+                    excludeItemTypes = excludeItemTypes,
+                    recursive = false,
+                    sortBy = sort?.let { listOf(sort.sort) },
+                    sortOrder = sort?.let { listOf(sort.direction) },
+                    fields = SlimItemFields,
+                ).let {
+                    filter?.applyTo(it, false) ?: it
+                }
             return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
         }
 
         fun changeSort(sortAndDirection: SortAndDirection) {
             _state.update { it.copy(sortAndDirection = sortAndDirection) }
             // TODO persist
-            updateData()
         }
 
         fun changeFilter(filter: GetItemsFilter) {
             _state.update { it.copy(itemFilter = filter) }
             // TODO persist
-            updateData()
         }
 
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
-            val shouldRefresh = _state.value.viewOptions.mixed != viewOptions.mixed
             _state.update { it.copy(viewOptions = viewOptions) }
-            if (shouldRefresh) {
-                updateData()
-            }
         }
 
         suspend fun getPossibleFilterValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
