@@ -9,14 +9,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +43,6 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
-import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import org.jellyfin.sdk.model.api.ItemSortBy
 import kotlin.time.Duration
 
@@ -73,15 +71,7 @@ fun CollectionRows(
     }
 
     var position by rememberPosition(0, 0)
-    val focusedItem =
-        remember(position) {
-            CollectionViewModel.typesInCollection.getOrNull(position.row).let {
-                (state.separateItems[it] as? HomeRowLoadingState.Success)?.items?.getOrNull(position.column)
-            }
-        }
-    LaunchedEffect(focusedItem) {
-        focusedItem?.let(onChangeBackdrop)
-    }
+
     // TODO enable sort & filter?
     val sortOptions = emptyList<ItemSortBy>() // MovieSortOptions
     val filterOptions = emptyList<ItemFilterBy<*>>() // DefaultFilterOptions
@@ -165,16 +155,6 @@ fun CollectionRows(
             }
             val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
             val density = LocalDensity.current
-            AnimatedVisibility(false && state.viewOptions.cardViewOptions.showDetails) {
-                HomePageHeader(
-                    item = focusedItem,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
-                )
-            }
             val homeRows =
                 remember(state.separateItems) {
                     state.separateItems.values.toList()
@@ -182,14 +162,26 @@ fun CollectionRows(
             HomePageContent(
                 homeRows = homeRows,
                 position = position,
-                onFocusPosition = { position ->
-                    showHeader = position.row <= 0
+                onFocusPosition = { newPosition ->
+                    showHeader = newPosition.row <= 0
+                    position = newPosition
                 },
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
                 onClickPlay = onClickPlay,
                 showClock = false,
                 onUpdateBackdrop = onChangeBackdrop,
+                headerComposable = { focusedItem ->
+                    AnimatedVisibility(state.viewOptions.cardViewOptions.showDetails) {
+                        HomePageHeader(
+                            item = focusedItem,
+                            modifier =
+                                Modifier
+                                    .padding(top = 8.dp, bottom = 48.dp, start = 8.dp)
+                                    .fillMaxHeight(.33f),
+                        )
+                    }
+                },
             )
         }
     }
