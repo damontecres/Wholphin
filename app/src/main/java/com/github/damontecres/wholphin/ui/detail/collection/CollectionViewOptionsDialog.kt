@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.components.ViewOptions.Companion.ViewO
 import com.github.damontecres.wholphin.ui.components.ViewOptions.Companion.ViewOptionsSpacing
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.serialization.Serializable
 
 @Composable
 fun CollectionViewOptionsDialog(
@@ -133,6 +134,7 @@ fun CollectionViewOptionsDialog(
     }
 }
 
+@Serializable
 data class CollectionViewOptions(
     val separateTypes: Boolean = false,
     val cardViewOptions: ViewOptions = ViewOptions(),
