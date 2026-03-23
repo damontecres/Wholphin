@@ -106,7 +106,20 @@ fun CollectionDetails(
                         modifier = Modifier.fillMaxSize(),
                     )
                 } else {
-                    CollectionRows(state, Modifier.fillMaxSize())
+                    CollectionRows(
+                        preferences = preferences,
+                        state = state,
+                        onClickItem = onClickItem,
+                        onLongClickItem = onLongClickItem,
+                        onSortChange = onSortChange,
+                        onClickPlay = onClickPlay,
+                        onClickPlayAll = onClickPlayAll,
+                        onChangeBackdrop = onChangeBackdrop,
+                        onFilterChange = onFilterChange,
+                        getPossibleFilterValues = viewModel::getPossibleFilterValues,
+                        onClickViewOptions = onClickViewOptions,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
             }
         }
@@ -118,11 +131,4 @@ fun CollectionDetails(
             onViewOptionsChange = viewModel::changeViewOptions,
         )
     }
-}
-
-@Composable
-fun CollectionRows(
-    state: CollectionState,
-    modifier: Modifier = Modifier,
-) {
 }

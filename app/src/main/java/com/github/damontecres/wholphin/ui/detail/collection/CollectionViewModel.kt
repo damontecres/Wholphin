@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.collection
 
+import android.content.Context
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -8,8 +10,8 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
-import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -18,10 +20,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Deferred
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -33,12 +34,14 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = CollectionViewModel.Factory::class)
 class CollectionViewModel
     @AssistedInject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         @Assisted private val itemId: UUID,
@@ -67,42 +70,60 @@ class CollectionViewModel
                         viewOptions = viewOptions,
                     )
                 }
+                updateData()
+            }
+        }
 
-                viewModelScope.launchIO {
-                    state
-                        .map { Pair(it.sortAndDirection, it.viewOptions.mixed) }
-                        .distinctUntilChanged()
-                        .collectLatest { (sort, mixed) ->
-                            _state.update { it.copy(loadingState = LoadingState.Loading) }
-                            if (mixed) {
-                                // TODO types
-                                val result =
-                                    fetchItems(
-                                        sort,
-                                        listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
-                                    )
-                                _state.update { it.copy(items = result) }
-                            } else {
-                                val jobs = mutableListOf<Deferred<Unit>>()
-                                supervisorScope {
-                                    async(Dispatchers.IO) {
-                                        val result = fetchItems(sort, listOf(BaseItemKind.MOVIE))
-                                        _state.update {
-                                            it.copy(
-                                                movies =
-                                                    HomeRowLoadingState.Success(
-                                                        "",
-                                                        result,
-                                                    ),
-                                            )
+        private fun updateData() {
+            viewModelScope.launchDefault {
+                state
+                    .map { Pair(it.sortAndDirection, it.viewOptions.mixed) }
+                    .distinctUntilChanged()
+                    .collectLatest { (sort, mixed) ->
+                        _state.update { it.copy(loadingState = LoadingState.Loading) }
+                        if (mixed) {
+                            val result = fetchItems(sort, typesInCollection)
+                            _state.update { it.copy(items = result) }
+                        } else {
+                            supervisorScope {
+                                val jobs =
+                                    typesInCollection.map { type ->
+                                        async(Dispatchers.IO) {
+                                            val title = context.getString(formatTypeName(type))
+                                            val result =
+                                                try {
+                                                    val pager = fetchItems(sort, listOf(type))
+                                                    // TODO view options
+                                                    HomeRowLoadingState.Success(title, pager)
+                                                } catch (ex: Exception) {
+                                                    Timber.e(
+                                                        ex,
+                                                        "Error fetching %s for collection %s",
+                                                        type,
+                                                        itemId,
+                                                    )
+                                                    HomeRowLoadingState.Error(
+                                                        title,
+                                                        exception = ex,
+                                                    )
+                                                }
+                                            type to result
                                         }
-                                    }.also { jobs.add(it) }
-                                    jobs.awaitAll()
+                                    }
+                                jobs.forEach { job ->
+                                    val (type, row) = job.await()
+                                    _state.update {
+                                        val separateItems =
+                                            it.separateItems.toMutableMap().apply {
+                                                put(type, row)
+                                            }
+                                        it.copy(separateItems = separateItems)
+                                    }
                                 }
                             }
-                            _state.update { it.copy(loadingState = LoadingState.Success) }
                         }
-                }
+                        _state.update { it.copy(loadingState = LoadingState.Success) }
+                    }
             }
         }
 
@@ -124,10 +145,15 @@ class CollectionViewModel
 
         fun changeSort(sortAndDirection: SortAndDirection) {
             _state.update { it.copy(sortAndDirection = sortAndDirection) }
+            updateData()
         }
 
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
+            val shouldRefresh = _state.value.viewOptions.mixed != viewOptions.mixed
             _state.update { it.copy(viewOptions = viewOptions) }
+            if (shouldRefresh) {
+                updateData()
+            }
         }
 
         suspend fun getPossibleFilterValues(filterBy: ItemFilterBy<*>): List<FilterValueOption> {
@@ -137,8 +163,19 @@ class CollectionViewModel
         suspend fun letterPosition(letter: Char): Int {
             TODO()
         }
+
+        companion object {
+            val typesInCollection =
+                listOf(
+                    BaseItemKind.MOVIE,
+                    BaseItemKind.SERIES,
+                    BaseItemKind.EPISODE,
+                    BaseItemKind.BOX_SET,
+                )
+        }
     }
 
+@Stable
 data class CollectionState(
     val loadingState: LoadingState = LoadingState.Pending,
     val collection: BaseItem? = null,
@@ -146,8 +183,5 @@ data class CollectionState(
     val itemFilter: GetItemsFilter = GetItemsFilter(),
     val viewOptions: CollectionViewOptions = CollectionViewOptions(),
     val items: List<BaseItem?> = emptyList(),
-    val movies: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
-    val series: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
-    val episodes: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
-    val collections: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
+    val separateItems: Map<BaseItemKind, HomeRowLoadingState> = emptyMap(),
 )
