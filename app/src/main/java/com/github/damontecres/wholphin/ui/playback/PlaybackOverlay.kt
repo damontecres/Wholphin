@@ -57,6 +57,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -625,6 +626,9 @@ fun Controller(
                     text = it,
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = titleTextSize,
+                    maxLines = 1,
+                    overflow = TextOverflow.MiddleEllipsis,
+                    modifier = Modifier.fillMaxWidth(.75f),
                 )
             }
             Row(
@@ -639,6 +643,9 @@ fun Controller(
                         text = it,
                         style = MaterialTheme.typography.titleMedium,
                         fontSize = subtitleTextSize,
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        modifier = Modifier.fillMaxWidth(.75f),
                     )
                 }
 
