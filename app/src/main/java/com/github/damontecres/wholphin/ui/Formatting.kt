@@ -126,29 +126,24 @@ fun abbreviateNumber(number: Int): String {
     return String.format(Locale.getDefault(), "%.1f%s", count, abbrevSuffixes[unit])
 }
 
-val byteSuffixes = listOf("B", "KB", "MB", "GB", "TB")
+val byteSuffixes = listOf("B", "KiB", "MiB", "GiB", "TiB")
 val byteRateSuffixes = listOf("bps", "kbps", "mbps", "gbps", "tbps")
-
-/**
- * Format bytes
- */
-fun formatBytes(
-    bytes: Int,
-    suffixes: List<String> = byteSuffixes,
-) = formatBytes(bytes.toLong(), suffixes)
 
 fun formatBytes(
     bytes: Long,
     suffixes: List<String> = byteSuffixes,
+    divisor: Int = 1024,
 ): String {
     var unit = 0
     var count = bytes.toDouble()
-    while (count >= 1024 && unit + 1 < suffixes.size) {
-        count /= 1024
+    while (count >= divisor && unit + 1 < suffixes.size) {
+        count /= divisor
         unit++
     }
-    return String.format(Locale.getDefault(), "%.2f%s", count, suffixes[unit])
+    return String.format(Locale.getDefault(), "%.2f %s", count, suffixes[unit])
 }
+
+fun formatBitrate(bitrate: Int) = formatBytes(bitrate.toLong(), byteRateSuffixes, 1000)
 
 @get:StringRes
 val MediaSegmentType.stringRes: Int

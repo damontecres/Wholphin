@@ -19,8 +19,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.preferences.PlayerBackend
-import com.github.damontecres.wholphin.ui.byteRateSuffixes
-import com.github.damontecres.wholphin.ui.formatBytes
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -104,7 +103,7 @@ fun TranscodeInfo(
                 "Reason:" to info.transcodeReasons.joinToString(", "),
                 "HW Accel:" to info.hardwareAccelerationType?.toString(),
                 "Container:" to info.container,
-                "Bitrate:" to info.bitrate?.let { formatBytes(it, byteRateSuffixes) },
+                "Bitrate:" to info.bitrate?.let { formatBitrate(it) },
             ),
         )
         SimpleTable(
