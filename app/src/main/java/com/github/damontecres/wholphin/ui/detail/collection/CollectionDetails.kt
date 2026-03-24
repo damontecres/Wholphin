@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.collection
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -141,15 +143,20 @@ fun CollectionDetails(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = modifier,
             ) {
-                Text(
-                    text = state.collection?.title ?: "",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(.85f),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = state.collection?.title ?: "",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .fillMaxWidth(.85f),
+                    )
+                }
                 if (state.viewOptions.separateTypes) {
                     CollectionRows(
                         preferences = preferences,

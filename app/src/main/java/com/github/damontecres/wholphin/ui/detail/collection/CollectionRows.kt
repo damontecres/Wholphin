@@ -1,19 +1,17 @@
 package com.github.damontecres.wholphin.ui.detail.collection
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
@@ -36,9 +33,6 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
-import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
-import com.github.damontecres.wholphin.ui.components.FilterByButton
-import com.github.damontecres.wholphin.ui.components.SortByButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.HomePageContent
@@ -46,8 +40,6 @@ import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ItemSortBy
-import kotlin.time.Duration
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -66,7 +58,6 @@ fun CollectionRows(
     modifier: Modifier = Modifier,
 ) {
     var showHeader by rememberSaveable { mutableStateOf(true) }
-    val headerRowFocusRequester = remember { FocusRequester() }
 
     val gridFocusRequester = remember { FocusRequester() }
     if (state.items.isNotEmpty()) {
@@ -75,90 +66,25 @@ fun CollectionRows(
 
     var position by rememberPosition(0, 0)
 
-    // TODO enable sort & filter?
-    val sortOptions = emptyList<ItemSortBy>() // MovieSortOptions
-    val filterOptions = emptyList<ItemFilterBy<*>>() // DefaultFilterOptions
-
     Box(modifier = modifier) {
+        AnimatedVisibility(
+            showHeader,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                ExpandableFaButton(
+                    title = R.string.view_options,
+                    iconStringRes = R.string.fa_sliders,
+                    onClick = onClickViewOptions,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                )
+            }
+        }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            AnimatedVisibility(
-                showHeader,
-                enter = expandVertically(),
-                exit = shrinkVertically(),
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                ) {
-                    val endPadding =
-                        16.dp + if (state.sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier
-                                .padding(start = 16.dp, end = endPadding)
-                                .fillMaxWidth()
-                                .focusRequester(headerRowFocusRequester),
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
-                        ) {
-                            if (sortOptions.isNotEmpty()) {
-                                SortByButton(
-                                    sortOptions = sortOptions,
-                                    current = state.sortAndDirection,
-                                    onSortChange = onSortChange,
-                                    modifier = Modifier,
-                                )
-                            }
-                            if (filterOptions.isNotEmpty()) {
-                                FilterByButton(
-                                    filterOptions = filterOptions,
-                                    current = state.itemFilter,
-                                    onFilterChange = onFilterChange,
-                                    getPossibleValues = getPossibleFilterValues,
-                                    modifier = Modifier,
-                                )
-                            }
-                            ExpandableFaButton(
-                                title = R.string.view_options,
-                                iconStringRes = R.string.fa_sliders,
-                                onClick = onClickViewOptions,
-                                modifier = Modifier,
-                            )
-                        }
-
-                        if (state.items.isNotEmpty()) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier,
-                            ) {
-                                ExpandablePlayButton(
-                                    title = R.string.play,
-                                    resume = Duration.ZERO,
-                                    icon = Icons.Default.PlayArrow,
-                                    onClick = { onClickPlayAll.invoke(false) },
-                                )
-                                ExpandableFaButton(
-                                    title = R.string.shuffle,
-                                    iconStringRes = R.string.fa_shuffle,
-                                    onClick = { onClickPlayAll.invoke(true) },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             val cardViewOptions = state.viewOptions.cardViewOptions
             val homeRows =
                 remember(state.separateItems, cardViewOptions) {
@@ -184,6 +110,9 @@ fun CollectionRows(
                         }
                     }
                 }
+            val headerBottomPadding by animateDpAsState(
+                targetValue = if (state.viewOptions.separateTypes && cardViewOptions.showTitles) 0.dp else 48.dp,
+            )
             HomePageContent(
                 homeRows = homeRows,
                 position = position,
@@ -202,7 +131,7 @@ fun CollectionRows(
                             item = focusedItem,
                             modifier =
                                 Modifier
-                                    .padding(top = 8.dp, bottom = 48.dp, start = 8.dp)
+                                    .padding(top = 8.dp, bottom = headerBottomPadding, start = 8.dp)
                                     .fillMaxHeight(.33f),
                         )
                     }
