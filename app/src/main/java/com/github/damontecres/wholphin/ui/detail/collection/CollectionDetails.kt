@@ -121,7 +121,16 @@ fun CollectionDetails(
     val onClickPlayAll =
         remember {
             { shuffle: Boolean ->
-                TODO()
+                val dest =
+                    Destination.PlaybackList(
+                        itemId = itemId,
+                        startIndex = 0,
+                        shuffle = shuffle,
+                        recursive = true,
+                        sortAndDirection = state.sortAndDirection,
+                        filter = state.itemFilter,
+                    )
+                viewModel.navigate(dest)
             }
         }
     val onChangeBackdrop = remember { { item: BaseItem -> viewModel.updateBackdrop(item) } }

@@ -57,6 +57,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -232,6 +233,15 @@ class CollectionViewModel
             filter: GetItemsFilter?,
             types: List<BaseItemKind>,
         ): ApiRequestPager<GetItemsRequest> {
+            val request = createGetItemsRequest(sort, filter, types)
+            return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+        }
+
+        private fun createGetItemsRequest(
+            sort: SortAndDirection?,
+            filter: GetItemsFilter?,
+            types: List<BaseItemKind>,
+        ): GetItemsRequest {
             val includeItemTypes: List<BaseItemKind>?
             val excludeItemTypes: List<BaseItemKind>?
             // Workaround for https://github.com/jellyfin/jellyfin/issues/16454
@@ -256,7 +266,7 @@ class CollectionViewModel
                 ).let {
                     filter?.applyTo(it, false) ?: it
                 }
-            return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+            return request
         }
 
         fun changeSort(sortAndDirection: SortAndDirection) {
@@ -313,9 +323,25 @@ class CollectionViewModel
                 filterOption,
             )
 
-        suspend fun letterPosition(letter: Char): Int {
-            TODO()
-        }
+        suspend fun letterPosition(letter: Char): Int =
+            withContext(Dispatchers.IO) {
+                val sort = state.value.sortAndDirection
+                val filter = state.value.itemFilter
+                val request =
+                    createGetItemsRequest(
+                        sort = sort,
+                        filter = filter,
+                        types = typesInCollection,
+                    ).copy(
+                        enableImageTypes = null,
+                        fields = null,
+                        nameLessThan = letter.toString(),
+                        limit = 0,
+                        enableTotalRecordCount = true,
+                    )
+                val result by GetItemsRequestHandler.execute(api, request)
+                result.totalRecordCount
+            }
 
         fun navigate(destination: Destination) {
             release()
@@ -328,8 +354,8 @@ class CollectionViewModel
             position: RowColumn?,
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             favoriteWatchManager.setWatched(itemId, played)
-            position?.let {
-                // TODO
+            if (position != null) {
+                refreshItem(itemId, position, false)
             }
         }
 
@@ -340,7 +366,7 @@ class CollectionViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             if (position != null) {
-                // TODO
+                refreshItem(itemId, position, false)
             }
         }
 
@@ -354,7 +380,35 @@ class CollectionViewModel
             position: RowColumn?,
         ) {
             deleteItem(context, mediaManagementService, item) {
-                // TODO
+                viewModelScope.launchIO {
+                    if (position != null) {
+                        refreshItem(itemId, position, true)
+                    }
+                }
+            }
+        }
+
+        private suspend fun refreshItem(
+            itemId: UUID,
+            position: RowColumn,
+            isDelete: Boolean,
+        ) {
+            state.value.let { state ->
+                val items =
+                    if (state.viewOptions.separateTypes) {
+                        val key =
+                            state.separateItems.keys
+                                .toList()
+                                .getOrNull(position.row)
+                        (state.separateItems[key] as? HomeRowLoadingState.Success)?.items as? ApiRequestPager<*>
+                    } else {
+                        state.items as? ApiRequestPager<*>
+                    }
+                if (isDelete) {
+                    items?.refreshPagesAfter(position.column)
+                } else {
+                    items?.refreshItem(position.column, itemId)
+                }
             }
         }
 
