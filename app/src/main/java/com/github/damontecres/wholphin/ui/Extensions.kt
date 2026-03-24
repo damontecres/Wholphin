@@ -38,6 +38,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.acra.ACRA
@@ -434,3 +436,13 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
 fun Int?.gt(that: Int) = (this ?: 0) > that
 
 fun Int?.lt(that: Int) = (this ?: 0) < that
+
+/**
+ * Simplifies endlessly collecting a flow
+ */
+fun <T> Flow<T>.collectLatestIn(
+    scope: CoroutineScope,
+    action: suspend (value: T) -> Unit,
+) {
+    scope.launchDefault { this@collectLatestIn.collectLatest(action) }
+}
