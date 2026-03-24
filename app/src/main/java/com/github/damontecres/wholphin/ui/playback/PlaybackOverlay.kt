@@ -74,10 +74,10 @@ import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
+import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -651,7 +651,7 @@ fun Controller(
                                 .toLong()
                                 .milliseconds
                         val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                        endTimeStr = TimeFormatter.format(endTime)
+                        endTimeStr = getTimeFormatter().format(endTime)
                         delay(1.seconds)
                     }
                 }

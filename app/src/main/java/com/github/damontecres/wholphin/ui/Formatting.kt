@@ -16,8 +16,25 @@ import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
 
-val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+private var timeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+
+fun getTimeFormatter(): DateTimeFormatter {
+    if (timeFormatter.locale != Locale.getDefault()) {
+        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
+    }
+    return timeFormatter
+}
+
+private var dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
+
+fun getDateFormatter(): DateTimeFormatter {
+    if (dateFormatter.locale != Locale.getDefault()) {
+        dateFormatter = dateFormatter.withLocale(Locale.getDefault())
+    }
+    return dateFormatter
+}
 
 // TODO server returns in UTC, but sdk converts to local time
 // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
@@ -25,9 +42,9 @@ val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy"
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
  */
-fun formatDateTime(dateTime: LocalDateTime): String = DateFormatter.format(dateTime)
+fun formatDateTime(dateTime: LocalDateTime): String = getDateFormatter().format(dateTime)
 
-fun formatDate(dateTime: LocalDate): String = DateFormatter.format(dateTime)
+fun formatDate(dateTime: LocalDate): String = getDateFormatter().format(dateTime)
 
 fun toLocalDate(date: String?): LocalDate? =
     date?.let {
