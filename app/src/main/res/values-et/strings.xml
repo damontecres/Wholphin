@@ -542,4 +542,14 @@
     <string name="volume_medium">Keskmine</string>
     <string name="volume_high">Vali</string>
     <string name="volume_full">Täisvaljus</string>
+    <string name="start_after">Käivita peale</string>
+    <string name="animate">Animeeri</string>
+    <string name="max_age_rating">Ülemine vanusepiirang</string>
+    <string name="no_max">Puudub</string>
+    <string name="for_all_ages">Sobilik kõikidele vanustele</string>
+    <string name="up_to_age">Kuni vanuseni %s</string>
+    <string name="screensaver">Ekraanisäästja</string>
+    <string name="next_up_outro">Lõputiitrite ja lõpuklipi ajal</string>
+    <string name="series_continueing">Jätkuv sari</string>
+    <string name="include_types_summary">Mis tüüpi objekte peaks piltide kontekstis näitama</string>
 </resources>
