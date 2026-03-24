@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,6 +46,10 @@ fun <T> ItemRow(
     val firstFocus = remember { FocusRequester() }
     val focusRequester = remember { FocusRequester() }
     var position by rememberInt()
+    
+    val currentOnClickItem = rememberUpdatedState(onClickItem)
+    val currentOnLongClickItem = rememberUpdatedState(onLongClickItem)
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
@@ -72,24 +77,34 @@ fun <T> ItemRow(
                     .focusRequester(focusRequester),
         ) {
             itemsIndexed(items) { index, item ->
-                val cardModifier =
+                val cardModifier = remember(index, position) {
                     if (index == position) {
                         Modifier.focusRequester(firstFocus)
                     } else {
                         Modifier
                     }
+                }
+                
+                val onClick = remember(index, item) {
+                    {
+                        position = index
+                        if (item != null) currentOnClickItem.value.invoke(index, item)
+                    }
+                }
+                
+                val onLongClick = remember(index, item) {
+                    {
+                        position = index
+                        if (item != null) currentOnLongClickItem.value.invoke(index, item)
+                    }
+                }
+
                 cardContent.invoke(
                     index,
                     item,
                     cardModifier,
-                    {
-                        position = index
-                        if (item != null) onClickItem.invoke(index, item)
-                    },
-                    {
-                        position = index
-                        if (item != null) onLongClickItem.invoke(index, item)
-                    },
+                    onClick,
+                    onLongClick,
                 )
             }
         }
