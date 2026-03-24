@@ -7,7 +7,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.github.damontecres.wholphin.ui.TimeFormatter
+import com.github.damontecres.wholphin.ui.getTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -25,9 +25,9 @@ data class Clock(
      */
     val now: MutableState<LocalDateTime> = mutableStateOf(LocalDateTime.now()),
     /**
-     * The current time formatted as a string with [TimeFormatter]
+     * The current time formatted as a string with [getTimeFormatter]
      */
-    val timeString: MutableState<String> = mutableStateOf(TimeFormatter.format(now.value)),
+    val timeString: MutableState<String> = mutableStateOf(getTimeFormatter().format(now.value)),
 )
 
 @Composable
@@ -37,7 +37,7 @@ fun ProvideLocalClock(content: @Composable () -> Unit) {
         withContext(Dispatchers.Default) {
             while (isActive) {
                 val now = LocalDateTime.now()
-                val time = TimeFormatter.format(now)
+                val time = getTimeFormatter().format(now)
                 clock.now.value = now
                 clock.timeString.value = time
                 delay(2_000)

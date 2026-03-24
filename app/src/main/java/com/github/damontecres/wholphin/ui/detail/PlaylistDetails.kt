@@ -70,7 +70,6 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
-import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
@@ -95,6 +94,7 @@ import com.github.damontecres.wholphin.ui.detail.music.buildMoreDialogForMusic
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -810,7 +810,7 @@ fun PlaylistItem(
                 val endTimeStr =
                     remember(item, now) {
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
-                        TimeFormatter.format(endTime)
+                        getTimeFormatter().format(endTime)
                     }
                 Column {
                     Text(

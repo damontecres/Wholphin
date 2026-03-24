@@ -16,8 +16,25 @@ import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
 
-val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+private var timeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+
+fun getTimeFormatter(): DateTimeFormatter {
+    if (timeFormatter.locale != Locale.getDefault()) {
+        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
+    }
+    return timeFormatter
+}
+
+private var dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
+
+fun getDateFormatter(): DateTimeFormatter {
+    if (dateFormatter.locale != Locale.getDefault()) {
+        dateFormatter = dateFormatter.withLocale(Locale.getDefault())
+    }
+    return dateFormatter
+}
 
 // TODO server returns in UTC, but sdk converts to local time
 // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
@@ -25,9 +42,9 @@ val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy"
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
  */
-fun formatDateTime(dateTime: LocalDateTime): String = DateFormatter.format(dateTime)
+fun formatDateTime(dateTime: LocalDateTime): String = getDateFormatter().format(dateTime)
 
-fun formatDate(dateTime: LocalDate): String = DateFormatter.format(dateTime)
+fun formatDate(dateTime: LocalDate): String = getDateFormatter().format(dateTime)
 
 fun toLocalDate(date: String?): LocalDate? =
     date?.let {
@@ -109,29 +126,24 @@ fun abbreviateNumber(number: Int): String {
     return String.format(Locale.getDefault(), "%.1f%s", count, abbrevSuffixes[unit])
 }
 
-val byteSuffixes = listOf("B", "KB", "MB", "GB", "TB")
+val byteSuffixes = listOf("B", "KiB", "MiB", "GiB", "TiB")
 val byteRateSuffixes = listOf("bps", "kbps", "mbps", "gbps", "tbps")
-
-/**
- * Format bytes
- */
-fun formatBytes(
-    bytes: Int,
-    suffixes: List<String> = byteSuffixes,
-) = formatBytes(bytes.toLong(), suffixes)
 
 fun formatBytes(
     bytes: Long,
     suffixes: List<String> = byteSuffixes,
+    divisor: Int = 1024,
 ): String {
     var unit = 0
     var count = bytes.toDouble()
-    while (count >= 1024 && unit + 1 < suffixes.size) {
-        count /= 1024
+    while (count >= divisor && unit + 1 < suffixes.size) {
+        count /= divisor
         unit++
     }
-    return String.format(Locale.getDefault(), "%.2f%s", count, suffixes[unit])
+    return String.format(Locale.getDefault(), "%.2f %s", count, suffixes[unit])
 }
+
+fun formatBitrate(bitrate: Int) = formatBytes(bitrate.toLong(), byteRateSuffixes, 1000)
 
 @get:StringRes
 val MediaSegmentType.stringRes: Int
