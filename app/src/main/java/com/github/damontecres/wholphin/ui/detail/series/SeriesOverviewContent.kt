@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -94,7 +95,7 @@ fun SeriesOverviewContent(
 ) {
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
+    var selectedTabIndex by rememberSaveable(position.seasonTabIndex) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
     }
@@ -111,13 +112,17 @@ fun SeriesOverviewContent(
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
 
     val seasonStr = stringResource(R.string.tv_season)
-    val tabs =
+    // Optimization: remember the tabs list to prevent TabRow recomposition on episode change
+    val tabs = remember(seasons) {
         seasons.map { season ->
             season?.name
                 ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
                 ?: ""
         }
+    }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
+
+    val currentOnChangeSeason = rememberUpdatedState(onChangeSeason)
 
     Box(
         modifier =
@@ -151,10 +156,12 @@ fun SeriesOverviewContent(
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     tabs = tabs,
-                    onClick = {
-                        selectedTabIndex = it
-                        onChangeSeason.invoke(it)
-                        requestFocusAfterSeason = true
+                    onClick = remember {
+                        {
+                            selectedTabIndex = it
+                            currentOnChangeSeason.value.invoke(it)
+                            requestFocusAfterSeason = true
+                        }
                     },
                     focusRequesters = focusRequesters,
                     modifier =
