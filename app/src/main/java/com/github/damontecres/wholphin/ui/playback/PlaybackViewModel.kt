@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -62,6 +63,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -142,6 +144,7 @@ class PlaybackViewModel
         private val userPreferencesService: UserPreferencesService,
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
+        private val musicService: MusicService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -270,6 +273,7 @@ class PlaybackViewModel
          * Initialize from the UI to start playback
          */
         private suspend fun init() {
+            musicService.stop()
             nextUp.setValueOnMain(null)
             this.preferences = userPreferencesService.getCurrent()
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
@@ -734,12 +738,12 @@ class PlaybackViewModel
                         player.removeListener(it)
                     }
 
+                    val playbackItemState = PlaybackItemState(playback, currentItemPlayback)
                     val activityListener =
                         TrackActivityPlaybackListener(
                             api = api,
                             player = player,
-                            playback = playback,
-                            itemPlayback = currentItemPlayback,
+                            getState = { playbackItemState },
                         )
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
