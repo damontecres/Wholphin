@@ -21,6 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
@@ -31,7 +33,6 @@ import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -58,13 +59,9 @@ fun CollectionRows(
     modifier: Modifier = Modifier,
 ) {
     var showHeader by rememberSaveable { mutableStateOf(true) }
-
-    val gridFocusRequester = remember { FocusRequester() }
-    if (state.items.isNotEmpty()) {
-        RequestOrRestoreFocus(gridFocusRequester)
-    }
-
     var position by rememberPosition(0, 0)
+
+    val focusRequester = remember { FocusRequester() }
 
     Box(modifier = modifier) {
         AnimatedVisibility(
@@ -77,13 +74,22 @@ fun CollectionRows(
                     title = R.string.view_options,
                     iconStringRes = R.string.fa_sliders,
                     onClick = onClickViewOptions,
-                    modifier = Modifier.align(Alignment.CenterEnd),
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .focusProperties {
+                                down = focusRequester
+                                left = focusRequester
+                            },
                 )
             }
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = 8.dp),
         ) {
             val cardViewOptions = state.viewOptions.cardViewOptions
             val homeRows =
@@ -136,6 +142,7 @@ fun CollectionRows(
                         )
                     }
                 },
+                modifier = Modifier.focusRequester(focusRequester),
             )
         }
     }

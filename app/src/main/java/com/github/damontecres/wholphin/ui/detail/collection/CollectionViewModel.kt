@@ -234,7 +234,14 @@ class CollectionViewModel
             types: List<BaseItemKind>,
         ): ApiRequestPager<GetItemsRequest> {
             val request = createGetItemsRequest(sort, filter, types)
-            return ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+            val useSeriesForPrimary = !state.value.viewOptions.separateTypes
+            return ApiRequestPager(
+                api,
+                request,
+                GetItemsRequestHandler,
+                viewModelScope,
+                useSeriesForPrimary = useSeriesForPrimary,
+            ).init()
         }
 
         private fun createGetItemsRequest(
@@ -248,7 +255,9 @@ class CollectionViewModel
             if (types.size == 1 && types.first() == BaseItemKind.BOX_SET) {
                 includeItemTypes = null
                 excludeItemTypes =
-                    typesInCollection.toMutableList().apply { remove(BaseItemKind.BOX_SET) }
+                    BaseItemKind.entries
+                        .toMutableList()
+                        .apply { remove(BaseItemKind.BOX_SET) }
             } else {
                 includeItemTypes = types
                 excludeItemTypes = null
@@ -309,6 +318,9 @@ class CollectionViewModel
 
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
             viewModelScope.launchIO {
+                if (!viewOptions.cardViewOptions.showDetails) {
+                    backdropService.clearBackdrop()
+                }
                 serverRepository.currentUser.value?.id?.let { userId ->
                     keyValueService.save(userId, VIEW_OPTIONS_KEY, viewOptions)
                 }
@@ -424,6 +436,7 @@ class CollectionViewModel
                     BaseItemKind.MOVIE,
                     BaseItemKind.SERIES,
                     BaseItemKind.EPISODE,
+                    BaseItemKind.VIDEO,
                     BaseItemKind.BOX_SET,
                 )
 
