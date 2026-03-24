@@ -141,24 +141,6 @@ class LatestNextUpServiceTests {
             itemId = UUID.randomUUID(),
         )
 
-    private val testDisplayPreferencesDto =
-        DisplayPreferencesDto(
-            id = "default",
-            viewType = null,
-            sortBy = null,
-            indexBy = null,
-            rememberIndexing = false,
-            primaryImageHeight = 0,
-            primaryImageWidth = 0,
-            customPrefs = mapOf(),
-            scrollDirection = ScrollDirection.VERTICAL,
-            showBackdrop = false,
-            rememberSorting = false,
-            sortOrder = SortOrder.ASCENDING,
-            showSidebar = false,
-            client = null,
-        )
-
     private val mockResponse: Response<BaseItemDtoQueryResult> =
         Response<BaseItemDtoQueryResult>(
             content =
@@ -185,3 +167,21 @@ class LatestNextUpServiceTests {
             headers = mapOf(),
         )
 }
+
+val testDisplayPreferencesDto =
+    DisplayPreferencesDto(
+        id = "default",
+        viewType = null,
+        sortBy = null,
+        indexBy = null,
+        rememberIndexing = false,
+        primaryImageHeight = 0,
+        primaryImageWidth = 0,
+        customPrefs = mapOf(),
+        scrollDirection = ScrollDirection.VERTICAL,
+        showBackdrop = false,
+        rememberSorting = false,
+        sortOrder = SortOrder.ASCENDING,
+        showSidebar = false,
+        client = null,
+    )

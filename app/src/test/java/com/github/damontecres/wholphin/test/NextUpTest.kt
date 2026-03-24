@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.services.DisplayPreferencesService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.mockQueryResult
+import com.github.damontecres.wholphin.services.testDisplayPreferencesDto
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
@@ -49,6 +50,13 @@ class NextUpTest {
     @Before
     fun setUp() {
         every { mockApi.tvShowsApi } returns mockTvShowsApi
+        coEvery {
+            mockDisplayPreferencesService.getDisplayPreferences(
+                any(),
+                any(),
+                any(),
+            )
+        } returns testDisplayPreferencesDto
     }
 
     @Test
