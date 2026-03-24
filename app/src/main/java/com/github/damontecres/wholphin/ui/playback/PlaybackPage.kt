@@ -5,8 +5,6 @@ import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -364,44 +362,38 @@ fun PlaybackPageContent(
             }
 
             // The playback controls
-            AnimatedVisibility(
-                controllerViewState.controlsVisible,
-                Modifier,
-                slideInVertically { it },
-                slideOutVertically { it },
-            ) {
-                PlaybackOverlay(
-                    modifier =
-                        Modifier
-                            .padding(WindowInsets.systemBars.asPaddingValues())
-                            .fillMaxSize()
-                            .background(Color.Transparent),
-                    item = currentPlayback?.item,
-                    playerControls = player,
-                    controllerViewState = controllerViewState,
-                    showPlay = playPauseState.showPlay,
-                    previousEnabled = true,
-                    nextEnabled = playlist.hasNext(),
-                    seekEnabled = true,
-                    seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                    seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                    skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-                    onPlaybackActionClick = onPlaybackActionClick,
-                    onClickPlaybackDialogType = { playbackDialog = it },
-                    onSeekBarChange = seekBarState::onValueChange,
-                    showDebugInfo = showDebugInfo,
-                    currentPlayback = currentPlayback,
-                    chapters = mediaInfo?.chapters ?: listOf(),
-                    trickplayInfo = mediaInfo?.trickPlayInfo,
-                    trickplayUrlFor = viewModel::getTrickplayUrl,
-                    playlist = playlist,
-                    onClickPlaylist = {
-                        viewModel.playItemInPlaylist(it)
-                    },
-                    currentSegment = currentSegment?.segment,
-                    showClock = preferences.appPreferences.interfacePreferences.showClock,
-                )
-            }
+
+            PlaybackOverlay(
+                modifier =
+                    Modifier
+                        .padding(WindowInsets.systemBars.asPaddingValues())
+                        .fillMaxSize()
+                        .background(Color.Transparent),
+                item = currentPlayback?.item,
+                playerControls = player,
+                controllerViewState = controllerViewState,
+                showPlay = playPauseState.showPlay,
+                previousEnabled = true,
+                nextEnabled = playlist.hasNext(),
+                seekEnabled = true,
+                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                onPlaybackActionClick = onPlaybackActionClick,
+                onClickPlaybackDialogType = { playbackDialog = it },
+                onSeekBarChange = seekBarState::onValueChange,
+                showDebugInfo = showDebugInfo,
+                currentPlayback = currentPlayback,
+                chapters = mediaInfo?.chapters ?: listOf(),
+                trickplayInfo = mediaInfo?.trickPlayInfo,
+                trickplayUrlFor = viewModel::getTrickplayUrl,
+                playlist = playlist,
+                onClickPlaylist = {
+                    viewModel.playItemInPlaylist(it)
+                },
+                currentSegment = currentSegment?.segment,
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
+            )
 
             val subtitleSettings =
                 remember(mediaInfo) {

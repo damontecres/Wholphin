@@ -29,6 +29,7 @@ data class HomeRowPresets(
     val tvLibrary: HomeRowViewOptions,
     val videoLibrary: HomeRowViewOptions,
     val photoLibrary: HomeRowViewOptions,
+    val musicLibrary: HomeRowViewOptions,
     val playlist: HomeRowViewOptions,
     val liveTv: HomeRowViewOptions,
     val genreSize: Int,
@@ -51,8 +52,9 @@ data class HomeRowPresets(
 
             CollectionType.LIVETV -> liveTv
 
+            CollectionType.MUSIC -> musicLibrary
+
             CollectionType.UNKNOWN,
-            CollectionType.MUSIC,
             CollectionType.BOOKS,
             CollectionType.PLAYLISTS,
             CollectionType.FOLDERS,
@@ -73,6 +75,10 @@ data class HomeRowPresets(
                     HomeRowViewOptions(
                         aspectRatio = AspectRatio.WIDE,
                         contentScale = PrefContentScale.CROP,
+                    ),
+                musicLibrary =
+                    HomeRowViewOptions(
+                        aspectRatio = AspectRatio.SQUARE,
                     ),
                 playlist =
                     HomeRowViewOptions(
@@ -110,6 +116,11 @@ data class HomeRowPresets(
                         heightDp = epHeight,
                         aspectRatio = AspectRatio.WIDE,
                         contentScale = PrefContentScale.CROP,
+                    ),
+                musicLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.SQUARE,
                     ),
                 playlist =
                     HomeRowViewOptions(
@@ -154,6 +165,11 @@ data class HomeRowPresets(
                         aspectRatio = AspectRatio.WIDE,
                         contentScale = PrefContentScale.CROP,
                     ),
+                musicLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.SQUARE,
+                    ),
                 playlist =
                     HomeRowViewOptions(
                         heightDp = epHeight,
@@ -197,6 +213,11 @@ data class HomeRowPresets(
                         heightDp = epHeight,
                         aspectRatio = AspectRatio.WIDE,
                         contentScale = PrefContentScale.CROP,
+                    ),
+                musicLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.SQUARE,
                     ),
                 playlist =
                     HomeRowViewOptions(
