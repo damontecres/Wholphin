@@ -7,16 +7,13 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,7 +40,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -53,17 +49,12 @@ import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
-import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
-import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
-import com.github.damontecres.wholphin.ui.components.SortByButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
@@ -77,10 +68,8 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
-import kotlin.time.Duration
 
 @Composable
 fun CollectionDetails2(
@@ -288,7 +277,9 @@ fun CollectionDetailsContent(
             visible = !itemsContentHasFocus,
             enter = expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Top),
-            modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester),
+            modifier =
+                Modifier
+                    .bringIntoViewRequester(bringIntoViewRequester),
         ) {
             LaunchedEffect(Unit) {
                 focusRequester.tryRequestFocus()
@@ -297,6 +288,7 @@ fun CollectionDetailsContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
+                        .padding(bottom = 32.dp)
                         .fillMaxWidth()
                         .onFocusChanged {
                             if (it.hasFocus) {
@@ -310,58 +302,19 @@ fun CollectionDetailsContent(
                     bringIntoViewRequester = bringIntoViewRequester,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp, bottom = 16.dp),
-                )
-
-                val sortOptions = MovieSortOptions
-                val filterOptions = DefaultFilterOptions
-                val endPadding =
-                    16.dp + if (state.sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, end = endPadding)
+                            .padding(top = 48.dp, start = 8.dp)
+                            .fillMaxHeight(.33f)
                             .fillMaxWidth(),
-                ) {
-                    if (state.items.isNotEmpty()) {
-                        ExpandablePlayButton(
-                            title = R.string.play,
-                            resume = Duration.ZERO,
-                            icon = Icons.Default.PlayArrow,
-                            onClick = { onClickPlayAll.invoke(false) },
-                            modifier = Modifier.focusRequester(focusRequester),
-                        )
-                        ExpandableFaButton(
-                            title = R.string.shuffle,
-                            iconStringRes = R.string.fa_shuffle,
-                            onClick = { onClickPlayAll.invoke(true) },
-                        )
-                    }
-                    if (!state.viewOptions.separateTypes) {
-                        SortByButton(
-                            sortOptions = sortOptions,
-                            current = state.sortAndDirection,
-                            onSortChange = onSortChange,
-                            modifier = Modifier,
-                        )
-                        FilterByButton(
-                            filterOptions = filterOptions,
-                            current = state.itemFilter,
-                            onFilterChange = onFilterChange,
-                            getPossibleValues = getPossibleFilterValues,
-                            modifier = Modifier,
-                        )
-                    }
-                    ExpandableFaButton(
-                        title = R.string.view_options,
-                        iconStringRes = R.string.fa_sliders,
-                        onClick = onClickViewOptions,
-                        modifier = Modifier,
-                    )
-                }
+                )
+                CollectionButtons(
+                    state = state,
+                    onSortChange = onSortChange,
+                    onClickPlayAll = onClickPlayAll,
+                    onFilterChange = onFilterChange,
+                    getPossibleFilterValues = getPossibleFilterValues,
+                    onClickViewOptions = onClickViewOptions,
+                    modifier = Modifier.focusRequester(focusRequester),
+                )
             }
         }
         // This exists so there is something to above the grid/rows to focus on
@@ -385,14 +338,17 @@ fun CollectionDetailsContent(
             visible = state.viewOptions.cardViewOptions.showDetails && itemsContentHasFocus,
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+            modifier = Modifier,
         ) {
             HomePageHeader(
                 item = focusedItem,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
+                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
+                        .fillMaxHeight(.33f)
+                        .fillMaxWidth(),
+//                        .height(200.dp)
+//                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
             )
         }
         Box(

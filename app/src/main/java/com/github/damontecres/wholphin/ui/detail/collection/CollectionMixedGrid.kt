@@ -22,7 +22,6 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -56,7 +55,7 @@ fun CollectionMixedGrid(
 
     val gridFocusRequester = remember { FocusRequester() }
     if (state.items.isNotEmpty()) {
-        RequestOrRestoreFocus(gridFocusRequester)
+//        RequestOrRestoreFocus(gridFocusRequester)
     }
 
     var position by rememberInt(0)
