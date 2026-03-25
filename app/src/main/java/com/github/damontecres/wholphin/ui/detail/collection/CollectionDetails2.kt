@@ -1,7 +1,10 @@
 package com.github.damontecres.wholphin.ui.detail.collection
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,10 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -272,84 +274,88 @@ fun CollectionDetailsContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        // Collection header
-        AnimatedVisibility(
-            visible = !itemsContentHasFocus,
-            enter = expandVertically(expandFrom = Alignment.Top),
-            exit = shrinkVertically(shrinkTowards = Alignment.Top),
-            modifier =
-                Modifier
-                    .bringIntoViewRequester(bringIntoViewRequester),
-        ) {
-            LaunchedEffect(Unit) {
-                focusRequester.tryRequestFocus()
+        SharedTransitionLayout {
+            AnimatedContent(
+                targetState = itemsContentHasFocus,
+                label = "header_transition",
+            ) { targetState ->
+                if (targetState) {
+                    // Show item header
+                    Column(
+                        Modifier.sharedBounds(
+                            rememberSharedContentState(key = "header"),
+                            animatedVisibilityScope = this@AnimatedContent,
+                            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
+                            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
+                        ),
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(0.dp)
+                                    .focusable()
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            focusRequester.tryRequestFocus()
+                                        }
+                                    },
+                        )
+                        if (state.viewOptions.cardViewOptions.showDetails) {
+                            HomePageHeader(
+                                item = focusedItem,
+                                modifier =
+                                    Modifier
+                                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
+                                        .fillMaxHeight(.33f)
+                                        .fillMaxWidth(),
+                            )
+                        }
+                    }
+                } else {
+                    // Show collection header
+                    LaunchedEffect(Unit) {
+                        focusRequester.tryRequestFocus()
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier =
+                            Modifier
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "header"),
+                                    animatedVisibilityScope = this@AnimatedContent,
+                                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                                    exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+                                ).padding(bottom = 32.dp)
+                                .fillMaxWidth()
+                                .onFocusChanged {
+                                    if (it.hasFocus) {
+                                        onChangeBackdrop.invoke(state.collection!!)
+                                    }
+                                },
+                    ) {
+                        CollectionDetailsHeader(
+                            collection = state.collection!!,
+                            overviewOnClick = overviewOnClick,
+                            bringIntoViewRequester = bringIntoViewRequester,
+                            modifier =
+                                Modifier
+                                    .padding(top = 48.dp, start = 8.dp)
+                                    .fillMaxHeight(.33f)
+                                    .fillMaxWidth(),
+                        )
+                        CollectionButtons(
+                            state = state,
+                            onSortChange = onSortChange,
+                            onClickPlayAll = onClickPlayAll,
+                            onFilterChange = onFilterChange,
+                            getPossibleFilterValues = getPossibleFilterValues,
+                            onClickViewOptions = onClickViewOptions,
+                            modifier = Modifier.focusRequester(focusRequester),
+                        )
+                    }
+                }
             }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(bottom = 32.dp)
-                        .fillMaxWidth()
-                        .onFocusChanged {
-                            if (it.hasFocus) {
-                                onChangeBackdrop.invoke(state.collection!!)
-                            }
-                        },
-            ) {
-                CollectionDetailsHeader(
-                    collection = state.collection!!,
-                    overviewOnClick = overviewOnClick,
-                    bringIntoViewRequester = bringIntoViewRequester,
-                    modifier =
-                        Modifier
-                            .padding(top = 48.dp, start = 8.dp)
-                            .fillMaxHeight(.33f)
-                            .fillMaxWidth(),
-                )
-                CollectionButtons(
-                    state = state,
-                    onSortChange = onSortChange,
-                    onClickPlayAll = onClickPlayAll,
-                    onFilterChange = onFilterChange,
-                    getPossibleFilterValues = getPossibleFilterValues,
-                    onClickViewOptions = onClickViewOptions,
-                    modifier = Modifier.focusRequester(focusRequester),
-                )
-            }
-        }
-        // This exists so there is something to above the grid/rows to focus on
-        AnimatedVisibility(
-            visible = itemsContentHasFocus,
-            modifier = Modifier.size(0.dp),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(0.dp)
-                        .focusable()
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                focusRequester.tryRequestFocus()
-                            }
-                        },
-            )
-        }
-        AnimatedVisibility(
-            visible = state.viewOptions.cardViewOptions.showDetails && itemsContentHasFocus,
-            enter = expandVertically(expandFrom = Alignment.Bottom),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
-            modifier = Modifier,
-        ) {
-            HomePageHeader(
-                item = focusedItem,
-                modifier =
-                    Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
-                        .fillMaxHeight(.33f)
-                        .fillMaxWidth(),
-//                        .height(200.dp)
-//                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
-            )
         }
         Box(
             modifier =
