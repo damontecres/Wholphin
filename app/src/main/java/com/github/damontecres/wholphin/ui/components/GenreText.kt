@@ -11,6 +11,11 @@ import androidx.tv.material3.Text
 
 private const val MAX_TO_SHOW = 4
 
+/**
+ * Display a comma separated list of genres
+ *
+ * Only the first few will be shown
+ */
 @Composable
 fun GenreText(
     genres: List<String>,

@@ -22,6 +22,9 @@ import javax.inject.Singleton
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Handles determining whether the refresh rate and/or resolution of the display need to changed when playing media
+ */
 @Singleton
 class RefreshRateService
     @Inject
@@ -119,6 +122,9 @@ class RefreshRateService
             MainActivity.instance.changeDisplayMode(0)
         }
 
+        /**
+         * Listens for the display to change so we known the refresh rate or resolution is updated
+         */
         private class Listener(
             val displayId: Int,
         ) : DisplayManager.DisplayListener {
@@ -213,6 +219,9 @@ class RefreshRateService
         }
     }
 
+/**
+ * Wrapper for a [Display.Mode]
+ */
 data class DisplayMode(
     val modeId: Int,
     val physicalWidth: Int,

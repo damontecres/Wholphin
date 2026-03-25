@@ -187,7 +187,7 @@ class PlaybackViewModel
         private var isPlaylist = false
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
-        val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
+        val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
         val currentUserDto = serverRepository.currentUserDto

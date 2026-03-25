@@ -20,6 +20,9 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.util.Date
 
+/**
+ * Sends a crash report to the current server
+ */
 @AutoService(ReportSenderFactory::class)
 class CrashReportSenderFactory : ReportSenderFactory {
     override fun create(

@@ -38,6 +38,11 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Create [Playlist]s (not Jellyfin server playlist) for playback
+ *
+ * Used to create a queue of episodes or from Play All button
+ */
 @Singleton
 class PlaylistCreator
     @Inject
@@ -74,6 +79,9 @@ class PlaylistCreator
             return Playlist(episodes, startIndex)
         }
 
+        /**
+         * Create from a server playlist ID
+         */
         suspend fun createFromPlaylistId(
             playlistId: UUID,
             startIndex: Int?,
@@ -133,6 +141,11 @@ class PlaylistCreator
             return Playlist(items, 0)
         }
 
+        /**
+         * Create a [Playlist] contextually based on the given item.
+         *
+         * For example, an episode creates a queue of next up episodes in the series, or a movie creates one for its parts if needed
+         */
         suspend fun createFrom(
             item: BaseItemDto,
             startIndex: Int = 0,
@@ -270,6 +283,9 @@ class PlaylistCreator
                 }
             }
 
+        /**
+         * Get the playlists on the server for a given media type
+         */
         suspend fun getServerPlaylists(
             mediaType: MediaType?,
             scope: CoroutineScope,

@@ -14,6 +14,9 @@ import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Filter for a collection folder
+ */
 @Serializable
 data class CollectionFolderFilter(
     val nameOverride: String? = null,
@@ -24,6 +27,9 @@ data class CollectionFolderFilter(
     val useSavedLibraryDisplayInfo: Boolean = true,
 )
 
+/**
+ * A sort of simplified filter which can be [applyTo] a [GetItemsRequest] or [GetPersonsRequest] to add or remove filters
+ */
 @Serializable
 data class GetItemsFilter(
     val favorite: Boolean? = null,
@@ -52,7 +58,7 @@ data class GetItemsFilter(
     }
 
     /**
-     * Clear all of the values for the given filters
+     * Clear all the values for the given filters
      */
     fun delete(filterOptions: List<ItemFilterBy<*>>): GetItemsFilter {
         var newFilter = this
@@ -128,6 +134,9 @@ data class GetItemsFilter(
             isFavorite = favorite,
         )
 
+    /**
+     * Merge another [GetItemsFilter] onto this one, replacing only unset values
+     */
     fun merge(filter: GetItemsFilter): GetItemsFilter =
         this.copy(
             favorite = favorite ?: filter.favorite,

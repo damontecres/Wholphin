@@ -8,6 +8,11 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.TranscodingInfo
 import kotlin.time.Duration
 
+/**
+ * Information about how the current media is being played such transcoding and decoder info
+ *
+ * @see CurrentMediaInfo
+ */
 data class CurrentPlayback(
     val item: BaseItem,
     val tracks: List<TrackSupport>,

@@ -12,6 +12,9 @@ import org.jellyfin.sdk.model.api.BaseItemPerson
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.PersonKind
 
+/**
+ * Represents a person in some media such as an actor or director
+ */
 @Stable
 data class Person(
     val id: UUID,

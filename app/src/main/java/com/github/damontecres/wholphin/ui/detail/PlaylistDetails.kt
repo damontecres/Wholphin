@@ -256,7 +256,7 @@ class PlaylistViewModel
         /**
          * This method tries to determine the [MediaType] of a playlist
          *
-         * In theory, the server will set the type, but sometime it doesn't
+         * In theory, the server will set the type, but sometimes it doesn't
          */
         private suspend fun determineMediaType() {
             // Use the type the server says

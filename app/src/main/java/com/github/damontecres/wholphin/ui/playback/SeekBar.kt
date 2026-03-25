@@ -49,6 +49,11 @@ import androidx.tv.material3.MaterialTheme
 import kotlinx.coroutines.FlowPreview
 import kotlin.time.Duration
 
+/**
+ * This is a seek bar which seeks by a percentage of the duration instead of a fixed amount of time
+ *
+ * For example, if [intervals] is 10, then each seek will be 10% of total media duration
+ */
 @Composable
 fun SteppedSeekBarImpl(
     progress: Float,
@@ -97,6 +102,9 @@ fun SteppedSeekBarImpl(
     )
 }
 
+/**
+ * A seek (or scrubber) bar which seeks forward or back a fixed amount of time per move
+ */
 @OptIn(FlowPreview::class)
 @Composable
 fun IntervalSeekBarImpl(
@@ -147,8 +155,14 @@ fun IntervalSeekBarImpl(
     )
 }
 
+/**
+ * Actually renders the seek bar. It has callbacks for when the user moves to the left or right
+ *
+ * @see IntervalSeekBarImpl
+ * @see SteppedSeekBarImpl
+ */
 @Composable
-fun SeekBarDisplay(
+private fun SeekBarDisplay(
     progress: Float,
     bufferedProgress: Float,
     durationMs: Long,

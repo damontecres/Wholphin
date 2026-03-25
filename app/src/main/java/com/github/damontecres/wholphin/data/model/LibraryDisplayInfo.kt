@@ -16,6 +16,11 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 
+/**
+ * Stores the filter, sort, and view options a user changes for a library
+ *
+ * This allows for restoring these settings whenever the user navigates to the library
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(

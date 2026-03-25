@@ -19,6 +19,9 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Service to manage media such as deletions
+ */
 @Singleton
 class MediaManagementService
     @Inject
@@ -45,6 +48,9 @@ class MediaManagementService
             return canDelete(item, appPreferences)
         }
 
+        /**
+         * Check if the item can be deleted. This means the app setting is enabled and the user has permission.
+         */
         fun canDelete(
             item: BaseItem,
             appPreferences: AppPreferences,
@@ -62,10 +68,14 @@ class MediaManagementService
                 }
         }
 
+        /**
+         * Delete the item.
+         *
+         * This item will be sent through [deletedItemFlow] for other services or view models to react.
+         */
         suspend fun deleteItem(item: BaseItem): DeleteResult {
             try {
                 Timber.i("Deleting %s", item.id)
-                // TODO enable
                 api.libraryApi.deleteItem(item.id)
                 _deletedItemFlow.emit(DeletedItem(item))
                 return DeleteResult.Success
@@ -88,6 +98,9 @@ sealed interface DeleteResult {
     ) : DeleteResult
 }
 
+/**
+ * Convenience function to delete an item and show a Toast based on success or error
+ */
 fun ViewModel.deleteItem(
     context: Context,
     mediaManagementService: MediaManagementService,

@@ -63,6 +63,9 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles getting home page settings and data
+ */
 @Singleton
 class HomeSettingsService
     @Inject
@@ -84,6 +87,9 @@ class HomeSettingsService
                 allowTrailingComma = true
             }
 
+        /**
+         * The current home page settings
+         */
         val currentSettings = MutableStateFlow(HomePageResolvedSettings.EMPTY)
 
         /**
@@ -245,6 +251,9 @@ class HomeSettingsService
             currentSettings.update { resolvedSettings }
         }
 
+        /**
+         * Resolve the settings and set them to be the current settings
+         */
         suspend fun updateCurrent(settings: HomePageSettings) {
             val resolvedRows =
                 settings.rows.mapIndexed { index, config ->
@@ -317,6 +326,9 @@ class HomeSettingsService
             return HomePageResolvedSettings(rowConfig)
         }
 
+        /**
+         * Create home page settings from the user's web UI home page settings
+         */
         suspend fun parseFromWebConfig(userId: UUID): HomePageResolvedSettings? {
             val customPrefs =
                 api.displayPreferencesApi

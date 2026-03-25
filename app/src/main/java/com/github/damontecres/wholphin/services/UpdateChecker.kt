@@ -45,6 +45,9 @@ import javax.inject.Singleton
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Checks if an app update is available
+ */
 @Singleton
 class UpdateChecker
     @Inject
@@ -65,6 +68,11 @@ class UpdateChecker
             val ACTIVE = true
         }
 
+        /**
+         * If the app hasn't recently checked, check for any updates and if there is one, show a toast message
+         *
+         * This is safe to call many times because it will only show the toast at most once every 12 hours
+         */
         suspend fun maybeShowUpdateToast(
             updateUrl: String,
             showNegativeToast: Boolean = false,
@@ -112,11 +120,17 @@ class UpdateChecker
             }
         }
 
+        /**
+         * Get the currently installed version
+         */
         fun getInstalledVersion(): Version {
             val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            return Version.Companion.fromString(pkgInfo.versionName!!)
+            return Version.fromString(pkgInfo.versionName!!)
         }
 
+        /**
+         * Get the latest released version
+         */
         suspend fun getLatestRelease(updateUrl: String): Release? {
             return withContext(Dispatchers.IO) {
                 val request =
@@ -161,6 +175,9 @@ class UpdateChecker
             }
         }
 
+        /**
+         * Download and install an update
+         */
         suspend fun installRelease(
             release: Release,
             callback: DownloadCallback,
@@ -263,6 +280,9 @@ class UpdateChecker
             return targetFile
         }
 
+        /**
+         * Check if the app has permission to write the download
+         */
         fun hasPermissions(): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
                 (

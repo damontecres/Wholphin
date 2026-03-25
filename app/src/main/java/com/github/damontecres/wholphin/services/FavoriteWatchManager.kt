@@ -8,6 +8,9 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles toggling media as favorited or watched
+ */
 @Singleton
 class FavoriteWatchManager
     @Inject
