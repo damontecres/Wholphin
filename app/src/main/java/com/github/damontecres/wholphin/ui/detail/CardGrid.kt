@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail
 
+import android.view.KeyEvent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -51,7 +52,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -199,6 +199,25 @@ fun <T : CardGridItem> CardGrid(
         }
     }
 
+    val jumpToLetter: (Char) -> Unit =
+        remember {
+            { letter: Char ->
+                scope.launch(ExceptionHandler()) {
+                    val jumpPosition =
+                        withContext(Dispatchers.IO) {
+                            letterPosition.invoke(letter)
+                        }
+                    Timber.d("Alphabet jump to $jumpPosition")
+                    if (jumpPosition >= 0) {
+                        pager.getOrNull(jumpPosition)
+                        gridState.scrollToItem(jumpPosition)
+                        focusOn(jumpPosition)
+                        alphabetFocus = true
+                    }
+                }
+            }
+        }
+
     if (pager.isEmpty()) {
         Box(
             contentAlignment = Alignment.Center,
@@ -256,6 +275,12 @@ fun <T : CardGridItem> CardGrid(
                             return@onKeyEvent true
                         } else if (useJumpRemoteButtons && isBackwardButton(it)) {
                             jump(-jump1)
+                            return@onKeyEvent true
+                        } else if (showLetterButtons && pager.isNotEmpty() &&
+                            it.nativeKeyEvent.keyCode in (KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z)
+                        ) {
+                            val letter = it.nativeKeyEvent.unicodeChar.toChar()
+                            jumpToLetter.invoke(letter)
                             return@onKeyEvent true
                         } else {
                             return@onKeyEvent false
@@ -372,8 +397,7 @@ fun <T : CardGridItem> CardGrid(
                     }
                 }
             }
-            val context = LocalContext.current
-            val letters = context.getString(R.string.jump_letters)
+            val letters = stringResource(R.string.jump_letters)
             // Letters
             val currentLetter =
                 remember(focusedIndex) {
@@ -383,12 +407,10 @@ fun <T : CardGridItem> CardGrid(
                         ?.firstOrNull()
                         ?.uppercaseChar()
                         ?.let {
-                            if (it >= '0' && it <= '9') {
-                                '#'
-                            } else if (it >= 'A' && it <= 'Z') {
-                                it
-                            } else {
-                                null
+                            when (it) {
+                                in '0'..'9' -> '#'
+                                in 'A'..'Z' -> it
+                                else -> null
                             }
                         }
                         ?: letters[0]
@@ -402,21 +424,7 @@ fun <T : CardGridItem> CardGrid(
                             .align(Alignment.CenterVertically)
                             .padding(start = 16.dp),
                     // Add end padding to push away from edge
-                    letterClicked = { letter ->
-                        scope.launch(ExceptionHandler()) {
-                            val jumpPosition =
-                                withContext(Dispatchers.IO) {
-                                    letterPosition.invoke(letter)
-                                }
-                            Timber.d("Alphabet jump to $jumpPosition")
-                            if (jumpPosition >= 0) {
-                                pager.getOrNull(jumpPosition)
-                                gridState.scrollToItem(jumpPosition)
-                                focusOn(jumpPosition)
-                                alphabetFocus = true
-                            }
-                        }
-                    },
+                    letterClicked = jumpToLetter,
                 )
             }
         }

@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionEx
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
+import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -267,6 +268,24 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
+                val viewOptions =
+                    when (library.collectionType) {
+                        CollectionType.MUSIC -> {
+                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
+                        }
+
+                        CollectionType.HOMEVIDEOS,
+                        CollectionType.MUSICVIDEOS,
+                        -> {
+                            HomeRowViewOptions(
+                                aspectRatio = AspectRatio.WIDE,
+                            )
+                        }
+
+                        else -> {
+                            HomeRowViewOptions()
+                        }
+                    }
                 val id = idCounter++
                 val newRow =
                     when (rowType) {
@@ -276,7 +295,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyAdded(library.itemId),
+                                config = RecentlyAdded(library.itemId, viewOptions),
                             )
                         }
 
@@ -291,7 +310,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyReleased(library.itemId),
+                                config = RecentlyReleased(library.itemId, viewOptions),
                             )
                         }
 
@@ -310,7 +329,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = Suggestions(library.itemId),
+                                config = Suggestions(library.itemId, viewOptions),
                             )
                         }
 
@@ -671,6 +690,7 @@ class HomeSettingsViewModel
                                             BaseItemKind.VIDEO -> preset.videoLibrary
                                             BaseItemKind.PLAYLIST -> preset.playlist
                                             BaseItemKind.PERSON -> preset.movieLibrary
+                                            BaseItemKind.MUSIC_ARTIST, BaseItemKind.MUSIC_ALBUM -> preset.musicLibrary
                                             else -> preset.movieLibrary
                                         }
                                     it.config.updateViewOptions(viewOptions)

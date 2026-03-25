@@ -114,7 +114,7 @@ class BackdropService
             }
         }
 
-        private suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
+        suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
             withContext(Dispatchers.IO) {
                 if (imageUrl.isNullOrBlank()) {
                     return@withContext ExtractedColors.DEFAULT

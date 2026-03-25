@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -83,11 +84,6 @@ data class NavDrawerPin(
             }
         }
     }
-}
-
-enum class MoveDirection {
-    UP,
-    DOWN,
 }
 
 private fun <T> List<T>.move(
@@ -246,7 +242,7 @@ fun NavDrawerPreferenceListItem(
 }
 
 @Composable
-private fun MoveButton(
+fun MoveButton(
     @StringRes icon: Int,
     enabled: Boolean,
     onClick: () -> Unit,

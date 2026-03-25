@@ -57,6 +57,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -74,10 +75,10 @@ import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
+import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -625,6 +626,9 @@ fun Controller(
                     text = it,
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = titleTextSize,
+                    maxLines = 1,
+                    overflow = TextOverflow.MiddleEllipsis,
+                    modifier = Modifier.fillMaxWidth(.75f),
                 )
             }
             Row(
@@ -639,6 +643,9 @@ fun Controller(
                         text = it,
                         style = MaterialTheme.typography.titleMedium,
                         fontSize = subtitleTextSize,
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        modifier = Modifier.fillMaxWidth(.75f),
                     )
                 }
 
@@ -651,7 +658,7 @@ fun Controller(
                                 .toLong()
                                 .milliseconds
                         val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                        endTimeStr = TimeFormatter.format(endTime)
+                        endTimeStr = getTimeFormatter().format(endTime)
                         delay(1.seconds)
                     }
                 }

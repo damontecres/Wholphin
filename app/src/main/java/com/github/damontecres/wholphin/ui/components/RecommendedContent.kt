@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -110,13 +111,14 @@ abstract class RecommendedViewModel(
 
     fun update(
         @StringRes title: Int,
+        viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
         block: suspend () -> List<BaseItem>,
     ): Deferred<HomeRowLoadingState> =
         viewModelScope.async(Dispatchers.IO) {
             val titleStr = context.getString(title)
             val row =
                 try {
-                    HomeRowLoadingState.Success(titleStr, block.invoke())
+                    HomeRowLoadingState.Success(titleStr, block.invoke(), viewOptions)
                 } catch (ex: Exception) {
                     HomeRowLoadingState.Error(titleStr, null, ex)
                 }
