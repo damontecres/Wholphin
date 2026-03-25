@@ -361,6 +361,15 @@ fun PlaybackPageContent(
                 }
             }
 
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+                PauseIndicator(
+                    player = player,
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center),
+                )
+            }
+
             // The playback controls
 
             PlaybackOverlay(
