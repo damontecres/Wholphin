@@ -125,56 +125,59 @@ fun HomePage(
             var position by rememberPosition()
 
             val onFocusPosition = remember { { it: RowColumn -> position = it } }
-            val onClickItem = remember {
-                { clickedPosition: RowColumn, item: BaseItem ->
-                    position = clickedPosition
-                    viewModel.navigationManager.navigateTo(item.destination())
+            val onClickItem =
+                remember {
+                    { clickedPosition: RowColumn, item: BaseItem ->
+                        position = clickedPosition
+                        viewModel.navigationManager.navigateTo(item.destination())
+                    }
                 }
-            }
-            val onLongClickItem = remember {
-                { clickedPosition: RowColumn, item: BaseItem ->
-                    position = clickedPosition
-                    val dialogItems =
-                        buildMoreDialogItemsForHome(
-                            context = context,
-                            item = item,
-                            seriesId = item.data.seriesId,
-                            playbackPosition = item.playbackPosition,
-                            watched = item.played,
-                            favorite = item.favorite,
-                            canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                            actions =
-                                MoreDialogActions(
-                                    navigateTo = viewModel.navigationManager::navigateTo,
-                                    onClickWatch = { itemId, played ->
-                                        viewModel.setWatched(itemId, played)
-                                    },
-                                    onClickFavorite = { itemId, favorite ->
-                                        viewModel.setFavorite(itemId, favorite)
-                                    },
-                                    onClickAddPlaylist = { itemId ->
-                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                        showPlaylistDialog = itemId
-                                    },
-                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                                    onClickDelete = {
-                                        showDeleteDialog = RowColumnItem(position, item)
-                                    },
-                                ),
-                        )
-                    dialog =
-                        DialogParams(
-                            title = item.title ?: "",
-                            fromLongClick = true,
-                            items = dialogItems,
-                        )
+            val onLongClickItem =
+                remember {
+                    { clickedPosition: RowColumn, item: BaseItem ->
+                        position = clickedPosition
+                        val dialogItems =
+                            buildMoreDialogItemsForHome(
+                                context = context,
+                                item = item,
+                                seriesId = item.data.seriesId,
+                                playbackPosition = item.playbackPosition,
+                                watched = item.played,
+                                favorite = item.favorite,
+                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                                actions =
+                                    MoreDialogActions(
+                                        navigateTo = viewModel.navigationManager::navigateTo,
+                                        onClickWatch = { itemId, played ->
+                                            viewModel.setWatched(itemId, played)
+                                        },
+                                        onClickFavorite = { itemId, favorite ->
+                                            viewModel.setFavorite(itemId, favorite)
+                                        },
+                                        onClickAddPlaylist = { itemId ->
+                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            showPlaylistDialog = itemId
+                                        },
+                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                        onClickDelete = {
+                                            showDeleteDialog = RowColumnItem(position, item)
+                                        },
+                                    ),
+                            )
+                        dialog =
+                            DialogParams(
+                                title = item.title ?: "",
+                                fromLongClick = true,
+                                items = dialogItems,
+                            )
+                    }
                 }
-            }
-            val onClickPlay = remember {
-                { _: RowColumn, item: BaseItem ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+            val onClickPlay =
+                remember {
+                    { _: RowColumn, item: BaseItem ->
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    }
                 }
-            }
 
             HomePageContent(
                 homeRows = homeRows,
@@ -350,19 +353,21 @@ fun HomePageContent(
                                         ItemRow(
                                             title = row.title,
                                             items = row.items,
-                                            onClickItem = remember(rowIndex, onClickItem) {
-                                                { index, item ->
-                                                    onClickItem.invoke(RowColumn(rowIndex, index), item)
-                                                }
-                                            },
-                                            onLongClickItem = remember(rowIndex, onLongClickItem) {
-                                                { index, item ->
-                                                    onLongClickItem.invoke(
-                                                        RowColumn(rowIndex, index),
-                                                        item,
-                                                    )
-                                                }
-                                            },
+                                            onClickItem =
+                                                remember(rowIndex, onClickItem) {
+                                                    { index, item ->
+                                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                                    }
+                                                },
+                                            onLongClickItem =
+                                                remember(rowIndex, onLongClickItem) {
+                                                    { index, item ->
+                                                        onLongClickItem.invoke(
+                                                            RowColumn(rowIndex, index),
+                                                            item,
+                                                        )
+                                                    }
+                                                },
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
@@ -371,24 +376,26 @@ fun HomePageContent(
                                                     .animateItem(),
                                             horizontalPadding = viewOptions.spacing.dp,
                                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                                val onFocus = remember(rowIndex, index) {
-                                                    { isFocused: Boolean ->
-                                                        if (isFocused) {
-                                                            currentOnFocusPosition.value.invoke(RowColumn(rowIndex, index))
+                                                val onFocus =
+                                                    remember(rowIndex, index) {
+                                                        { isFocused: Boolean ->
+                                                            if (isFocused) {
+                                                                currentOnFocusPosition.value.invoke(RowColumn(rowIndex, index))
+                                                            }
                                                         }
                                                     }
-                                                }
-                                                val onKey = remember(item) {
-                                                    { event: androidx.compose.ui.input.key.KeyEvent ->
-                                                        if (isPlayKeyUp(event) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            currentOnClickPlay.value.invoke(currentPosition.value, item)
-                                                            true
-                                                        } else {
-                                                            false
+                                                val onKey =
+                                                    remember(item) {
+                                                        { event: androidx.compose.ui.input.key.KeyEvent ->
+                                                            if (isPlayKeyUp(event) && item?.type?.playable == true) {
+                                                                Timber.v("Clicked play on ${item.id}")
+                                                                currentOnClickPlay.value.invoke(currentPosition.value, item)
+                                                                true
+                                                            } else {
+                                                                false
+                                                            }
                                                         }
                                                     }
-                                                }
                                                 HomePageCardContent(
                                                     index = index,
                                                     item = item,

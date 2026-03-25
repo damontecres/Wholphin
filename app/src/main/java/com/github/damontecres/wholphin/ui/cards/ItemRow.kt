@@ -46,7 +46,7 @@ fun <T> ItemRow(
     val firstFocus = remember { FocusRequester() }
     val focusRequester = remember { FocusRequester() }
     var position by rememberInt()
-    
+
     val currentOnClickItem = rememberUpdatedState(onClickItem)
     val currentOnLongClickItem = rememberUpdatedState(onLongClickItem)
 
@@ -77,27 +77,30 @@ fun <T> ItemRow(
                     .focusRequester(focusRequester),
         ) {
             itemsIndexed(items) { index, item ->
-                val cardModifier = remember(index, position) {
-                    if (index == position) {
-                        Modifier.focusRequester(firstFocus)
-                    } else {
-                        Modifier
+                val cardModifier =
+                    remember(index, position) {
+                        if (index == position) {
+                            Modifier.focusRequester(firstFocus)
+                        } else {
+                            Modifier
+                        }
                     }
-                }
-                
-                val onClick = remember(index, item) {
-                    {
-                        position = index
-                        if (item != null) currentOnClickItem.value.invoke(index, item)
+
+                val onClick =
+                    remember(index, item) {
+                        {
+                            position = index
+                            if (item != null) currentOnClickItem.value.invoke(index, item)
+                        }
                     }
-                }
-                
-                val onLongClick = remember(index, item) {
-                    {
-                        position = index
-                        if (item != null) currentOnLongClickItem.value.invoke(index, item)
+
+                val onLongClick =
+                    remember(index, item) {
+                        {
+                            position = index
+                            if (item != null) currentOnLongClickItem.value.invoke(index, item)
+                        }
                     }
-                }
 
                 cardContent.invoke(
                     index,

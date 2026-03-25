@@ -59,7 +59,7 @@ fun TabRow(
         }
     }
     var rowHasFocus by remember { mutableStateOf(false) }
-    
+
     val currentSelectedTabIndex = rememberUpdatedState(selectedTabIndex)
     val currentFocusRequesters = rememberUpdatedState(focusRequesters)
     val currentOnClick = rememberUpdatedState(onClick)
@@ -92,11 +92,12 @@ fun TabRow(
     ) {
         itemsIndexed(tabs) { index, tabTitle ->
             val interactionSource = remember { MutableInteractionSource() }
-            val onTabClick = remember(index) {
-                {
-                    currentOnClick.value.invoke(index)
+            val onTabClick =
+                remember(index) {
+                    {
+                        currentOnClick.value.invoke(index)
+                    }
                 }
-            }
             Tab(
                 title = tabTitle,
                 selected = index == selectedTabIndex,

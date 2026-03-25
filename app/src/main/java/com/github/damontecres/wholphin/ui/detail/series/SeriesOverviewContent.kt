@@ -113,13 +113,14 @@ fun SeriesOverviewContent(
 
     val seasonStr = stringResource(R.string.tv_season)
     // Optimization: remember the tabs list to prevent TabRow recomposition on episode change
-    val tabs = remember(seasons) {
-        seasons.map { season ->
-            season?.name
-                ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
-                ?: ""
+    val tabs =
+        remember(seasons) {
+            seasons.map { season ->
+                season?.name
+                    ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
+                    ?: ""
+            }
         }
-    }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
 
     val currentOnChangeSeason = rememberUpdatedState(onChangeSeason)
@@ -156,13 +157,14 @@ fun SeriesOverviewContent(
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     tabs = tabs,
-                    onClick = remember {
-                        {
-                            selectedTabIndex = it
-                            currentOnChangeSeason.value.invoke(it)
-                            requestFocusAfterSeason = true
-                        }
-                    },
+                    onClick =
+                        remember {
+                            {
+                                selectedTabIndex = it
+                                currentOnChangeSeason.value.invoke(it)
+                                requestFocusAfterSeason = true
+                            }
+                        },
                     focusRequesters = focusRequesters,
                     modifier =
                         Modifier
