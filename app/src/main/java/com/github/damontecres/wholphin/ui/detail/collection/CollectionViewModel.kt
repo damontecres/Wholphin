@@ -330,7 +330,12 @@ class CollectionViewModel
         fun changeViewOptions(viewOptions: CollectionViewOptions) {
             viewModelScope.launchIO {
                 if (!viewOptions.cardViewOptions.showDetails) {
-                    backdropService.clearBackdrop()
+                    val collection = state.value.collection
+                    if (collection != null) {
+                        backdropService.submit(collection)
+                    } else {
+                        backdropService.clearBackdrop()
+                    }
                 }
                 serverRepository.currentUser.value?.id?.let { userId ->
                     keyValueService.save(userId, VIEW_OPTIONS_KEY, viewOptions)
@@ -437,7 +442,15 @@ class CollectionViewModel
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchDefault {
-                backdropService.submit(item)
+                val collection = state.value.collection
+                if (item.id == collection?.id) {
+                    // Always show the collection's backdrop if requested
+                    backdropService.submit(collection)
+                } else if (state.value.viewOptions.cardViewOptions.showDetails) {
+                    backdropService.submit(item)
+                } else {
+                    backdropService.clearBackdrop()
+                }
             }
         }
 
