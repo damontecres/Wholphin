@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
@@ -71,6 +73,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
+import timber.log.Timber
 import java.util.UUID
 
 @Composable
@@ -306,7 +309,7 @@ fun CollectionDetailsContent(
                                 item = focusedItem,
                                 modifier =
                                     Modifier
-                                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
+                                        .padding(top = 48.dp, start = 8.dp)
                                         .fillMaxHeight(.33f)
                                         .fillMaxWidth(),
                             )
@@ -316,6 +319,7 @@ fun CollectionDetailsContent(
                     // Show collection header
                     LaunchedEffect(Unit) {
                         focusRequester.tryRequestFocus()
+                        focusedItem = state.collection
                     }
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -326,7 +330,7 @@ fun CollectionDetailsContent(
                                     animatedVisibilityScope = this@AnimatedContent,
                                     enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
                                     exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
-                                ).padding(bottom = 32.dp)
+                                ).padding(bottom = 16.dp)
                                 .fillMaxWidth()
                                 .onFocusChanged {
                                     if (it.hasFocus) {
@@ -336,12 +340,13 @@ fun CollectionDetailsContent(
                     ) {
                         CollectionDetailsHeader(
                             collection = state.collection!!,
+                            logoImageUrl = state.logoImageUrl,
                             overviewOnClick = overviewOnClick,
                             bringIntoViewRequester = bringIntoViewRequester,
                             modifier =
                                 Modifier
                                     .padding(top = 48.dp, start = 8.dp)
-                                    .fillMaxHeight(.33f)
+                                    .fillMaxHeight(.36f)
                                     .fillMaxWidth(),
                         )
                         CollectionButtons(
@@ -402,6 +407,7 @@ fun CollectionDetailsContent(
                     onClickViewOptions = onClickViewOptions,
                     modifier = Modifier.fillMaxSize(),
                     onFocusPosition = {
+                        Timber.v("onFocusPosition=%s", it)
                         showButtons = it.column < state.viewOptions.cardViewOptions.columns
                         focusedItem = state.items.getOrNull(it.column)
                     },
@@ -414,6 +420,7 @@ fun CollectionDetailsContent(
 @Composable
 fun CollectionDetailsHeader(
     collection: BaseItem,
+    logoImageUrl: String?,
     overviewOnClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester,
     modifier: Modifier = Modifier,
@@ -425,18 +432,28 @@ fun CollectionDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        // Title
-        Text(
-            text = collection.name ?: "",
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier =
-                Modifier
-                    .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
-        )
+        if (logoImageUrl != null) {
+            AsyncImage(
+                model = logoImageUrl,
+                contentDescription = collection.name,
+                modifier = Modifier.height(80.dp),
+                alignment = Alignment.TopStart,
+                contentScale = ContentScale.Fit,
+            )
+        } else {
+            // Title
+            Text(
+                text = collection.name ?: "",
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.75f)
+                        .padding(start = 8.dp),
+            )
+        }
 
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),

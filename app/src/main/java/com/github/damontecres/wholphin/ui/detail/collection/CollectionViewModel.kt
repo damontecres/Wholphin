@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
@@ -61,6 +62,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -81,6 +83,7 @@ class CollectionViewModel
         private val backdropService: BackdropService,
         private val keyValueService: KeyValueService,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
+        private val imageUrlService: ImageUrlService,
         val mediaReportService: MediaReportService,
         @Assisted private val itemId: UUID,
     ) : ViewModel() {
@@ -135,9 +138,16 @@ class CollectionViewModel
                         .content
                         .let { BaseItem(it, false) }
                 backdropService.submit(collection)
+                val logoImageUrl =
+                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
+                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
+                    } else {
+                        null
+                    }
                 _state.update {
                     it.copy(
                         collection = collection,
+                        logoImageUrl = logoImageUrl,
                     )
                 }
                 listenForStateUpdates()
@@ -454,4 +464,5 @@ data class CollectionState(
     val viewOptions: CollectionViewOptions = CollectionViewOptions(),
     val items: List<BaseItem?> = emptyList(),
     val separateItems: Map<BaseItemKind, HomeRowLoadingState> = emptyMap(),
+    val logoImageUrl: String? = null,
 )
