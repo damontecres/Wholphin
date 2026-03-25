@@ -57,6 +57,7 @@ fun CollectionRows(
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     onClickViewOptions: () -> Unit,
     modifier: Modifier = Modifier,
+    onFocusPosition: (RowColumn) -> Unit = {},
 ) {
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var position by rememberPosition(0, 0)
@@ -125,6 +126,7 @@ fun CollectionRows(
                 onFocusPosition = { newPosition ->
                     showHeader = newPosition.row <= 0
                     position = newPosition
+                    onFocusPosition.invoke(newPosition)
                 },
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,

@@ -134,6 +134,7 @@ class CollectionViewModel
                         .getItem(itemId)
                         .content
                         .let { BaseItem(it, false) }
+                backdropService.submit(collection)
                 _state.update {
                     it.copy(
                         collection = collection,

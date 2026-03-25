@@ -22,7 +22,7 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
-import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
+import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails2
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
@@ -142,7 +142,7 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionDetails(
+                    CollectionDetails2(
                         preferences = preferences,
                         itemId = destination.itemId,
                         modifier = modifier,
