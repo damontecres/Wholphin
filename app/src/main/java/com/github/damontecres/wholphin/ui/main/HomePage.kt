@@ -247,9 +247,10 @@ fun HomePageContent(
     takeFocus: Boolean = true,
     showEmptyRows: Boolean = false,
 ) {
-    val focusedItem = remember(homeRows, position) {
+    val focusedItem =
+        remember(homeRows, position) {
             (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(position.column)
-    }
+        }
 
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
