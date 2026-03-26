@@ -31,6 +31,7 @@ data class MoreDialogActions(
     val onSendMediaInfo: (UUID) -> Unit,
     val onClickDelete: (BaseItem) -> Unit,
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
+    val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
 )
 
 enum class ClearChosenStreams {
@@ -271,6 +272,8 @@ fun buildMoreDialogItemsForHome(
     favorite: Boolean,
     canDelete: Boolean,
     actions: MoreDialogActions,
+    canRemoveContinueWatching: Boolean = false,
+    canRemoveNextUp: Boolean = false,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -345,6 +348,26 @@ fun buildMoreDialogItemsForHome(
                     iconColor = Color.Red.copy(alpha = .8f),
                 ) {
                     actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        if (canRemoveContinueWatching && !watched && playbackPosition > Duration.ZERO) {
+            add(
+                DialogItem(
+                    text = R.string.remove_continue_watching,
+                    iconStringRes = R.string.fa_eye,
+                ) {
+                    actions.onClickWatch.invoke(itemId, false)
+                },
+            )
+        }
+        if (canRemoveNextUp && item.type == BaseItemKind.EPISODE && item.data.seriesId != null) {
+            add(
+                DialogItem(
+                    text = R.string.remove_next_up,
+                    iconStringRes = R.string.fa_tag,
+                ) {
+                    actions.onClickRemoveFromNextUp.invoke(item)
                 },
             )
         }

@@ -47,6 +47,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
@@ -131,6 +132,12 @@ fun HomePage(
                 },
                 onLongClickItem = { clickedPosition, item ->
                     position = clickedPosition
+                    val row =
+                        (homeRows.getOrNull(clickedPosition.row) as? HomeRowLoadingState.Success)
+                    val canRemoveContinueWatching =
+                        row?.rowType is HomeRowConfig.ContinueWatching || row?.rowType is HomeRowConfig.ContinueWatchingCombined
+                    val canRemoveNextUp =
+                        row?.rowType is HomeRowConfig.NextUp || row?.rowType is HomeRowConfig.ContinueWatchingCombined
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
@@ -140,6 +147,8 @@ fun HomePage(
                             watched = item.played,
                             favorite = item.favorite,
                             canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                            canRemoveContinueWatching = canRemoveContinueWatching,
+                            canRemoveNextUp = canRemoveNextUp,
                             actions =
                                 MoreDialogActions(
                                     navigateTo = viewModel.navigationManager::navigateTo,
@@ -157,6 +166,7 @@ fun HomePage(
                                     onClickDelete = {
                                         showDeleteDialog = RowColumnItem(position, item)
                                     },
+                                    onClickRemoveFromNextUp = viewModel::removeFromNextUp,
                                 ),
                         )
                     dialog =

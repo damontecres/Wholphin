@@ -129,6 +129,7 @@ class TestHomeRowSamples {
                 latestNextUpService = mockk(),
                 imageUrlService = mockk(),
                 suggestionService = mockk(),
+                displayPreferencesService = mockk(),
             )
 
         val str = """{

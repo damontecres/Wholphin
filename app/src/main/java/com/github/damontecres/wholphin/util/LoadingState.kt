@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.util
 
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 
 /**
@@ -64,6 +65,7 @@ sealed interface HomeRowLoadingState {
         override val title: String,
         val items: List<BaseItem?>,
         val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        val rowType: HomeRowConfig? = null,
     ) : HomeRowLoadingState
 
     data class Error(

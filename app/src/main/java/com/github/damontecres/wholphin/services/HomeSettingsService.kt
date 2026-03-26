@@ -40,7 +40,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -75,6 +74,7 @@ class HomeSettingsService
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
+        private val displayPreferencesService: DisplayPreferencesService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -94,19 +94,11 @@ class HomeSettingsService
         suspend fun saveToServer(
             userId: UUID,
             settings: HomePageSettings,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
         ) {
-            val current = getDisplayPreferences(userId, DISPLAY_PREF_ID)
-            val customPrefs =
-                current.customPrefs.toMutableMap().apply {
-                    put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
-                }
-            api.displayPreferencesApi.updateDisplayPreferences(
-                displayPreferencesId = displayPreferencesId,
-                userId = userId,
-                client = context.getString(R.string.app_name),
-                data = current.copy(customPrefs = customPrefs),
-            )
+            displayPreferencesService.updateDisplayPreferences(userId, displayPreferencesId) {
+                put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
+            }
         }
 
         /**
@@ -118,24 +110,15 @@ class HomeSettingsService
          */
         suspend fun loadFromServer(
             userId: UUID,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
-        ): HomePageSettings? {
-            val current = getDisplayPreferences(userId, displayPreferencesId)
-            return current.customPrefs[CUSTOM_PREF_ID]?.let {
-                val jsonElement = jsonParser.parseToJsonElement(it)
-                decode(jsonElement)
-            }
-        }
-
-        private suspend fun getDisplayPreferences(
-            userId: UUID,
-            displayPreferencesId: String,
-        ) = api.displayPreferencesApi
-            .getDisplayPreferences(
-                userId = userId,
-                displayPreferencesId = displayPreferencesId,
-                client = context.getString(R.string.app_name),
-            ).content
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
+        ): HomePageSettings? =
+            displayPreferencesService
+                .getDisplayPreferences(userId, displayPreferencesId)
+                .customPrefs[CUSTOM_PREF_ID]
+                ?.let {
+                    val jsonElement = jsonParser.parseToJsonElement(it)
+                    decode(jsonElement)
+                }
 
         /**
          * Computes the filename for locally saved [HomePageSettings]
@@ -319,12 +302,12 @@ class HomeSettingsService
 
         suspend fun parseFromWebConfig(userId: UUID): HomePageResolvedSettings? {
             val customPrefs =
-                api.displayPreferencesApi
+                displayPreferencesService
                     .getDisplayPreferences(
                         displayPreferencesId = "usersettings",
                         userId = userId,
                         client = "emby",
-                    ).content.customPrefs
+                    ).customPrefs
             val userDto by api.userApi.getUserById(userId)
             val config = userDto.configuration ?: DefaultUserConfiguration
             val libraries =
@@ -580,6 +563,7 @@ class HomeSettingsService
                         title = context.getString(R.string.continue_watching),
                         items = resume,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -598,6 +582,7 @@ class HomeSettingsService
                         title = context.getString(R.string.next_up),
                         items = nextUp,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -627,6 +612,7 @@ class HomeSettingsService
                                 nextUp,
                             ),
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -686,6 +672,7 @@ class HomeSettingsService
                         title,
                         genres,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -713,6 +700,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     latest
@@ -745,6 +733,7 @@ class HomeSettingsService
                                 title,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -773,6 +762,7 @@ class HomeSettingsService
                                 name ?: context.getString(R.string.collection),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -800,6 +790,7 @@ class HomeSettingsService
                                 row.name,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -850,6 +841,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     }
@@ -874,6 +866,7 @@ class HomeSettingsService
                                 context.getString(R.string.active_recordings),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -898,6 +891,7 @@ class HomeSettingsService
                                 context.getString(R.string.live_tv),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -915,6 +909,7 @@ class HomeSettingsService
                                 context.getString(R.string.channels),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -937,12 +932,14 @@ class HomeSettingsService
                             title,
                             suggestions.items,
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else if (suggestions is SuggestionsResource.Empty) {
                         Success(
                             title,
                             listOf(),
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else {
                         Error(
@@ -954,7 +951,6 @@ class HomeSettingsService
             }
 
         companion object {
-            const val DISPLAY_PREF_ID = "default"
             const val CUSTOM_PREF_ID = "home_settings"
         }
     }

@@ -1,13 +1,15 @@
 package com.github.damontecres.wholphin.test
 
-import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
+import com.github.damontecres.wholphin.services.DisplayPreferencesService
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.mockQueryResult
+import com.github.damontecres.wholphin.services.testDisplayPreferencesDto
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
@@ -33,15 +35,28 @@ class NextUpTest {
 
     private val mockTvShowsApi = mockk<TvShowsApi>()
     private val mockApi = mockk<ApiClient>(relaxed = true)
-    private val mockContext = mockk<Context>()
     private val mockDatePlayedService = mockk<DatePlayedService>()
+    private val mockDisplayPreferencesService = mockk<DisplayPreferencesService>()
+    private val mockFavoriteWatchManager = mockk<FavoriteWatchManager>(relaxed = true)
 
     private val latestNextUpService =
-        LatestNextUpService(mockContext, mockApi, mockDatePlayedService)
+        LatestNextUpService(
+            mockApi,
+            mockDatePlayedService,
+            mockDisplayPreferencesService,
+            mockFavoriteWatchManager,
+        )
 
     @Before
     fun setUp() {
         every { mockApi.tvShowsApi } returns mockTvShowsApi
+        coEvery {
+            mockDisplayPreferencesService.getDisplayPreferences(
+                any(),
+                any(),
+                any(),
+            )
+        } returns testDisplayPreferencesDto
     }
 
     @Test
