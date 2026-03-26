@@ -47,8 +47,8 @@ fun <T> ItemRow(
     val focusRequester = remember { FocusRequester() }
     var position by rememberInt()
 
-    val currentOnClickItem = rememberUpdatedState(onClickItem)
-    val currentOnLongClickItem = rememberUpdatedState(onLongClickItem)
+    val currentOnClickItem by rememberUpdatedState(onClickItem)
+    val currentOnLongClickItem by rememberUpdatedState(onLongClickItem)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -90,7 +90,7 @@ fun <T> ItemRow(
                     remember(index, item) {
                         {
                             position = index
-                            if (item != null) currentOnClickItem.value.invoke(index, item)
+                            if (item != null) currentOnClickItem(index, item)
                         }
                     }
 
@@ -98,7 +98,7 @@ fun <T> ItemRow(
                     remember(index, item) {
                         {
                             position = index
-                            if (item != null) currentOnLongClickItem.value.invoke(index, item)
+                            if (item != null) currentOnLongClickItem(index, item)
                         }
                     }
 

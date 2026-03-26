@@ -60,9 +60,9 @@ fun TabRow(
     }
     var rowHasFocus by remember { mutableStateOf(false) }
 
-    val currentSelectedTabIndex = rememberUpdatedState(selectedTabIndex)
-    val currentFocusRequesters = rememberUpdatedState(focusRequesters)
-    val currentOnClick = rememberUpdatedState(onClick)
+    val currentSelectedTabIndex by rememberUpdatedState(selectedTabIndex)
+    val currentFocusRequesters by rememberUpdatedState(focusRequesters)
+    val currentOnClick by rememberUpdatedState(onClick)
 
     LazyRow(
         state = state,
@@ -75,8 +75,8 @@ fun TabRow(
                     onEnter = {
                         // If entering from left or right, use last or first tab
                         // Otherwise use the selected tab
-                        val index = currentSelectedTabIndex.value
-                        val requesters = currentFocusRequesters.value
+                        val index = currentSelectedTabIndex
+                        val requesters = currentFocusRequesters
                         Timber.v("onEnter requestedFocusDirection=$requestedFocusDirection, selectedTabIndex=$index")
                         val focusRequester =
                             if (requestedFocusDirection == FocusDirection.Left) {
@@ -95,7 +95,7 @@ fun TabRow(
             val onTabClick =
                 remember(index) {
                     {
-                        currentOnClick.value.invoke(index)
+                        currentOnClick(index)
                     }
                 }
             Tab(
