@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.episode
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -19,6 +20,8 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
+import com.github.damontecres.wholphin.ui.combinePair
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -34,6 +37,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -68,11 +76,19 @@ class EpisodeViewModel
         val item = MutableLiveData<BaseItem?>(null)
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
-        var canDelete: Boolean = false
-            private set
+        val canDelete = MutableStateFlow(false)
 
         init {
             init()
+            viewModelScope.launchDefault {
+                item
+                    .asFlow()
+                    .filterNotNull()
+                    .combinePair(userPreferencesService.flow.map { it.appPreferences })
+                    .collectLatest { (item, preferences) ->
+                        canDelete.update { mediaManagementService.canDelete(item, preferences) }
+                    }
+            }
         }
 
         private fun fetchAndSetItem(): Deferred<BaseItem> =
@@ -101,7 +117,6 @@ class EpisodeViewModel
             ) {
                 val prefs = userPreferencesService.getCurrent()
                 val item = fetchAndSetItem().await()
-                canDelete = mediaManagementService.canDelete(item)
                 val result = itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
                 withContext(Dispatchers.Main) {
                     this@EpisodeViewModel.item.value = item
