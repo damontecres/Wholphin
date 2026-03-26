@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.collection
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,12 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -40,12 +46,15 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
+import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
@@ -79,8 +88,9 @@ fun CollectionDetails(
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
-    var showDeleteDialog by remember { mutableStateOf<Pair<RowColumn, BaseItem>?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<Pair<RowColumn?, BaseItem>?>(null) }
     var showViewOptionsDialog by remember { mutableStateOf(false) }
+    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
     // Actions
     val onClickItem =
@@ -178,7 +188,16 @@ fun CollectionDetails(
                 letterPosition = viewModel::letterPosition,
                 onClickViewOptions = onClickViewOptions,
                 modifier = modifier,
-                overviewOnClick = {},
+                overviewOnClick = {
+                    val collection = state.collection!!
+                    overviewDialog =
+                        ItemDetailsDialogInfo(
+                            title = collection.title ?: "",
+                            overview = collection.data.overview,
+                            genres = collection.data.genres.orEmpty(),
+                            files = emptyList(),
+                        )
+                },
                 favoriteOnClick =
                     remember {
                         {
@@ -202,7 +221,37 @@ fun CollectionDetails(
                         } ?: false
                     },
                 moreOnClick = {
-                    TODO()
+                    val collection = state.collection!!
+                    val items =
+                        buildMoreDialogItemsForCollection(
+                            context = context,
+                            item = collection,
+                            favorite = collection.favorite,
+                            canDelete = viewModel.canDelete(collection, preferences.appPreferences),
+                            onClickPlayAll = onClickPlayAll,
+                            actions =
+                                MoreDialogActions(
+                                    navigateTo = viewModel::navigate,
+                                    onClickWatch = { itemId, watched ->
+                                        viewModel.setWatched(itemId, watched, null)
+                                    },
+                                    onClickFavorite = { itemId, favorite ->
+                                        viewModel.setFavorite(itemId, favorite, null)
+                                    },
+                                    onClickAddPlaylist = { itemId ->
+                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                        showPlaylistDialog.makePresent(itemId)
+                                    },
+                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                    onClickDelete = { item -> showDeleteDialog = Pair(null, item) },
+                                ),
+                        )
+                    moreDialog =
+                        DialogParams(
+                            fromLongClick = false,
+                            title = collection.title ?: "",
+                            items = items,
+                        )
                 },
             )
         }
@@ -251,6 +300,16 @@ fun CollectionDetails(
             },
         )
     }
+    overviewDialog?.let { info ->
+        ItemDetailsDialog(
+            info = info,
+            showFilePath =
+                viewModel.serverRepository.currentUserDto.value
+                    ?.policy
+                    ?.isAdministrator == true,
+            onDismissRequest = { overviewDialog = null },
+        )
+    }
 }
 
 @Composable
@@ -274,7 +333,7 @@ fun CollectionDetailsContent(
     moreOnClick: () -> Unit,
     modifier: Modifier,
 ) {
-    var itemsContentHasFocus by remember { mutableStateOf(false) }
+    var itemsContentHasFocus by rememberSaveable { mutableStateOf(false) }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val focusRequester = remember { FocusRequester() }
 
@@ -302,17 +361,14 @@ fun CollectionDetailsContent(
                             exit = slideOutVertically { it / 2 } + fadeOut(),
                         ),
                     ) {
+                        // This box exists so that there is something focusable above the item content
+                        // allowing focus to move up to restore the collection's header
                         Box(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .height(0.dp)
-                                    .focusable()
-                                    .onFocusChanged {
-                                        if (it.isFocused) {
-                                            focusRequester.tryRequestFocus()
-                                        }
-                                    },
+                                    .focusable(),
                         )
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
@@ -430,3 +486,60 @@ fun CollectionDetailsContent(
         }
     }
 }
+
+fun buildMoreDialogItemsForCollection(
+    context: Context,
+    item: BaseItem,
+    favorite: Boolean,
+    canDelete: Boolean,
+    onClickPlayAll: (shuffle: Boolean) -> Unit,
+    actions: MoreDialogActions,
+): List<DialogItem> =
+    buildList {
+        add(
+            DialogItem(
+                context.getString(R.string.play),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                onClickPlayAll.invoke(false)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.shuffle),
+                R.string.fa_shuffle,
+            ) {
+                onClickPlayAll.invoke(true)
+            },
+        )
+
+        add(
+            DialogItem(
+                text = R.string.add_to_playlist,
+                iconStringRes = R.string.fa_list_ul,
+            ) {
+                actions.onClickAddPlaylist.invoke(item.id)
+            },
+        )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+            ) {
+                actions.onClickFavorite.invoke(item.id, !favorite)
+            },
+        )
+    }

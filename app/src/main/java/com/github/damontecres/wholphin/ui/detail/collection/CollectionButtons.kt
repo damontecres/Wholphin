@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.collection
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -47,16 +48,19 @@ fun CollectionButtons(
     val sortOptions = MovieSortOptions
     val filterOptions = DefaultFilterOptions
     val firstFocus = remember { FocusRequester() }
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        contentPadding = PaddingValues(8.dp),
-        modifier =
-            modifier
-                .focusGroup()
-                .focusRestorer(firstFocus),
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = modifier,
     ) {
-        if (state.items.isNotEmpty()) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            contentPadding = PaddingValues(8.dp),
+            modifier =
+                Modifier
+                    .focusGroup()
+                    .focusRestorer(firstFocus),
+        ) {
             item {
                 ExpandablePlayButton(
                     title = R.string.play,
@@ -73,63 +77,72 @@ fun CollectionButtons(
                     onClick = { onClickPlayAll.invoke(true) },
                 )
             }
-        }
-        item("favorite") {
-            val favorite = remember(state.collection) { state.collection?.favorite == true }
-            ExpandableFaButton(
-                title = if (favorite) R.string.remove_favorite else R.string.add_favorite,
-                iconStringRes = R.string.fa_heart,
-                onClick = favoriteOnClick,
-                iconColor = if (favorite) Color.Red else Color.Unspecified,
-                modifier = Modifier,
-            )
-        }
-        if (canDelete) {
-            item("delete") {
-                DeleteButton(
-                    onClick = deleteOnClick,
-                    modifier =
-                    Modifier,
+
+            item("favorite") {
+                val favorite = remember(state.collection) { state.collection?.favorite == true }
+                ExpandableFaButton(
+                    title = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                    iconStringRes = R.string.fa_heart,
+                    onClick = favoriteOnClick,
+                    iconColor = if (favorite) Color.Red else Color.Unspecified,
+                    modifier = Modifier,
+                )
+            }
+            if (canDelete) {
+                item("delete") {
+                    DeleteButton(
+                        onClick = deleteOnClick,
+                        modifier =
+                        Modifier,
+                    )
+                }
+            }
+
+            item {
+                ExpandableFaButton(
+                    title = R.string.view_options,
+                    iconStringRes = R.string.fa_sliders,
+                    onClick = onClickViewOptions,
+                    modifier = Modifier,
+                )
+            }
+
+            // More button
+            item("more") {
+                ExpandablePlayButton(
+                    title = R.string.more,
+                    resume = Duration.ZERO,
+                    icon = Icons.Default.MoreVert,
+                    onClick = { moreOnClick.invoke() },
+                    modifier = Modifier,
                 )
             }
         }
-
-        // More button
-        item("more") {
-            ExpandablePlayButton(
-                title = R.string.more,
-                resume = Duration.ZERO,
-                icon = Icons.Default.MoreVert,
-                onClick = { moreOnClick.invoke() },
-                modifier = Modifier,
-            )
-        }
-
-        item {
-            SortByButton(
-                sortOptions = sortOptions,
-                current = state.sortAndDirection,
-                onSortChange = onSortChange,
-                modifier = Modifier,
-            )
-        }
-        item {
-            FilterByButton(
-                filterOptions = filterOptions,
-                current = state.itemFilter,
-                onFilterChange = onFilterChange,
-                getPossibleValues = getPossibleFilterValues,
-                modifier = Modifier,
-            )
-        }
-
-        item {
-            ExpandableFaButton(
-                title = R.string.view_options,
-                iconStringRes = R.string.fa_sliders,
-                onClick = onClickViewOptions,
-                modifier = Modifier,
-            )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            contentPadding = PaddingValues(8.dp),
+            modifier =
+                Modifier
+                    .focusGroup(),
+        ) {
+            item {
+                SortByButton(
+                    sortOptions = sortOptions,
+                    current = state.sortAndDirection,
+                    onSortChange = onSortChange,
+                    modifier = Modifier,
+                )
+            }
+            item {
+                FilterByButton(
+                    filterOptions = filterOptions,
+                    current = state.itemFilter,
+                    onFilterChange = onFilterChange,
+                    getPossibleValues = getPossibleFilterValues,
+                    modifier = Modifier,
+                )
+            }
         }
     }
 }

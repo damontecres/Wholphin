@@ -73,7 +73,7 @@ class CollectionViewModel
     constructor(
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val navigationManager: NavigationManager,
         private val preferencesService: UserPreferencesService,
         private val themeSongPlayer: ThemeSongPlayer,
@@ -197,7 +197,13 @@ class CollectionViewModel
             separateTypes: Boolean,
         ) {
             Timber.d("Begin updateData for %s", itemId)
-            _state.update { it.copy(loadingState = LoadingState.Loading) }
+            _state.update {
+                it.copy(
+                    loadingState = LoadingState.Loading,
+                    items = emptyList(),
+                    separateItems = emptyMap(),
+                )
+            }
             if (!separateTypes) {
                 val result = fetchItems(sort, filter, typesInCollection)
                 _state.update { it.copy(items = result) }
