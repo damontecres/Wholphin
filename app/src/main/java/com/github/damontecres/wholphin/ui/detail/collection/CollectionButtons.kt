@@ -105,25 +105,24 @@ fun CollectionButtons(
             )
         }
 
-        if (!state.viewOptions.separateTypes) {
-            item {
-                SortByButton(
-                    sortOptions = sortOptions,
-                    current = state.sortAndDirection,
-                    onSortChange = onSortChange,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                FilterByButton(
-                    filterOptions = filterOptions,
-                    current = state.itemFilter,
-                    onFilterChange = onFilterChange,
-                    getPossibleValues = getPossibleFilterValues,
-                    modifier = Modifier,
-                )
-            }
+        item {
+            SortByButton(
+                sortOptions = sortOptions,
+                current = state.sortAndDirection,
+                onSortChange = onSortChange,
+                modifier = Modifier,
+            )
         }
+        item {
+            FilterByButton(
+                filterOptions = filterOptions,
+                current = state.itemFilter,
+                onFilterChange = onFilterChange,
+                getPossibleValues = getPossibleFilterValues,
+                modifier = Modifier,
+            )
+        }
+
         item {
             ExpandableFaButton(
                 title = R.string.view_options,

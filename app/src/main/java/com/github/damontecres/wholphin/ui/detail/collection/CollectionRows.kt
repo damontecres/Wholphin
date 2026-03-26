@@ -12,16 +12,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.github.damontecres.wholphin.data.filter.FilterValueOption
-import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -34,13 +30,7 @@ fun CollectionRows(
     state: CollectionState,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
-    onSortChange: (SortAndDirection) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
-    onClickPlayAll: (Boolean) -> Unit,
-    onChangeBackdrop: (BaseItem) -> Unit,
-    onFilterChange: (GetItemsFilter) -> Unit,
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    onClickViewOptions: () -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: (RowColumn) -> Unit = {},
 ) {

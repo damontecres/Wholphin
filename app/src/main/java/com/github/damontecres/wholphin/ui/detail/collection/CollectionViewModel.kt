@@ -62,7 +62,6 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -138,12 +137,13 @@ class CollectionViewModel
                         .content
                         .let { BaseItem(it, false) }
                 backdropService.submit(collection)
-                val logoImageUrl =
-                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
-                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
-                    } else {
-                        null
-                    }
+                val logoImageUrl = null
+                // TODO add logo back
+//                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
+//                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
+//                    } else {
+//                        null
+//                    }
                 _state.update {
                     it.copy(
                         collection = collection,
@@ -209,7 +209,7 @@ class CollectionViewModel
                                 val title = context.getString(formatTypeName(type))
                                 val result =
                                     try {
-                                        val pager = fetchItems(null, null, listOf(type))
+                                        val pager = fetchItems(sort, filter, listOf(type))
                                         HomeRowLoadingState.Success(title, pager)
                                     } catch (ex: Exception) {
                                         Timber.e(

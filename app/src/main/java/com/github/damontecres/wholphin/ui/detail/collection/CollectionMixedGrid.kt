@@ -12,14 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.github.damontecres.wholphin.data.filter.FilterValueOption
-import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
@@ -32,14 +28,8 @@ fun CollectionMixedGrid(
     state: CollectionState,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
-    onSortChange: (SortAndDirection) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
-    onClickPlayAll: (Boolean) -> Unit,
-    onChangeBackdrop: (BaseItem) -> Unit,
-    onFilterChange: (GetItemsFilter) -> Unit,
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     letterPosition: suspend (Char) -> Int,
-    onClickViewOptions: () -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: (RowColumn) -> Unit = {},
 ) {

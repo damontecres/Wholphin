@@ -2,10 +2,10 @@ package com.github.damontecres.wholphin.ui.detail.collection
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,26 +23,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
-import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
@@ -53,11 +43,8 @@ import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -65,14 +52,11 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
-import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
@@ -166,7 +150,6 @@ fun CollectionDetails(
                 viewModel.navigate(dest)
             }
         }
-    val onChangeBackdrop = remember { { item: BaseItem -> viewModel.updateBackdrop(item) } }
     val onClickViewOptions = remember { { showViewOptionsDialog = true } }
 
     when (val s = state.loadingState) {
@@ -189,7 +172,7 @@ fun CollectionDetails(
                 onSortChange = onSortChange,
                 onClickPlay = onClickPlay,
                 onClickPlayAll = onClickPlayAll,
-                onChangeBackdrop = onChangeBackdrop,
+                onChangeBackdrop = viewModel::updateBackdrop,
                 onFilterChange = onFilterChange,
                 getPossibleFilterValues = viewModel::getPossibleFilterValues,
                 letterPosition = viewModel::letterPosition,
@@ -315,8 +298,8 @@ fun CollectionDetailsContent(
                         Modifier.sharedBounds(
                             rememberSharedContentState(key = "header"),
                             animatedVisibilityScope = this@AnimatedContent,
-                            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
-                            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
+                            enter = slideInVertically { it / 2 } + fadeIn(),
+                            exit = slideOutVertically { it / 2 } + fadeOut(),
                         ),
                     ) {
                         Box(
@@ -355,8 +338,8 @@ fun CollectionDetailsContent(
                                 .sharedBounds(
                                     rememberSharedContentState(key = "header"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
-                                    exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+                                    enter = slideInVertically { -it / 2 } + fadeIn(),
+                                    exit = slideOutVertically { -it / 2 } + fadeOut(),
                                 ).padding(bottom = 16.dp)
                                 .fillMaxWidth()
                                 .onFocusChanged {
@@ -413,13 +396,7 @@ fun CollectionDetailsContent(
                     state = state,
                     onClickItem = onClickItem,
                     onLongClickItem = onLongClickItem,
-                    onSortChange = onSortChange,
                     onClickPlay = onClickPlay,
-                    onClickPlayAll = onClickPlayAll,
-                    onChangeBackdrop = onChangeBackdrop,
-                    onFilterChange = onFilterChange,
-                    getPossibleFilterValues = getPossibleFilterValues,
-                    onClickViewOptions = onClickViewOptions,
                     modifier = Modifier.fillMaxSize(),
                     onFocusPosition = { position ->
                         Timber.v("onFocusPosition=%s", position)
@@ -441,100 +418,13 @@ fun CollectionDetailsContent(
                     state = state,
                     onClickItem = onClickItem,
                     onLongClickItem = onLongClickItem,
-                    onSortChange = onSortChange,
                     onClickPlay = onClickPlay,
-                    onClickPlayAll = onClickPlayAll,
-                    onChangeBackdrop = onChangeBackdrop,
-                    onFilterChange = onFilterChange,
-                    getPossibleFilterValues = getPossibleFilterValues,
                     letterPosition = letterPosition,
-                    onClickViewOptions = onClickViewOptions,
                     modifier = Modifier.fillMaxSize(),
                     onFocusPosition = {
                         Timber.v("onFocusPosition=%s", it)
                         focusedItem = state.items.getOrNull(it.column)
                     },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun CollectionDetailsHeader(
-    collection: BaseItem,
-    logoImageUrl: String?,
-    overviewOnClick: () -> Unit,
-    bringIntoViewRequester: BringIntoViewRequester,
-    modifier: Modifier = Modifier,
-) {
-    val dto = collection.data
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
-    ) {
-        if (logoImageUrl != null) {
-            AsyncImage(
-                model = logoImageUrl,
-                contentDescription = collection.name,
-                modifier = Modifier.height(80.dp),
-                alignment = Alignment.TopStart,
-                contentScale = ContentScale.Fit,
-            )
-        } else {
-            // Title
-            Text(
-                text = collection.name ?: "",
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.75f)
-                        .padding(start = 8.dp),
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth(.60f),
-        ) {
-            QuickDetails(
-                collection.ui.quickDetails,
-                collection.timeRemainingOrRuntime,
-                Modifier.padding(start = 8.dp),
-            )
-
-            dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp))
-            }
-            dto.taglines?.firstOrNull()?.let { tagline ->
-                Text(
-                    text = tagline,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontStyle = FontStyle.Italic,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-
-            // Description
-            dto.overview?.let { overview ->
-                OverviewText(
-                    overview = overview,
-                    maxLines = 3,
-                    onClick = overviewOnClick,
-                    textBoxHeight = Dp.Unspecified,
-                    modifier =
-                        Modifier.onFocusChanged {
-                            if (it.isFocused) {
-                                scope.launch(ExceptionHandler()) {
-                                    bringIntoViewRequester.bringIntoView()
-                                }
-                            }
-                        },
                 )
             }
         }
