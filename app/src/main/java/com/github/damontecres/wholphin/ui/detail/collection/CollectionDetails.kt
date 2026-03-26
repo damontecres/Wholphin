@@ -336,6 +336,7 @@ fun CollectionDetailsContent(
     var itemsContentHasFocus by rememberSaveable { mutableStateOf(false) }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val focusRequester = remember { FocusRequester() }
+    val contentFocusRequester = remember { FocusRequester() }
 
     var focusedItem by remember { mutableStateOf<BaseItem?>(state.collection) }
     LaunchedEffect(focusedItem) {
@@ -353,6 +354,10 @@ fun CollectionDetailsContent(
             ) { targetState ->
                 if (targetState) {
                     // Show item header
+                    LaunchedEffect(Unit) {
+                        contentFocusRequester.tryRequestFocus()
+                        focusedItem = state.collection
+                    }
                     Column(
                         Modifier.sharedBounds(
                             rememberSharedContentState(key = "header"),
@@ -368,7 +373,9 @@ fun CollectionDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .height(0.dp)
-                                    .focusable(),
+                                    .onFocusChanged {
+                                        if (it.isFocused) itemsContentHasFocus = false
+                                    }.focusable(),
                         )
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
@@ -441,10 +448,10 @@ fun CollectionDetailsContent(
                 Modifier
                     .fillMaxSize()
                     .onFocusChanged {
-                        itemsContentHasFocus = it.hasFocus
+                        if (it.hasFocus) itemsContentHasFocus = true
                     }.focusProperties {
                         up = focusRequester
-                    },
+                    }.focusRequester(contentFocusRequester),
         ) {
             if (state.viewOptions.separateTypes) {
                 CollectionRows(
