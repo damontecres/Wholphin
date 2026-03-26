@@ -356,7 +356,6 @@ fun CollectionDetailsContent(
                     // Show item header
                     LaunchedEffect(Unit) {
                         contentFocusRequester.tryRequestFocus()
-                        focusedItem = state.collection
                     }
                     Column(
                         Modifier.sharedBounds(

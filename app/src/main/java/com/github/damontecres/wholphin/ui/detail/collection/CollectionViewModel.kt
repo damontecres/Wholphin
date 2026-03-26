@@ -62,6 +62,8 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -478,7 +480,11 @@ class CollectionViewModel
 data class CollectionState(
     val loadingState: LoadingState = LoadingState.Pending,
     val collection: BaseItem? = null,
-    val sortAndDirection: SortAndDirection = SortAndDirection.DEFAULT,
+    val sortAndDirection: SortAndDirection =
+        SortAndDirection(
+            ItemSortBy.DEFAULT,
+            SortOrder.ASCENDING,
+        ),
     val itemFilter: GetItemsFilter = GetItemsFilter(),
     val viewOptions: CollectionViewOptions = CollectionViewOptions(),
     val items: List<BaseItem?> = emptyList(),

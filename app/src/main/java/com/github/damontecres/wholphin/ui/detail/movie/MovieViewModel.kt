@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.movie
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ExtrasItem
@@ -29,6 +30,8 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.combinePair
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -46,6 +49,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -93,11 +99,19 @@ class MovieViewModel
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
-        var canDelete: Boolean = false
-            private set
+        val canDelete = MutableStateFlow(false)
 
         init {
             init()
+            viewModelScope.launchDefault {
+                item
+                    .asFlow()
+                    .filterNotNull()
+                    .combinePair(userPreferencesService.flow.map { it.appPreferences })
+                    .collectLatest { (item, preferences) ->
+                        canDelete.update { mediaManagementService.canDelete(item, preferences) }
+                    }
+            }
         }
 
         private fun fetchAndSetItem(): Deferred<BaseItem> =
@@ -112,7 +126,6 @@ class MovieViewModel
                     api.userLibraryApi.getItem(itemId).content.let {
                         BaseItem.from(it, api)
                     }
-                canDelete = mediaManagementService.canDelete(item)
                 this@MovieViewModel.item.setValueOnMain(item)
                 item
             }

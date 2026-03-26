@@ -106,6 +106,7 @@ fun MovieDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
     val discovered by viewModel.discovered.collectAsState()
+    val canDelete by viewModel.canDelete.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -211,7 +212,7 @@ fun MovieDetails(
                                         seriesId = null,
                                         sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
-                                        canDelete = viewModel.canDelete,
+                                        canDelete = canDelete,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -323,7 +324,7 @@ fun MovieDetails(
                     onClickDiscover = { index, item ->
                         viewModel.navigateTo(item.destination)
                     },
-                    canDelete = viewModel.canDelete,
+                    canDelete = canDelete,
                     deleteOnClick = { showDeleteDialog = movie },
                     modifier = modifier,
                 )
