@@ -196,6 +196,31 @@ fun CollectionDetails(
                 onClickViewOptions = onClickViewOptions,
                 modifier = modifier,
                 overviewOnClick = {},
+                favoriteOnClick =
+                    remember {
+                        {
+                            state.collection?.let {
+                                viewModel.setFavorite(it.id, !it.favorite, null)
+                            }
+                        }
+                    },
+                deleteOnClick =
+                    remember {
+                        {
+                            state.collection?.let {
+                                viewModel.deleteItem(it, null)
+                            }
+                        }
+                    },
+                canDelete =
+                    remember(state.collection) {
+                        state.collection?.let {
+                            viewModel.canDelete(it, preferences.appPreferences)
+                        } ?: false
+                    },
+                moreOnClick = {
+                    TODO()
+                },
             )
         }
     }
@@ -260,6 +285,10 @@ fun CollectionDetailsContent(
     letterPosition: suspend (Char) -> Int,
     onClickViewOptions: () -> Unit,
     overviewOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
+    deleteOnClick: () -> Unit,
+    canDelete: Boolean,
+    moreOnClick: () -> Unit,
     modifier: Modifier,
 ) {
     var itemsContentHasFocus by remember { mutableStateOf(false) }
@@ -344,6 +373,7 @@ fun CollectionDetailsContent(
                             modifier =
                                 Modifier
                                     .padding(top = 48.dp, start = 8.dp)
+                                    // TODO
                                     .fillMaxHeight(.36f)
                                     .fillMaxWidth(),
                         )
@@ -354,7 +384,14 @@ fun CollectionDetailsContent(
                             onFilterChange = onFilterChange,
                             getPossibleFilterValues = getPossibleFilterValues,
                             onClickViewOptions = onClickViewOptions,
-                            modifier = Modifier.focusRequester(focusRequester),
+                            favoriteOnClick = favoriteOnClick,
+                            deleteOnClick = deleteOnClick,
+                            canDelete = canDelete,
+                            moreOnClick = moreOnClick,
+                            modifier =
+                                Modifier
+                                    .focusRequester(focusRequester)
+                                    .fillMaxWidth(),
                         )
                     }
                 }
