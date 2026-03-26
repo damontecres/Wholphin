@@ -247,18 +247,16 @@ fun HomePageContent(
     takeFocus: Boolean = true,
     showEmptyRows: Boolean = false,
 ) {
-    val focusedItem by remember(homeRows, position) {
-        derivedStateOf {
+    val focusedItem = remember(homeRows, position) {
             (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(position.column)
-        }
     }
 
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
 
-    val currentPosition = rememberUpdatedState(position)
-    val currentOnFocusPosition = rememberUpdatedState(onFocusPosition)
-    val currentOnClickPlay = rememberUpdatedState(onClickPlay)
+    val currentPosition by rememberUpdatedState(position)
+    val currentOnFocusPosition by rememberUpdatedState(onFocusPosition)
+    val currentOnClickPlay by rememberUpdatedState(onClickPlay)
 
     if (takeFocus) {
         LaunchedEffect(homeRows) {
@@ -279,13 +277,6 @@ fun HomePageContent(
                         }
                 }
             }
-        }
-    }
-    // Optimization: avoid animateScrollToItem on every position change if unnecessary,
-    // relying on focus scrolling and LocalBringIntoViewSpec.
-    LaunchedEffect(position.row) {
-        if (position.row >= 0 && !listState.isScrollInProgress) {
-            listState.animateScrollToItem(position.row)
         }
     }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
@@ -323,7 +314,7 @@ fun HomePageContent(
                         Modifier
                             .focusRestorer(),
                 ) {
-                    itemsIndexed(homeRows, key = { _, row -> row.title }) { rowIndex, row ->
+                    itemsIndexed(homeRows) { rowIndex, row ->
                         CompositionLocalProvider(
                             LocalBringIntoViewSpec provides defaultBringIntoViewSpec,
                         ) {
@@ -372,7 +363,7 @@ fun HomePageContent(
                                                 Modifier
                                                     .fillMaxWidth()
                                                     .focusGroup()
-                                                    .focusRequester(rowFocusRequesters.getOrElse(rowIndex) { FocusRequester() })
+                                                    .focusRequester(rowFocusRequesters[rowIndex])
                                                     .animateItem(),
                                             horizontalPadding = viewOptions.spacing.dp,
                                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
@@ -380,7 +371,7 @@ fun HomePageContent(
                                                     remember(rowIndex, index) {
                                                         { isFocused: Boolean ->
                                                             if (isFocused) {
-                                                                currentOnFocusPosition.value.invoke(RowColumn(rowIndex, index))
+                                                                currentOnFocusPosition(RowColumn(rowIndex, index))
                                                             }
                                                         }
                                                     }
@@ -389,7 +380,7 @@ fun HomePageContent(
                                                         { event: androidx.compose.ui.input.key.KeyEvent ->
                                                             if (isPlayKeyUp(event) && item?.type?.playable == true) {
                                                                 Timber.v("Clicked play on ${item.id}")
-                                                                currentOnClickPlay.value.invoke(currentPosition.value, item)
+                                                                currentOnClickPlay(currentPosition, item)
                                                                 true
                                                             } else {
                                                                 false

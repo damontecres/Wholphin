@@ -101,13 +101,13 @@ fun BannerCard(
     var imageError by remember(imageUrl) { mutableStateOf(false) }
 
     // Stabilize callbacks to prevent AsyncImage from recomposing
-    val currentOnClick = rememberUpdatedState(onClick)
-    val currentOnLongClick = rememberUpdatedState(onLongClick)
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnLongClick by rememberUpdatedState(onLongClick)
 
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
-        onClick = { currentOnClick.value.invoke() },
-        onLongClick = { currentOnLongClick.value.invoke() },
+        onClick = { currentOnClick() },
+        onLongClick = { currentOnLongClick() },
         interactionSource = interactionSource,
         colors =
             CardDefaults.colors(
