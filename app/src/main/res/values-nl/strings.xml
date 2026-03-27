@@ -60,7 +60,7 @@
     <string name="mark_unwatched">Markeren als niet-bekeken</string>
     <string name="mark_watched">Markeren als bekeken</string>
     <string name="max_bitrate">Max. bitsnelheid</string>
-    <string name="more_like_this">Gerelateerd</string>
+    <string name="more_like_this">Soortgelijk</string>
     <string name="more">Meer</string>
     <string name="movies">Films</string>
     <string name="name">Naam</string>
@@ -437,4 +437,8 @@
     <string name="skip_automatically">Automatisch overslaan</string>
     <string name="conductor">Dirigent</string>
     <string name="producer">Producent</string>
+    <plurals name="days">
+        <item quantity="one">%s dag</item>
+        <item quantity="other">%s dagen</item>
+    </plurals>
 </resources>
