@@ -31,12 +31,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -54,6 +56,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -118,9 +121,10 @@ fun SeriesOverviewContent(
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
 
     val currentOnChangeSeason by rememberUpdatedState(onChangeSeason)
-    val (guestStars, castAndCrew) = remember(peopleInEpisode) {
-        peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
-    }
+    val (guestStars, castAndCrew) =
+        remember(peopleInEpisode) {
+            peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
+        }
     Box(
         modifier =
             modifier
@@ -217,11 +221,17 @@ fun SeriesOverviewContent(
                                             cardRowHasFocus = it.hasFocus
                                         },
                             ) {
-                                itemsIndexed(episodes.episodes) { episodeIndex, episode ->
+                                itemsIndexed(
+                                    episodes.episodes,
+                                    key = { index, episode ->
+                                        episode?.id ?: index
+                                    },
+                                ) { episodeIndex, episode ->
                                     val interactionSource = remember { MutableInteractionSource() }
                                     if (interactionSource.collectIsFocusedAsState().value) {
                                         onFocusEpisode.invoke(episodeIndex)
                                     }
+                                    val isNotSelected = episodeIndex != position.episodeRowIndex
                                     BannerCard(
                                         name = episode?.name,
                                         item = episode,
@@ -235,42 +245,46 @@ fun SeriesOverviewContent(
                                         playPercent =
                                             episode?.data?.userData?.playedPercentage
                                                 ?: 0.0,
-                                        onClick = {
-                                            epPosition = episodeIndex
-                                            if (episode != null) onClick.invoke(episode)
-                                        },
-                                        onLongClick = {
-                                            epPosition = episodeIndex
-                                            if (episode != null) onLongClick.invoke(episode)
-                                        },
+                                        onClick =
+                                            remember {
+                                                {
+                                                    epPosition = episodeIndex
+                                                    if (episode != null) onClick.invoke(episode)
+                                                }
+                                            },
+                                        onLongClick =
+                                            remember {
+                                                {
+                                                    epPosition = episodeIndex
+                                                    if (episode != null) onLongClick.invoke(episode)
+                                                }
+                                            },
                                         modifier =
                                             Modifier
                                                 .ifElse(
                                                     episodeIndex == position.episodeRowIndex,
                                                     Modifier
                                                         .focusRequester(firstItemFocusRequester),
-                                                )
-                                                .ifElse(
+                                                ).ifElse(
                                                     episodeIndex == epPosition,
                                                     Modifier.focusRequester(episodeRowFocusRequester),
-                                                )
-                                                .ifElse(
-                                                    episodeIndex != position.episodeRowIndex,
-                                                    Modifier
-                                                        .background(
-                                                            Color.Black,
-                                                            shape = RoundedCornerShape(8.dp),
+                                                ).graphicsLayer {
+                                                    alpha = if (isNotSelected) dimming else 1f
+                                                }.drawBehind {
+                                                    // Only draw the background if we are actually dimming
+                                                    if (isNotSelected && dimming < 1f) {
+                                                        drawRoundRect(
+                                                            color = Color.Black,
+                                                            cornerRadius = CornerRadius(8.dp.toPx()),
                                                         )
-                                                        .alpha { dimming },
-                                                )
-                                                .onFocusChanged {
+                                                    }
+                                                }.onFocusChanged {
                                                     if (it.isFocused) {
                                                         scope.launch {
                                                             bringIntoViewRequester.bringIntoView()
                                                         }
                                                     }
-                                                }
-                                                .onKeyEvent {
+                                                }.onKeyEvent {
                                                     if (episode != null && isPlayKeyUp(it)) {
                                                         onClick.invoke(episode)
                                                         return@onKeyEvent true
