@@ -23,6 +23,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -63,7 +64,7 @@ fun CollectionDetailsHeader(
                 modifier =
                     Modifier
                         .fillMaxWidth(.75f)
-                        .padding(start = 8.dp),
+                        .padding(start = HeaderUtils.startPadding),
             )
         }
 
@@ -74,18 +75,18 @@ fun CollectionDetailsHeader(
             QuickDetails(
                 collection.ui.quickDetails,
                 collection.timeRemainingOrRuntime,
-                Modifier.padding(start = 8.dp),
+                Modifier.padding(start = HeaderUtils.startPadding),
             )
 
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding))
             }
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
                     fontStyle = FontStyle.Italic,
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
                 )
             }
 

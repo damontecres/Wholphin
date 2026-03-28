@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -386,7 +387,6 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
@@ -402,13 +402,13 @@ fun SeriesDetailsContent(
                             Modifier
                                 .fillMaxWidth()
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 8.dp)
+                                .padding(start = HeaderUtils.startPadding)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
@@ -702,15 +702,19 @@ fun SeriesDetailsHeader(
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
+                    .padding(start = HeaderUtils.startPadding),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
+            QuickDetails(
+                series.ui.quickDetails,
+                null,
+                Modifier.padding(start = HeaderUtils.startPadding),
+            )
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 8.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(

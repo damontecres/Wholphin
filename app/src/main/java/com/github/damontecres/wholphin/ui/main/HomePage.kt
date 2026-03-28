@@ -61,6 +61,7 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.FocusableItemRow
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.RowColumnItem
@@ -230,10 +231,7 @@ fun HomePageContent(
     headerComposable: @Composable (focusedItem: BaseItem?) -> Unit = { focusedItem ->
         HomePageHeader(
             item = focusedItem,
-            modifier =
-                Modifier
-                    .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
-                    .fillMaxHeight(.33f),
+            modifier = HeaderUtils.modifier,
         )
     },
 ) {

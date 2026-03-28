@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
@@ -59,7 +60,7 @@ fun MovieDetailsHeader(
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
+                    .padding(start = HeaderUtils.startPadding),
         )
 
         Column(
@@ -69,24 +70,29 @@ fun MovieDetailsHeader(
             QuickDetails(
                 movie.ui.quickDetails,
                 movie.timeRemainingOrRuntime,
-                Modifier.padding(start = 8.dp),
+                Modifier.padding(start = HeaderUtils.startPadding),
             )
 
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding))
             }
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
                 numberOfVersions = movie.data.mediaSourceCount ?: 0,
-                modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 16.dp),
+                modifier =
+                    Modifier.padding(
+                        start = HeaderUtils.startPadding,
+                        top = 4.dp,
+                        bottom = 16.dp,
+                    ),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
                     fontStyle = FontStyle.Italic,
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
                 )
             }
 
@@ -122,7 +128,7 @@ fun MovieDetailsHeader(
                         text = stringResource(R.string.directed_by, it),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = HeaderUtils.startPadding),
                     )
                 }
         }
