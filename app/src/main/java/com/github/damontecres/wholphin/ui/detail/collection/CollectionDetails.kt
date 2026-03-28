@@ -11,7 +11,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -418,7 +417,7 @@ fun CollectionDetailsContent(
                                     .padding(
                                         top = HeaderUtils.topPadding,
                                         bottom = HeaderUtils.bottomPadding,
-                                    ).fillMaxHeight(HeaderUtils.FILL_MAX_HEIGHT),
+                                    ).height(HeaderUtils.height),
                         )
                         CollectionButtons(
                             state = state,

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -450,17 +449,16 @@ fun HomePageHeader(
             title = title,
             logoImageUrl = logoImageUrl,
             showLogo = showLogo,
-            Modifier.fillMaxWidth(.75f),
+            modifier = Modifier.fillMaxWidth(.75f),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 Modifier
-                    .fillMaxWidth(.6f)
-                    .fillMaxHeight(),
+                    .fillMaxWidth(.6f),
         ) {
-            subtitle?.let {
-                EpisodeName(it)
+            if (subtitle != null) {
+                EpisodeName(subtitle)
             }
             QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
             val overviewModifier =

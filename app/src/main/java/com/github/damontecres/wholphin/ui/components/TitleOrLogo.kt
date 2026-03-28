@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
@@ -30,20 +31,25 @@ fun TitleOrLogo(
 ) {
     var imageError by remember { mutableStateOf(false) }
     Box(
-        modifier = modifier.heightIn(max = 80.dp),
+        modifier = modifier.heightIn(max = logoHeight),
     ) {
         if (showLogo && logoImageUrl != null && !imageError) {
             AsyncImage(
                 model = logoImageUrl,
                 contentDescription = title,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 320.dp),
+                modifier =
+                    Modifier
+                        .height(logoHeight)
+                        .widthIn(max = 320.dp),
             )
         } else {
             Title(title, Modifier)
         }
     }
 }
+
+private val logoHeight = 80.dp
 
 @Composable
 private fun Title(
