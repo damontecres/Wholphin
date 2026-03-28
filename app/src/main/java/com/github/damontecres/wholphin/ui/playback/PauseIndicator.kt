@@ -7,7 +7,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.observeState
+import androidx.tv.material3.Icon
+import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.R
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
@@ -57,9 +58,10 @@ fun PauseIndicator(
             delay(50)
             visible = false
         }
-        Image(
+        Icon(
             modifier = Modifier.size(64.dp, 64.dp),
             painter = painterResource(id = R.drawable.baseline_pause_24),
+            tint = MaterialTheme.colorScheme.onSurface,
             contentDescription = null,
         )
     }
