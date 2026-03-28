@@ -27,11 +27,11 @@ fun TitleOrLogo(
     title: String?,
     logoImageUrl: String?,
     showLogo: Boolean,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     var imageError by remember { mutableStateOf(false) }
     Box(
-        modifier = modifier.heightIn(max = logoHeight),
+        modifier = modifier.heightIn(max = HeaderUtils.logoHeight),
     ) {
         if (showLogo && logoImageUrl != null && !imageError) {
             AsyncImage(
@@ -40,7 +40,7 @@ fun TitleOrLogo(
                 contentScale = ContentScale.Fit,
                 modifier =
                     Modifier
-                        .height(logoHeight)
+                        .height(HeaderUtils.logoHeight)
                         .widthIn(max = 320.dp),
             )
         } else {
@@ -49,12 +49,10 @@ fun TitleOrLogo(
     }
 }
 
-private val logoHeight = 80.dp
-
 @Composable
 private fun Title(
     title: String?,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = title ?: "",
@@ -71,7 +69,7 @@ private fun Title(
 fun TitleOrLogo(
     item: BaseItem?,
     showLogo: Boolean,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val logoImageUrl = rememberLogoUrl(item)
     TitleOrLogo(

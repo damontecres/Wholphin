@@ -409,6 +409,7 @@ fun CollectionDetailsContent(
                     ) {
                         CollectionDetailsHeader(
                             collection = state.collection!!,
+                            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                             logoImageUrl = state.logoImageUrl,
                             overviewOnClick = overviewOnClick,
                             bringIntoViewRequester = bringIntoViewRequester,

@@ -62,6 +62,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -139,13 +140,12 @@ class CollectionViewModel
                         .content
                         .let { BaseItem(it, false) }
                 backdropService.submit(collection)
-                val logoImageUrl = null
-                // TODO add logo back
-//                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
-//                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
-//                    } else {
-//                        null
-//                    }
+                val logoImageUrl =
+                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
+                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
+                    } else {
+                        null
+                    }
                 _state.update {
                     it.copy(
                         collection = collection,

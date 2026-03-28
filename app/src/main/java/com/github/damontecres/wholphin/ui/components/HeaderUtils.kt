@@ -15,6 +15,8 @@ object HeaderUtils {
 
     val height = 180.dp
 
+    val logoHeight = 72.dp
+
     val modifier =
         Modifier
             .padding(padding)

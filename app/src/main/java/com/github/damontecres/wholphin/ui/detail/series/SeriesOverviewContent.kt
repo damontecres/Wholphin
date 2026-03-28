@@ -54,8 +54,8 @@ import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -167,7 +167,11 @@ fun SeriesOverviewContent(
                             .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier.padding(start = HeaderUtils.startPadding))
+                TitleOrLogo(
+                    item = series,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
