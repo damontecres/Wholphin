@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.services.LocalServerDiscovery
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.hilt.DefaultDispatcher
@@ -261,22 +262,12 @@ class SwitchServerViewModel
 
         fun discoverServers() {
             viewModelScope.launchIO {
-                jellyfin.discovery.discoverLocalServers().collect { server ->
-                    val newServerList =
-                        discoveredServers.value!!
-                            .toMutableList()
-                            .apply {
-                                add(
-                                    JellyfinServer(
-                                        server.id.toUUID(),
-                                        server.name,
-                                        server.address,
-                                        null,
-                                    ),
-                                )
-                            }
-                    withContext(Dispatchers.Main) {
-                        discoveredServers.value = newServerList
+                LocalServerDiscovery(ioDispatcher).discover().collect { result ->
+                    val current = discoveredServers.value.orEmpty()
+                    if (current.none { it.url == result.address }) {
+                        discoveredServers.setValueOnMain(
+                            current + JellyfinServer(result.id, result.name, result.address, null),
+                        )
                     }
                 }
             }
