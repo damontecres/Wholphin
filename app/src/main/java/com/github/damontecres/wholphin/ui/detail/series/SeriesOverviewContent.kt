@@ -312,18 +312,9 @@ fun SeriesOverviewContent(
                 }
             }
 
-            val castAndCrew =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filterNot {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
-            val guestStars =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filter {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
+            val (guestStars, castAndCrew) = remember(peopleInEpisode) {
+                peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
+            }
 
             AnimatedVisibility(
                 visible = peopleInEpisode.isNotEmpty(),
