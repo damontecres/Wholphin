@@ -37,7 +37,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -268,16 +270,11 @@ fun SeriesOverviewContent(
                                                 ).ifElse(
                                                     episodeIndex == epPosition,
                                                     Modifier.focusRequester(episodeRowFocusRequester),
+                                                ).background(
+                                                    if (isNotSelected) Color.Black else Color.Transparent,
+                                                    shape = RoundedCornerShape(8.dp),
                                                 ).graphicsLayer {
                                                     alpha = if (isNotSelected) dimming else 1f
-                                                }.drawBehind {
-                                                    // Only draw the background if we are actually dimming
-                                                    if (isNotSelected && dimming < 1f) {
-                                                        drawRoundRect(
-                                                            color = Color.Black,
-                                                            cornerRadius = CornerRadius(8.dp.toPx()),
-                                                        )
-                                                    }
                                                 }.onFocusChanged {
                                                     if (it.isFocused) {
                                                         scope.launch {
