@@ -59,6 +59,8 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import kotlin.time.Duration
@@ -73,7 +75,7 @@ fun ExpandablePlayButtons(
     watched: Boolean,
     favorite: Boolean,
     canDelete: Boolean,
-    trailers: List<Trailer>?,
+    trailers: PersistentList<Trailer>?,
     playOnClick: (position: Duration) -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
@@ -434,7 +436,7 @@ private fun ExpandablePlayButtonsPreview() {
             favoriteOnClick = {},
             moreOnClick = {},
             buttonOnFocusChanged = {},
-            trailers = listOf(),
+            trailers = persistentListOf(),
             trailerOnClick = {},
             canDelete = true,
             deleteOnClick = {},

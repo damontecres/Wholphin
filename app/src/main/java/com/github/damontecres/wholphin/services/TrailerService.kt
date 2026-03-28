@@ -10,6 +10,8 @@ import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.nav.Destination
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.toPersistentList
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import javax.inject.Inject
@@ -22,7 +24,7 @@ class TrailerService
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
     ) {
-        fun getRemoteTrailers(item: BaseItem): List<Trailer> =
+        fun getRemoteTrailers(item: BaseItem): PersistentList<Trailer> =
             item.data.remoteTrailers
                 ?.mapNotNull { t ->
                     t.url?.let { url ->
@@ -56,7 +58,7 @@ class TrailerService
                             it.name
                         },
                     ),
-                )
+                ).toPersistentList()
 
         suspend fun getLocalTrailers(item: BaseItem): List<Trailer> {
             val localTrailerCount = item.data.localTrailerCount ?: return emptyList()

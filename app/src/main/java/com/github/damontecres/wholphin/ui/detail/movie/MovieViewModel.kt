@@ -41,6 +41,9 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -85,7 +88,7 @@ class MovieViewModel
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val item = MutableLiveData<BaseItem?>(null)
-        val trailers = MutableLiveData<List<Trailer>>(listOf())
+        val trailers = MutableLiveData<PersistentList<Trailer>>(persistentListOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
@@ -143,7 +146,8 @@ class MovieViewModel
                 viewModelScope.launchIO {
                     trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
                         withContext(Dispatchers.Main) {
-                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                            this@MovieViewModel.trailers.value =
+                                (localTrailers + remoteTrailers).toPersistentList()
                         }
                     }
                 }

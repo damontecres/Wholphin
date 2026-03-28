@@ -71,6 +71,8 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -100,7 +102,7 @@ fun MovieDetails(
     val item by viewModel.item.observeAsState()
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
-    val trailers by viewModel.trailers.observeAsState(listOf())
+    val trailers by viewModel.trailers.observeAsState(persistentListOf())
     val extras by viewModel.extras.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
@@ -404,7 +406,7 @@ fun MovieDetailsContent(
     chosenStreams: ChosenStreams?,
     people: List<Person>,
     chapters: List<Chapter>,
-    trailers: List<Trailer>,
+    trailers: PersistentList<Trailer>,
     extras: List<ExtrasItem>,
     similar: List<BaseItem>,
     discovered: List<DiscoverItem>,

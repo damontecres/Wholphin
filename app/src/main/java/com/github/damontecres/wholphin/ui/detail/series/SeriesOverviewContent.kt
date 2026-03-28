@@ -305,20 +305,26 @@ fun SeriesOverviewContent(
                             chosenStreams = chosenStreams,
                             playOnClick = playOnClick,
                             moreOnClick = moreOnClick,
-                            watchOnClick = {
-                                watchOnClick.invoke()
-                                episodeRowFocusRequester.tryRequestFocus()
-                            },
-                            favoriteOnClick = favoriteOnClick,
-                            buttonOnFocusChanged = {
-                                if (it.isFocused) {
-                                    scope.launch {
-                                        bringIntoViewRequester.bringIntoView()
+                            watchOnClick =
+                                remember {
+                                    {
+                                        watchOnClick.invoke()
+                                        episodeRowFocusRequester.tryRequestFocus()
                                     }
-                                }
-                            },
+                                },
+                            favoriteOnClick = favoriteOnClick,
+                            buttonOnFocusChanged =
+                                remember {
+                                    {
+                                        if (it.isFocused) {
+                                            scope.launch {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
+                                        }
+                                    }
+                                },
                             canDelete = canDelete.invoke(ep),
-                            deleteOnClick = { deleteOnClick.invoke(ep) },
+                            deleteOnClick = remember { { deleteOnClick.invoke(ep) } },
                             modifier =
                                 Modifier
                                     .padding(top = 4.dp)
