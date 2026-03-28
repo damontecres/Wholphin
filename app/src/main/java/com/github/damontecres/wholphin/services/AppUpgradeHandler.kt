@@ -282,7 +282,7 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("0.6.0-0-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("0.5.4-6-g0"))) {
                 appPreferences.updateData {
                     it.updateMusicPreferences {
                         showBackdrop = true
@@ -292,7 +292,7 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("0.6.0-0-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("0.5.4-15-g0"))) {
                 appPreferences.updateData {
                     it.updateInterfacePreferences {
                         showLogos = AppPreference.ShowLogos.defaultValue
