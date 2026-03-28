@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
@@ -109,6 +110,11 @@ fun Modifier.ifElse(
     ifFalseModifier: () -> Modifier = { Modifier },
 ): Modifier = then(if (condition) ifTrueModifier.invoke() else ifFalseModifier.invoke())
 
+/**
+ * An alpha modifier that reads the value in the Draw Phase.
+ * Use this for animations (like your 'dimming' state) to avoid recompositions.
+ */
+fun Modifier.alpha(alpha: () -> Float): Modifier = graphicsLayer { this.alpha = alpha() }
 /**
  * Handles horizontal (Left & Right) D-Pad Keys and consumes the event(s) so that the focus doesn't
  * accidentally move to another element.

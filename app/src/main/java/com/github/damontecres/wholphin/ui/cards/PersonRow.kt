@@ -57,7 +57,9 @@ fun PersonRow(
                     .fillMaxWidth()
                     .focusRestorer(firstFocus),
         ) {
-            itemsIndexed(people, key = { _, person -> person.id }) { index, person ->
+            itemsIndexed(
+                people,
+                key = { _, person -> person.id.toString() + person.role }) { index, person ->
                 PersonCard(
                     person = person,
                     onClick = {

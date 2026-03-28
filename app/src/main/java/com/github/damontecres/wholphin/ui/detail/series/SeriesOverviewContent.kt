@@ -1,9 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -50,6 +47,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.alpha
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -130,10 +128,10 @@ fun SeriesOverviewContent(
     ) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 16.dp),
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(vertical = 16.dp)
                     .focusGroup()
                     .nestedScroll(scrollConnection)
                     .onFocusChanged { pageHasFocus = it.hasFocus },
@@ -263,7 +261,7 @@ fun SeriesOverviewContent(
                                                             Color.Black,
                                                             shape = RoundedCornerShape(8.dp),
                                                         )
-                                                        .alpha(dimming),
+                                                        .alpha { dimming },
                                                 )
                                                 .onFocusChanged {
                                                     if (it.isFocused) {
@@ -326,6 +324,7 @@ fun SeriesOverviewContent(
                         onClick = personOnClick,
                         modifier =
                             Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .focusRequester(castCrewRowFocusRequester),
                     )
@@ -339,6 +338,7 @@ fun SeriesOverviewContent(
                         onClick = personOnClick,
                         modifier =
                             Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .focusRequester(guestStarRowFocusRequester),
                     )
