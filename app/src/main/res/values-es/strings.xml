@@ -594,4 +594,5 @@
     <string name="show_lyrics">Mostrar letras</string>
     <string name="song_has_lyrics">Canción con letra</string>
     <string name="remove_from_queue">Eliminar de la cola</string>
+    <string name="separate_types">Separar por tipos</string>
 </resources>
