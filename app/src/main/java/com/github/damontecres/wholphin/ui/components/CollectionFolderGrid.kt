@@ -1008,6 +1008,7 @@ fun CollectionFolderGridContent(
                                 modifier = mod,
                             )
                         },
+                        keyExtractor = { index, item -> item?.id ?: index },
                         columns = viewOptions.columns,
                         spacing = viewOptions.spacing.dp,
                         bringIntoViewSpec =

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,7 +52,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -113,6 +113,7 @@ fun <T : CardGridItem> CardGrid(
             modifier = mod,
         )
     },
+    keyExtractor: ((index: Int, item: T?) -> Any)? = null,
     columns: Int = 6,
     spacing: Dp = 16.dp,
     bringIntoViewSpec: BringIntoViewSpec = LocalBringIntoViewSpec.current,
@@ -297,7 +298,7 @@ fun <T : CardGridItem> CardGrid(
                                     }
                                 },
                     ) {
-                        items(pager.size) { index ->
+                        itemsIndexed(pager, key = keyExtractor) { index, item ->
                             val mod =
                                 if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
                                     if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
@@ -308,7 +309,6 @@ fun <T : CardGridItem> CardGrid(
                                 } else {
                                     Modifier
                                 }
-                            val item = pager[index]
                             cardContent(
                                 item,
                                 {
@@ -372,8 +372,7 @@ fun <T : CardGridItem> CardGrid(
                     }
                 }
             }
-            val context = LocalContext.current
-            val letters = context.getString(R.string.jump_letters)
+            val letters = stringResource(R.string.jump_letters)
             // Letters
             val currentLetter =
                 remember(focusedIndex) {
