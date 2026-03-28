@@ -127,6 +127,9 @@ data class BaseItem(
                                 } else if (data.premiereDate != null) {
                                     add(data.premiereDate!!.toLocalDate().toString())
                                 }
+                            } else if (type == BaseItemKind.BOX_SET) {
+                                data.productionYear?.let { add(it.toString()) }
+                                data.childCount?.let { add("$it items") }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }

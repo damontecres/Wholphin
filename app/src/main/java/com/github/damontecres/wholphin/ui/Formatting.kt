@@ -7,6 +7,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
 import java.time.LocalDate
@@ -195,4 +196,46 @@ fun listToDotString(
                 appendInlineContent(id = "rotten")
             }
         }
+    }
+
+@StringRes
+fun formatTypeName(type: BaseItemKind): Int =
+    when (type) {
+        BaseItemKind.MOVIE -> R.string.movies
+        BaseItemKind.SERIES -> R.string.tv_shows
+        BaseItemKind.EPISODE -> R.string.episodes
+        BaseItemKind.VIDEO -> R.string.videos
+        BaseItemKind.PLAYLIST -> R.string.playlists
+        BaseItemKind.PERSON -> R.string.people
+        BaseItemKind.BOX_SET -> R.string.collections
+        BaseItemKind.AUDIO -> TODO()
+        BaseItemKind.CHANNEL -> R.string.channels
+        BaseItemKind.GENRE -> R.string.genres
+        BaseItemKind.LIVE_TV_CHANNEL -> R.string.channels
+        BaseItemKind.MUSIC_ALBUM -> TODO()
+        BaseItemKind.MUSIC_ARTIST -> TODO()
+        BaseItemKind.MUSIC_GENRE -> TODO()
+        BaseItemKind.MUSIC_VIDEO -> TODO()
+        BaseItemKind.PHOTO -> R.string.photos
+        BaseItemKind.PHOTO_ALBUM -> TODO()
+        BaseItemKind.PROGRAM -> TODO()
+        BaseItemKind.RECORDING -> TODO()
+        BaseItemKind.SEASON -> R.string.tv_seasons
+        BaseItemKind.STUDIO -> R.string.studios
+        BaseItemKind.TRAILER -> R.string.trailers
+        BaseItemKind.TV_CHANNEL -> R.string.channels
+        BaseItemKind.TV_PROGRAM -> TODO()
+        BaseItemKind.USER_ROOT_FOLDER -> TODO()
+        BaseItemKind.USER_VIEW -> TODO()
+        BaseItemKind.YEAR -> TODO()
+        BaseItemKind.AGGREGATE_FOLDER -> TODO()
+        BaseItemKind.AUDIO_BOOK -> TODO()
+        BaseItemKind.BASE_PLUGIN_FOLDER -> TODO()
+        BaseItemKind.BOOK -> TODO()
+        BaseItemKind.CHANNEL_FOLDER_ITEM -> TODO()
+        BaseItemKind.COLLECTION_FOLDER -> TODO()
+        BaseItemKind.FOLDER -> TODO()
+        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
+        BaseItemKind.LIVE_TV_PROGRAM -> TODO()
+        BaseItemKind.PLAYLISTS_FOLDER -> TODO()
     }
