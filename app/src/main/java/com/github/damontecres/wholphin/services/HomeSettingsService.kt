@@ -886,7 +886,7 @@ class HomeSettingsService
                             limit = limit,
                             enableUserData = true,
                             enableImages = true,
-                            enableImageTypes = listOf(ImageType.PRIMARY),
+                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.LOGO),
                             imageTypeLimit = 1,
                         )
                     api.liveTvApi

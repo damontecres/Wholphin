@@ -69,7 +69,7 @@ fun DestinationContent(
         }
 
         is Destination.HomeSettings -> {
-            HomeSettingsPage(modifier)
+            HomeSettingsPage(preferences, modifier)
         }
 
         is Destination.PlaybackList,

@@ -398,6 +398,7 @@ class CollectionFolderViewModel
                                 ImageType.PRIMARY,
                                 ImageType.THUMB,
                                 ImageType.BACKDROP,
+                                ImageType.LOGO,
                             ),
                         includeItemTypes = includeItemTypes,
                         recursive = recursive,
@@ -960,6 +961,7 @@ fun CollectionFolderGridContent(
             AnimatedVisibility(viewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                     modifier =
                         Modifier
                             .fillMaxWidth()

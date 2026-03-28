@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -65,6 +64,8 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.RowColumnItem
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
+import com.github.damontecres.wholphin.ui.components.rememberLogoUrl
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
@@ -173,6 +174,7 @@ fun HomePage(
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
+                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                 modifier = modifier,
             )
             dialog?.let { params ->
@@ -223,6 +225,7 @@ fun HomePageContent(
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
+    showLogo: Boolean,
     modifier: Modifier = Modifier,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
@@ -231,6 +234,7 @@ fun HomePageContent(
     headerComposable: @Composable (focusedItem: BaseItem?) -> Unit = { focusedItem ->
         HomePageHeader(
             item = focusedItem,
+            showLogo = showLogo,
             modifier = HeaderUtils.modifier,
         )
     },
@@ -408,6 +412,7 @@ fun HomePageContent(
 @Composable
 fun HomePageHeader(
     item: BaseItem?,
+    showLogo: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val isEpisode = item?.type == BaseItemKind.EPISODE
@@ -419,6 +424,8 @@ fun HomePageHeader(
         overviewTwoLines = isEpisode,
         quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
         timeRemaining = item?.timeRemainingOrRuntime,
+        showLogo = showLogo,
+        logoImageUrl = rememberLogoUrl(item),
         modifier = modifier,
     )
 }
@@ -431,22 +438,20 @@ fun HomePageHeader(
     overviewTwoLines: Boolean,
     quickDetails: AnnotatedString?,
     timeRemaining: Duration?,
+    showLogo: Boolean,
+    logoImageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        title?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(.75f),
-            )
-        }
+        TitleOrLogo(
+            title = title,
+            logoImageUrl = logoImageUrl,
+            showLogo = showLogo,
+            Modifier.fillMaxWidth(.75f),
+        )
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =

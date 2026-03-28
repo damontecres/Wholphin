@@ -380,6 +380,7 @@ fun CollectionDetailsContent(
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
                                 item = focusedItem,
+                                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                                 modifier = HeaderUtils.modifier,
                             )
                         }
