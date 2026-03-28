@@ -380,7 +380,12 @@ fun CollectionDetailsContent(
                             HomePageHeader(
                                 item = focusedItem,
                                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
-                                modifier = HeaderUtils.modifier,
+                                modifier =
+                                    Modifier
+                                        .padding(
+                                            top = HeaderUtils.topPadding,
+                                            bottom = 8.dp,
+                                        ).height(HeaderUtils.height),
                             )
                         }
                     }

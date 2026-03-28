@@ -15,7 +15,7 @@ object HeaderUtils {
 
     val height = 180.dp
 
-    val logoHeight = 72.dp
+    val logoHeight = 60.dp
 
     val modifier =
         Modifier
