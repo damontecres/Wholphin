@@ -576,4 +576,5 @@
     <string name="play_as_type">Abspielen als?</string>
     <string name="visualizer_rationale">Die Visualisierung der aktuellen Wiedergabe erfordert die Berechtigung zur Audioaufzeichnung.</string>
     <string name="continue_string">Fortfahren</string>
+    <string name="separate_types">Verschiedene Arten</string>
 </resources>
