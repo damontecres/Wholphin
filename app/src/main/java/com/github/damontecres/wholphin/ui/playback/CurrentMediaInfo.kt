@@ -8,6 +8,11 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.ticks
 
+/**
+ * Metadata about the currently playing media
+ *
+ * @see CurrentPlayback
+ */
 data class CurrentMediaInfo(
     val sourceId: String?,
     val videoStream: SimpleVideoStream?,

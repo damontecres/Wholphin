@@ -62,6 +62,14 @@ data class PlaybackSettings(
     val playbackSpeedEnabled: Boolean,
 )
 
+/**
+ * Centralized UI component for displaying dialogs during playback
+ *
+ * Typically, the user will click something generating a [PlaybackAction] which translates into the
+ * [PlaybackDialogType] determining which dialog is shown by this component.
+ *
+ * @see PlaybackAction
+ */
 @Composable
 fun PlaybackDialog(
     enableSubtitleDelay: Boolean,

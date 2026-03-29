@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Get the current user's [UserPreferences]
+ */
 @Singleton
 class UserPreferencesService
     @Inject

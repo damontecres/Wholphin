@@ -5,6 +5,11 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.mediaStreamDisplayTitle
 import org.jellyfin.sdk.model.api.MediaStream
 
+/**
+ * A slimmer [MediaStream] with minimal data for UI purposes
+ *
+ * @see SimpleVideoStream
+ */
 data class SimpleMediaStream(
     val index: Int,
     val streamTitle: String?,

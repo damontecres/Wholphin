@@ -32,6 +32,9 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles any changes needed when the app in upgraded on the device such as setting new preferences
+ */
 @Singleton
 class AppUpgradeHandler
     @Inject
@@ -61,6 +64,7 @@ class AppUpgradeHandler
                 Timber.i(
                     "App updated: $previousVersion=>$newVersion, $previousVersionCode=>$newVersionCode",
                 )
+                // Store the previous and new version info
                 prefs.edit(true) {
                     putString(VERSION_NAME_PREVIOUS_KEY, previousVersion)
                     putLong(VERSION_CODE_PREVIOUS_KEY, previousVersionCode)
@@ -83,6 +87,9 @@ class AppUpgradeHandler
             }
         }
 
+        /**
+         * Copies the font file used by MPV subtitles to the app's files directory
+         */
         fun copySubfont(overwrite: Boolean) {
             try {
                 val fontFileName = "subfont.ttf"
@@ -111,6 +118,9 @@ class AppUpgradeHandler
             const val VERSION_CODE_CURRENT_KEY = "version.current.code"
         }
 
+        /**
+         * Perform any needed upgrades
+         */
         suspend fun upgradeApp(
             previous: Version,
             current: Version,

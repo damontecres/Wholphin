@@ -14,7 +14,7 @@ import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.room.Ignore
 
 /**
- * Modifications to a video playback
+ * Modifications to an image or video playback
  */
 data class VideoFilter(
     val rotation: Int = 0,

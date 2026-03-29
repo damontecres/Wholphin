@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -50,8 +51,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
+/**
+ * Abstract [ViewModel] for the "Recommended" tab for a library
+ */
 abstract class RecommendedViewModel(
-    val context: Context,
+    @param:ApplicationContext val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
     val mediaReportService: MediaReportService,

@@ -9,6 +9,9 @@ enum class NavPinType {
     UNPINNED,
 }
 
+/**
+ * Stores preference information about nav drawer items such as its order and whether to show or put in More
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(

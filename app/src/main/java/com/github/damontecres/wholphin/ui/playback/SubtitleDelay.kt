@@ -30,6 +30,9 @@ import kotlin.time.Duration.Companion.seconds
 
 private val delayIncrements = listOf(50.milliseconds, 250.milliseconds, 1.seconds)
 
+/**
+ * Shows buttons for adding to or subtracting from the given [Duration], ie subtitle delay
+ */
 @Composable
 fun SubtitleDelay(
     delay: Duration,

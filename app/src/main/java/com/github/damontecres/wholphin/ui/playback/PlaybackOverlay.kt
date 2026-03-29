@@ -575,6 +575,8 @@ enum class OverlayViewState {
 
 /**
  * A wrapper for the playback controls to show title and other information, plus the actual controls
+ *
+ * @see PlaybackControls
  */
 @Composable
 fun Controller(

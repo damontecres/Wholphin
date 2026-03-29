@@ -157,6 +157,9 @@ class NavDrawerViewModel
 
         fun getUserImage(user: JellyfinUser): String = api.imageApi.getUserImageUrl(user.id)
 
+        /**
+         * Determine which nav drawer item should be highlighted as currently selected
+         */
         fun updateSelectedIndex() {
             viewModelScope.launchDefault {
                 val asDestinations =
@@ -215,6 +218,11 @@ class NavDrawerViewModel
         }
     }
 
+/**
+ * An item that can be shown in the nav drawer
+ *
+ * Some are built-in such as Favorites. Others are created dynamically for libraries.
+ */
 sealed interface NavDrawerItem {
     val id: String
 
@@ -242,6 +250,9 @@ sealed interface NavDrawerItem {
     }
 }
 
+/**
+ * A server provided nav drawer item, typically a library
+ */
 data class ServerNavDrawerItem(
     val itemId: UUID,
     val name: String,

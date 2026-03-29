@@ -5,6 +5,14 @@ import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration
 
+/**
+ * Represents audio or a song as a stripped down [BaseItem] since there may be a lot of these created.
+ *
+ * Typically added to a MediaItem as the tag for reference later
+ *
+ * The "key" can be used by a Compose LazyList key function as it will uniquely identify this particular
+ * audio even if the same song is added to the queue multiple times
+ */
 @Stable
 data class AudioItem(
     val key: Long = keyTracker++,

@@ -6,6 +6,11 @@ import androidx.compose.runtime.setValue
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
+/**
+ * Tracks playback of multiple items. Points to the current media with function to advance or go to previous ones.
+ *
+ * This is not the same thing as a Jellyfin server playlist
+ */
 class Playlist(
     items: List<BaseItem>,
     startIndex: Int = 0,

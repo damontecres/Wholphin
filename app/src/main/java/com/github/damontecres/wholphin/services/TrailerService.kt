@@ -15,6 +15,9 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Gets trailers for media
+ */
 @Singleton
 class TrailerService
     @Inject

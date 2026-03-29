@@ -12,6 +12,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.util.LocalClock
 
+/**
+ * Displays the [LocalClock] in the upper right corner of the parent [androidx.compose.foundation.layout.Box]
+ */
 @Composable
 fun BoxScope.TimeDisplay(modifier: Modifier = Modifier) {
     val timeString by LocalClock.current.timeString

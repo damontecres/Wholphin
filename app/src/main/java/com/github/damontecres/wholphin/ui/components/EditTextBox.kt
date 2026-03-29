@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -49,8 +48,10 @@ import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
-import com.google.protobuf.value
 
+/**
+ * An input field for text customized for TV entry
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTextBox(

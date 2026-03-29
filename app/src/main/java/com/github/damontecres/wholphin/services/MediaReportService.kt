@@ -21,6 +21,9 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Send media info to the server
+ */
 @Singleton
 class MediaReportService
     @Inject
@@ -39,6 +42,9 @@ class MediaReportService
                 encodeDefaults = false
             }
 
+        /**
+         * Fetch the media info and send it to the server
+         */
         fun sendReportFor(itemId: UUID) {
             ioScope.launchIO(ExceptionHandler(autoToast = true)) {
                 val item = api.userLibraryApi.getItem(itemId = itemId).content
@@ -46,6 +52,9 @@ class MediaReportService
             }
         }
 
+        /**
+         * Send the media report for the given item
+         */
         suspend fun sendReportFor(item: BaseItemDto) {
             val sources =
                 item.mediaSources ?: api.userLibraryApi
