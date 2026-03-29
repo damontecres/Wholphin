@@ -219,6 +219,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.androidx.tvprovider)
     implementation(libs.androidx.work.runtime.ktx)

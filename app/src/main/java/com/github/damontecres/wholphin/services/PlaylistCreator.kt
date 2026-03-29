@@ -122,7 +122,12 @@ class PlaylistCreator
                     req =
                         GetItemsRequest(
                             parentId = item.id,
-                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            enableImageTypes =
+                                listOf(
+                                    ImageType.PRIMARY,
+                                    ImageType.THUMB,
+                                    ImageType.LOGO,
+                                ),
                             includeItemTypes = includeItemTypes,
                             recursive = true,
                             excludeItemIds = listOf(item.id),

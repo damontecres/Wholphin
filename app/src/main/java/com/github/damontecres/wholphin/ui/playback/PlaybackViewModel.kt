@@ -260,7 +260,6 @@ class PlaybackViewModel
             val sessionPlayer =
                 MediaSessionPlayer(
                     player,
-                    controllerViewState,
                     preferences.appPreferences.playbackPreferences,
                 )
             mediaSession =

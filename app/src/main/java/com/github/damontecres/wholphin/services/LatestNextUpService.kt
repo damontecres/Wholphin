@@ -15,7 +15,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
@@ -60,12 +59,6 @@ class LatestNextUpService
                                     remove(BaseItemKind.EPISODE)
                                 }
                         },
-                    enableImageTypes =
-                        listOf(
-                            ImageType.PRIMARY,
-                            ImageType.THUMB,
-                            ImageType.BACKDROP,
-                        ),
                 )
             val items =
                 api.itemsApi
