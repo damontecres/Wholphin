@@ -223,8 +223,8 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Kurzvideo</item>
-        <item quantity="other">Kurzvideos</item>
+        <item quantity="one">Short</item>
+        <item quantity="other">Shorts</item>
     </plurals>
     <string name="combine_continue_next_summary">Trifft nur auf Serien zu</string>
     <string name="direct_play_ass">Direktes abspielen von ASS Untertitel</string>
@@ -440,8 +440,8 @@
     <string name="interlaced">Interlaced</string>
     <string name="nal">NAL</string>
     <string name="quick_connect_summary">Gewähre anderen Geräten Zugang zu deinem Account</string>
-    <string name="quick_connect_code">Eingabe Quick Connect Code</string>
-    <string name="no_limit">Keine Beschränkung</string>
+    <string name="quick_connect_code">Quick Connect-Code eingeben</string>
+    <string name="no_limit">Keine Begrenzung</string>
     <string name="add_row">Reihe hinzufügen</string>
     <string name="genres_in">Genres in %1$s</string>
     <string name="recently_released_in">kürzlich veröffentlicht in %1$s</string>
@@ -542,7 +542,7 @@
     <string name="arranger">Arrangeur</string>
     <string name="engineer">Ingenieur</string>
     <string name="bold_blue">Dunkelblau</string>
-    <string name="image_subtitle_opacity">Untertitel-Transparenz</string>
+    <string name="image_subtitle_opacity">Transparenz des Bilduntertitels</string>
     <string name="image_type_thumb">Vorschaubild</string>
     <string name="use_series">Serien Vorschaubilder verwenden</string>
     <string name="enter_url_api_key"><![CDATA[URL & API Key eingeben]]></string>
