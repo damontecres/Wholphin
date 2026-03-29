@@ -593,4 +593,5 @@
     <string name="quick_connect_summary">Autorizujte iné zariadenie na prihlásenie do vášho účtu</string>
     <string name="send_media_info_log_to_server">Odoslať log informácií o médiách na server</string>
     <string name="max_days_next_up">Max. počet dní v sekcií Nasleduje</string>
+    <string name="albums">Albumy</string>
 </resources>
