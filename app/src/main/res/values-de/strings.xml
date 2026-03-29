@@ -84,7 +84,7 @@
     <string name="choose_stream">%1$s Wählen</string>
     <string name="clear_image_cache">Bilder Cache leeren</string>
     <string name="community_rating">Community Bewertung</string>
-    <string name="compose_error_message_title">Es ist ein Fehler aufgetreten! Drücke den Knopf um Logs zu deinem Server zu senden.</string>
+    <string name="compose_error_message_title">Ein Fehler ist aufgetreten! Drücke die Taste um ein Logo an deinen Server zu senden.</string>
     <string name="directed_by">Regie von %1$s</string>
     <string name="disabled">Deaktiviert</string>
     <string name="discovered_servers">Gefundene Server</string>
