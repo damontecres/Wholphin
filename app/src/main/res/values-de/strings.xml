@@ -84,7 +84,7 @@
     <string name="choose_stream">%1$s Wählen</string>
     <string name="clear_image_cache">Bilder Cache leeren</string>
     <string name="community_rating">Community Bewertung</string>
-    <string name="compose_error_message_title">Ein Fehler ist aufgetreten! Drücke die Taste um ein Logo an deinen Server zu senden.</string>
+    <string name="compose_error_message_title">Ein Fehler ist aufgetreten! Drücke die Taste um Logs an deinen Server zu senden.</string>
     <string name="directed_by">Regie von %1$s</string>
     <string name="disabled">Deaktiviert</string>
     <string name="discovered_servers">Gefundene Server</string>
@@ -140,7 +140,7 @@
     <string name="sort_by_date_released">Erscheinungsdatum</string>
     <string name="sort_by_random">Zufällig</string>
     <string name="submit">Übermitteln</string>
-    <string name="subtitle_download_too_long">Herunterladen dauert sehr lange, vielleicht hilft ein neustart der Wiedergabe</string>
+    <string name="subtitle_download_too_long">Herunterladen dauert sehr lange, vielleicht hilft ein Neustart der Wiedergabe</string>
     <string name="subtitle">Untertitel</string>
     <string name="suggestions">Vorschläge</string>
     <string name="switch_user">Wechseln</string>
@@ -223,7 +223,7 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Shorts</item>
+        <item quantity="one">Kurzvideo</item>
         <item quantity="other">Kurzvideos</item>
     </plurals>
     <string name="combine_continue_next_summary">Trifft nur auf Serien zu</string>
@@ -577,4 +577,5 @@
     <string name="visualizer_rationale">Die Visualisierung der aktuellen Wiedergabe erfordert die Berechtigung zur Audioaufzeichnung.</string>
     <string name="continue_string">Fortfahren</string>
     <string name="separate_types">Verschiedene Arten</string>
+    <string name="prefer_logos">Logos anstatt Titelnamen anzeigen</string>
 </resources>
