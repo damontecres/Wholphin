@@ -558,4 +558,6 @@
     <string name="visualizer_rationale">啟用音樂視覺化需要錄音權限。</string>
     <string name="continue_string">繼續</string>
     <string name="instant_mix">即時混播</string>
+    <string name="separate_types">依類型分開顯示</string>
+    <string name="prefer_logos">優先顯示圖像標題</string>
 </resources>
