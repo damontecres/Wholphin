@@ -439,7 +439,7 @@
     </plurals>
     <string name="interlaced">Interlaced</string>
     <string name="nal">NAL</string>
-    <string name="quick_connect_summary">Gewähre anderen Geräten Zugriff auf deinen Account</string>
+    <string name="quick_connect_summary">Gewähre anderen Geräten Zugang zu deinem Account</string>
     <string name="quick_connect_code">Eingabe Quick Connect Code</string>
     <string name="no_limit">Keine Beschränkung</string>
     <string name="add_row">Reihe hinzufügen</string>
@@ -447,13 +447,13 @@
     <string name="recently_released_in">kürzlich veröffentlicht in %1$s</string>
     <string name="height">Höhe</string>
     <string name="apply_all_rows">Auf alle Reihen anwenden</string>
-    <string name="add_row_for">Reihe hinzufügen für %1$s</string>
-    <string name="overwrite_server_settings">Überschreibe Einstellungen auf dem Server?</string>
-    <string name="overwrite_local_settings">Überschreibe lokale Einstellungen?</string>
+    <string name="add_row_for">Füge Reihe für %1$s hinzu</string>
+    <string name="overwrite_server_settings">Einstellungen auf dem Server übverschreiben?</string>
+    <string name="overwrite_local_settings">Lokale Einstellungen überschreiben?</string>
     <string name="suggestions_for">Vorschläge für %1$s</string>
     <string name="send_media_info_log_to_server">Sende Media Info Log zum Server</string>
     <string name="customize_home">Anpassung Homepage</string>
-    <string name="for_episodes">Für Episoden</string>
+    <string name="for_episodes">Für Folgen</string>
     <string name="display_presets_description">Vorlagen um schnell alle Reihen zu gestalten</string>
     <string name="customize_home_summary">Wähle Reihen und Bilder auf der Homepage</string>
     <string name="start_after">Starte anschließend</string>
