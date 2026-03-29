@@ -52,9 +52,10 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -143,10 +144,12 @@ fun SeriesOverviewContent(
                         .bringIntoViewRequester(bringIntoViewRequester),
             ) {
                 val paddingValues =
-                    if (preferences.appPreferences.interfacePreferences.showClock) {
-                        PaddingValues(start = 0.dp, end = 184.dp)
-                    } else {
-                        PaddingValues(start = 0.dp, end = 16.dp)
+                    remember(preferences.appPreferences.interfacePreferences.showClock) {
+                        if (preferences.appPreferences.interfacePreferences.showClock) {
+                            PaddingValues(start = 0.dp, end = 184.dp)
+                        } else {
+                            PaddingValues(start = 0.dp, end = 16.dp)
+                        }
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
@@ -164,7 +167,11 @@ fun SeriesOverviewContent(
                             .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier.padding(start = 8.dp))
+                TitleOrLogo(
+                    item = series,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,

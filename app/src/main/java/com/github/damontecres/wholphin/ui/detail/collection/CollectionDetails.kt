@@ -11,7 +11,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +49,7 @@ import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -379,11 +379,13 @@ fun CollectionDetailsContent(
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
                                 item = focusedItem,
+                                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                                 modifier =
                                     Modifier
-                                        .padding(top = 48.dp, start = 8.dp)
-                                        .fillMaxHeight(.33f)
-                                        .fillMaxWidth(),
+                                        .padding(
+                                            top = HeaderUtils.topPadding,
+                                            bottom = 8.dp,
+                                        ).height(HeaderUtils.height),
                             )
                         }
                     }
@@ -412,15 +414,16 @@ fun CollectionDetailsContent(
                     ) {
                         CollectionDetailsHeader(
                             collection = state.collection!!,
+                            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                             logoImageUrl = state.logoImageUrl,
                             overviewOnClick = overviewOnClick,
                             bringIntoViewRequester = bringIntoViewRequester,
                             modifier =
                                 Modifier
-                                    .padding(top = 48.dp, start = 8.dp)
-                                    // TODO
-                                    .fillMaxHeight(.36f)
-                                    .fillMaxWidth(),
+                                    .padding(
+                                        top = HeaderUtils.topPadding,
+                                        bottom = HeaderUtils.bottomPadding,
+                                    ).height(HeaderUtils.height),
                         )
                         CollectionButtons(
                             state = state,

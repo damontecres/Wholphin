@@ -250,6 +250,8 @@ fun SeerrDiscoverPage(
             overviewTwoLines = true,
             quickDetails = details,
             timeRemaining = null,
+            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+            logoImageUrl = null, // TODO
             modifier =
                 Modifier
                     .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)

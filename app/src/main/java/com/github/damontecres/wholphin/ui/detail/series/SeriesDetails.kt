@@ -37,14 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -69,10 +65,12 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
@@ -386,7 +384,6 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
@@ -397,18 +394,19 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 8.dp)
+                                .padding(start = HeaderUtils.startPadding)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
@@ -684,6 +682,7 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    showLogo: Boolean,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -693,24 +692,25 @@ fun SeriesDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        Text(
-            text = series.name ?: stringResource(R.string.unknown),
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        TitleOrLogo(
+            item = series,
+            showLogo = showLogo,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
+                    .padding(start = HeaderUtils.startPadding),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
+            QuickDetails(
+                series.ui.quickDetails,
+                null,
+                Modifier.padding(start = HeaderUtils.startPadding),
+            )
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 8.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(

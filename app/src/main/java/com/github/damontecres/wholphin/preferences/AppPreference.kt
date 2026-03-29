@@ -501,6 +501,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
             )
 
+        val ShowLogos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.prefer_logos,
+                defaultValue = true,
+                getter = { it.interfacePreferences.showLogos },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { showLogos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val InstalledVersion =
             AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
@@ -1122,6 +1134,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ShowLogos,
                         AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418

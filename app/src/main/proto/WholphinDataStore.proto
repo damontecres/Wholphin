@@ -167,6 +167,7 @@ message InterfacePreferences {
   SubtitlePreferences hdr_subtitles_preferences = 10;
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
+  bool show_logos = 13;
 }
 
 message AdvancedPreferences {
