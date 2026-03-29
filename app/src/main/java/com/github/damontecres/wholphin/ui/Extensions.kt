@@ -38,6 +38,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.acra.ACRA
@@ -434,3 +437,18 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
 fun Int?.gt(that: Int) = (this ?: 0) > that
 
 fun Int?.lt(that: Int) = (this ?: 0) < that
+
+/**
+ * Simplifies endlessly collecting a flow
+ */
+fun <T> Flow<T>.collectLatestIn(
+    scope: CoroutineScope,
+    action: suspend (value: T) -> Unit,
+) {
+    scope.launchDefault { this@collectLatestIn.collectLatest(action) }
+}
+
+/**
+ * Easy way to combine two flows into a [Pair]
+ */
+fun <T1, T2> Flow<T1>.combinePair(flow: Flow<T2>): Flow<Pair<T1, T2>> = combine(flow) { t1, t2 -> Pair(t1, t2) }

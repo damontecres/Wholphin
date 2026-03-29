@@ -15,7 +15,8 @@ function clone(){
 
   if [[ -d "$dir" ]]; then
     pushd "$dir" || exit
-    git checkout --force "$branch"
+		git fetch origin "$branch" --depth 1
+  	git checkout --force FETCH_HEAD
     popd || exit
   else
     git clone "$repo" --depth 1 --single-branch -b "$branch" "$dir" "$@"

@@ -170,6 +170,38 @@ fun buildMoreDialogItems(
                 actions.onClickFavorite.invoke(item.id, !favorite)
             },
         )
+        item.data.albumId?.let { albumId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    R.string.fa_compact_disc,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            albumId,
+                            BaseItemKind.MUSIC_ALBUM,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
+        item.data.artistItems?.firstOrNull()?.id?.let { artistId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    R.string.fa_user,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            artistId,
+                            BaseItemKind.MUSIC_ARTIST,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
         seriesId?.let {
             add(
                 DialogItem(

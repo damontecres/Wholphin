@@ -7,6 +7,7 @@ import androidx.room.Query
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.ui.toServerString
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 @Dao
@@ -26,6 +27,12 @@ interface LibraryDisplayInfoDao {
         userId: Int,
         itemId: String,
     ): LibraryDisplayInfo?
+
+    @Query("SELECT * from LibraryDisplayInfo WHERE userId=:userId AND itemId=:itemId")
+    fun getItemAsFlow(
+        userId: Int,
+        itemId: String,
+    ): Flow<LibraryDisplayInfo?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun saveItem(item: LibraryDisplayInfo): Long

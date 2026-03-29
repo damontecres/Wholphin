@@ -51,6 +51,7 @@ import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
@@ -76,6 +77,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -100,9 +103,14 @@ class SearchViewModel
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val albums = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val artists = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val songs = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
         private var currentQuery: String? = null
+
+        private val semaphore = Semaphore(4)
 
         fun search(query: String?) {
             if (currentQuery == query) {
@@ -117,6 +125,9 @@ class SearchViewModel
                 searchInternal(query, BaseItemKind.MOVIE, movies)
                 searchInternal(query, BaseItemKind.SERIES, series)
                 searchInternal(query, BaseItemKind.EPISODE, episodes)
+                searchInternal(query, BaseItemKind.MUSIC_ALBUM, albums)
+                searchInternal(query, BaseItemKind.MUSIC_ARTIST, artists)
+                searchInternal(query, BaseItemKind.AUDIO, songs)
                 searchInternal(query, BaseItemKind.BOX_SET, collections)
                 searchSeerr(query)
             } else {
@@ -135,19 +146,21 @@ class SearchViewModel
         ) {
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 try {
-                    val request =
-                        GetItemsRequest(
-                            searchTerm = query,
-                            recursive = true,
-                            includeItemTypes = listOf(type),
-                            fields = SlimItemFields,
-                            limit = 25,
-                        )
-                    val pager =
-                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                    pager.init()
-                    withContext(Dispatchers.Main) {
-                        target.value = SearchResult.Success(pager)
+                    semaphore.withPermit {
+                        val request =
+                            GetItemsRequest(
+                                searchTerm = query,
+                                recursive = true,
+                                includeItemTypes = listOf(type),
+                                fields = SlimItemFields,
+                                limit = 25,
+                            )
+                        val pager =
+                            ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                        pager.init()
+                        withContext(Dispatchers.Main) {
+                            target.value = SearchResult.Success(pager)
+                        }
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception searching for $type")
@@ -202,10 +215,13 @@ sealed interface SearchResult {
 
 private const val SEARCH_ROW = 0
 private const val MOVIE_ROW = SEARCH_ROW + 1
-private const val COLLECTION_ROW = MOVIE_ROW + 1
-private const val SERIES_ROW = COLLECTION_ROW + 1
+private const val SERIES_ROW = MOVIE_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
-private const val SEERR_ROW = EPISODE_ROW + 1
+private const val ALBUM_ROW = EPISODE_ROW + 1
+private const val ARTIST_ROW = ALBUM_ROW + 1
+private const val SONG_ROW = ARTIST_ROW + 1
+private const val COLLECTION_ROW = SONG_ROW + 1
+private const val SEERR_ROW = COLLECTION_ROW + 1
 
 /** Delay for focus to settle after voice search dialog dismisses. */
 private const val VOICE_RESULT_FOCUS_DELAY_MS = 350L
@@ -223,6 +239,9 @@ fun SearchPage(
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
+    val albums by viewModel.albums.observeAsState(SearchResult.NoQuery)
+    val artists by viewModel.artists.observeAsState(SearchResult.NoQuery)
+    val songs by viewModel.songs.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
 
 //    val query = rememberTextFieldState()
@@ -368,16 +387,6 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.collections),
-            result = collections,
-            rowIndex = COLLECTION_ROW,
-            position = position,
-            focusRequester = focusRequesters[COLLECTION_ROW],
-            onClickItem = onClickItem,
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        searchResultRow(
             title = context.getString(R.string.tv_shows),
             result = series,
             rowIndex = SERIES_ROW,
@@ -408,6 +417,85 @@ fun SearchPage(
                     modifier = mod.padding(horizontal = 8.dp),
                 )
             },
+        )
+        searchResultRow(
+            title = context.getString(R.string.albums),
+            result = albums,
+            rowIndex = ALBUM_ROW,
+            position = position,
+            focusRequester = focusRequesters[ALBUM_ROW],
+            onClickItem = onClickItem,
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
+            cardContent = { index, item, mod, onClick, onLongClick ->
+                SeasonCard(
+                    item = item,
+                    onClick = {
+                        position = RowColumn(ALBUM_ROW, index)
+                        onClick.invoke()
+                    },
+                    onLongClick = onLongClick,
+                    imageHeight = Cards.heightEpisode,
+                    aspectRatio = AspectRatios.SQUARE,
+                    modifier = mod,
+                )
+            },
+        )
+        searchResultRow(
+            title = context.getString(R.string.artists),
+            result = artists,
+            rowIndex = COLLECTION_ROW,
+            position = position,
+            focusRequester = focusRequesters[COLLECTION_ROW],
+            onClickItem = onClickItem,
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
+            cardContent = { index, item, mod, onClick, onLongClick ->
+                SeasonCard(
+                    item = item,
+                    onClick = {
+                        position = RowColumn(ALBUM_ROW, index)
+                        onClick.invoke()
+                    },
+                    onLongClick = onLongClick,
+                    imageHeight = Cards.heightEpisode,
+                    aspectRatio = AspectRatios.SQUARE,
+                    modifier = mod,
+                )
+            },
+        )
+        searchResultRow(
+            title = context.getString(R.string.songs),
+            result = songs,
+            rowIndex = SONG_ROW,
+            position = position,
+            focusRequester = focusRequesters[SONG_ROW],
+            onClickItem = onClickItem,
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
+            cardContent = { index, item, mod, onClick, onLongClick ->
+                SeasonCard(
+                    item = item,
+                    onClick = {
+                        position = RowColumn(ALBUM_ROW, index)
+                        onClick.invoke()
+                    },
+                    onLongClick = onLongClick,
+                    imageHeight = Cards.heightEpisode,
+                    aspectRatio = AspectRatios.SQUARE,
+                    modifier = mod,
+                )
+            },
+        )
+        searchResultRow(
+            title = context.getString(R.string.collections),
+            result = collections,
+            rowIndex = COLLECTION_ROW,
+            position = position,
+            focusRequester = focusRequesters[COLLECTION_ROW],
+            onClickItem = onClickItem,
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
             title = context.getString(R.string.discover),

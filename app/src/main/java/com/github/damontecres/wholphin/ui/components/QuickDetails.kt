@@ -21,8 +21,8 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.dot
+import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import kotlin.time.Duration
 
@@ -107,7 +107,7 @@ fun TimeRemaining(
     val now by LocalClock.current.now
     val remainingStr =
         remember(remaining, now) {
-            val endTimeStr = TimeFormatter.format(now.plusSeconds(remaining.inWholeSeconds))
+            val endTimeStr = getTimeFormatter().format(now.plusSeconds(remaining.inWholeSeconds))
             buildAnnotatedString {
                 dot()
                 append(context.getString(R.string.ends_at, endTimeStr))

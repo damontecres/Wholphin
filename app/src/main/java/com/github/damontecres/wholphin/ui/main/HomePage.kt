@@ -227,6 +227,15 @@ fun HomePageContent(
     listState: LazyListState = rememberLazyListState(),
     takeFocus: Boolean = true,
     showEmptyRows: Boolean = false,
+    headerComposable: @Composable (focusedItem: BaseItem?) -> Unit = { focusedItem ->
+        HomePageHeader(
+            item = focusedItem,
+            modifier =
+                Modifier
+                    .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
+                    .fillMaxHeight(.33f),
+        )
+    },
 ) {
     val focusedItem =
         position.let {
@@ -266,13 +275,8 @@ fun HomePageContent(
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HomePageHeader(
-                item = focusedItem,
-                modifier =
-                    Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
-                        .fillMaxHeight(.33f),
-            )
+            headerComposable.invoke(focusedItem)
+
             val density = LocalDensity.current
             val spaceAbovePx =
                 with(density) {

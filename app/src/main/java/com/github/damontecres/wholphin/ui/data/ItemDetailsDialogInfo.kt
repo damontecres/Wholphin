@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -116,7 +116,7 @@ fun ItemDetailsDialog(
                                 }
                                 source.bitrate?.let {
                                     add(
-                                        bitrateLabel to formatBytes(it, byteRateSuffixes),
+                                        bitrateLabel to formatBitrate(it),
                                     )
                                 }
                                 source.runTimeTicks?.let {
@@ -297,7 +297,7 @@ private fun buildVideoStreamInfo(
             val aspectRatio = calculateAspectRatio(stream.width!!, stream.height!!)
             add(aspectRatioLabel to aspectRatio)
         }
-        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
+        stream.bitRate?.let { add(bitrateLabel to formatBitrate(it)) }
         stream.averageFrameRate?.let {
             add(framerateLabel to String.format(Locale.getDefault(), "%.3f", it))
         }
@@ -405,7 +405,7 @@ private fun buildAudioStreamInfo(
         stream.channelLayout?.let { add(layoutLabel to it) }
         stream.channels?.let { add(channelsLabel to it.toString()) }
         stream.profile?.let { add(profileLabel to it) }
-        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
+        stream.bitRate?.let { add(bitrateLabel to formatBitrate(it)) }
         stream.sampleRate?.let { add(sampleRateLabel to "$it $sampleRateUnit") }
         stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
     }

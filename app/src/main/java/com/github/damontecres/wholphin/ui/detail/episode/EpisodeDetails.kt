@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -85,6 +86,7 @@ fun EpisodeDetails(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val canDelete by viewModel.canDelete.collectAsState()
 
     val preferredSubtitleLanguage =
         viewModel.serverRepository.currentUserDto
@@ -226,7 +228,7 @@ fun EpisodeDetails(
                                         onClearChosenStreams = {
                                             viewModel.clearChosenStreams(chosenStreams)
                                         },
-                                        canDelete = viewModel.canDelete,
+                                        canDelete = canDelete,
                                     ),
                             )
                     },
@@ -236,7 +238,7 @@ fun EpisodeDetails(
                     favoriteOnClick = {
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
-                    canDelete = viewModel.canDelete,
+                    canDelete = canDelete,
                     deleteOnClick = { showDeleteDialog = ep },
                     modifier = modifier,
                 )

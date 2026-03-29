@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +34,8 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
-import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 
 @Composable
 fun MainContent(
@@ -45,9 +44,9 @@ fun MainContent(
     appPreferences: AppPreferences,
     backdropService: BackdropService,
     screensaverService: ScreensaverService,
-    requestedDestination: Destination,
     modifier: Modifier = Modifier,
 ) {
+    val preferences by rememberUpdatedState(UserPreferences(appPreferences))
     Surface(
         modifier =
             modifier
@@ -96,10 +95,6 @@ fun MainContent(
                                 backdropService.clearBackdrop()
                             }
                             val current = key.current
-                            val preferences =
-                                remember(appPreferences) {
-                                    UserPreferences(appPreferences)
-                                }
                             var showContent by remember {
                                 mutableStateOf(true)
                             }
@@ -113,7 +108,6 @@ fun MainContent(
                                 ApplicationContent(
                                     user = current.user,
                                     server = current.server,
-                                    startDestination = requestedDestination,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
                                     modifier = Modifier.fillMaxSize(),

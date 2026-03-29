@@ -438,10 +438,7 @@ class HomeSettingsService
         ): HomeRowConfigDisplay =
             when (config) {
                 is HomeRowConfig.ByParent -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         name,
@@ -466,10 +463,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Genres -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.genres_in, name),
@@ -490,10 +484,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyAdded -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.recently_added_in, name),
@@ -502,10 +493,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyReleased -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.recently_released_in, name),
@@ -547,16 +535,23 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Suggestions -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id = id,
                         title = context.getString(R.string.suggestions_for, name),
                         config,
                     )
                 }
+            }
+
+        private suspend fun getItemName(itemId: UUID): String? =
+            try {
+                api.userLibraryApi
+                    .getItem(itemId = itemId)
+                    .content.name
+            } catch (ex: Exception) {
+                Timber.e(ex, "Could not get name for %s", itemId)
+                context.getString(R.string.unknown)
             }
 
         /**

@@ -5,12 +5,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
-import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
+import com.github.damontecres.wholphin.ui.detail.music.artistsString
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -32,7 +33,7 @@ import kotlin.time.Duration
 @Stable
 data class BaseItem(
     val data: BaseItemDto,
-    val useSeriesForPrimary: Boolean,
+    val useSeriesForPrimary: Boolean = false,
     val imageUrlOverride: String? = null,
     val destinationOverride: Destination? = null,
 ) : CardGridItem {
@@ -57,6 +58,7 @@ data class BaseItem(
             when (type) {
                 BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
                 BaseItemKind.SERIES -> data.seriesProductionYears
+                BaseItemKind.AUDIO -> listOfNotNull(data.album, artistsString).joinToString(" - ")
                 else -> data.productionYear?.toString()
             }
 
@@ -116,7 +118,7 @@ data class BaseItem(
                         buildList {
                             if (type == BaseItemKind.EPISODE) {
                                 data.seasonEpisode?.let(::add)
-                                data.premiereDate?.let { add(DateFormatter.format(it)) }
+                                data.premiereDate?.let { add(getDateFormatter().format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
                             } else if (type == BaseItemKind.PHOTO) {
@@ -125,6 +127,9 @@ data class BaseItem(
                                 } else if (data.premiereDate != null) {
                                     add(data.premiereDate!!.toLocalDate().toString())
                                 }
+                            } else if (type == BaseItemKind.BOX_SET) {
+                                data.productionYear?.let { add(it.toString()) }
+                                data.childCount?.let { add("$it items") }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
