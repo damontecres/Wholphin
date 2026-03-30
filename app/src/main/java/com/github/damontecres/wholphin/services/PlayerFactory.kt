@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -77,9 +78,14 @@ class PlayerFactory
                     PlayerBackend.UNRECOGNIZED,
                     -> {
                         val extensions = prefs.overrides.mediaExtensionsEnabled
-                        val directPlayAss = prefs.overrides.directPlayAss
+                        val useLibAss =
+                            prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
                         val decodeAv1 = prefs.overrides.decodeAv1
-                        Timber.v("extensions=$extensions, directPlayAss=$directPlayAss")
+                        Timber.v(
+                            "extensions=%s, assPlaybackMode=%s",
+                            extensions,
+                            prefs.overrides.assPlaybackMode,
+                        )
                         val rendererMode =
                             when (extensions) {
                                 MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
@@ -94,7 +100,7 @@ class PlayerFactory
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
                         val mediaSourceFactory =
-                            if (directPlayAss) {
+                            if (useLibAss) {
                                 assHandler = AssHandler(AssRenderType.OVERLAY_OPEN_GL)
                                 val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)

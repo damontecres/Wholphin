@@ -430,16 +430,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
-        val DirectPlayAss =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.direct_play_ass,
-                defaultValue = true,
-                getter = { it.playbackPreferences.overrides.directPlayAss },
+        val AssSubtitleMode =
+            AppChoicePreference<AppPreferences, AssPlaybackMode>(
+                title = R.string.app_theme,
+                defaultValue = AssPlaybackMode.ASS_LIBASS,
+                getter = { it.playbackPreferences.overrides.assPlaybackMode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { directPlayAss = value }
+                    prefs.updatePlaybackOverrides { assPlaybackMode = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.ass_subtitle_modes,
+                subtitles = R.array.ass_subtitle_modes_summary,
+                indexToValue = { AssPlaybackMode.forNumber(it) },
+                valueToIndex = { if (it != AssPlaybackMode.UNRECOGNIZED) it.number else AssPlaybackMode.ASS_LIBASS.number },
             )
         val DirectPlayPgs =
             AppSwitchPreference<AppPreferences>(
@@ -1097,7 +1099,7 @@ private val ExoPlayerSettings =
         AppPreference.FfmpegPreference,
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
-        AppPreference.DirectPlayAss,
+        AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
         AppPreference.DecodeAv1,

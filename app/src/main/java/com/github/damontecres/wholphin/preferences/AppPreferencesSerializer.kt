@@ -61,10 +61,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             ac3Supported = AppPreference.Ac3Supported.defaultValue
                                             downmixStereo = AppPreference.DownMixStereo.defaultValue
-                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
+//                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
+                                            assPlaybackMode =
+                                                AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
 
                                 mpvOptions =

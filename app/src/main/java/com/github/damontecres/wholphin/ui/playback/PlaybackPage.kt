@@ -66,6 +66,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
@@ -440,7 +441,7 @@ fun PlaybackPageContent(
                                 setBottomPaddingFraction(it.margin.toFloat() / 100f)
                             }
                             playerState.assHandler?.let { assHandler ->
-                                if (prefs.overrides.directPlayAss) {
+                                if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
                                     Timber.v("Adding AssSubtitleView")
                                     addView(
                                         AssSubtitleView(context, assHandler).apply {
