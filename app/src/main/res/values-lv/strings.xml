@@ -65,8 +65,8 @@
     <string name="more">Vairāk</string>
     <plurals name="movies">
         <item quantity="zero">Filmas</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Nosaukums</string>
     <string name="next_up">Rindā</string>
@@ -81,8 +81,8 @@
     <string name="path">Ceļš</string>
     <plurals name="people">
         <item quantity="zero">Cilvēki</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Skatījumu skaits</string>
     <string name="play_from_here">Atskaņot no šejienes</string>
@@ -100,7 +100,7 @@
     <string name="recently_added">Nesen pievienots</string>
     <string name="recently_recorded">Nesenie Ieraksti</string>
     <string name="recently_released">Nesen Iznācis</string>
-    <string name="recommended">Ieteikumi</string>
+    <string name="recommended">Ieteicamie</string>
     <string name="record_program">Ierakstīt Raidījumu</string>
     <string name="record_series">Ierakstīt Sērijas</string>
     <string name="remove_favorite">Noņemt no izlases</string>
@@ -153,8 +153,8 @@
     <string name="trailer">Treileris</string>
     <plurals name="trailers">
         <item quantity="zero">Treileri</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Ierakstu plāns</string>
     <string name="tv_guide">Programma</string>
@@ -162,8 +162,8 @@
     <string name="tv_seasons">Sezonas</string>
     <plurals name="tv_shows">
         <item quantity="zero">TV Šovi</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Saskarne</string>
     <string name="unknown">Nezināms</string>
@@ -191,58 +191,58 @@
     <string name="extras">Ekstras</string>
     <plurals name="other_extras">
         <item quantity="zero">Cits</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="zero">Aizkadri</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="zero">Tituldziesmas</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="zero">Titulvideo</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="zero">Klipi</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="zero">Izgrieztās ainas</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="zero">Intervijas</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="zero">Ainas</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="zero">Paraugi</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="zero">Īssižeti</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="zero">Īsie rullīši</item>
-        <item quantity="one"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="other"/>
     </plurals>
     <string name="favorite_items">Izlase %s</string>
     <plurals name="downloads">
