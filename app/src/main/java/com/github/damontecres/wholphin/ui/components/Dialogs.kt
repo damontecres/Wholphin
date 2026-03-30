@@ -90,6 +90,9 @@ sealed interface DialogItemEntry
 
 data object DialogItemDivider : DialogItemEntry
 
+/**
+ * An item within a [DialogPopup]
+ */
 data class DialogItem(
     val headlineContent: @Composable () -> Unit,
     val onClick: () -> Unit,

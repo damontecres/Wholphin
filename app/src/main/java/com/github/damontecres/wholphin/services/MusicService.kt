@@ -63,6 +63,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Manage the global state for playing music
+ *
+ * Has functions for modifying the queue
+ */
 @OptIn(UnstableApi::class)
 @Singleton
 class MusicService
@@ -104,6 +109,11 @@ class MusicService
         private var activityTracker: TrackActivityPlaybackListener? = null
         private var websocketJob: Job? = null
 
+        /**
+         * Start music playback
+         *
+         * Sets up the media session, activity tracking, and actual playback
+         */
         suspend fun start() {
             if (mediaSession == null) {
                 mutex.withLock {
@@ -130,6 +140,9 @@ class MusicService
             }
         }
 
+        /**
+         * Stop music playback
+         */
         suspend fun stop() {
             mutex.withLock {
                 Timber.i("Stopping music")
@@ -191,6 +204,9 @@ class MusicService
             addAllToQueue(items, startIndex)
         }
 
+        /**
+         * Replace the queue with the given items
+         */
         suspend fun setQueue(
             items: List<BaseItem>,
             shuffled: Boolean,
@@ -208,6 +224,9 @@ class MusicService
             }
         }
 
+        /**
+         * Add an item to the specified index of the queue. If no index specified, it will be added to the end.
+         */
         suspend fun addToQueue(
             item: BaseItem,
             index: Int? = null,
@@ -229,6 +248,11 @@ class MusicService
             }
         }
 
+        /**
+         *  Add all the items in teh list to end of the queue
+         *
+         *  @param startIndex The index to start from within the source list
+         */
         suspend fun addAllToQueue(
             list: BlockingList<BaseItem?>,
             startIndex: Int,
@@ -255,6 +279,9 @@ class MusicService
             updateQueueSize()
         }
 
+        /**
+         * Converts a [BaseItem] into a [MediaItem] setting an [AudioItem] as its tag
+         */
         private fun convert(audio: BaseItem): MediaItem {
             val url =
                 api.universalAudioApi.getUniversalAudioStreamUrl(
@@ -282,6 +309,9 @@ class MusicService
                 .build()
         }
 
+        /**
+         * Updates the state for when the queue changes
+         */
         private suspend fun updateQueueSize() {
 //            val ids =
 //                withContext(Dispatchers.Default) {
@@ -306,6 +336,9 @@ class MusicService
             }
         }
 
+        /**
+         * Move an item within the queue
+         */
         suspend fun moveQueue(
             index: Int,
             direction: MoveDirection,
@@ -314,6 +347,9 @@ class MusicService
             updateQueueSize()
         }
 
+        /**
+         * Move an item within the queue
+         */
         suspend fun moveQueue(
             index: Int,
             newIndex: Int,
@@ -322,6 +358,9 @@ class MusicService
             updateQueueSize()
         }
 
+        /**
+         * Start playback at the given index of the queue
+         */
         suspend fun playIndex(index: Int) {
             onMain {
                 player.seekTo(index, 0L)
@@ -330,6 +369,9 @@ class MusicService
             // MusicPlayerListener will update state
         }
 
+        /**
+         * Play this item next after the current, ie add the item as the next index in the queue
+         */
         suspend fun playNext(song: BaseItem) {
             val mediaItem = convert(song)
             onMain {
@@ -341,6 +383,9 @@ class MusicService
             updateQueueSize()
         }
 
+        /**
+         * From the item at the given index from the queue
+         */
         suspend fun removeFromQueue(index: Int) {
             onMain { player.removeMediaItem(index) }
             updateQueueSize()
@@ -353,7 +398,10 @@ class MusicService
             return result
         }
 
-        fun subscribe(): Job =
+        /**
+         * Subscribes to the server websocket to receive playback commands
+         */
+        private fun subscribe(): Job =
             api.webSocket
                 .subscribe<PlaystateMessage>()
                 .onEach { message ->
@@ -503,6 +551,11 @@ private class MusicPlayerListener(
     }
 }
 
+/**
+ * Remember the queue currently playing
+ *
+ * @see MusicServiceState
+ */
 @Composable
 fun rememberQueue(
     player: Player,

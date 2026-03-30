@@ -84,6 +84,9 @@ import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Possible actions the user can take during playback
+ */
 sealed interface PlaybackAction {
     data object ShowDebug : PlaybackAction
 
@@ -114,6 +117,9 @@ sealed interface PlaybackAction {
     data object Next : PlaybackAction
 }
 
+/**
+ * UI for actual playback controls such as seek bar, play/pause and seek buttons
+ */
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
@@ -515,6 +521,11 @@ fun PlaybackFaButton(
     }
 }
 
+/**
+ * Show a dialog aligned to the bottom of the screen instead of centered.
+ *
+ * @param gravity The [Gravity] to align the dialog to left or right
+ */
 @Composable
 fun <T> BottomDialog(
     choices: List<BottomDialogItem<T>>,
@@ -593,10 +604,6 @@ fun <T> BottomDialog(
         }
     }
 }
-
-data class MoreButtonOptions(
-    val options: Map<String, PlaybackAction>,
-)
 
 data class BottomDialogItem<T>(
     val data: T,

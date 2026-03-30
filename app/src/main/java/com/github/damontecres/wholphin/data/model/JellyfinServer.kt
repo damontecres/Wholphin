@@ -17,6 +17,9 @@ import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Represents a Jellyfin server
+ */
 @Entity(tableName = "servers")
 @Serializable
 data class JellyfinServer(
@@ -29,6 +32,9 @@ data class JellyfinServer(
     val serverVersion: ServerVersion? by lazy { version?.let(ServerVersion::fromString) }
 }
 
+/**
+ * Represents a Jellyfin user for a particular server
+ */
 @Entity(
     tableName = "users",
     foreignKeys = [
@@ -59,6 +65,9 @@ data class JellyfinUser(
         "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
 }
 
+/**
+ * Represents the relationship between [JellyfinServer] and its [JellyfinUser]
+ */
 data class JellyfinServerUsers(
     @Embedded val server: JellyfinServer,
     @Relation(

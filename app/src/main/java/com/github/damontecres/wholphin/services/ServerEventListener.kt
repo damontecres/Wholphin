@@ -25,6 +25,9 @@ import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import javax.inject.Inject
 
+/**
+ * Listens for basic messages from the server such as messages
+ */
 @ActivityScoped
 class ServerEventListener
     @Inject

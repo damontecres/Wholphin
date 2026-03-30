@@ -55,6 +55,14 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import java.util.UUID
 
+/**
+ * Button for filtering data.
+ *
+ * Clicking on it will show a drop-down menu of filterable options. Many of these show a second drop-down menu when clicked.
+ *
+ * @see GetItemsFilter
+ * @see ItemFilterBy
+ */
 @Composable
 fun FilterByButton(
     filterOptions: List<ItemFilterBy<*>>,

@@ -25,6 +25,9 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.ifElse
 import kotlin.math.abs
 
+/**
+ * Shows a rotating indicator when seeking. Displays the amount of seconds in the [durationMs].
+ */
 @Composable
 fun SkipIndicator(
     durationMs: Long,

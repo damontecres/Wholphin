@@ -42,6 +42,9 @@ data class ItemDetailsDialogInfo(
     val files: List<MediaSourceInfo>,
 )
 
+/**
+ * Dialog showing metadata about an item
+ */
 @Composable
 fun ItemDetailsDialog(
     info: ItemDetailsDialogInfo,

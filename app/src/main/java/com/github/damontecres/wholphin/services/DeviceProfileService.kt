@@ -14,6 +14,9 @@ import org.jellyfin.sdk.model.api.DeviceProfile
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Creates and caches the device direct play/transcoding profile sent to the server for ExoPlayer
+ */
 @Singleton
 class DeviceProfileService
     @Inject
@@ -21,7 +24,7 @@ class DeviceProfileService
         @param:ApplicationContext private val context: Context,
     ) {
         val mediaCodecCapabilitiesTest by lazy {
-            // Created lazily below on the IO thread since it cn take time
+            // Created lazily below on another thread since it cn take time
             MediaCodecCapabilitiesTest(context)
         }
         private val mutex = Mutex()
@@ -33,7 +36,7 @@ class DeviceProfileService
             prefs: PlaybackPreferences,
             serverVersion: ServerVersion?,
         ): DeviceProfile =
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.Default) {
                 mutex.withLock {
                     val newConfig =
                         DeviceProfileConfiguration(

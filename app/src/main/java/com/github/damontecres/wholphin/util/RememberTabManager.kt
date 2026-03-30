@@ -3,6 +3,9 @@ package com.github.damontecres.wholphin.util
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import java.util.UUID
 
+/**
+ * Functions to remember tabs choices for a library
+ */
 interface RememberTabManager {
     /**
      * If enabled, get the remembered tab index for the given item

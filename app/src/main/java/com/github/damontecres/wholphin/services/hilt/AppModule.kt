@@ -34,26 +34,48 @@ import org.jellyfin.sdk.model.DeviceInfo
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
+/**
+ * An [OkHttpClient] that includes the user's access token when making requests
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AuthOkHttpClient
 
+/**
+ * A basic [OkHttpClient] that does not include auth
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class StandardOkHttpClient
 
+/**
+ * A [CoroutineScope] with [Dispatchers.IO]
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
+/**
+ * A [CoroutineScope] with [Dispatchers.Default]
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCoroutineScope
 
+/**
+ * [Dispatchers.IO]
+ *
+ * @see IoCoroutineScope
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IoDispatcher
 
+/**
+ * [Dispatchers.Default]
+ *
+ * @see DefaultCoroutineScope
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultDispatcher

@@ -14,6 +14,7 @@ The app uses:
 * [Room](https://developer.android.com/training/data-storage/room) & [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for local data storage
 * [Hilt](https://developer.android.com/training/dependency-injection/hilt-android) for dependency injection
 * [Media3/ExoPlayer](https://developer.android.com/media/media3/exoplayer) for media playback
+* [MPV/libmpv](https://github.com/mpv-player/mpv) for media playback
 * [Coil](https://coil-kt.github.io/coil/) for image loading
 * [OkHttp](https://square.github.io/okhttp/) for HTTP requests
 

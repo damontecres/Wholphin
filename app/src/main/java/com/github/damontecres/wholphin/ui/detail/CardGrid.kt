@@ -85,6 +85,9 @@ interface CardGridItem {
     val sortName: String
 }
 
+/**
+ * Shows a vertical grid of [CardGridItem]s
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T : CardGridItem> CardGrid(

@@ -50,6 +50,11 @@ val DefaultPlaylistItemsOptions =
         DecadeFilter,
     )
 
+/**
+ * A way to filter libraries
+ *
+ * Gets and sets values within a [GetItemsFilter]
+ */
 sealed interface ItemFilterBy<T> {
     @get:StringRes
     val stringRes: Int

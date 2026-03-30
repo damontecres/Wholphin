@@ -83,6 +83,7 @@ fun CollectionRows(
                 onUpdateBackdrop = {},
                 headerComposable = {},
                 takeFocus = false,
+                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                 modifier = Modifier,
             )
         }
