@@ -44,8 +44,12 @@ kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
 openapi-generator = "7.21.0"
 runner = "1.7.0"
+wholphin-extensions = "0.1.0"
 
 [libraries]
+wholphin-extensions-mpv = { module = "com.github.damontecres.wholphin.mpv:wholphin-mpv", version.ref = "wholphin-extensions" }
+wholphin-extensions-ffmpeg = { module = "com.github.damontecres.wholphin.media3:decoder-ffmpeg", version.ref = "wholphin-extensions" }
+wholphin-extensions-av1 = { module = "com.github.damontecres.wholphin.media3:decoder-av1", version.ref = "wholphin-extensions" }
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 acra-dialog = { module = "ch.acra:acra-dialog", version.ref = "acra" }
