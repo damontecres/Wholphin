@@ -13,7 +13,7 @@
     <string name="cancel_series_recording">Serieopname afbreken</string>
     <string name="cancel">Annuleren</string>
     <string name="chapters">Hoofdstukken</string>
-    <string name="choose_stream">‘%1$s’ kiezen</string>
+    <string name="choose_stream">%1$s kiezen</string>
     <string name="clear_image_cache">Afbeeldingscache wissen</string>
     <string name="collection">Collectie</string>
     <string name="collections">Collecties</string>
@@ -57,8 +57,8 @@
     <string name="loading">Bezig met laden…</string>
     <string name="mark_entire_series_as_played">Serie als bekeken markeren?</string>
     <string name="mark_entire_series_as_unplayed">Serie als niet-bekeken markeren?</string>
-    <string name="mark_unwatched">Markeren als niet-bekeken</string>
-    <string name="mark_watched">Markeren als bekeken</string>
+    <string name="mark_unwatched">Als niet-bekeken markeren</string>
+    <string name="mark_watched">Als bekeken markeren</string>
     <string name="max_bitrate">Max. bitsnelheid</string>
     <string name="more_like_this">Soortgelijk</string>
     <string name="more">Meer</string>
@@ -325,7 +325,7 @@
     <string name="level">Niveau</string>
     <string name="resolution">Resolutie</string>
     <string name="anamorphic">Anamorfisch</string>
-    <string name="interlaced">Met interlatie</string>
+    <string name="interlaced">Geïnterlinieerd</string>
     <string name="framerate">Framesnelheid</string>
     <string name="bit_depth">Bitdiepte</string>
     <string name="video_range">Videobereik</string>
@@ -374,12 +374,12 @@
     <string name="seerr_login">Login bij Seerr server</string>
     <string name="search_for">Zoek %s</string>
     <string name="actor">Acteur</string>
-    <string name="clear_track_choices">Afspeel voorkeuren wissen</string>
+    <string name="clear_track_choices">Afspeelvoorkeuren wissen</string>
     <string name="display_preset_episode_thumbnails">Aflevering thumbnails</string>
     <string name="writer">Auteur</string>
     <string name="for_episodes">Voor afleveringen</string>
     <string name="start_after">Start na</string>
-    <string name="add_to_queue">Toevoegen aan wachtrij</string>
+    <string name="add_to_queue">Aan wachtrij toevoegen</string>
     <string name="composer">Componist</string>
     <string name="display_preset_series_thumb">Serie thumbnails</string>
     <string name="delete_item">Weet u zeker dat u dit item wilt verwijderen?</string>
@@ -401,7 +401,7 @@
     <string name="upcoming_tv">Verwachte series</string>
     <string name="request_4k">Verzoek in 4K</string>
     <string name="brightness">Helderheid</string>
-    <string name="send_media_info_log_to_server">Stuur media-info log naar server</string>
+    <string name="send_media_info_log_to_server">Media-info log naar server</string>
     <string name="resolution_switching">Resolutie schakelen</string>
     <string name="local">Lokaal</string>
     <string name="backdrop_display">Achtergrondstijl</string>
@@ -432,7 +432,7 @@
     <string name="no_limit">Geen limiet</string>
     <string name="customize_home">Startscherm aanpassen</string>
     <string name="home_rows">Startrijen</string>
-    <string name="suggestions_for">"Aanbevelingen voor  %1$s"</string>
+    <string name="suggestions_for">Aanbevelingen voor %1$s</string>
     <string name="volume_lowest">Laagst</string>
     <string name="skip_automatically">Automatisch overslaan</string>
     <string name="conductor">Dirigent</string>
