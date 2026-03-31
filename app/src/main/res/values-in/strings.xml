@@ -534,4 +534,8 @@
     <string name="content_scale_fill">Layar penuh</string>
     <string name="content_scale_fill_width">Lebar penuh</string>
     <string name="content_scale_fill_height">Tinggi penuh</string>
+    <string name="prefer_logos">Utamakan logo untuk judul</string>
+    <string name="albums">Album</string>
+    <string name="artists">Artis</string>
+    <string name="songs">Lagu</string>
 </resources>
