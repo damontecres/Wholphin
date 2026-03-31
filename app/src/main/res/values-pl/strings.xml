@@ -253,7 +253,7 @@
     <string name="playlist">Playlista</string>
     <string name="recap">Streszczenie</string>
     <string name="record_series">Zapisz serial</string>
-    <string name="search_and_download"><![CDATA[Search & Download]]></string>
+    <string name="search_and_download"><![CDATA[Znajdź i pobierz]]></string>
     <string name="show">Pokaż</string>
     <string name="subtitle_download_too_long">Pobieranie napisów trwa zbyt długo, może być konieczne ponowne uruchomienie odtwarzacza</string>
     <string name="tv_dvr_schedule">Harmonogram nagrywania</string>
@@ -298,4 +298,18 @@
     <string name="skip_back_on_resume_preference">Cofnij gdy wznawiasz odtwarzanie</string>
     <string name="player_backend">Player odtwarzający</string>
     <string name="pass_out_protection">Ochrona przed uśpieniem</string>
+    <string name="ends_at">Kończy się o %1$s</string>
+    <string name="enter_server_address">Wprowadź adres serwera</string>
+    <string name="immediate">Natychmiastowo</string>
+    <string name="no_servers_found">Nie znaleziono serwerów</string>
+    <string name="only_forced_subtitles">Tylko wymuszone napisy</string>
+    <string name="voice_search">Wyszukiwanie głosowe</string>
+    <string name="voice_starting">Uruchamianie</string>
+    <string name="voice_search_prompt">Mów żeby wyszukać</string>
+    <string name="processing">Przetwarzanie</string>
+    <string name="press_back_to_cancel">Wciśnij wstecz aby anulować</string>
+    <string name="voice_error_audio">Błąd nagrywania dźwięku</string>
+    <string name="voice_error_client">Błąd rozpoznawania mowy</string>
+    <string name="voice_error_permissions">Wymagane uprawnienia mikrofonu</string>
+    <string name="voice_error_network">Błąd sieci</string>
 </resources>
