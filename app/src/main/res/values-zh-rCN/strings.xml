@@ -559,4 +559,5 @@
     <string name="visualizer_rationale">可视化当前播放的音频需要录音权限。</string>
     <string name="continue_string">继续</string>
     <string name="separate_types">分开类型</string>
+    <string name="prefer_logos">优先显示标题图标</string>
 </resources>
