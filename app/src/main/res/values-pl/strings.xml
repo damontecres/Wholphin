@@ -312,4 +312,9 @@
     <string name="voice_error_client">Błąd rozpoznawania mowy</string>
     <string name="voice_error_permissions">Wymagane uprawnienia mikrofonu</string>
     <string name="voice_error_network">Błąd sieci</string>
+    <string name="voice_error_server">Błąd serwera</string>
+    <string name="retry">Ponów</string>
+    <string name="video">Wideo</string>
+    <string name="videos">Filmy</string>
+    <string name="watch_live">Oglądanie na żywo</string>
 </resources>
