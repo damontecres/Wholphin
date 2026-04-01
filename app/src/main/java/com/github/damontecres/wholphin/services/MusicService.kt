@@ -30,7 +30,7 @@ import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
-import com.github.damontecres.wholphin.util.profile.Codec
+import com.github.damontecres.wholphin.util.profile.supportedAudioCodecs
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +82,8 @@ class MusicService
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
+
+        private val audioFormats by lazy { listOf(*supportedAudioCodecs) }
 
         val player: Player by lazy {
             ExoPlayer
@@ -286,14 +288,9 @@ class MusicService
             val url =
                 api.universalAudioApi.getUniversalAudioStreamUrl(
                     itemId = audio.id,
-                    container =
-                        listOf(
-                            Codec.Audio.OPUS,
-                            Codec.Audio.MP3,
-                            Codec.Audio.AAC,
-                            Codec.Audio.FLAC,
-                        ),
+                    container = audioFormats,
                 )
+            Timber.i("url=%s", url)
             val imageUrl =
                 audio.data.albumId?.let { albumId ->
                     imageUrlService.getItemImageUrl(
