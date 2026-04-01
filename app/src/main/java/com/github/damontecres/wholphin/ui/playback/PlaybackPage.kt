@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.collectAsState
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
@@ -121,7 +120,7 @@ fun PlaybackPage(
 
         LoadingState.Pending,
         LoadingState.Loading,
-        -> {
+            -> {
             LoadingPage(modifier.background(Color.Black))
         }
 
@@ -304,7 +303,7 @@ fun PlaybackPageContent(
 
     val showSegment =
         currentSegment?.interacted == false &&
-            nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+                nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
     BackHandler(showSegment) {
         viewModel.updateSegment(currentSegment?.segment?.id, true)
     }
@@ -453,6 +452,7 @@ fun PlaybackPageContent(
             ContentWarningPill(
                 rating = contentWarningRating,
                 warnings = contentWarningTags,
+                isPlaying = playPauseState.showPlay.not() && !presentationState.coverSurface,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(
