@@ -585,4 +585,6 @@
     <string name="play_as_type">Nasıl çalınsın?</string>
     <string name="visualizer_rationale">Çalan sesi görselleştirmek için ses kaydetme izni gerekiyor.</string>
     <string name="continue_string">Devam et</string>
+    <string name="separate_types">Farklı türler</string>
+    <string name="prefer_logos">Başlık yerine logo göster</string>
 </resources>
