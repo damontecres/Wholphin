@@ -414,6 +414,7 @@ fun SearchPage(
                     },
                     onLongClick = onLongClick,
                     imageHeight = 140.dp,
+                    showImageOverlay = true,
                     modifier = mod.padding(horizontal = 8.dp),
                 )
             },
@@ -437,6 +438,7 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
@@ -460,6 +462,7 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
@@ -483,6 +486,7 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
@@ -549,6 +553,7 @@ fun LazyListScope.searchResultRow(
             },
             onLongClick = onLongClick,
             imageHeight = Cards.height2x3,
+            showImageOverlay = true,
             modifier = mod,
         )
     },
