@@ -341,7 +341,7 @@ fun DiscoverMovieDetailsContent(
                                 item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                showOverlay = false,
+                                showOverlay = true,
                                 modifier = mod,
                             )
                         },

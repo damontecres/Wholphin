@@ -342,7 +342,7 @@ fun DiscoverRow(
                         item = item,
                         onClick = onClick,
                         onLongClick = onLongClick,
-                        showOverlay = false,
+                        showOverlay = true,
                         modifier =
                             mod.onFocusChanged {
                                 if (it.isFocused) {
