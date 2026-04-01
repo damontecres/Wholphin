@@ -85,7 +85,13 @@ class HomeViewModel
                         val refresh =
                             state.loadingState == LoadingState.Success && state.settings == settings
                         Timber.v("refresh=$refresh, state.loadingState=${state.loadingState}")
-                        _state.update { it.copy(settings = settings) }
+                        _state.update {
+                            it.copy(
+                                loadingState = if (refresh) LoadingState.Success else LoadingState.Loading,
+                                refreshState = LoadingState.Loading,
+                                settings = settings,
+                            )
+                        }
 
                         val semaphore = Semaphore(4)
 
