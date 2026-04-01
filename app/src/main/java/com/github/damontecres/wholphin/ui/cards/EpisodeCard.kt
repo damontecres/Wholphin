@@ -45,6 +45,7 @@ fun EpisodeCard(
     modifier: Modifier = Modifier,
     imageHeight: Dp = Dp.Unspecified,
     imageWidth: Dp = Dp.Unspecified,
+    showImageOverlay: Boolean = false,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val dto = item?.data
@@ -94,7 +95,7 @@ fun EpisodeCard(
                 ItemCardImage(
                     item = item,
                     name = item?.name,
-                    showOverlay = false,
+                    showOverlay = showImageOverlay,
                     favorite = dto?.userData?.isFavorite ?: false,
                     watched = dto?.userData?.played ?: false,
                     unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
