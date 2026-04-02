@@ -319,17 +319,9 @@ fun SeriesOverviewContent(
                 }
             }
 
-            val castAndCrew =
+            val (guestStars, castAndCrew) =
                 remember(peopleInEpisode) {
-                    peopleInEpisode.filterNot {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
-            val guestStars =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filter {
-                        it.type == PersonKind.GUEST_STAR
-                    }
+                    peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
                 }
 
             AnimatedVisibility(
