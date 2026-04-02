@@ -17,6 +17,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -28,10 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -67,6 +66,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -143,8 +143,8 @@ fun MovieDetails(
 
         is DataLoadingState.Success -> {
             val unknownStr = stringResource(R.string.unknown)
-            val movie = s.data
-            val chosenStreams = state.chosenStreams
+            val movie by rememberUpdatedState(s.data)
+            val chosenStreams by rememberUpdatedState(state.chosenStreams)
             LifecycleResumeEffect(destination.itemId) {
                 viewModel.maybePlayThemeSong(
                     destination.itemId,
@@ -157,12 +157,7 @@ fun MovieDetails(
             MovieDetailsContent(
                 preferences = preferences,
                 movie = movie,
-                chosenStreams = state.chosenStreams,
-                people = state.people,
-                chapters = state.chapters,
-                extras = state.extras,
-                trailers = state.trailers,
-                similar = state.similar,
+                state = state,
                 onClickItem = { index, item ->
                     viewModel.navigateTo(item.destination())
                 },
@@ -203,11 +198,7 @@ fun MovieDetails(
                                     watched = movie.data.userData?.played ?: false,
                                     favorite = movie.data.userData?.isFavorite ?: false,
                                     seriesId = null,
-                                    sourceId =
-                                        chosenStreams
-                                            ?.source
-                                            ?.id
-                                            ?.toUUIDOrNull(),
+                                    sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                     canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
                                     canDelete = state.canDelete,
                                     actions = moreActions,
@@ -229,7 +220,7 @@ fun MovieDetails(
                                         viewModel.streamChoiceService
                                             .chooseSource(
                                                 movie.data,
-                                                state.chosenStreams?.itemPlayback,
+                                                chosenStreams?.itemPlayback,
                                             )?.let { source ->
                                                 chooseVersion =
                                                     chooseStream(
@@ -314,7 +305,6 @@ fun MovieDetails(
                 onClickExtra = { index, extra ->
                     viewModel.navigateTo(extra.destination)
                 },
-                discovered = state.discovered,
                 onClickDiscover = { index, item ->
                     viewModel.navigateTo(item.destination)
                 },
@@ -395,13 +385,7 @@ private const val DISCOVER_ROW = SIMILAR_ROW + 1
 fun MovieDetailsContent(
     preferences: UserPreferences,
     movie: BaseItem,
-    chosenStreams: ChosenStreams?,
-    people: List<Person>,
-    chapters: List<Chapter>,
-    trailers: List<Trailer>,
-    extras: List<ExtrasItem>,
-    similar: List<BaseItem>,
-    discovered: List<DiscoverItem>,
+    state: MovieState,
     playOnClick: (Duration) -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
@@ -446,7 +430,7 @@ fun MovieDetailsContent(
                     MovieDetailsHeader(
                         preferences = preferences,
                         movie = movie,
-                        chosenStreams = chosenStreams,
+                        chosenStreams = state.chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         modifier =
@@ -473,7 +457,7 @@ fun MovieDetailsContent(
                                 }
                             }
                         },
-                        trailers = trailers,
+                        trailers = state.trailers,
                         trailerOnClick = {
                             position = TRAILER_ROW
                             trailerOnClick.invoke(it)
@@ -488,7 +472,7 @@ fun MovieDetailsContent(
                     )
                 }
             }
-            if (people.isNotEmpty()) {
+            state.people.letNotEmpty { people ->
                 item {
                     PersonRow(
                         people = people,
@@ -507,7 +491,7 @@ fun MovieDetailsContent(
                     )
                 }
             }
-            if (chapters.isNotEmpty()) {
+            state.chapters.letNotEmpty { chapters ->
                 item {
                     ChapterRow(
                         chapters = chapters,
@@ -524,7 +508,7 @@ fun MovieDetailsContent(
                     )
                 }
             }
-            if (extras.isNotEmpty()) {
+            state.extras.letNotEmpty { extras ->
                 item {
                     ExtrasRow(
                         extras = extras,
@@ -540,7 +524,7 @@ fun MovieDetailsContent(
                     )
                 }
             }
-            if (similar.isNotEmpty()) {
+            state.similar.letNotEmpty { similar ->
                 item {
                     val imageHeight =
                         remember(movie.type) {
@@ -579,7 +563,7 @@ fun MovieDetailsContent(
                     )
                 }
             }
-            if (discovered.isNotEmpty()) {
+            state.discovered.letNotEmpty { discovered ->
                 item {
                     DiscoverRow(
                         row =
