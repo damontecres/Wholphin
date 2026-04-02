@@ -111,11 +111,6 @@ fun Modifier.ifElse(
 ): Modifier = then(if (condition) ifTrueModifier.invoke() else ifFalseModifier.invoke())
 
 /**
- * An alpha modifier that reads the value in the Draw Phase.
- * Use this for animations (like your 'dimming' state) to avoid recompositions.
- */
-fun Modifier.alpha(alpha: () -> Float): Modifier = graphicsLayer { this.alpha = alpha() }
-/**
  * Handles horizontal (Left & Right) D-Pad Keys and consumes the event(s) so that the focus doesn't
  * accidentally move to another element.
  * */

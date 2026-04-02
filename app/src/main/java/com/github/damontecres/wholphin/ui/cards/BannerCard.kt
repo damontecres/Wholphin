@@ -100,7 +100,6 @@ fun BannerCard(
         }
     var imageError by remember(imageUrl) { mutableStateOf(false) }
 
-    // Stabilize callbacks to prevent AsyncImage from recomposing
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
 
