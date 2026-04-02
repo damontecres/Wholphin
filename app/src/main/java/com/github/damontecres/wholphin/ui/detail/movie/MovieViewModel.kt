@@ -33,7 +33,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
-import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.DataLoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -87,12 +87,15 @@ class MovieViewModel
             viewModelScope.launchDefault {
                 userPreferencesService.flow.collectLatest { preferences ->
                     _state.update {
-                        it.copy(
-                            canDelete =
+                        val canDelete =
+                            it.movie?.let {
                                 mediaManagementService.canDelete(
-                                    it.movie,
+                                    it,
                                     preferences.appPreferences,
-                                ),
+                                )
+                            }
+                        it.copy(
+                            canDelete = canDelete ?: false,
                         )
                     }
                 }
@@ -114,7 +117,7 @@ class MovieViewModel
                         getMovie()
                     } catch (ex: Exception) {
                         Timber.e(ex, "Failed to fetch movie %s", itemId)
-                        _state.update { it.copy(loading = LoadingState.Error(ex)) }
+                        _state.update { it.copy(loading = DataLoadingState.Error(ex)) }
                         return@launchDefault
                     }
                 val chosenStreams =
@@ -127,8 +130,7 @@ class MovieViewModel
                 val chapters = Chapter.fromDto(movie.data, api)
                 _state.update {
                     it.copy(
-                        loading = LoadingState.Success,
-                        movie = movie,
+                        loading = DataLoadingState.Success(movie),
                         chosenStreams = chosenStreams,
                         trailers = remoteTrailers,
                         chapters = chapters,
@@ -192,7 +194,11 @@ class MovieViewModel
         ) = viewModelScope.launchDefault {
             try {
                 favoriteWatchManager.setWatched(itemId, played)
-                getMovie().let { movie -> _state.update { it.copy(movie = movie) } }
+                getMovie().let { movie ->
+                    _state.update {
+                        it.copy(loading = DataLoadingState.Success(movie))
+                    }
+                }
             } catch (ex: Exception) {
                 Timber.e(ex, "Error updating watch status for movie %s", itemId)
                 showToast(context, "Something went wrong...")
@@ -206,7 +212,9 @@ class MovieViewModel
             try {
                 favoriteWatchManager.setFavorite(itemId, favorite)
                 val movie = getMovie()
-                _state.update { it.copy(movie = movie) }
+                _state.update {
+                    it.copy(loading = DataLoadingState.Success(movie))
+                }
                 if (itemId != movie.id) {
                     viewModelScope.launchIO {
                         val people = peopleFavorites.getPeopleFor(movie)
@@ -283,7 +291,7 @@ class MovieViewModel
         fun clearChosenStreams(chosenStreams: ChosenStreams?) {
             viewModelScope.launchIO {
                 itemPlaybackRepository.deleteChosenStreams(chosenStreams)
-                state.value.movie.let { item ->
+                state.value.movie?.let { item ->
                     val result =
                         itemPlaybackRepository.getSelectedTracks(
                             itemId,
@@ -303,8 +311,7 @@ class MovieViewModel
     }
 
 data class MovieState(
-    val movie: BaseItem = BaseItem.UNSET,
-    val loading: LoadingState = LoadingState.Pending,
+    val loading: DataLoadingState<BaseItem> = DataLoadingState.Pending,
     val trailers: List<Trailer> = emptyList(),
     val people: List<Person> = emptyList(),
     val chapters: List<Chapter> = emptyList(),
@@ -313,4 +320,6 @@ data class MovieState(
     val discovered: List<DiscoverItem> = emptyList(),
     val chosenStreams: ChosenStreams? = null,
     val canDelete: Boolean = false,
-)
+) {
+    val movie: BaseItem? = (loading as? DataLoadingState.Success<BaseItem>)?.data
+}

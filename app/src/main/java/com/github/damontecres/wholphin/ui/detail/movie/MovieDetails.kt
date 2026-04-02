@@ -71,7 +71,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -132,19 +131,19 @@ fun MovieDetails(
         )
 
     when (val s = state.loading) {
-        is LoadingState.Error -> {
+        is DataLoadingState.Error -> {
             ErrorMessage(s, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
+        is DataLoadingState.Success -> {
             val unknownStr = stringResource(R.string.unknown)
-            val movie = state.movie
+            val movie = s.data
             val chosenStreams = state.chosenStreams
             LifecycleResumeEffect(destination.itemId) {
                 viewModel.maybePlayThemeSong(

@@ -247,17 +247,6 @@ data class BaseItem(
                 dto,
                 useSeriesForPrimary,
             )
-
-        /**
-         * An unset BaseItem
-         */
-        val UNSET =
-            BaseItem(
-                BaseItemDto(
-                    id = UUID.randomUUID(),
-                    type = BaseItemKind.YEAR,
-                ),
-            )
     }
 }
 
