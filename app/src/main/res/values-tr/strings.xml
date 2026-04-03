@@ -587,4 +587,5 @@
     <string name="continue_string">Devam et</string>
     <string name="separate_types">Farklı türler</string>
     <string name="prefer_logos">Başlık yerine logo göster</string>
+    <string name="updated_toast">Wholphin %s sürümüne güncellendi</string>
 </resources>
