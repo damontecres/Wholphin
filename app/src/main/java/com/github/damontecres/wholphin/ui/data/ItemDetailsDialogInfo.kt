@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -82,7 +84,7 @@ fun ItemDetailsDialog(
                 }
                 if (info.overview.isNotNullOrBlank()) {
                     Text(
-                        text = info.overview,
+                        text = AnnotatedString.fromHtml(info.overview),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
