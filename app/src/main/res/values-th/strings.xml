@@ -548,7 +548,4 @@
     <string name="select_all">เลือกทั้งหมด</string>
     <string name="separate_types">แยกประเภท</string>
     <string name="prefer_logos">ควรแสดงโลโก้แทนชื่อเรื่อง</string>
-    <plurals name="downloads">
-        <item quantity="other"></item>
-    </plurals>
 </resources>
