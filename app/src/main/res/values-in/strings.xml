@@ -41,7 +41,7 @@
     <string name="disabled">Nonaktif</string>
     <string name="enabled">Aktif</string>
     <string name="genres">Genre</string>
-    <string name="go_to_series">Masuk ke serial</string>
+    <string name="go_to_series">Buka serial</string>
     <string name="go_to">Masuk ke</string>
     <string name="forced_track">Paksa</string>
     <string name="hide_controller_timeout">Sembunyikan kontrol pemutaran</string>
@@ -538,4 +538,26 @@
     <string name="albums">Album</string>
     <string name="artists">Artis</string>
     <string name="songs">Lagu</string>
+    <string name="now_playing">Sedang diputar</string>
+    <string name="instant_mix">Campuran instan</string>
+    <string name="add_to_queue">Tambahkan ke antrean</string>
+    <string name="album_artist">Artis album</string>
+    <string name="album">Album</string>
+    <string name="popular_songs">Lagu populer</string>
+    <string name="play_next">Putar berikutnya</string>
+    <string name="music_videos">Video musik</string>
+    <string name="lyrics">Lirik</string>
+    <string name="hide_lyrics">Sembunyikan lirik</string>
+    <string name="show_lyrics">Tampilkan lirik</string>
+    <string name="song_has_lyrics">Tersedia lirik</string>
+    <string name="remove_from_queue">Hapus dari antrean</string>
+    <string name="show_album_cover">Tampilkan sampul album</string>
+    <string name="show_visualizer">Tampilkan visualisator</string>
+    <string name="show_backdrop">Tampilkan backdrop</string>
+    <string name="play_as_type">Putar sebagai?</string>
+    <string name="visualizer_rationale">Memvisualisasikan audio yang sedang diputar memerlukan izin untuk merekam audio.</string>
+    <string name="continue_string">Lanjutkan</string>
+    <string name="separate_types">Pisahkan jenis</string>
+    <string name="go_to_artist">Buka artis</string>
+    <string name="go_to_album">Buka album</string>
 </resources>
