@@ -88,7 +88,7 @@
     <string name="recently_added_in">Onlangs toegevoegd aan %1$s</string>
     <string name="recently_added">Onlangs toegevoegd</string>
     <string name="recently_recorded">Onlangs opgenomen</string>
-    <string name="recently_released">Onlangs uitgebracht</string>
+    <string name="recently_released">Onlangs verschenen</string>
     <string name="recommended">Aanbevolen</string>
     <string name="record_program">Programma opnemen</string>
     <string name="record_series">Serie opnemen</string>
@@ -109,7 +109,7 @@
     <string name="sort_by_date_added">Toegevoegd</string>
     <string name="sort_by_date_episode_added">Toegevoegd (aflevering)</string>
     <string name="sort_by_date_played">Bekeken</string>
-    <string name="sort_by_date_released">Uitgebracht</string>
+    <string name="sort_by_date_released">Verschenen</string>
     <string name="sort_by_name">Naam</string>
     <string name="sort_by_random">Willekeurig</string>
     <string name="studios">Studio\'s</string>
@@ -120,7 +120,7 @@
     <string name="suggestions">Suggesties</string>
     <string name="switch_servers">Andere server kiezen</string>
     <string name="switch_user">Kiezen</string>
-    <string name="top_unwatched">Best beoordeeld, niet-bekeken</string>
+    <string name="top_unwatched">Best beoordeeld niet-bekeken</string>
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailer</item>
@@ -130,7 +130,7 @@
     <string name="tv_guide">Gids</string>
     <string name="tv_season">Seizoen</string>
     <string name="tv_seasons">Seizoenen</string>
-    <string name="tv_shows">Afleveringen</string>
+    <string name="tv_shows">Series</string>
     <string name="ui_interface">Vormgeving</string>
     <string name="unknown">Onbekend</string>
     <string name="updates">Updates</string>
@@ -388,7 +388,7 @@
     <string name="music_videos">Muziekvideos</string>
     <string name="max_days_next_up">Max. aantal dagen in Volgende</string>
     <string name="now_playing">Wordt nu afgespeeld</string>
-    <string name="request">Aanvragen</string>
+    <string name="request">Aangevraagd</string>
     <string name="play_trailer">Trailer afspelen</string>
     <string name="no_servers_found">Geen servers gevonden</string>
     <string name="only_forced_subtitles">Alleen geforceerde ondertiteling</string>
@@ -399,7 +399,7 @@
     <string name="password">Wachtwoord</string>
     <string name="upcoming_movies">Verwachte films</string>
     <string name="upcoming_tv">Verwachte series</string>
-    <string name="request_4k">Verzoek in 4K</string>
+    <string name="request_4k">Aanvragen in 4K</string>
     <string name="brightness">Helderheid</string>
     <string name="send_media_info_log_to_server">Media-info log naar server</string>
     <string name="resolution_switching">Resolutie schakelen</string>
