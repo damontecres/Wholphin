@@ -128,50 +128,67 @@ class UpdateChecker
             return Version.fromString(pkgInfo.versionName!!)
         }
 
+        suspend fun getRelease(version: Version): Release? {
+            val url =
+                "https://api.github.com/repos/damontecres/Wholphin/releases/tags/v${version.major}.${version.minor}.${version.patch}"
+            return withContext(Dispatchers.IO) {
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .build()
+                getRelease(request)
+            }
+        }
+
         /**
          * Get the latest released version
          */
-        suspend fun getLatestRelease(updateUrl: String): Release? {
-            return withContext(Dispatchers.IO) {
+        suspend fun getLatestRelease(updateUrl: String): Release? =
+            withContext(Dispatchers.IO) {
                 val request =
                     Request
                         .Builder()
                         .url(updateUrl)
                         .get()
                         .build()
-                okHttpClient.newCall(request).execute().use {
-                    if (it.isSuccessful && it.body != null) {
-                        val result = Json.parseToJsonElement(it.body!!.string())
-                        val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                        val version = Version.tryFromString(name)
-                        val publishedAt =
-                            result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
-                        val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
-                        val downloadUrl =
-                            result.jsonObject["assets"]
-                                ?.jsonArray
-                                ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
-                        Timber.v("version=$version, downloadUrl=$downloadUrl")
-                        if (version != null) {
-                            val notes =
-                                if (body.isNotNullOrBlank()) {
-                                    NOTE_REGEX
-                                        .findAll(body)
-                                        .map { m ->
-                                            m.groupValues[1]
-                                        }.toList()
-                                } else {
-                                    listOf()
-                                }
-                            return@use Release(version, downloadUrl, publishedAt, body, notes)
-                        } else {
-                            Timber.w("Update version parsing failed. name=$name")
-                        }
+                getRelease(request)
+            }
+
+        private fun getRelease(request: Request): Release? {
+            return okHttpClient.newCall(request).execute().use {
+                if (it.isSuccessful && it.body != null) {
+                    val result = Json.parseToJsonElement(it.body!!.string())
+                    val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+                    val version = Version.tryFromString(name)
+                    val publishedAt =
+                        result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
+                    val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
+                    val downloadUrl =
+                        result.jsonObject["assets"]
+                            ?.jsonArray
+                            ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
+                    Timber.v("version=$version, downloadUrl=$downloadUrl")
+                    if (version != null) {
+                        val notes =
+                            if (body.isNotNullOrBlank()) {
+                                NOTE_REGEX
+                                    .findAll(body)
+                                    .map { m ->
+                                        m.groupValues[1]
+                                    }.toList()
+                            } else {
+                                emptyList()
+                            }
+                        return@use Release(version, downloadUrl, publishedAt, body, notes)
                     } else {
-                        Timber.w("Update check failed: ${it.message}")
+                        Timber.w("Update version parsing failed. name=$name")
                     }
-                    return@use null
+                } else {
+                    Timber.w("Update check failed ${it.code}: ${it.message}")
                 }
+                return@use null
             }
         }
 
@@ -347,7 +364,19 @@ data class Release(
     val publishedAt: String?,
     val body: String?,
     val notes: List<String>,
-)
+) {
+    val content =
+        "# ${version}\n" +
+            (
+                (notes.joinToString("\n").takeIf { it.isNotNullOrBlank() } ?: "") +
+                    (body ?: "")
+            ).replace(
+                Regex("https://github.com/\\w*/\\w+/pull/(\\d+)"),
+                "#$1",
+            )
+                // Remove the last line for full changelog since its just a link
+                .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), "")
+}
 
 interface DownloadCallback {
     fun contentLength(contentLength: Long)
