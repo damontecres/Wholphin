@@ -14,6 +14,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -92,6 +93,16 @@ fun ErrorMessage(
 @Composable
 fun ErrorMessage(
     error: LoadingState.Error,
+    modifier: Modifier = Modifier,
+) = ErrorMessage(
+    message = error.message,
+    exception = error.exception,
+    modifier = modifier,
+)
+
+@Composable
+fun ErrorMessage(
+    error: DataLoadingState.Error,
     modifier: Modifier = Modifier,
 ) = ErrorMessage(
     message = error.message,
