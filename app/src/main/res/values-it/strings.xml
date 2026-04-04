@@ -596,4 +596,5 @@
     <string name="continue_string">Continua</string>
     <string name="separate_types">Tipi separati</string>
     <string name="prefer_logos">Preferisci mostrare i loghi per i titoli</string>
+    <string name="updated_toast">Wholphin aggiornato a %s</string>
 </resources>
