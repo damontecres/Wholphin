@@ -147,15 +147,15 @@ class LatestNextUpServiceTests {
                 BaseItemDtoQueryResult(
                     items =
                         listOf(
-                            mockk<BaseItemDto> {
+                            mockk<BaseItemDto>(relaxed = true) {
                                 every { seriesId } returns seriesId1
                                 every { userData } returns testUserItemDataDto.copy(lastPlayedDate = LocalDateTime.now().minusDays(7))
                             },
-                            mockk<BaseItemDto> {
+                            mockk<BaseItemDto>(relaxed = true) {
                                 every { seriesId } returns seriesId2
                                 every { userData } returns testUserItemDataDto.copy(lastPlayedDate = null)
                             },
-                            mockk<BaseItemDto> {
+                            mockk<BaseItemDto>(relaxed = true) {
                                 every { seriesId } returns seriesId3
                                 every { userData } returns testUserItemDataDto.copy(lastPlayedDate = LocalDateTime.now().plusDays(7))
                             },
