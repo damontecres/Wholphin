@@ -30,10 +30,6 @@ jobs:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
         uses: ./.github/actions/setup
-      - name: Native build
-        uses: ./.github/actions/native-build
-        with:
-          cache: true
 
       - name: Get version names
         run: |
@@ -55,8 +51,11 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
           ./gradlew clean assembleRelease assembleDebug --no-daemon
+
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"

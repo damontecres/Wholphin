@@ -9,12 +9,20 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Get extras for media
+ *
+ * @see [ExtrasItem]
+ */
 @Singleton
 class ExtrasService
     @Inject
     constructor(
         private val api: ApiClient,
     ) {
+        /**
+         * Get the [ExtrasItem]s for the given item
+         */
         suspend fun getExtras(itemId: UUID): List<ExtrasItem> {
             val extrasMap =
                 api.userLibraryApi
@@ -42,6 +50,9 @@ class ExtrasService
         }
     }
 
+/**
+ * The order which extras should be shown
+ */
 private val ExtraType.sortOrder: Int
     get() =
         when (this) {

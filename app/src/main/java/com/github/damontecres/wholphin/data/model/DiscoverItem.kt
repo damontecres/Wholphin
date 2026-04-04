@@ -16,6 +16,9 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.time.LocalDate
 import java.util.UUID
 
+/**
+ * The type of a Seerr/Discover object with mapping to the Jellyfin [BaseItemKind]
+ */
 @Serializable
 enum class SeerrItemType(
     val baseItemKind: BaseItemKind?,
@@ -46,6 +49,9 @@ enum class SeerrItemType(
     }
 }
 
+/**
+ * How available is a particular discovered item within the Jellyfin server
+ */
 @Serializable
 enum class SeerrAvailability(
     val status: Int,
@@ -64,7 +70,7 @@ enum class SeerrAvailability(
 }
 
 /**
- * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well.
+ * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well, see [availability].
  */
 @Stable
 @Serializable
@@ -104,6 +110,9 @@ data class DiscoverItem(
         }
 }
 
+/**
+ * A rating for a discovered item which is usually fetched separately from the item
+ */
 data class DiscoverRating(
     val criticRating: Int?,
     val audienceRating: Float?,

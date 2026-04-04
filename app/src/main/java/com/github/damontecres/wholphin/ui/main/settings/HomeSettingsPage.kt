@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.search.SearchForDialog
@@ -51,6 +52,7 @@ val settingsWidth = 360.dp
 
 @Composable
 fun HomeSettingsPage(
+    preferences: UserPreferences,
     modifier: Modifier,
     viewModel: HomeSettingsViewModel = hiltViewModel(),
 ) {
@@ -310,6 +312,7 @@ fun HomeSettingsPage(
             listState = listState,
             takeFocus = false,
             showEmptyRows = true,
+            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
             modifier =
                 Modifier
                     .fillMaxHeight()

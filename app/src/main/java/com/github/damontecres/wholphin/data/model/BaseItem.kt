@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.timeRemaining
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -28,6 +29,9 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.time.Duration
 
+/**
+ * Wrapper for [BaseItemDto] with shortcuts for various UI elements
+ */
 @Serializable
 @Stable
 data class BaseItem(
@@ -89,7 +93,11 @@ data class BaseItem(
 
     val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
 
-    val ui by lazy {
+    /**
+     * Contains pre computed UI elements that would be expensive to create on the main thread
+     */
+    @Transient
+    val ui =
         BaseItemUi(
             episodeCornerText =
                 data.indexNumber?.let { "E$it" }
@@ -123,6 +131,9 @@ data class BaseItem(
                                 } else if (data.premiereDate != null) {
                                     add(data.premiereDate!!.toLocalDate().toString())
                                 }
+                            } else if (type == BaseItemKind.BOX_SET) {
+                                data.productionYear?.let { add(it.toString()) }
+                                data.childCount?.let { add("$it items") }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -162,7 +173,6 @@ data class BaseItem(
                     }
                 },
         )
-    }
 
     private fun dateAsIndex(): Int? =
         data.premiereDate
@@ -172,6 +182,9 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
+    /**
+     * Convert this [BaseItem] into a [Destination] to navigate to its page in the app
+     */
     fun destination(index: Int? = null): Destination {
         if (destinationOverride != null) return destinationOverride
         val result =
@@ -222,6 +235,7 @@ data class BaseItem(
     }
 
     companion object {
+        @Deprecated("Use regular constructor instead")
         fun from(
             dto: BaseItemDto,
             api: ApiClient,
@@ -243,6 +257,9 @@ data class BaseItemUi(
     val quickDetails: AnnotatedString,
 )
 
+/**
+ * Create the special [Destination.FilteredCollection] for the given genre information
+ */
 fun createGenreDestination(
     genreId: UUID,
     genreName: String,

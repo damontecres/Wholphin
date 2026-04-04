@@ -51,7 +51,7 @@ import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 
 @Composable
 fun DownloadSubtitlesContent(
-    state: SubtitleSearch,
+    state: SubtitleSearchStatus,
     language: String,
     onSearch: (String) -> Unit,
     onClickDownload: (RemoteSubtitleInfo) -> Unit,
@@ -59,7 +59,7 @@ fun DownloadSubtitlesContent(
     modifier: Modifier = Modifier,
 ) {
     when (val s = state) {
-        SubtitleSearch.Searching -> {
+        SubtitleSearchStatus.Searching -> {
             Wrapper {
                 Text(
                     text = stringResource(R.string.searching),
@@ -69,7 +69,7 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        SubtitleSearch.Downloading -> {
+        SubtitleSearchStatus.Downloading -> {
             Wrapper {
                 Text(
                     text = stringResource(R.string.downloading),
@@ -79,11 +79,11 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        is SubtitleSearch.Error -> {
+        is SubtitleSearchStatus.Error -> {
             Wrapper { ErrorMessage(null, s.ex, modifier) }
         }
 
-        is SubtitleSearch.Success -> {
+        is SubtitleSearchStatus.Success -> {
             val dialogItems = convertRemoteSubtitles(s.options, onClickDownload)
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {

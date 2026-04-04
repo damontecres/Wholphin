@@ -37,6 +37,9 @@ import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Shows the current backdrop images provided by [com.github.damontecres.wholphin.services.BackdropService]
+ */
 @Composable
 fun Backdrop(
     drawerIsOpen: Boolean,
@@ -59,6 +62,9 @@ fun Backdrop(
     )
 }
 
+/**
+ * Shows the current backdrop images provided by the [BackdropResult]
+ */
 @Composable
 fun Backdrop(
     backdrop: BackdropResult,

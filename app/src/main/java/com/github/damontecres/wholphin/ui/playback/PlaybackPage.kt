@@ -168,7 +168,7 @@ fun PlaybackPageContent(
     val nextUp by viewModel.nextUp.observeAsState(null)
     val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
 
-    val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
+    val subtitleSearch by viewModel.subtitleSearchStatus.observeAsState(null)
     val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
@@ -359,6 +359,15 @@ fun PlaybackPageContent(
                                 .fillMaxWidth(percent),
                     )
                 }
+            }
+
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+                PauseIndicator(
+                    player = player,
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center),
+                )
             }
 
             // The playback controls

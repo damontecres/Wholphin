@@ -12,7 +12,7 @@ kotlin = "2.3.20"
 ksp = "2.3.6"
 coreKtx = "1.18.0"
 appcompat = "1.7.1"
-composeBom = "2026.03.00"
+composeBom = "2026.03.01"
 mockk = "1.14.9"
 robolectric = "4.16.1"
 multiplatformMarkdownRenderer = "0.39.2"
@@ -24,7 +24,7 @@ tvFoundation = "1.0.0-beta01"
 tvMaterial = "1.0.1"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
-androidx-media3 = "1.9.3"
+androidx-media3 = "1.10.0"
 coil = "3.4.0"
 jellyfin-sdk = "1.7.1"
 nav3Core = "1.0.1"
@@ -33,19 +33,23 @@ material3AdaptiveNav3 = "1.0.0-alpha03"
 protobuf = "0.9.6"
 datastore = "1.2.1"
 kotlinx-serialization = "1.10.0"
-protobuf-javalite = "4.34.0"
+protobuf-javalite = "4.34.1"
 hilt = "2.59.2"
 room = "2.8.4"
 preferenceKtx = "1.2.1"
 tvprovider = "1.1.0"
-workRuntimeKtx = "2.11.1"
+workRuntimeKtx = "2.11.2"
 paletteKtx = "1.0.0"
 kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
-openapi-generator = "7.20.0"
+openapi-generator = "7.21.0"
 runner = "1.7.0"
+wholphin-extensions = "0.1.0"
 
 [libraries]
+wholphin-extensions-mpv = { module = "com.github.damontecres.wholphin.mpv:wholphin-mpv", version.ref = "wholphin-extensions" }
+wholphin-extensions-ffmpeg = { module = "com.github.damontecres.wholphin.media3:decoder-ffmpeg", version.ref = "wholphin-extensions" }
+wholphin-extensions-av1 = { module = "com.github.damontecres.wholphin.media3:decoder-av1", version.ref = "wholphin-extensions" }
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 acra-dialog = { module = "ch.acra:acra-dialog", version.ref = "acra" }
@@ -72,6 +76,7 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-tvprovider = { module = "androidx.tvprovider:tvprovider", version.ref = "tvprovider" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }

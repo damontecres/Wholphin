@@ -414,7 +414,7 @@ class HomeSettingsViewModel
                     config =
                         HomeRowConfig.ByParent(
                             parentId = parent.id,
-                            recursive = true,
+                            recursive = false,
                         ),
                 )
             updateState {

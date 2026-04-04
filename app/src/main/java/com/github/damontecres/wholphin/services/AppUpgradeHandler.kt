@@ -1,11 +1,11 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
-import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -32,6 +32,9 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles any changes needed when the app in upgraded on the device such as setting new preferences
+ */
 @Singleton
 class AppUpgradeHandler
     @Inject
@@ -40,12 +43,10 @@ class AppUpgradeHandler
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrServerDao: SeerrServerDao,
     ) {
-        suspend fun run() {
-            val pkgInfo =
-                WholphinApplication.instance.packageManager.getPackageInfo(
-                    WholphinApplication.instance.packageName,
-                    0,
-                )
+        val pkgInfo: PackageInfo get() = context.packageManager.getPackageInfo(context.packageName, 0)
+        val currentVersion: Version get() = Version.fromString(pkgInfo.versionName!!)
+
+        fun needUpgrade(): Boolean {
             val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             val previousVersion = prefs.getString(VERSION_NAME_CURRENT_KEY, null)
             val previousVersionCode = prefs.getLong(VERSION_CODE_CURRENT_KEY, -1)
@@ -57,32 +58,48 @@ class AppUpgradeHandler
                 } else {
                     pkgInfo.versionCode.toLong()
                 }
-            if (newVersion != previousVersion || newVersionCode != previousVersionCode) {
-                Timber.i(
-                    "App updated: $previousVersion=>$newVersion, $previousVersionCode=>$newVersionCode",
-                )
-                prefs.edit(true) {
-                    putString(VERSION_NAME_PREVIOUS_KEY, previousVersion)
-                    putLong(VERSION_CODE_PREVIOUS_KEY, previousVersionCode)
-                    putString(VERSION_NAME_CURRENT_KEY, newVersion)
-                    putLong(VERSION_CODE_CURRENT_KEY, newVersionCode)
-                }
-                try {
-                    copySubfont(true)
-                    upgradeApp(
-                        Version.fromString(previousVersion ?: "0.0.0"),
-                        Version.fromString(newVersion),
-                        appPreferences,
-                    )
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Exception during app upgrade")
-                }
-                Timber.i("App upgrade complete")
-            } else {
-                Timber.d("No app update needed")
-            }
+            Timber.i(
+                "App versions: $previousVersion=>$newVersion, $previousVersionCode=>$newVersionCode",
+            )
+            return newVersion != previousVersion || newVersionCode != previousVersionCode
         }
 
+        suspend fun run() {
+            Timber.i("App upgrade started")
+            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+            val previousVersion = prefs.getString(VERSION_NAME_CURRENT_KEY, null)
+            val previousVersionCode = prefs.getLong(VERSION_CODE_CURRENT_KEY, -1)
+
+            val newVersion = pkgInfo.versionName!!
+            val newVersionCode =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    pkgInfo.longVersionCode
+                } else {
+                    pkgInfo.versionCode.toLong()
+                }
+            // Store the previous and new version info
+            prefs.edit(true) {
+                putString(VERSION_NAME_PREVIOUS_KEY, previousVersion)
+                putLong(VERSION_CODE_PREVIOUS_KEY, previousVersionCode)
+                putString(VERSION_NAME_CURRENT_KEY, newVersion)
+                putLong(VERSION_CODE_CURRENT_KEY, newVersionCode)
+            }
+            try {
+                copySubfont(true)
+                upgradeApp(
+                    Version.fromString(previousVersion ?: "0.0.0"),
+                    Version.fromString(newVersion),
+                    appPreferences,
+                )
+            } catch (ex: Exception) {
+                Timber.e(ex, "Exception during app upgrade")
+            }
+            Timber.i("App upgrade complete")
+        }
+
+        /**
+         * Copies the font file used by MPV subtitles to the app's files directory
+         */
         fun copySubfont(overwrite: Boolean) {
             try {
                 val fontFileName = "subfont.ttf"
@@ -111,6 +128,9 @@ class AppUpgradeHandler
             const val VERSION_CODE_CURRENT_KEY = "version.current.code"
         }
 
+        /**
+         * Perform any needed upgrades
+         */
         suspend fun upgradeApp(
             previous: Version,
             current: Version,
@@ -282,12 +302,20 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("0.6.0-0-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("0.5.4-6-g0"))) {
                 appPreferences.updateData {
                     it.updateMusicPreferences {
                         showBackdrop = true
                         showLyrics = true
                         showAlbumArt = true
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.5.4-15-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        showLogos = AppPreference.ShowLogos.defaultValue
                     }
                 }
             }

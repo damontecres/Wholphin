@@ -39,6 +39,11 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.ImageType
 
+/**
+ * A dialog that shows the controls for making changes to a [ViewOptions] object. The caller must manage the state of the [ViewOptions].
+ *
+ * It displays the [AppPreference] objects from [ViewOptions.OPTIONS]
+ */
 @Composable
 fun ViewOptionsDialog(
     viewOptions: ViewOptions,
@@ -105,6 +110,11 @@ fun ViewOptionsDialog(
     }
 }
 
+/**
+ * Stores the customizable view changes from the user
+ *
+ * This is used to determine how the UI looks such as card size and shape
+ */
 @Serializable
 data class ViewOptions(
     val columns: Int = 6,

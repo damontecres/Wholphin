@@ -13,6 +13,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 
+/**
+ * Represents a Seerr server instance
+ */
 @Entity(
     tableName = "seerr_servers",
     indices = [Index("url", unique = true)],
@@ -26,6 +29,9 @@ data class SeerrServer(
     val version: String? = null,
 )
 
+/**
+ * Represents a user on a [SeerrServer]
+ */
 @Entity(
     tableName = "seerr_users",
     foreignKeys = [
@@ -56,12 +62,18 @@ data class SeerrUser(
         "SeerrUser(jellyfinUserRowId=$jellyfinUserRowId, serverId=$serverId, authMethod=$authMethod, username=$username, password?=${password.isNotNullOrBlank()}, credential?=${credential.isNotNullOrBlank()})"
 }
 
+/**
+ * The method used to authenticate a user to the server
+ */
 enum class SeerrAuthMethod {
     LOCAL,
     JELLYFIN,
     API_KEY,
 }
 
+/**
+ * Represents the relationship between a [SeerrServer] and its [SeerrUser]s
+ */
 data class SeerrServerUsers(
     @Embedded val server: SeerrServer,
     @Relation(

@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -52,9 +53,10 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -94,7 +96,7 @@ fun SeriesOverviewContent(
 ) {
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
+    var selectedTabIndex by rememberSaveable(position.seasonTabIndex) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
     }
@@ -118,6 +120,8 @@ fun SeriesOverviewContent(
                 ?: ""
         }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
+
+    val currentOnChangeSeason by rememberUpdatedState(onChangeSeason)
 
     Box(
         modifier =
@@ -143,19 +147,24 @@ fun SeriesOverviewContent(
                         .bringIntoViewRequester(bringIntoViewRequester),
             ) {
                 val paddingValues =
-                    if (preferences.appPreferences.interfacePreferences.showClock) {
-                        PaddingValues(start = 0.dp, end = 184.dp)
-                    } else {
-                        PaddingValues(start = 0.dp, end = 16.dp)
+                    remember(preferences.appPreferences.interfacePreferences.showClock) {
+                        if (preferences.appPreferences.interfacePreferences.showClock) {
+                            PaddingValues(start = 0.dp, end = 184.dp)
+                        } else {
+                            PaddingValues(start = 0.dp, end = 16.dp)
+                        }
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     tabs = tabs,
-                    onClick = {
-                        selectedTabIndex = it
-                        onChangeSeason.invoke(it)
-                        requestFocusAfterSeason = true
-                    },
+                    onClick =
+                        remember {
+                            {
+                                selectedTabIndex = it
+                                currentOnChangeSeason(it)
+                                requestFocusAfterSeason = true
+                            }
+                        },
                     focusRequesters = focusRequesters,
                     modifier =
                         Modifier
@@ -164,7 +173,11 @@ fun SeriesOverviewContent(
                             .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier.padding(start = 8.dp))
+                TitleOrLogo(
+                    item = series,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,

@@ -50,9 +50,8 @@ enum class ClearChosenStreams {
  * If there are any (ie one or more) subtitle tracks, adds an option to disable or pick one
  *
  * @param item the media item to build for, typically an Episode or Movie
- * @param series the item's series or null if not a TV episode; a non-null value will include a "Go to Series" option
+ * @param seriesId the item's series or null if not a TV episode; a non-null value will include a "Go to Series" option
  * @param sourceId the item's media source UUID
- * @param navigateTo a function to trigger a navigation
  * @param onChooseVersion callback to pick a version of the item
  * @param onChooseTracks callback to pick a track for the given type of the item
  * @param onShowOverview callback to show overview dialog with media information

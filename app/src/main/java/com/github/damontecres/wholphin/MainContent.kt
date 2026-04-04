@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ fun MainContent(
     screensaverService: ScreensaverService,
     modifier: Modifier = Modifier,
 ) {
+    val preferences by rememberUpdatedState(UserPreferences(appPreferences))
     Surface(
         modifier =
             modifier
@@ -93,10 +95,6 @@ fun MainContent(
                                 backdropService.clearBackdrop()
                             }
                             val current = key.current
-                            val preferences =
-                                remember(appPreferences) {
-                                    UserPreferences(appPreferences)
-                                }
                             var showContent by remember {
                                 mutableStateOf(true)
                             }

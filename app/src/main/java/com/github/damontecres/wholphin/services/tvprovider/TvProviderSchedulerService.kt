@@ -24,6 +24,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
+/**
+ * Schedules the [TvProviderWorker] to update the OS resume watching row
+ */
 @ActivityScoped
 class TvProviderSchedulerService
     @Inject
@@ -44,6 +47,7 @@ class TvProviderSchedulerService
                 workManager.cancelUniqueWork(TvProviderWorker.WORK_NAME)
                 if (supportsTvProvider) {
                     if (user != null) {
+                        // Schedule a new worker whenever the user changes
                         activity.lifecycleScope.launchIO(ExceptionHandler()) {
                             Timber.i("Scheduling TvProviderWorker for ${user.user}")
                             workManager
@@ -70,6 +74,9 @@ class TvProviderSchedulerService
             }
         }
 
+        /**
+         * Run the [TvProviderWorker] as a one-off instead of scheduled
+         */
         fun launchOneTimeRefresh() {
             if (supportsTvProvider) {
                 activity.lifecycleScope.launchIO(ExceptionHandler()) {

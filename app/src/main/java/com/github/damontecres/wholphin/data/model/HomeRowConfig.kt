@@ -162,7 +162,7 @@ sealed interface HomeRowConfig {
     @SerialName("ByParent")
     data class ByParent(
         val parentId: UUID,
-        val recursive: Boolean,
+        val recursive: Boolean = false,
         val sort: SortAndDirection? = null,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {

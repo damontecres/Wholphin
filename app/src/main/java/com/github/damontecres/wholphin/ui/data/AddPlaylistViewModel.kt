@@ -19,6 +19,10 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+/**
+ * A supplementary [ViewModel] for adding items to a server playlist
+ * @see com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+ */
 @HiltViewModel
 class AddPlaylistViewModel
     @Inject

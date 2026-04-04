@@ -522,4 +522,16 @@
     <string name="engineer">Teknisi</string>
     <string name="mixer">Mixer</string>
     <string name="creator">Kreator</string>
+    <string name="select_all">Pilih semua</string>
+    <string name="search_for">Cari %s</string>
+    <string name="show_media_management">Tampilkan opsi kelola media</string>
+    <string name="delete_item">Apakah kamu yakin ingin menghapus item ini?</string>
+    <string name="subtitle_edge_shadow">Bayangan</string>
+    <string name="background_style_wrap">Pembungkus</string>
+    <string name="background_style_boxed">Kotak</string>
+    <string name="content_scale_fit">Sesuaikan</string>
+    <string name="content_scale_crop">Pangkas</string>
+    <string name="content_scale_fill">Layar penuh</string>
+    <string name="content_scale_fill_width">Lebar penuh</string>
+    <string name="content_scale_fill_height">Tinggi penuh</string>
 </resources>

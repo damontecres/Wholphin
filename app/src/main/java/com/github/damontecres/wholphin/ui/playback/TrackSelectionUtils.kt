@@ -15,6 +15,9 @@ import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
 import timber.log.Timber
 import kotlin.math.max
 
+/**
+ * Functions for selecting which audio & subtitle tracks to activate in the [androidx.media3.common.Player]
+ */
 object TrackSelectionUtils {
     @OptIn(UnstableApi::class)
     fun createTrackSelections(
@@ -258,6 +261,9 @@ fun List<MediaStream>.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
         }
     }
 
+/**
+ * The result of [TrackSelectionUtils.createTrackSelections]
+ */
 data class TrackSelectionResult(
     val trackSelectionParameters: TrackSelectionParameters,
     val audioSelected: Boolean,

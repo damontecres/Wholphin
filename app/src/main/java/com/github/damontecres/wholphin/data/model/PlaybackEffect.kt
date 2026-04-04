@@ -5,6 +5,9 @@ import androidx.room.Entity
 import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 
+/**
+ * Store effects applied to some media such as color or hue adjustments
+ */
 @Entity(tableName = "playback_effects", primaryKeys = ["jellyfinUserRowId", "itemId", "type"])
 data class PlaybackEffect(
     val jellyfinUserRowId: Int,

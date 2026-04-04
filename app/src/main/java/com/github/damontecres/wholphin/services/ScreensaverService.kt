@@ -38,6 +38,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Handles the queue of items to show on the screensaver, both in-app or OS
+ */
 @Singleton
 class ScreensaverService
     @Inject
@@ -67,6 +70,9 @@ class ScreensaverService
                 }.launchIn(scope)
         }
 
+        /**
+         * Reset the timer before showing the in-app screensaver
+         */
         fun pulse() {
             waitJob?.cancel()
             if (_state.value.enabled) {
@@ -95,6 +101,9 @@ class ScreensaverService
             }
         }
 
+        /**
+         * Immediately start the in-app screensaver
+         */
         fun start() {
             _state.update {
                 it.copy(
@@ -104,6 +113,9 @@ class ScreensaverService
             }
         }
 
+        /**
+         * Immediately stop the in-app screensaver
+         */
         fun stop(cancelJob: Boolean) {
             _state.update {
                 it.copy(
@@ -114,6 +126,9 @@ class ScreensaverService
             if (cancelJob) waitJob?.cancel()
         }
 
+        /**
+         * Signal to the OS for keeping the screen on such as during playback or when the in-app screensaver is active
+         */
         fun keepScreenOn(keep: Boolean) {
             scope.launchDefault {
                 val screensaverEnabled = _state.value.enabled
@@ -136,6 +151,9 @@ class ScreensaverService
             keepScreenOn.update { keep }
         }
 
+        /**
+         * Create a flow of items to show on the screensaver
+         */
         fun createItemFlow(scope: CoroutineScope): Flow<CurrentItem?> =
             flow {
                 val prefs =

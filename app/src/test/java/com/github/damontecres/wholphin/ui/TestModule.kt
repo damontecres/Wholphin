@@ -5,6 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.BuildConfig
@@ -277,6 +280,15 @@ object TestDatabaseModule {
                     ReplaceFileCorruptionHandler(
                         produceNewData = { AppPreferences.getDefaultInstance() },
                     ),
+            )
+
+        @Provides
+        @Singleton
+        fun keyValueDataStore(
+            @ApplicationContext context: Context,
+        ): DataStore<Preferences> =
+            PreferenceDataStoreFactory.create(
+                produceFile = { context.preferencesDataStoreFile("key_value") },
             )
     }
 }

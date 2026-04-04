@@ -9,6 +9,10 @@ import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Stores the language choices for a series so they can be applied automatically to other episodes
+ * without the user needing to explicitly choose the tracks
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(

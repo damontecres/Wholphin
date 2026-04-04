@@ -22,7 +22,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
@@ -35,6 +34,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Get continue watching and next up items for users
+ */
 @Singleton
 class LatestNextUpService
     @Inject
@@ -44,6 +46,9 @@ class LatestNextUpService
         private val displayPreferencesService: DisplayPreferencesService,
         private val favoriteWatchManager: FavoriteWatchManager,
     ) {
+        /**
+         * Get resume (continue watching) items for a user
+         */
         suspend fun getResume(
             userId: UUID,
             limit: Int,
@@ -65,12 +70,6 @@ class LatestNextUpService
                                     remove(BaseItemKind.EPISODE)
                                 }
                         },
-                    enableImageTypes =
-                        listOf(
-                            ImageType.PRIMARY,
-                            ImageType.THUMB,
-                            ImageType.BACKDROP,
-                        ),
                 )
             val items =
                 api.itemsApi
@@ -81,6 +80,9 @@ class LatestNextUpService
             return items
         }
 
+        /**
+         * Get next up items for a user
+         */
         suspend fun getNextUp(
             userId: UUID,
             limit: Int,
@@ -130,6 +132,11 @@ class LatestNextUpService
             return nextUp
         }
 
+        /**
+         * Create the combined Continue Watching & Next Up items
+         *
+         * @see [DatePlayedService]
+         */
         suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,

@@ -8,12 +8,18 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.ExtraType
 
+/**
+ * Represents "extras" for media such as behind-the-scenes or deleted scenes
+ */
 sealed interface ExtrasItem {
     val parentId: UUID
     val type: ExtraType
     val destination: Destination
     val title: String?
 
+    /**
+     * Represents multiple extras of the same type
+     */
     data class Group(
         override val parentId: UUID,
         override val type: ExtraType,
@@ -25,6 +31,9 @@ sealed interface ExtrasItem {
         override val title: String? = null
     }
 
+    /**
+     * Represents a single extra
+     */
     data class Single(
         override val parentId: UUID,
         override val type: ExtraType,
@@ -38,6 +47,9 @@ sealed interface ExtrasItem {
     }
 }
 
+/**
+ * Converts [ExtraType] to the string resource ID
+ */
 @get:StringRes
 val ExtraType.stringRes: Int
     get() =
@@ -56,6 +68,9 @@ val ExtraType.stringRes: Int
             ExtraType.SHORT -> R.string.shorts
         }
 
+/**
+ * Converts [ExtraType] to the plural resource ID
+ */
 @get:PluralsRes
 val ExtraType.pluralRes: Int
     get() =

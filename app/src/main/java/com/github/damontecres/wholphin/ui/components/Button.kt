@@ -35,6 +35,11 @@ import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 
+/**
+ * This is a re-implementation of [androidx.tv.material3.Button] with altered sizing, padding, colors, etc
+ *
+ * This allows for creating smaller and fully circular Buttons.
+ */
 @Composable
 fun Button(
     onClick: () -> Unit,
