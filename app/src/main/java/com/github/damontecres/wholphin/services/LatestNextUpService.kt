@@ -206,6 +206,25 @@ class LatestNextUpService
                     Json.decodeFromString<RemovedSeriesIds>(it).value
                 }.orEmpty()
 
+        suspend fun allowSeriesRemovedFromNextUp(
+            userId: UUID,
+            seriesId: UUID,
+        ) {
+            displayPreferencesService.updateDisplayPreferences(userId) {
+                val ids =
+                    get(REMOVED_KEY)
+                        ?.let {
+                            Json.decodeFromString<RemovedSeriesIds>(it).value
+                        }.orEmpty()
+                        .toMutableMap()
+                ids.remove(seriesId)
+                put(
+                    REMOVED_KEY,
+                    Json.encodeToString(RemovedSeriesIds(ids)),
+                )
+            }
+        }
+
         /**
          * Check if user has watched a series since removing it
          */
