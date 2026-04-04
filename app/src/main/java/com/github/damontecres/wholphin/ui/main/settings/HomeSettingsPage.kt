@@ -284,6 +284,9 @@ fun HomeSettingsPage(
                                                 addRow(false) { viewModel.resetToDefault() }
                                             }
                                     },
+                                    onClickViewNextUp = {
+                                        backStack.add(HomeSettingsDestination.RemovedNextUp)
+                                    },
                                     modifier = destModifier,
                                 )
                             }
@@ -291,6 +294,12 @@ fun HomeSettingsPage(
                             HomeSettingsDestination.Presets -> {
                                 HomeRowPresetsContent(
                                     onApply = viewModel::applyPreset,
+                                    modifier = destModifier,
+                                )
+                            }
+
+                            HomeSettingsDestination.RemovedNextUp -> {
+                                RemovedNextUpContent(
                                     modifier = destModifier,
                                 )
                             }
