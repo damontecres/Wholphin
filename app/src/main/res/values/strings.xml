@@ -126,6 +126,8 @@
     <string name="select_server">Select Server</string>
     <string name="select_user">Select User</string>
     <string name="show_debug_info">Show debug info</string>
+    <string name="show_stats">Show stats</string>
+    <string name="hide_stats">Hide stats</string>
     <string name="show_next_up_when">Show next up</string>
     <string name="show">Show</string>
     <string name="shuffle">Shuffle</string>

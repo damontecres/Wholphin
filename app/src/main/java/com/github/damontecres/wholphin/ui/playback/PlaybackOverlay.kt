@@ -116,6 +116,8 @@ fun PlaybackOverlay(
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     onSeekBarChange: (Long) -> Unit,
     showDebugInfo: Boolean,
+    showStats: Boolean = false,
+    player: Player? = null,
     currentPlayback: CurrentPlayback?,
     currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
@@ -559,6 +561,21 @@ fun PlaybackOverlay(
                         .align(Alignment.TopStart)
                         .padding(8.dp)
                         .background(AppColors.TransparentBlack50),
+            )
+        }
+        // Stats HUD - visible even when controls are hidden
+        AnimatedVisibility(
+            visible = showStats,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.dp, end = 16.dp),
+        ) {
+            PlaybackStatsHud(
+                currentPlayback = currentPlayback,
+                player = player,
             )
         }
     }

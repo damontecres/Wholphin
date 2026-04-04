@@ -164,6 +164,7 @@ fun PlaybackPageContent(
 
     val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
+    var showStats by remember { mutableStateOf(false) }
 
     val nextUp by viewModel.nextUp.observeAsState(null)
     val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
@@ -258,6 +259,10 @@ fun PlaybackPageContent(
 
             PlaybackAction.ShowDebug -> {
                 showDebugInfo = !showDebugInfo
+            }
+
+            PlaybackAction.ToggleStats -> {
+                showStats = !showStats
             }
 
             PlaybackAction.ShowPlaylist -> {
@@ -392,6 +397,8 @@ fun PlaybackPageContent(
                 onClickPlaybackDialogType = { playbackDialog = it },
                 onSeekBarChange = seekBarState::onValueChange,
                 showDebugInfo = showDebugInfo,
+                showStats = showStats,
+                player = player,
                 currentPlayback = currentPlayback,
                 chapters = mediaInfo?.chapters ?: listOf(),
                 trickplayInfo = mediaInfo?.trickPlayInfo,
@@ -588,6 +595,7 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
+                    showStats = showStats,
                     audioIndex = currentItemPlayback?.audioIndex,
                     audioStreams = mediaInfo?.audioStreams.orEmpty(),
                     subtitleIndex = currentItemPlayback?.subtitleIndex,

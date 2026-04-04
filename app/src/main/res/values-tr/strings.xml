@@ -130,6 +130,8 @@
     <string name="select_server">Sunucu Seç</string>
     <string name="select_user">Kullanıcı Seç</string>
     <string name="show_debug_info">Hata ayıklama bilgisini göster</string>
+    <string name="show_stats">İstatistikleri göster</string>
+    <string name="hide_stats">İstatistikleri gizle</string>
     <string name="show_next_up_when">Sıradakini göster</string>
     <string name="show">Göster</string>
     <string name="shuffle">Karıştır</string>

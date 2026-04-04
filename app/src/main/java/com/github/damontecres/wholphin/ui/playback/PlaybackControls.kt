@@ -90,6 +90,8 @@ import kotlin.time.Duration.Companion.seconds
 sealed interface PlaybackAction {
     data object ShowDebug : PlaybackAction
 
+    data object ToggleStats : PlaybackAction
+
     data object ShowPlaylist : PlaybackAction
 
     data object ShowVideoFilterDialog : PlaybackAction
