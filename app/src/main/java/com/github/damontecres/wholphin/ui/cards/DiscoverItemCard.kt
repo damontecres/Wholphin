@@ -81,6 +81,7 @@ fun DiscoverItemCard(
     val width = Cards.height2x3 * AspectRatios.TALL
     val height = Dp.Unspecified * (1f / AspectRatios.TALL)
     Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
         modifier = modifier.size(width, height),
     ) {

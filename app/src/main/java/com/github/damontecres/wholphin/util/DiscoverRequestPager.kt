@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.util
 
+import androidx.annotation.StringRes
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.data.model.DiscoverItem
@@ -32,13 +34,15 @@ class DiscoverRequestPager<T>(
 
 const val SEERR_PAGE_SIZE = 20
 
-enum class DiscoverRequestType {
-    DISCOVER_TV,
-    DISCOVER_MOVIES,
-    TRENDING,
-    UPCOMING_TV,
-    UPCOMING_MOVIES,
-    UNKNOWN,
+enum class DiscoverRequestType(
+    @param:StringRes val stringRes: Int,
+) {
+    DISCOVER_TV(R.string.discover_tv),
+    DISCOVER_MOVIES(R.string.discover_movies),
+    TRENDING(R.string.trending),
+    UPCOMING_TV(R.string.upcoming_tv),
+    UPCOMING_MOVIES(R.string.upcoming_movies),
+    UNKNOWN(R.string.unknown),
 }
 
 /**

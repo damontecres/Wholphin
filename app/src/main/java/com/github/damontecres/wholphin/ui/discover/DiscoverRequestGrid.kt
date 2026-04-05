@@ -2,13 +2,14 @@ package com.github.damontecres.wholphin.ui.discover
 
 import android.content.Context
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,10 +19,12 @@ import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.GridTitle
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverMovieRequestHandler
 import com.github.damontecres.wholphin.util.DiscoverRequestPager
@@ -147,28 +150,33 @@ fun DiscoverRequestGrid(
         ),
 ) {
     val state by viewModel.state.collectAsState()
-    Column(
-        modifier = modifier,
-    ) {
-        when (val s = state.loading) {
-            DataLoadingState.Pending,
-            DataLoadingState.Loading,
-            -> {
-                LoadingPage(Modifier.fillMaxSize())
-            }
+    when (val s = state.loading) {
+        DataLoadingState.Pending,
+        DataLoadingState.Loading,
+        -> {
+            LoadingPage(modifier)
+        }
 
-            is DataLoadingState.Error -> {
-                ErrorMessage(s, Modifier.fillMaxSize())
-            }
+        is DataLoadingState.Error -> {
+            ErrorMessage(s, modifier)
+        }
 
-            is DataLoadingState.Success<List<DiscoverItem?>> -> {
-                val gridFocusRequester = remember { FocusRequester() }
+        is DataLoadingState.Success<List<DiscoverItem?>> -> {
+            val gridFocusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+            Column(
+                modifier = modifier,
+            ) {
+                GridTitle(stringResource(destination.type.stringRes))
+
                 CardGrid(
                     initialPosition = destination.startIndex,
                     pager = s.data,
-                    onClickItem = { index, item -> },
+                    onClickItem = { index, item ->
+                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                    },
                     onLongClickItem = { index, item -> },
-                    onClickPlay = { index, item -> },
+                    onClickPlay = { _, _ -> },
                     letterPosition = { 0 },
                     gridFocusRequester = gridFocusRequester,
                     showJumpButtons = false,

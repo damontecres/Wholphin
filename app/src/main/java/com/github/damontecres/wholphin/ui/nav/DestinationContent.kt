@@ -356,6 +356,7 @@ fun DestinationContent(
         }
 
         is Destination.DiscoverMoreResult -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             DiscoverRequestGrid(
                 destination = destination,
                 modifier = modifier,

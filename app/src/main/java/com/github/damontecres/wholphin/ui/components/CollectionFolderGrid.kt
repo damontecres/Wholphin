@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -882,15 +883,7 @@ fun CollectionFolderGridContent(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (showTitle) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        GridTitle(title)
                     }
                     val endPadding =
                         16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
@@ -1146,3 +1139,18 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 listOf()
             }
         }
+
+@Composable
+@NonRestartableComposable
+fun GridTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+) = Text(
+    text = title,
+    style = MaterialTheme.typography.displayMedium,
+    color = MaterialTheme.colorScheme.onBackground,
+    textAlign = TextAlign.Center,
+    maxLines = 1,
+    overflow = TextOverflow.Ellipsis,
+    modifier = modifier.fillMaxWidth(),
+)
