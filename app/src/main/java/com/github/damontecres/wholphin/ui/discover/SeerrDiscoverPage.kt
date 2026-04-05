@@ -30,6 +30,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.SeerrItemType
@@ -52,6 +53,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -166,26 +168,39 @@ class SeerrDiscoverViewModel
                     return@launchIO
                 }
                 val result =
-                    when (item.type) {
-                        SeerrItemType.MOVIE -> {
-                            DiscoverRating(
-                                seerrService.api.moviesApi.movieMovieIdRatingsGet(
-                                    movieId = item.id,
-                                ),
-                            )
-                        }
+                    try {
+                        when (item.type) {
+                            SeerrItemType.MOVIE -> {
+                                DiscoverRating(
+                                    seerrService.api.moviesApi.movieMovieIdRatingsGet(
+                                        movieId = item.id,
+                                    ),
+                                )
+                            }
 
-                        SeerrItemType.TV -> {
-                            DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
-                        }
+                            SeerrItemType.TV -> {
+                                DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
+                            }
 
-                        SeerrItemType.PERSON -> {
+                            SeerrItemType.PERSON -> {
+                                DiscoverRating(null, null)
+                            }
+
+                            SeerrItemType.UNKNOWN -> {
+                                DiscoverRating(null, null)
+                            }
+                        }
+                    } catch (ex: ClientException) {
+                        if (ex.statusCode == 404) {
+                            Timber.w("No rating found for %s", item.id)
                             DiscoverRating(null, null)
+                        } else {
+                            Timber.e(ex, "Error getting rating for %s", item.id)
+                            return@launchIO
                         }
-
-                        SeerrItemType.UNKNOWN -> {
-                            DiscoverRating(null, null)
-                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error getting rating for %s", item.id)
+                        return@launchIO
                     }
                 ratingCache.put(item.id, result)
                 rating.update {
