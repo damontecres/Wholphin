@@ -150,6 +150,8 @@ class SeerrDiscoverViewModel
                 if (item != null) {
                     backdropService.submit("discover_${item.id}", item.backDropUrl)
                     fetchRating(item)
+                } else {
+                    backdropService.clearBackdrop()
                 }
             }
         }
@@ -325,6 +327,9 @@ fun SeerrDiscoverPage(
                             focusRequester = focusRequesters[rowIndex],
                             enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
                             onClickViewMore = {
+                                (row.items as? DataLoadingState.Success<List<DiscoverItem>>)?.data?.size?.let {
+                                    position = RowColumn(rowIndex, it)
+                                }
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(row.type),
                                 )

@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverViewMoreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -169,9 +170,22 @@ fun DiscoverItemRow(
             if (enableViewMore) {
                 item {
                     DiscoverViewMoreCard(
-                        onClick = onClickViewMore,
+                        onClick =
+                            remember {
+                                {
+                                    position = items.size
+                                    onClickViewMore.invoke()
+                                }
+                            },
                         onLongClick = {},
-                        modifier = Modifier,
+                        modifier =
+                            Modifier
+                                .ifElse(items.size == position, Modifier.focusRequester(firstFocus))
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        currentOnCardFocus.invoke(items.size)
+                                    }
+                                },
                     )
                 }
             }
