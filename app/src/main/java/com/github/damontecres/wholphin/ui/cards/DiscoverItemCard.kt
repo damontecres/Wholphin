@@ -38,6 +38,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
@@ -328,7 +329,7 @@ fun DiscoverViewMoreCard(
             interactionSource = interactionSource,
             colors =
                 CardDefaults.colors(
-//                    containerColor = Color.Transparent,
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                 ),
         ) {
             Box(
@@ -338,6 +339,7 @@ fun DiscoverViewMoreCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowForward,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     contentDescription = "View more",
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -356,6 +358,7 @@ fun DiscoverViewMoreCard(
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 modifier =
                     Modifier
@@ -375,6 +378,11 @@ private fun Preview() {
             PendingIndicator()
             AvailableIndicator()
             PartiallyAvailableIndicator()
+            DiscoverViewMoreCard(
+                onClick = {},
+                onLongClick = {},
+                modifier = Modifier,
+            )
         }
     }
 }
