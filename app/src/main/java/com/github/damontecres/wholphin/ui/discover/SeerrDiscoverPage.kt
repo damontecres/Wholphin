@@ -23,17 +23,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
@@ -42,17 +37,16 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
-import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
-import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -286,6 +280,14 @@ fun SeerrDiscoverPage(
                             onLongClickItem = { index, item -> },
                             onCardFocus = { index -> position = RowColumn(rowIndex, index) },
                             focusRequester = focusRequesters[rowIndex],
+                            enableViewMore = true,
+                            onClickViewMore = {
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.DiscoverMoreResult(
+                                        DiscoverRequestType.DISCOVER_TV,
+                                    ),
+                                )
+                            },
                             modifier =
                                 Modifier
                                     .fillMaxWidth(),
@@ -293,66 +295,6 @@ fun SeerrDiscoverPage(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun DiscoverRow(
-    row: DiscoverRowData,
-    onClickItem: (Int, DiscoverItem) -> Unit,
-    onLongClickItem: (Int, DiscoverItem) -> Unit,
-    onCardFocus: (Int) -> Unit,
-    focusRequester: FocusRequester,
-    modifier: Modifier = Modifier,
-) {
-    when (val state = row.items) {
-        is DataLoadingState.Error -> {
-            ErrorMessage(state.message, state.exception, modifier)
-        }
-
-        DataLoadingState.Loading,
-        DataLoadingState.Pending,
-        -> {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = modifier,
-            ) {
-                Text(
-                    text = row.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = stringResource(R.string.loading),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
-
-        is DataLoadingState.Success<List<DiscoverItem>> -> {
-            ItemRow(
-                title = row.title,
-                items = state.data,
-                onClickItem = onClickItem,
-                onLongClickItem = onLongClickItem,
-                cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                    DiscoverItemCard(
-                        item = item,
-                        onClick = onClick,
-                        onLongClick = onLongClick,
-                        showOverlay = true,
-                        modifier =
-                            mod.onFocusChanged {
-                                if (it.isFocused) {
-                                    onCardFocus.invoke(index)
-                                }
-                            },
-                    )
-                },
-                modifier = modifier.focusRequester(focusRequester),
-            )
         }
     }
 }

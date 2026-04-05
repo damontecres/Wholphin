@@ -749,5 +749,6 @@
     <string name="separate_types">Separate types</string>
     <string name="prefer_logos">Prefer showing logos for titles</string>
     <string name="updated_toast">Wholphin updated to %s</string>
+    <string name="view_more">View more</string>
 
 </resources>

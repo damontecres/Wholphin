@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -281,6 +284,86 @@ fun PartiallyAvailableIndicator(modifier: Modifier = Modifier) {
                         shape = CircleShape,
                     ),
         )
+    }
+}
+
+@Composable
+fun DiscoverViewMoreCard(
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
+    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
+    var focusedAfterDelay by remember { mutableStateOf(false) }
+
+    val hideOverlayDelay = 500L
+    if (focused) {
+        LaunchedEffect(Unit) {
+            delay(hideOverlayDelay)
+            if (focused) {
+                focusedAfterDelay = true
+            } else {
+                focusedAfterDelay = false
+            }
+        }
+    } else {
+        focusedAfterDelay = false
+    }
+    val width = Cards.height2x3 * AspectRatios.TALL
+    val height = Dp.Unspecified * (1f / AspectRatios.TALL)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        modifier = modifier.size(width, height),
+    ) {
+        Card(
+            modifier =
+                Modifier
+                    .size(Dp.Unspecified, Cards.height2x3)
+                    .aspectRatio(AspectRatios.TALL),
+            onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
+            colors =
+                CardDefaults.colors(
+//                    containerColor = Color.Transparent,
+                ),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "View more",
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.view_more),
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .enableMarquee(focusedAfterDelay),
+            )
+        }
     }
 }
 

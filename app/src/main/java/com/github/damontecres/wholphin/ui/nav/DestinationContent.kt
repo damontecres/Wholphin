@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
+import com.github.damontecres.wholphin.ui.discover.DiscoverRequestGrid
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
@@ -352,6 +353,13 @@ fun DestinationContent(
                     )
                 }
             }
+        }
+
+        is Destination.DiscoverMoreResult -> {
+            DiscoverRequestGrid(
+                destination = destination,
+                modifier = modifier,
+            )
         }
     }
 }

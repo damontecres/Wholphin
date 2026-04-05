@@ -13,7 +13,7 @@ class DiscoverRequestPager<T>(
     val requestHandler: DiscoverRequestHandler<T>,
     val transform: suspend (T) -> DiscoverItem,
     scope: CoroutineScope,
-    pageSize: Int = 20,
+    pageSize: Int = SEERR_PAGE_SIZE,
     cacheSize: Long = 16,
 ) : RequestPager<DiscoverItem>(scope, pageSize, cacheSize) {
     override suspend fun init(initialPosition: Int): DiscoverRequestPager<T> = super.init(initialPosition) as DiscoverRequestPager<T>
@@ -22,10 +22,17 @@ class DiscoverRequestPager<T>(
         pageNumber: Int,
         includeTotalCount: Boolean,
     ): QueryResult<DiscoverItem> {
-        val result = requestHandler.execute(api, pageNumber)
+        val result = requestHandler.execute(api, pageNumber + 1) // Seerr pages are 1-indexed
         val transformed = result.items.map { transform.invoke(it) }
         return QueryResult(transformed, result.totalCount)
     }
+}
+
+const val SEERR_PAGE_SIZE = 20
+
+enum class DiscoverRequestType {
+    DISCOVER_TV,
+    DISCOVER_MOVIES,
 }
 
 /**
