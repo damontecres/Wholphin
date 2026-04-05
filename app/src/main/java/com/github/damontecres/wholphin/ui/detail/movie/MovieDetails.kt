@@ -70,6 +70,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -570,6 +571,7 @@ fun MovieDetailsContent(
                             DiscoverRowData(
                                 stringResource(R.string.discover),
                                 DataLoadingState.Success(discovered),
+                                type = DiscoverRequestType.UNKNOWN,
                             ),
                         onClickItem = { index: Int, item: DiscoverItem ->
                             position = DISCOVER_ROW

@@ -52,7 +52,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import org.jellyfin.sdk.api.client.ApiClient
 import javax.inject.Inject
 
 @HiltViewModel
@@ -62,7 +61,6 @@ class SeerrDiscoverViewModel
         @param:ApplicationContext private val context: Context,
         private val seerrService: SeerrService,
         val navigationManager: NavigationManager,
-        private val api: ApiClient,
         private val backdropService: BackdropService,
     ) : ViewModel() {
         val state = MutableStateFlow<DiscoverState>(DiscoverState())
@@ -73,24 +71,53 @@ class SeerrDiscoverViewModel
                 backdropService.clearBackdrop()
             }
             fetchAndUpdateState(seerrService::discoverMovies) {
-                this.copy(movies = DiscoverRowData(context.getString(R.string.movies), it))
+                this.copy(
+                    movies =
+                        DiscoverRowData(
+                            context.getString(R.string.movies),
+                            it,
+                            DiscoverRequestType.DISCOVER_MOVIES,
+                        ),
+                )
             }
             fetchAndUpdateState(seerrService::discoverTv) {
-                this.copy(tv = DiscoverRowData(context.getString(R.string.tv_shows), it))
+                this.copy(
+                    tv =
+                        DiscoverRowData(
+                            context.getString(R.string.tv_shows),
+                            it,
+                            DiscoverRequestType.DISCOVER_TV,
+                        ),
+                )
             }
             fetchAndUpdateState(seerrService::trending) {
-                this.copy(trending = DiscoverRowData(context.getString(R.string.trending), it))
+                this.copy(
+                    trending =
+                        DiscoverRowData(
+                            context.getString(R.string.trending),
+                            it,
+                            DiscoverRequestType.TRENDING,
+                        ),
+                )
             }
             fetchAndUpdateState(seerrService::upcomingMovies) {
                 this.copy(
                     upcomingMovies =
-                        DiscoverRowData(context.getString(R.string.upcoming_movies), it),
+                        DiscoverRowData(
+                            context.getString(R.string.upcoming_movies),
+                            it,
+                            DiscoverRequestType.UPCOMING_MOVIES,
+                        ),
                 )
             }
             fetchAndUpdateState(seerrService::upcomingTv) {
                 this.copy(
                     upcomingTv =
-                        DiscoverRowData(context.getString(R.string.upcoming_tv), it),
+                        DiscoverRowData(
+                            context.getString(R.string.upcoming_tv),
+                            it,
+                            DiscoverRequestType.UPCOMING_TV,
+                        ),
                 )
             }
         }
@@ -171,9 +198,10 @@ class SeerrDiscoverViewModel
 data class DiscoverRowData(
     val title: String,
     val items: DataLoadingState<List<DiscoverItem>>,
+    val type: DiscoverRequestType,
 ) {
     companion object {
-        val EMPTY = DiscoverRowData("", DataLoadingState.Pending)
+        val EMPTY = DiscoverRowData("", DataLoadingState.Pending, DiscoverRequestType.UNKNOWN)
     }
 }
 
@@ -280,12 +308,10 @@ fun SeerrDiscoverPage(
                             onLongClickItem = { index, item -> },
                             onCardFocus = { index -> position = RowColumn(rowIndex, index) },
                             focusRequester = focusRequesters[rowIndex],
-                            enableViewMore = true,
+                            enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
                             onClickViewMore = {
                                 viewModel.navigationManager.navigateTo(
-                                    Destination.DiscoverMoreResult(
-                                        DiscoverRequestType.DISCOVER_TV,
-                                    ),
+                                    Destination.DiscoverMoreResult(row.type),
                                 )
                             },
                             modifier =

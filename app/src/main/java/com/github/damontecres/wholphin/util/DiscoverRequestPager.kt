@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.util
 
+import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.services.SeerrApi
+import com.github.damontecres.wholphin.services.SeerrSearchResult
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -33,6 +35,10 @@ const val SEERR_PAGE_SIZE = 20
 enum class DiscoverRequestType {
     DISCOVER_TV,
     DISCOVER_MOVIES,
+    TRENDING,
+    UPCOMING_TV,
+    UPCOMING_MOVIES,
+    UNKNOWN,
 }
 
 /**
@@ -52,6 +58,50 @@ val DiscoverTvRequestHandler =
             pageNumber: Int,
         ): QueryResult<TvResult> =
             api.api.searchApi.discoverTvGet(page = pageNumber).let {
+                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+            }
+    }
+
+val DiscoverMovieRequestHandler =
+    object : DiscoverRequestHandler<MovieResult> {
+        override suspend fun execute(
+            api: SeerrApi,
+            pageNumber: Int,
+        ): QueryResult<MovieResult> =
+            api.api.searchApi.discoverMoviesGet(page = pageNumber).let {
+                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+            }
+    }
+
+val TrendingRequestHandler =
+    object : DiscoverRequestHandler<SeerrSearchResult> {
+        override suspend fun execute(
+            api: SeerrApi,
+            pageNumber: Int,
+        ): QueryResult<SeerrSearchResult> =
+            api.api.searchApi.discoverTrendingGet(page = pageNumber).let {
+                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+            }
+    }
+
+val UpcomingTvRequestHandler =
+    object : DiscoverRequestHandler<TvResult> {
+        override suspend fun execute(
+            api: SeerrApi,
+            pageNumber: Int,
+        ): QueryResult<TvResult> =
+            api.api.searchApi.discoverTvUpcomingGet(page = pageNumber).let {
+                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+            }
+    }
+
+val UpcomingMovieRequestHandler =
+    object : DiscoverRequestHandler<MovieResult> {
+        override suspend fun execute(
+            api: SeerrApi,
+            pageNumber: Int,
+        ): QueryResult<MovieResult> =
+            api.api.searchApi.discoverMoviesUpcomingGet(page = pageNumber).let {
                 QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
             }
     }

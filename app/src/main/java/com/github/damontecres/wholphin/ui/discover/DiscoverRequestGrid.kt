@@ -23,9 +23,13 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverMovieRequestHandler
 import com.github.damontecres.wholphin.util.DiscoverRequestPager
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.DiscoverTvRequestHandler
+import com.github.damontecres.wholphin.util.TrendingRequestHandler
+import com.github.damontecres.wholphin.util.UpcomingMovieRequestHandler
+import com.github.damontecres.wholphin.util.UpcomingTvRequestHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -73,7 +77,43 @@ class DiscoverRequestViewModel
                             }
 
                             DiscoverRequestType.DISCOVER_MOVIES -> {
-                                TODO()
+                                DiscoverRequestPager(
+                                    api,
+                                    DiscoverMovieRequestHandler,
+                                    seerrService::createDiscoverItem,
+                                    viewModelScope,
+                                )
+                            }
+
+                            DiscoverRequestType.TRENDING -> {
+                                DiscoverRequestPager(
+                                    api,
+                                    TrendingRequestHandler,
+                                    seerrService::createDiscoverItem,
+                                    viewModelScope,
+                                )
+                            }
+
+                            DiscoverRequestType.UPCOMING_TV -> {
+                                DiscoverRequestPager(
+                                    api,
+                                    UpcomingTvRequestHandler,
+                                    seerrService::createDiscoverItem,
+                                    viewModelScope,
+                                )
+                            }
+
+                            DiscoverRequestType.UPCOMING_MOVIES -> {
+                                DiscoverRequestPager(
+                                    api,
+                                    UpcomingMovieRequestHandler,
+                                    seerrService::createDiscoverItem,
+                                    viewModelScope,
+                                )
+                            }
+
+                            DiscoverRequestType.UNKNOWN -> {
+                                throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
                             }
                         }.init(startIndex)
                     _state.update {
