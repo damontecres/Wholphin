@@ -59,6 +59,7 @@ fun DiscoverItemCard(
     modifier: Modifier = Modifier,
     showOverlay: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    width: Dp = Cards.height2x3 * AspectRatios.TALL,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -78,17 +79,15 @@ fun DiscoverItemCard(
     } else {
         focusedAfterDelay = false
     }
-    val width = Cards.height2x3 * AspectRatios.TALL
-    val height = Dp.Unspecified * (1f / AspectRatios.TALL)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
-        modifier = modifier.size(width, height),
+        modifier = modifier.size(width, Dp.Unspecified),
     ) {
         Card(
             modifier =
                 Modifier
-                    .size(Dp.Unspecified, Cards.height2x3)
+                    .size(width, Dp.Unspecified)
                     .aspectRatio(AspectRatios.TALL),
             onClick = onClick,
             onLongClick = onLongClick,
