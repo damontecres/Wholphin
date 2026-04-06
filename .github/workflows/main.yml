@@ -81,6 +81,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          shopt -s globstar
+
           gh release delete "${{ env.TAG_NAME }}" --cleanup-tag -y || true
 
 
