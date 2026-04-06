@@ -77,4 +77,4 @@ jobs:
 
           gh release create "${{ env.TAG_NAME }}" \
             --latest --title "${{ env.TAG_NAME }}" --verify-tag -n "" --draft \
-            "app/build/outputs/apk/**/*.apk"
+            app/build/outputs/apk/**/*.apk
