@@ -239,6 +239,7 @@ fun DebugPage(
                         "Version Code: ${pkgInfo.versionCodeLong}",
                         "ClientInfo:  ${viewModel.clientInfo}",
                         "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Build flavor: ${BuildConfig.FLAVOR}",
                         "Debug enabled: ${BuildConfig.DEBUG}",
                         "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
                     ) + installInfo
