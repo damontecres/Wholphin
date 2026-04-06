@@ -568,6 +568,9 @@ fun ArtistDetailsPage(
                                         onClick = onClick,
                                         onLongClick = onLongClick,
                                         aspectRatio = AspectRatios.WIDE,
+                                        played = item?.played ?: false,
+                                        playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
+                                        favorite = item?.favorite ?: false,
                                         modifier = mod,
                                     )
                                 },
