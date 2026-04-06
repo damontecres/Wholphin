@@ -560,6 +560,4 @@
     <string name="continue_string">继续</string>
     <string name="separate_types">分开类型</string>
     <string name="prefer_logos">优先显示标题图标</string>
-    <string name="discover_tv"></string>
-    <string name="discover_movies"></string>
 </resources>
