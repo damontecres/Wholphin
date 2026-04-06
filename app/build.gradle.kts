@@ -47,6 +47,8 @@ android {
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
+
+        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
     }
 
     signingConfigs {
@@ -106,6 +108,20 @@ android {
                         "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
                     output.outputFileName = outputFileName
                 }
+        }
+    }
+    flavorDimensions += "version"
+    productFlavors {
+        create("default") {
+            dimension = "version"
+            isDefault = true
+            manifestPlaceholders += mapOf("leanback" to false)
+            buildConfigField("boolean", "UPDATING_ENABLED", "true")
+        }
+        create("appstore") {
+            dimension = "version"
+            manifestPlaceholders += mapOf("leanback" to true)
+            buildConfigField("boolean", "UPDATING_ENABLED", "false")
         }
     }
     compileOptions {

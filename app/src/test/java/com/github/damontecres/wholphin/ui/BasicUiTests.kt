@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui
 
+import android.app.Application
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.test.core.app.ApplicationProvider
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ScreensaverState
 import com.github.damontecres.wholphin.services.SetupDestination
@@ -49,8 +52,11 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import javax.inject.Inject
 
@@ -61,7 +67,23 @@ class BasicUiTests {
     @get:Rule(order = 0)
     var hiltRule = HiltAndroidRule(this)
 
+    // From https://github.com/robolectric/robolectric/pull/4736#issuecomment-1831034882
     @get:Rule(order = 1)
+    val addActivityToRobolectricRule =
+        object : TestWatcher() {
+            override fun starting(description: Description?) {
+                super.starting(description)
+                val appContext: Application = ApplicationProvider.getApplicationContext()
+                val activityInfo =
+                    ActivityInfo().apply {
+                        name = TestActivity::class.java.name
+                        packageName = appContext.packageName
+                    }
+                shadowOf(appContext.packageManager).addOrUpdateActivity(activityInfo)
+            }
+        }
+
+    @get:Rule(order = 2)
     val composeTestRule = createAndroidComposeRule<TestActivity>()
 
     @Inject
