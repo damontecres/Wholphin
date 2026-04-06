@@ -270,6 +270,7 @@ fun createGenreDestination(
     includeItemTypes: List<BaseItemKind>?,
 ) = Destination.FilteredCollection(
     itemId = parentId,
+    parentType = BaseItemKind.GENRE,
     filter =
         CollectionFolderFilter(
             nameOverride =
@@ -295,6 +296,7 @@ fun createStudioDestination(
     includeItemTypes: List<BaseItemKind>?,
 ) = Destination.FilteredCollection(
     itemId = parentId,
+    parentType = BaseItemKind.STUDIO,
     filter =
         CollectionFolderFilter(
             nameOverride =

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.DefaultTvFilterOptions
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -125,6 +126,7 @@ fun CollectionFolderTv(
                     showTitle = false,
                     recursive = true,
                     sortOptions = SeriesSortOptions,
+                    filterOptions = DefaultTvFilterOptions,
                     defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier

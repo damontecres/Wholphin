@@ -99,6 +99,7 @@ sealed class Destination(
     @Serializable
     data class FilteredCollection(
         val itemId: UUID,
+        val parentType: BaseItemKind,
         val filter: CollectionFolderFilter,
         val recursive: Boolean,
     ) : Destination(false)
