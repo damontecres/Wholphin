@@ -487,10 +487,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Studios -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.studios_in, name),
@@ -722,6 +719,7 @@ class HomeSettingsService
                             parentId = row.parentId,
                             userId = userDto.id,
                             limit = limit,
+                            includeItemTypes = listOf(BaseItemKind.SERIES),
                         )
                     val items =
                         GetStudiosRequestHandler
@@ -733,7 +731,7 @@ class HomeSettingsService
                     val title =
                         library?.name?.let { context.getString(R.string.studios_in, it) }
                             ?: context.getString(R.string.studios)
-                    val genres =
+                    val studios =
                         items.map {
                             val imageUrl =
                                 imageUrlService.getItemImageUrl(
@@ -761,7 +759,7 @@ class HomeSettingsService
 
                     Success(
                         title,
-                        genres,
+                        studios,
                         viewOptions = row.viewOptions,
                     )
                 }
