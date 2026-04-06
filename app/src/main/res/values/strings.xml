@@ -752,5 +752,8 @@
     <string name="remove_continue_watching">Remove from continue watching</string>
     <string name="remove_next_up">Remove series from next up</string>
     <string name="view_removed_next_up">View series removed from next up</string>
+    <string name="view_more">View more</string>
+    <string name="discover_tv">Discover TV Shows</string>
+    <string name="discover_movies">Discover Movies</string>
 
 </resources>

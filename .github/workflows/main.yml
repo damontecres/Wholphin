@@ -54,7 +54,7 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleRelease assembleDebug --no-daemon
+          ./gradlew clean assembleDefaultRelease assembleDefaultDebug --no-daemon
 
       - name: Verify signatures
         run: |
@@ -67,7 +67,7 @@ jobs:
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' line; do
               # Wholphin-release-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-arm64-v8a.apk
-              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//' | sed -E 's/-default//')"
               echo "$line => $short_name"
               cp "$line" "$short_name"
             done

@@ -73,6 +73,7 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -386,6 +387,7 @@ fun PersonPageContent(
                         DiscoverRowData(
                             stringResource(R.string.discover),
                             DataLoadingState.Success(discovered),
+                            DiscoverRequestType.UNKNOWN,
                         ),
                     onClickItem = { index: Int, item: DiscoverItem ->
                         position = RowColumn(DISCOVER_ROW, index)
