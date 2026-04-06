@@ -578,4 +578,5 @@
     <string name="continue_string">Fortfahren</string>
     <string name="separate_types">Verschiedene Arten</string>
     <string name="prefer_logos">Logos anstatt Titelnamen anzeigen</string>
+    <string name="updated_toast">Wholphin aktualisiert auf %s</string>
 </resources>
