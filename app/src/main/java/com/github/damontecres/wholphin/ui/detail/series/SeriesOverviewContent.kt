@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -260,14 +261,21 @@ fun SeriesOverviewContent(
                                             ).ifElse(
                                                 episodeIndex == epPosition,
                                                 Modifier.focusRequester(episodeRowFocusRequester),
-                                            ).ifElse(
-                                                episodeIndex != position.episodeRowIndex,
-                                                Modifier
-                                                    .background(
-                                                        Color.Black,
-                                                        shape = RoundedCornerShape(8.dp),
-                                                    ).alpha(dimming),
-                                            ).onFocusChanged {
+                                            ).background(
+                                                if (episodeIndex != position.episodeRowIndex) {
+                                                    Color.Black
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                                shape = RoundedCornerShape(8.dp),
+                                            ).graphicsLayer {
+                                                alpha =
+                                                    if (episodeIndex != position.episodeRowIndex) {
+                                                        dimming
+                                                    } else {
+                                                        1f
+                                                    }
+                                            }.onFocusChanged {
                                                 if (it.isFocused) {
                                                     scope.launch {
                                                         bringIntoViewRequester.bringIntoView()
@@ -319,17 +327,9 @@ fun SeriesOverviewContent(
                 }
             }
 
-            val castAndCrew =
+            val (guestStars, castAndCrew) =
                 remember(peopleInEpisode) {
-                    peopleInEpisode.filterNot {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
-            val guestStars =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filter {
-                        it.type == PersonKind.GUEST_STAR
-                    }
+                    peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
                 }
 
             AnimatedVisibility(
