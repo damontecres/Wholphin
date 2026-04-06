@@ -313,3 +313,5 @@ fun createStudioDestination(
         ),
     recursive = true,
 )
+
+val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()

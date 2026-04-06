@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
@@ -214,6 +215,7 @@ fun SeriesDetails(
                                 title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
                                 genres = item.data.genres.orEmpty(),
+                                studios = item.studioNames,
                                 files = listOf(),
                             )
                     },
@@ -715,7 +717,7 @@ fun SeriesDetailsHeader(
                 Modifier.padding(start = HeaderUtils.startPadding),
             )
             dto.studios?.let {
-                val studios = remember { dto.studios?.mapNotNull { it.name }.orEmpty() }
+                val studios = remember { series.studioNames }
                 GenreText(
                     studios,
                     textStyle = MaterialTheme.typography.bodyLarge,
