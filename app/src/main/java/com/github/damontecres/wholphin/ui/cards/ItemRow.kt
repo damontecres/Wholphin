@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -59,12 +60,8 @@ fun <T> ItemRow(
                 }
             },
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 8.dp),
-        )
+        ItemRowTitle(title)
+
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(horizontalPadding),
@@ -113,3 +110,15 @@ fun <T> ItemRow(
         }
     }
 }
+
+@Composable
+@NonRestartableComposable
+fun ItemRowTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+) = Text(
+    text = title,
+    style = MaterialTheme.typography.titleLarge,
+    color = MaterialTheme.colorScheme.onBackground,
+    modifier = modifier.padding(start = 8.dp),
+)
