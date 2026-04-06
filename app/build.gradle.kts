@@ -108,6 +108,20 @@ android {
                 }
         }
     }
+    flavorDimensions += "version"
+    productFlavors {
+        create("default") {
+            dimension = "version"
+            isDefault = true
+            manifestPlaceholders += mapOf("leanback" to false)
+            buildConfigField("boolean", "UPDATING_ENABLED", "true")
+        }
+        create("appstore") {
+            dimension = "version"
+            manifestPlaceholders += mapOf("leanback" to true)
+            buildConfigField("boolean", "UPDATING_ENABLED", "false")
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
