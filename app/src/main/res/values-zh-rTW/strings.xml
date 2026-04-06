@@ -560,4 +560,8 @@
     <string name="instant_mix">即時混播</string>
     <string name="separate_types">依類型分開顯示</string>
     <string name="prefer_logos">優先顯示圖像標題</string>
+    <string name="updated_toast">Wholphin 已更新至 %s</string>
+    <string name="view_more">查看更多</string>
+    <string name="discover_tv">探索電視劇</string>
+    <string name="discover_movies">探索電影</string>
 </resources>
