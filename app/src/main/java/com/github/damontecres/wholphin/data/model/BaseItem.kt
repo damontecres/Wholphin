@@ -79,8 +79,7 @@ data class BaseItem(
 
     val canDelete: Boolean get() = data.canDelete == true
 
-    @Transient
-    val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
+    val aspectRatio: Float? get() = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
     val indexNumber get() = data.indexNumber
 
@@ -92,8 +91,7 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    @Transient
-    val timeRemainingOrRuntime: Duration? = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
 
     /**
      * Contains pre computed UI elements that would be expensive to create on the main thread

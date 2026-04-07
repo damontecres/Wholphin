@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.search.SearchForDialog
@@ -61,6 +62,7 @@ fun HomeSettingsPage(
     val backStack = rememberNavBackStack(HomeSettingsDestination.RowList)
     var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
     var searchForDialog by remember { mutableStateOf<BaseItemKind?>(null) }
+    var showRemovedNextUpDialog by remember { mutableStateOf(false) }
 
     val state by viewModel.state.collectAsState()
     var position by rememberPosition(0, 0)
@@ -284,6 +286,9 @@ fun HomeSettingsPage(
                                                 addRow(false) { viewModel.resetToDefault() }
                                             }
                                     },
+                                    onClickViewNextUp = {
+                                        showRemovedNextUpDialog = true
+                                    },
                                     modifier = destModifier,
                                 )
                             }
@@ -339,6 +344,15 @@ fun HomeSettingsPage(
                 addRow { viewModel.addRow(searchType, it) }
             },
         )
+    }
+    if (showRemovedNextUpDialog) {
+        BasicDialog(
+            onDismissRequest = { showRemovedNextUpDialog = false },
+        ) {
+            RemovedNextUpContent(
+                modifier = Modifier.padding(16.dp),
+            )
+        }
     }
 }
 
