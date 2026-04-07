@@ -23,7 +23,8 @@
       "groupName": "Jellyfin SDK",
       "matchPackageNames": [
         "org.jellyfin.sdk:**"
-      ]
+      ],
+      "enabled": false
     },
     {
       "groupName": "AGP",
