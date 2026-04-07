@@ -91,6 +91,18 @@ sealed interface HomeRowConfig {
     }
 
     /**
+     * Row of a studios in a library
+     */
+    @Serializable
+    @SerialName("Studios")
+    data class Studios(
+        val parentId: UUID,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.genreDefault,
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Studios = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
      * Favorites for a specific type
      */
     @Serializable
@@ -162,7 +174,7 @@ sealed interface HomeRowConfig {
     @SerialName("ByParent")
     data class ByParent(
         val parentId: UUID,
-        val recursive: Boolean,
+        val recursive: Boolean = false,
         val sort: SortAndDirection? = null,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {

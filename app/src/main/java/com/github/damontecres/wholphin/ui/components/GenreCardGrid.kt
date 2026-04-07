@@ -139,6 +139,7 @@ class GenreViewModel
                         nameLessThan = letter.toString(),
                         limit = 0,
                         enableTotalRecordCount = true,
+                        includeItemTypes = includeItemTypes,
                     )
                 val result by GetGenresRequestHandler.execute(api, request)
                 return@withContext result.totalRecordCount

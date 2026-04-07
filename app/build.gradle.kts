@@ -21,6 +21,8 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
+val mpvModuleExists = project.file("libs/wholphin-mpv-release.aar").exists()
+val extensionsRepoActive = project.hasProperty("WholphinExtensionsUsername")
 
 val gitTags =
     providers
@@ -45,6 +47,8 @@ android {
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
+
+        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
     }
 
     signingConfigs {
@@ -104,6 +108,20 @@ android {
                         "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
                     output.outputFileName = outputFileName
                 }
+        }
+    }
+    flavorDimensions += "version"
+    productFlavors {
+        create("default") {
+            dimension = "version"
+            isDefault = true
+            manifestPlaceholders += mapOf("leanback" to false)
+            buildConfigField("boolean", "UPDATING_ENABLED", "true")
+        }
+        create("appstore") {
+            dimension = "version"
+            manifestPlaceholders += mapOf("leanback" to true)
+            buildConfigField("boolean", "UPDATING_ENABLED", "false")
         }
     }
     compileOptions {
@@ -289,11 +307,33 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    if (ffmpegModuleExists || isCI) {
+
+    if (ffmpegModuleExists) {
+        logger.info("Using local ffmpeg decoder")
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt ffmpeg decoder")
+        implementation(libs.wholphin.extensions.ffmpeg)
+    } else {
+        logger.warn("Media3 ffmpeg decoder was NOT found")
     }
-    if (av1ModuleExists || isCI) {
+    if (av1ModuleExists) {
+        logger.info("Using local av1 decoder")
         implementation(files("libs/lib-decoder-av1-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt av1 decoder")
+        implementation(libs.wholphin.extensions.av1)
+    } else {
+        logger.warn("Media3 av1 decoder was NOT found")
+    }
+    if (mpvModuleExists) {
+        logger.info("Using local libMPV build")
+        implementation(files("libs/wholphin-mpv-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt libMPV")
+        implementation(libs.wholphin.extensions.mpv)
+    } else {
+        logger.warn("libMPV was NOT found")
     }
 
     testImplementation(libs.mockk.android)

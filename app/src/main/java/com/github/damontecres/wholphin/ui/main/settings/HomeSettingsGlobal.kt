@@ -38,6 +38,7 @@ fun HomeSettingsGlobal(
     onClickLoad: () -> Unit,
     onClickLoadWeb: () -> Unit,
     onClickReset: () -> Unit,
+    onClickViewNextUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstFocus: FocusRequester = remember { FocusRequester() }
@@ -123,6 +124,20 @@ fun HomeSettingsGlobal(
                 )
             }
             item { HorizontalDivider() }
+            item {
+                HomeSettingsListItem(
+                    selected = false,
+                    headlineText = stringResource(R.string.view_removed_next_up),
+                    leadingContent = {
+                        Text(
+                            text = stringResource(R.string.fa_eye),
+                            fontFamily = FontAwesome,
+                        )
+                    },
+                    onClick = onClickViewNextUp,
+                    modifier = Modifier,
+                )
+            }
             item {
                 HomeSettingsListItem(
                     selected = false,

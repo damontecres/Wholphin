@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
+import com.github.damontecres.wholphin.data.filter.StudioFilter
 import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -206,7 +207,9 @@ fun FilterByButton(
                         val isSelected =
                             remember(currentValue) {
                                 when (filterOption) {
-                                    GenreFilter -> {
+                                    GenreFilter,
+                                    StudioFilter,
+                                    -> {
                                         (currentValue as? List<UUID>)
                                             .orEmpty()
                                             .contains(value.value)
@@ -271,7 +274,9 @@ fun FilterByButton(
                             onClick = {
                                 val newFilter =
                                     when (filterOption) {
-                                        GenreFilter -> {
+                                        GenreFilter,
+                                        StudioFilter,
+                                        -> {
                                             val list = (currentValue as? List<UUID>).orEmpty()
                                             val newValue =
                                                 list

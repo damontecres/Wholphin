@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.main
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,7 +33,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -232,7 +232,6 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -377,7 +376,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = context.getString(R.string.movies),
+            title = R.string.movies,
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -387,7 +386,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.tv_shows),
+            title = R.string.tv_shows,
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -397,7 +396,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.episodes),
+            title = R.string.episodes,
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
@@ -414,12 +413,13 @@ fun SearchPage(
                     },
                     onLongClick = onLongClick,
                     imageHeight = 140.dp,
+                    showImageOverlay = true,
                     modifier = mod.padding(horizontal = 8.dp),
                 )
             },
         )
         searchResultRow(
-            title = context.getString(R.string.albums),
+            title = R.string.albums,
             result = albums,
             rowIndex = ALBUM_ROW,
             position = position,
@@ -437,12 +437,13 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
         )
         searchResultRow(
-            title = context.getString(R.string.artists),
+            title = R.string.artists,
             result = artists,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -460,12 +461,13 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
         )
         searchResultRow(
-            title = context.getString(R.string.songs),
+            title = R.string.songs,
             result = songs,
             rowIndex = SONG_ROW,
             position = position,
@@ -483,12 +485,13 @@ fun SearchPage(
                     onLongClick = onLongClick,
                     imageHeight = Cards.heightEpisode,
                     aspectRatio = AspectRatios.SQUARE,
+                    showImageOverlay = true,
                     modifier = mod,
                 )
             },
         )
         searchResultRow(
-            title = context.getString(R.string.collections),
+            title = R.string.collections,
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -498,7 +501,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.discover),
+            title = R.string.discover,
             result = seerrResults,
             rowIndex = SEERR_ROW,
             position = position,
@@ -525,7 +528,7 @@ fun SearchPage(
 }
 
 fun LazyListScope.searchResultRow(
-    title: String,
+    @StringRes title: Int,
     result: SearchResult,
     rowIndex: Int,
     position: RowColumn,
@@ -549,6 +552,7 @@ fun LazyListScope.searchResultRow(
             },
             onLongClick = onLongClick,
             imageHeight = Cards.height2x3,
+            showImageOverlay = true,
             modifier = mod,
         )
     },
@@ -557,7 +561,7 @@ fun LazyListScope.searchResultRow(
         when (val r = result) {
             is SearchResult.Error -> {
                 SearchResultPlaceholder(
-                    title = title,
+                    title = stringResource(title),
                     message = r.ex.localizedMessage ?: "Error occurred during search",
                     messageColor = MaterialTheme.colorScheme.error,
                     modifier = Modifier,
@@ -570,7 +574,7 @@ fun LazyListScope.searchResultRow(
 
             SearchResult.Searching -> {
                 SearchResultPlaceholder(
-                    title = title,
+                    title = stringResource(title),
                     message = stringResource(R.string.searching),
                     modifier = modifier,
                 )
@@ -579,13 +583,13 @@ fun LazyListScope.searchResultRow(
             is SearchResult.Success -> {
                 if (r.items.isEmpty()) {
                     SearchResultPlaceholder(
-                        title = title,
+                        title = stringResource(title),
                         message = stringResource(R.string.no_results),
                         modifier = modifier,
                     )
                 } else {
                     ItemRow(
-                        title = title,
+                        title = stringResource(title),
                         items = r.items,
                         onClickItem = onClickItem,
                         onLongClickItem = { _, _ -> },
@@ -598,13 +602,13 @@ fun LazyListScope.searchResultRow(
             is SearchResult.SuccessSeerr -> {
                 if (r.items.isEmpty()) {
                     SearchResultPlaceholder(
-                        title = title,
+                        title = stringResource(title),
                         message = stringResource(R.string.no_results),
                         modifier = modifier,
                     )
                 } else {
                     ItemRow(
-                        title = title,
+                        title = stringResource(title),
                         items = r.items,
                         onClickItem = { index, item ->
                             onClickPosition.invoke(RowColumn(rowIndex, index))

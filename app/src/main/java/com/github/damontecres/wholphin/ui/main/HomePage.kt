@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
@@ -52,6 +54,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.StudioCard
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -122,54 +125,78 @@ fun HomePage(
             var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             var position by rememberPosition()
+
+            val onFocusPosition = remember { { it: RowColumn -> position = it } }
+            val onClickItem =
+                remember {
+                    { clickedPosition: RowColumn, item: BaseItem ->
+                        position = clickedPosition
+                        viewModel.navigationManager.navigateTo(item.destination())
+                    }
+                }
+            val onLongClickItem =
+                remember {
+                    { clickedPosition: RowColumn, item: BaseItem ->
+                        position = clickedPosition
+                        val row =
+                            (homeRows.getOrNull(clickedPosition.row) as? HomeRowLoadingState.Success)
+                        val canRemoveContinueWatching =
+                            row?.rowType is HomeRowConfig.ContinueWatching || row?.rowType is HomeRowConfig.ContinueWatchingCombined
+                        val canRemoveNextUp =
+                            row?.rowType is HomeRowConfig.NextUp || row?.rowType is HomeRowConfig.ContinueWatchingCombined
+                        val dialogItems =
+                            buildMoreDialogItemsForHome(
+                                context = context,
+                                item = item,
+                                seriesId = item.data.seriesId,
+                                playbackPosition = item.playbackPosition,
+                                watched = item.played,
+                                favorite = item.favorite,
+                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                                canRemoveNextUp = canRemoveNextUp,
+                                canRemoveContinueWatching = canRemoveContinueWatching,
+                                actions =
+                                    MoreDialogActions(
+                                        navigateTo = viewModel.navigationManager::navigateTo,
+                                        onClickWatch = { itemId, played ->
+                                            viewModel.setWatched(itemId, played)
+                                        },
+                                        onClickFavorite = { itemId, favorite ->
+                                            viewModel.setFavorite(itemId, favorite)
+                                        },
+                                        onClickAddPlaylist = { itemId ->
+                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            showPlaylistDialog = itemId
+                                        },
+                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                        onClickDelete = {
+                                            showDeleteDialog = RowColumnItem(position, item)
+                                        },
+                                        onClickRemoveFromNextUp = viewModel::removeFromNextUp,
+                                    ),
+                            )
+                        dialog =
+                            DialogParams(
+                                title = item.title ?: "",
+                                fromLongClick = true,
+                                items = dialogItems,
+                            )
+                    }
+                }
+            val onClickPlay =
+                remember {
+                    { _: RowColumn, item: BaseItem ->
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    }
+                }
+
             HomePageContent(
                 homeRows = homeRows,
                 position = position,
-                onFocusPosition = { position = it },
-                onClickItem = { clickedPosition, item ->
-                    position = clickedPosition
-                    viewModel.navigationManager.navigateTo(item.destination())
-                },
-                onLongClickItem = { clickedPosition, item ->
-                    position = clickedPosition
-                    val dialogItems =
-                        buildMoreDialogItemsForHome(
-                            context = context,
-                            item = item,
-                            seriesId = item.data.seriesId,
-                            playbackPosition = item.playbackPosition,
-                            watched = item.played,
-                            favorite = item.favorite,
-                            canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                            actions =
-                                MoreDialogActions(
-                                    navigateTo = viewModel.navigationManager::navigateTo,
-                                    onClickWatch = { itemId, played ->
-                                        viewModel.setWatched(itemId, played)
-                                    },
-                                    onClickFavorite = { itemId, favorite ->
-                                        viewModel.setFavorite(itemId, favorite)
-                                    },
-                                    onClickAddPlaylist = { itemId ->
-                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                        showPlaylistDialog = itemId
-                                    },
-                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                                    onClickDelete = {
-                                        showDeleteDialog = RowColumnItem(position, item)
-                                    },
-                                ),
-                        )
-                    dialog =
-                        DialogParams(
-                            title = item.title ?: "",
-                            fromLongClick = true,
-                            items = dialogItems,
-                        )
-                },
-                onClickPlay = { _, item ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
-                },
+                onFocusPosition = onFocusPosition,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                onClickPlay = onClickPlay,
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
@@ -210,6 +237,8 @@ fun HomePage(
                 )
             }
         }
+
+        else -> {}
     }
 }
 
@@ -239,12 +268,19 @@ fun HomePageContent(
     },
 ) {
     val focusedItem =
-        position.let {
-            (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
+        remember(homeRows, position) {
+            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(
+                position.column,
+            )
         }
 
-    val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
+    val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
+
+    val currentPosition by rememberUpdatedState(position)
+    val currentOnFocusPosition by rememberUpdatedState(onFocusPosition)
+    val currentOnClickPlay by rememberUpdatedState(onClickPlay)
+
     if (takeFocus) {
         LaunchedEffect(homeRows) {
             if (!firstFocused && homeRows.isNotEmpty()) {
@@ -266,11 +302,6 @@ fun HomePageContent(
             }
         }
     }
-    LaunchedEffect(position) {
-        if (position.row >= 0) {
-            listState.animateScrollToItem(position.row)
-        }
-    }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
     }
@@ -280,9 +311,11 @@ fun HomePageContent(
 
             val density = LocalDensity.current
             val spaceAbovePx =
-                with(density) {
-                    // The size of the row titles & spacing
-                    50.dp.toPx()
+                remember(density) {
+                    with(density) {
+                        // The size of the row titles & spacing
+                        50.dp.toPx()
+                    }
                 }
             val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
             CompositionLocalProvider(
@@ -329,15 +362,27 @@ fun HomePageContent(
                                         ItemRow(
                                             title = row.title,
                                             items = row.items,
-                                            onClickItem = { index, item ->
-                                                onClickItem.invoke(RowColumn(rowIndex, index), item)
-                                            },
-                                            onLongClickItem = { index, item ->
-                                                onLongClickItem.invoke(
-                                                    RowColumn(rowIndex, index),
-                                                    item,
-                                                )
-                                            },
+                                            onClickItem =
+                                                remember(rowIndex, onClickItem) {
+                                                    { index, item ->
+                                                        onClickItem.invoke(
+                                                            RowColumn(
+                                                                rowIndex,
+                                                                index,
+                                                            ),
+                                                            item,
+                                                        )
+                                                    }
+                                                },
+                                            onLongClickItem =
+                                                remember(rowIndex, onLongClickItem) {
+                                                    { index, item ->
+                                                        onLongClickItem.invoke(
+                                                            RowColumn(rowIndex, index),
+                                                            item,
+                                                        )
+                                                    }
+                                                },
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
@@ -346,6 +391,34 @@ fun HomePageContent(
                                                     .animateItem(),
                                             horizontalPadding = viewOptions.spacing.dp,
                                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                                val onFocus =
+                                                    remember(rowIndex, index) {
+                                                        { isFocused: Boolean ->
+                                                            if (isFocused) {
+                                                                currentOnFocusPosition(
+                                                                    RowColumn(
+                                                                        rowIndex,
+                                                                        index,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                val onKey =
+                                                    remember(item) {
+                                                        { event: androidx.compose.ui.input.key.KeyEvent ->
+                                                            if (isPlayKeyUp(event) && item?.type?.playable == true) {
+                                                                Timber.v("Clicked play on ${item.id}")
+                                                                currentOnClickPlay(
+                                                                    currentPosition,
+                                                                    item,
+                                                                )
+                                                                true
+                                                            } else {
+                                                                false
+                                                            }
+                                                        }
+                                                    }
                                                 HomePageCardContent(
                                                     index = index,
                                                     item = item,
@@ -354,23 +427,8 @@ fun HomePageContent(
                                                     viewOptions = viewOptions,
                                                     modifier =
                                                         cardModifier
-                                                            .onFocusChanged {
-                                                                if (it.isFocused) {
-                                                                    onFocusPosition?.invoke(
-                                                                        RowColumn(rowIndex, index),
-                                                                    )
-                                                                }
-                                                            }.onKeyEvent {
-                                                                if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                                    Timber.v("Clicked play on ${item.id}")
-                                                                    onClickPlay.invoke(
-                                                                        position,
-                                                                        item,
-                                                                    )
-                                                                    return@onKeyEvent true
-                                                                }
-                                                                return@onKeyEvent false
-                                                            },
+                                                            .onFocusChanged { onFocus(it.isFocused) }
+                                                            .onKeyEvent { onKey(it) },
                                                 )
                                             },
                                         )
@@ -495,6 +553,17 @@ fun HomePageCardContent(
         BaseItemKind.GENRE -> {
             GenreCard(
                 genreId = item.id,
+                name = item.name,
+                imageUrl = item.imageUrlOverride,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier = modifier.height(viewOptions.heightDp.dp),
+            )
+        }
+
+        BaseItemKind.STUDIO -> {
+            StudioCard(
+                studioId = item.id,
                 name = item.name,
                 imageUrl = item.imageUrlOverride,
                 onClick = onClick,

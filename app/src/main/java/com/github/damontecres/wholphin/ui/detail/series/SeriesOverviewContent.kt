@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -95,7 +97,7 @@ fun SeriesOverviewContent(
 ) {
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
+    var selectedTabIndex by rememberSaveable(position.seasonTabIndex) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
     }
@@ -119,6 +121,8 @@ fun SeriesOverviewContent(
                 ?: ""
         }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
+
+    val currentOnChangeSeason by rememberUpdatedState(onChangeSeason)
 
     Box(
         modifier =
@@ -154,11 +158,14 @@ fun SeriesOverviewContent(
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     tabs = tabs,
-                    onClick = {
-                        selectedTabIndex = it
-                        onChangeSeason.invoke(it)
-                        requestFocusAfterSeason = true
-                    },
+                    onClick =
+                        remember {
+                            {
+                                selectedTabIndex = it
+                                currentOnChangeSeason(it)
+                                requestFocusAfterSeason = true
+                            }
+                        },
                     focusRequesters = focusRequesters,
                     modifier =
                         Modifier
@@ -254,14 +261,21 @@ fun SeriesOverviewContent(
                                             ).ifElse(
                                                 episodeIndex == epPosition,
                                                 Modifier.focusRequester(episodeRowFocusRequester),
-                                            ).ifElse(
-                                                episodeIndex != position.episodeRowIndex,
-                                                Modifier
-                                                    .background(
-                                                        Color.Black,
-                                                        shape = RoundedCornerShape(8.dp),
-                                                    ).alpha(dimming),
-                                            ).onFocusChanged {
+                                            ).background(
+                                                if (episodeIndex != position.episodeRowIndex) {
+                                                    Color.Black
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                                shape = RoundedCornerShape(8.dp),
+                                            ).graphicsLayer {
+                                                alpha =
+                                                    if (episodeIndex != position.episodeRowIndex) {
+                                                        dimming
+                                                    } else {
+                                                        1f
+                                                    }
+                                            }.onFocusChanged {
                                                 if (it.isFocused) {
                                                     scope.launch {
                                                         bringIntoViewRequester.bringIntoView()
@@ -313,17 +327,9 @@ fun SeriesOverviewContent(
                 }
             }
 
-            val castAndCrew =
+            val (guestStars, castAndCrew) =
                 remember(peopleInEpisode) {
-                    peopleInEpisode.filterNot {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
-            val guestStars =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filter {
-                        it.type == PersonKind.GUEST_STAR
-                    }
+                    peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
                 }
 
             AnimatedVisibility(
