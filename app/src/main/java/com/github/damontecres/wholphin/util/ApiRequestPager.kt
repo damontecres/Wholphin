@@ -12,6 +12,7 @@ import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.personsApi
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.studiosApi
 import org.jellyfin.sdk.api.client.extensions.suggestionsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -24,6 +25,7 @@ import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
+import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -305,4 +307,24 @@ val GetPersonsHandler =
             api: ApiClient,
             request: GetPersonsRequest,
         ): Response<BaseItemDtoQueryResult> = api.personsApi.getPersons((request))
+    }
+
+val GetStudiosRequestHandler =
+    object : RequestHandler<GetStudiosRequest> {
+        override fun prepare(
+            request: GetStudiosRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetStudiosRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetStudiosRequest,
+        ): Response<BaseItemDtoQueryResult> = api.studiosApi.getStudios(request)
     }

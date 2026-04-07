@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.DefaultTvFilterOptions
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -29,6 +30,7 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
+import com.github.damontecres.wholphin.ui.components.StudioCardGrid
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
@@ -53,6 +55,7 @@ fun CollectionFolderTv(
             stringResource(R.string.recommended),
             stringResource(R.string.library),
             stringResource(R.string.genres),
+            stringResource(R.string.studios),
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -123,6 +126,7 @@ fun CollectionFolderTv(
                     showTitle = false,
                     recursive = true,
                     sortOptions = SeriesSortOptions,
+                    filterOptions = DefaultTvFilterOptions,
                     defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
@@ -142,6 +146,18 @@ fun CollectionFolderTv(
             // Genres
             2 -> {
                 GenreCardGrid(
+                    itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.SERIES),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                )
+            }
+
+            // Studios
+            3 -> {
+                StudioCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.SERIES),
                     modifier =

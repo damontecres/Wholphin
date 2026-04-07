@@ -80,6 +80,16 @@ fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
             )
         }
 
+        library.collectionType == CollectionType.TVSHOWS -> {
+            listOf(
+                LibraryRowType.RECENTLY_ADDED,
+                LibraryRowType.RECENTLY_RELEASED,
+                LibraryRowType.SUGGESTIONS,
+                LibraryRowType.GENRES,
+                LibraryRowType.STUDIOS,
+            )
+        }
+
         supportsSuggestions -> {
             listOf(
                 LibraryRowType.RECENTLY_ADDED,
@@ -124,6 +134,7 @@ enum class LibraryRowType(
     RECENTLY_RELEASED(R.string.recently_released),
     SUGGESTIONS(R.string.suggestions),
     GENRES(R.string.genres),
+    STUDIOS(R.string.studios),
     TV_CHANNELS(R.string.channels),
     TV_PROGRAMS(R.string.live_tv),
     RECENTLY_RECORDED(R.string.recently_recorded),

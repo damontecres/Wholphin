@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -185,6 +186,7 @@ fun MovieDetails(
                             overview = movie.data.overview,
                             genres = movie.data.genres.orEmpty(),
                             files = movie.data.mediaSources.orEmpty(),
+                            studios = movie.studioNames,
                         )
                 },
                 moreOnClick = {

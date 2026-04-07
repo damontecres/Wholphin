@@ -43,6 +43,7 @@ class TestHomeRowSamples {
                     parentId = UUID.randomUUID(),
                     viewOptions = HomeRowViewOptions(),
                 ),
+                HomeRowConfig.Studios(parentId = UUID.randomUUID()),
                 HomeRowConfig.ContinueWatching(
                     viewOptions = HomeRowViewOptions(),
                 ),
@@ -98,6 +99,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.TvPrograms -> foundTypes.add(it::class)
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
                 is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
+                is HomeRowConfig.Studios -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
