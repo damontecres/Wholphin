@@ -36,6 +36,13 @@
       "matchPackageNames": [
         "org.jetbrains.kotlin**"
       ]
+    },
+    {
+      "groupName": "Internal dependencies",
+      "matchPackageNames": [
+        "com.github.damontecres.wholphin**"
+      ],
+      "enabled": false
     }
   ]
 }
