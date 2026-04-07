@@ -588,4 +588,7 @@
     <string name="separate_types">Farklı türler</string>
     <string name="prefer_logos">Başlık yerine logo göster</string>
     <string name="updated_toast">Wholphin %s sürümüne güncellendi</string>
+    <string name="view_more">Daha fazla göster</string>
+    <string name="discover_tv">Dizileri Keşfet</string>
+    <string name="discover_movies">Filmleri Keşfet</string>
 </resources>
