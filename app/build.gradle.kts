@@ -152,6 +152,12 @@ android {
             isUniversalApk = true
         }
     }
+    packaging {
+        jniLibs {
+            // Work around because libass-android & wholphin-mpv both (incorrectly) package libc++_shared.so
+            pickFirsts += "lib/*/libc++_shared.so"
+        }
+    }
 
     sourceSets {
         getByName("main") {
