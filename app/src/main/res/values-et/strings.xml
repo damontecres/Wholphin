@@ -579,4 +579,11 @@
     <string name="separate_types">Eraldi tüübid</string>
     <string name="prefer_logos">Pealkirjade puhul eelista logode kuvamist</string>
     <string name="updated_toast">Wholphin on uuendatud versioonini %s</string>
+    <string name="remove_continue_watching">Eemalda „Jätka vaatamist“ valikust</string>
+    <string name="remove_next_up">Eemalda sari valikust „Järgmisena esitamisel“</string>
+    <string name="view_removed_next_up">Vaata sarja, mis sai eemaldatud valikust „Järgmisena esitamisel“</string>
+    <string name="view_more">Vaata veel</string>
+    <string name="discover_tv">Leia telesaateid</string>
+    <string name="discover_movies">Leia filme</string>
+    <string name="studios_in">Stuudiod: %1$s</string>
 </resources>
