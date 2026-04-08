@@ -600,4 +600,8 @@
     <string name="view_more">Ver más</string>
     <string name="discover_tv">Descubrir series</string>
     <string name="discover_movies">Descubrir películas</string>
+    <string name="remove_continue_watching">Eliminar de \"Continuar viendo\"</string>
+    <string name="remove_next_up">Eliminar de \"Siguiente\"</string>
+    <string name="view_removed_next_up">Ver series eliminadas de \"Siguiente\"</string>
+    <string name="studios_in">Estudios en %1$s</string>
 </resources>
