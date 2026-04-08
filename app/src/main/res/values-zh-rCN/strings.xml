@@ -564,4 +564,8 @@
     <string name="view_more">查看更多</string>
     <string name="discover_tv">发现电视节目</string>
     <string name="discover_movies">发现电影</string>
+    <string name="remove_continue_watching">从继续观看中移除</string>
+    <string name="remove_next_up">从即将播放中移除剧集</string>
+    <string name="view_removed_next_up">查看已从即将播放中移除的剧集</string>
+    <string name="studios_in">%1$s 制片公司</string>
 </resources>
