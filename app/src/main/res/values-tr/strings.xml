@@ -591,4 +591,8 @@
     <string name="view_more">Daha fazla göster</string>
     <string name="discover_tv">Dizileri Keşfet</string>
     <string name="discover_movies">Filmleri Keşfet</string>
+    <string name="remove_continue_watching">İzlemeye devam et listesinden kaldır</string>
+    <string name="remove_next_up">Sıradaki bölümlerden kaldır</string>
+    <string name="view_removed_next_up">Sıradaki bölümlerden kaldırılan dizileri göster</string>
+    <string name="studios_in">Stüdyolar: %1$s</string>
 </resources>
