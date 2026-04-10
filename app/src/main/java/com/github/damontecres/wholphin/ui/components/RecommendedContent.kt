@@ -26,6 +26,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -35,6 +36,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
@@ -48,6 +50,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
@@ -56,9 +59,11 @@ import java.util.UUID
  */
 abstract class RecommendedViewModel(
     @param:ApplicationContext val context: Context,
+    val api: ApiClient,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
     val mediaReportService: MediaReportService,
+    private val musicService: MusicService,
     private val backdropService: BackdropService,
     private val mediaManagementService: MediaManagementService,
 ) : ViewModel() {
@@ -147,6 +152,11 @@ abstract class RecommendedViewModel(
         item: BaseItem,
         appPreferences: AppPreferences,
     ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+    fun addToQueue(
+        item: BaseItem,
+        index: Int,
+    ) = addToQueue(api, musicService, item, index)
 }
 
 @Composable
@@ -244,6 +254,9 @@ fun RecommendedContent(
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                             onClickDelete = { showDeleteDialog = RowColumnItem(position, item) },
+                            onClickAddToQueue = {
+                                viewModel.addToQueue(it, 0)
+                            },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
