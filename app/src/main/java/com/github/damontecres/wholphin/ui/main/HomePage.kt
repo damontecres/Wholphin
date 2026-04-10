@@ -85,6 +85,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.stripMarkdown
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
@@ -501,7 +502,7 @@ fun HomePageHeader(
                     .width(400.dp)
             if (overview.isNotNullOrBlank()) {
                 Text(
-                    text = AnnotatedString.fromHtml(overview),
+                    text = overview.stripMarkdown(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = if (overviewTwoLines) 2 else 3,

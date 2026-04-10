@@ -24,6 +24,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
+import com.github.damontecres.wholphin.util.stripMarkdown
 
 /**
  * Show the overview text for an item. Uses a fixed size and allows for clicking.
@@ -61,7 +62,7 @@ fun OverviewText(
                 },
     ) {
         Text(
-            text = AnnotatedString.fromHtml(overview),
+            text = overview.stripMarkdown(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = maxLines,

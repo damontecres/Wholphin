@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
+import com.mikepenz.markdown.m3.Markdown
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -83,10 +84,7 @@ fun ItemDetailsDialog(
                     )
                 }
                 if (info.overview.isNotNullOrBlank()) {
-                    Text(
-                        text = AnnotatedString.fromHtml(info.overview),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    Markdown(content = info.overview)
                 }
             }
         }
