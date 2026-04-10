@@ -107,6 +107,13 @@ abstract class RequestPager<T>(
         }
     }
 
+    suspend fun refresh() {
+        cachedPages.asMap().keys.forEachIndexed { index, pageNum ->
+            if (DEBUG) Timber.v("refresh: pageNum=%s", pageNum)
+            fetchPageBlocking(pageNum * pageSize, index == 0)
+        }
+    }
+
     protected abstract suspend fun fetchPage(
         pageNumber: Int,
         includeTotalCount: Boolean,

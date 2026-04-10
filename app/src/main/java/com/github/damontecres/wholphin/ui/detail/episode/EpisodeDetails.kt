@@ -176,6 +176,7 @@ fun EpisodeDetails(
                                                 chooseVersionParams(
                                                     context,
                                                     ep.data.mediaSources!!,
+                                                    chosenStreams?.source?.id?.toUUIDOrNull(),
                                                 ) { idx ->
                                                     val source = ep.data.mediaSources!![idx]
                                                     viewModel.savePlayVersion(

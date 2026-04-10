@@ -210,6 +210,7 @@ fun MovieDetails(
                                             chooseVersionParams(
                                                 context,
                                                 movie.data.mediaSources!!,
+                                                chosenStreams?.source?.id?.toUUIDOrNull(),
                                             ) { idx ->
                                                 val source = movie.data.mediaSources!![idx]
                                                 viewModel.savePlayVersion(

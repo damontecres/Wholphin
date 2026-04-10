@@ -76,6 +76,8 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.util.UUID
 
 /**
  * Parameters for rendering a [DialogPopup]
@@ -597,6 +599,7 @@ fun ConfirmDeleteDialog(
 fun chooseVersionParams(
     context: Context,
     sources: List<MediaSourceInfo>,
+    chosenSourceId: UUID?,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
@@ -604,12 +607,16 @@ fun chooseVersionParams(
         title = context.getString(R.string.choose_stream, context.getString(R.string.version)),
         items =
             sources.filter { it.id.isNotNullOrBlank() }.mapIndexed { index, source ->
+                val uuid = source.id?.toUUIDOrNull()
                 val videoStream =
                     source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }
                 val title = source.name ?: source.path ?: source.id ?: ""
                 DialogItem(
                     headlineContent = {
                         Text(text = title)
+                    },
+                    leadingContent = {
+                        SelectedLeadingContent(uuid != null && uuid == chosenSourceId)
                     },
                     supportingContent = {
                         videoStream?.displayTitle?.let { Text(text = it) }
