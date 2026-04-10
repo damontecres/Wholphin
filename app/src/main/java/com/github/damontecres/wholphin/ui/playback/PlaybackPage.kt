@@ -68,14 +68,12 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -463,8 +461,8 @@ fun PlaybackPageContent(
                     delay(10.seconds)
                     viewModel.updateSegment(segment.segment.id, true)
                 }
-                TextButton(
-                    stringRes = segment.segment.type.skipStringRes,
+                SkipSegmentButton(
+                    type = segment.segment.type,
                     onClick = {
                         viewModel.updateSegment(segment.segment.id, false)
                     },
