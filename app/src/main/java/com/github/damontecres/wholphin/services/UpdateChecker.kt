@@ -65,7 +65,7 @@ class UpdateChecker
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
 
-            const val ACTIVE = BuildConfig.UPDATING_ENABLED
+            val ACTIVE = BuildConfig.UPDATING_ENABLED
         }
 
         /**
