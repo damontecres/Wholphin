@@ -6,23 +6,22 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Border
-import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.skipStringRes
@@ -51,7 +50,16 @@ fun SkipSegmentButton(
     )
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier =
+            modifier.drawBehind {
+                val px = 6.dp.toPx()
+                drawRoundRect(
+                    color = color,
+                    cornerRadius = CornerRadius(this.size.width * .5f),
+                    topLeft = Offset(-px, -px),
+                    size = Size(this.size.width + px * 2, this.size.height + px * 2),
+                )
+            },
         onLongClick = onLongClick,
         enabled = true,
         contentPadding =
@@ -66,15 +74,6 @@ fun SkipSegmentButton(
         content = {
             Text(text = stringResource(type.skipStringRes))
         },
-        border =
-            ClickableSurfaceDefaults.border(
-                focusedBorder =
-                    Border(
-                        border = BorderStroke(width = 4.dp, color = color),
-                        inset = 0.dp,
-                        shape = CircleShape,
-                    ),
-            ),
     )
 }
 
