@@ -81,35 +81,7 @@ abstract class MusicViewModel(
     fun addToQueue(
         item: BaseItem,
         index: Int,
-    ) {
-        viewModelScope.launchIO {
-            Timber.v("addToQueue %s %s", item.type, item.id)
-            when (item.type) {
-                BaseItemKind.AUDIO -> {
-                    musicService.addAllToQueue(BlockingList.of(listOf(item)), 0)
-                }
-
-                BaseItemKind.MUSIC_ALBUM -> {
-                    val pager = getPagerForAlbum(api, item.id)
-                    musicService.addAllToQueue(pager, 0)
-                }
-
-                BaseItemKind.MUSIC_ARTIST -> {
-                    val pager = getPagerForArtist(api, item.id)
-                    musicService.addAllToQueue(pager, 0)
-                }
-
-                BaseItemKind.PLAYLIST -> {
-                    val pager = getPagerForPlaylist(api, item.id)
-                    musicService.addAllToQueue(pager, 0)
-                }
-
-                else -> {
-                    Timber.w("Unknown item type to queue for music: %s", item.type)
-                }
-            }
-        }
-    }
+    ) = addToQueue(api, musicService, item, index)
 
     fun startInstantMix(itemId: UUID) {
         viewModelScope.launchIO {
@@ -139,4 +111,39 @@ abstract class MusicViewModel(
     }
 
     internal abstract fun init()
+}
+
+fun ViewModel.addToQueue(
+    api: ApiClient,
+    musicService: MusicService,
+    item: BaseItem,
+    index: Int,
+) {
+    viewModelScope.launchIO {
+        Timber.v("addToQueue %s %s", item.type, item.id)
+        when (item.type) {
+            BaseItemKind.AUDIO -> {
+                musicService.addAllToQueue(BlockingList.of(listOf(item)), 0)
+            }
+
+            BaseItemKind.MUSIC_ALBUM -> {
+                val pager = getPagerForAlbum(api, item.id)
+                musicService.addAllToQueue(pager, 0)
+            }
+
+            BaseItemKind.MUSIC_ARTIST -> {
+                val pager = getPagerForArtist(api, item.id)
+                musicService.addAllToQueue(pager, 0)
+            }
+
+            BaseItemKind.PLAYLIST -> {
+                val pager = getPagerForPlaylist(api, item.id)
+                musicService.addAllToQueue(pager, 0)
+            }
+
+            else -> {
+                Timber.w("Unknown item type to queue for music: %s", item.type)
+            }
+        }
+    }
 }

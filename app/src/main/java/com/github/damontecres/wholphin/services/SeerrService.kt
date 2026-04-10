@@ -191,6 +191,18 @@ class SeerrService
             return "${base}${prefix}$path"
         }
 
+        suspend fun createDiscoverItem(item: Any): DiscoverItem =
+            when (item) {
+                is MovieResult -> createDiscoverItem(item)
+                is MovieDetails -> createDiscoverItem(item)
+                is TvResult -> createDiscoverItem(item)
+                is TvDetails -> createDiscoverItem(item)
+                is SeerrSearchResult -> createDiscoverItem(item)
+                is CreditCast -> createDiscoverItem(item)
+                is CreditCrew -> createDiscoverItem(item)
+                else -> throw IllegalArgumentException("Unsupported type ${item::class.qualifiedName}")
+            }
+
         suspend fun createDiscoverItem(movie: MovieResult): DiscoverItem =
             DiscoverItem(
                 id = movie.id,

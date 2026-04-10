@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
+import com.github.damontecres.wholphin.data.filter.DefaultForStudiosFilterOptions
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
@@ -35,6 +36,7 @@ import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
+import com.github.damontecres.wholphin.ui.discover.DiscoverRequestGrid
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
@@ -251,7 +253,12 @@ fun DestinationContent(
                 recursive = destination.recursive,
                 usePosters = true,
                 playEnabled = true, // TODO only genres use this currently, so might need to change in future
-                filterOptions = DefaultForGenresFilterOptions,
+                filterOptions =
+                    when (destination.parentType) {
+                        BaseItemKind.GENRE -> DefaultForGenresFilterOptions
+                        BaseItemKind.STUDIO -> DefaultForStudiosFilterOptions
+                        else -> throw IllegalArgumentException("Unsupported parentType ${destination.parentType}")
+                    },
                 modifier = modifier,
             )
         }
@@ -352,6 +359,14 @@ fun DestinationContent(
                     )
                 }
             }
+        }
+
+        is Destination.DiscoverMoreResult -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            DiscoverRequestGrid(
+                destination = destination,
+                modifier = modifier,
+            )
         }
     }
 }

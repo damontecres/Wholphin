@@ -43,6 +43,7 @@ data class ItemDetailsDialogInfo(
     val overview: String?,
     val genres: List<String>,
     val files: List<MediaSourceInfo>,
+    val studios: List<String> = emptyList(),
 )
 
 /**
@@ -77,6 +78,12 @@ fun ItemDetailsDialog(
                     text = info.title,
                     style = MaterialTheme.typography.headlineSmall,
                 )
+                if (info.studios.isNotEmpty()) {
+                    Text(
+                        text = info.studios.joinToString(", "),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
                 if (info.genres.isNotEmpty()) {
                     Text(
                         text = info.genres.joinToString(", "),

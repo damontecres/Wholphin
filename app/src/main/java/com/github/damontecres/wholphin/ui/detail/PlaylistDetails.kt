@@ -430,6 +430,7 @@ fun PlaylistDetails(
             },
             onSendMediaInfo = viewModel::sendMediaReport,
             onClickDelete = { showDeleteDialog = it },
+            onClickAddToQueue = { viewModel.addToQueue(it, 0) },
         )
 
     PlaylistDetailsContent(

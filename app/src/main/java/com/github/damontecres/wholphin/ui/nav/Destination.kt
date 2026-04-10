@@ -12,6 +12,8 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.SEERR_PAGE_SIZE
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -97,6 +99,7 @@ sealed class Destination(
     @Serializable
     data class FilteredCollection(
         val itemId: UUID,
+        val parentType: BaseItemKind,
         val filter: CollectionFolderFilter,
         val recursive: Boolean,
     ) : Destination(false)
@@ -127,6 +130,11 @@ sealed class Destination(
     @Serializable
     data class DiscoveredItem(
         val item: DiscoverItem,
+    ) : Destination(false)
+
+    data class DiscoverMoreResult(
+        val type: DiscoverRequestType,
+        val startIndex: Int = SEERR_PAGE_SIZE,
     ) : Destination(false)
 
     @Serializable

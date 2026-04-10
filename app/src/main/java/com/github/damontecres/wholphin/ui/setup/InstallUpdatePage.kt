@@ -53,7 +53,6 @@ import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
@@ -66,6 +65,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Version
 import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownTypography
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -272,15 +272,7 @@ fun InstallUpdatePageContent(
                     },
         ) {
             item {
-                Markdown(
-                    (release.notes.joinToString("\n\n") + (release.body ?: ""))
-                        .replace(
-                            Regex("https://github.com/damontecres/\\w+/pull/(\\d+)"),
-                            "#$1",
-                        )
-                        // Remove the last line for full changelog since its just a link
-                        .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), ""),
-                )
+                ReleaseNotes(release)
             }
         }
         Column(
@@ -315,6 +307,25 @@ fun InstallUpdatePageContent(
             )
         }
     }
+}
+
+@Composable
+fun ReleaseNotes(
+    release: Release,
+    modifier: Modifier = Modifier,
+) {
+    Markdown(
+        content = release.content,
+        typography =
+            markdownTypography(
+                h1 = MaterialTheme.typography.headlineLarge,
+                h2 = MaterialTheme.typography.headlineMedium,
+                h3 = MaterialTheme.typography.headlineSmall,
+                text = MaterialTheme.typography.bodySmall,
+                code = MaterialTheme.typography.bodySmall,
+            ),
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -392,13 +403,15 @@ private fun InstallUpdatePageContentPreview() {
                     downloadUrl = "https://url",
                     publishedAt = null,
                     body =
-                        "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus " +
+                        "## Header 2\n" +
+                            "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus " +
                             "ex sapien vitae pellentesque sem placerat. In id cursus mi pretium " +
                             "tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. " +
                             "Pulvinar vivamus fringilla lacus nec metus bibendum egestas. " +
                             "Iaculis massa nisl malesuada lacinia integer nunc posuere. " +
                             "Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora " +
                             "torquent per conubia nostra inceptos himenaeos.\n\n" +
+                            "### Header 3\n" +
                             "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus " +
                             "ex sapien vitae pellentesque sem placerat. In id cursus mi pretium " +
                             "tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. " +

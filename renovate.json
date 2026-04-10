@@ -23,7 +23,8 @@
       "groupName": "Jellyfin SDK",
       "matchPackageNames": [
         "org.jellyfin.sdk:**"
-      ]
+      ],
+      "enabled": false
     },
     {
       "groupName": "AGP",
@@ -36,6 +37,13 @@
       "matchPackageNames": [
         "org.jetbrains.kotlin**"
       ]
+    },
+    {
+      "groupName": "Internal dependencies",
+      "matchPackageNames": [
+        "com.github.damontecres.wholphin**"
+      ],
+      "enabled": false
     }
   ]
 }

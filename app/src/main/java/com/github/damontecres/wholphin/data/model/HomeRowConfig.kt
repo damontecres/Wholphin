@@ -91,6 +91,18 @@ sealed interface HomeRowConfig {
     }
 
     /**
+     * Row of a studios in a library
+     */
+    @Serializable
+    @SerialName("Studios")
+    data class Studios(
+        val parentId: UUID,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.genreDefault,
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Studios = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
      * Favorites for a specific type
      */
     @Serializable

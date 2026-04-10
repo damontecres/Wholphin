@@ -748,5 +748,13 @@
     <string name="select_all">Select all</string>
     <string name="separate_types">Separate types</string>
     <string name="prefer_logos">Prefer showing logos for titles</string>
+    <string name="updated_toast">Wholphin updated to %s</string>
+    <string name="remove_continue_watching">Remove from continue watching</string>
+    <string name="remove_next_up">Remove series from next up</string>
+    <string name="view_removed_next_up">View series removed from next up</string>
+    <string name="view_more">View more</string>
+    <string name="discover_tv">Discover TV Shows</string>
+    <string name="discover_movies">Discover Movies</string>
+    <string name="studios_in">Studios in %1$s</string>
 
 </resources>

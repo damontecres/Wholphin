@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +47,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.StudioCard
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -139,6 +140,12 @@ fun HomePage(
                 remember {
                     { clickedPosition: RowColumn, item: BaseItem ->
                         position = clickedPosition
+                        val row =
+                            (homeRows.getOrNull(clickedPosition.row) as? HomeRowLoadingState.Success)
+                        val canRemoveContinueWatching =
+                            row?.rowType is HomeRowConfig.ContinueWatching || row?.rowType is HomeRowConfig.ContinueWatchingCombined
+                        val canRemoveNextUp =
+                            row?.rowType is HomeRowConfig.NextUp || row?.rowType is HomeRowConfig.ContinueWatchingCombined
                         val dialogItems =
                             buildMoreDialogItemsForHome(
                                 context = context,
@@ -148,6 +155,8 @@ fun HomePage(
                                 watched = item.played,
                                 favorite = item.favorite,
                                 canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                                canRemoveNextUp = canRemoveNextUp,
+                                canRemoveContinueWatching = canRemoveContinueWatching,
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel.navigationManager::navigateTo,
@@ -165,6 +174,7 @@ fun HomePage(
                                         onClickDelete = {
                                             showDeleteDialog = RowColumnItem(position, item)
                                         },
+                                        onClickRemoveFromNextUp = viewModel::removeFromNextUp,
                                     ),
                             )
                         dialog =
@@ -261,7 +271,9 @@ fun HomePageContent(
 ) {
     val focusedItem =
         remember(homeRows, position) {
-            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(position.column)
+            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(
+                position.column,
+            )
         }
 
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
@@ -355,7 +367,13 @@ fun HomePageContent(
                                             onClickItem =
                                                 remember(rowIndex, onClickItem) {
                                                     { index, item ->
-                                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                                        onClickItem.invoke(
+                                                            RowColumn(
+                                                                rowIndex,
+                                                                index,
+                                                            ),
+                                                            item,
+                                                        )
                                                     }
                                                 },
                                             onLongClickItem =
@@ -379,7 +397,12 @@ fun HomePageContent(
                                                     remember(rowIndex, index) {
                                                         { isFocused: Boolean ->
                                                             if (isFocused) {
-                                                                currentOnFocusPosition(RowColumn(rowIndex, index))
+                                                                currentOnFocusPosition(
+                                                                    RowColumn(
+                                                                        rowIndex,
+                                                                        index,
+                                                                    ),
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -388,7 +411,10 @@ fun HomePageContent(
                                                         { event: androidx.compose.ui.input.key.KeyEvent ->
                                                             if (isPlayKeyUp(event) && item?.type?.playable == true) {
                                                                 Timber.v("Clicked play on ${item.id}")
-                                                                currentOnClickPlay(currentPosition, item)
+                                                                currentOnClickPlay(
+                                                                    currentPosition,
+                                                                    item,
+                                                                )
                                                                 true
                                                             } else {
                                                                 false
@@ -529,6 +555,17 @@ fun HomePageCardContent(
         BaseItemKind.GENRE -> {
             GenreCard(
                 genreId = item.id,
+                name = item.name,
+                imageUrl = item.imageUrlOverride,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier = modifier.height(viewOptions.heightDp.dp),
+            )
+        }
+
+        BaseItemKind.STUDIO -> {
+            StudioCard(
+                studioId = item.id,
                 name = item.name,
                 imageUrl = item.imageUrlOverride,
                 onClick = onClick,

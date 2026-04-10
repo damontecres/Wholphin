@@ -279,6 +279,7 @@ class MusicService
                     onMain { player.addMediaItems(mediaItems) }
                 }
             updateQueueSize()
+            start()
         }
 
         /**

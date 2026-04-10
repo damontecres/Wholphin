@@ -41,12 +41,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
@@ -87,6 +89,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -212,6 +215,7 @@ fun SeriesDetails(
                                 title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
                                 genres = item.data.genres.orEmpty(),
+                                studios = item.studioNames,
                                 files = listOf(),
                             )
                     },
@@ -396,6 +400,7 @@ fun SeriesDetailsContent(
                         series = series,
                         showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
+                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -653,6 +658,7 @@ fun SeriesDetailsContent(
                                 DiscoverRowData(
                                     stringResource(R.string.discover),
                                     DataLoadingState.Success(discovered),
+                                    type = DiscoverRequestType.UNKNOWN,
                                 ),
                             onClickItem = { index: Int, item: DiscoverItem ->
                                 position = DISCOVER_ROW
@@ -684,6 +690,7 @@ fun SeriesDetailsHeader(
     series: BaseItem,
     showLogo: Boolean,
     overviewOnClick: () -> Unit,
+    bringIntoViewRequester: BringIntoViewRequester,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -709,8 +716,16 @@ fun SeriesDetailsHeader(
                 null,
                 Modifier.padding(start = HeaderUtils.startPadding),
             )
+            dto.studios?.let {
+                val studios = remember { series.studioNames }
+                GenreText(
+                    studios,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
+            }
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 4.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
@@ -718,6 +733,14 @@ fun SeriesDetailsHeader(
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
+                    modifier =
+                        Modifier.onFocusChanged {
+                            if (it.isFocused) {
+                                scope.launch(ExceptionHandler()) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
                 )
             }
         }

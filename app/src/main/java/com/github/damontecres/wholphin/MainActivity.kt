@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -34,6 +35,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
@@ -51,14 +53,15 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
-import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -112,6 +115,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
+
+    @Inject
+    lateinit var latestNextUpSchedulerService: LatestNextUpSchedulerService
 
     @Inject
     lateinit var backdropService: BackdropService
@@ -394,6 +400,7 @@ class MainActivity : AppCompatActivity() {
 class MainActivityViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val preferences: DataStore<AppPreferences>,
         val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
@@ -402,9 +409,19 @@ class MainActivityViewModel
         private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 try {
-                    appUpgradeHandler.run()
+                    val needUpgrade = appUpgradeHandler.needUpgrade()
+                    if (needUpgrade) {
+                        showToast(
+                            context,
+                            context.getString(
+                                R.string.updated_toast,
+                                appUpgradeHandler.currentVersion.toString(),
+                            ),
+                        )
+                        appUpgradeHandler.run()
+                    }
                     appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
@@ -447,7 +464,7 @@ class MainActivityViewModel
                     navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }

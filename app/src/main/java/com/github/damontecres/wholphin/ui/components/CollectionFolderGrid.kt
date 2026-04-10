@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +64,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -79,6 +81,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -138,6 +141,7 @@ class CollectionFolderViewModel
         private val themeSongPlayer: ThemeSongPlayer,
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
+        private val musicService: MusicService,
         val mediaReportService: MediaReportService,
         @Assisted itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
@@ -531,6 +535,11 @@ class CollectionFolderViewModel
             item: BaseItem,
             appPreferences: AppPreferences,
         ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+        fun addToQueue(
+            item: BaseItem,
+            index: Int,
+        ) = addToQueue(api, musicService, item, index)
     }
 
 /**
@@ -775,6 +784,9 @@ fun CollectionFolderGrid(
                             onClickGoTo = {
                                 onClickItem.invoke(position, it)
                             },
+                            onClickAddToQueue = {
+                                viewModel.addToQueue(it, 0)
+                            },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
@@ -882,15 +894,7 @@ fun CollectionFolderGridContent(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (showTitle) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        GridTitle(title)
                     }
                     val endPadding =
                         16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
@@ -1146,3 +1150,18 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 listOf()
             }
         }
+
+@Composable
+@NonRestartableComposable
+fun GridTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+) = Text(
+    text = title,
+    style = MaterialTheme.typography.displayMedium,
+    color = MaterialTheme.colorScheme.onBackground,
+    textAlign = TextAlign.Center,
+    maxLines = 1,
+    overflow = TextOverflow.Ellipsis,
+    modifier = modifier.fillMaxWidth(),
+)

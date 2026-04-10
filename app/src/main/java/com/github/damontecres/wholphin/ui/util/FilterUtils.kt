@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
+import com.github.damontecres.wholphin.data.filter.StudioFilter
 import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,9 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.api.client.extensions.localizationApi
+import org.jellyfin.sdk.api.client.extensions.studiosApi
 import org.jellyfin.sdk.api.client.extensions.yearsApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import timber.log.Timber
@@ -43,6 +46,16 @@ object FilterUtils {
                             .getGenres(
                                 parentId = parentId,
                                 userId = userId,
+                            ).content.items
+                            .map { FilterValueOption(it.name ?: "", it.id) }
+                    }
+
+                    StudioFilter -> {
+                        api.studiosApi
+                            .getStudios(
+                                parentId = parentId,
+                                userId = userId,
+                                includeItemTypes = listOf(BaseItemKind.SERIES),
                             ).content.items
                             .map { FilterValueOption(it.name ?: "", it.id) }
                     }

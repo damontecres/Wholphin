@@ -21,48 +21,35 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.createGenreDestination
+import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.ui.cards.GenreCard
+import com.github.damontecres.wholphin.ui.cards.StudioCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.GetGenresRequestHandler
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemFields
-import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.request.GetGenresRequest
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import timber.log.Timber
+import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.hours
 
-@HiltViewModel(assistedFactory = GenreViewModel.Factory::class)
-class GenreViewModel
+@HiltViewModel(assistedFactory = StudioViewModel.Factory::class)
+class StudioViewModel
     @AssistedInject
     constructor(
         private val api: ApiClient,
@@ -77,12 +64,12 @@ class GenreViewModel
             fun create(
                 itemId: UUID,
                 includeItemTypes: List<BaseItemKind>?,
-            ): GenreViewModel
+            ): StudioViewModel
         }
 
         val item = MutableLiveData<BaseItem?>(null)
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val genres = MutableLiveData<List<Genre>>(listOf())
+        val studios = MutableLiveData<List<Studio>>(listOf())
 
         fun init(cardWidthPx: Int) {
             loading.value = LoadingState.Loading
@@ -91,140 +78,52 @@ class GenreViewModel
                     api.userLibraryApi.getItem(itemId = itemId).content.let {
                         BaseItem(it, false)
                     }
-                this@GenreViewModel.item.setValueOnMain(item)
+                this@StudioViewModel.item.setValueOnMain(item)
                 val request =
-                    GetGenresRequest(
+                    GetStudiosRequest(
                         userId = serverRepository.currentUser.value?.id,
                         parentId = itemId,
                         fields = SlimItemFields,
                         includeItemTypes = includeItemTypes,
                     )
-                val genres =
-                    GetGenresRequestHandler
+                val studios =
+                    GetStudiosRequestHandler
                         .execute(api, request)
                         .content.items
                         .map {
-                            Genre(it.id, it.name ?: "", null)
+                            val imageUrl =
+                                imageUrlService.getItemImageUrl(
+                                    itemId = it.id,
+                                    imageType = ImageType.THUMB,
+                                    fillWidth = cardWidthPx,
+                                )
+                            Studio(it.id, it.name ?: "", imageUrl)
                         }
                 withContext(Dispatchers.Main) {
-                    this@GenreViewModel.genres.value = genres
+                    this@StudioViewModel.studios.value = studios
                     loading.value = LoadingState.Success
                 }
-                val genreToUrl =
-                    getGenreImageMap(
-                        api = api,
-                        userId = serverRepository.currentUser.value?.id,
-                        scope = viewModelScope,
-                        imageUrlService = imageUrlService,
-                        genres = genres.map { it.id },
-                        parentId = itemId,
-                        includeItemTypes = includeItemTypes,
-                        cardWidthPx = cardWidthPx,
-                    )
-                val genresWithImages =
-                    genres.map {
-                        it.copy(
-                            imageUrl = genreToUrl[it.id],
-                        )
-                    }
-                this@GenreViewModel.genres.setValueOnMain(genresWithImages)
             }
         }
 
         suspend fun positionOfLetter(letter: Char): Int =
             withContext(Dispatchers.IO) {
                 val request =
-                    GetGenresRequest(
+                    GetStudiosRequest(
+                        userId = serverRepository.currentUser.value?.id,
                         parentId = itemId,
                         nameLessThan = letter.toString(),
                         limit = 0,
                         enableTotalRecordCount = true,
                         includeItemTypes = includeItemTypes,
                     )
-                val result by GetGenresRequestHandler.execute(api, request)
+                val result by GetStudiosRequestHandler.execute(api, request)
                 return@withContext result.totalRecordCount
             }
     }
 
-data class GenreCacheKey(
-    val userId: UUID?,
-    val parentId: UUID,
-)
-
-private val genreCache by lazy {
-    InMemoryKache<GenreCacheKey, Map<UUID, String?>>(8) {
-        expireAfterWriteDuration = 2.hours
-    }
-}
-
-/**
- * Create a mapping from genre IDs to image URLs using random items within each genre
- */
-suspend fun getGenreImageMap(
-    api: ApiClient,
-    userId: UUID?,
-    scope: CoroutineScope,
-    imageUrlService: ImageUrlService,
-    genres: List<UUID>,
-    parentId: UUID,
-    includeItemTypes: List<BaseItemKind>?,
-    cardWidthPx: Int?,
-    useCache: Boolean = true,
-): Map<UUID, String?> {
-    val key = GenreCacheKey(userId, parentId)
-    if (useCache) {
-        genreCache.getIfAvailable(key)?.let {
-            Timber.v("Got cached entry")
-            return it
-        }
-    }
-    val genreToUrl = ConcurrentHashMap<UUID, String?>()
-    val semaphore = Semaphore(4)
-    genres
-        .map { genreId ->
-            scope.async(Dispatchers.IO) {
-                semaphore.withPermit {
-                    val item =
-                        GetItemsRequestHandler
-                            .execute(
-                                api,
-                                GetItemsRequest(
-                                    userId = userId,
-                                    parentId = parentId,
-                                    recursive = true,
-                                    limit = 1,
-                                    sortBy = listOf(ItemSortBy.RANDOM),
-                                    fields = listOf(ItemFields.GENRES),
-                                    imageTypes = listOf(ImageType.BACKDROP),
-                                    imageTypeLimit = 1,
-                                    includeItemTypes = includeItemTypes,
-                                    genreIds = listOf(genreId),
-                                    enableTotalRecordCount = false,
-                                ),
-                            ).content.items
-                            .firstOrNull()
-                    if (item != null) {
-                        genreToUrl[genreId] =
-                            imageUrlService.getItemImageUrl(
-                                itemId = item.id,
-                                itemType = item.type,
-                                seriesId = null,
-                                useSeriesForPrimary = true,
-                                imageType = ImageType.BACKDROP,
-                                imageTags = item.imageTags.orEmpty(),
-                                fillWidth = cardWidthPx,
-                                backdropTags = item.backdropImageTags.orEmpty(),
-                            )
-                    }
-                }
-            }
-        }.awaitAll()
-    genreCache.put(key, genreToUrl)
-    return genreToUrl
-}
-
 @Stable
-data class Genre(
+data class Studio(
     val id: UUID,
     val name: String,
     val imageUrl: String?,
@@ -234,16 +133,13 @@ data class Genre(
     override val sortName: String get() = name
 }
 
-/**
- * Show an optimized grid of genres for a library
- */
 @Composable
-fun GenreCardGrid(
+fun StudioCardGrid(
     itemId: UUID,
     includeItemTypes: List<BaseItemKind>?,
     modifier: Modifier = Modifier,
-    viewModel: GenreViewModel =
-        hiltViewModel<GenreViewModel, GenreViewModel.Factory>(
+    viewModel: StudioViewModel =
+        hiltViewModel<StudioViewModel, StudioViewModel.Factory>(
             creationCallback = { it.create(itemId, includeItemTypes) },
         ),
 ) {
@@ -266,7 +162,7 @@ fun GenreCardGrid(
         viewModel.init(cardWidthPx)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val genres by viewModel.genres.observeAsState(listOf())
+    val studios by viewModel.studios.observeAsState(listOf())
 
     val gridFocusRequester = remember { FocusRequester() }
     when (val st = loading) {
@@ -285,12 +181,12 @@ fun GenreCardGrid(
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
                 val item by viewModel.item.observeAsState(null)
                 CardGrid(
-                    pager = genres,
-                    onClickItem = { _, genre ->
+                    pager = studios,
+                    onClickItem = { _, studio ->
                         viewModel.navigationManager.navigateTo(
-                            createGenreDestination(
-                                genreId = genre.id,
-                                genreName = genre.name,
+                            createStudioDestination(
+                                studioId = studio.id,
+                                name = studio.name,
                                 parentId = itemId,
                                 parentName = item?.title,
                                 includeItemTypes = includeItemTypes,
@@ -309,9 +205,9 @@ fun GenreCardGrid(
                     },
                     columns = columns,
                     spacing = spacing,
-                    cardContent = { item: Genre?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
-                        GenreCard(
-                            genre = item,
+                    cardContent = { item: Studio?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
+                        StudioCard(
+                            studio = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
                             modifier = mod,
