@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
@@ -19,7 +20,7 @@ class SeerrApi(
         )
         private set
 
-    val active: Boolean get() = api.baseUrl.isNotNullOrBlank()
+    val active: Boolean get() = api.baseUrl.isNotNullOrBlank() && BuildConfig.DISCOVER_ENABLED
 
     fun update(
         baseUrl: String,

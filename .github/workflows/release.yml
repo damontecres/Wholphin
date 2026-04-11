@@ -36,7 +36,7 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleDefaultRelease bundleAppstoreRelease --no-daemon
+          ./gradlew clean assembleDefaultRelease bundleAppstoreRelease bundleFiretvRelease --no-daemon
 
       - name: Verify signatures
         run: |

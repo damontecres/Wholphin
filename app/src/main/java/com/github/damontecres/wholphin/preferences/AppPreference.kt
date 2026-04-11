@@ -5,6 +5,7 @@ import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -1085,10 +1086,12 @@ val basicPreferences =
         PreferenceGroup(
             title = R.string.more,
             preferences =
-                listOf(
-                    AppPreference.SeerrIntegration,
-                    AppPreference.AdvancedSettings,
-                ),
+                buildList {
+                    if (BuildConfig.DISCOVER_ENABLED) {
+                        add(AppPreference.SeerrIntegration)
+                    }
+                    add(AppPreference.AdvancedSettings)
+                },
         ),
     )
 

@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.ProductFlavor
 import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
@@ -112,16 +113,34 @@ android {
     }
     flavorDimensions += "version"
     productFlavors {
+        val featureLeanback = "leanback"
+        val featureUpdate = "UPDATING_ENABLED"
+        val featureDiscover = "DISCOVER_ENABLED"
+
+        fun ProductFlavor.setFeatureFlag(
+            name: String,
+            enabled: Boolean,
+        ) {
+            this.buildConfigField("boolean", name, "Boolean.parseBoolean(\"${enabled}\")")
+        }
         create("default") {
             dimension = "version"
             isDefault = true
-            manifestPlaceholders += mapOf("leanback" to false)
-            buildConfigField("boolean", "UPDATING_ENABLED", "true")
+            manifestPlaceholders += mapOf(featureLeanback to false)
+            setFeatureFlag(featureUpdate, true)
+            setFeatureFlag(featureDiscover, true)
         }
         create("appstore") {
             dimension = "version"
-            manifestPlaceholders += mapOf("leanback" to true)
-            buildConfigField("boolean", "UPDATING_ENABLED", "false")
+            manifestPlaceholders += mapOf(featureLeanback to true)
+            setFeatureFlag(featureUpdate, false)
+            setFeatureFlag(featureDiscover, true)
+        }
+        create("firetv") {
+            dimension = "version"
+            manifestPlaceholders += mapOf(featureLeanback to true)
+            setFeatureFlag(featureUpdate, false)
+            setFeatureFlag(featureDiscover, false)
         }
     }
     compileOptions {
