@@ -545,7 +545,7 @@
     <string name="image_type_thumb">Miniature</string>
     <string name="backdrop_style_dynamic">Image avec couleur dynamique</string>
     <string name="backdrop_style_image">Image uniquement</string>
-    <string name="enter_url_api_key"><![CDATA[Saisir l'URL et la clé API]]></string>
+    <string name="enter_url_api_key">Saisir l\'URL et la clé API</string>
     <string name="api_key">Clé API</string>
     <string name="seerr_login">Se connecter au serveur Seerr</string>
     <string name="seerr_jellyfin_user">Utilisateur Jellyfin</string>
