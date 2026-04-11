@@ -199,7 +199,7 @@
     <string name="remove_favorite">移出我的最愛</string>
     <string name="resume">繼續播放</string>
     <string name="search_and_download"><![CDATA[搜尋並下載]]></string>
-    <string name="studios">製片公司</string>
+    <string name="studios">製作公司</string>
     <string name="top_unwatched">高評分未觀看</string>
     <string name="tv_dvr_schedule">錄影排程</string>
     <string name="tv_shows">電視劇</string>
@@ -564,4 +564,8 @@
     <string name="view_more">查看更多</string>
     <string name="discover_tv">探索電視劇</string>
     <string name="discover_movies">探索電影</string>
+    <string name="remove_continue_watching">從繼續觀看中移除</string>
+    <string name="remove_next_up">從接下來播放中移除劇集</string>
+    <string name="view_removed_next_up">查看從接下來播放中移除的劇集</string>
+    <string name="studios_in">%1$s 製作公司</string>
 </resources>
