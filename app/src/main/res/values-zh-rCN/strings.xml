@@ -559,4 +559,13 @@
     <string name="visualizer_rationale">可视化当前播放的音频需要录音权限。</string>
     <string name="continue_string">继续</string>
     <string name="separate_types">分开类型</string>
+    <string name="prefer_logos">优先显示标题图标</string>
+    <string name="updated_toast">Wholphin 已更新至 %s</string>
+    <string name="view_more">查看更多</string>
+    <string name="discover_tv">发现电视节目</string>
+    <string name="discover_movies">发现电影</string>
+    <string name="remove_continue_watching">从继续观看中移除</string>
+    <string name="remove_next_up">从即将播放中移除剧集</string>
+    <string name="view_removed_next_up">查看已从即将播放中移除的剧集</string>
+    <string name="studios_in">%1$s 制片公司</string>
 </resources>
