@@ -579,4 +579,11 @@
     <string name="separate_types">Verschiedene Arten</string>
     <string name="prefer_logos">Logos anstatt Titelnamen anzeigen</string>
     <string name="updated_toast">Wholphin aktualisiert auf %s</string>
+    <string name="remove_continue_watching">Von \"Weiterschauen\" entfernen</string>
+    <string name="remove_next_up">Serie aus \"Als nächstes Anschauen\" entfernen</string>
+    <string name="view_more">Mehr anzeigen</string>
+    <string name="discover_tv">TV Serien entdecken</string>
+    <string name="discover_movies">Filme entdecken</string>
+    <string name="studios_in">Studios in %1$s</string>
+    <string name="view_removed_next_up">Serien anzeigen, die von \"Als nächstes Anschauen\" entfernt wurden</string>
 </resources>
