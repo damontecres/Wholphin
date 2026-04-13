@@ -44,10 +44,10 @@
     <string name="top_unwatched">Najlepiej Oceniane Nieobejrzane</string>
     <string name="trailer">Zwiastun</string>
     <plurals name="trailers">
-        <item quantity="one">Zwiastuny</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Zwiastun</item>
+        <item quantity="few">Zwiastuny</item>
+        <item quantity="many">Zwiastunów</item>
+        <item quantity="other">Zwiastunów</item>
     </plurals>
     <string name="submit">Potwierdź</string>
     <string name="sort_by_date_released">Data Wydania</string>
@@ -133,10 +133,10 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">Czołówki</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Czołówka</item>
+        <item quantity="few">Czołówki</item>
+        <item quantity="many">Czołówek</item>
+        <item quantity="other">Czołówek</item>
     </plurals>
     <string name="create_playlist">Utwórz nową playliste</string>
     <string name="add_to_playlist">Dodaj do playlisty</string>
@@ -182,9 +182,9 @@
     <string name="italic_font">Czcionka kursywy</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Za kulisami</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="few">Za kulisami</item>
+        <item quantity="many">Za kulisami</item>
+        <item quantity="other">Za kulisami</item>
     </plurals>
     <string name="advanced_settings">Ustawienia zaawansowane</string>
     <string name="check_for_updates">Sprawdź dostępność aktualizacji</string>
@@ -275,10 +275,10 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Usunięte sceny</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Usunięta scena</item>
+        <item quantity="few">Usunięte sceny</item>
+        <item quantity="many">Usunięte sceny</item>
+        <item quantity="other">Usunięte sceny</item>
     </plurals>
     <string name="nav_drawer_switch_on_focus_summary_off">Naciśnij by zmienić stronę</string>
     <string name="send_app_logs_summary">Przydatne do debugowania</string>
@@ -315,7 +315,7 @@
     <string name="voice_error_server">Błąd serwera</string>
     <string name="retry">Ponów</string>
     <string name="video">Wideo</string>
-    <string name="videos">Filmy</string>
+    <string name="videos">Widea</string>
     <string name="watch_live">Oglądaj na żywo</string>
     <string name="quick_connect_success">Urządzenie uwierzytelniono pomyślnie</string>
     <string name="password">Hasło</string>
@@ -475,9 +475,9 @@
     <string name="voice_error_timeout">Przekroczono limit czasu rozpoznawania głosu</string>
     <plurals name="theme_songs">
         <item quantity="one">Piosenki tematyczne</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="nav_drawer_switch_on_focus">Przełącz fokus na szufladę nawigacyjną</string>
     <string name="playback_overrides">Nadpisywanie odtwarzania</string>
@@ -591,27 +591,27 @@
     <string name="runtime_sort">Czas trwania</string>
     <plurals name="clips">
         <item quantity="one">Klipy</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Próbki</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Filmy krótkometrażowe</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Krótkie filmy</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="aspect_ratio">Proporcje ekranu</string>
     <string name="guest_stars">Aktorzy gościnni</string>
