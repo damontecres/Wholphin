@@ -600,4 +600,8 @@
     <string name="view_more">Voir plus</string>
     <string name="discover_tv">Parcourir les séries</string>
     <string name="discover_movies">Parcourir les films</string>
+    <string name="remove_continue_watching">Supprimer de continuer à regarder</string>
+    <string name="remove_next_up">Supprimer la série de la liste suivante</string>
+    <string name="view_removed_next_up">Voir les séries supprimées de la liste suivante</string>
+    <string name="studios_in">Studios en %1$s</string>
 </resources>
