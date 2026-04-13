@@ -215,7 +215,7 @@
         <item quantity="other">%d godzin</item>
     </plurals>
     <string name="image_type">Typ obrazu</string>
-    <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
+    <string name="cast_and_crew"><![CDATA[Obsada]]></string>
     <string name="global_content_scale">Domyślne skalowanie</string>
     <string name="direct_play_ass">Odtwarzaj bezpośrednio napisy ASS</string>
     <string name="direct_play_pgs">Odtwarzaj bezpośrednio napisy PGS</string>
@@ -316,7 +316,7 @@
     <string name="retry">Ponów</string>
     <string name="video">Wideo</string>
     <string name="videos">Filmy</string>
-    <string name="watch_live">Oglądanie na żywo</string>
+    <string name="watch_live">Oglądaj na żywo</string>
     <string name="quick_connect_success">Urządzenie uwierzytelniono pomyślnie</string>
     <string name="password">Hasło</string>
     <string name="username">Nazwa użytkownika</string>
@@ -585,4 +585,41 @@
     <string name="view_more">Zobacz więcej</string>
     <string name="discover_tv">Odkryj programy TV</string>
     <string name="studios_in">Studio w %1$s</string>
+    <string name="voice_error_unknown">Nieznany błąd</string>
+    <string name="media_information">Informacje o mediach</string>
+    <string name="aired_episode_order">Kolejność emisji odcinków</string>
+    <string name="runtime_sort">Czas trwania</string>
+    <plurals name="clips">
+        <item quantity="one">Klipy</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Próbki</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Filmy krótkometrażowe</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Krótkie filmy</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="aspect_ratio">Proporcje ekranu</string>
+    <string name="guest_stars">Aktorzy gościnni</string>
+    <string name="refresh_rate_switching">Przełączenie częstotliwości odświeżania</string>
+    <string name="automatic">Automatycznie</string>
+    <string name="bit_depth">Głębia bitowa</string>
+    <string name="color_space">Przestrzeń kolorów</string>
+    <string name="interlaced">Przeplatany</string>
+    <string name="framerate">Liczba klatek</string>
+    <string name="discover_movies">Odkrywaj filmy</string>
 </resources>
