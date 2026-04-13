@@ -49,6 +49,8 @@ Wholphin uses several native components for extra playback compatibility. This i
 
 If you want to include these in a local build, see the [instructions here](https://github.com/damontecres/wholphin-extensions?tab=readme-ov-file#usage) for configuring the repository.
 
+You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
+
 ### App settings
 
 App settings are available with the `AppPreferences` object and defined by different `AppPreference` objects (note the `s` differences).
