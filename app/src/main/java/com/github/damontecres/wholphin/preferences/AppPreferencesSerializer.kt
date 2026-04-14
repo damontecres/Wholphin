@@ -65,8 +65,7 @@ class AppPreferencesSerializer
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
-                                            assPlaybackMode =
-                                                AppPreference.AssSubtitleMode.defaultValue
+                                            assPlaybackMode = AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
 
                                 mpvOptions =

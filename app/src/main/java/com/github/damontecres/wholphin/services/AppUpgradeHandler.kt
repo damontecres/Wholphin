@@ -319,5 +319,13 @@ class AppUpgradeHandler
                     }
                 }
             }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.2-1-g0"))) {
+                appPreferences.updateData {
+                    it.updatePlaybackOverrides {
+                        assPlaybackMode = AppPreference.AssSubtitleMode.defaultValue
+                    }
+                }
+            }
         }
     }

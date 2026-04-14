@@ -433,7 +433,7 @@ sealed interface AppPreference<Pref, T> {
             )
         val AssSubtitleMode =
             AppChoicePreference<AppPreferences, AssPlaybackMode>(
-                title = R.string.app_theme,
+                title = R.string.ass_subtitle_playback,
                 defaultValue = AssPlaybackMode.ASS_LIBASS,
                 getter = { it.playbackPreferences.overrides.assPlaybackMode },
                 setter = { prefs, value ->
