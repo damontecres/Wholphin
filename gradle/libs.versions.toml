@@ -1,5 +1,5 @@
 [versions]
-aboutLibraries = "13.2.1"
+aboutLibraries = "14.0.0"
 acra = "5.13.1"
 agp = "9.0.1"
 auto-service = "1.1.1"
@@ -15,7 +15,7 @@ appcompat = "1.7.1"
 composeBom = "2026.03.01"
 mockk = "1.14.9"
 robolectric = "4.16.1"
-multiplatformMarkdownRenderer = "0.39.2"
+multiplatformMarkdownRenderer = "0.40.2"
 okhttpBom = "5.3.2"
 programguide = "1.6.0"
 slf4j2Timber = "1.2"
@@ -45,7 +45,7 @@ kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
 openapi-generator = "7.21.0"
 runner = "1.7.0"
-wholphin-extensions = "0.1.0"
+wholphin-extensions = "0.1.1"
 
 [libraries]
 wholphin-extensions-mpv = { module = "com.github.damontecres.wholphin.mpv:wholphin-mpv", version.ref = "wholphin-extensions" }

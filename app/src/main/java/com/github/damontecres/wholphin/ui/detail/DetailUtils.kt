@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -32,6 +33,7 @@ data class MoreDialogActions(
     val onClickDelete: (BaseItem) -> Unit,
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
+    val onClickAddToQueue: (BaseItem) -> Unit = {},
 )
 
 enum class ClearChosenStreams {
@@ -330,6 +332,16 @@ fun buildMoreDialogItemsForHome(
                     },
                 )
             }
+        }
+        if (item.type == BaseItemKind.MUSIC_ALBUM) {
+            add(
+                DialogItem(
+                    context.getString(R.string.add_to_queue),
+                    Icons.Default.Add,
+                ) {
+                    actions.onClickAddToQueue(item)
+                },
+            )
         }
         add(
             DialogItem(

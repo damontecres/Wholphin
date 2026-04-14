@@ -573,7 +573,7 @@
     <string name="show_album_cover">Mostrar portada del álbum</string>
     <string name="show_visualizer">Mostrar visualizador</string>
     <string name="show_backdrop">Mostrar imagen de fondo</string>
-    <string name="play_as_type">Reproducir en</string>
+    <string name="play_as_type">Reproducir como...</string>
     <string name="visualizer_rationale">Para visualizar el audio en reproducción, se requiere permiso para grabar audio.</string>
     <string name="continue_string">Continuar</string>
     <string name="albums">Álbumes</string>
@@ -596,4 +596,12 @@
     <string name="remove_from_queue">Eliminar de la cola</string>
     <string name="separate_types">Separar por tipos</string>
     <string name="prefer_logos">Preferir logotipos para los títulos</string>
+    <string name="updated_toast">Wholphin se ha actualizado a la versión %s</string>
+    <string name="view_more">Ver más</string>
+    <string name="discover_tv">Descubrir series</string>
+    <string name="discover_movies">Descubrir películas</string>
+    <string name="remove_continue_watching">Eliminar de \"Continuar viendo\"</string>
+    <string name="remove_next_up">Eliminar de \"Siguiente\"</string>
+    <string name="view_removed_next_up">Ver series eliminadas de \"Siguiente\"</string>
+    <string name="studios_in">Estudios en %1$s</string>
 </resources>

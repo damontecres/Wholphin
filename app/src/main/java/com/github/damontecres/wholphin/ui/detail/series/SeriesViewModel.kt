@@ -287,8 +287,7 @@ class SeriesViewModel
             item.value?.let { item ->
                 if (loading.value == LoadingState.Success) {
                     viewModelScope.launchIO {
-                        val seasons = getSeasons(item, null).await()
-                        this@SeriesViewModel.seasons.setValueOnMain(seasons)
+                        (seasons.value as? ApiRequestPager<*>)?.refresh()
                     }
                 }
             }

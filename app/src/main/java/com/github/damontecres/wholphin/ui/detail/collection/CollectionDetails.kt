@@ -124,6 +124,7 @@ fun CollectionDetails(
                                 },
                                 onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                 onClickDelete = { item -> showDeleteDialog = Pair(position, item) },
+                                onClickAddToQueue = { viewModel.addToQueue(it, 0) },
                             ),
                     )
                 moreDialog =
@@ -244,6 +245,7 @@ fun CollectionDetails(
                                     },
                                     onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                     onClickDelete = { item -> showDeleteDialog = Pair(null, item) },
+                                    onClickAddToQueue = { viewModel.addToQueue(it, 0) },
                                 ),
                         )
                     moreDialog =

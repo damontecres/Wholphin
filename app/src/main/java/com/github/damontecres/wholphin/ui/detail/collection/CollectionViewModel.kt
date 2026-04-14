@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -27,6 +28,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -86,6 +88,7 @@ class CollectionViewModel
         private val keyValueService: KeyValueService,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val imageUrlService: ImageUrlService,
+        private val musicService: MusicService,
         val mediaReportService: MediaReportService,
         @Assisted private val itemId: UUID,
     ) : ViewModel() {
@@ -461,6 +464,11 @@ class CollectionViewModel
                 }
             }
         }
+
+        fun addToQueue(
+            item: BaseItem,
+            index: Int,
+        ) = addToQueue(api, musicService, item, index)
 
         companion object {
             val typesInCollection =

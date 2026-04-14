@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="about">Despre</string>
-    <string name="add_favorite">Favorite</string>
+    <string name="add_favorite">Favorit</string>
     <string name="add_server">Adaugă server</string>
     <string name="add_user">Adaugă utilizator</string>
     <string name="audio">Audio</string>
@@ -42,8 +42,8 @@
     <string name="no_update_available">Nu este disponibilă nicio actualizare</string>
     <plurals name="movies">
         <item quantity="one">Filme</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="other"/>
     </plurals>
     <string name="library">Librărie</string>
     <string name="go_to">Mergi la</string>
@@ -55,8 +55,8 @@
     <string name="mark_watched">Marchează ca vizionat</string>
     <plurals name="people">
         <item quantity="one">Persoane</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Număr de redări</string>
     <string name="more">Mai mult</string>
@@ -173,7 +173,7 @@
     <string name="api_key">Cheie API</string>
     <string name="seerr_login">Conectează-te la serverul Seerr</string>
     <string name="discovered_servers">Servere descoperite</string>
-    <string name="download_and_update"><![CDATA[Descarcă & Utilizează]]></string>
+    <string name="download_and_update"><![CDATA[Descarcă & Actualizează]]></string>
     <string name="commercial">Reclamă</string>
     <string name="community_rating">Evaluarea comunității</string>
     <string name="compose_error_message_title">A apărut o eroare! Apasă butonul pentru a trimite jurnalele către serverul tău.</string>
@@ -215,8 +215,8 @@
     <string name="tv_seasons">Sezoane</string>
     <plurals name="tv_shows">
         <item quantity="one">Seriale TV</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Interfață</string>
     <string name="unknown">Necunoscut</string>
@@ -228,8 +228,8 @@
     <string name="one_click_pause">Pauză cu un click</string>
     <plurals name="interviews">
         <item quantity="one">Interviuri</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="other"/>
     </plurals>
     <string name="background">Fundal</string>
     <plurals name="downloads">
@@ -306,4 +306,95 @@
     <string name="song_has_lyrics">Cântecul are versuri</string>
     <string name="select_all">Selectează tot</string>
     <string name="play_as_type">Redă ca?</string>
+    <string name="cancel_series_recording">Anulează înregistrarea seriei</string>
+    <string name="license_info">Informații privind licența</string>
+    <string name="forced_track">Forțat</string>
+    <string name="hide_debug_info">Ascunde informațiile de depanare</string>
+    <string name="immediate">Imediat</string>
+    <string name="none">Niciuna</string>
+    <string name="play_from_here">Redă de aici</string>
+    <string name="playback_speed">Viteza de redare</string>
+    <string name="playback">Redare</string>
+    <string name="playlist">Listă de redare</string>
+    <string name="playback_debug_info">Afișează informații de depanare privind redarea</string>
+    <string name="only_forced_subtitles">Doar subtitrări forțate</string>
+    <string name="save">Salvează</string>
+    <string name="search_and_download"><![CDATA[Caută & Descarcă]]></string>
+    <string name="resume">Reia</string>
+    <string name="voice_starting">Începe</string>
+    <string name="voice_search_prompt">Vorbește pentru a căuta</string>
+    <string name="restart">Repornire</string>
+    <string name="voice_error_network">Eroare rețea</string>
+    <string name="shuffle">Amestecă</string>
+    <string name="top_unwatched">Cele mai bine cotate, nevizionate</string>
+    <plurals name="trailers">
+        <item quantity="one">Trailere</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="play_with_transcoding">Redă cu transcodare</string>
+    <string name="media_information">Informații media</string>
+    <string name="create_playlist">Creează o listă noua de redare</string>
+    <string name="add_to_playlist">Adaugă în lista de redare</string>
+    <plurals name="other_extras">
+        <item quantity="one">Altele</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="one">În spatele scenelor</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="one">Melodii tematice</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Scene șterse</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="official_rating">Evaluare parentală</string>
+    <string name="runtime_sort">Timp de execuție</string>
+    <string name="extras">Extra</string>
+    <plurals name="clips">
+        <item quantity="one">Clipuri</item>
+        <item quantity="few"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="favorite_items">%s favorit</string>
+    <string name="app_theme">Temă aplicație</string>
+    <string name="auto_check_for_updates">Verifică automat dacă există actualizări</string>
+    <string name="ac3_supported">Dispozitivul acceptă formatele AC3/Dolby Digital</string>
+    <string name="advanced_settings">Setări avansate</string>
+    <string name="advanced_ui">Interfață avansată</string>
+    <string name="auto_play_next">Redă automat următorul</string>
+    <string name="combine_continue_next_summary">Se aplică numai serialelor TV</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Faceți clic pentru a schimba paginile</string>
+    <string name="skip_segment_unknown">Sări peste segment</string>
+    <string name="skip_segment_outro">Sări peste final</string>
+    <string name="use_server_credentials">Autentificare prin server</string>
+    <string name="press_enter_to_confirm">Apăsați în centru pentru a confirma</string>
+    <string name="require_pin_code">Solicită codul PIN pentru profil</string>
+    <string name="view_options">Opțiuni de vizualizare</string>
+    <string name="login">Autentificare</string>
+    <string name="layout">Aspect</string>
+    <string name="rotate_left">Rotește la stânga</string>
+    <string name="overwrite_server_settings">Suprascrie setările pe server?</string>
+    <string name="overwrite_local_settings">Suprascrie setările locale?</string>
+    <string name="start_after">Începe după</string>
+    <string name="include_types_summary">Pentru ce tipuri de articole să se afișeze imagini</string>
+    <string name="black">Negru</string>
+    <string name="skip_ignore">Ignoră</string>
+    <string name="next_up_playback_end">La sfârșitul redării</string>
+    <string name="next_up_outro">În timpul genericului de final/outro</string>
+    <string name="bold_blue">Albastru aldin</string>
+    <string name="bold_font">Font aldin</string>
+    <string name="player_backend">Motorul de redare</string>
+    <string name="mpv_hardware_decoding">MPV: Utilizează decodarea hardware</string>
+    <string name="disable_if_crash">Dezactivează această opțiune dacă aplicația se blochează</string>
+    <string name="background_opacity">Opacitatea fundalului</string>
+    <string name="profile">Profil</string>
 </resources>
