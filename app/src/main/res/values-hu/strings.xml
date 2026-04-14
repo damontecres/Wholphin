@@ -18,7 +18,7 @@
     <string name="compose_error_message_title">Hiba történt! Nyomja meg a gombot, hogy elküldje a naplófájlokat a szervernek.</string>
     <string name="confirm">Megerősít</string>
     <string name="critic_rating">Kritikusi értékelés</string>
-    <string name="decimal_seconds">%.1f másodperc</string>
+    <string name="decimal_seconds">%.2f másodperc</string>
     <string name="default_track">Alapértelmezett</string>
     <string name="delete">Törlés</string>
     <string name="directed_by">Rendezte: %1$s</string>
