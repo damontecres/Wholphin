@@ -5,15 +5,20 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewModelScope
@@ -37,14 +42,19 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.model.extensions.inWholeTicks
 import timber.log.Timber
+import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel(assistedFactory = PlayExternalViewModel.Factory::class)
 class PlayExternalViewModel
     @AssistedInject
     constructor(
+        private val savedStateHandle: SavedStateHandle,
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val playlistCreator: PlaylistCreator,
@@ -118,6 +128,7 @@ class PlayExternalViewModel
                         } else {
                             throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                         }
+                    savedStateHandle["itemId"] = base.id
                     this@PlayExternalViewModel.item = BaseItem(base, false)
                     val uri =
                         api.videosApi
@@ -165,6 +176,52 @@ class PlayExternalViewModel
                 }
             }
         }
+
+        fun onResult(result: ActivityResult) {
+            viewModelScope.launchDefault {
+                val itemId = savedStateHandle.get<UUID?>("itemId")
+                Timber.v("Result action: %s", result.data?.action)
+                if (result.resultCode == Activity.RESULT_OK) {
+                    Timber.i("Activity result OK")
+                    val position: Long
+                    val data = result.data
+                    when (data?.action) {
+                        "org.videolan.vlc.player.result" -> {
+                            // VLC: https://wiki.videolan.org/Android_Player_Intents/
+                            position = data.getLongExtra("extra_position", -1)
+                        }
+
+                        "is.xyz.mpv.MPVActivity.result" -> {
+                            // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
+                            position = data.getIntExtra("position", -2).toLong()
+                        }
+
+                        "com.mxtech.intent.result.VIEW" -> {
+                            // MX player: https://mx.j2inter.com/api
+                            position = data.getIntExtra("position", -2).toLong()
+                        }
+
+                        else -> {
+                            // Unsupported app
+                            position = -1L
+                        }
+                    }
+                    Timber.v("Result position: %s", position.milliseconds)
+                    if (position == -2L) {
+                        // TODO, check if watched
+                    } else if (position >= 0 && itemId != null) {
+                        api.playStateApi.onPlaybackProgress(
+                            itemId = itemId,
+                            mediaSourceId = null, // TODO
+                            positionTicks = position.milliseconds.inWholeTicks,
+                        )
+                    }
+                } else {
+                    Timber.w("Activity result: %s", result.resultCode)
+                }
+                navigationManager.goBack()
+            }
+        }
     }
 
 data class PlayExternalState(
@@ -184,8 +241,14 @@ fun PlayExternalPage(
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+            onResult = viewModel::onResult,
+        )
 
     val state by viewModel.state.collectAsState()
+    var launched by rememberSaveable { mutableStateOf(false) }
 
     if (activity != null) {
         when (val l = state.loading) {
@@ -201,19 +264,13 @@ fun PlayExternalPage(
 
             LoadingState.Success -> {
                 LoadingPage(modifier)
-                val launcher =
-                    rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.StartActivityForResult(),
-                    ) { result ->
-                        if (result.resultCode == Activity.RESULT_OK) {
-                            Timber.i("Activity result OK")
-                        } else {
-                            Timber.w("Activity result: %s", result.resultCode)
-                        }
+                if (!launched) {
+                    LifecycleStartEffect(Unit) {
+                        Timber.i("Launching external playback")
+                        launched = true
+                        launcher.launch(state.intent)
+                        onStopOrDispose { }
                     }
-                LifecycleStartEffect(Unit) {
-                    launcher.launch(state.intent)
-                    onStopOrDispose { }
                 }
             }
         }
