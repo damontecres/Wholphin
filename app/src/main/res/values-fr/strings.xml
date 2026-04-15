@@ -323,7 +323,7 @@
     <string name="spacing">Espacement</string>
     <string name="aspect_ratio">Format d\'image</string>
     <string name="show_details">Afficher les détails</string>
-    <string name="cast_and_crew">Distribution et équipe</string>
+    <string name="cast_and_crew"><![CDATA[Distribution et équipe]]></string>
     <string name="guest_stars">Invités spéciaux</string>
     <string name="edge_size">Taille des bordures</string>
     <string name="refresh_rate_switching">Changement de fréquence de rafraîchissement</string>
@@ -550,7 +550,7 @@
     <string name="seerr_login">Se connecter au serveur Seerr</string>
     <string name="seerr_jellyfin_user">Utilisateur Jellyfin</string>
     <string name="seerr_local_user">Utilisateur local</string>
-    <string name="search_and_download_subtitles">Rechercher et télécharger des sous-titres</string>
+    <string name="search_and_download_subtitles"><![CDATA[Rechercher et télécharger des sous-titres]]></string>
     <string name="no_subtitles_found">Aucun sous-titre distant n\'a été trouvé</string>
     <string name="series_continueing">En cours</string>
     <string name="in_app_screensaver">Utiliser l\'économiseur d\'écran intégré</string>
