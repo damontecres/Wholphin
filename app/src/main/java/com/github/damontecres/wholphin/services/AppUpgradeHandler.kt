@@ -141,7 +141,7 @@ class AppUpgradeHandler
                     it.updatePlaybackOverrides {
                         ac3Supported = AppPreference.Ac3Supported.defaultValue
                         downmixStereo = AppPreference.DownMixStereo.defaultValue
-                        directPlayAss = AppPreference.DirectPlayAss.defaultValue
+//                        directPlayAss = AppPreference.DirectPlayAss.defaultValue
                         directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                     }
                 }
@@ -316,6 +316,14 @@ class AppUpgradeHandler
                 appPreferences.updateData {
                     it.updateInterfacePreferences {
                         showLogos = AppPreference.ShowLogos.defaultValue
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.2-1-g0"))) {
+                appPreferences.updateData {
+                    it.updatePlaybackOverrides {
+                        assPlaybackMode = AppPreference.AssSubtitleMode.defaultValue
                     }
                 }
             }

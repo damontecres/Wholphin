@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -43,7 +44,7 @@ class DeviceProfileService
                             maxBitrate = prefs.maxBitrate.toInt(),
                             isAC3Enabled = prefs.overrides.ac3Supported,
                             downMixAudio = prefs.overrides.downmixStereo,
-                            assDirectPlay = prefs.overrides.directPlayAss,
+                            assPlaybackMode = prefs.overrides.assPlaybackMode,
                             pgsDirectPlay = prefs.overrides.directPlayPgs,
                             dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
                             decodeAv1 = prefs.overrides.decodeAv1,
@@ -58,7 +59,7 @@ class DeviceProfileService
                                 maxBitrate = newConfig.maxBitrate,
                                 isAC3Enabled = newConfig.isAC3Enabled,
                                 downMixAudio = newConfig.downMixAudio,
-                                assDirectPlay = newConfig.assDirectPlay,
+                                assDirectPlay = newConfig.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
                                 decodeAv1 = prefs.overrides.decodeAv1,
@@ -77,7 +78,7 @@ data class DeviceProfileConfiguration(
     val maxBitrate: Int,
     val isAC3Enabled: Boolean,
     val downMixAudio: Boolean,
-    val assDirectPlay: Boolean,
+    val assPlaybackMode: AssPlaybackMode,
     val pgsDirectPlay: Boolean,
     val dolbyVisionELDirectPlay: Boolean,
     val decodeAv1: Boolean,

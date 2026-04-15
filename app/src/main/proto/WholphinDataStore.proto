@@ -41,14 +41,21 @@ message MpvOptions{
   bool use_gpu_next = 2;
 }
 
+enum AssPlaybackMode{
+  ASS_LIBASS = 0;
+  ASS_EXO_PLAYER = 1;
+  ASS_TRANSCODE = 2;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
-  bool direct_play_ass = 3;
+  bool direct_play_ass = 3 [deprecated = true];
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
+  AssPlaybackMode ass_playback_mode = 8;
 }
 
 message PlaybackPreferences {

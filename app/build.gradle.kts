@@ -171,6 +171,12 @@ android {
             isUniversalApk = true
         }
     }
+    packaging {
+        jniLibs {
+            // Work around because libass-android & wholphin-mpv both (incorrectly) package libc++_shared.so
+            pickFirsts += "lib/*/libc++_shared.so"
+        }
+    }
 
     sourceSets {
         getByName("main") {
@@ -273,6 +279,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.ass.media)
 
     implementation(libs.coil.core)
     implementation(libs.coil.compose)

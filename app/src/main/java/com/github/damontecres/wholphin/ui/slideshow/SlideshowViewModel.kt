@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.ScreensaverService
@@ -30,6 +31,7 @@ import com.github.damontecres.wholphin.ui.util.ThrottledLiveData
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -77,9 +79,8 @@ class SlideshowViewModel
             fun create(slideshow: Destination.Slideshow): SlideshowViewModel
         }
 
-        val player by lazy {
-            playerFactory.createVideoPlayer()
-        }
+        lateinit var player: Player
+            private set
 
         private var saveFilters = true
 
@@ -96,13 +97,14 @@ class SlideshowViewModel
 
         var slideshowDelay by Delegates.notNull<Long>()
 
-        //        private val album = MutableLiveData<BaseItem>()
         private val _pager = MutableLiveData<ApiRequestPager<GetItemsRequest>>()
         val pager: LiveData<List<BaseItem?>> = _pager.map { it }
         val position = MutableLiveData(0)
 
         private val _image = MutableLiveData<ImageState>()
         val image: LiveData<ImageState> = _image
+
+        val loading = MutableStateFlow<LoadingState>(LoadingState.Pending)
 
         val loadingState = MutableLiveData<ImageLoadingState>(ImageLoadingState.Loading)
         private val _imageFilter = MutableLiveData(VideoFilter())
@@ -113,58 +115,67 @@ class SlideshowViewModel
         init {
             addCloseable {
                 screensaverService.keepScreenOn(false)
-                player.removeListener(this@SlideshowViewModel)
-                player.release()
-            }
-            player.addListener(this@SlideshowViewModel)
-            viewModelScope.launchIO {
-                val photoPrefs = userPreferencesService.getCurrent().appPreferences.photoPreferences
-                slideshowDelay =
-                    photoPrefs.slideshowDuration.takeIf { it >= AppPreference.SlideshowDuration.min }
-                        ?: AppPreference.SlideshowDuration.defaultValue
-//                val album =
-//                    api.userLibraryApi
-//                        .getItem(
-//                            itemId = slideshowSettings.parentId,
-//                        ).content
-//                        .let { BaseItem(it, false) }
-//                this@SlideshowViewModel.album.setValueOnMain(album)
-                val includeItemTypes =
-                    if (photoPrefs.slideshowPlayVideos) {
-                        listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO)
-                    } else {
-                        listOf(BaseItemKind.PHOTO)
-                    }
-                val request =
-                    slideshowSettings.filter.filter.applyTo(
-                        GetItemsRequest(
-                            parentId = slideshowSettings.parentId,
-                            includeItemTypes = includeItemTypes,
-                            fields = PhotoItemFields,
-                            recursive = slideshowSettings.recursive,
-                            sortBy = listOf(slideshowSettings.sortAndDirection.sort),
-                            sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
-                        ),
-                    )
-                serverRepository.currentUser.value?.let { user ->
-                    val filter =
-                        playbackEffectDao
-                            .getPlaybackEffect(
-                                user.rowId,
-                                slideshowSettings.parentId,
-                                BaseItemKind.PHOTO_ALBUM,
-                            )?.videoFilter
-                    if (filter != null) {
-                        Timber.v("Got filter for album %s", slideshowSettings.parentId)
-                        albumImageFilter = filter
-                    }
+                if (this@SlideshowViewModel::player.isInitialized) {
+                    player.removeListener(this@SlideshowViewModel)
+                    player.release()
                 }
-                val pager =
-                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                        .init(slideshowSettings.index)
-                this@SlideshowViewModel._pager.setValueOnMain(pager)
-                updatePosition(slideshowSettings.index)?.join()
-                if (slideshowSettings.startSlideshow) onMain { startSlideshow() }
+            }
+            viewModelScope.launchIO {
+                try {
+                    val appPreferences = userPreferencesService.getCurrent().appPreferences
+                    val playerCreation =
+                        playerFactory.createVideoPlayer(
+                            backend = PlayerBackend.EXO_PLAYER,
+                            appPreferences.playbackPreferences,
+                        )
+                    player = playerCreation.player
+                    player.addListener(this@SlideshowViewModel)
+
+                    val photoPrefs = appPreferences.photoPreferences
+                    slideshowDelay =
+                        photoPrefs.slideshowDuration.takeIf { it >= AppPreference.SlideshowDuration.min }
+                            ?: AppPreference.SlideshowDuration.defaultValue
+                    val includeItemTypes =
+                        if (photoPrefs.slideshowPlayVideos) {
+                            listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO)
+                        } else {
+                            listOf(BaseItemKind.PHOTO)
+                        }
+                    val request =
+                        slideshowSettings.filter.filter.applyTo(
+                            GetItemsRequest(
+                                parentId = slideshowSettings.parentId,
+                                includeItemTypes = includeItemTypes,
+                                fields = PhotoItemFields,
+                                recursive = slideshowSettings.recursive,
+                                sortBy = listOf(slideshowSettings.sortAndDirection.sort),
+                                sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
+                            ),
+                        )
+                    serverRepository.currentUser.value?.let { user ->
+                        val filter =
+                            playbackEffectDao
+                                .getPlaybackEffect(
+                                    user.rowId,
+                                    slideshowSettings.parentId,
+                                    BaseItemKind.PHOTO_ALBUM,
+                                )?.videoFilter
+                        if (filter != null) {
+                            Timber.v("Got filter for album %s", slideshowSettings.parentId)
+                            albumImageFilter = filter
+                        }
+                    }
+                    val pager =
+                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                            .init(slideshowSettings.index)
+                    this@SlideshowViewModel._pager.setValueOnMain(pager)
+                    loading.update { LoadingState.Success }
+                    updatePosition(slideshowSettings.index)?.join()
+                    if (slideshowSettings.startSlideshow) onMain { startSlideshow() }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error")
+                    loading.update { LoadingState.Error(ex) }
+                }
             }
         }
 
