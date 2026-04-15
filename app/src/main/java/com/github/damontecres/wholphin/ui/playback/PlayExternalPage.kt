@@ -21,14 +21,18 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.ItemPlaybackDao
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -44,11 +48,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.PlaybackStopInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
+import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
+import java.io.File
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -59,7 +67,10 @@ class PlayExternalViewModel
         private val savedStateHandle: SavedStateHandle,
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
+        private val serverRepository: ServerRepository,
+        private val itemPlaybackDao: ItemPlaybackDao,
         private val playlistCreator: PlaylistCreator,
+        private val streamChoiceService: StreamChoiceService,
         private val navigationManager: NavigationManager,
         private val userPreferencesService: UserPreferencesService,
         @Assisted val destination: Destination,
@@ -75,6 +86,7 @@ class PlayExternalViewModel
 
         init {
             viewModelScope.launchDefault {
+                val prefs = userPreferencesService.getCurrent()
                 val positionMs: Long
                 val itemId =
                     when (val d = destination) {
@@ -133,17 +145,58 @@ class PlayExternalViewModel
                         }
                     savedStateHandle["itemId"] = base.id
                     this@PlayExternalViewModel.item = BaseItem(base, false)
+                    val playbackConfig =
+                        serverRepository.currentUser.value?.let { user ->
+                            itemPlaybackDao.getItem(user, base.id)?.let {
+                                Timber.v("Fetched itemPlayback from DB: %s", it)
+                                if (it.sourceId != null) {
+                                    it
+                                } else {
+                                    null
+                                }
+                            }
+                        }
+                    val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
+                    val plc = streamChoiceService.getPlaybackLanguageChoice(base)
+                    if (mediaSource == null) {
+                        Timber.w("Media source is null")
+                        return@launchDefault
+                    }
+                    val subtitleIndex =
+                        streamChoiceService
+                            .chooseSubtitleStream(
+                                source = mediaSource,
+                                audioStream = null,
+                                seriesId = base.seriesId,
+                                itemPlayback = playbackConfig,
+                                plc = plc,
+                                prefs = prefs,
+                            )?.index
+                    val externalSubtitles =
+                        mediaSource.mediaStreams
+                            ?.filter { it.isExternal }
+                            ?.sortedWith(compareBy<MediaStream> { it.index == subtitleIndex }.thenBy { it.isDefault })
+                            .orEmpty()
+                    val subtitleUrls =
+                        externalSubtitles.map {
+                            val format = it.path?.let { File(it).extension } ?: "srt"
+                            api.subtitleApi
+                                .getSubtitleUrl(
+                                    routeItemId = itemId,
+                                    routeMediaSourceId = mediaSource.id!!,
+                                    routeIndex = it.index,
+                                    routeFormat = format,
+                                ).toUri()
+                        }
+
                     val uri =
                         api.videosApi
                             .getVideoStreamUrl(
                                 itemId = item.id,
-                                mediaSourceId = null, // TODO
+                                mediaSourceId = mediaSource.id,
                                 static = true,
                             ).toUri()
-                    val playerId =
-                        userPreferencesService
-                            .getCurrent()
-                            .appPreferences.playbackPreferences.externalPlayer
+                    val playerId = prefs.appPreferences.playbackPreferences.externalPlayer
                     // Make sure player is available, user could have uninstalled it
                     val foundPlayer =
                         getExternalPlayers(context).firstOrNull { it.identifier == playerId } != null
@@ -159,25 +212,33 @@ class PlayExternalViewModel
                             setComponent(component)
                             setDataAndType(uri, "video/*")
                             putExtra("title", "${item.title} ${item.subtitleLong}")
+                            putExtra("position", positionMs)
 
-                            // VLC intents: https://wiki.videolan.org/Android_Player_Intents/
-                            // mxplayer intents: https://mx.j2inter.com/api
-                            // mpv-android intents: https://mpv-android.github.io/mpv-android/intent.html
-//                    if (externalSubtitles) {
-//                        // VLC
-//                        // TODO doesn't work?
-//                        putExtra("subtitles_location", subUrl)
-//
-//                        // MX
-//                        // TODO arrays of strings
-//                        putExtra("subs", subs)
-//                        putExtra("subs.name", subNames)
-//                    }
+                            // MX/mpv
+                            putExtra("return_result", true)
+                            putExtra("secure_uri", true)
+                            putExtra("subs", subtitleUrls.toTypedArray())
+                            putExtra(
+                                "subs.name",
+                                externalSubtitles
+                                    .map { it.displayTitle ?: it.index.toString() }
+                                    .toTypedArray(),
+                            )
+                            if (subtitleIndex != null) {
+                                externalSubtitles
+                                    .indexOfFirstOrNull { it.index == subtitleIndex }
+                                    ?.let {
+                                        putExtra("subs.enable", arrayOf(subtitleUrls[it]))
+                                    }
+                            }
+
                             // VLC
-                            // TODO
-                            // putExtra("extra_duration", duration)
-
-                            // TODO starting position?
+                            if (subtitleUrls.isNotEmpty()) {
+                                putExtra("subtitles_location", subtitleUrls.first().toString())
+                            }
+                            mediaSource.runTimeTicks?.ticks?.inWholeMilliseconds?.let {
+                                putExtra("extra_duration", it)
+                            }
                         }
 
                     state.update {
