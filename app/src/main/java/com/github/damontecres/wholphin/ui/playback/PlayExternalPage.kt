@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -25,10 +26,13 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.getExternalPlayers
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
@@ -57,6 +61,7 @@ class PlayExternalViewModel
         private val api: ApiClient,
         private val playlistCreator: PlaylistCreator,
         private val navigationManager: NavigationManager,
+        private val userPreferencesService: UserPreferencesService,
         @Assisted val destination: Destination,
     ) : ViewModel() {
         @AssistedFactory
@@ -135,8 +140,23 @@ class PlayExternalViewModel
                                 mediaSourceId = null, // TODO
                                 static = true,
                             ).toUri()
+                    val playerId =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.playbackPreferences.externalPlayer
+                    // Make sure player is available, user could have uninstalled it
+                    val foundPlayer =
+                        getExternalPlayers(context).firstOrNull { it.identifier == playerId } != null
+                    val component =
+                        if (playerId.isNotNullOrBlank() && foundPlayer) {
+                            ComponentName.unflattenFromString(playerId)
+                        } else {
+                            null
+                        }
+                    Timber.v("playerId=%s, component=%s", playerId, component)
                     val intent =
                         Intent(Intent.ACTION_VIEW).apply {
+                            setComponent(component)
                             setDataAndType(uri, "video/*")
                             putExtra("title", "${item.title} ${item.subtitleLong}")
 
@@ -230,6 +250,11 @@ class PlayExternalViewModel
                 navigationManager.goBack()
             }
         }
+
+        fun reportException(ex: Exception) {
+            Timber.e(ex, "Error launching activity")
+            state.update { it.copy(loading = LoadingState.Error(ex)) }
+        }
     }
 
 data class PlayExternalState(
@@ -273,7 +298,11 @@ fun PlayExternalPage(
                 LifecycleStartEffect(Unit) {
                     Timber.i("Launching external playback")
                     launched = true
-                    launcher.launch(state.intent)
+                    try {
+                        launcher.launch(state.intent)
+                    } catch (ex: Exception) {
+                        viewModel.reportException(ex)
+                    }
                     onStopOrDispose { }
                 }
             }

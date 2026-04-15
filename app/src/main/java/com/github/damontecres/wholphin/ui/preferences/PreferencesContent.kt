@@ -103,6 +103,7 @@ fun PreferencesContent(
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
+    val players by viewModel.externalPlayers.collectAsState()
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrConnection by viewModel.seerrConnection.collectAsState()
@@ -477,7 +478,6 @@ fun PreferencesContent(
 
                                 AppPreference.ExternalPlayerApp -> {
                                     val value = pref.getter.invoke(preferences).toString()
-                                    val players by viewModel.externalPlayers.collectAsState()
                                     val selectedIndex =
                                         remember(value, players) {
                                             players.indexOfFirstOrNull { it.identifier == value }
@@ -487,19 +487,28 @@ fun PreferencesContent(
                                         summary = players[selectedIndex].name,
                                         possibleValues = players,
                                         selectedIndex = selectedIndex,
-                                        onValueChange = {
-                                            // TODO
+                                        onValueChange = { index ->
+                                            scope.launch(ExceptionHandler()) {
+                                                val newValue =
+                                                    players.getOrNull(index)?.identifier ?: ""
+                                                preferences =
+                                                    viewModel.preferenceDataStore.updateData { prefs ->
+                                                        pref.setter.invoke(prefs, newValue)
+                                                    }
+                                            }
                                         },
                                         valueDisplay = { index, item ->
                                             Row(
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
-                                                Image(
-                                                    bitmap = item.icon,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.width(40.dp),
-                                                )
+                                                if (item.icon != null) {
+                                                    Image(
+                                                        bitmap = item.icon,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.width(40.dp),
+                                                    )
+                                                }
                                                 Text(item.name)
                                             }
                                         },

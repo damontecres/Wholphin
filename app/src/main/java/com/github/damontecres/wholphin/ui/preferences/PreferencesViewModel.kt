@@ -11,6 +11,7 @@ import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -74,28 +75,14 @@ class PreferencesViewModel
                     Intent(Intent.ACTION_VIEW).apply {
                         setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
                     }
-                val externalPlayers =
-                    context.packageManager
-                        .queryIntentActivities(fakeIntent, PackageManager.MATCH_ALL)
-                        .filter { it.priority >= 0 }
-                        .map {
-                            val component =
-                                ComponentName(
-                                    it.activityInfo.packageName,
-                                    it.activityInfo.name,
-                                )
-                            ExternalPlayerApp(
-                                name = it.loadLabel(context.packageManager).toString(),
-                                icon =
-                                    it
-                                        .loadIcon(context.packageManager)
-                                        .toBitmap()
-                                        .asImageBitmap(),
-                                component = component,
-                                identifier = component.flattenToString(),
-                            ).also { Timber.v("Found %s", it) }
-                        }
-                this@PreferencesViewModel.externalPlayers.update { externalPlayers }
+                val externalPlayers = getExternalPlayers(context)
+                val systemDefault =
+                    ExternalPlayerApp(
+                        name = context.getString(R.string.system_default),
+                        icon = null,
+                        identifier = "",
+                    )
+                this@PreferencesViewModel.externalPlayers.update { listOf(systemDefault) + externalPlayers }
             }
         }
 
@@ -169,7 +156,34 @@ class PreferencesViewModel
 
 data class ExternalPlayerApp(
     val name: String,
-    val icon: ImageBitmap,
-    val component: ComponentName,
+    val icon: ImageBitmap?,
     val identifier: String,
 )
+
+fun getExternalPlayers(context: Context): List<ExternalPlayerApp> {
+    val fakeIntent =
+        Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
+        }
+    val externalPlayers =
+        context.packageManager
+            .queryIntentActivities(fakeIntent, PackageManager.MATCH_ALL)
+            .filter { it.priority >= 0 }
+            .map {
+                val component =
+                    ComponentName(
+                        it.activityInfo.packageName,
+                        it.activityInfo.name,
+                    )
+                ExternalPlayerApp(
+                    name = it.loadLabel(context.packageManager).toString(),
+                    icon =
+                        it
+                            .loadIcon(context.packageManager)
+                            .toBitmap()
+                            .asImageBitmap(),
+                    identifier = component.flattenToString(),
+                )
+            }
+    return externalPlayers
+}
