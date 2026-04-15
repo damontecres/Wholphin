@@ -31,7 +31,7 @@
     <string name="director">ผู้กำกับ</string>
     <string name="disabled">ปิดใช้งาน</string>
     <string name="discovered_servers">เซิร์ฟเวอร์ที่ค้นพบ</string>
-    <string name="download_and_update">ดาวน์โหลดและอัปเดต</string>
+    <string name="download_and_update"><![CDATA[ดาวน์โหลดและอัปเดต]]></string>
     <string name="downloading">กำลังดาวน์โหลด…</string>
     <string name="enabled">ใช้งาน</string>
     <string name="ends_at">จบที่ %1$s</string>
@@ -104,7 +104,7 @@
     <string name="restart">เริ่มใหม่</string>
     <string name="resume">เล่นเกมต่อ</string>
     <string name="save">บันทึก</string>
-    <string name="search_and_download">ค้นหาและดาวน์โหลด</string>
+    <string name="search_and_download"><![CDATA[ค้นหาและดาวน์โหลด]]></string>
     <string name="search">ค้นหา</string>
     <string name="searching">ค้นหา…</string>
     <string name="voice_search">ค้นหาด้วยเสียง</string>
@@ -225,7 +225,7 @@
     <string name="auto_play_next">เล่นอัตโนมัติถัดไป</string>
     <string name="check_for_updates">ตรวจสอบอัปเดต</string>
     <string name="combine_continue_next_summary">ใช้ได้กับซีรีส์โทรทัศน์เท่านั้น</string>
-    <string name="combine_continue_next">รวมตัวเลือก \"ดูต่อ\" และ \"รายการถัดไป\" เข้าด้วยกัน</string>
+    <string name="combine_continue_next"><![CDATA[รวมตัวเลือก \"ดูต่อ\" และ \"รายการถัดไป\" เข้าด้วยกัน]]></string>
     <string name="direct_play_ass">เล่นคำบรรยาย ASS โดยตรง</string>
     <string name="direct_play_pgs">เล่นคำบรรยาย PGS โดยตรง</string>
     <string name="downmix_stereo">ลดระดับเสียงลงเป็นสเตอริโอเสมอ</string>
@@ -307,7 +307,7 @@
     <string name="aspect_ratio">อัตราส่วนภาพ</string>
     <string name="show_details">แสดงรายละเอียด</string>
     <string name="image_type">ประเภทรูปภาพ</string>
-    <string name="cast_and_crew">นักแสดงและทีมงาน</string>
+    <string name="cast_and_crew"><![CDATA[นักแสดงและทีมงาน]]></string>
     <string name="guest_stars">ดารารับเชิญ</string>
     <string name="edge_size">ขนาดขอบ</string>
     <string name="refresh_rate_switching">การสลับอัตราการรีเฟรช</string>
@@ -505,12 +505,12 @@
     <string name="image_type_thumb">นิ้วหัวแม่มือ</string>
     <string name="backdrop_style_dynamic">ภาพที่มีสีแบบไดนามิก</string>
     <string name="backdrop_style_image">รูปภาพเท่านั้น</string>
-    <string name="enter_url_api_key">ป้อน URL และ API Key</string>
+    <string name="enter_url_api_key"><![CDATA[ป้อน URL และ API Key]]></string>
     <string name="api_key">คีย์ API</string>
     <string name="seerr_login">เข้าสู่ระบบเซิร์ฟเวอร์ Seerr</string>
     <string name="seerr_jellyfin_user">Jellyfin ผู้ใช้</string>
     <string name="seerr_local_user">ผู้ใช้ท้องถิ่น</string>
-    <string name="search_and_download_subtitles">ค้นหาและดาวน์โหลดคำบรรยาย</string>
+    <string name="search_and_download_subtitles"><![CDATA[ค้นหาและดาวน์โหลดคำบรรยาย]]></string>
     <string name="no_subtitles_found">ไม่พบคำบรรยายระยะไกล</string>
     <string name="series_continueing">ปัจจุบัน</string>
     <string name="in_app_screensaver">ใช้โปรแกรมรักษาหน้าจอในแอป</string>
