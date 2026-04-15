@@ -60,7 +60,7 @@ sealed interface AppPreference<Pref, T> {
             AppSliderPreference<AppPreferences>(
                 title = R.string.skip_forward_preference,
                 defaultValue = 30,
-                min = 10,
+                min = 5,
                 max = 5.minutes.inWholeSeconds,
                 interval = 5,
                 getter = {
