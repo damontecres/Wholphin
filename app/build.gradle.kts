@@ -183,6 +183,10 @@ android {
             isIncludeAndroidResources = true
         }
     }
+
+    lint {
+        disable.add("MissingTranslation")
+    }
 }
 
 protobuf {

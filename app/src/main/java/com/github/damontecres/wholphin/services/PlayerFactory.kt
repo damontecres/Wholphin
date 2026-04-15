@@ -95,6 +95,10 @@ class PlayerFactory
                                 playWhenReady = true
                             }
                     }
+
+                    PlayerBackend.EXTERNAL_PLAYER -> {
+                        throw IllegalStateException("Cannot create a player for external playback")
+                    }
                 }
             currentPlayer = newPlayer
             return newPlayer
@@ -141,6 +145,10 @@ class PlayerFactory
                                     .setEnableDecoderFallback(true)
                                     .setExtensionRendererMode(rendererMode),
                             ).build()
+                    }
+
+                    PlayerBackend.EXTERNAL_PLAYER -> {
+                        throw IllegalStateException("Cannot create a player for external playback")
                     }
                 }
             currentPlayer = newPlayer

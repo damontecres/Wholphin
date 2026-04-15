@@ -231,6 +231,8 @@ class PlaybackViewModel
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
                     PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+
+                    PlayerBackend.EXTERNAL_PLAYER -> throw IllegalStateException("Cannot use this for external playback")
                 }
 
             Timber.d("Selected backend: %s", playerBackend)

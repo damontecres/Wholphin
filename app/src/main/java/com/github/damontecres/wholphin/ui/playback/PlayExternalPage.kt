@@ -11,11 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -29,7 +27,6 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
@@ -45,6 +42,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.model.api.PlaybackStopInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import timber.log.Timber
 import java.util.UUID
@@ -180,7 +178,7 @@ class PlayExternalViewModel
         fun onResult(result: ActivityResult) {
             viewModelScope.launchDefault {
                 val itemId = savedStateHandle.get<UUID?>("itemId")
-                Timber.v("Result action: %s", result.data?.action)
+                Timber.v("Result: itemId=%s action=%s", itemId, result.data?.action)
                 if (result.resultCode == Activity.RESULT_OK) {
                     Timber.i("Activity result OK")
                     val position: Long
@@ -203,21 +201,31 @@ class PlayExternalViewModel
 
                         else -> {
                             // Unsupported app
-                            position = -1L
+                            val posInt =
+                                data
+                                    ?.getIntExtra("position", Int.MIN_VALUE)
+                                    ?.takeIf { it != Int.MIN_VALUE }
+                                    ?.toLong()
+                            position =
+                                posInt ?: (data?.getLongExtra("position", -1L) ?: -1L)
                         }
                     }
                     Timber.v("Result position: %s", position.milliseconds)
                     if (position == -2L) {
                         // TODO, check if watched
                     } else if (position >= 0 && itemId != null) {
-                        api.playStateApi.onPlaybackProgress(
-                            itemId = itemId,
-                            mediaSourceId = null, // TODO
-                            positionTicks = position.milliseconds.inWholeTicks,
+                        api.playStateApi.reportPlaybackStopped(
+                            PlaybackStopInfo(
+                                itemId = itemId,
+                                mediaSourceId = null, // TODO
+                                positionTicks = position.milliseconds.inWholeTicks,
+                                failed = false,
+                            ),
                         )
                     }
                 } else {
                     Timber.w("Activity result: %s", result.resultCode)
+                    showToast(context, "Unknown result from external player")
                 }
                 navigationManager.goBack()
             }
@@ -239,8 +247,6 @@ fun PlayExternalPage(
             creationCallback = { it.create(destination) },
         ),
 ) {
-    val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
     val launcher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.StartActivityForResult(),
@@ -250,35 +256,27 @@ fun PlayExternalPage(
     val state by viewModel.state.collectAsState()
     var launched by rememberSaveable { mutableStateOf(false) }
 
-    if (activity != null) {
-        when (val l = state.loading) {
-            LoadingState.Pending,
-            LoadingState.Loading,
-            -> {
-                LoadingPage(modifier)
-            }
+    when (val l = state.loading) {
+        LoadingState.Pending,
+        LoadingState.Loading,
+        -> {
+            LoadingPage(modifier)
+        }
 
-            is LoadingState.Error -> {
-                ErrorMessage(l, modifier)
-            }
+        is LoadingState.Error -> {
+            ErrorMessage(l, modifier)
+        }
 
-            LoadingState.Success -> {
-                LoadingPage(modifier)
-                if (!launched) {
-                    LifecycleStartEffect(Unit) {
-                        Timber.i("Launching external playback")
-                        launched = true
-                        launcher.launch(state.intent)
-                        onStopOrDispose { }
-                    }
+        LoadingState.Success -> {
+            LoadingPage(modifier)
+            if (!launched) {
+                LifecycleStartEffect(Unit) {
+                    Timber.i("Launching external playback")
+                    launched = true
+                    launcher.launch(state.intent)
+                    onStopOrDispose { }
                 }
             }
         }
-    } else {
-        ErrorMessage(
-            message = "Unknown error",
-            exception = null,
-            modifier = modifier,
-        )
     }
 }

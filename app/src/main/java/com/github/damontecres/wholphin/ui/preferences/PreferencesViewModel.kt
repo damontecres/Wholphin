@@ -1,6 +1,13 @@
 package com.github.damontecres.wholphin.ui.preferences
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -59,11 +66,36 @@ class PreferencesViewModel
 
         val releaseNotes = MutableStateFlow<DataLoadingState<Release>>(DataLoadingState.Pending)
 
+        val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
+
         init {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
-//                    fetchNavDrawerPins(user)
-                }
+                val fakeIntent =
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
+                    }
+                val externalPlayers =
+                    context.packageManager
+                        .queryIntentActivities(fakeIntent, PackageManager.MATCH_ALL)
+                        .filter { it.priority >= 0 }
+                        .map {
+                            val component =
+                                ComponentName(
+                                    it.activityInfo.packageName,
+                                    it.activityInfo.name,
+                                )
+                            ExternalPlayerApp(
+                                name = it.loadLabel(context.packageManager).toString(),
+                                icon =
+                                    it
+                                        .loadIcon(context.packageManager)
+                                        .toBitmap()
+                                        .asImageBitmap(),
+                                component = component,
+                                identifier = component.flattenToString(),
+                            ).also { Timber.v("Found %s", it) }
+                        }
+                this@PreferencesViewModel.externalPlayers.update { externalPlayers }
             }
         }
 
@@ -134,3 +166,10 @@ class PreferencesViewModel
             }
         }
     }
+
+data class ExternalPlayerApp(
+    val name: String,
+    val icon: ImageBitmap,
+    val component: ComponentName,
+    val identifier: String,
+)

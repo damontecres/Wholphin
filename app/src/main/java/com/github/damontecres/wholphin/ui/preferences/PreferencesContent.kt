@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -62,6 +65,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
@@ -468,6 +472,37 @@ fun PreferencesContent(
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
+                                    )
+                                }
+
+                                AppPreference.ExternalPlayerApp -> {
+                                    val value = pref.getter.invoke(preferences).toString()
+                                    val players by viewModel.externalPlayers.collectAsState()
+                                    val selectedIndex =
+                                        remember(value, players) {
+                                            players.indexOfFirstOrNull { it.identifier == value }
+                                        } ?: 0
+                                    ChoicePreference(
+                                        title = stringResource(pref.title),
+                                        summary = players[selectedIndex].name,
+                                        possibleValues = players,
+                                        selectedIndex = selectedIndex,
+                                        onValueChange = {
+                                            // TODO
+                                        },
+                                        valueDisplay = { index, item ->
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Image(
+                                                    bitmap = item.icon,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.width(40.dp),
+                                                )
+                                                Text(item.name)
+                                            }
+                                        },
                                     )
                                 }
 
