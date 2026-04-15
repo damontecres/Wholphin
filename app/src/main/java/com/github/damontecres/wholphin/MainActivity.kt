@@ -30,6 +30,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
@@ -320,8 +321,7 @@ class MainActivity : AppCompatActivity() {
         outState.putString(KEY_BACK_STACK, str)
         val playerBackend =
             runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
-        // TODO
-        outState.putBoolean(KEY_EXTERNAL_PLAYER, true)
+        outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
