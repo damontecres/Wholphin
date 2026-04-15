@@ -597,4 +597,11 @@
     <string name="separate_types">Tipi separati</string>
     <string name="prefer_logos">Preferisci mostrare i loghi per i titoli</string>
     <string name="updated_toast">Wholphin aggiornato a %s</string>
+    <string name="remove_continue_watching">Rimuovi da Continua a guardare</string>
+    <string name="remove_next_up">Rimuovi serie da Prossimo</string>
+    <string name="view_removed_next_up">Visualizza serie rimosse da Prossimo</string>
+    <string name="view_more">Mostra altro</string>
+    <string name="discover_tv">Scopri serie TV</string>
+    <string name="discover_movies">Scopri film</string>
+    <string name="studios_in">Studi in %1$s</string>
 </resources>
