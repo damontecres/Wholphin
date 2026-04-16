@@ -337,8 +337,10 @@ class PlaybackViewModel
                                 navigationManager.goBack()
                                 return
                             }
-                            withContext(Dispatchers.Main) {
-                                this@PlaybackViewModel.playlist.value = r.playlist
+                            if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.playlist.value = r.playlist
+                                }
                             }
                             r.playlist.items
                                 .first()
@@ -363,7 +365,7 @@ class PlaybackViewModel
                 playNextUp()
             }
 
-            if (!isPlaylist) {
+            if (!isPlaylist && preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
                     withContext(Dispatchers.Main) {

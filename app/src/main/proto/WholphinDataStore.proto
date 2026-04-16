@@ -6,6 +6,7 @@ option java_multiple_files = true;
 enum ShowNextUpWhen{
   END_OF_PLAYBACK = 0;
   DURING_CREDITS = 1;
+  NEXT_UP_NEVER = 2;
 }
 
 enum SkipSegmentBehavior{
