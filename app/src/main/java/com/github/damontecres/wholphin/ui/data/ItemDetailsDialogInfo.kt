@@ -102,16 +102,17 @@ fun ItemDetailsDialog(
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }
-                val lastPlayed = remember(info) { info.lastPlayed?.let { formatDate(it) } }
-                if (lastPlayed != null) {
-                    Text(
-                        text = "$lastPlayedLabel: $lastPlayed",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
                 if (info.overview.isNotNullOrBlank()) {
                     Text(
                         text = info.overview,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                val lastPlayed =
+                    remember(info.lastPlayed) { info.lastPlayed?.let { formatDate(it) } }
+                if (lastPlayed != null) {
+                    Text(
+                        text = "$lastPlayedLabel: $lastPlayed",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
