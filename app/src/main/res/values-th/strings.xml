@@ -21,7 +21,7 @@
     <string name="community_rating">การให้คะแนนของชุมชน</string>
     <string name="compose_error_message_title">เกิดข้อผิดพลาด! กดปุ่มเพื่อส่งบันทึกไปยังเซิร์ฟเวอร์ของคุณ</string>
     <string name="confirm">ตกลง</string>
-    <string name="continue_watching">ดูต่อครับ</string>
+    <string name="continue_watching">ดูต่อ</string>
     <string name="critic_rating">การจัดอันดับนักวิจารณ์</string>
     <string name="decimal_seconds">%.2f วินาที</string>
     <string name="default_track">ค่าเริ่มต้น</string>
@@ -34,7 +34,7 @@
     <string name="download_and_update"><![CDATA[ดาวน์โหลดและอัปเดต]]></string>
     <string name="downloading">กำลังดาวน์โหลด…</string>
     <string name="enabled">ใช้งาน</string>
-    <string name="ends_at">จบที่ %1$s</string>
+    <string name="ends_at">จบเมื่อ %1$s</string>
     <string name="enter_server_url">ป้อนที่อยู่ IP หรือ URL ของเซิร์ฟเวอร์</string>
     <string name="enter_server_address">ป้อนที่อยู่เซิร์ฟเวอร์</string>
     <string name="episodes">ตอน</string>
@@ -68,7 +68,7 @@
         <item quantity="other">ภาพยนตร์</item>
     </plurals>
     <string name="name">ชื่อ</string>
-    <string name="next_up">ถัดไปขึ้นมา</string>
+    <string name="next_up">ตอนถัดไป</string>
     <string name="no_data">ไม่มีข้อมูล</string>
     <string name="no_results">ไม่มีผลลัพธ์</string>
     <string name="no_servers_found">ไม่พบเซิร์ฟเวอร์</string>
@@ -102,7 +102,7 @@
     <string name="record_series">บันทึกซีรีส์</string>
     <string name="remove_favorite">ไม่เป็นที่ชื่นชอบ</string>
     <string name="restart">เริ่มใหม่</string>
-    <string name="resume">เล่นเกมต่อ</string>
+    <string name="resume">เล่นต่อ</string>
     <string name="save">บันทึก</string>
     <string name="search_and_download"><![CDATA[ค้นหาและดาวน์โหลด]]></string>
     <string name="search">ค้นหา</string>
@@ -128,7 +128,7 @@
     <string name="select_server">เลือกเซิร์ฟเวอร์</string>
     <string name="select_user">เลือกผู้ใช้งาน</string>
     <string name="show_debug_info">แสดงข้อมูลการแก้ไขข้อบกพร่อง</string>
-    <string name="show_next_up_when">แสดงต่อไป</string>
+    <string name="show_next_up_when">แสดงตอนถัดไป</string>
     <string name="show">แสดง</string>
     <string name="shuffle">สุ่ม</string>
     <string name="skip">ข้าม</string>
@@ -146,21 +146,21 @@
     <string name="suggestions">คำแนะนำ</string>
     <string name="switch_servers">สลับเซิร์ฟเวอร์</string>
     <string name="switch_user">สวิตช์</string>
-    <string name="top_unwatched">เรตติ้งสูงสุด (ยังไม่มีคนดู)</string>
+    <string name="top_unwatched">รายการที่ได้คะแนนสูงที่ยังไม่ได้ดู</string>
     <string name="trailer">ตัวอย่าง</string>
     <plurals name="trailers">
-        <item quantity="other">รถพ่วง</item>
+        <item quantity="other">ตัวอย่าง</item>
     </plurals>
-    <string name="tv_dvr_schedule">กำหนดการ DVR</string>
-    <string name="tv_guide">แนะนำ</string>
-    <string name="tv_season">ฤดูกาล</string>
-    <string name="tv_seasons">ฤดูกาล</string>
+    <string name="tv_dvr_schedule">กำหนดการบันทึก</string>
+    <string name="tv_guide">ผังรายการ</string>
+    <string name="tv_season">ซีซั่น</string>
+    <string name="tv_seasons">ซีซั่น</string>
     <plurals name="tv_shows">
         <item quantity="other">รายการทีวี</item>
     </plurals>
     <string name="ui_interface">อินเทอร์เฟซ</string>
     <string name="unknown">ไม่มีข้อมูล</string>
-    <string name="updates">มีอัพเดต</string>
+    <string name="updates">อัปเดต</string>
     <string name="version">เวอร์ชัน</string>
     <string name="video_scale">สเกลวิดีโอ</string>
     <string name="video">วิดีโอ</string>
@@ -221,10 +221,10 @@
     <string name="advanced_ui">UI ขั้นสูง</string>
     <string name="app_theme">ธีมแอปพลิเคชัน</string>
     <string name="auto_check_for_updates">ตรวจสอบการอัปเดตโดยอัตโนมัติ</string>
-    <string name="auto_play_next_delay">หน่วงเวลาก่อนเล่นเพลงถัดไป</string>
-    <string name="auto_play_next">เล่นอัตโนมัติถัดไป</string>
-    <string name="check_for_updates">ตรวจสอบอัปเดต</string>
-    <string name="combine_continue_next_summary">ใช้ได้กับซีรีส์โทรทัศน์เท่านั้น</string>
+    <string name="auto_play_next_delay">หน่วงเวลาก่อนเล่นตอนถัดไป</string>
+    <string name="auto_play_next">เล่นตอนถัดไปอัตโนมัติ</string>
+    <string name="check_for_updates">ตรวจสอบการอัปเดต</string>
+    <string name="combine_continue_next_summary">ใช้กับรายการโทรทัศน์เท่านั้น</string>
     <string name="combine_continue_next"><![CDATA[รวมตัวเลือก \"ดูต่อ\" และ \"รายการถัดไป\" เข้าด้วยกัน]]></string>
     <string name="direct_play_ass">เล่นคำบรรยาย ASS โดยตรง</string>
     <string name="direct_play_pgs">เล่นคำบรรยาย PGS โดยตรง</string>
@@ -274,7 +274,7 @@
     <string name="player_backend">การเล่นแบ็กเอนด์</string>
     <string name="mpv_hardware_decoding">MPV: ใช้การถอดรหัสฮาร์ดแวร์</string>
     <string name="disable_if_crash">ปิดใช้งานหากพบปัญหาโปรแกรมหยุดทำงาน</string>
-    <string name="mpv_options">MPV ตัวเลือก</string>
+    <string name="mpv_options">ตัวเลือก MPV</string>
     <string name="exoplayer_options">ตัวเลือก ExoPlayer</string>
     <string name="skip_segment_unknown">ข้ามส่วน</string>
     <string name="skip_segment_commercial">ข้ามโฆษณา</string>
@@ -548,4 +548,7 @@
     <string name="select_all">เลือกทั้งหมด</string>
     <string name="separate_types">แยกประเภท</string>
     <string name="prefer_logos">ควรแสดงโลโก้แทนชื่อเรื่อง</string>
+    <string name="updated_toast">Wolphin อัปเดตเวอร์ชั่นเป็น %s แล้ว</string>
+    <string name="remove_continue_watching">นำออกจากรายการดูต่อ</string>
+    <string name="remove_next_up">นำซีรีส์ออกจากรายการถัดไป</string>
 </resources>
