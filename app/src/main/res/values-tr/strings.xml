@@ -595,4 +595,9 @@
     <string name="remove_next_up">Sıradaki bölümlerden kaldır</string>
     <string name="view_removed_next_up">Sıradaki bölümlerden kaldırılan dizileri göster</string>
     <string name="studios_in">Stüdyolar: %1$s</string>
+    <string name="last_played">Son oynatma</string>
+    <string name="ass_subtitle_mode_libass">libass ile doğrudan oynatma</string>
+    <string name="ass_subtitle_mode_exoplayer">Yerleşik ExoPlayer ile doğrudan oynatma</string>
+    <string name="ass_subtitle_mode_transcode">Sunucuda dönüştür ve işle</string>
+    <string name="ass_subtitle_playback">SSA/ASS altyazı oynatma</string>
 </resources>
