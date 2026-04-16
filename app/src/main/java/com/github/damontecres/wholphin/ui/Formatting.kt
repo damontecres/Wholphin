@@ -47,6 +47,8 @@ fun formatDateTime(dateTime: LocalDateTime): String = getDateFormatter().format(
 
 fun formatDate(dateTime: LocalDate): String = getDateFormatter().format(dateTime)
 
+fun formatDate(dateTime: LocalDateTime): String = getDateFormatter().format(dateTime)
+
 fun toLocalDate(date: String?): LocalDate? =
     date?.let {
         try {

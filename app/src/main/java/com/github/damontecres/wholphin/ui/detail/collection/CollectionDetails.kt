@@ -191,13 +191,7 @@ fun CollectionDetails(
                 modifier = modifier,
                 overviewOnClick = {
                     val collection = state.collection!!
-                    overviewDialog =
-                        ItemDetailsDialogInfo(
-                            title = collection.title ?: "",
-                            overview = collection.data.overview,
-                            genres = collection.data.genres.orEmpty(),
-                            files = emptyList(),
-                        )
+                    overviewDialog = ItemDetailsDialogInfo(collection)
                 },
                 favoriteOnClick =
                     remember {
