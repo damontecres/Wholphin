@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,11 +81,9 @@ class PlayExternalViewModel
             fun create(destination: Destination): PlayExternalViewModel
         }
 
-        private lateinit var item: BaseItem
-
         val state = MutableStateFlow(PlayExternalState())
 
-        init {
+        fun init() {
             viewModelScope.launchDefault {
                 val prefs = userPreferencesService.getCurrent()
                 val positionMs: Long
@@ -143,8 +142,7 @@ class PlayExternalViewModel
                         } else {
                             throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                         }
-                    savedStateHandle["itemId"] = base.id
-                    this@PlayExternalViewModel.item = BaseItem(base, false)
+                    val item = BaseItem(base, false)
                     val playbackConfig =
                         serverRepository.currentUser.value?.let { user ->
                             itemPlaybackDao.getItem(user, base.id)?.let {
@@ -162,6 +160,8 @@ class PlayExternalViewModel
                         Timber.w("Media source is null")
                         return@launchDefault
                     }
+                    savedStateHandle[KEY_ID] = base.id
+                    savedStateHandle[KEY_MEDIA_ID] = mediaSource.id
                     val subtitleIndex =
                         streamChoiceService
                             .chooseSubtitleStream(
@@ -210,9 +210,9 @@ class PlayExternalViewModel
                     val intent =
                         Intent(Intent.ACTION_VIEW).apply {
                             setComponent(component)
-                            setDataAndType(uri, "video/*")
+                            setDataAndTypeAndNormalize(uri, "video/*")
                             putExtra("title", "${item.title} ${item.subtitleLong}")
-                            putExtra("position", positionMs)
+                            putExtra("position", positionMs.toInt())
 
                             // MX/mpv
                             putExtra("return_result", true)
@@ -258,26 +258,40 @@ class PlayExternalViewModel
 
         fun onResult(result: ActivityResult) {
             viewModelScope.launchDefault {
-                val itemId = savedStateHandle.get<UUID?>("itemId")
-                Timber.v("Result: itemId=%s action=%s", itemId, result.data?.action)
-                if (result.resultCode == Activity.RESULT_OK) {
-                    Timber.i("Activity result OK")
-                    val position: Long
+                val itemId = savedStateHandle.get<UUID?>(KEY_ID)
+                val mediaSourceId = savedStateHandle.get<String?>(KEY_MEDIA_ID)
+                if (itemId == null) {
+                    Timber.w("itemId is null")
+                    return@launchDefault
+                }
+                Timber.v(
+                    "Result: result=%s, itemId=%s action=%s",
+                    result.resultCode,
+                    itemId,
+                    result.data?.action,
+                )
+                if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED) {
+                    val position: Long?
                     val data = result.data
                     when (data?.action) {
+                        // VLC: https://wiki.videolan.org/Android_Player_Intents/
                         "org.videolan.vlc.player.result" -> {
-                            // VLC: https://wiki.videolan.org/Android_Player_Intents/
-                            position = data.getLongExtra("extra_position", -1)
+                            position =
+                                data
+                                    .getLongExtra("extra_position", Long.MIN_VALUE)
+                                    .takeIf { it >= 0 }
                         }
 
-                        "is.xyz.mpv.MPVActivity.result" -> {
-                            // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
-                            position = data.getIntExtra("position", -2).toLong()
-                        }
-
-                        "com.mxtech.intent.result.VIEW" -> {
-                            // MX player: https://mx.j2inter.com/api
-                            position = data.getIntExtra("position", -2).toLong()
+                        // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
+                        "is.xyz.mpv.MPVActivity.result",
+                        // MX player: https://mx.j2inter.com/api
+                        "com.mxtech.intent.result.VIEW",
+                        -> {
+                            position =
+                                data
+                                    .getIntExtra("position", Int.MIN_VALUE)
+                                    .toLong()
+                                    .takeIf { it >= 0 }
                         }
 
                         else -> {
@@ -285,25 +299,21 @@ class PlayExternalViewModel
                             val posInt =
                                 data
                                     ?.getIntExtra("position", Int.MIN_VALUE)
-                                    ?.takeIf { it != Int.MIN_VALUE }
+                                    ?.takeIf { it >= 0 }
                                     ?.toLong()
                             position =
-                                posInt ?: (data?.getLongExtra("position", -1L) ?: -1L)
+                                posInt ?: data?.getLongExtra("position", -1L)?.takeIf { it >= 0 }
                         }
                     }
-                    Timber.v("Result position: %s", position.milliseconds)
-                    if (position == -2L) {
-                        // TODO, check if watched
-                    } else if (position >= 0 && itemId != null) {
-                        api.playStateApi.reportPlaybackStopped(
-                            PlaybackStopInfo(
-                                itemId = itemId,
-                                mediaSourceId = null, // TODO
-                                positionTicks = position.milliseconds.inWholeTicks,
-                                failed = false,
-                            ),
-                        )
-                    }
+                    Timber.v("Result position: %s", position?.milliseconds)
+                    api.playStateApi.reportPlaybackStopped(
+                        PlaybackStopInfo(
+                            itemId = itemId,
+                            mediaSourceId = mediaSourceId,
+                            positionTicks = position?.milliseconds?.inWholeTicks,
+                            failed = false,
+                        ),
+                    )
                 } else {
                     Timber.w("Activity result: %s", result.resultCode)
                     showToast(context, "Unknown result from external player")
@@ -315,6 +325,11 @@ class PlayExternalViewModel
         fun reportException(ex: Exception) {
             Timber.e(ex, "Error launching activity")
             state.update { it.copy(loading = LoadingState.Error(ex)) }
+        }
+
+        companion object {
+            private const val KEY_ID = "itemId"
+            private const val KEY_MEDIA_ID = "mediaId"
         }
     }
 
@@ -341,6 +356,11 @@ fun PlayExternalPage(
 
     val state by viewModel.state.collectAsState()
     var launched by rememberSaveable { mutableStateOf(false) }
+    if (!launched) {
+        LaunchedEffect(Unit) {
+            viewModel.init()
+        }
+    }
 
     when (val l = state.loading) {
         LoadingState.Pending,
