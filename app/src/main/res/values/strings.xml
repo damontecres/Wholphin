@@ -615,9 +615,11 @@
 
     <string name="next_up_playback_end">At the end of playback</string>
     <string name="next_up_outro">During end credits/outro</string>
+    <string name="next_up_never">Never</string>
     <string-array name="show_next_up_when_options">
         <item>@string/next_up_playback_end</item>
         <item>@string/next_up_outro</item>
+        <item>@string/next_up_never</item>
     </string-array>
 
     <string name="white">White</string>
