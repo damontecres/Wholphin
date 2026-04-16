@@ -210,14 +210,7 @@ fun SeriesDetails(
                         }
                     },
                     overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = item.name ?: context.getString(R.string.unknown),
-                                overview = item.data.overview,
-                                genres = item.data.genres.orEmpty(),
-                                studios = item.studioNames,
-                                files = listOf(),
-                            )
+                        overviewDialog = ItemDetailsDialogInfo(item)
                     },
                     playOnClick = { shuffle ->
                         if (shuffle) {

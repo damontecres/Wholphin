@@ -759,8 +759,8 @@
     <string name="discover_tv">Discover TV Shows</string>
     <string name="discover_movies">Discover Movies</string>
     <string name="studios_in">Studios in %1$s</string>
+    <string name="last_played">Last played</string>
     <string name="system_default">System default</string>
-
     <string name="ass_subtitle_mode_libass">Direct play with libass</string>
     <string name="ass_subtitle_mode_exoplayer">Direct play with ExoPlayer built-in</string>
     <string name="ass_subtitle_mode_transcode">Burn in/transcode on server</string>
