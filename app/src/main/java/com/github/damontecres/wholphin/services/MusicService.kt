@@ -5,15 +5,10 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
@@ -77,6 +72,7 @@ class MusicService
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
         @param:DefaultCoroutineScope private val defaultScope: CoroutineScope,
         private val api: ApiClient,
+        private val playerFactory: PlayerFactory,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
     ) {
@@ -86,21 +82,9 @@ class MusicService
         private val audioFormats by lazy { listOf(*supportedAudioCodecs) }
 
         val player: Player by lazy {
-            ExoPlayer
-                .Builder(context)
-                .setMediaSourceFactory(
-                    DefaultMediaSourceFactory(
-                        OkHttpDataSource.Factory(authOkHttpClient),
-                    ),
-                ).build()
+            playerFactory
+                .createAudioPlayer()
                 .also {
-                    it.setAudioAttributes(
-                        AudioAttributes
-                            .Builder()
-                            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                            .build(),
-                        false,
-                    )
                     it.addListener(MusicPlayerListener(it, _state))
                 }
         }

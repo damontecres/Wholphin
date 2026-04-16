@@ -6,25 +6,28 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import androidx.annotation.OptIn
-import androidx.datastore.core.DataStore
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
@@ -34,6 +37,7 @@ import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.lang.reflect.Constructor
 import javax.inject.Inject
@@ -47,7 +51,7 @@ class PlayerFactory
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
-        private val appPreferences: DataStore<AppPreferences>,
+        @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
     ) {
         @Volatile
         var currentPlayer: Player? = null
@@ -57,8 +61,8 @@ class PlayerFactory
             backend: PlayerBackend,
             prefs: PlaybackPreferences,
         ): PlayerCreation {
-            withContext(Dispatchers.Main) {
-                if (currentPlayer?.isReleased == false) {
+            if (currentPlayer?.isReleased == false) {
+                withContext(Dispatchers.Main) {
                     Timber.w("Player was not released before trying to create a new one!")
                     currentPlayer?.release()
                 }
@@ -94,7 +98,7 @@ class PlayerFactory
                                 else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                             }
                         val dataSourceFactory = DefaultDataSource.Factory(context)
-                        val extractorsFactory = DefaultExtractorsFactory()
+                        val extractorsFactory = createExtractorsFactory()
                         var renderersFactory: RenderersFactory =
                             WholphinRenderersFactory(context, decodeAv1)
                                 .setEnableDecoderFallback(true)
@@ -117,19 +121,85 @@ class PlayerFactory
                                     extractorsFactory,
                                 )
                             }
+                        val trackSelector = createTrackSelector()
+
                         ExoPlayer
                             .Builder(context)
                             .setMediaSourceFactory(mediaSourceFactory)
                             .setRenderersFactory(renderersFactory)
+                            .setTrackSelector(trackSelector)
                             .build()
                             .apply {
                                 assHandler?.init(this)
+                                withContext(Dispatchers.Main) {
+                                    setAudioAttributes(
+                                        AudioAttributes
+                                            .Builder()
+                                            .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                                            .build(),
+                                        false,
+                                    )
+                                }
                             }
                     }
                 }
             currentPlayer = newPlayer
             return PlayerCreation(newPlayer, assHandler)
         }
+
+        fun createAudioPlayer(extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK): ExoPlayer {
+            val rendererMode =
+                when (extensions) {
+                    MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                    MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                    MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+                    else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                }
+            val extractorsFactory = createExtractorsFactory()
+            val renderersFactory: RenderersFactory =
+                WholphinRenderersFactory(context, false)
+                    .setEnableDecoderFallback(true)
+                    .setExtensionRendererMode(rendererMode)
+            val mediaSourceFactory =
+                DefaultMediaSourceFactory(
+                    OkHttpDataSource.Factory(authOkHttpClient),
+                    extractorsFactory,
+                )
+            val trackSelector = createTrackSelector()
+            return ExoPlayer
+                .Builder(context)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .setRenderersFactory(renderersFactory)
+                .setTrackSelector(trackSelector)
+                .build()
+                .also {
+                    it.setAudioAttributes(
+                        AudioAttributes
+                            .Builder()
+                            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                            .build(),
+                        false,
+                    )
+                }
+        }
+
+        private fun createExtractorsFactory() =
+            DefaultExtractorsFactory()
+                .setConstantBitrateSeekingEnabled(true)
+                .setConstantBitrateSeekingAlwaysEnabled(true)
+
+        private fun createTrackSelector() =
+            DefaultTrackSelector(context).apply {
+                setParameters(
+                    buildUponParameters()
+                        .setAudioOffloadPreferences(
+                            AudioOffloadPreferences
+                                .Builder()
+                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
+                                .build(),
+                        ),
+                )
+            }
     }
 
 val Player.isReleased: Boolean
