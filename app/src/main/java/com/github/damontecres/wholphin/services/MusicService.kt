@@ -13,7 +13,6 @@ import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
@@ -39,7 +38,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
@@ -69,7 +67,6 @@ class MusicService
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
-        @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
         @param:DefaultCoroutineScope private val defaultScope: CoroutineScope,
         private val api: ApiClient,
         private val playerFactory: PlayerFactory,
