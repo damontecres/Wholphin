@@ -51,6 +51,7 @@ enum class PlaybackDialogType {
 
 data class PlaybackSettings(
     val showDebugInfo: Boolean,
+    val showStats: Boolean,
     val audioIndex: Int?,
     val audioStreams: List<SimpleMediaStream>,
     val subtitleIndex: Int?,
@@ -85,10 +86,17 @@ fun PlaybackDialog(
     when (type) {
         PlaybackDialogType.MORE -> {
             val options =
-                buildList {
+                buildList<BottomDialogItem<PlaybackAction>> {
                     add(
                         BottomDialogItem(
-                            data = 0,
+                            data = PlaybackAction.ToggleStats,
+                            headline = stringResource(if (settings.showStats) R.string.hide_stats else R.string.show_stats),
+                            supporting = null,
+                        ),
+                    )
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackAction.ShowDebug,
                             headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
                             supporting = null,
                         ),
@@ -101,7 +109,7 @@ fun PlaybackDialog(
 //                    focusRequester.tryRequestFocus()
                 },
                 onSelectChoice = { index, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
+                    onPlaybackActionClick.invoke(choice.data)
                 },
                 gravity = Gravity.START,
             )
