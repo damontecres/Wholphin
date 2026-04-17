@@ -34,7 +34,7 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
     - Use poster or thumb images, show/hide titles, add/remove/re-order different types of rows!
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
 - Integration with [Jellyseerr/Seerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
-    - Note: only available when installed from [GitHub](https://github.com/damontecres/Wholphin/releases/latest) or the [Play store](https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin) 
+    - Note: only available when installed from [GitHub](https://github.com/damontecres/Wholphin/releases/latest) or the [Play store](https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin)
 - Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
 - Play theme music, if available
