@@ -572,4 +572,6 @@
     <string name="ass_subtitle_mode_exoplayer">通过内置的 ExoPlayer 直接播放</string>
     <string name="ass_subtitle_mode_transcode">服务器端烧录/转码</string>
     <string name="ass_subtitle_playback">SSA/ASS 字幕播放</string>
+    <string name="next_up_never">从不</string>
+    <string name="last_played">上次播放</string>
 </resources>
