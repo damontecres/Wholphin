@@ -609,4 +609,5 @@
     <string name="ass_subtitle_mode_transcode">Incrustar/transcodificar en el servidor</string>
     <string name="ass_subtitle_playback">Reproducción de subtítulos SSA/ASS</string>
     <string name="last_played">Última reproducción</string>
+    <string name="next_up_never">Nunca</string>
 </resources>
