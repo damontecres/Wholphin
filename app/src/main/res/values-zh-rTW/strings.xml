@@ -101,7 +101,7 @@
     <string name="auto_check_for_updates">自動檢查更新</string>
     <string name="auto_play_next">自動播放下一集</string>
     <string name="check_for_updates">檢查更新</string>
-    <string name="direct_play_ass">直接播放 ASS 字幕</string>
+    <string name="direct_play_ass">使用 libass 播放 ASS 字幕</string>
     <string name="direct_play_pgs">直接播放 PGS 字幕</string>
     <string name="ffmpeg_extension_pref">使用 FFmpeg 解碼模組</string>
     <string name="global_content_scale">預設縮放比例</string>
@@ -568,4 +568,10 @@
     <string name="remove_next_up">從接下來播放中移除劇集</string>
     <string name="view_removed_next_up">查看從接下來播放中移除的劇集</string>
     <string name="studios_in">%1$s 製作公司</string>
+    <string name="ass_subtitle_mode_libass">使用 libass 播放</string>
+    <string name="ass_subtitle_mode_exoplayer">使用 ExoPlayer 內建播放</string>
+    <string name="ass_subtitle_mode_transcode">由伺服器燒錄/轉碼</string>
+    <string name="ass_subtitle_playback">SSA/ASS 字幕播放方式</string>
+    <string name="last_played">上次播放</string>
+    <string name="next_up_never">不顯示</string>
 </resources>
