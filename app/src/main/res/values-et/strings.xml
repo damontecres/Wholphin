@@ -591,4 +591,5 @@
     <string name="ass_subtitle_mode_exoplayer">Otseesitus sisseehitatud ExoPlayer teegiga</string>
     <string name="ass_subtitle_mode_transcode">Kodeeri serveris</string>
     <string name="ass_subtitle_playback">SSA/ASS subtiitrite esitus</string>
+    <string name="next_up_never">Mitte kunagi</string>
 </resources>
