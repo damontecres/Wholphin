@@ -207,11 +207,12 @@ class PlayExternalViewModel
                             null
                         }
                     Timber.v("playerId=%s, component=%s", playerId, component)
+                    val title = "${item.title} ${item.subtitleLong}"
                     val intent =
                         Intent(Intent.ACTION_VIEW).apply {
                             setComponent(component)
                             setDataAndTypeAndNormalize(uri, "video/*")
-                            putExtra("title", "${item.title} ${item.subtitleLong}")
+                            putExtra("title", title)
                             putExtra("position", positionMs.toInt())
 
                             // MX/mpv
@@ -239,6 +240,16 @@ class PlayExternalViewModel
                             mediaSource.runTimeTicks?.ticks?.inWholeMilliseconds?.let {
                                 putExtra("extra_duration", it)
                             }
+
+                            // Vimu - https://vimu.tv/player-api/
+                            putExtra("startfrom", positionMs.toInt())
+                            putExtra("forceresume", false)
+                            putExtra("forcename", title)
+                            externalSubtitles
+                                .indexOfFirstOrNull { it.index == subtitleIndex && it.codec == "srt" }
+                                ?.let {
+                                    putExtra("forcedsrt", subtitleUrls[it])
+                                }
                         }
 
                     state.update {
@@ -270,7 +281,10 @@ class PlayExternalViewModel
                     itemId,
                     result.data?.action,
                 )
-                if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED) {
+                if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED ||
+                    // Vimu return 1 for video completion
+                    (result.data?.action == "net.gtvbox.videoplayer.result" && result.resultCode == 1)
+                ) {
                     val position: Long?
                     val data = result.data
                     when (data?.action) {
@@ -286,6 +300,8 @@ class PlayExternalViewModel
                         "is.xyz.mpv.MPVActivity.result",
                         // MX player: https://mx.j2inter.com/api
                         "com.mxtech.intent.result.VIEW",
+                        // VIMU: https://vimu.tv/player-api/
+                        "net.gtvbox.videoplayer.result",
                         -> {
                             position =
                                 data
