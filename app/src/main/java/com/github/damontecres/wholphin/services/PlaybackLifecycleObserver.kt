@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.services
 
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.github.damontecres.wholphin.ui.nav.Destination
 import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Inject
 
@@ -20,13 +19,14 @@ class PlaybackLifecycleObserver
         private var wasPlaying: Boolean? = null
 
         override fun onStart(owner: LifecycleOwner) {
-            val lastDest = navigationManager.backStack.lastOrNull()
-            if (lastDest is Destination.Playback ||
-                lastDest is Destination.PlaybackList ||
-                lastDest is Destination.Slideshow
-            ) {
-                navigationManager.goBack()
-            }
+            // TODO
+//            val lastDest = navigationManager.backStack.lastOrNull()
+//            if (lastDest is Destination.Playback ||
+//                lastDest is Destination.PlaybackList ||
+//                lastDest is Destination.Slideshow
+//            ) {
+//                navigationManager.goBack()
+//            }
             wasPlaying = null
         }
 

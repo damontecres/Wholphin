@@ -1,9 +1,17 @@
 package com.github.damontecres.wholphin.ui.preferences
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -59,11 +67,22 @@ class PreferencesViewModel
 
         val releaseNotes = MutableStateFlow<DataLoadingState<Release>>(DataLoadingState.Pending)
 
+        val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
+
         init {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
-//                    fetchNavDrawerPins(user)
-                }
+                val fakeIntent =
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
+                    }
+                val externalPlayers = getExternalPlayers(context)
+                val systemDefault =
+                    ExternalPlayerApp(
+                        name = context.getString(R.string.system_default),
+                        icon = null,
+                        identifier = "",
+                    )
+                this@PreferencesViewModel.externalPlayers.update { listOf(systemDefault) + externalPlayers }
             }
         }
 
@@ -134,3 +153,37 @@ class PreferencesViewModel
             }
         }
     }
+
+data class ExternalPlayerApp(
+    val name: String,
+    val icon: ImageBitmap?,
+    val identifier: String,
+)
+
+fun getExternalPlayers(context: Context): List<ExternalPlayerApp> {
+    val fakeIntent =
+        Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
+        }
+    val externalPlayers =
+        context.packageManager
+            .queryIntentActivities(fakeIntent, PackageManager.MATCH_ALL)
+            .filter { it.priority >= 0 }
+            .map {
+                val component =
+                    ComponentName(
+                        it.activityInfo.packageName,
+                        it.activityInfo.name,
+                    )
+                ExternalPlayerApp(
+                    name = it.loadLabel(context.packageManager).toString(),
+                    icon =
+                        it
+                            .loadIcon(context.packageManager)
+                            .toBitmap()
+                            .asImageBitmap(),
+                    identifier = component.flattenToString(),
+                )
+            }
+    return externalPlayers
+}

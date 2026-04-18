@@ -201,6 +201,10 @@ object TrackSelectionUtils {
                     }
                 }
             }
+
+            PlayerBackend.EXTERNAL_PLAYER -> {
+                throw IllegalStateException("Cannot calculate tracks external playback")
+            }
         }
 }
 
