@@ -45,6 +45,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
@@ -270,71 +271,79 @@ class PlayExternalViewModel
         fun onResult(result: ActivityResult) {
             viewModelScope.launchDefault {
                 val itemId = savedStateHandle.get<UUID?>(KEY_ID)
-                val mediaSourceId = savedStateHandle.get<String?>(KEY_MEDIA_ID)
-                if (itemId == null) {
-                    Timber.w("itemId is null")
-                    return@launchDefault
-                }
-                Timber.v(
-                    "Result: result=%s, itemId=%s action=%s",
-                    result.resultCode,
-                    itemId,
-                    result.data?.action,
-                )
-                if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED ||
-                    // Vimu return 1 for video completion
-                    (result.data?.action == "net.gtvbox.videoplayer.result" && result.resultCode == 1)
-                ) {
-                    val position: Long?
-                    val data = result.data
-                    when (data?.action) {
-                        // VLC: https://wiki.videolan.org/Android_Player_Intents/
-                        "org.videolan.vlc.player.result" -> {
-                            position =
-                                data
-                                    .getLongExtra("extra_position", Long.MIN_VALUE)
-                                    .takeIf { it >= 0 }
-                        }
-
-                        // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
-                        "is.xyz.mpv.MPVActivity.result",
-                        // MX player: https://mx.j2inter.com/api
-                        "com.mxtech.intent.result.VIEW",
-                        // VIMU: https://vimu.tv/player-api/
-                        "net.gtvbox.videoplayer.result",
-                        -> {
-                            position =
-                                data
-                                    .getIntExtra("position", Int.MIN_VALUE)
-                                    .toLong()
-                                    .takeIf { it >= 0 }
-                        }
-
-                        else -> {
-                            // Unsupported app
-                            val posInt =
-                                data
-                                    ?.getIntExtra("position", Int.MIN_VALUE)
-                                    ?.takeIf { it >= 0 }
-                                    ?.toLong()
-                            position =
-                                posInt ?: data?.getLongExtra("position", -1L)?.takeIf { it >= 0 }
-                        }
+                try {
+                    val mediaSourceId = savedStateHandle.get<String?>(KEY_MEDIA_ID)
+                    if (itemId == null) {
+                        Timber.w("itemId is null")
+                        return@launchDefault
                     }
-                    Timber.v("Result position: %s", position?.milliseconds)
-                    api.playStateApi.reportPlaybackStopped(
-                        PlaybackStopInfo(
-                            itemId = itemId,
-                            mediaSourceId = mediaSourceId,
-                            positionTicks = position?.milliseconds?.inWholeTicks,
-                            failed = false,
-                        ),
+                    Timber.v(
+                        "Result: result=%s, itemId=%s action=%s",
+                        result.resultCode,
+                        itemId,
+                        result.data?.action,
                     )
-                } else {
-                    Timber.w("Activity result: %s", result.resultCode)
-                    showToast(context, "Unknown result from external player")
+                    if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED ||
+                        // Vimu return 1 for video completion
+                        (result.data?.action == "net.gtvbox.videoplayer.result" && result.resultCode == 1)
+                    ) {
+                        val position: Long?
+                        val data = result.data
+                        when (data?.action) {
+                            // VLC: https://wiki.videolan.org/Android_Player_Intents/
+                            "org.videolan.vlc.player.result" -> {
+                                position =
+                                    data
+                                        .getLongExtra("extra_position", Long.MIN_VALUE)
+                                        .takeIf { it >= 0 }
+                            }
+
+                            // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
+                            "is.xyz.mpv.MPVActivity.result",
+                            // MX player: https://mx.j2inter.com/api
+                            "com.mxtech.intent.result.VIEW",
+                            // VIMU: https://vimu.tv/player-api/
+                            "net.gtvbox.videoplayer.result",
+                            -> {
+                                position =
+                                    data
+                                        .getIntExtra("position", Int.MIN_VALUE)
+                                        .toLong()
+                                        .takeIf { it >= 0 }
+                            }
+
+                            else -> {
+                                // Unsupported app
+                                val posInt =
+                                    data
+                                        ?.getIntExtra("position", Int.MIN_VALUE)
+                                        ?.takeIf { it >= 0 }
+                                        ?.toLong()
+                                position =
+                                    posInt ?: data
+                                        ?.getLongExtra("position", -1L)
+                                        ?.takeIf { it >= 0 }
+                            }
+                        }
+                        Timber.v("Result position: %s", position?.milliseconds)
+                        api.playStateApi.reportPlaybackStopped(
+                            PlaybackStopInfo(
+                                itemId = itemId,
+                                mediaSourceId = mediaSourceId,
+                                positionTicks = position?.milliseconds?.inWholeTicks,
+                                failed = false,
+                            ),
+                        )
+                    } else {
+                        Timber.w("Activity result: %s", result.resultCode)
+                        showToast(context, "Unknown result from external player")
+                    }
+                    navigationManager.goBack()
+                } catch (_: CancellationException) {
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during external playback of %s", itemId)
+                    state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
-                navigationManager.goBack()
             }
         }
 
