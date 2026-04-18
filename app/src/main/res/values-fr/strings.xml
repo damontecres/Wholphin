@@ -604,4 +604,10 @@
     <string name="remove_next_up">Supprimer la série de la liste suivante</string>
     <string name="view_removed_next_up">Voir les séries supprimées de la liste suivante</string>
     <string name="studios_in">Studios en %1$s</string>
+    <string name="next_up_never">Jamais</string>
+    <string name="last_played">Dernière lecture</string>
+    <string name="ass_subtitle_mode_libass">Lecture directe avec libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Lecture directe avec ExoPlayer intégré</string>
+    <string name="ass_subtitle_mode_transcode">Incruster / Transcoder sur le serveur</string>
+    <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
 </resources>
