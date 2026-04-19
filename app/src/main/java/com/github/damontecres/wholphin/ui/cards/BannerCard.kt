@@ -237,6 +237,7 @@ fun BannerCard(
             }
             if (episodeStatus == EpisodeAvailabilityStatus.UNAIRED) {
                 item?.data?.premiereDate?.let { premiereDate ->
+                    val formattedDate = remember(premiereDate) { formatDateTime(premiereDate) }
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -255,7 +256,7 @@ fun BannerCard(
                                 fontFamily = FontAwesome,
                             )
                             Text(
-                                text = formatDateTime(premiereDate),
+                                text = formattedDate,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
