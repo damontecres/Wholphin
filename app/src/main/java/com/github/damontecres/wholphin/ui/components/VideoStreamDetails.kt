@@ -27,6 +27,9 @@ import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.EpisodeAvailabilityStatus
+import com.github.damontecres.wholphin.data.model.episodeAvailabilityStatus
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
@@ -49,6 +52,7 @@ fun VideoStreamDetails(
     chosenStreams: ChosenStreams?,
     numberOfVersions: Int,
     modifier: Modifier = Modifier,
+    item: BaseItem? = null,
 ) = VideoStreamDetails(
     chosenStreams?.source,
     chosenStreams?.videoStream,
@@ -56,6 +60,7 @@ fun VideoStreamDetails(
     chosenStreams?.subtitleStream,
     numberOfVersions,
     modifier,
+    item,
 )
 
 @Composable
@@ -66,12 +71,27 @@ fun VideoStreamDetails(
     subtitleStream: MediaStream?,
     numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
+    item: BaseItem? = null,
 ) {
     val context = LocalContext.current
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        item?.let { ep ->
+            val status = remember(ep) { ep.episodeAvailabilityStatus }
+            when (status) {
+                EpisodeAvailabilityStatus.UNAIRED ->
+                    StreamLabel(
+                        text = stringResource(R.string.unaired)
+                    )
+                EpisodeAvailabilityStatus.MISSING ->
+                    StreamLabel(
+                        text = stringResource(R.string.missing)
+                    )
+                else -> {}
+            }
+        }
         val video =
             remember(videoStream) {
                 videoStream

@@ -66,8 +66,8 @@ import org.jellyfin.sdk.model.api.ImageType
 @Composable
 private fun EpisodeStatusPill(status: EpisodeAvailabilityStatus) {
     val (label, bgColor) = when (status) {
-        EpisodeAvailabilityStatus.UNAIRED -> "Unaired" to Color(0xB0FF8C00)
-        EpisodeAvailabilityStatus.MISSING -> "Missing" to Color(0xB0CC0000)
+        EpisodeAvailabilityStatus.UNAIRED -> stringResource(R.string.unaired) to Color(0xB0FF8C00)
+        EpisodeAvailabilityStatus.MISSING -> stringResource(R.string.missing) to Color(0xB0CC0000)
         EpisodeAvailabilityStatus.AVAILABLE -> return
     }
     Box(

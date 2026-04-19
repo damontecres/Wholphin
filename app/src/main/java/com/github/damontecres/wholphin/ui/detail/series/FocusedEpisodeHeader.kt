@@ -48,6 +48,7 @@ fun FocusedEpisodeHeader(
                 chosenStreams = chosenStreams,
                 numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                item = ep,
             )
         }
         OverviewText(
