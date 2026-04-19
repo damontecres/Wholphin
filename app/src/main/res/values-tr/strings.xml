@@ -526,7 +526,7 @@
     <string name="seerr_local_user">Yerel kullanıcı</string>
     <string name="search_and_download_subtitles"><![CDATA[Altyazı ara ve indir]]></string>
     <string name="no_subtitles_found">Uzak altyazı bulunamadı</string>
-    <string name="series_continueing">Mevcut</string>
+    <string name="series_continueing">Günümüz</string>
     <plurals name="minutes">
         <item quantity="one">%s dakika</item>
         <item quantity="other">%s dakika</item>
@@ -601,4 +601,6 @@
     <string name="ass_subtitle_mode_transcode">Sunucuda dönüştür ve işle</string>
     <string name="ass_subtitle_playback">SSA/ASS altyazı oynatma</string>
     <string name="next_up_never">Asla</string>
+    <string name="external_player">Harici Oynatıcı</string>
+    <string name="system_default">Sistem varsayılanı</string>
 </resources>
