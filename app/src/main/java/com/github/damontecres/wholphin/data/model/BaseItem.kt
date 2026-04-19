@@ -24,7 +24,9 @@ import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.LocationType
 import org.jellyfin.sdk.model.extensions.ticks
+import java.time.LocalDateTime
 import java.util.Locale
 import java.util.UUID
 import kotlin.time.Duration
@@ -313,3 +315,20 @@ fun createStudioDestination(
 )
 
 val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()
+
+enum class EpisodeAvailabilityStatus {
+    AVAILABLE,
+    UNAIRED,
+    MISSING
+}
+
+val BaseItem.episodeAvailabilityStatus: EpisodeAvailabilityStatus
+    get() {
+        if (data.locationType != LocationType.VIRTUAL) return EpisodeAvailabilityStatus.AVAILABLE
+        val premiereDate = data.premiereDate
+        return if (premiereDate != null && premiereDate.isAfter(LocalDateTime.now())) {
+            EpisodeAvailabilityStatus.UNAIRED
+        } else {
+            EpisodeAvailabilityStatus.MISSING
+        }
+    }
