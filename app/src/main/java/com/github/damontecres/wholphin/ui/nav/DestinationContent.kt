@@ -8,6 +8,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
 import com.github.damontecres.wholphin.data.filter.DefaultForStudiosFilterOptions
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
@@ -40,6 +41,7 @@ import com.github.damontecres.wholphin.ui.discover.DiscoverRequestGrid
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
+import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
@@ -77,11 +79,19 @@ fun DestinationContent(
         is Destination.PlaybackList,
         is Destination.Playback,
         -> {
-            PlaybackPage(
-                preferences = preferences,
-                destination = destination,
-                modifier = modifier,
-            )
+            if (preferences.appPreferences.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER) {
+                PlayExternalPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            } else {
+                PlaybackPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            }
         }
 
         is Destination.Settings -> {

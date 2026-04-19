@@ -30,6 +30,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
@@ -70,6 +71,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -151,12 +153,15 @@ class MainActivity : AppCompatActivity() {
         if (backStackStr != null) {
             Timber.d("Restoring back stack")
             var backStack = json.decodeFromString<List<Destination>>(backStackStr)
-            val lastDest = backStack.lastOrNull()
-            if (lastDest is Destination.Playback ||
-                lastDest is Destination.PlaybackList ||
-                lastDest is Destination.Slideshow
-            ) {
-                backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+            if (!savedInstanceState.getBoolean(KEY_EXTERNAL_PLAYER)) {
+                val lastDest = backStack.lastOrNull()
+                if (lastDest is Destination.Playback ||
+                    lastDest is Destination.PlaybackList ||
+                    lastDest is Destination.Slideshow
+                ) {
+                    Timber.v("Restoring back stack with playback")
+                    backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+                }
             }
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
@@ -314,6 +319,9 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onSaveInstanceState")
         val str = json.encodeToString(navigationManager.backStack.toList())
         outState.putString(KEY_BACK_STACK, str)
+        val playerBackend =
+            runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
+        outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -390,6 +398,7 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_SEASON_ID = "seaId"
 
         private const val KEY_BACK_STACK = "backStack"
+        private const val KEY_EXTERNAL_PLAYER = "extPlayer"
 
         lateinit var instance: MainActivity
             private set
