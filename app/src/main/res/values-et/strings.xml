@@ -588,8 +588,10 @@
     <string name="studios_in">Stuudiod: %1$s</string>
     <string name="last_played">Viimati esitatud</string>
     <string name="ass_subtitle_mode_libass">Otseesitus libass teegiga</string>
-    <string name="ass_subtitle_mode_exoplayer">Otseesitus sisseehitatud ExoPlayer teegiga</string>
+    <string name="ass_subtitle_mode_exoplayer">Otseesitus sisseehitatud ExoPlayeri teegiga</string>
     <string name="ass_subtitle_mode_transcode">Kodeeri serveris</string>
     <string name="ass_subtitle_playback">SSA/ASS subtiitrite esitus</string>
     <string name="next_up_never">Mitte kunagi</string>
+    <string name="external_player">Väline meediapleier</string>
+    <string name="system_default">Süsteemi vaikeväärtus</string>
 </resources>
