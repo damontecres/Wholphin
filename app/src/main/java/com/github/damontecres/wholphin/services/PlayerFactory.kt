@@ -62,8 +62,8 @@ class PlayerFactory
             backend: PlayerBackend,
             prefs: PlaybackPreferences,
         ): PlayerCreation {
-            if (currentPlayer?.isReleased == false) {
-                withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
+                if (currentPlayer?.isReleased == false) {
                     Timber.w("Player was not released before trying to create a new one!")
                     currentPlayer?.release()
                 }
