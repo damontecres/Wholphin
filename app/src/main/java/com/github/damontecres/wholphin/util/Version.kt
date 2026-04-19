@@ -2,6 +2,9 @@ package com.github.damontecres.wholphin.util
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Represents a version in the format of `<major>.<minor>.<patch>-<numCommits>-g<gitSha>` as output by `git describe`
+ */
 @Serializable
 data class Version(
     val major: Int,

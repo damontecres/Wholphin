@@ -66,11 +66,11 @@
     <string name="more">المزيد</string>
     <plurals name="movies">
         <item quantity="zero">الأفلام</item>
-        <item quantity="one"></item>
-        <item quantity="two"></item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="two"/>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="name">الاسم</string>
     <string name="next_up">التالي</string>
@@ -85,11 +85,11 @@
     <string name="path">المسار</string>
     <plurals name="people">
         <item quantity="zero">الأشخاص</item>
-        <item quantity="one"></item>
-        <item quantity="two"></item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="one"/>
+        <item quantity="two"/>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">عدد مرات التشغيل</string>
     <string name="play_from_here">تشغيل من هنا</string>
@@ -128,4 +128,26 @@
     <string name="voice_error_network">خطأ في الشبكة</string>
     <string name="voice_error_network_timeout">انتهت مهلة الشبكة</string>
     <string name="voice_error_no_match">لم يتم التعرف على الكلام</string>
+    <string name="voice_error_busy">التعرف على الصوت مشغول حالياً</string>
+    <string name="voice_error_server">خطأ في الخادم</string>
+    <string name="voice_error_speech_timeout">لم يتم اكتشاف صوت</string>
+    <string name="voice_error_unknown">خطأ غير معروف</string>
+    <string name="voice_error_start_failed">فشل بدء التعرف على الصوت</string>
+    <string name="voice_error_timeout">انتهت مهلة التعرف على الصوت</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="select_server">اختر الخادم</string>
+    <string name="select_user">اختر المستخدم</string>
+    <string name="show_debug_info">إظهار معلومات تصحيح الأخطاء</string>
+    <string name="show_next_up_when">إظهار التالي</string>
+    <string name="show">إظهار</string>
+    <string name="shuffle">تشغيل عشوائي</string>
+    <string name="skip">تخطي</string>
+    <string name="sort_by_date_added">تاريخ الإضافة</string>
+    <string name="sort_by_date_episode_added">تاريخ إضافة الحلقة</string>
+    <string name="sort_by_date_played">تاريخ التشغيل</string>
+    <string name="sort_by_date_released">تاريخ الإصدار</string>
+    <string name="sort_by_name">الاسم</string>
+    <string name="sort_by_random">عشوائي</string>
+    <string name="studios">استوديوهات</string>
+    <string name="submit">إرسال</string>
 </resources>

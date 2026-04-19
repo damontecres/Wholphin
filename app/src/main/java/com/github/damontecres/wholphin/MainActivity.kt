@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -24,15 +25,18 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import androidx.navigation3.runtime.NavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
@@ -50,14 +54,15 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
-import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -66,7 +71,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -112,6 +119,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
     @Inject
+    lateinit var latestNextUpSchedulerService: LatestNextUpSchedulerService
+
+    @Inject
     lateinit var backdropService: BackdropService
 
     // Note: unused but injected to ensure it is created
@@ -127,12 +137,37 @@ class MainActivity : AppCompatActivity() {
 
     private var signInAuto = true
 
+    private val json =
+        Json {
+            classDiscriminator = "_type"
+        }
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
+
+        val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
+        if (backStackStr != null) {
+            Timber.d("Restoring back stack")
+            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
+            if (!savedInstanceState.getBoolean(KEY_EXTERNAL_PLAYER)) {
+                val lastDest = backStack.lastOrNull()
+                if (lastDest is Destination.Playback ||
+                    lastDest is Destination.PlaybackList ||
+                    lastDest is Destination.Slideshow
+                ) {
+                    Timber.v("Restoring back stack with playback")
+                    backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+                }
+            }
+            navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
+        } else {
+            val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
+            navigationManager.backStack = NavBackStack(startDestination)
+        }
 
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
@@ -206,17 +241,12 @@ class MainActivity : AppCompatActivity() {
                         appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                     ) {
                         ProvideLocalClock {
-                            val requestedDestination =
-                                remember(intent) {
-                                    intent?.let(::extractDestination) ?: Destination.Home()
-                                }
                             MainContent(
                                 backStack = setupNavigationManager.backStack,
                                 navigationManager = navigationManager,
                                 appPreferences = appPreferences,
                                 backdropService = backdropService,
                                 screensaverService = screensaverService,
-                                requestedDestination = requestedDestination,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
@@ -287,6 +317,11 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Timber.d("onSaveInstanceState")
+        val str = json.encodeToString(navigationManager.backStack.toList())
+        outState.putString(KEY_BACK_STACK, str)
+        val playerBackend =
+            runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
+        outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -362,6 +397,9 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
 
+        private const val KEY_BACK_STACK = "backStack"
+        private const val KEY_EXTERNAL_PLAYER = "extPlayer"
+
         lateinit var instance: MainActivity
             private set
     }
@@ -371,6 +409,7 @@ class MainActivity : AppCompatActivity() {
 class MainActivityViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val preferences: DataStore<AppPreferences>,
         val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
@@ -379,9 +418,19 @@ class MainActivityViewModel
         private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 try {
-                    appUpgradeHandler.run()
+                    val needUpgrade = appUpgradeHandler.needUpgrade()
+                    if (needUpgrade) {
+                        showToast(
+                            context,
+                            context.getString(
+                                R.string.updated_toast,
+                                appUpgradeHandler.currentVersion.toString(),
+                            ),
+                        )
+                        appUpgradeHandler.run()
+                    }
                     appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
@@ -424,7 +473,7 @@ class MainActivityViewModel
                     navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }

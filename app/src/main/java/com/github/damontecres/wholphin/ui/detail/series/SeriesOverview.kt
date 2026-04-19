@@ -225,6 +225,7 @@ fun SeriesOverview(
                                         chooseVersionParams(
                                             context,
                                             ep.data.mediaSources!!,
+                                            chosenStreams?.source?.id?.toUUIDOrNull(),
                                         ) { idx ->
                                             val source = ep.data.mediaSources!![idx]
                                             viewModel.savePlayVersion(
@@ -264,13 +265,7 @@ fun SeriesOverview(
                                         }
                                 },
                                 onShowOverview = {
-                                    overviewDialog =
-                                        ItemDetailsDialogInfo(
-                                            title = ep.name ?: context.getString(R.string.unknown),
-                                            overview = ep.data.overview,
-                                            genres = ep.data.genres.orEmpty(),
-                                            files = ep.data.mediaSources.orEmpty(),
-                                        )
+                                    overviewDialog = ItemDetailsDialogInfo(ep)
                                 },
                                 onClearChosenStreams = {
                                     viewModel.clearChosenStreams(ep, chosenStreams)
@@ -356,15 +351,7 @@ fun SeriesOverview(
                     },
                     overviewOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
-                            scope.launchDefault {
-                                overviewDialog =
-                                    ItemDetailsDialogInfo(
-                                        title = it.name ?: context.getString(R.string.unknown),
-                                        overview = it.data.overview,
-                                        genres = it.data.genres.orEmpty(),
-                                        files = it.data.mediaSources.orEmpty(),
-                                    )
-                            }
+                            overviewDialog = ItemDetailsDialogInfo(it)
                         }
                     },
                     personOnClick = {

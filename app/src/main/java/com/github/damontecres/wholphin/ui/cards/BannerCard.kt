@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,10 +99,15 @@ fun BannerCard(
             }
         }
     var imageError by remember(imageUrl) { mutableStateOf(false) }
+
+    // Stabilize callbacks to prevent AsyncImage from recomposing
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnLongClick by rememberUpdatedState(onLongClick)
+
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
-        onClick = onClick,
-        onLongClick = onLongClick,
+        onClick = { currentOnClick() },
+        onLongClick = { currentOnLongClick() },
         interactionSource = interactionSource,
         colors =
             CardDefaults.colors(
@@ -119,7 +125,7 @@ fun BannerCard(
                     model = imageUrl,
                     contentDescription = null,
                     contentScale = imageContentScale,
-                    onError = { imageError = true },
+                    onError = remember { { imageError = true } },
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
@@ -214,7 +220,7 @@ fun BannerCardWithTitle(
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
+    val spaceBelow by animateDpAsState(if (focused) 0.dp else 8.dp)
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
     val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
     val width = cardHeight * aspectRationToUse

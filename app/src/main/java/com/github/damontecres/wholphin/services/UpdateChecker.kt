@@ -45,6 +45,9 @@ import javax.inject.Singleton
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Checks if an app update is available
+ */
 @Singleton
 class UpdateChecker
     @Inject
@@ -62,9 +65,14 @@ class UpdateChecker
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
 
-            val ACTIVE = true
+            val ACTIVE = BuildConfig.UPDATING_ENABLED
         }
 
+        /**
+         * If the app hasn't recently checked, check for any updates and if there is one, show a toast message
+         *
+         * This is safe to call many times because it will only show the toast at most once every 12 hours
+         */
         suspend fun maybeShowUpdateToast(
             updateUrl: String,
             showNegativeToast: Boolean = false,
@@ -112,55 +120,81 @@ class UpdateChecker
             }
         }
 
+        /**
+         * Get the currently installed version
+         */
         fun getInstalledVersion(): Version {
             val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            return Version.Companion.fromString(pkgInfo.versionName!!)
+            return Version.fromString(pkgInfo.versionName!!)
         }
 
-        suspend fun getLatestRelease(updateUrl: String): Release? {
+        suspend fun getRelease(version: Version): Release? {
+            val url =
+                "https://api.github.com/repos/damontecres/Wholphin/releases/tags/v${version.major}.${version.minor}.${version.patch}"
             return withContext(Dispatchers.IO) {
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .build()
+                getRelease(request)
+            }
+        }
+
+        /**
+         * Get the latest released version
+         */
+        suspend fun getLatestRelease(updateUrl: String): Release? =
+            withContext(Dispatchers.IO) {
                 val request =
                     Request
                         .Builder()
                         .url(updateUrl)
                         .get()
                         .build()
-                okHttpClient.newCall(request).execute().use {
-                    if (it.isSuccessful && it.body != null) {
-                        val result = Json.parseToJsonElement(it.body!!.string())
-                        val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                        val version = Version.tryFromString(name)
-                        val publishedAt =
-                            result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
-                        val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
-                        val downloadUrl =
-                            result.jsonObject["assets"]
-                                ?.jsonArray
-                                ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
-                        Timber.v("version=$version, downloadUrl=$downloadUrl")
-                        if (version != null) {
-                            val notes =
-                                if (body.isNotNullOrBlank()) {
-                                    NOTE_REGEX
-                                        .findAll(body)
-                                        .map { m ->
-                                            m.groupValues[1]
-                                        }.toList()
-                                } else {
-                                    listOf()
-                                }
-                            return@use Release(version, downloadUrl, publishedAt, body, notes)
-                        } else {
-                            Timber.w("Update version parsing failed. name=$name")
-                        }
+                getRelease(request)
+            }
+
+        private fun getRelease(request: Request): Release? {
+            return okHttpClient.newCall(request).execute().use {
+                if (it.isSuccessful && it.body != null) {
+                    val result = Json.parseToJsonElement(it.body!!.string())
+                    val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+                    val version = Version.tryFromString(name)
+                    val publishedAt =
+                        result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
+                    val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
+                    val downloadUrl =
+                        result.jsonObject["assets"]
+                            ?.jsonArray
+                            ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
+                    Timber.v("version=$version, downloadUrl=$downloadUrl")
+                    if (version != null) {
+                        val notes =
+                            if (body.isNotNullOrBlank()) {
+                                NOTE_REGEX
+                                    .findAll(body)
+                                    .map { m ->
+                                        m.groupValues[1]
+                                    }.toList()
+                            } else {
+                                emptyList()
+                            }
+                        return@use Release(version, downloadUrl, publishedAt, body, notes)
                     } else {
-                        Timber.w("Update check failed: ${it.message}")
+                        Timber.w("Update version parsing failed. name=$name")
                     }
-                    return@use null
+                } else {
+                    Timber.w("Update check failed ${it.code}: ${it.message}")
                 }
+                return@use null
             }
         }
 
+        /**
+         * Download and install an update
+         */
         suspend fun installRelease(
             release: Release,
             callback: DownloadCallback,
@@ -263,6 +297,9 @@ class UpdateChecker
             return targetFile
         }
 
+        /**
+         * Check if the app has permission to write the download
+         */
         fun hasPermissions(): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
                 (
@@ -327,7 +364,19 @@ data class Release(
     val publishedAt: String?,
     val body: String?,
     val notes: List<String>,
-)
+) {
+    val content =
+        "# ${version}\n" +
+            (
+                (notes.joinToString("\n").takeIf { it.isNotNullOrBlank() } ?: "") +
+                    (body ?: "")
+            ).replace(
+                Regex("https://github.com/\\w*/\\w+/pull/(\\d+)"),
+                "#$1",
+            )
+                // Remove the last line for full changelog since its just a link
+                .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), "")
+}
 
 interface DownloadCallback {
     fun contentLength(contentLength: Long)

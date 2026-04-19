@@ -64,6 +64,7 @@ import org.jellyfin.sdk.model.DeviceInfo
 import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -85,6 +86,34 @@ class DebugViewModel
                 MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
             display.supportedModes.orEmpty()
+        }
+
+        val av1Included by lazy {
+            try {
+                Class.forName("androidx.media3.decoder.av1.Libdav1dVideoRenderer")
+                true
+            } catch (_: ClassNotFoundException) {
+                false
+            }
+        }
+
+        val ffmpegIncluded by lazy {
+            try {
+                Class.forName("androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer")
+                true
+            } catch (_: ClassNotFoundException) {
+                false
+            }
+        }
+
+        val libMpvLoaded by lazy {
+            try {
+                System.loadLibrary("player")
+                System.loadLibrary("mpv")
+                true
+            } catch (_: Exception) {
+                false
+            }
         }
 
         init {
@@ -380,6 +409,7 @@ fun DebugPage(
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                val buildTime = Date(BuildConfig.BUILD_TIME)
                 val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 val installInfo =
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -401,6 +431,11 @@ fun DebugPage(
                         "Version Code: ${pkgInfo.versionCodeLong}",
                         "ClientInfo:  ${viewModel.clientInfo}",
                         "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Build flavor: ${BuildConfig.FLAVOR}",
+                        "Build time: $buildTime",
+                        "FFMPEG included: ${viewModel.ffmpegIncluded}",
+                        "AV1 included: ${viewModel.av1Included}",
+                        "libmpv loaded: ${viewModel.libMpvLoaded}",
                         "Debug enabled: ${BuildConfig.DEBUG}",
                         "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
                     ) + installInfo

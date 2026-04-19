@@ -139,6 +139,7 @@ class GenreViewModel
                         nameLessThan = letter.toString(),
                         limit = 0,
                         enableTotalRecordCount = true,
+                        includeItemTypes = includeItemTypes,
                     )
                 val result by GetGenresRequestHandler.execute(api, request)
                 return@withContext result.totalRecordCount
@@ -156,6 +157,9 @@ private val genreCache by lazy {
     }
 }
 
+/**
+ * Create a mapping from genre IDs to image URLs using random items within each genre
+ */
 suspend fun getGenreImageMap(
     api: ApiClient,
     userId: UUID?,
@@ -230,6 +234,9 @@ data class Genre(
     override val sortName: String get() = name
 }
 
+/**
+ * Show an optimized grid of genres for a library
+ */
 @Composable
 fun GenreCardGrid(
     itemId: UUID,

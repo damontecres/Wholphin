@@ -6,6 +6,7 @@ option java_multiple_files = true;
 enum ShowNextUpWhen{
   END_OF_PLAYBACK = 0;
   DURING_CREDITS = 1;
+  NEXT_UP_NEVER = 2;
 }
 
 enum SkipSegmentBehavior{
@@ -33,6 +34,7 @@ enum PlayerBackend{
   EXO_PLAYER = 0;
   MPV = 1;
   PREFER_MPV = 2;
+  EXTERNAL_PLAYER = 3;
 }
 
 message MpvOptions{
@@ -40,15 +42,22 @@ message MpvOptions{
   bool use_gpu_next = 2;
 }
 
+enum AssPlaybackMode{
+  ASS_LIBASS = 0;
+  ASS_EXO_PLAYER = 1;
+  ASS_TRANSCODE = 2;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
-  bool direct_play_ass = 3;
+  bool direct_play_ass = 3 [deprecated = true];
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
-  bool prefer_ac3_surround = 8;
+  AssPlaybackMode ass_playback_mode = 8;
+  bool prefer_ac3_surround = 9;
 }
 
 message PlaybackPreferences {
@@ -77,6 +86,7 @@ message PlaybackPreferences {
   MpvOptions mpv_options = 21;
   bool refresh_rate_switching = 22;
   bool resolution_switching = 23;
+  string external_player = 24;
 }
 
 message HomePagePreferences{
@@ -168,6 +178,7 @@ message InterfacePreferences {
   SubtitlePreferences hdr_subtitles_preferences = 10;
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
+  bool show_logos = 13;
 }
 
 message AdvancedPreferences {
@@ -177,6 +188,13 @@ message AdvancedPreferences {
 message PhotoPreferences{
   int64 slideshow_duration = 1;
   bool slideshow_play_videos = 2;
+}
+
+message MusicPreferences {
+  bool show_lyrics = 1;
+  bool show_visualizer = 2;
+  bool show_album_Art = 3;
+  bool show_backdrop = 4;
 }
 
 message AppPreferences {
@@ -195,4 +213,5 @@ message AppPreferences {
   AdvancedPreferences advanced_preferences = 10;
   bool sign_in_automatically = 11;
   PhotoPreferences photo_preferences = 12;
+  MusicPreferences music_preferences = 13;
 }

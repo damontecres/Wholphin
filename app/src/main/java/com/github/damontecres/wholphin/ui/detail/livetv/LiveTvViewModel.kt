@@ -172,6 +172,9 @@ class LiveTvViewModel
             }
         }
 
+        /**
+         * Creates a list of [LocalDateTime] for each hour from now
+         */
         private fun buildGuideTimes() =
             buildList {
                 val start = LocalDateTime.now().roundDownToHalfHour()
@@ -194,15 +197,22 @@ class LiveTvViewModel
             loading.setValueOnMain(LoadingState.Success)
         }
 
+        /**
+         * Get live TV programs for a subset of channels
+         *
+         * @param guideStart The start timestamp to fetch from
+         * @param channels The full list of channels
+         * @param channelIndices The indices of which channels to fetch programs for
+         */
         private suspend fun fetchPrograms(
             guideStart: LocalDateTime,
             channels: List<TvChannel>,
-            range: IntRange,
+            channelIndices: IntRange,
         ) = mutex.withLock {
             val maxStartDate = guideStart.plusHours(MAX_HOURS).minusMinutes(1)
             val minEndDate = guideStart.plusMinutes(1L)
-            val channelsToFetch = channels.subList(range.first, range.last + 1)
-            Timber.v("Fetching programs for $range channels ${channelsToFetch.size}")
+            val channelsToFetch = channels.subList(channelIndices.first, channelIndices.last + 1)
+            Timber.v("Fetching programs for $channelIndices channels ${channelsToFetch.size}")
             val request =
                 GetProgramsDto(
                     maxStartDate = maxStartDate,
@@ -390,7 +400,7 @@ class LiveTvViewModel
             Timber.d("Got ${fetchedPrograms.size} programs & ${finalProgramList.size} total programs")
             withContext(Dispatchers.Main) {
                 this@LiveTvViewModel.programs.value =
-                    FetchedPrograms(range, finalProgramList, programsByChannel)
+                    FetchedPrograms(channelIndices, finalProgramList, programsByChannel)
             }
         }
 
@@ -472,6 +482,11 @@ class LiveTvViewModel
 
         private var focusLoadingJob: Job? = null
 
+        /**
+         * Callback when focusing on the EPG grid
+         *
+         * This determines if more programs/channels should be fetched based on the current position
+         */
         fun onFocusChannel(position: RowColumn) {
             channels.value?.let { channels ->
                 val fetchedRange = programs.value!!.range

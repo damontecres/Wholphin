@@ -10,6 +10,9 @@ import org.jellyfin.sdk.api.client.extensions.itemsApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Gets people in media, specifically to check if they are favorited or not
+ */
 @Singleton
 class PeopleFavorites
     @Inject

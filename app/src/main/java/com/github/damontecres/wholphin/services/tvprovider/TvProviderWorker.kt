@@ -43,6 +43,11 @@ import java.util.Date
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * Updates the Android OS resume watching row for a given Jellyfin user
+ *
+ * @see TvProviderSchedulerService
+ */
 @HiltWorker
 class TvProviderWorker
     @AssistedInject

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,20 +53,21 @@ fun Modifier.offsetByPercent(
  *
  * @param xPercentage percent offset between 0 inclusive and 1 inclusive
  */
-fun Modifier.offsetByPercent(xPercentage: Float) =
-    this.then(
-        Modifier.layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints)
-            layout(placeable.width, placeable.height) {
-                placeable.placeRelative(
-                    x =
-                        ((constraints.maxWidth * xPercentage).toInt() - placeable.width / 2)
-                            .coerceIn(0, constraints.maxWidth - placeable.width),
-                    y = 0,
-                )
-            }
-        },
-    )
+fun Modifier.offsetByPercent(
+    @FloatRange(0.0, 1.0) xPercentage: Float,
+) = this.then(
+    Modifier.layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) {
+            placeable.placeRelative(
+                x =
+                    ((constraints.maxWidth * xPercentage).toInt() - placeable.width / 2)
+                        .coerceIn(0, constraints.maxWidth - placeable.width),
+                y = 0,
+            )
+        }
+    },
+)
 
 /**
  * Show trickplay preview image. This composable assumes the provided URL is for the correct index.
@@ -105,7 +107,7 @@ fun SeekPreviewImage(
         val tileIndex =
             index % numberOfTilesPerImage // Index of tile within the current image
         val x = (tileIndex % trickPlayInfo.tileWidth) // x position within tile grid
-        val y = (tileIndex / trickPlayInfo.tileHeight) // y position
+        val y = (tileIndex / trickPlayInfo.tileWidth) // y position
         Box(
             modifier =
                 modifier

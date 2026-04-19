@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
+import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -21,6 +22,7 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
+import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
@@ -40,7 +42,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -58,11 +59,15 @@ import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
+import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles getting home page settings and data
+ */
 @Singleton
 class HomeSettingsService
     @Inject
@@ -75,6 +80,7 @@ class HomeSettingsService
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
+        private val displayPreferencesService: DisplayPreferencesService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -84,6 +90,9 @@ class HomeSettingsService
                 allowTrailingComma = true
             }
 
+        /**
+         * The current home page settings
+         */
         val currentSettings = MutableStateFlow(HomePageResolvedSettings.EMPTY)
 
         /**
@@ -94,19 +103,11 @@ class HomeSettingsService
         suspend fun saveToServer(
             userId: UUID,
             settings: HomePageSettings,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
         ) {
-            val current = getDisplayPreferences(userId, DISPLAY_PREF_ID)
-            val customPrefs =
-                current.customPrefs.toMutableMap().apply {
-                    put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
-                }
-            api.displayPreferencesApi.updateDisplayPreferences(
-                displayPreferencesId = displayPreferencesId,
-                userId = userId,
-                client = context.getString(R.string.app_name),
-                data = current.copy(customPrefs = customPrefs),
-            )
+            displayPreferencesService.updateDisplayPreferences(userId, displayPreferencesId) {
+                put(CUSTOM_PREF_ID, jsonParser.encodeToString(settings))
+            }
         }
 
         /**
@@ -118,24 +119,15 @@ class HomeSettingsService
          */
         suspend fun loadFromServer(
             userId: UUID,
-            displayPreferencesId: String = DISPLAY_PREF_ID,
-        ): HomePageSettings? {
-            val current = getDisplayPreferences(userId, displayPreferencesId)
-            return current.customPrefs[CUSTOM_PREF_ID]?.let {
-                val jsonElement = jsonParser.parseToJsonElement(it)
-                decode(jsonElement)
-            }
-        }
-
-        private suspend fun getDisplayPreferences(
-            userId: UUID,
-            displayPreferencesId: String,
-        ) = api.displayPreferencesApi
-            .getDisplayPreferences(
-                userId = userId,
-                displayPreferencesId = displayPreferencesId,
-                client = context.getString(R.string.app_name),
-            ).content
+            displayPreferencesId: String = DisplayPreferencesService.DEFAULT_DISPLAY_PREF_ID,
+        ): HomePageSettings? =
+            displayPreferencesService
+                .getDisplayPreferences(userId, displayPreferencesId)
+                .customPrefs[CUSTOM_PREF_ID]
+                ?.let {
+                    val jsonElement = jsonParser.parseToJsonElement(it)
+                    decode(jsonElement)
+                }
 
         /**
          * Computes the filename for locally saved [HomePageSettings]
@@ -245,6 +237,9 @@ class HomeSettingsService
             currentSettings.update { resolvedSettings }
         }
 
+        /**
+         * Resolve the settings and set them to be the current settings
+         */
         suspend fun updateCurrent(settings: HomePageSettings) {
             val resolvedRows =
                 settings.rows.mapIndexed { index, config ->
@@ -317,14 +312,17 @@ class HomeSettingsService
             return HomePageResolvedSettings(rowConfig)
         }
 
+        /**
+         * Create home page settings from the user's web UI home page settings
+         */
         suspend fun parseFromWebConfig(userId: UUID): HomePageResolvedSettings? {
             val customPrefs =
-                api.displayPreferencesApi
+                displayPreferencesService
                     .getDisplayPreferences(
                         displayPreferencesId = "usersettings",
                         userId = userId,
                         client = "emby",
-                    ).content.customPrefs
+                    ).customPrefs
             val userDto by api.userApi.getUserById(userId)
             val config = userDto.configuration ?: DefaultUserConfiguration
             val libraries =
@@ -438,10 +436,7 @@ class HomeSettingsService
         ): HomeRowConfigDisplay =
             when (config) {
                 is HomeRowConfig.ByParent -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         name,
@@ -466,13 +461,19 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Genres -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.genres_in, name),
+                        config,
+                    )
+                }
+
+                is HomeRowConfig.Studios -> {
+                    val name = getItemName(config.parentId) ?: ""
+                    HomeRowConfigDisplay(
+                        id,
+                        context.getString(R.string.studios_in, name),
                         config,
                     )
                 }
@@ -490,10 +491,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyAdded -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.recently_added_in, name),
@@ -502,10 +500,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyReleased -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id,
                         context.getString(R.string.recently_released_in, name),
@@ -547,16 +542,23 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Suggestions -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
+                    val name = getItemName(config.parentId) ?: ""
                     HomeRowConfigDisplay(
                         id = id,
                         title = context.getString(R.string.suggestions_for, name),
                         config,
                     )
                 }
+            }
+
+        private suspend fun getItemName(itemId: UUID): String? =
+            try {
+                api.userLibraryApi
+                    .getItem(itemId = itemId)
+                    .content.name
+            } catch (ex: Exception) {
+                Timber.e(ex, "Could not get name for %s", itemId)
+                context.getString(R.string.unknown)
             }
 
         /**
@@ -585,6 +587,7 @@ class HomeSettingsService
                         title = context.getString(R.string.continue_watching),
                         items = resume,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -603,6 +606,7 @@ class HomeSettingsService
                         title = context.getString(R.string.next_up),
                         items = nextUp,
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -632,6 +636,7 @@ class HomeSettingsService
                                 nextUp,
                             ),
                         viewOptions = row.viewOptions,
+                        rowType = row,
                     )
                 }
 
@@ -691,6 +696,58 @@ class HomeSettingsService
                         title,
                         genres,
                         viewOptions = row.viewOptions,
+                        rowType = row,
+                    )
+                }
+
+                is HomeRowConfig.Studios -> {
+                    val request =
+                        GetStudiosRequest(
+                            parentId = row.parentId,
+                            userId = userDto.id,
+                            limit = limit,
+                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                        )
+                    val items =
+                        GetStudiosRequestHandler
+                            .execute(api, request)
+                            .content.items
+                    val library =
+                        libraries
+                            .firstOrNull { it.itemId == row.parentId }
+                    val title =
+                        library?.name?.let { context.getString(R.string.studios_in, it) }
+                            ?: context.getString(R.string.studios)
+                    val studios =
+                        items.map {
+                            val imageUrl =
+                                imageUrlService.getItemImageUrl(
+                                    itemId = it.id,
+                                    imageType = ImageType.THUMB,
+                                )
+                            BaseItem(
+                                it,
+                                false,
+                                imageUrl,
+                                createStudioDestination(
+                                    studioId = it.id,
+                                    name = it.name ?: "",
+                                    parentId = row.parentId,
+                                    parentName = library?.name,
+                                    includeItemTypes =
+                                        library?.collectionType?.let {
+                                            getTypeFor(it)?.let {
+                                                listOf(it)
+                                            }
+                                        },
+                                ),
+                            )
+                        }
+
+                    Success(
+                        title,
+                        studios,
+                        viewOptions = row.viewOptions,
                     )
                 }
 
@@ -718,6 +775,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     latest
@@ -750,6 +808,7 @@ class HomeSettingsService
                                 title,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -778,6 +837,7 @@ class HomeSettingsService
                                 name ?: context.getString(R.string.collection),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -805,6 +865,7 @@ class HomeSettingsService
                                 row.name,
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -855,6 +916,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    rowType = row,
                                 )
                             }
                     }
@@ -879,6 +941,7 @@ class HomeSettingsService
                                 context.getString(R.string.active_recordings),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -891,7 +954,7 @@ class HomeSettingsService
                             limit = limit,
                             enableUserData = true,
                             enableImages = true,
-                            enableImageTypes = listOf(ImageType.PRIMARY),
+                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.LOGO),
                             imageTypeLimit = 1,
                         )
                     api.liveTvApi
@@ -903,6 +966,7 @@ class HomeSettingsService
                                 context.getString(R.string.live_tv),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -920,6 +984,7 @@ class HomeSettingsService
                                 context.getString(R.string.channels),
                                 it,
                                 row.viewOptions,
+                                rowType = row,
                             )
                         }
                 }
@@ -942,12 +1007,14 @@ class HomeSettingsService
                             title,
                             suggestions.items,
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else if (suggestions is SuggestionsResource.Empty) {
                         Success(
                             title,
                             listOf(),
                             row.viewOptions,
+                            rowType = row,
                         )
                     } else {
                         Error(
@@ -959,7 +1026,6 @@ class HomeSettingsService
             }
 
         companion object {
-            const val DISPLAY_PREF_ID = "default"
             const val CUSTOM_PREF_ID = "home_settings"
         }
     }

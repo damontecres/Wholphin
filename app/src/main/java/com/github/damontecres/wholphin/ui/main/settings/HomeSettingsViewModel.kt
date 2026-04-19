@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionEx
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
+import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -122,19 +123,23 @@ class HomeSettingsViewModel
                     state.value
                         .let { state ->
                             state.rows
-                                .map { it.config }
                                 .map { row ->
                                     viewModelScope.async(Dispatchers.IO) {
                                         semaphore.withPermit {
-                                            homeSettingsService.fetchDataForRow(
-                                                row = row,
-                                                scope = viewModelScope,
-                                                prefs = prefs,
-                                                userDto = userDto,
-                                                libraries = state.libraries,
-                                                limit = limit,
-                                                isRefresh = false,
-                                            )
+                                            try {
+                                                homeSettingsService.fetchDataForRow(
+                                                    row = row.config,
+                                                    scope = viewModelScope,
+                                                    prefs = prefs,
+                                                    userDto = userDto,
+                                                    libraries = state.libraries,
+                                                    limit = limit,
+                                                    isRefresh = false,
+                                                )
+                                            } catch (ex: Exception) {
+                                                Timber.e(ex, "Error on row %s", row)
+                                                HomeRowLoadingState.Error(row.title, exception = ex)
+                                            }
                                         }
                                     }
                                 }
@@ -195,7 +200,12 @@ class HomeSettingsViewModel
             viewModelScope.launchIO {
                 updateState {
                     val rows = it.rows.toMutableList().apply { removeAt(index) }
-                    val rowData = it.rowData.toMutableList().apply { removeAt(index) }
+                    val rowData =
+                        if (index in it.rowData.indices) {
+                            it.rowData.toMutableList().apply { removeAt(index) }
+                        } else {
+                            it.rowData
+                        }
                     it.copy(
                         rows = rows,
                         rowData = rowData,
@@ -258,6 +268,24 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
+                val viewOptions =
+                    when (library.collectionType) {
+                        CollectionType.MUSIC -> {
+                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
+                        }
+
+                        CollectionType.HOMEVIDEOS,
+                        CollectionType.MUSICVIDEOS,
+                        -> {
+                            HomeRowViewOptions(
+                                aspectRatio = AspectRatio.WIDE,
+                            )
+                        }
+
+                        else -> {
+                            HomeRowViewOptions()
+                        }
+                    }
                 val id = idCounter++
                 val newRow =
                     when (rowType) {
@@ -267,7 +295,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyAdded(library.itemId),
+                                config = RecentlyAdded(library.itemId, viewOptions),
                             )
                         }
 
@@ -282,7 +310,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyReleased(library.itemId),
+                                config = RecentlyReleased(library.itemId, viewOptions),
                             )
                         }
 
@@ -295,13 +323,23 @@ class HomeSettingsViewModel
                             )
                         }
 
+                        LibraryRowType.STUDIOS -> {
+                            val title =
+                                library.name.let { context.getString(R.string.studios_in, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.Studios(library.itemId),
+                            )
+                        }
+
                         LibraryRowType.SUGGESTIONS -> {
                             val title =
                                 library.name.let { context.getString(R.string.suggestions_for, it) }
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = Suggestions(library.itemId),
+                                config = Suggestions(library.itemId, viewOptions),
                             )
                         }
 
@@ -386,7 +424,7 @@ class HomeSettingsViewModel
                     config =
                         HomeRowConfig.ByParent(
                             parentId = parent.id,
-                            recursive = true,
+                            recursive = false,
                         ),
                 )
             updateState {
@@ -662,12 +700,17 @@ class HomeSettingsViewModel
                                             BaseItemKind.VIDEO -> preset.videoLibrary
                                             BaseItemKind.PLAYLIST -> preset.playlist
                                             BaseItemKind.PERSON -> preset.movieLibrary
+                                            BaseItemKind.MUSIC_ARTIST, BaseItemKind.MUSIC_ALBUM -> preset.musicLibrary
                                             else -> preset.movieLibrary
                                         }
                                     it.config.updateViewOptions(viewOptions)
                                 }
 
                                 is Genres -> {
+                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                }
+
+                                is HomeRowConfig.Studios -> {
                                     it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
                                 }
 

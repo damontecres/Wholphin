@@ -4,6 +4,9 @@ import android.util.Log
 import com.github.damontecres.wholphin.BuildConfig
 import timber.log.Timber
 
+/**
+ * Enable debug logging via [Timber] if enabled in the app settings
+ */
 class DebugLogTree private constructor() : Timber.Tree() {
     // Only add logging for below INFO, production logger in WholphinApplication logs >=INFO
     override fun isLoggable(

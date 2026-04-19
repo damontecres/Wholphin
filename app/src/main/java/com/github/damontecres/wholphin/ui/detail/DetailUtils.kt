@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -31,6 +32,8 @@ data class MoreDialogActions(
     val onSendMediaInfo: (UUID) -> Unit,
     val onClickDelete: (BaseItem) -> Unit,
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
+    val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
+    val onClickAddToQueue: (BaseItem) -> Unit = {},
 )
 
 enum class ClearChosenStreams {
@@ -49,9 +52,8 @@ enum class ClearChosenStreams {
  * If there are any (ie one or more) subtitle tracks, adds an option to disable or pick one
  *
  * @param item the media item to build for, typically an Episode or Movie
- * @param series the item's series or null if not a TV episode; a non-null value will include a "Go to Series" option
+ * @param seriesId the item's series or null if not a TV episode; a non-null value will include a "Go to Series" option
  * @param sourceId the item's media source UUID
- * @param navigateTo a function to trigger a navigation
  * @param onChooseVersion callback to pick a version of the item
  * @param onChooseTracks callback to pick a track for the given type of the item
  * @param onShowOverview callback to show overview dialog with media information
@@ -170,6 +172,38 @@ fun buildMoreDialogItems(
                 actions.onClickFavorite.invoke(item.id, !favorite)
             },
         )
+        item.data.albumId?.let { albumId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    R.string.fa_compact_disc,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            albumId,
+                            BaseItemKind.MUSIC_ALBUM,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
+        item.data.artistItems?.firstOrNull()?.id?.let { artistId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    R.string.fa_user,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            artistId,
+                            BaseItemKind.MUSIC_ARTIST,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
         seriesId?.let {
             add(
                 DialogItem(
@@ -239,6 +273,8 @@ fun buildMoreDialogItemsForHome(
     favorite: Boolean,
     canDelete: Boolean,
     actions: MoreDialogActions,
+    canRemoveContinueWatching: Boolean = false,
+    canRemoveNextUp: Boolean = false,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -297,6 +333,16 @@ fun buildMoreDialogItemsForHome(
                 )
             }
         }
+        if (item.type == BaseItemKind.MUSIC_ALBUM) {
+            add(
+                DialogItem(
+                    context.getString(R.string.add_to_queue),
+                    Icons.Default.Add,
+                ) {
+                    actions.onClickAddToQueue(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = R.string.add_to_playlist,
@@ -313,6 +359,26 @@ fun buildMoreDialogItemsForHome(
                     iconColor = Color.Red.copy(alpha = .8f),
                 ) {
                     actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        if (canRemoveContinueWatching && !watched && playbackPosition > Duration.ZERO) {
+            add(
+                DialogItem(
+                    text = R.string.remove_continue_watching,
+                    iconStringRes = R.string.fa_eye,
+                ) {
+                    actions.onClickWatch.invoke(itemId, false)
+                },
+            )
+        }
+        if (canRemoveNextUp && item.type == BaseItemKind.EPISODE && item.data.seriesId != null) {
+            add(
+                DialogItem(
+                    text = R.string.remove_next_up,
+                    iconStringRes = R.string.fa_tag,
+                ) {
+                    actions.onClickRemoveFromNextUp.invoke(item)
                 },
             )
         }

@@ -10,8 +10,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,6 +47,10 @@ fun <T> ItemRow(
     val firstFocus = remember { FocusRequester() }
     val focusRequester = remember { FocusRequester() }
     var position by rememberInt()
+
+    val currentOnClickItem by rememberUpdatedState(onClickItem)
+    val currentOnLongClickItem by rememberUpdatedState(onLongClickItem)
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
@@ -54,12 +60,8 @@ fun <T> ItemRow(
                 }
             },
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 8.dp),
-        )
+        ItemRowTitle(title)
+
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(horizontalPadding),
@@ -73,25 +75,50 @@ fun <T> ItemRow(
         ) {
             itemsIndexed(items) { index, item ->
                 val cardModifier =
-                    if (index == position) {
-                        Modifier.focusRequester(firstFocus)
-                    } else {
-                        Modifier
+                    remember(index, position) {
+                        if (index == position) {
+                            Modifier.focusRequester(firstFocus)
+                        } else {
+                            Modifier
+                        }
                     }
+
+                val onClick =
+                    remember(index, item) {
+                        {
+                            position = index
+                            if (item != null) currentOnClickItem(index, item)
+                        }
+                    }
+
+                val onLongClick =
+                    remember(index, item) {
+                        {
+                            position = index
+                            if (item != null) currentOnLongClickItem(index, item)
+                        }
+                    }
+
                 cardContent.invoke(
                     index,
                     item,
                     cardModifier,
-                    {
-                        position = index
-                        if (item != null) onClickItem.invoke(index, item)
-                    },
-                    {
-                        position = index
-                        if (item != null) onLongClickItem.invoke(index, item)
-                    },
+                    onClick,
+                    onLongClick,
                 )
             }
         }
     }
 }
+
+@Composable
+@NonRestartableComposable
+fun ItemRowTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+) = Text(
+    text = title,
+    style = MaterialTheme.typography.titleLarge,
+    color = MaterialTheme.colorScheme.onBackground,
+    modifier = modifier.padding(start = 8.dp),
+)

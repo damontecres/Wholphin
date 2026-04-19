@@ -30,10 +30,6 @@ jobs:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
         uses: ./.github/actions/setup
-      - name: Native build
-        uses: ./.github/actions/native-build
-        with:
-          cache: true
 
       - name: Get version names
         run: |
@@ -55,8 +51,11 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleRelease assembleDebug --no-daemon
+          ./gradlew clean assembleDefaultRelease assembleDefaultDebug --no-daemon
+
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"
@@ -68,12 +67,10 @@ jobs:
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' line; do
               # Wholphin-release-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-arm64-v8a.apk
-              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//' | sed -E 's/-default//')"
               echo "$line => $short_name"
               cp "$line" "$short_name"
             done
-          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
-          echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Checksums
         run: |
           echo "SHA256 checksums:"
@@ -82,6 +79,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          shopt -s globstar
+
           gh release delete "${{ env.TAG_NAME }}" --cleanup-tag -y || true
 
 
@@ -98,4 +97,4 @@ jobs:
 
            gh release create "${{ env.TAG_NAME }}" \
             --latest=false --prerelease --title "${{ env.VERSION_NAME }}" --target "${{ env.BRANCH_NAME }}" -F ci_release_note.txt \
-            "app/build/outputs/apk/**/*.apk"
+            app/build/outputs/apk/**/*.apk

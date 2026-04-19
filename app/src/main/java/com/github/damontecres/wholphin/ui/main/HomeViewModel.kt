@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -58,6 +60,7 @@ class HomeViewModel
         private val backdropService: BackdropService,
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
+        private val latestNextUpService: LatestNextUpService,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeState.EMPTY)
         val state: StateFlow<HomeState> = _state
@@ -85,7 +88,13 @@ class HomeViewModel
                         val refresh =
                             state.loadingState == LoadingState.Success && state.settings == settings
                         Timber.v("refresh=$refresh, state.loadingState=${state.loadingState}")
-                        _state.update { it.copy(settings = settings) }
+                        _state.update {
+                            it.copy(
+                                loadingState = if (refresh) LoadingState.Success else LoadingState.Loading,
+                                refreshState = LoadingState.Loading,
+                                settings = settings,
+                            )
+                        }
 
                         val semaphore = Semaphore(4)
 
@@ -225,6 +234,19 @@ class HomeViewModel
             item: BaseItem,
             appPreferences: AppPreferences,
         ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+        fun removeFromNextUp(item: BaseItem) {
+            if (item.type == BaseItemKind.EPISODE) {
+                viewModelScope.launchDefault {
+                    serverRepository.currentUser.value?.id?.let { userId ->
+                        latestNextUpService.removeFromNextUp(userId, item)
+                        init()
+                    }
+                }
+            } else {
+                Timber.w("Item is not an episode %s", item.id)
+            }
+        }
     }
 
 data class HomeState(

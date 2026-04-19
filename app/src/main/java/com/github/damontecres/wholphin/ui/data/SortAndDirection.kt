@@ -99,6 +99,45 @@ val BoxSetSortOptions =
         ItemSortBy.RANDOM,
     )
 
+val AlbumSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.ALBUM_ARTIST,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.RANDOM,
+    )
+
+val ArtistSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.RANDOM,
+    )
+
+val SongSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
+        ItemSortBy.ALBUM,
+        ItemSortBy.ALBUM_ARTIST,
+        ItemSortBy.ARTIST,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.PLAY_COUNT,
+        ItemSortBy.RUNTIME,
+        ItemSortBy.RANDOM,
+    )
+
 @StringRes
 fun getStringRes(sort: ItemSortBy): Int =
     when (sort) {
@@ -131,6 +170,12 @@ fun getStringRes(sort: ItemSortBy): Int =
         ItemSortBy.RUNTIME -> R.string.runtime_sort
 
         ItemSortBy.DEFAULT -> R.string.default_track
+
+        ItemSortBy.ALBUM -> R.string.album
+
+        ItemSortBy.ALBUM_ARTIST -> R.string.album_artist
+
+        ItemSortBy.ARTIST -> R.string.artist
 
         else -> throw IllegalArgumentException("Unsupported sort option: $sort")
     }

@@ -18,10 +18,10 @@
     <string name="commercial">מסחרי</string>
     <string name="community_rating">דירוג קהילתי</string>
     <string name="compose_error_message_title">אירעה שגיאה! לחץ על הכפתור על מנת לשלוח יומני אירועים לשרת שלך.</string>
-    <string name="confirm">לאשר</string>
+    <string name="confirm">אשר</string>
     <string name="continue_watching">המשך צפייה</string>
     <string name="critic_rating">דירוג מבקרים</string>
-    <string name="decimal_seconds">%.1f שניות</string>
+    <string name="decimal_seconds">%.2f שניות</string>
     <string name="default_track">ברירת מחדל</string>
     <string name="delete">מחק</string>
     <string name="died">מת</string>
@@ -30,4 +30,115 @@
     <string name="disabled">מושבת</string>
     <string name="born">נולד</string>
     <string name="choose_stream">בחר %1$s</string>
+    <string name="select_server">בחר שרת</string>
+    <string name="discovered_servers">שרתים שנמצאו</string>
+    <string name="searching">מחפש…</string>
+    <string name="enter_server_address">הזן כתובת שרת</string>
+    <string name="select_user">בחר משתמש</string>
+    <string name="switch_servers">החלף שרתים</string>
+    <string name="search">חיפוש</string>
+    <string name="home">דף הבית</string>
+    <string name="favorites">מועדפים</string>
+    <plurals name="movies">
+        <item quantity="one">סרטים</item>
+        <item quantity="two"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">סדרות</item>
+        <item quantity="two"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="tv_seasons">עונות</string>
+    <string name="tv_season">עונה</string>
+    <string name="trailer">טריילר</string>
+    <plurals name="trailers">
+        <item quantity="one">טריילרים</item>
+        <item quantity="two"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="subtitle">כתובית</string>
+    <string name="subtitles">כתוביות</string>
+    <string name="ui_interface">ממשק</string>
+    <string name="sign_in_auto">התחבר אוטומטית</string>
+    <string name="remember_selected_tab">זכור כרטיסיות שנבחרו</string>
+    <string name="enabled">מופעל</string>
+    <string name="volume_lowest">נמוך ביותר</string>
+    <string name="volume_low">נמוך</string>
+    <string name="volume_medium">בינוני</string>
+    <string name="volume_high">גבוה</string>
+    <string name="volume_full">מלא</string>
+    <string name="purple">סגול</string>
+    <string name="orange">כתום</string>
+    <string name="black">שחור</string>
+    <string name="white">לבן</string>
+    <string name="login">התחבר</string>
+    <string name="username">שם משתמש</string>
+    <string name="password">סיסמה</string>
+    <string name="downloading">מוריד…</string>
+    <string name="ends_at">מסתיים ב-%1$s</string>
+    <string name="enter_server_url">הזן כתובת IP או URL</string>
+    <string name="episodes">פרקים</string>
+    <string name="external_track">חיצוני</string>
+    <string name="file_size">גודל</string>
+    <string name="genres">ז\'אנרים</string>
+    <string name="go_to_series">עבור לסדרה</string>
+    <string name="go_to">עבור אל</string>
+    <string name="hide">הסתר</string>
+    <string name="error_loading_collection">שגיאה בטעינת האוסף %1$s</string>
+    <string name="intro">פתיח</string>
+    <string name="library">תכנים</string>
+    <string name="more">עוד</string>
+    <string name="name">שם</string>
+    <string name="next_up">הבא בתור</string>
+    <string name="no_data">אין נתונים</string>
+    <string name="no_results">אין תוצאות</string>
+    <string name="no_servers_found">לא נמצאו שרתים</string>
+    <string name="outro">סיום</string>
+    <string name="none">ללא</string>
+    <plurals name="people">
+        <item quantity="one">אנשים</item>
+        <item quantity="two"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="play_from_here">נגן מכאן</string>
+    <string name="play">נגן</string>
+    <string name="playback_speed">מהירות ניגון</string>
+    <string name="playback">ניגון</string>
+    <string name="playlist">פלייליסט</string>
+    <string name="playlists">פלייליסטים</string>
+    <plurals name="downloads">
+        <item quantity="one">הורדה %s</item>
+        <item quantity="two">%s הורדות</item>
+        <item quantity="other">%s הורדות</item>
+    </plurals>
+    <plurals name="hours">
+        <item quantity="one">שעה %d</item>
+        <item quantity="two">שעתיים</item>
+        <item quantity="other">%d שעות</item>
+    </plurals>
+    <plurals name="days">
+        <item quantity="one">יום %s</item>
+        <item quantity="two">יומיים</item>
+        <item quantity="other">%s ימים</item>
+    </plurals>
+    <plurals name="items">
+        <item quantity="one">פריט %d</item>
+        <item quantity="two">%d פריטים</item>
+        <item quantity="other">%d פריטים</item>
+    </plurals>
+    <plurals name="seconds">
+        <item quantity="one">שניה %d</item>
+        <item quantity="two">%d שניות</item>
+        <item quantity="other">%d שניות</item>
+    </plurals>
+    <plurals name="minutes">
+        <item quantity="one">דקה %s</item>
+        <item quantity="two">%s דקות</item>
+        <item quantity="other">%s דקות</item>
+    </plurals>
+    <string name="mark_unwatched">סמן כלא נצפה</string>
+    <string name="mark_watched">סמן כנצפה</string>
+    <string name="max_bitrate">מקסימום קצב נתונים</string>
+    <string name="more_like_this">עוד דומים</string>
 </resources>

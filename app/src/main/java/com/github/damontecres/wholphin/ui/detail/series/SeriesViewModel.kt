@@ -271,14 +271,24 @@ class SeriesViewModel
         }
 
         fun onResumePage() {
-            viewModelScope.launchIO {
-                item.value?.let {
-                    backdropService.submit(it)
+            item.value?.let { item ->
+                viewModelScope.launchDefault { backdropService.submit(item) }
+                viewModelScope.launchIO {
                     val playThemeSongs =
                         userPreferencesService
                             .getCurrent()
                             .appPreferences.interfacePreferences.playThemeSongs
                     themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                }
+            }
+        }
+
+        fun refresh() {
+            item.value?.let { item ->
+                if (loading.value == LoadingState.Success) {
+                    viewModelScope.launchIO {
+                        (seasons.value as? ApiRequestPager<*>)?.refresh()
+                    }
                 }
             }
         }
@@ -292,6 +302,7 @@ class SeriesViewModel
             seasonNum: Int?,
         ): Deferred<List<BaseItem?>> =
             viewModelScope.async(Dispatchers.IO) {
+                Timber.v("getSeasons for %s", series.id)
                 val request =
                     GetItemsRequest(
                         parentId = series.id,

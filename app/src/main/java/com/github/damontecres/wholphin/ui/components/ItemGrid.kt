@@ -82,6 +82,9 @@ class ItemGridViewModel
         }
     }
 
+/**
+ * Display a grid of a list of arbitrary item IDs such as for [com.github.damontecres.wholphin.data.ExtrasItem]
+ */
 @Composable
 fun ItemGrid(
     destination: Destination.ItemGrid,

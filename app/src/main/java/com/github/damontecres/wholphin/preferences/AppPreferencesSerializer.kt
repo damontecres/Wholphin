@@ -61,10 +61,11 @@ class AppPreferencesSerializer
                                         .apply {
                                             ac3Supported = AppPreference.Ac3Supported.defaultValue
                                             downmixStereo = AppPreference.DownMixStereo.defaultValue
-                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
+//                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
+                                            assPlaybackMode = AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
 
                                 mpvOptions =
@@ -95,6 +96,7 @@ class AppPreferencesSerializer
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
                                 backdropStyle = AppPreference.BackdropStylePref.defaultValue
+                                showLogos = AppPreference.ShowLogos.defaultValue
 
                                 subtitlesPreferences =
                                     SubtitlePreferences
@@ -151,6 +153,15 @@ class AppPreferencesSerializer
                             .apply {
                                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
                                 slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
+                            }.build()
+
+                    musicPreferences =
+                        MusicPreferences
+                            .newBuilder()
+                            .apply {
+                                showBackdrop = true
+                                showLyrics = true
+                                showAlbumArt = true
                             }.build()
                 }.build()
 
@@ -218,6 +229,11 @@ inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder
 inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
     updateInterfacePreferences {
         screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        musicPreferences = musicPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

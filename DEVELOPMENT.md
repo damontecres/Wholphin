@@ -14,6 +14,7 @@ The app uses:
 * [Room](https://developer.android.com/training/data-storage/room) & [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for local data storage
 * [Hilt](https://developer.android.com/training/dependency-injection/hilt-android) for dependency injection
 * [Media3/ExoPlayer](https://developer.android.com/media/media3/exoplayer) for media playback
+* [MPV/libmpv](https://github.com/mpv-player/mpv) for media playback
 * [Coil](https://coil-kt.github.io/coil/) for image loading
 * [OkHttp](https://square.github.io/okhttp/) for HTTP requests
 
@@ -42,21 +43,13 @@ Code is split into several packages:
 - `ui` - User interface code and ViewModels
 - `util` - Utility classes and functions
 
-### Native components
+## Extensions
 
-#### FFmpeg decoder module
+Wholphin uses several native components for extra playback compatibility. This includes Media3 ffmpeg/av1 decoders and `libmpv`. These extensions are not required to build the app, but without them some functionality will not work.
 
-Wholphin ships with [media3 ffmpeg decoder module](https://github.com/androidx/media/blob/release/libraries/decoder_ffmpeg/README.md).
+If you want to include these in a local build, see the [instructions here](https://github.com/damontecres/wholphin-extensions?tab=readme-ov-file#usage) for configuring the repository.
 
-It is not required to build the extension in order to build the app locally.
-
-You can build the module on MacOS or Linux with the [`build_ffmpeg_decoder.sh`](./scripts/ffmpeg/build_ffmpeg_decoder.sh) script.
-
-#### MPV player backend
-
-Wholphin has a playback engine that uses [`libmpv`](https://github.com/mpv-player/mpv). The app uses JNI code from [`mpv-android`](https://github.com/mpv-android/mpv-android) and has an implementation of `androidx.media3.common.Player` to swap out for `ExoPlayer`.
-
-See the [build scripts](scripts/mpv/) for details on building this component.
+You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
 
 ### App settings
 

@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -14,6 +15,9 @@ import org.jellyfin.sdk.model.api.DeviceProfile
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Creates and caches the device direct play/transcoding profile sent to the server for ExoPlayer
+ */
 @Singleton
 class DeviceProfileService
     @Inject
@@ -21,7 +25,7 @@ class DeviceProfileService
         @param:ApplicationContext private val context: Context,
     ) {
         val mediaCodecCapabilitiesTest by lazy {
-            // Created lazily below on the IO thread since it cn take time
+            // Created lazily below on another thread since it cn take time
             MediaCodecCapabilitiesTest(context)
         }
         private val mutex = Mutex()
@@ -33,14 +37,14 @@ class DeviceProfileService
             prefs: PlaybackPreferences,
             serverVersion: ServerVersion?,
         ): DeviceProfile =
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.Default) {
                 mutex.withLock {
                     val newConfig =
                         DeviceProfileConfiguration(
                             maxBitrate = prefs.maxBitrate.toInt(),
                             isAC3Enabled = prefs.overrides.ac3Supported,
                             downMixAudio = prefs.overrides.downmixStereo,
-                            assDirectPlay = prefs.overrides.directPlayAss,
+                            assPlaybackMode = prefs.overrides.assPlaybackMode,
                             pgsDirectPlay = prefs.overrides.directPlayPgs,
                             dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
                             decodeAv1 = prefs.overrides.decodeAv1,
@@ -56,7 +60,7 @@ class DeviceProfileService
                                 maxBitrate = newConfig.maxBitrate,
                                 isAC3Enabled = newConfig.isAC3Enabled,
                                 downMixAudio = newConfig.downMixAudio,
-                                assDirectPlay = newConfig.assDirectPlay,
+                                assDirectPlay = newConfig.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
                                 decodeAv1 = prefs.overrides.decodeAv1,
@@ -76,7 +80,7 @@ data class DeviceProfileConfiguration(
     val maxBitrate: Int,
     val isAC3Enabled: Boolean,
     val downMixAudio: Boolean,
-    val assDirectPlay: Boolean,
+    val assPlaybackMode: AssPlaybackMode,
     val pgsDirectPlay: Boolean,
     val dolbyVisionELDirectPlay: Boolean,
     val decodeAv1: Boolean,

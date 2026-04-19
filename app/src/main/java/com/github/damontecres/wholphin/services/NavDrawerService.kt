@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
@@ -16,9 +17,11 @@ import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -33,7 +36,11 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.hours
 
+/**
+ * Gets the items to show in the nav drawer
+ */
 @Singleton
 class NavDrawerService
     @Inject
@@ -44,11 +51,13 @@ class NavDrawerService
         private val serverRepository: ServerRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
+        private val musicService: MusicService,
     ) {
         private val _state = MutableStateFlow(NavDrawerItemState.EMPTY)
         val state: StateFlow<NavDrawerItemState> = _state
 
         init {
+            // Handle updating the nav drawer when the user changes
             serverRepository.currentUser
                 .asFlow()
                 .combine(serverRepository.currentUserDto.asFlow()) { user, userDto ->
@@ -69,12 +78,52 @@ class NavDrawerService
                     showToast(context, "Error fetching user's views")
                 }.launchIn(coroutineScope)
 
+            // Handle when the user has logged into a Seerr server
             seerrServerRepository.active
                 .onEach { discoverActive ->
                     _state.update { it.copy(discoverEnabled = discoverActive) }
                 }.launchIn(coroutineScope)
+
+            // Handle when music is actively playing or not
+            coroutineScope.launchDefault {
+                musicService.state.collectLatest { music ->
+                    Timber.v("MusicService updated")
+                    when (music.status) {
+                        NowPlayingStatus.PLAYING -> {
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = true,
+                                    nowPlayingTitle = music.currentItemTitle,
+                                )
+                            }
+                        }
+
+                        NowPlayingStatus.IDLE -> {
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = false,
+                                    nowPlayingTitle = null,
+                                )
+                            }
+                        }
+
+                        NowPlayingStatus.PAUSED -> {
+                            delay(2.hours)
+                            _state.update {
+                                it.copy(
+                                    nowPlayingEnabled = false,
+                                    nowPlayingTitle = null,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
+        /**
+         * Get all the libraries the user has access to
+         */
         suspend fun getAllUserLibraries(
             userId: UUID,
             tvAccess: Boolean,
@@ -108,6 +157,9 @@ class NavDrawerService
             return libraries
         }
 
+        /**
+         * Get the libraries that the user has not "pinned". These will show in the More section.
+         */
         suspend fun getFilteredUserLibraries(
             user: JellyfinUser,
             tvAccess: Boolean,
@@ -122,6 +174,9 @@ class NavDrawerService
             return libraries
         }
 
+        /**
+         * Update the current state of the nav drawer items
+         */
         suspend fun updateNavDrawer(
             user: JellyfinUser,
             userDto: UserDto,
@@ -185,9 +240,11 @@ data class NavDrawerItemState(
     val items: List<NavDrawerItem>,
     val moreItems: List<NavDrawerItem>,
     val discoverEnabled: Boolean,
+    val nowPlayingEnabled: Boolean,
+    val nowPlayingTitle: String?,
 ) {
     companion object {
-        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false)
+        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false, false, null)
     }
 }
 

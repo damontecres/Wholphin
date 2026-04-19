@@ -37,20 +37,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
@@ -69,10 +67,12 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
@@ -89,6 +89,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -132,6 +133,14 @@ fun SeriesDetails(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
+    LifecycleResumeEffect(destination.itemId) {
+        viewModel.refresh()
+
+        onPauseOrDispose {
+            viewModel.release()
+        }
+    }
+
     when (val state = loading) {
         is LoadingState.Error -> {
             ErrorMessage(state, modifier)
@@ -148,9 +157,7 @@ fun SeriesDetails(
                 LifecycleResumeEffect(destination.itemId) {
                     viewModel.onResumePage()
 
-                    onPauseOrDispose {
-                        viewModel.release()
-                    }
+                    onPauseOrDispose {}
                 }
 
                 val played = item.data.userData?.played ?: false
@@ -203,13 +210,7 @@ fun SeriesDetails(
                         }
                     },
                     overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = item.name ?: context.getString(R.string.unknown),
-                                overview = item.data.overview,
-                                genres = item.data.genres.orEmpty(),
-                                files = listOf(),
-                            )
+                        overviewDialog = ItemDetailsDialogInfo(item)
                     },
                     playOnClick = { shuffle ->
                         if (shuffle) {
@@ -380,7 +381,6 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
@@ -391,18 +391,20 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
+                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 8.dp)
+                                .padding(start = HeaderUtils.startPadding)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
@@ -649,6 +651,7 @@ fun SeriesDetailsContent(
                                 DiscoverRowData(
                                     stringResource(R.string.discover),
                                     DataLoadingState.Success(discovered),
+                                    type = DiscoverRequestType.UNKNOWN,
                                 ),
                             onClickItem = { index: Int, item: DiscoverItem ->
                                 position = DISCOVER_ROW
@@ -678,7 +681,9 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    showLogo: Boolean,
     overviewOnClick: () -> Unit,
+    bringIntoViewRequester: BringIntoViewRequester,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -687,24 +692,33 @@ fun SeriesDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        Text(
-            text = series.name ?: stringResource(R.string.unknown),
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        TitleOrLogo(
+            item = series,
+            showLogo = showLogo,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
+                    .padding(start = HeaderUtils.startPadding),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
+            QuickDetails(
+                series.ui.quickDetails,
+                null,
+                Modifier.padding(start = HeaderUtils.startPadding),
+            )
+            dto.studios?.let {
+                val studios = remember { series.studioNames }
+                GenreText(
+                    studios,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
+            }
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 8.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 4.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
@@ -712,6 +726,14 @@ fun SeriesDetailsHeader(
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
+                    modifier =
+                        Modifier.onFocusChanged {
+                            if (it.isFocused) {
+                                scope.launch(ExceptionHandler()) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
                 )
             }
         }

@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
 import android.content.Context
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -29,31 +28,28 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.setValueOnMain
-import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.DataLoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
+import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = MovieViewModel.Factory::class)
@@ -83,87 +79,99 @@ class MovieViewModel
             fun create(itemId: UUID): MovieViewModel
         }
 
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val item = MutableLiveData<BaseItem?>(null)
-        val trailers = MutableLiveData<List<Trailer>>(listOf())
-        val people = MutableLiveData<List<Person>>(listOf())
-        val chapters = MutableLiveData<List<Chapter>>(listOf())
-        val extras = MutableLiveData<List<ExtrasItem>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>()
-        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
-        val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
-
-        var canDelete: Boolean = false
-            private set
+        private val _state = MutableStateFlow(MovieState())
+        val state: StateFlow<MovieState> = _state
 
         init {
             init()
+            viewModelScope.launchDefault {
+                userPreferencesService.flow.collectLatest { preferences ->
+                    _state.update {
+                        val canDelete =
+                            it.movie?.let {
+                                mediaManagementService.canDelete(
+                                    it,
+                                    preferences.appPreferences,
+                                )
+                            }
+                        it.copy(
+                            canDelete = canDelete ?: false,
+                        )
+                    }
+                }
+            }
         }
 
-        private fun fetchAndSetItem(): Deferred<BaseItem> =
-            viewModelScope.async(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
-                val item =
-                    api.userLibraryApi.getItem(itemId).content.let {
-                        BaseItem.from(it, api)
-                    }
-                canDelete = mediaManagementService.canDelete(item)
-                this@MovieViewModel.item.setValueOnMain(item)
-                item
-            }
+        private suspend fun getMovie(): BaseItem {
+            val item =
+                api.userLibraryApi.getItem(itemId).content.let {
+                    BaseItem(it)
+                }
+            return item
+        }
 
         fun init(): Job =
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
-                val item = fetchAndSetItem().await()
-                val result =
+            viewModelScope.launchDefault {
+                val movie =
+                    try {
+                        getMovie()
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Failed to fetch movie %s", itemId)
+                        _state.update { it.copy(loading = DataLoadingState.Error(ex)) }
+                        return@launchDefault
+                    }
+                val chosenStreams =
                     itemPlaybackRepository.getSelectedTracks(
-                        item.id,
-                        item,
+                        itemId,
+                        movie,
                         userPreferencesService.getCurrent(),
                     )
-                val remoteTrailers = trailerService.getRemoteTrailers(item)
-                withContext(Dispatchers.Main) {
-                    this@MovieViewModel.item.value = item
-                    chosenStreams.value = result
-                    this@MovieViewModel.trailers.value = remoteTrailers
-                    loading.value = LoadingState.Success
-                    backdropService.submit(item)
+                val remoteTrailers = trailerService.getRemoteTrailers(movie)
+                val chapters = Chapter.fromDto(movie.data, api)
+                _state.update {
+                    it.copy(
+                        loading = DataLoadingState.Success(movie),
+                        chosenStreams = chosenStreams,
+                        trailers = remoteTrailers,
+                        chapters = chapters,
+                    )
                 }
+                backdropService.submit(movie)
                 viewModelScope.launchIO {
-                    trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
-                        withContext(Dispatchers.Main) {
-                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                    trailerService.getLocalTrailers(movie).letNotEmpty { localTrailers ->
+                        _state.update {
+                            it.copy(
+                                trailers = localTrailers + remoteTrailers,
+                            )
                         }
                     }
                 }
                 viewModelScope.launchIO {
-                    val people = peopleFavorites.getPeopleFor(item)
-                    this@MovieViewModel.people.setValueOnMain(people)
+                    val people = peopleFavorites.getPeopleFor(movie)
+                    _state.update {
+                        it.copy(
+                            people = people,
+                        )
+                    }
                 }
                 viewModelScope.launchIO {
-                    val extras = extrasService.getExtras(item.id)
-                    this@MovieViewModel.extras.setValueOnMain(extras)
+                    val extras = extrasService.getExtras(itemId)
+                    _state.update {
+                        it.copy(
+                            extras = extras,
+                        )
+                    }
                 }
                 viewModelScope.launchIO {
-                    val results = seerrService.similar(item).orEmpty()
-                    discovered.update { results }
+                    val results = seerrService.similar(movie).orEmpty()
+                    _state.update {
+                        it.copy(
+                            discovered = results,
+                        )
+                    }
                 }
 
-                withContext(Dispatchers.Main) {
-                    chapters.value = Chapter.fromDto(item.data, api)
-                }
-                if (!similar.isInitialized) {
+                if (state.value.similar.isEmpty()) {
                     val similar =
                         api.libraryApi
                             .getSimilarItems(
@@ -174,31 +182,48 @@ class MovieViewModel
                                     limit = 25,
                                 ),
                             ).content.items
-                            .map { BaseItem.Companion.from(it, api) }
-                    this@MovieViewModel.similar.setValueOnMain(similar)
+                            .map { BaseItem(it) }
+
+                    _state.update { it.copy(similar = similar) }
                 }
             }
 
         fun setWatched(
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setWatched(itemId, played)
-            fetchAndSetItem()
+        ) = viewModelScope.launchDefault {
+            try {
+                favoriteWatchManager.setWatched(itemId, played)
+                getMovie().let { movie ->
+                    _state.update {
+                        it.copy(loading = DataLoadingState.Success(movie))
+                    }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error updating watch status for movie %s", itemId)
+                showToast(context, "Something went wrong...")
+            }
         }
 
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setFavorite(itemId, favorite)
-            val item = item.value
-            fetchAndSetItem()
-            if (item != null && itemId != item.id) {
-                viewModelScope.launchIO {
-                    val people = peopleFavorites.getPeopleFor(item)
-                    this@MovieViewModel.people.setValueOnMain(people)
+        ) = viewModelScope.launchDefault {
+            try {
+                favoriteWatchManager.setFavorite(itemId, favorite)
+                val movie = getMovie()
+                _state.update {
+                    it.copy(loading = DataLoadingState.Success(movie))
                 }
+                if (itemId != movie.id) {
+                    viewModelScope.launchIO {
+                        val people = peopleFavorites.getPeopleFor(movie)
+                        _state.update { it.copy(people = people) }
+                    }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error updating favorite  %s", itemId)
+                showToast(context, "Something went wrong...")
             }
         }
 
@@ -214,9 +239,7 @@ class MovieViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -240,9 +263,7 @@ class MovieViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -270,14 +291,14 @@ class MovieViewModel
         fun clearChosenStreams(chosenStreams: ChosenStreams?) {
             viewModelScope.launchIO {
                 itemPlaybackRepository.deleteChosenStreams(chosenStreams)
-                item.value?.let { item ->
+                state.value.movie?.let { item ->
                     val result =
                         itemPlaybackRepository.getSelectedTracks(
                             itemId,
                             item,
                             userPreferencesService.getCurrent(),
                         )
-                    this@MovieViewModel.chosenStreams.setValueOnMain(result)
+                    _state.update { it.copy(chosenStreams = result) }
                 }
             }
         }
@@ -288,3 +309,17 @@ class MovieViewModel
             }
         }
     }
+
+data class MovieState(
+    val loading: DataLoadingState<BaseItem> = DataLoadingState.Pending,
+    val trailers: List<Trailer> = emptyList(),
+    val people: List<Person> = emptyList(),
+    val chapters: List<Chapter> = emptyList(),
+    val extras: List<ExtrasItem> = emptyList(),
+    val similar: List<BaseItem> = emptyList(),
+    val discovered: List<DiscoverItem> = emptyList(),
+    val chosenStreams: ChosenStreams? = null,
+    val canDelete: Boolean = false,
+) {
+    val movie: BaseItem? = (loading as? DataLoadingState.Success<BaseItem>)?.data
+}

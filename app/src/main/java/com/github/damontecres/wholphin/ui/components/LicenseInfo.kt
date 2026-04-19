@@ -6,6 +6,9 @@ import androidx.compose.ui.Modifier
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 
+/**
+ * Displays dependencies' license information to comply with attribution
+ */
 @Composable
 fun LicenseInfo(modifier: Modifier = Modifier) {
     val libraries by produceLibraries()

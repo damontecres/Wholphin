@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import com.github.damontecres.wholphin.data.model.BaseItem
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -8,6 +9,9 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles toggling media as favorited or watched
+ */
 @Singleton
 class FavoriteWatchManager
     @Inject
@@ -36,4 +40,7 @@ class FavoriteWatchManager
             } else {
                 api.userLibraryApi.unmarkFavoriteItem(itemId).content
             }
+
+        suspend fun removeContinueWatching(item: BaseItem) {
+        }
     }

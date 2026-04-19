@@ -1,12 +1,13 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -42,16 +43,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
@@ -63,6 +66,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
@@ -70,19 +74,18 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
+import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,8 +130,7 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val playerState by viewModel.currentPlayer.collectAsState()
             PlaybackPageContent(
-                player = playerState!!.player,
-                playerBackend = playerState!!.backend,
+                playerState = playerState!!,
                 preferences = preferences,
                 destination = destination,
                 viewModel = viewModel,
@@ -141,13 +143,15 @@ fun PlaybackPage(
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackPageContent(
-    player: Player,
-    playerBackend: PlayerBackend,
+    playerState: PlayerState,
     preferences: UserPreferences,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel,
 ) {
+    val player = playerState.player
+    val playerBackend = playerState.backend
+
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -170,7 +174,7 @@ fun PlaybackPageContent(
     val nextUp by viewModel.nextUp.observeAsState(null)
     val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
 
-    val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
+    val subtitleSearch by viewModel.subtitleSearchStatus.observeAsState(null)
     val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
@@ -320,10 +324,14 @@ fun PlaybackPageContent(
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
+            var playerSurfaceSize by remember { mutableStateOf(IntSize.Zero) }
             PlayerSurface(
                 player = player,
                 surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                modifier = scaledModifier,
+                modifier =
+                    scaledModifier.onSizeChanged {
+                        playerSurfaceSize = it
+                    },
             )
             if (presentationState.coverSurface) {
                 Box(
@@ -363,45 +371,48 @@ fun PlaybackPageContent(
                 }
             }
 
-            // The playback controls
-            AnimatedVisibility(
-                controllerViewState.controlsVisible,
-                Modifier,
-                slideInVertically { it },
-                slideOutVertically { it },
-            ) {
-                PlaybackOverlay(
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+                PauseIndicator(
+                    player = player,
                     modifier =
                         Modifier
-                            .padding(WindowInsets.systemBars.asPaddingValues())
-                            .fillMaxSize()
-                            .background(Color.Transparent),
-                    item = currentPlayback?.item,
-                    playerControls = player,
-                    controllerViewState = controllerViewState,
-                    showPlay = playPauseState.showPlay,
-                    previousEnabled = true,
-                    nextEnabled = playlist.hasNext(),
-                    seekEnabled = true,
-                    seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                    seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                    skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-                    onPlaybackActionClick = onPlaybackActionClick,
-                    onClickPlaybackDialogType = { playbackDialog = it },
-                    onSeekBarChange = seekBarState::onValueChange,
-                    showDebugInfo = showDebugInfo,
-                    currentPlayback = currentPlayback,
-                    chapters = mediaInfo?.chapters ?: listOf(),
-                    trickplayInfo = mediaInfo?.trickPlayInfo,
-                    trickplayUrlFor = viewModel::getTrickplayUrl,
-                    playlist = playlist,
-                    onClickPlaylist = {
-                        viewModel.playItemInPlaylist(it)
-                    },
-                    currentSegment = currentSegment?.segment,
-                    showClock = preferences.appPreferences.interfacePreferences.showClock,
+                            .align(Alignment.Center),
                 )
             }
+
+            // The playback controls
+
+            PlaybackOverlay(
+                modifier =
+                    Modifier
+                        .padding(WindowInsets.systemBars.asPaddingValues())
+                        .fillMaxSize()
+                        .background(Color.Transparent),
+                item = currentPlayback?.item,
+                playerControls = player,
+                controllerViewState = controllerViewState,
+                showPlay = playPauseState.showPlay,
+                previousEnabled = true,
+                nextEnabled = playlist.hasNext(),
+                seekEnabled = true,
+                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                onPlaybackActionClick = onPlaybackActionClick,
+                onClickPlaybackDialogType = { playbackDialog = it },
+                onSeekBarChange = seekBarState::onValueChange,
+                showDebugInfo = showDebugInfo,
+                currentPlayback = currentPlayback,
+                chapters = mediaInfo?.chapters ?: listOf(),
+                trickplayInfo = mediaInfo?.trickPlayInfo,
+                trickplayUrlFor = viewModel::getTrickplayUrl,
+                playlist = playlist,
+                onClickPlaylist = {
+                    viewModel.playItemInPlaylist(it)
+                },
+                currentSegment = currentSegment?.segment,
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
+            )
 
             val subtitleSettings =
                 remember(mediaInfo) {
@@ -416,7 +427,7 @@ fun PlaybackPageContent(
                 remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
-            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
                 val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
                 AndroidView(
@@ -427,12 +438,42 @@ fun PlaybackPageContent(
                                 setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                                 setBottomPaddingFraction(it.margin.toFloat() / 100f)
                             }
+                            playerState.assHandler?.let { assHandler ->
+                                if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
+                                    Timber.v("Adding AssSubtitleView")
+                                    addView(
+                                        AssSubtitleView(context, assHandler).apply {
+                                            layoutParams =
+                                                FrameLayout
+                                                    .LayoutParams(
+                                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    ).apply { gravity = Gravity.CENTER }
+                                        },
+                                    )
+                                }
+                            }
                         }
                     },
                     update = {
                         it.setCues(cues)
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(it)
+                        it.children.firstOrNull { it is AssSubtitleView }?.let {
+                            (it as? AssSubtitleView)?.apply {
+                                val resized =
+                                    layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
+                                if (resized) {
+                                    Timber.v("Resizing AssSubtitleView: $playerSurfaceSize")
+                                    layoutParams =
+                                        FrameLayout
+                                            .LayoutParams(
+                                                playerSurfaceSize.width,
+                                                playerSurfaceSize.height,
+                                            ).apply { gravity = Gravity.CENTER }
+                                }
+                            }
+                        }
                     },
                     onReset = {
                         it.setCues(null)
@@ -462,8 +503,8 @@ fun PlaybackPageContent(
                     delay(10.seconds)
                     viewModel.updateSegment(segment.segment.id, true)
                 }
-                TextButton(
-                    stringRes = segment.segment.type.skipStringRes,
+                SkipSegmentButton(
+                    type = segment.segment.type,
                     onClick = {
                         viewModel.updateSegment(segment.segment.id, false)
                     },

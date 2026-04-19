@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
+import com.github.damontecres.wholphin.data.filter.StudioFilter
 import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -55,6 +56,14 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import java.util.UUID
 
+/**
+ * Button for filtering data.
+ *
+ * Clicking on it will show a drop-down menu of filterable options. Many of these show a second drop-down menu when clicked.
+ *
+ * @see GetItemsFilter
+ * @see ItemFilterBy
+ */
 @Composable
 fun FilterByButton(
     filterOptions: List<ItemFilterBy<*>>,
@@ -198,7 +207,9 @@ fun FilterByButton(
                         val isSelected =
                             remember(currentValue) {
                                 when (filterOption) {
-                                    GenreFilter -> {
+                                    GenreFilter,
+                                    StudioFilter,
+                                    -> {
                                         (currentValue as? List<UUID>)
                                             .orEmpty()
                                             .contains(value.value)
@@ -263,7 +274,9 @@ fun FilterByButton(
                             onClick = {
                                 val newFilter =
                                     when (filterOption) {
-                                        GenreFilter -> {
+                                        GenreFilter,
+                                        StudioFilter,
+                                        -> {
                                             val list = (currentValue as? List<UUID>).orEmpty()
                                             val newValue =
                                                 list

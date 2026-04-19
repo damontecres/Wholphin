@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.chooseStream
@@ -85,6 +87,7 @@ fun EpisodeDetails(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val canDelete by viewModel.canDelete.collectAsState()
 
     val preferredSubtitleLanguage =
         viewModel.serverRepository.currentUserDto
@@ -146,12 +149,7 @@ fun EpisodeDetails(
                     },
                     overviewOnClick = {
                         overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = ep.name ?: context.getString(R.string.unknown),
-                                overview = ep.data.overview,
-                                genres = ep.data.genres.orEmpty(),
-                                files = ep.data.mediaSources.orEmpty(),
-                            )
+                            ItemDetailsDialogInfo(ep)
                     },
                     moreOnClick = {
                         moreDialog =
@@ -173,6 +171,7 @@ fun EpisodeDetails(
                                                 chooseVersionParams(
                                                     context,
                                                     ep.data.mediaSources!!,
+                                                    chosenStreams?.source?.id?.toUUIDOrNull(),
                                                 ) { idx ->
                                                     val source = ep.data.mediaSources!![idx]
                                                     viewModel.savePlayVersion(
@@ -214,19 +213,13 @@ fun EpisodeDetails(
                                         onShowOverview = {
                                             val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
                                             if (source != null) {
-                                                overviewDialog =
-                                                    ItemDetailsDialogInfo(
-                                                        title = ep.name ?: context.getString(R.string.unknown),
-                                                        overview = ep.data.overview,
-                                                        genres = ep.data.genres.orEmpty(),
-                                                        files = listOf(source),
-                                                    )
+                                                overviewDialog = ItemDetailsDialogInfo(ep)
                                             }
                                         },
                                         onClearChosenStreams = {
                                             viewModel.clearChosenStreams(chosenStreams)
                                         },
-                                        canDelete = viewModel.canDelete,
+                                        canDelete = canDelete,
                                     ),
                             )
                     },
@@ -236,7 +229,7 @@ fun EpisodeDetails(
                     favoriteOnClick = {
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
-                    canDelete = viewModel.canDelete,
+                    canDelete = canDelete,
                     deleteOnClick = { showDeleteDialog = ep },
                     modifier = modifier,
                 )
@@ -330,7 +323,7 @@ fun EpisodeDetailsContent(
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
+            contentPadding = PaddingValues(bottom = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
@@ -350,7 +343,7 @@ fun EpisodeDetailsContent(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,

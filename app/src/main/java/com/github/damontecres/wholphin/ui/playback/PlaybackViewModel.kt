@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -63,6 +64,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -74,6 +76,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.peerless2012.ass.media.AssHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -143,6 +146,7 @@ class PlaybackViewModel
         private val userPreferencesService: UserPreferencesService,
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
+        private val musicService: MusicService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -182,10 +186,10 @@ class PlaybackViewModel
         private val jobs = mutableListOf<Job>()
 
         val nextUp = MutableLiveData<BaseItem?>()
-        private var isPlaylist = false
+        private val isPlaylist = destination is Destination.PlaybackList
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
-        val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
+        val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
         val currentUserDto = serverRepository.currentUserDto
@@ -219,7 +223,8 @@ class PlaybackViewModel
             isHdr: Boolean,
             is4k: Boolean,
         ) {
-            val softwareDecoding = !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
+            val softwareDecoding =
+                !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -229,6 +234,8 @@ class PlaybackViewModel
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
                     PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+
+                    PlayerBackend.EXTERNAL_PLAYER -> throw IllegalStateException("Cannot use this for external playback")
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
@@ -238,13 +245,14 @@ class PlaybackViewModel
                     disconnectPlayer()
                 }
 
-                player =
+                val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
                         preferences.appPreferences.playbackPreferences,
                     )
+                this.player = playerCreation.player
                 currentPlayer.update {
-                    PlayerState(player, playerBackend)
+                    PlayerState(playerCreation.player, playerBackend, playerCreation.assHandler)
                 }
                 configurePlayer()
             }
@@ -258,7 +266,6 @@ class PlaybackViewModel
             val sessionPlayer =
                 MediaSessionPlayer(
                     player,
-                    controllerViewState,
                     preferences.appPreferences.playbackPreferences,
                 )
             mediaSession =
@@ -271,6 +278,7 @@ class PlaybackViewModel
          * Initialize from the UI to start playback
          */
         private suspend fun init() {
+            musicService.stop()
             nextUp.setValueOnMain(null)
             this.preferences = userPreferencesService.getCurrent()
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
@@ -310,7 +318,6 @@ class PlaybackViewModel
                 if (queriedItem.type.playable) {
                     queriedItem
                 } else if (destination is Destination.PlaybackList) {
-                    isPlaylist = true
                     val playlistResult =
                         playlistCreator.createFrom(
                             item = queriedItem,
@@ -332,8 +339,10 @@ class PlaybackViewModel
                                 navigationManager.goBack()
                                 return
                             }
-                            withContext(Dispatchers.Main) {
-                                this@PlaybackViewModel.playlist.value = r.playlist
+                            if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.playlist.value = r.playlist
+                                }
                             }
                             r.playlist.items
                                 .first()
@@ -358,7 +367,7 @@ class PlaybackViewModel
                 playNextUp()
             }
 
-            if (!isPlaylist) {
+            if (!isPlaylist && preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
@@ -735,12 +744,12 @@ class PlaybackViewModel
                         player.removeListener(it)
                     }
 
+                    val playbackItemState = PlaybackItemState(playback, currentItemPlayback)
                     val activityListener =
                         TrackActivityPlaybackListener(
                             api = api,
                             player = player,
-                            playback = playback,
-                            itemPlayback = currentItemPlayback,
+                            getState = { playbackItemState },
                         )
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
@@ -1462,6 +1471,7 @@ class PlaybackViewModel
 data class PlayerState(
     val player: Player,
     val backend: PlayerBackend,
+    val assHandler: AssHandler?,
 )
 
 data class MediaSegmentState(

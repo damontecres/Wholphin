@@ -5,6 +5,7 @@ import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -62,7 +63,7 @@ sealed interface AppPreference<Pref, T> {
             AppSliderPreference<AppPreferences>(
                 title = R.string.skip_forward_preference,
                 defaultValue = 30,
-                min = 10,
+                min = 5,
                 max = 5.minutes.inWholeSeconds,
                 interval = 5,
                 getter = {
@@ -464,16 +465,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
-        val DirectPlayAss =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.direct_play_ass,
-                defaultValue = true,
-                getter = { it.playbackPreferences.overrides.directPlayAss },
+        val AssSubtitleMode =
+            AppChoicePreference<AppPreferences, AssPlaybackMode>(
+                title = R.string.ass_subtitle_playback,
+                defaultValue = AssPlaybackMode.ASS_LIBASS,
+                getter = { it.playbackPreferences.overrides.assPlaybackMode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { directPlayAss = value }
+                    prefs.updatePlaybackOverrides { assPlaybackMode = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.ass_subtitle_modes,
+                subtitles = R.array.ass_subtitle_modes_summary,
+                indexToValue = { AssPlaybackMode.forNumber(it) },
+                valueToIndex = { if (it != AssPlaybackMode.UNRECOGNIZED) it.number else AssPlaybackMode.ASS_LIBASS.number },
             )
         val DirectPlayPgs =
             AppSwitchPreference<AppPreferences>(
@@ -533,6 +536,18 @@ sealed interface AppPreference<Pref, T> {
                 displayValues = R.array.app_theme_colors,
                 indexToValue = { AppThemeColors.forNumber(it) },
                 valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val ShowLogos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.prefer_logos,
+                defaultValue = true,
+                getter = { it.interfacePreferences.showLogos },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { showLogos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
             )
 
         val InstalledVersion =
@@ -845,8 +860,19 @@ sealed interface AppPreference<Pref, T> {
                 },
                 displayValues = R.array.player_backend_options,
                 subtitles = R.array.player_backend_options_subtitles,
-                indexToValue = { PlayerBackend.forNumber(it) },
-                valueToIndex = { it.number },
+                indexToValue = { PlayerBackend.forNumber(it) ?: PlayerBackend.EXO_PLAYER },
+                valueToIndex = { if (it != PlayerBackend.UNRECOGNIZED) it.number else PlayerBackend.EXO_PLAYER.number },
+            )
+
+        val ExternalPlayerApp =
+            AppStringPreference<AppPreferences>(
+                title = R.string.external_player,
+                defaultValue = "",
+                getter = { it.playbackPreferences.externalPlayer },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { externalPlayer = value }
+                },
+                summary = null,
             )
 
         val ExoPlayerSettings =
@@ -1107,10 +1133,12 @@ val basicPreferences =
         PreferenceGroup(
             title = R.string.more,
             preferences =
-                listOf(
-                    AppPreference.SeerrIntegration,
-                    AppPreference.AdvancedSettings,
-                ),
+                buildList {
+                    if (BuildConfig.DISCOVER_ENABLED) {
+                        add(AppPreference.SeerrIntegration)
+                    }
+                    add(AppPreference.AdvancedSettings)
+                },
         ),
     )
 
@@ -1120,7 +1148,7 @@ private val ExoPlayerSettings =
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
         AppPreference.PreferAc3ForSurround,
-        AppPreference.DirectPlayAss,
+        AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
         AppPreference.DecodeAv1,
@@ -1157,6 +1185,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ShowLogos,
                         AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
@@ -1215,6 +1244,10 @@ val advancedPreferences =
                                 AppPreference.ExoPlayerSettings,
                                 AppPreference.MpvSettings,
                             ),
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER },
+                            listOf(AppPreference.ExternalPlayerApp),
                         ),
                     ),
             ),

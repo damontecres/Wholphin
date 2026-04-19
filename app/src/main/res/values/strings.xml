@@ -312,7 +312,7 @@
     <string name="check_for_updates">Check for updates</string>
     <string name="combine_continue_next_summary">Applies to TV Series only</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
-    <string name="direct_play_ass">Direct play ASS subtitles</string>
+    <string name="direct_play_ass">Use libass for ASS subtitles</string>
     <string name="direct_play_pgs">Direct play PGS subtitles</string>
     <string name="downmix_stereo">Always downmix to stereo</string>
     <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
@@ -504,6 +504,14 @@
     <string name="send_media_info_log_to_server">Send media info log to server</string>
     <string name="no_limit">No limit</string>
     <string name="max_days_next_up">Max days in Next Up</string>
+    <string name="albums">Albums</string>
+    <string name="artists">Artists</string>
+    <string name="songs">Songs</string>
+    <string name="go_to_artist">Go to artist</string>
+    <string name="now_playing">Now playing</string>
+    <string name="instant_mix">Instant mix</string>
+    <string name="go_to_album">Go to album</string>
+    <string name="add_to_queue">Add to queue</string>
 
     <string name="add_row">Add row</string>
     <string name="genres_in">Genres in %1$s</string>
@@ -609,9 +617,11 @@
 
     <string name="next_up_playback_end">At the end of playback</string>
     <string name="next_up_outro">During end credits/outro</string>
+    <string name="next_up_never">Never</string>
     <string-array name="show_next_up_when_options">
         <item>@string/next_up_playback_end</item>
         <item>@string/next_up_outro</item>
+        <item>@string/next_up_never</item>
     </string-array>
 
     <string name="white">White</string>
@@ -652,10 +662,12 @@
     <string name="exoplayer" translatable="false">ExoPlayer</string>
     <string name="mpv" translatable="false">MPV</string>
     <string name="prefer_mpv">Prefer MPV</string>
+    <string name="external_player">External Player</string>
     <string-array name="player_backend_options">
         <item>@string/exoplayer</item>
         <item>@string/mpv</item>
         <item>@string/prefer_mpv</item>
+        <item>@string/external_player</item>
     </string-array>
 
     <string name="player_backend_options_subtitles_prefer_mpv">Use ExoPlayer for HDR playback</string>
@@ -663,6 +675,7 @@
         <item /><!-- Intentionally blank -->
         <item /><!-- Intentionally blank -->
         <item>@string/player_backend_options_subtitles_prefer_mpv</item>
+        <item /><!-- Intentionally blank -->
     </string-array>
 
     <string name="aspect_ratios_poster">Poster (2:3)</string>
@@ -709,6 +722,8 @@
         <item>@string/photos</item>
     </string-array>
 
+    <string name="search_for">Search %s</string>
+
     <string name="actor">Actor</string>
     <string name="composer">Composer</string>
     <string name="writer">Writer</string>
@@ -721,7 +736,47 @@
     <string name="mixer">Mixer</string>
     <string name="creator">Creator</string>
     <string name="artist">Artist</string>
-    <string name="search_for">Search %s</string>
+    <string name="album_artist">Album artist</string>
+    <string name="album">Album</string>
+    <string name="popular_songs">Popular songs</string>
+    <string name="play_next">Play next</string>
+    <string name="music_videos">Music videos</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="hide_lyrics">Hide lyrics</string>
+    <string name="show_lyrics">Show lyrics</string>
+    <string name="song_has_lyrics">Song has lyrics</string>
+    <string name="remove_from_queue">Remove from queue</string>
+    <string name="show_album_cover">Show album cover</string>
+    <string name="show_visualizer">Show visualizer</string>
+    <string name="show_backdrop">Show backdrop</string>
+    <string name="play_as_type">Play as?</string>
+    <string name="visualizer_rationale">Visualizing the currently playing audio requires permission to record audio.</string>
+    <string name="continue_string">Continue</string>
     <string name="select_all">Select all</string>
-
+    <string name="separate_types">Separate types</string>
+    <string name="prefer_logos">Prefer showing logos for titles</string>
+    <string name="updated_toast">Wholphin updated to %s</string>
+    <string name="remove_continue_watching">Remove from continue watching</string>
+    <string name="remove_next_up">Remove series from next up</string>
+    <string name="view_removed_next_up">View series removed from next up</string>
+    <string name="view_more">View more</string>
+    <string name="discover_tv">Discover TV Shows</string>
+    <string name="discover_movies">Discover Movies</string>
+    <string name="studios_in">Studios in %1$s</string>
+    <string name="last_played">Last played</string>
+    <string name="system_default">System default</string>
+    <string name="ass_subtitle_mode_libass">Direct play with libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Direct play with ExoPlayer built-in</string>
+    <string name="ass_subtitle_mode_transcode">Burn in/transcode on server</string>
+    <string name="ass_subtitle_playback">SSA/ASS subtitle playback</string>
+    <array name="ass_subtitle_modes">
+        <item>@string/ass_subtitle_mode_libass</item>
+        <item>@string/ass_subtitle_mode_exoplayer</item>
+        <item>@string/ass_subtitle_mode_transcode</item>
+    </array>
+    <array name="ass_subtitle_modes_summary">
+        <item>@string/default_track</item>
+        <item></item><!-- Intentionally blank -->
+        <item></item><!-- Intentionally blank -->
+    </array>
 </resources>

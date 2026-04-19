@@ -19,12 +19,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -34,6 +36,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
@@ -42,18 +45,25 @@ import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
+/**
+ * Abstract [ViewModel] for the "Recommended" tab for a library
+ */
 abstract class RecommendedViewModel(
-    val context: Context,
+    @param:ApplicationContext val context: Context,
+    val api: ApiClient,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
     val mediaReportService: MediaReportService,
+    private val musicService: MusicService,
     private val backdropService: BackdropService,
     private val mediaManagementService: MediaManagementService,
 ) : ViewModel() {
@@ -110,13 +120,14 @@ abstract class RecommendedViewModel(
 
     fun update(
         @StringRes title: Int,
+        viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
         block: suspend () -> List<BaseItem>,
     ): Deferred<HomeRowLoadingState> =
         viewModelScope.async(Dispatchers.IO) {
             val titleStr = context.getString(title)
             val row =
                 try {
-                    HomeRowLoadingState.Success(titleStr, block.invoke())
+                    HomeRowLoadingState.Success(titleStr, block.invoke(), viewOptions)
                 } catch (ex: Exception) {
                     HomeRowLoadingState.Error(titleStr, null, ex)
                 }
@@ -141,6 +152,11 @@ abstract class RecommendedViewModel(
         item: BaseItem,
         appPreferences: AppPreferences,
     ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+    fun addToQueue(
+        item: BaseItem,
+        index: Int,
+    ) = addToQueue(api, musicService, item, index)
 }
 
 @Composable
@@ -205,6 +221,7 @@ fun RecommendedContent(
                 },
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
+                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                 modifier = modifier,
             )
         }
@@ -237,6 +254,9 @@ fun RecommendedContent(
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                             onClickDelete = { showDeleteDialog = RowColumnItem(position, item) },
+                            onClickAddToQueue = {
+                                viewModel.addToQueue(it, 0)
+                            },
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },

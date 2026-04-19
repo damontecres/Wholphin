@@ -55,9 +55,7 @@ class PlaybackKeyHandler(
                 } else if (oneClickPause && isEnterKey(it)) {
                     val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
-                    if (wasPlaying) {
-                        controllerViewState.showControls()
-                    } else {
+                    if (!wasPlaying) {
                         skipBackOnResume?.let {
                             player.seekBack(it)
                         }
