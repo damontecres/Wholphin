@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,10 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,18 +40,47 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.EpisodeAvailabilityStatus
+import com.github.damontecres.wholphin.data.model.episodeAvailabilityStatus
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+
+/**
+ * This is underlying code for controlling the ep availability status indicator
+ * Needs to stay before BannerCard
+ */
+
+@Composable
+private fun EpisodeStatusPill(status: EpisodeAvailabilityStatus) {
+    val (label, bgColor) = when (status) {
+        EpisodeAvailabilityStatus.UNAIRED -> "Unaired" to Color(0xB0FF8C00)
+        EpisodeAvailabilityStatus.MISSING -> "Missing" to Color(0xB0CC0000)
+        EpisodeAvailabilityStatus.AVAILABLE -> return
+    }
+    Box(
+        modifier = Modifier.background(bgColor, shape = RoundedCornerShape(25)),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White,
+            modifier = Modifier.padding(4.dp),
+        )
+    }
+}
 
 /**
  * Displays an image as a card. If no image is available, the name will be shown instead
@@ -103,6 +135,13 @@ fun BannerCard(
     // Stabilize callbacks to prevent AsyncImage from recomposing
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
+    val episodeStatus by remember(item) {
+        derivedStateOf {
+            item?.takeIf { it.type == BaseItemKind.EPISODE }
+                ?.episodeAvailabilityStatus
+                ?: EpisodeAvailabilityStatus.AVAILABLE
+        }
+    }
 
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
@@ -140,7 +179,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText != null) {
+            if (played || cornerText != null || episodeStatus != EpisodeAvailabilityStatus.AVAILABLE) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -151,6 +190,9 @@ fun BannerCard(
                 ) {
                     if (played && (playPercent <= 0 || playPercent >= 100)) {
                         WatchedIcon(Modifier.size(24.dp))
+                    }
+                    if (episodeStatus != EpisodeAvailabilityStatus.AVAILABLE) {
+                        EpisodeStatusPill(episodeStatus)
                     }
                     if (cornerText != null) {
                         Box(
@@ -194,6 +236,34 @@ fun BannerCard(
                             .height(Cards.playedPercentHeight)
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
+            }
+            if (episodeStatus == EpisodeAvailabilityStatus.UNAIRED) {
+                item?.data?.premiereDate?.let { premiereDate ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .background(AppColors.TransparentBlack50, shape = RoundedCornerShape(25)),
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(4.dp),
+                        ) {
+                            Text(
+                                text = "\uF017",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontFamily = FontAwesome,
+                            )
+                            Text(
+                                text = formatDateTime(premiereDate),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
