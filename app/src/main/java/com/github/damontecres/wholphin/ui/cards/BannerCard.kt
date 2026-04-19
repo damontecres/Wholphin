@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -133,12 +132,10 @@ fun BannerCard(
     // Stabilize callbacks to prevent AsyncImage from recomposing
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
-    val episodeStatus by remember(item) {
-        derivedStateOf {
+    val episodeStatus = remember(item) {
             item?.takeIf { it.type == BaseItemKind.EPISODE }
                 ?.episodeAvailabilityStatus
                 ?: EpisodeAvailabilityStatus.AVAILABLE
-        }
     }
 
     Card(
