@@ -185,7 +185,7 @@ class PlaybackViewModel
         private val jobs = mutableListOf<Job>()
 
         val nextUp = MutableLiveData<BaseItem?>()
-        private var isPlaylist = false
+        private val isPlaylist = destination is Destination.PlaybackList
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
         val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
@@ -233,6 +233,8 @@ class PlaybackViewModel
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
                     PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+
+                    PlayerBackend.EXTERNAL_PLAYER -> throw IllegalStateException("Cannot use this for external playback")
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
@@ -315,7 +317,6 @@ class PlaybackViewModel
                 if (queriedItem.type.playable) {
                     queriedItem
                 } else if (destination is Destination.PlaybackList) {
-                    isPlaylist = true
                     val playlistResult =
                         playlistCreator.createFrom(
                             item = queriedItem,
@@ -337,8 +338,10 @@ class PlaybackViewModel
                                 navigationManager.goBack()
                                 return
                             }
-                            withContext(Dispatchers.Main) {
-                                this@PlaybackViewModel.playlist.value = r.playlist
+                            if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.playlist.value = r.playlist
+                                }
                             }
                             r.playlist.items
                                 .first()
@@ -363,7 +366,7 @@ class PlaybackViewModel
                 playNextUp()
             }
 
-            if (!isPlaylist) {
+            if (!isPlaylist && preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
                     withContext(Dispatchers.Main) {

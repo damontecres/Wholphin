@@ -826,8 +826,19 @@ sealed interface AppPreference<Pref, T> {
                 },
                 displayValues = R.array.player_backend_options,
                 subtitles = R.array.player_backend_options_subtitles,
-                indexToValue = { PlayerBackend.forNumber(it) },
-                valueToIndex = { it.number },
+                indexToValue = { PlayerBackend.forNumber(it) ?: PlayerBackend.EXO_PLAYER },
+                valueToIndex = { if (it != PlayerBackend.UNRECOGNIZED) it.number else PlayerBackend.EXO_PLAYER.number },
+            )
+
+        val ExternalPlayerApp =
+            AppStringPreference<AppPreferences>(
+                title = R.string.external_player,
+                defaultValue = "",
+                getter = { it.playbackPreferences.externalPlayer },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { externalPlayer = value }
+                },
+                summary = null,
             )
 
         val ExoPlayerSettings =
@@ -1198,6 +1209,10 @@ val advancedPreferences =
                                 AppPreference.ExoPlayerSettings,
                                 AppPreference.MpvSettings,
                             ),
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER },
+                            listOf(AppPreference.ExternalPlayerApp),
                         ),
                     ),
             ),

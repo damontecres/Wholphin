@@ -10,6 +10,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
+import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
@@ -142,6 +143,10 @@ class PlayerFactory
                                 }
                             }
                     }
+
+                    PlayerBackend.EXTERNAL_PLAYER -> {
+                        throw IllegalArgumentException("Cannot create a player for external playback")
+                    }
                 }
             currentPlayer = newPlayer
             return PlayerCreation(newPlayer, assHandler)
@@ -221,6 +226,7 @@ class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
 ) : DefaultRenderersFactory(context) {
+    @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
         context: Context,
         extensionRendererMode: Int,
