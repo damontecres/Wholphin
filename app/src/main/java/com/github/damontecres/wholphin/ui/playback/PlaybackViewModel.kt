@@ -185,7 +185,7 @@ class PlaybackViewModel
         private val jobs = mutableListOf<Job>()
 
         val nextUp = MutableLiveData<BaseItem?>()
-        private var isPlaylist = false
+        private val isPlaylist = destination is Destination.PlaybackList
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
         val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
@@ -233,6 +233,8 @@ class PlaybackViewModel
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
                     PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+
+                    PlayerBackend.EXTERNAL_PLAYER -> throw IllegalStateException("Cannot use this for external playback")
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
@@ -315,7 +317,6 @@ class PlaybackViewModel
                 if (queriedItem.type.playable) {
                     queriedItem
                 } else if (destination is Destination.PlaybackList) {
-                    isPlaylist = true
                     val playlistResult =
                         playlistCreator.createFrom(
                             item = queriedItem,

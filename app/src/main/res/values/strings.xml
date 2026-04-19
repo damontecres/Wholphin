@@ -662,10 +662,12 @@
     <string name="exoplayer" translatable="false">ExoPlayer</string>
     <string name="mpv" translatable="false">MPV</string>
     <string name="prefer_mpv">Prefer MPV</string>
+    <string name="external_player">External Player</string>
     <string-array name="player_backend_options">
         <item>@string/exoplayer</item>
         <item>@string/mpv</item>
         <item>@string/prefer_mpv</item>
+        <item>@string/external_player</item>
     </string-array>
 
     <string name="player_backend_options_subtitles_prefer_mpv">Use ExoPlayer for HDR playback</string>
@@ -673,6 +675,7 @@
         <item /><!-- Intentionally blank -->
         <item /><!-- Intentionally blank -->
         <item>@string/player_backend_options_subtitles_prefer_mpv</item>
+        <item /><!-- Intentionally blank -->
     </string-array>
 
     <string name="aspect_ratios_poster">Poster (2:3)</string>
@@ -761,7 +764,7 @@
     <string name="discover_movies">Discover Movies</string>
     <string name="studios_in">Studios in %1$s</string>
     <string name="last_played">Last played</string>
-
+    <string name="system_default">System default</string>
     <string name="ass_subtitle_mode_libass">Direct play with libass</string>
     <string name="ass_subtitle_mode_exoplayer">Direct play with ExoPlayer built-in</string>
     <string name="ass_subtitle_mode_transcode">Burn in/transcode on server</string>
