@@ -22,6 +22,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.episodeAvailabilityStatus
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -61,7 +62,7 @@ fun EpisodeDetailsHeader(
                 chosenStreams = chosenStreams,
                 numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier.padding(bottom = padding),
-                item = ep,
+                availabilityStatus = ep.episodeAvailabilityStatus,
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(

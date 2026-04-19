@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.episodeAvailabilityStatus
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -48,7 +49,7 @@ fun FocusedEpisodeHeader(
                 chosenStreams = chosenStreams,
                 numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier.padding(start = HeaderUtils.startPadding),
-                item = ep,
+                availabilityStatus = ep.episodeAvailabilityStatus,
             )
         }
         OverviewText(
