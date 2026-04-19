@@ -76,7 +76,7 @@ private fun EpisodeStatusPill(status: EpisodeAvailabilityStatus) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(4.dp),
         )
     }
