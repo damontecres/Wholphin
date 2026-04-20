@@ -4,7 +4,7 @@ import android.content.Context
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
-import com.github.damontecres.wholphin.ui.components.CurrentItem
+import com.github.damontecres.wholphin.ui.components.ScreensaverItem
 import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -154,30 +154,20 @@ class ScreensaverService
         /**
          * Create a flow of items to show on the screensaver
          */
-        fun createItemFlow(scope: CoroutineScope): Flow<CurrentItem?> =
+        fun createItemFlow(scope: CoroutineScope): Flow<ScreensaverItem?> =
             flow {
-                val prefs =
-                    userPreferencesService.flow
-                        .first()
-                        .appPreferences
-                        .interfacePreferences.screensaverPreference
-                val maxAge = prefs.maxAgeFilter.takeIf { it >= 0 }
-                val itemTypes = prefs.itemTypesList.map { BaseItemKind.fromName(it) }
-                val request =
-                    GetItemsRequest(
-                        recursive = true,
-                        includeItemTypes = itemTypes,
-                        imageTypes = if (BaseItemKind.PHOTO in itemTypes) null else listOf(ImageType.BACKDROP),
-                        sortBy = listOf(ItemSortBy.RANDOM),
-                        maxOfficialRating = maxAge?.toString(),
-                        hasParentalRating = maxAge?.let { true },
-                    )
                 val pager =
-                    ApiRequestPager(api, request, GetItemsRequestHandler, scope).init()
+                    try {
+                        createPager()
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error creating pager for screensaver")
+                        emit(ScreensaverItem.Error(ex))
+                        return@flow
+                    }
                 Timber.v("Got %s items", pager.size)
                 var index = 0
                 if (pager.isEmpty()) {
-                    emit(null)
+                    emit(ScreensaverItem.Empty)
                 } else {
                     val duration =
                         userPreferencesService
@@ -213,7 +203,14 @@ class ScreensaverService
                                                 .build(),
                                         ).job
                                         .await()
-                                    emit(CurrentItem(item, backdropUrl, logoUrl, title ?: ""))
+                                    emit(
+                                        ScreensaverItem.CurrentItem(
+                                            item,
+                                            backdropUrl,
+                                            logoUrl,
+                                            title ?: "",
+                                        ),
+                                    )
                                     delay(duration)
                                 }
                             }
@@ -228,6 +225,26 @@ class ScreensaverService
                     }
                 }
             }.flowOn(Dispatchers.Default).cancellable()
+
+        private suspend fun createPager(): ApiRequestPager<GetItemsRequest> {
+            val prefs =
+                userPreferencesService.flow
+                    .first()
+                    .appPreferences
+                    .interfacePreferences.screensaverPreference
+            val maxAge = prefs.maxAgeFilter.takeIf { it >= 0 }
+            val itemTypes = prefs.itemTypesList.map { BaseItemKind.fromName(it) }
+            val request =
+                GetItemsRequest(
+                    recursive = true,
+                    includeItemTypes = itemTypes,
+                    imageTypes = if (BaseItemKind.PHOTO in itemTypes) null else listOf(ImageType.BACKDROP),
+                    sortBy = listOf(ItemSortBy.RANDOM),
+                    maxOfficialRating = maxAge?.toString(),
+                    hasParentalRating = maxAge?.let { true },
+                )
+            return ApiRequestPager(api, request, GetItemsRequestHandler, scope).init()
+        }
     }
 
 data class ScreensaverState(
