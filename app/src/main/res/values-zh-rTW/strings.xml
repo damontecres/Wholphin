@@ -574,4 +574,6 @@
     <string name="ass_subtitle_playback">SSA/ASS 字幕播放方式</string>
     <string name="last_played">上次播放</string>
     <string name="next_up_never">不顯示</string>
+    <string name="external_player">外部播放器</string>
+    <string name="system_default">系統預設</string>
 </resources>
