@@ -240,8 +240,10 @@ class SwitchUserViewModel
             return serverDao
                 .getServer(server.id)
                 ?.users
-                ?.sortedBy { it.name }
-                ?.map { JellyfinUserAndImage(it, api.imageApi.getUserImageUrl(it.id)) }
+                ?.sortedWith(
+                    compareByDescending<JellyfinUser> { it.lastUsedAt ?: Long.MIN_VALUE }
+                        .thenBy(nullsLast(String.CASE_INSENSITIVE_ORDER)) { it.name },
+                )?.map { JellyfinUserAndImage(it, api.imageApi.getUserImageUrl(it.id)) }
                 .orEmpty()
         }
 
