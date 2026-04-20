@@ -592,4 +592,6 @@
     <string name="ass_subtitle_mode_exoplayer">Direkte Wiedergabe mit ExoPlayer (eingebaut)</string>
     <string name="ass_subtitle_mode_transcode">Einbrennen/Auf Server transkodieren</string>
     <string name="ass_subtitle_playback">SSA/ASS Untertitel Wiedergabe</string>
+    <string name="external_player">Externer Player</string>
+    <string name="system_default">Systemstandard</string>
 </resources>
