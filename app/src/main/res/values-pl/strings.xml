@@ -217,7 +217,7 @@
     <string name="image_type">Typ obrazu</string>
     <string name="cast_and_crew"><![CDATA[Obsada]]></string>
     <string name="global_content_scale">Domyślne skalowanie</string>
-    <string name="direct_play_ass">Odtwarzaj bezpośrednio napisy ASS</string>
+    <string name="direct_play_ass">Używaj libass do napisów ASS</string>
     <string name="direct_play_pgs">Odtwarzaj bezpośrednio napisy PGS</string>
     <string name="downmix_stereo">Zawsze miksuj w dół do stereo</string>
     <string name="app_theme">Motyw interfejsu</string>
@@ -622,4 +622,12 @@
     <string name="interlaced">Przeplatany</string>
     <string name="framerate">Liczba klatek</string>
     <string name="discover_movies">Odkrywaj filmy</string>
+    <string name="next_up_never">Nigdy</string>
+    <string name="external_player">Zewnętrzny odtwarzacz</string>
+    <string name="last_played">Ostatnio odtwarzane</string>
+    <string name="system_default">Domyślny systemowy</string>
+    <string name="ass_subtitle_mode_libass">Bezpośrednie odtwarzanie z libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Bezpośrednie odtwarzanie z wbudowanym ExoPlayer</string>
+    <string name="ass_subtitle_mode_transcode">Wypalaj napisy/transkoduj źródło na serwerze</string>
+    <string name="ass_subtitle_playback">Odtwarzanie napisów SSA/ASS</string>
 </resources>
