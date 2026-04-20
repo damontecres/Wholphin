@@ -610,4 +610,6 @@
     <string name="ass_subtitle_mode_exoplayer">Lecture directe avec ExoPlayer intégré</string>
     <string name="ass_subtitle_mode_transcode">Incruster / Transcoder sur le serveur</string>
     <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
+    <string name="external_player">Lecteur externe</string>
+    <string name="system_default">Paramètres système par défaut</string>
 </resources>
