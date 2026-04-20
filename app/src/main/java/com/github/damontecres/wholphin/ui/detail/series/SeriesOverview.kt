@@ -98,13 +98,15 @@ fun SeriesOverview(
     val episodeRowFocusRequester = remember { FocusRequester() }
     val castCrewRowFocusRequester = remember { FocusRequester() }
     val guestStarRowFocusRequester = remember { FocusRequester() }
+    val extrasRowFocusRequester = remember { FocusRequester() }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val series by viewModel.item.observeAsState(null)
-    val seasons by viewModel.seasons.observeAsState(listOf())
+    val seasons by viewModel.seasons.observeAsState(emptyList())
     val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
-    val peopleInEpisode by viewModel.peopleInEpisode.map { it.people }.observeAsState(listOf())
+    val seasonExtras by viewModel.extras.observeAsState(emptyList())
+    val peopleInEpisode by viewModel.peopleInEpisode.map { it.people }.observeAsState(emptyList())
     val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
     val position by viewModel.position.collectAsState(SeriesOverviewPosition(0, 0))
@@ -164,6 +166,7 @@ fun SeriesOverview(
                         EPISODE_ROW -> episodeRowFocusRequester
                         CAST_AND_CREW_ROW -> castCrewRowFocusRequester
                         GUEST_STAR_ROW -> guestStarRowFocusRequester
+                        EXTRAS_ROW -> extrasRowFocusRequester
                         else -> episodeRowFocusRequester
                     },
                     "series_overview",
@@ -280,11 +283,13 @@ fun SeriesOverview(
                     episodes = episodes,
                     chosenStreams = chosenStreams,
                     peopleInEpisode = peopleInEpisode,
+                    seasonExtras = seasonExtras,
                     position = position,
                     firstItemFocusRequester = firstItemFocusRequester,
                     episodeRowFocusRequester = episodeRowFocusRequester,
                     castCrewRowFocusRequester = castCrewRowFocusRequester,
                     guestStarRowFocusRequester = guestStarRowFocusRequester,
+                    extrasRowFocusRequester = extrasRowFocusRequester,
                     onChangeSeason = { index ->
                         if (index != position.seasonTabIndex) {
                             seasons.getOrNull(index)?.let { season ->
@@ -364,6 +369,10 @@ fun SeriesOverview(
                             ),
                         )
                     },
+                    onClickExtra = { _, extra ->
+                        rowFocused = EXTRAS_ROW
+                        viewModel.navigateTo(extra.destination)
+                    },
                     canDelete = { viewModel.canDelete(it, preferences.appPreferences) },
                     deleteOnClick = { showDeleteDialog = it },
                     modifier = modifier,
@@ -435,3 +444,4 @@ fun SeriesOverview(
 private const val EPISODE_ROW = 0
 private const val CAST_AND_CREW_ROW = EPISODE_ROW + 1
 private const val GUEST_STAR_ROW = CAST_AND_CREW_ROW + 1
+private const val EXTRAS_ROW = GUEST_STAR_ROW + 1
