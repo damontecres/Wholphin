@@ -28,7 +28,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
@@ -220,14 +219,7 @@ class MainActivity : AppCompatActivity() {
                     signInAuto = appPreferences.signInAutomatically
                 }
                 CoilConfig(
-                    diskCacheSizeBytes =
-                        appPreferences.advancedPreferences.imageDiskCacheSizeBytes.let {
-                            if (it < AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT) {
-                                AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
-                            } else {
-                                it
-                            }
-                        },
+                    prefs = appPreferences,
                     okHttpClient = okHttpClient,
                     debugLogging = false,
                     enableCache = true,
