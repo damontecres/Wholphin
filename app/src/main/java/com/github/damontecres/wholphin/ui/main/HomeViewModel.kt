@@ -150,6 +150,7 @@ class HomeViewModel
                                             }
                                     }
                                 Timber.v("Got row data index=%s", rowIndex)
+                                remaining.removeIf { it.index == rowIndex }
                                 // Include only errors & non-empty successes
                                 if (rowData is HomeRowLoadingState.Error ||
                                     (rowData is HomeRowLoadingState.Success && rowData.items.isNotEmpty())
@@ -163,7 +164,6 @@ class HomeViewModel
                                             homeRows = newRows,
                                         )
                                     }
-                                    remaining.removeIf { it.index == rowIndex }
                                 } else {
                                     Timber.d("Skipping invalid row %s: %s", rowIndex, rowData)
                                 }
