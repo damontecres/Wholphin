@@ -125,7 +125,7 @@ sealed interface PlaybackAction {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
-    playerControls: Player,
+    player: Player,
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
@@ -166,7 +166,7 @@ fun PlaybackControls(
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         SeekBar(
-            player = playerControls,
+            player = player,
             controllerViewState = controllerViewState,
             onSeekProgress = onSeekProgress,
             interactionSource = seekBarInteractionSource,
@@ -192,7 +192,7 @@ fun PlaybackControls(
                 modifier = Modifier.align(Alignment.CenterStart),
             )
             PlaybackButtons(
-                player = playerControls,
+                player = player,
                 initialFocusRequester = initialFocusRequester,
                 onControllerInteraction = onControllerInteraction,
                 onPlaybackActionClick = onPlaybackActionClick,
@@ -211,7 +211,7 @@ fun PlaybackControls(
                     TextButton(
                         stringRes = segment.type.skipStringRes,
                         onClick = {
-                            playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                            player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                         },
                         modifier =
                             Modifier

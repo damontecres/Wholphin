@@ -396,7 +396,7 @@ fun PlaybackPageContent(
                         .fillMaxSize()
                         .background(Color.Transparent),
                 item = currentPlayback?.item,
-                playerControls = player,
+                player = player,
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,
                 previousEnabled = true,

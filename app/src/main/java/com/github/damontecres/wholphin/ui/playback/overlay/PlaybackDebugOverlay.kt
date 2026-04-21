@@ -93,17 +93,16 @@ fun PlaybackDebugOverlay(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-    var memoryUsed by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    val memoryUsed by produceState("") {
         withContext(Dispatchers.Default) {
-            while (true) {
+            while (isActive) {
                 val runtime = Runtime.getRuntime()
                 val total = runtime.totalMemory()
                 val free = runtime.freeMemory()
                 val used = total - free
                 val totalMemory = formatBytes(total)
                 val usedMemory = formatBytes(used)
-                memoryUsed = "$usedMemory / $totalMemory"
+                value = "$usedMemory / $totalMemory"
                 delay(2.seconds)
             }
         }
@@ -119,14 +118,16 @@ fun PlaybackDebugOverlay(
         ) {
             ProvideTextStyle(textStyle) {
                 SimpleTable(
-                    buildList {
-                        add("Backend:" to currentPlayback?.backend?.toString())
-                        add("Play method:" to currentPlayback?.playMethod?.serialName)
-                        if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
-                            add("Video Decoder:" to currentPlayback.videoDecoder)
-                            add("Audio Decoder:" to (currentPlayback.audioDecoder ?: "Pass through"))
+                    remember(currentPlayback, displayMode) {
+                        buildList {
+                            add("Backend:" to currentPlayback?.backend?.toString())
+                            add("Play method:" to currentPlayback?.playMethod?.serialName)
+                            if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
+                                add("Video Decoder:" to currentPlayback.videoDecoder)
+                                add("Audio Decoder:" to (currentPlayback.audioDecoder ?: "Pass through"))
+                            }
+                            add("Display Mode: " to displayMode)
                         }
-                        add("Display Mode: " to displayMode)
                     },
                     modifier = Modifier.weight(1f, fill = false),
                     keyWidth = 80.dp,

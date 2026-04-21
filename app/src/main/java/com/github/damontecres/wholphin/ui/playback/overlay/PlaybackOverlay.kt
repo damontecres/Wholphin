@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -21,11 +20,9 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,19 +35,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -63,24 +56,16 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
-import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
-import java.time.LocalTime
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-
-private val titleTextSize = 28.sp
-private val subtitleTextSize = 18.sp
 
 /**
  * The overlay during playback showing controls, seek preview image, debug info, etc
@@ -89,7 +74,7 @@ private val subtitleTextSize = 18.sp
 fun PlaybackOverlay(
     item: BaseItem?,
     chapters: List<Chapter>,
-    playerControls: Player,
+    player: Player,
     controllerViewState: ControllerViewState,
     showPlay: Boolean,
     showClock: Boolean,
@@ -115,8 +100,8 @@ fun PlaybackOverlay(
 ) {
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
     // Will be used for preview/trick play images
-    var seekProgressMs by remember(seekBarFocused) { mutableLongStateOf(playerControls.currentPosition) }
-    var seekProgressPercent = (seekProgressMs.toDouble() / playerControls.duration).toFloat()
+    var seekProgressMs by remember(seekBarFocused) { mutableLongStateOf(player.currentPosition) }
+    var seekProgressPercent = (seekProgressMs.toDouble() / player.duration).toFloat()
 
     val density = LocalDensity.current
 
@@ -133,6 +118,9 @@ fun PlaybackOverlay(
     var controllerHeight by remember { mutableStateOf(0.dp) }
     var state by remember(controllerViewState.controlsVisible) {
         mutableStateOf(if (controllerViewState.controlsVisible) OverlayViewState.CONTROLLER else OverlayViewState.HIDDEN)
+    }
+    val onChangeState = { newState: OverlayViewState ->
+        state = newState
     }
 
     Box(
@@ -188,24 +176,25 @@ fun PlaybackOverlay(
                     if (seekBarFocused) {
                         LaunchedEffect(Unit) {
                             seekProgressPercent =
-                                (playerControls.currentPosition.toFloat() / playerControls.duration)
+                                (player.currentPosition.toFloat() / player.duration)
                         }
                     }
                     val nextState =
-                        if (chapters.isNotEmpty()) {
-                            OverlayViewState.CHAPTERS
-                        } else if (playlist.hasNext()) {
-                            OverlayViewState.QUEUE
-                        } else {
-                            null
+                        remember(chapters, playlist) {
+                            if (chapters.isNotEmpty()) {
+                                OverlayViewState.CHAPTERS
+                            } else if (playlist.hasNext()) {
+                                OverlayViewState.QUEUE
+                            } else {
+                                null
+                            }
                         }
                     PlaybackController(
                         item = item,
                         nextState = nextState,
-                        playerControls = playerControls,
+                        player = player,
                         controllerViewState = controllerViewState,
                         showPlay = showPlay,
-                        showClock = showClock,
                         previousEnabled = previousEnabled,
                         nextEnabled = nextEnabled,
                         seekEnabled = seekEnabled,
@@ -219,7 +208,7 @@ fun PlaybackOverlay(
                             seekProgressMs = it
                         },
                         currentSegment = currentSegment,
-                        onChangeState = { state = it },
+                        onChangeState = onChangeState,
                         modifier =
                             Modifier
                                 .padding(bottom = 8.dp)
@@ -233,12 +222,12 @@ fun PlaybackOverlay(
                 OverlayViewState.CHAPTERS -> {
                     if (chapters.isNotEmpty()) {
                         ChapterRowOverlay(
-                            player = playerControls,
+                            player = player,
                             controllerViewState = controllerViewState,
                             chapters = chapters,
                             playlist = playlist,
                             aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
-                            onChangeState = { state = it },
+                            onChangeState = onChangeState,
                             modifier =
                                 Modifier
                                     .padding(horizontal = 8.dp)
@@ -253,12 +242,14 @@ fun PlaybackOverlay(
                             playlist = playlist,
                             controllerViewState = controllerViewState,
                             nextState =
-                                if (chapters.isNotEmpty()) {
-                                    OverlayViewState.CHAPTERS
-                                } else {
-                                    OverlayViewState.CONTROLLER
+                                remember(chapters) {
+                                    if (chapters.isNotEmpty()) {
+                                        OverlayViewState.CHAPTERS
+                                    } else {
+                                        OverlayViewState.CONTROLLER
+                                    }
                                 },
-                            onChangeState = { state = it },
+                            onChangeState = onChangeState,
                             onClickPlaylist = onClickPlaylist,
                             modifier =
                                 Modifier
@@ -405,135 +396,4 @@ enum class OverlayViewState {
     CONTROLLER,
     CHAPTERS,
     QUEUE,
-}
-
-/**
- * A wrapper for the playback controls to show title and other information, plus the actual controls
- *
- * @see PlaybackControls
- */
-@Composable
-fun Controller(
-    title: String?,
-    playerControls: Player,
-    controllerViewState: ControllerViewState,
-    showClock: Boolean,
-    showPlay: Boolean,
-    previousEnabled: Boolean,
-    nextEnabled: Boolean,
-    seekEnabled: Boolean,
-    seekBack: Duration,
-    skipBackOnResume: Duration?,
-    seekForward: Duration,
-    onPlaybackActionClick: (PlaybackAction) -> Unit,
-    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
-    onSeekProgress: (Long) -> Unit,
-    nextState: OverlayViewState?,
-    currentSegment: MediaSegmentDto?,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    onNextStateFocus: () -> Unit = {},
-) {
-    val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
-    val verticalOffset by animateDpAsState(
-        targetValue = if (seekBarFocused) (-32).dp else 0.dp,
-        label = "TitleBumpOffset",
-        animationSpec =
-            spring(
-                stiffness = Spring.StiffnessMediumLow,
-                visibilityThreshold = Dp.VisibilityThreshold,
-            ),
-    )
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .padding(start = 16.dp)
-                    .offset(y = verticalOffset),
-        ) {
-            title?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = titleTextSize,
-                    maxLines = 1,
-                    overflow = TextOverflow.MiddleEllipsis,
-                    modifier = Modifier.fillMaxWidth(.75f),
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.End),
-            ) {
-                subtitle?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontSize = subtitleTextSize,
-                        maxLines = 1,
-                        overflow = TextOverflow.MiddleEllipsis,
-                        modifier = Modifier.fillMaxWidth(.75f),
-                    )
-                }
-
-                var endTimeStr by remember { mutableStateOf("...") }
-                LaunchedEffect(playerControls) {
-                    while (isActive) {
-                        val remaining =
-                            (playerControls.duration - playerControls.currentPosition)
-                                .div(playerControls.playbackParameters.speed)
-                                .toLong()
-                                .milliseconds
-                        val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                        endTimeStr = getTimeFormatter().format(endTime)
-                        delay(1.seconds)
-                    }
-                }
-                Text(
-                    text = "Ends $endTimeStr",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier =
-                        Modifier
-                            .padding(end = 32.dp),
-                )
-            }
-        }
-        // TODO need to move these up a level?
-        val moreFocusRequester = remember { FocusRequester() }
-        val captionFocusRequester = remember { FocusRequester() }
-        val settingsFocusRequester = remember { FocusRequester() }
-        PlaybackControls(
-            modifier = Modifier.fillMaxWidth(),
-            playerControls = playerControls,
-            onPlaybackActionClick = onPlaybackActionClick,
-            controllerViewState = controllerViewState,
-            onSeekProgress = {
-                onSeekProgress(it)
-            },
-            showPlay = showPlay,
-            previousEnabled = previousEnabled,
-            nextEnabled = nextEnabled,
-            seekEnabled = seekEnabled,
-            seekBarInteractionSource = seekBarInteractionSource,
-            seekBarIntervals = 16,
-            seekBack = seekBack,
-            seekForward = seekForward,
-            skipBackOnResume = skipBackOnResume,
-            currentSegment = currentSegment,
-            onClickPlaybackDialogType = onClickPlaybackDialogType,
-            moreFocusRequester = moreFocusRequester,
-            captionFocusRequester = captionFocusRequester,
-            settingsFocusRequester = settingsFocusRequester,
-        )
-    }
 }
