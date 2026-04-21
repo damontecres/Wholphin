@@ -16,27 +16,18 @@ import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,16 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -68,7 +55,6 @@ import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.Playlist
@@ -76,18 +62,13 @@ import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.cards.ChapterCard
-import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.HiddenFocusBox
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.getTimeFormatter
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.ImageType
@@ -218,263 +199,72 @@ fun PlaybackOverlay(
                         } else {
                             null
                         }
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    PlaybackController(
+                        item = item,
+                        nextState = nextState,
+                        playerControls = playerControls,
+                        controllerViewState = controllerViewState,
+                        showPlay = showPlay,
+                        showClock = showClock,
+                        previousEnabled = previousEnabled,
+                        nextEnabled = nextEnabled,
+                        seekEnabled = seekEnabled,
+                        seekBack = seekBack,
+                        skipBackOnResume = skipBackOnResume,
+                        seekForward = seekForward,
+                        onPlaybackActionClick = onPlaybackActionClick,
+                        onClickPlaybackDialogType = onClickPlaybackDialogType,
+                        onSeekBarChange = {
+                            onSeekBarChange(it)
+                            seekProgressMs = it
+                        },
+                        currentSegment = currentSegment,
+                        onChangeState = { state = it },
                         modifier =
                             Modifier
                                 .padding(bottom = 8.dp)
                                 .onGloballyPositioned {
                                     controllerHeight = with(density) { it.size.height.toDp() }
                                 },
-                    ) {
-                        Controller(
-                            title = item?.title,
-                            subtitle = item?.subtitleLong,
-                            playerControls = playerControls,
-                            controllerViewState = controllerViewState,
-                            showPlay = showPlay,
-                            showClock = showClock,
-                            previousEnabled = previousEnabled,
-                            nextEnabled = nextEnabled,
-                            seekEnabled = seekEnabled,
-                            seekBack = seekBack,
-                            skipBackOnResume = skipBackOnResume,
-                            seekForward = seekForward,
-                            onPlaybackActionClick = onPlaybackActionClick,
-                            onClickPlaybackDialogType = onClickPlaybackDialogType,
-                            onSeekProgress = {
-                                onSeekBarChange(it)
-                                seekProgressMs = it
-                            },
-                            seekBarInteractionSource = seekBarInteractionSource,
-                            nextState = nextState,
-                            onNextStateFocus = {
-                                nextState?.let { state = it }
-                            },
-                            currentSegment = currentSegment,
-                            modifier =
-                            Modifier,
-                            // Don't use key events because this control has vertical items so up/down is tough to manage
-                        )
-                        when (nextState) {
-                            OverlayViewState.CHAPTERS -> {
-                                Text(
-                                    text = stringResource(R.string.chapters),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 16.dp, top = 0.dp)
-                                            .onFocusChanged {
-                                                if (it.isFocused) state = nextState
-                                            }.focusable(),
-                                )
-                            }
-
-                            OverlayViewState.QUEUE -> {
-                                Text(
-                                    text = stringResource(R.string.queue),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 16.dp, top = 0.dp)
-                                            .onFocusChanged {
-                                                if (it.isFocused) state = nextState
-                                            }.focusable(),
-                                )
-                            }
-
-                            else -> {
-                                Spacer(Modifier.height(32.dp))
-                            }
-                        }
-                    }
+                        seekBarInteractionSource = seekBarInteractionSource,
+                    )
                 }
 
                 OverlayViewState.CHAPTERS -> {
                     if (chapters.isNotEmpty()) {
-                        val chapterInteractionSources =
-                            remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
-                        val bringIntoViewRequester = remember { BringIntoViewRequester() }
-                        val chapterIndex =
-                            remember {
-                                val position = playerControls.currentPosition.milliseconds
-                                val index =
-                                    chapters
-                                        .indexOfFirst { it.position > position }
-                                        .minus(1)
-                                        .let {
-                                            if (it < 0) {
-                                                // Didn't find a chapter, so it's either the first or last
-                                                if (position < chapters.first().position) {
-                                                    0
-                                                } else {
-                                                    chapters.lastIndex
-                                                }
-                                            } else {
-                                                it
-                                            }
-                                        }.coerceIn(0, chapters.lastIndex)
-                                index
-                            }
-                        val listState = rememberLazyListState(chapterIndex)
-                        val focusRequester = remember { FocusRequester() }
-                        val hiddenFocusRequester = remember { FocusRequester() }
-                        LaunchedEffect(Unit) {
-                            bringIntoViewRequester.bringIntoView()
-                            focusRequester.tryRequestFocus()
-                        }
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ChapterRowOverlay(
+                            player = playerControls,
+                            controllerViewState = controllerViewState,
+                            chapters = chapters,
+                            playlist = playlist,
+                            aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
+                            onChangeState = { state = it },
                             modifier =
                                 Modifier
                                     .padding(horizontal = 8.dp)
                                     .fillMaxWidth(),
-                        ) {
-                            HiddenFocusBox(hiddenFocusRequester) {
-                                state = OverlayViewState.CONTROLLER
-                            }
-                            Text(
-                                text = stringResource(R.string.chapters),
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                            LazyRow(
-                                state = listState,
-                                contentPadding = PaddingValues(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .focusRestorer(focusRequester)
-                                        .onFocusChanged {
-                                            if (it.hasFocus) {
-                                                controllerViewState.pulseControls()
-                                            }
-                                        }.focusProperties {
-                                            up = hiddenFocusRequester
-                                        },
-                            ) {
-                                itemsIndexed(chapters) { index, chapter ->
-                                    val interactionSource = chapterInteractionSources[index]
-                                    val isFocused =
-                                        interactionSource.collectIsFocusedAsState().value
-                                    LaunchedEffect(isFocused) {
-                                        if (isFocused) controllerViewState.pulseControls()
-                                    }
-                                    ChapterCard(
-                                        name = chapter.name,
-                                        position = chapter.position,
-                                        imageUrl = chapter.imageUrl,
-                                        aspectRatio =
-                                            item?.data?.aspectRatioFloat
-                                                ?: AspectRatios.WIDE,
-                                        onClick = {
-                                            playerControls.seekTo(chapter.position.inWholeMilliseconds)
-                                            controllerViewState.hideControls()
-                                        },
-                                        interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    index == chapterIndex,
-                                                    Modifier
-                                                        .focusRequester(focusRequester)
-                                                        .bringIntoViewRequester(
-                                                            bringIntoViewRequester,
-                                                        ),
-                                                ).ifElse(
-                                                    index == 0,
-                                                    Modifier.focusProperties {
-                                                        // Prevent scrolling left on first card to prevent moving down
-                                                        left = FocusRequester.Cancel
-                                                    },
-                                                ),
-                                    )
-                                }
-                            }
-                            if (playlist.hasNext()) {
-                                Text(
-                                    text = stringResource(R.string.queue),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier =
-                                        Modifier
-                                            .padding(bottom = 8.dp)
-                                            .onFocusChanged {
-                                                if (it.isFocused) state = OverlayViewState.QUEUE
-                                            }.focusable(),
-                                )
-                            }
-                        }
+                        )
                     }
                 }
 
                 OverlayViewState.QUEUE -> {
                     if (playlist.hasNext()) {
-                        val items = remember { playlist.upcomingItems() }
-                        val focusRequester = remember { FocusRequester() }
-                        val hiddenFocusRequester = remember { FocusRequester() }
-                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        QueueRowOverlay(
+                            playlist = playlist,
+                            controllerViewState = controllerViewState,
+                            nextState =
+                                if (chapters.isNotEmpty()) {
+                                    OverlayViewState.CHAPTERS
+                                } else {
+                                    OverlayViewState.CONTROLLER
+                                },
+                            onChangeState = { state = it },
+                            onClickPlaylist = onClickPlaylist,
                             modifier =
                                 Modifier
                                     .padding(8.dp)
                                     .fillMaxWidth(),
-                        ) {
-                            HiddenFocusBox(hiddenFocusRequester) {
-                                state =
-                                    if (chapters.isNotEmpty()) {
-                                        OverlayViewState.CHAPTERS
-                                    } else {
-                                        OverlayViewState.CONTROLLER
-                                    }
-                            }
-                            Text(
-                                text = stringResource(R.string.queue),
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                            LazyRow(
-                                contentPadding =
-                                    PaddingValues(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp,
-                                    ),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .focusRestorer(focusRequester)
-                                        .onFocusChanged {
-                                            if (it.hasFocus) {
-                                                controllerViewState.pulseControls()
-                                            }
-                                        },
-                            ) {
-                                itemsIndexed(items) { index, item ->
-                                    val interactionSource =
-                                        remember { MutableInteractionSource() }
-                                    val isFocused =
-                                        interactionSource.collectIsFocusedAsState().value
-                                    LaunchedEffect(isFocused) {
-                                        if (isFocused) controllerViewState.pulseControls()
-                                    }
-                                    SeasonCard(
-                                        item = item,
-                                        onClick = {
-                                            onClickPlaylist.invoke(item)
-                                            controllerViewState.hideControls()
-                                        },
-                                        onLongClick = {},
-                                        imageHeight = 140.dp,
-                                        interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier.ifElse(
-                                                index == 0,
-                                                Modifier.focusRequester(focusRequester),
-                                            ),
-                                    )
-                                }
-                            }
-                        }
+                        )
                     }
                 }
             }
