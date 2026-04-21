@@ -4,18 +4,29 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.util.TrackSupport
 
@@ -26,11 +37,13 @@ import com.github.damontecres.wholphin.util.TrackSupport
 fun PlaybackTrackInfo(
     trackSupport: List<TrackSupport>,
     modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
 ) {
+    val selectedTracks = remember(trackSupport) { trackSupport.filter { it.selected } }
     val selectedWeight = .5f
     val weights = listOf(.25f, .4f, .5f, 1f, 1f)
-    val textStyle =
-        MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface)
+
+    var expanded by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier,
@@ -70,52 +83,95 @@ fun PlaybackTrackInfo(
                 }
             }
         }
-        items(trackSupport) { track ->
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier =
-                    Modifier.ifElse(
-                        track.selected,
-                        Modifier.background(MaterialTheme.colorScheme.border.copy(alpha = .25f)),
-                    ),
-            ) {
-                val texts =
-                    listOf(
-                        track.id ?: "",
-                        track.type.name,
-                        track.codecs ?: "",
-                        track.supported.name,
-                        track.labels.joinToString(", "),
-                    )
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.weight(selectedWeight),
-                ) {
-                    if (track.selected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    } else {
-                        Text(
-                            text = "-",
-                            style = textStyle,
-                        )
+        items(if (expanded) trackSupport else selectedTracks) { track ->
+            ProvideTextStyle(textStyle) {
+                TrackSupportRow(
+                    track = track,
+                    selectedWeight = selectedWeight,
+                    weights = weights,
+                    modifier = Modifier,
+                )
+            }
+        }
+        if (trackSupport.size > selectedTracks.size) {
+            item {
+                val density = LocalDensity.current
+                val height =
+                    remember(density, textStyle) {
+                        with(density) {
+                            textStyle.fontSize.toDp() * 2
+                        }
                     }
-                }
-                texts.forEachIndexed { index, text ->
-                    Box(
-                        contentAlignment = Alignment.CenterStart,
-                        modifier = Modifier.weight(weights[index]),
+                Box(Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { expanded = true },
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        shape =
+                            ClickableSurfaceDefaults.shape(
+                                shape = RoundedCornerShape(25),
+                            ),
+                        contentHeight = height,
                     ) {
+                        val text = if (expanded) "Hide" else "Show"
                         Text(
-                            text = text,
-                            style = textStyle,
+                            text = "$text ${trackSupport.size - selectedTracks.size} more",
+                            fontSize = textStyle.fontSize,
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun TrackSupportRow(
+    track: TrackSupport,
+    selectedWeight: Float,
+    weights: List<Float>,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier =
+            modifier.ifElse(
+                track.selected,
+                Modifier.background(MaterialTheme.colorScheme.border.copy(alpha = .25f)),
+            ),
+    ) {
+        val texts =
+            listOf(
+                track.id ?: "",
+                track.type.name,
+                track.codecs ?: "",
+                track.supported.name,
+                track.labels.joinToString(", "),
+            )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.weight(selectedWeight),
+        ) {
+            if (track.selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(12.dp),
+                )
+            } else {
+                Text(
+                    text = "-",
+                )
+            }
+        }
+        texts.forEachIndexed { index, text ->
+            Box(
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier.weight(weights[index]),
+            ) {
+                Text(
+                    text = text,
+                )
             }
         }
     }

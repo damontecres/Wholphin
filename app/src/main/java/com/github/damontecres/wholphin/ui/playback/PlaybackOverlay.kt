@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -55,6 +56,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,8 +151,9 @@ fun PlaybackOverlay(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
+        // Controls
         AnimatedVisibility(
-            visible = controllerViewState.controlsVisible,
+            visible = controllerViewState.controlsVisible && !showDebugInfo,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.matchParentSize(),
@@ -544,6 +547,8 @@ fun PlaybackOverlay(
         ) {
             TimeDisplay()
         }
+
+        // Debug overlay
         AnimatedVisibility(
             visible = showDebugInfo && controllerViewState.controlsVisible,
             enter = slideInVertically() + fadeIn(),
@@ -552,13 +557,29 @@ fun PlaybackOverlay(
                 Modifier
                     .align(Alignment.TopStart),
         ) {
+            val configuration = LocalConfiguration.current
+            val height =
+                remember(
+                    configuration,
+                    controllerHeight,
+                ) { configuration.screenHeightDp.dp - controllerHeight }
             PlaybackDebugOverlay(
                 currentPlayback = currentPlayback,
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
+                        .padding(bottom = 16.dp)
+                        .background(AppColors.TransparentBlack50)
+                        .heightIn(max = height)
                         .padding(8.dp)
-                        .background(AppColors.TransparentBlack50),
+                        .onFocusChanged {
+                            if (it.hasFocus) {
+                                // If Debug overlay gains focus, do not hide the controls
+                                controllerViewState.pulseControls(Long.MAX_VALUE)
+                            } else {
+                                controllerViewState.pulseControls()
+                            }
+                        },
             )
         }
     }

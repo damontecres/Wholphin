@@ -3,9 +3,11 @@ package com.github.damontecres.wholphin.ui.playback
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.view.Display
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -15,14 +17,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.media3.common.Format
+import androidx.media3.common.util.UnstableApi
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.TrackSupport
+import com.github.damontecres.wholphin.util.TrackSupportReason
+import com.github.damontecres.wholphin.util.TrackType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaProtocol
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaSourceType
+import org.jellyfin.sdk.model.api.MediaStreamProtocol
+import org.jellyfin.sdk.model.api.PlayMethod
+import org.jellyfin.sdk.model.api.TranscodeReason
 import org.jellyfin.sdk.model.api.TranscodingInfo
 import timber.log.Timber
 import java.util.Locale
@@ -55,6 +75,11 @@ fun PlaybackDebugOverlay(
             delay(10.seconds)
         }
     }
+    val textStyle =
+        MaterialTheme.typography.bodySmall.copy(
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -63,7 +88,7 @@ fun PlaybackDebugOverlay(
             horizontalArrangement = Arrangement.spacedBy(48.dp),
             modifier = Modifier.padding(start = 8.dp, top = 8.dp),
         ) {
-            ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface)) {
+            ProvideTextStyle(textStyle) {
                 SimpleTable(
                     buildList {
                         add("Backend:" to currentPlayback?.backend?.toString())
@@ -84,6 +109,7 @@ fun PlaybackDebugOverlay(
         currentPlayback?.tracks?.letNotEmpty {
             PlaybackTrackInfo(
                 trackSupport = it,
+                textStyle = textStyle,
             )
         }
     }
@@ -140,5 +166,92 @@ fun SimpleTable(
                 )
             }
         }
+    }
+}
+
+@OptIn(UnstableApi::class)
+@PreviewTvSpec
+@Composable
+fun PlaybackDebugOverlayPreview() {
+    val currentPlayback =
+        CurrentPlayback(
+            item =
+                BaseItem(
+                    data =
+                        BaseItemDto(
+                            id = UUID.randomUUID(),
+                            type = BaseItemKind.EPISODE,
+                        ),
+                ),
+            backend = PlayerBackend.EXO_PLAYER,
+            playMethod = PlayMethod.TRANSCODE,
+            playSessionId = "123",
+            liveStreamId = "123",
+            videoDecoder = "video.decoder.name",
+            audioDecoder = "audio.decoder.name",
+            mediaSourceInfo =
+                MediaSourceInfo(
+                    protocol = MediaProtocol.HTTP,
+                    type = MediaSourceType.DEFAULT,
+                    isRemote = false,
+                    readAtNativeFramerate = true,
+                    ignoreDts = true,
+                    ignoreIndex = true,
+                    genPtsInput = false,
+                    supportsTranscoding = true,
+                    supportsDirectStream = true,
+                    supportsDirectPlay = true,
+                    isInfiniteStream = false,
+                    requiresOpening = false,
+                    requiresClosing = false,
+                    requiresLooping = false,
+                    supportsProbing = true,
+                    transcodingSubProtocol = MediaStreamProtocol.HTTP,
+                    hasSegments = false,
+                ),
+            transcodeInfo =
+                TranscodingInfo(
+                    isVideoDirect = false,
+                    isAudioDirect = false,
+                    transcodeReasons = listOf(TranscodeReason.VIDEO_PROFILE_NOT_SUPPORTED),
+                ),
+            tracks =
+                listOf(
+                    TrackSupport(
+                        id = "0",
+                        type = TrackType.VIDEO,
+                        supported = TrackSupportReason.EXCEEDS_CAPABILITIES,
+                        selected = true,
+                        labels = listOf(),
+                        codecs = "avc1",
+                        format = Format.Builder().build(),
+                    ),
+                    TrackSupport(
+                        id = "0",
+                        type = TrackType.AUDIO,
+                        supported = TrackSupportReason.HANDLED,
+                        selected = true,
+                        labels = listOf(),
+                        codecs = "ac3",
+                        format = Format.Builder().build(),
+                    ),
+                ) +
+                    List(10) {
+                        TrackSupport(
+                            id = "0",
+                            type = TrackType.TEXT,
+                            supported = TrackSupportReason.HANDLED,
+                            selected = false,
+                            labels = listOf(),
+                            codecs = "srt",
+                            format = Format.Builder().build(),
+                        )
+                    },
+        )
+    WholphinTheme {
+        PlaybackDebugOverlay(
+            currentPlayback = currentPlayback,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
