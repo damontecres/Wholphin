@@ -289,16 +289,14 @@
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
-    <string name="combine_continue_next"><![CDATA[Combiner "Continuer à regarder" & "À suivre"]]></string>
-    <string name="download_and_update"><![CDATA[Télécharger & Mettre à jour]]></string>
-    <string name="search_and_download"><![CDATA[Rechercher & Télécharger]]></string>
+    <string name="combine_continue_next"><![CDATA[Combiner Continuer à regarder &amp; À suivre]]></string>
+    <string name="download_and_update"><![CDATA[Télécharger &amp; Mettre à jour]]></string>
+    <string name="search_and_download"><![CDATA[Rechercher &amp; Télécharger]]></string>
     <string name="tv_dvr_schedule">Calendrier du DVR</string>
     <string name="aired_episode_order">Trié par date de diffusion</string>
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
-        <item quantity="one">Featurettes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
