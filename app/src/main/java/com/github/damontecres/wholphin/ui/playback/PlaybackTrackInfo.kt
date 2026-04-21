@@ -24,6 +24,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ClickableSurfaceDefaults
@@ -32,6 +33,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.util.TrackSupport
@@ -141,9 +143,17 @@ fun PlaybackTrackInfo(
                                 up = focusRequesters[0]
                             },
                 ) {
-                    val text = if (expanded) "Hide" else "Show"
+                    val text =
+                        if (expanded) {
+                            stringResource(R.string.hide)
+                        } else {
+                            stringResource(
+                                R.string.show_more,
+                                trackSupport.size - selectedTracks.size,
+                            )
+                        }
                     Text(
-                        text = "$text ${trackSupport.size - selectedTracks.size} more",
+                        text = text,
                         fontSize = textStyle.fontSize,
                     )
                 }
