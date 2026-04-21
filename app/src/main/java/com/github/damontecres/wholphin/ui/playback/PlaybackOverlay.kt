@@ -184,17 +184,19 @@ fun PlaybackOverlay(
             targetState = state,
             label = "controls transition",
             transitionSpec = {
-//                    this.initialState
-//                    this.targetState
-                (slideInVertically { it / 2 } + fadeIn()).togetherWith(slideOutVertically { it / 2 } + fadeOut())
+                if (targetState.ordinal > initialState.ordinal) {
+                    // Moving down, so move content up
+                    (slideInVertically { it / 2 } + fadeIn()).togetherWith(slideOutVertically { -it / 2 } + fadeOut())
+                } else {
+                    // Moving up
+                    (slideInVertically { -it / 2 } + fadeIn()).togetherWith(slideOutVertically { it / 2 } + fadeOut())
+                }
             },
         ) { targetState ->
             when (targetState) {
                 OverlayViewState.HIDDEN -> {
-                    Box(
-                        Modifier
-                            .fillMaxWidth(),
-                    )
+                    // Necessary so the bounds for animation are full width
+                    Box(Modifier.fillMaxWidth())
                 }
 
                 OverlayViewState.CONTROLLER -> {
