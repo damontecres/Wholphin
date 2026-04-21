@@ -150,16 +150,23 @@ class HomeViewModel
                                             }
                                     }
                                 Timber.v("Got row data index=%s", rowIndex)
-                                _state.update { state ->
-                                    val newRows =
-                                        state.homeRows.toMutableList().apply {
-                                            set(rowIndex, rowData)
-                                        }
-                                    state.copy(
-                                        homeRows = newRows,
-                                    )
+                                // Include only errors & non-empty successes
+                                if (rowData is HomeRowLoadingState.Error ||
+                                    (rowData is HomeRowLoadingState.Success && rowData.items.isNotEmpty())
+                                ) {
+                                    _state.update { state ->
+                                        val newRows =
+                                            state.homeRows.toMutableList().apply {
+                                                set(rowIndex, rowData)
+                                            }
+                                        state.copy(
+                                            homeRows = newRows,
+                                        )
+                                    }
+                                    remaining.removeIf { it.index == rowIndex }
+                                } else {
+                                    Timber.d("Skipping invalid row %s: %s", rowIndex, rowData)
                                 }
-                                remaining.removeIf { it.index == rowIndex }
                             }
                             _state.update {
                                 it.copy(
@@ -168,7 +175,14 @@ class HomeViewModel
                                 )
                             }
                         } else {
-                            val rows = deferred.awaitAll()
+                            val rows =
+                                deferred
+                                    .awaitAll()
+                                    .filter {
+                                        // Include only errors & non-empty successes
+                                        it is HomeRowLoadingState.Error ||
+                                            (it is HomeRowLoadingState.Success && it.items.isNotEmpty())
+                                    }
                             Timber.v("Got all rows")
                             _state.update {
                                 it.copy(
