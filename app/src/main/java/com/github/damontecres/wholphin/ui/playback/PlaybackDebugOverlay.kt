@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -122,9 +121,9 @@ fun PlaybackDebugOverlay(
                         add("Play method:" to currentPlayback?.playMethod?.serialName)
                         if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
                             add("Video Decoder:" to currentPlayback.videoDecoder)
-                            add("Audio Decoder:" to currentPlayback.audioDecoder)
+                            add("Audio Decoder:" to (currentPlayback.audioDecoder ?: "Pass through"))
                         }
-                        add("Display Mode: " to displayMode?.toString())
+                        add("Display Mode: " to displayMode)
                     },
                     modifier = Modifier.weight(1f, fill = false),
                     keyWidth = 80.dp,
@@ -219,7 +218,7 @@ fun PlaybackDebugOverlayPreview() {
             playSessionId = "123",
             liveStreamId = "123",
             videoDecoder = "video.decoder.name",
-            audioDecoder = "audio.decoder.name",
+            audioDecoder = null, // "audio.decoder.name",
             mediaSourceInfo =
                 MediaSourceInfo(
                     protocol = MediaProtocol.HTTP,

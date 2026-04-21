@@ -52,9 +52,6 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -79,6 +76,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.HiddenFocusBox
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
@@ -146,7 +144,7 @@ fun PlaybackOverlay(
 
     // This will be calculated after composition
     var controllerHeight by remember { mutableStateOf(0.dp) }
-    var state by remember { mutableStateOf(OverlayViewState.CONTROLLER) }
+    var state by remember(controllerViewState.controlsVisible) { mutableStateOf(OverlayViewState.CONTROLLER) }
 
     Box(
         modifier = modifier,
@@ -301,6 +299,7 @@ fun PlaybackOverlay(
                     }
                 val listState = rememberLazyListState(chapterIndex)
                 val focusRequester = remember { FocusRequester() }
+                val hiddenFocusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) {
                     bringIntoViewRequester.bringIntoView()
                     focusRequester.tryRequestFocus()
@@ -310,16 +309,9 @@ fun PlaybackOverlay(
                     modifier =
                         Modifier
                             .padding(horizontal = 8.dp)
-                            .fillMaxWidth()
-                            .onPreviewKeyEvent { e ->
-                                if (e.type == KeyEventType.KeyUp && isUp(e)) {
-                                    state = OverlayViewState.CONTROLLER
-                                    true
-                                } else {
-                                    false
-                                }
-                            },
+                            .fillMaxWidth(),
                 ) {
+                    HiddenFocusBox(hiddenFocusRequester) { state = OverlayViewState.CONTROLLER }
                     Text(
                         text = stringResource(R.string.chapters),
                         style = MaterialTheme.typography.titleLarge,
@@ -336,6 +328,8 @@ fun PlaybackOverlay(
                                     if (it.hasFocus) {
                                         controllerViewState.pulseControls()
                                     }
+                                }.focusProperties {
+                                    up = hiddenFocusRequester
                                 },
                     ) {
                         itemsIndexed(chapters) { index, chapter ->
@@ -394,28 +388,23 @@ fun PlaybackOverlay(
             if (playlist.hasNext()) {
                 val items = remember { playlist.upcomingItems() }
                 val focusRequester = remember { FocusRequester() }
+                val hiddenFocusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
                             .padding(8.dp)
-                            .fillMaxWidth()
-                            .onPreviewKeyEvent { e ->
-                                if (e.type == KeyEventType.KeyUp && isUp(e)) {
-                                    if (chapters.isNotEmpty()) {
-                                        state = OverlayViewState.CHAPTERS
-                                    } else {
-                                        state = OverlayViewState.CONTROLLER
-                                    }
-                                    true
-                                } else if (isDown(e)) {
-                                    true
-                                } else {
-                                    false
-                                }
-                            },
+                            .fillMaxWidth(),
                 ) {
+                    HiddenFocusBox(hiddenFocusRequester) {
+                        state =
+                            if (chapters.isNotEmpty()) {
+                                OverlayViewState.CHAPTERS
+                            } else {
+                                OverlayViewState.CONTROLLER
+                            }
+                    }
                     Text(
                         text = stringResource(R.string.queue),
                         style = MaterialTheme.typography.titleLarge,
