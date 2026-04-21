@@ -8,14 +8,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Format
@@ -27,16 +32,20 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.formatBitrate
+import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.TrackSupportReason
 import com.github.damontecres.wholphin.util.TrackType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.HardwareAccelerationType
 import org.jellyfin.sdk.model.api.MediaProtocol
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaSourceType
@@ -50,6 +59,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlaybackDebugOverlay(
+    analyticsState: AnalyticsState,
     currentPlayback: CurrentPlayback?,
     modifier: Modifier = Modifier,
 ) {
@@ -80,12 +90,29 @@ fun PlaybackDebugOverlay(
             fontSize = 10.sp,
             color = MaterialTheme.colorScheme.onSurface,
         )
+
+    var memoryUsed by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.Default) {
+            while (true) {
+                val runtime = Runtime.getRuntime()
+                val total = runtime.totalMemory()
+                val free = runtime.freeMemory()
+                val used = total - free
+                val totalMemory = formatBytes(total)
+                val usedMemory = formatBytes(used)
+                memoryUsed = "$usedMemory / $totalMemory"
+                delay(2.seconds)
+            }
+        }
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(48.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(start = 8.dp, top = 8.dp),
         ) {
             ProvideTextStyle(textStyle) {
@@ -100,9 +127,40 @@ fun PlaybackDebugOverlay(
                         add("Display Mode: " to displayMode?.toString())
                     },
                     modifier = Modifier.weight(1f, fill = false),
+                    keyWidth = 80.dp,
                 )
-                currentPlayback?.transcodeInfo?.let {
-                    TranscodeInfo(it, Modifier.weight(2f))
+                SimpleTable(
+                    rows =
+                        listOf(
+                            "Bitrate: " to analyticsState.bitrate,
+                            "Bitrate (est): " to analyticsState.bitrateEstimate,
+                            "Dropped frames: " to analyticsState.droppedFrames,
+                            "Memory" to memoryUsed,
+                        ),
+                    keyWidth = 80.dp,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                currentPlayback?.transcodeInfo?.let { info ->
+                    SimpleTable(
+                        listOf(
+                            "Reason:" to info.transcodeReasons.joinToString(", "),
+                            "HW Accel:" to info.hardwareAccelerationType?.toString(),
+                            "Container:" to info.container,
+                            "Bitrate:" to info.bitrate?.let { formatBitrate(it) },
+                        ),
+                        modifier = Modifier.weight(1f, fill = false),
+                        keyWidth = 64.dp,
+                    )
+                    SimpleTable(
+                        listOf(
+                            "Video:" to "${info.videoCodec}, ${info.width}x${info.height}",
+                            "Video Direct:" to info.isVideoDirect.toString(),
+                            "Audio:" to "${info.audioCodec}, ch=${info.audioChannels}",
+                            "Audio Direct:" to info.isAudioDirect.toString(),
+                        ),
+                        modifier = Modifier.weight(1f, fill = false),
+                        keyWidth = 64.dp,
+                    )
                 }
             }
         }
@@ -116,37 +174,10 @@ fun PlaybackDebugOverlay(
 }
 
 @Composable
-fun TranscodeInfo(
-    info: TranscodingInfo,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier,
-    ) {
-        SimpleTable(
-            listOf(
-                "Reason:" to info.transcodeReasons.joinToString(", "),
-                "HW Accel:" to info.hardwareAccelerationType?.toString(),
-                "Container:" to info.container,
-                "Bitrate:" to info.bitrate?.let { formatBitrate(it) },
-            ),
-        )
-        SimpleTable(
-            listOf(
-                "Video:" to "${info.videoCodec}, ${info.width}x${info.height}",
-                "Video Direct:" to info.isVideoDirect.toString(),
-                "Audio:" to "${info.audioCodec}, ch=${info.audioChannels}",
-                "Audio Direct:" to info.isAudioDirect.toString(),
-            ),
-        )
-    }
-}
-
-@Composable
 fun SimpleTable(
-    rows: List<Pair<String, String?>>,
+    rows: List<Pair<String, Any?>>,
     modifier: Modifier = Modifier,
+    keyWidth: Dp = 100.dp,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -158,7 +189,7 @@ fun SimpleTable(
             ) {
                 Text(
                     text = it.first,
-                    modifier = Modifier.width(100.dp),
+                    modifier = Modifier.width(keyWidth),
                 )
                 Text(
                     text = it.second.toString(),
@@ -211,9 +242,19 @@ fun PlaybackDebugOverlayPreview() {
                 ),
             transcodeInfo =
                 TranscodingInfo(
+                    videoCodec = "h264",
+                    audioCodec = "aac",
+                    container = "HLS",
+                    width = 1080,
+                    height = 1920,
                     isVideoDirect = false,
                     isAudioDirect = false,
-                    transcodeReasons = listOf(TranscodeReason.VIDEO_PROFILE_NOT_SUPPORTED),
+                    transcodeReasons =
+                        listOf(
+                            TranscodeReason.VIDEO_PROFILE_NOT_SUPPORTED,
+                            TranscodeReason.AUDIO_CHANNELS_NOT_SUPPORTED,
+                        ),
+                    hardwareAccelerationType = HardwareAccelerationType.NONE,
                 ),
             tracks =
                 listOf(
@@ -250,6 +291,7 @@ fun PlaybackDebugOverlayPreview() {
         )
     WholphinTheme {
         PlaybackDebugOverlay(
+            analyticsState = AnalyticsState(),
             currentPlayback = currentPlayback,
             modifier = Modifier.fillMaxSize(),
         )

@@ -167,6 +167,7 @@ fun PlaybackPageContent(
         ),
     )
     val currentSegment by viewModel.currentSegment.collectAsState()
+    val analyticsState by viewModel.analyticsState.collectAsState()
 
     val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -412,6 +413,7 @@ fun PlaybackPageContent(
                 },
                 currentSegment = currentSegment?.segment,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                analyticsState = analyticsState,
             )
 
             val subtitleSettings =

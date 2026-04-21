@@ -51,6 +51,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -117,6 +118,7 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.Date
 import java.util.UUID
+import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -174,6 +176,7 @@ class PlaybackViewModel
         val currentPlayback = MutableStateFlow<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
         val currentSegment = MutableStateFlow<MediaSegmentState?>(null)
+        val analyticsState = MutableStateFlow(AnalyticsState())
 
         val subtitleCues = MutableLiveData<List<Cue>>(listOf())
 
@@ -353,7 +356,6 @@ class PlaybackViewModel
                 }
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
-
             val item = BaseItem.from(base, api)
             val played =
                 play(
@@ -1451,6 +1453,37 @@ class PlaybackViewModel
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             screensaverService.keepScreenOn(isPlaying)
         }
+
+        override fun onBandwidthEstimate(
+            eventTime: AnalyticsListener.EventTime,
+            totalLoadTimeMs: Int,
+            totalBytesLoaded: Long,
+            bitrateEstimate: Long,
+        ) {
+            Timber.v(
+                "onBandwidthEstimate: totalLoadTimeMs=%s, totalBytesLoaded=%s, bitrateEstimate=%s",
+                totalLoadTimeMs,
+                totalBytesLoaded,
+                bitrateEstimate,
+            )
+            if (totalLoadTimeMs > 0 && totalBytesLoaded > 0) {
+                analyticsState.update {
+                    it.copy(
+                        bitrate = formatBitrate((totalBytesLoaded.toDouble() / (totalLoadTimeMs / 1000.0) * 8).roundToInt()),
+                        bitrateEstimate = formatBitrate(bitrateEstimate.toInt()),
+                    )
+                }
+            }
+        }
+
+        override fun onDroppedVideoFrames(
+            eventTime: AnalyticsListener.EventTime,
+            droppedFrames: Int,
+            elapsedMs: Long,
+        ) {
+//            Timber.v("onDroppedVideoFrames: droppedFrames=%s", droppedFrames)
+            analyticsState.update { it.copy(droppedFrames = it.droppedFrames + droppedFrames) }
+        }
     }
 
 data class PlayerState(
@@ -1462,4 +1495,10 @@ data class PlayerState(
 data class MediaSegmentState(
     val segment: MediaSegmentDto,
     val interacted: Boolean,
+)
+
+data class AnalyticsState(
+    val bitrate: String = formatBitrate(0),
+    val bitrateEstimate: String = formatBitrate(0),
+    val droppedFrames: Int = 0,
 )

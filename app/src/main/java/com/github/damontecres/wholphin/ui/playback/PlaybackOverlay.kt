@@ -120,6 +120,7 @@ fun PlaybackOverlay(
     showDebugInfo: Boolean,
     currentPlayback: CurrentPlayback?,
     currentSegment: MediaSegmentDto?,
+    analyticsState: AnalyticsState,
     modifier: Modifier = Modifier,
     trickplayInfo: TrickplayInfo? = null,
     trickplayUrlFor: (Int) -> String? = { null },
@@ -564,6 +565,7 @@ fun PlaybackOverlay(
                     controllerHeight,
                 ) { configuration.screenHeightDp.dp - controllerHeight }
             PlaybackDebugOverlay(
+                analyticsState = analyticsState,
                 currentPlayback = currentPlayback,
                 modifier =
                     Modifier
