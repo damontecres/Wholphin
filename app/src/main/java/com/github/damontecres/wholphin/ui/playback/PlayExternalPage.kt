@@ -54,7 +54,11 @@ import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.PlayMethod
+import org.jellyfin.sdk.model.api.PlaybackOrder
+import org.jellyfin.sdk.model.api.PlaybackStartInfo
 import org.jellyfin.sdk.model.api.PlaybackStopInfo
+import org.jellyfin.sdk.model.api.RepeatMode
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -252,7 +256,17 @@ class PlayExternalViewModel
                                     putExtra("forcedsrt", subtitleUrls[it])
                                 }
                         }
-
+                    api.playStateApi.reportPlaybackStart(
+                        PlaybackStartInfo(
+                            canSeek = false,
+                            itemId = itemId,
+                            isPaused = false,
+                            playMethod = PlayMethod.DIRECT_PLAY,
+                            repeatMode = RepeatMode.REPEAT_NONE,
+                            playbackOrder = PlaybackOrder.DEFAULT,
+                            isMuted = false,
+                        ),
+                    )
                     state.update {
                         PlayExternalState(
                             loading = LoadingState.Success,
@@ -278,10 +292,10 @@ class PlayExternalViewModel
                         return@launchDefault
                     }
                     Timber.v(
-                        "Result: result=%s, itemId=%s action=%s",
+                        "Result: result=%s, action=%s, itemId=%s",
                         result.resultCode,
-                        itemId,
                         result.data?.action,
+                        itemId,
                     )
                     if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED ||
                         // Vimu return 1 for video completion
@@ -326,16 +340,22 @@ class PlayExternalViewModel
                             }
                         }
                         Timber.v("Result position: %s", position?.milliseconds)
-                        api.playStateApi.reportPlaybackStopped(
-                            PlaybackStopInfo(
-                                itemId = itemId,
-                                mediaSourceId = mediaSourceId,
-                                positionTicks = position?.milliseconds?.inWholeTicks,
-                                failed = false,
-                            ),
-                        )
+                        if (position != null || result.data?.action != null) {
+                            api.playStateApi.reportPlaybackStopped(
+                                PlaybackStopInfo(
+                                    itemId = itemId,
+                                    mediaSourceId = mediaSourceId,
+                                    positionTicks = position?.milliseconds?.inWholeTicks,
+                                    failed = false,
+                                ),
+                            )
+                        }
                     } else {
-                        Timber.w("Activity result: %s", result.resultCode)
+                        Timber.w(
+                            "Activity result: %s, action=%s",
+                            result.resultCode,
+                            result.data?.action,
+                        )
                         showToast(context, "Unknown result from external player")
                     }
                     navigationManager.goBack()
