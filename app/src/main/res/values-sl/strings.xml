@@ -121,4 +121,15 @@
     <string name="voice_error_server">Napaka strežnika</string>
     <string name="voice_error_speech_timeout">Govor ni zaznan</string>
     <string name="voice_error_unknown">Neznana napaka</string>
+    <string name="voice_error_start_failed">Prepoznavanje glasu ni uspelo zagnati</string>
+    <string name="voice_error_timeout">Časovna omejitev prepoznavanja glasu je potekla</string>
+    <string name="retry">Poskusi znova</string>
+    <string name="select_server">Izberite strežnik</string>
+    <string name="select_user">Izberite uporabnika</string>
+    <string name="show_debug_info">Prikaži informacije o odpravljanju napak</string>
+    <string name="show_next_up_when">Pokaži naslednjo</string>
+    <string name="show">Pokaži</string>
+    <string name="shuffle">Naključno</string>
+    <string name="skip">Preskoči</string>
+    <string name="sort_by_date_added">Datum dodajanja</string>
 </resources>
