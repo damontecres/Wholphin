@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
@@ -13,6 +14,7 @@ import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -144,13 +146,14 @@ fun PlaybackOverlay(
 
     // This will be calculated after composition
     var controllerHeight by remember { mutableStateOf(0.dp) }
-    var state by remember(controllerViewState.controlsVisible) { mutableStateOf(OverlayViewState.CONTROLLER) }
+    var state by remember(controllerViewState.controlsVisible) {
+        mutableStateOf(if (controllerViewState.controlsVisible) OverlayViewState.CONTROLLER else OverlayViewState.HIDDEN)
+    }
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
-        // Controls
         AnimatedVisibility(
             visible = controllerViewState.controlsVisible && !showDebugInfo,
             enter = fadeIn(),
@@ -177,272 +180,294 @@ fun PlaybackOverlay(
             )
         }
 
-        AnimatedVisibility(
-            visible = controllerViewState.controlsVisible && state == OverlayViewState.CONTROLLER,
-            enter = slideInVertically { it / 2 } + fadeIn(),
-            exit = slideOutVertically { it / 2 } + fadeOut(),
-        ) {
-            if (seekBarFocused) {
-                LaunchedEffect(Unit) {
-                    seekProgressPercent =
-                        (playerControls.currentPosition.toFloat() / playerControls.duration)
-                }
-            }
-            val nextState =
-                if (chapters.isNotEmpty()) {
-                    OverlayViewState.CHAPTERS
-                } else if (playlist.hasNext()) {
-                    OverlayViewState.QUEUE
-                } else {
-                    null
-                }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(bottom = 8.dp)
-                        .onGloballyPositioned {
-                            controllerHeight = with(density) { it.size.height.toDp() }
-                        },
-            ) {
-                Controller(
-                    title = item?.title,
-                    subtitle = item?.subtitleLong,
-                    playerControls = playerControls,
-                    controllerViewState = controllerViewState,
-                    showPlay = showPlay,
-                    showClock = showClock,
-                    previousEnabled = previousEnabled,
-                    nextEnabled = nextEnabled,
-                    seekEnabled = seekEnabled,
-                    seekBack = seekBack,
-                    skipBackOnResume = skipBackOnResume,
-                    seekForward = seekForward,
-                    onPlaybackActionClick = onPlaybackActionClick,
-                    onClickPlaybackDialogType = onClickPlaybackDialogType,
-                    onSeekProgress = {
-                        onSeekBarChange(it)
-                        seekProgressMs = it
-                    },
-                    seekBarInteractionSource = seekBarInteractionSource,
-                    nextState = nextState,
-                    onNextStateFocus = {
-                        nextState?.let { state = it }
-                    },
-                    currentSegment = currentSegment,
-                    modifier =
-                    Modifier,
-                    // Don't use key events because this control has vertical items so up/down is tough to manage
-                )
-                when (nextState) {
-                    OverlayViewState.CHAPTERS -> {
-                        Text(
-                            text = stringResource(R.string.chapters),
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier =
-                                Modifier
-                                    .padding(start = 16.dp, top = 0.dp)
-                                    .onFocusChanged {
-                                        if (it.isFocused) state = nextState
-                                    }.focusable(),
-                        )
-                    }
-
-                    OverlayViewState.QUEUE -> {
-                        Text(
-                            text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier =
-                                Modifier
-                                    .padding(start = 16.dp, top = 0.dp)
-                                    .onFocusChanged {
-                                        if (it.isFocused) state = nextState
-                                    }.focusable(),
-                        )
-                    }
-
-                    else -> {
-                        Spacer(Modifier.height(32.dp))
-                    }
-                }
-            }
-        }
-        AnimatedVisibility(
-            visible = controllerViewState.controlsVisible && state == OverlayViewState.CHAPTERS,
-            enter = slideInVertically { it / 2 } + fadeIn(),
-            exit = slideOutVertically { it / 2 } + fadeOut(),
-        ) {
-            if (chapters.isNotEmpty()) {
-                val chapterInteractionSources =
-                    remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
-                val bringIntoViewRequester = remember { BringIntoViewRequester() }
-                val chapterIndex =
-                    remember {
-                        val position = playerControls.currentPosition.milliseconds
-                        val index =
-                            chapters
-                                .indexOfFirst { it.position > position }
-                                .minus(1)
-                                .let {
-                                    if (it < 0) {
-                                        // Didn't find a chapter, so it's either the first or last
-                                        if (position < chapters.first().position) {
-                                            0
-                                        } else {
-                                            chapters.lastIndex
-                                        }
-                                    } else {
-                                        it
-                                    }
-                                }.coerceIn(0, chapters.lastIndex)
-                        index
-                    }
-                val listState = rememberLazyListState(chapterIndex)
-                val focusRequester = remember { FocusRequester() }
-                val hiddenFocusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) {
-                    bringIntoViewRequester.bringIntoView()
-                    focusRequester.tryRequestFocus()
-                }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier =
+        AnimatedContent(
+            targetState = state,
+            label = "controls transition",
+            transitionSpec = {
+//                    this.initialState
+//                    this.targetState
+                (slideInVertically { it / 2 } + fadeIn()).togetherWith(slideOutVertically { it / 2 } + fadeOut())
+            },
+        ) { targetState ->
+            when (targetState) {
+                OverlayViewState.HIDDEN -> {
+                    Box(
                         Modifier
-                            .padding(horizontal = 8.dp)
                             .fillMaxWidth(),
-                ) {
-                    HiddenFocusBox(hiddenFocusRequester) { state = OverlayViewState.CONTROLLER }
-                    Text(
-                        text = stringResource(R.string.chapters),
-                        style = MaterialTheme.typography.titleLarge,
                     )
-                    LazyRow(
-                        state = listState,
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRestorer(focusRequester)
-                                .onFocusChanged {
-                                    if (it.hasFocus) {
-                                        controllerViewState.pulseControls()
-                                    }
-                                }.focusProperties {
-                                    up = hiddenFocusRequester
-                                },
-                    ) {
-                        itemsIndexed(chapters) { index, chapter ->
-                            val interactionSource = chapterInteractionSources[index]
-                            val isFocused = interactionSource.collectIsFocusedAsState().value
-                            LaunchedEffect(isFocused) {
-                                if (isFocused) controllerViewState.pulseControls()
-                            }
-                            ChapterCard(
-                                name = chapter.name,
-                                position = chapter.position,
-                                imageUrl = chapter.imageUrl,
-                                aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
-                                onClick = {
-                                    playerControls.seekTo(chapter.position.inWholeMilliseconds)
-                                    controllerViewState.hideControls()
-                                },
-                                interactionSource = interactionSource,
-                                modifier =
-                                    Modifier
-                                        .ifElse(
-                                            index == chapterIndex,
-                                            Modifier
-                                                .focusRequester(focusRequester)
-                                                .bringIntoViewRequester(bringIntoViewRequester),
-                                        ).ifElse(
-                                            index == 0,
-                                            Modifier.focusProperties {
-                                                // Prevent scrolling left on first card to prevent moving down
-                                                left = FocusRequester.Cancel
-                                            },
-                                        ),
-                            )
+                }
+
+                OverlayViewState.CONTROLLER -> {
+                    if (seekBarFocused) {
+                        LaunchedEffect(Unit) {
+                            seekProgressPercent =
+                                (playerControls.currentPosition.toFloat() / playerControls.duration)
                         }
                     }
-                    if (playlist.hasNext()) {
-                        Text(
-                            text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier =
-                                Modifier
-                                    .padding(bottom = 8.dp)
-                                    .onFocusChanged {
-                                        if (it.isFocused) state = OverlayViewState.QUEUE
-                                    }.focusable(),
-                        )
-                    }
-                }
-            }
-        }
-        AnimatedVisibility(
-            visible = controllerViewState.controlsVisible && state == OverlayViewState.QUEUE,
-            enter = slideInVertically { it / 2 } + fadeIn(),
-            exit = slideOutVertically { it / 2 } + fadeOut(),
-        ) {
-            if (playlist.hasNext()) {
-                val items = remember { playlist.upcomingItems() }
-                val focusRequester = remember { FocusRequester() }
-                val hiddenFocusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                ) {
-                    HiddenFocusBox(hiddenFocusRequester) {
-                        state =
-                            if (chapters.isNotEmpty()) {
-                                OverlayViewState.CHAPTERS
-                            } else {
-                                OverlayViewState.CONTROLLER
-                            }
-                    }
-                    Text(
-                        text = stringResource(R.string.queue),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    val nextState =
+                        if (chapters.isNotEmpty()) {
+                            OverlayViewState.CHAPTERS
+                        } else if (playlist.hasNext()) {
+                            OverlayViewState.QUEUE
+                        } else {
+                            null
+                        }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .focusRestorer(focusRequester)
-                                .onFocusChanged {
-                                    if (it.hasFocus) {
-                                        controllerViewState.pulseControls()
-                                    }
+                                .padding(bottom = 8.dp)
+                                .onGloballyPositioned {
+                                    controllerHeight = with(density) { it.size.height.toDp() }
                                 },
                     ) {
-                        itemsIndexed(items) { index, item ->
-                            val interactionSource = remember { MutableInteractionSource() }
-                            val isFocused = interactionSource.collectIsFocusedAsState().value
-                            LaunchedEffect(isFocused) {
-                                if (isFocused) controllerViewState.pulseControls()
+                        Controller(
+                            title = item?.title,
+                            subtitle = item?.subtitleLong,
+                            playerControls = playerControls,
+                            controllerViewState = controllerViewState,
+                            showPlay = showPlay,
+                            showClock = showClock,
+                            previousEnabled = previousEnabled,
+                            nextEnabled = nextEnabled,
+                            seekEnabled = seekEnabled,
+                            seekBack = seekBack,
+                            skipBackOnResume = skipBackOnResume,
+                            seekForward = seekForward,
+                            onPlaybackActionClick = onPlaybackActionClick,
+                            onClickPlaybackDialogType = onClickPlaybackDialogType,
+                            onSeekProgress = {
+                                onSeekBarChange(it)
+                                seekProgressMs = it
+                            },
+                            seekBarInteractionSource = seekBarInteractionSource,
+                            nextState = nextState,
+                            onNextStateFocus = {
+                                nextState?.let { state = it }
+                            },
+                            currentSegment = currentSegment,
+                            modifier =
+                            Modifier,
+                            // Don't use key events because this control has vertical items so up/down is tough to manage
+                        )
+                        when (nextState) {
+                            OverlayViewState.CHAPTERS -> {
+                                Text(
+                                    text = stringResource(R.string.chapters),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 16.dp, top = 0.dp)
+                                            .onFocusChanged {
+                                                if (it.isFocused) state = nextState
+                                            }.focusable(),
+                                )
                             }
-                            SeasonCard(
-                                item = item,
-                                onClick = {
-                                    onClickPlaylist.invoke(item)
-                                    controllerViewState.hideControls()
-                                },
-                                onLongClick = {},
-                                imageHeight = 140.dp,
-                                interactionSource = interactionSource,
-                                modifier =
-                                    Modifier.ifElse(
-                                        index == 0,
-                                        Modifier.focusRequester(focusRequester),
-                                    ),
+
+                            OverlayViewState.QUEUE -> {
+                                Text(
+                                    text = stringResource(R.string.queue),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 16.dp, top = 0.dp)
+                                            .onFocusChanged {
+                                                if (it.isFocused) state = nextState
+                                            }.focusable(),
+                                )
+                            }
+
+                            else -> {
+                                Spacer(Modifier.height(32.dp))
+                            }
+                        }
+                    }
+                }
+
+                OverlayViewState.CHAPTERS -> {
+                    if (chapters.isNotEmpty()) {
+                        val chapterInteractionSources =
+                            remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
+                        val bringIntoViewRequester = remember { BringIntoViewRequester() }
+                        val chapterIndex =
+                            remember {
+                                val position = playerControls.currentPosition.milliseconds
+                                val index =
+                                    chapters
+                                        .indexOfFirst { it.position > position }
+                                        .minus(1)
+                                        .let {
+                                            if (it < 0) {
+                                                // Didn't find a chapter, so it's either the first or last
+                                                if (position < chapters.first().position) {
+                                                    0
+                                                } else {
+                                                    chapters.lastIndex
+                                                }
+                                            } else {
+                                                it
+                                            }
+                                        }.coerceIn(0, chapters.lastIndex)
+                                index
+                            }
+                        val listState = rememberLazyListState(chapterIndex)
+                        val focusRequester = remember { FocusRequester() }
+                        val hiddenFocusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) {
+                            bringIntoViewRequester.bringIntoView()
+                            focusRequester.tryRequestFocus()
+                        }
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .fillMaxWidth(),
+                        ) {
+                            HiddenFocusBox(hiddenFocusRequester) {
+                                state = OverlayViewState.CONTROLLER
+                            }
+                            Text(
+                                text = stringResource(R.string.chapters),
+                                style = MaterialTheme.typography.titleLarge,
                             )
+                            LazyRow(
+                                state = listState,
+                                contentPadding = PaddingValues(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .focusRestorer(focusRequester)
+                                        .onFocusChanged {
+                                            if (it.hasFocus) {
+                                                controllerViewState.pulseControls()
+                                            }
+                                        }.focusProperties {
+                                            up = hiddenFocusRequester
+                                        },
+                            ) {
+                                itemsIndexed(chapters) { index, chapter ->
+                                    val interactionSource = chapterInteractionSources[index]
+                                    val isFocused =
+                                        interactionSource.collectIsFocusedAsState().value
+                                    LaunchedEffect(isFocused) {
+                                        if (isFocused) controllerViewState.pulseControls()
+                                    }
+                                    ChapterCard(
+                                        name = chapter.name,
+                                        position = chapter.position,
+                                        imageUrl = chapter.imageUrl,
+                                        aspectRatio =
+                                            item?.data?.aspectRatioFloat
+                                                ?: AspectRatios.WIDE,
+                                        onClick = {
+                                            playerControls.seekTo(chapter.position.inWholeMilliseconds)
+                                            controllerViewState.hideControls()
+                                        },
+                                        interactionSource = interactionSource,
+                                        modifier =
+                                            Modifier
+                                                .ifElse(
+                                                    index == chapterIndex,
+                                                    Modifier
+                                                        .focusRequester(focusRequester)
+                                                        .bringIntoViewRequester(
+                                                            bringIntoViewRequester,
+                                                        ),
+                                                ).ifElse(
+                                                    index == 0,
+                                                    Modifier.focusProperties {
+                                                        // Prevent scrolling left on first card to prevent moving down
+                                                        left = FocusRequester.Cancel
+                                                    },
+                                                ),
+                                    )
+                                }
+                            }
+                            if (playlist.hasNext()) {
+                                Text(
+                                    text = stringResource(R.string.queue),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier =
+                                        Modifier
+                                            .padding(bottom = 8.dp)
+                                            .onFocusChanged {
+                                                if (it.isFocused) state = OverlayViewState.QUEUE
+                                            }.focusable(),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                OverlayViewState.QUEUE -> {
+                    if (playlist.hasNext()) {
+                        val items = remember { playlist.upcomingItems() }
+                        val focusRequester = remember { FocusRequester() }
+                        val hiddenFocusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth(),
+                        ) {
+                            HiddenFocusBox(hiddenFocusRequester) {
+                                state =
+                                    if (chapters.isNotEmpty()) {
+                                        OverlayViewState.CHAPTERS
+                                    } else {
+                                        OverlayViewState.CONTROLLER
+                                    }
+                            }
+                            Text(
+                                text = stringResource(R.string.queue),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            LazyRow(
+                                contentPadding =
+                                    PaddingValues(
+                                        horizontal = 16.dp,
+                                        vertical = 8.dp,
+                                    ),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .focusRestorer(focusRequester)
+                                        .onFocusChanged {
+                                            if (it.hasFocus) {
+                                                controllerViewState.pulseControls()
+                                            }
+                                        },
+                            ) {
+                                itemsIndexed(items) { index, item ->
+                                    val interactionSource =
+                                        remember { MutableInteractionSource() }
+                                    val isFocused =
+                                        interactionSource.collectIsFocusedAsState().value
+                                    LaunchedEffect(isFocused) {
+                                        if (isFocused) controllerViewState.pulseControls()
+                                    }
+                                    SeasonCard(
+                                        item = item,
+                                        onClick = {
+                                            onClickPlaylist.invoke(item)
+                                            controllerViewState.hideControls()
+                                        },
+                                        onLongClick = {},
+                                        imageHeight = 140.dp,
+                                        interactionSource = interactionSource,
+                                        modifier =
+                                            Modifier.ifElse(
+                                                index == 0,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -580,6 +605,7 @@ fun PlaybackOverlay(
  * The view state of the overlay
  */
 enum class OverlayViewState {
+    HIDDEN,
     CONTROLLER,
     CHAPTERS,
     QUEUE,
