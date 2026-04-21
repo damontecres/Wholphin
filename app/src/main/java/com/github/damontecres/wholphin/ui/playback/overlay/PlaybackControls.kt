@@ -1,6 +1,6 @@
 @file:kotlin.OptIn(ExperimentalMaterial3Api::class)
 
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import android.view.Gravity
 import androidx.annotation.DrawableRes
@@ -69,6 +69,8 @@ import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes

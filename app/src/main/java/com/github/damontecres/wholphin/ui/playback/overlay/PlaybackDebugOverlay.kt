@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import android.content.Context
 import android.hardware.display.DisplayManager
@@ -33,6 +33,9 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.playback.AnalyticsState
+import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
+import com.github.damontecres.wholphin.ui.playback.PlaybackTrackInfo
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.TrackSupportReason

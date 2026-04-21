@@ -36,6 +36,9 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
@@ -65,10 +68,10 @@ data class PlaybackSettings(
 /**
  * Centralized UI component for displaying dialogs during playback
  *
- * Typically, the user will click something generating a [PlaybackAction] which translates into the
+ * Typically, the user will click something generating a [com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction] which translates into the
  * [PlaybackDialogType] determining which dialog is shown by this component.
  *
- * @see PlaybackAction
+ * @see com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
  */
 @Composable
 fun PlaybackDialog(

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -83,6 +83,10 @@ import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.playback.AnalyticsState
+import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
+import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
