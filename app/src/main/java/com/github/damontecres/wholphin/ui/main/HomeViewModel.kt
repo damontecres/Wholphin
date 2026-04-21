@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -87,26 +88,30 @@ class HomeViewModel
                         // Refreshing if a load has already occurred and the rows haven't significantly changed
                         val refresh =
                             state.loadingState == LoadingState.Success && state.settings == settings
-                        Timber.v("refresh=$refresh, state.loadingState=${state.loadingState}")
+                        Timber.v(
+                            "refresh=%s, state.loadingState=%s, %s rows",
+                            refresh,
+                            state.loadingState,
+                            settings.rows.size,
+                        )
                         _state.update {
                             it.copy(
                                 loadingState = if (refresh) LoadingState.Success else LoadingState.Loading,
                                 refreshState = LoadingState.Loading,
                                 settings = settings,
+                                homeRows =
+                                    if (refresh) {
+                                        it.homeRows
+                                    } else {
+                                        List(settings.rows.size) { HomeRowLoadingState.Pending("") }
+                                    },
                             )
                         }
 
                         val semaphore = Semaphore(4)
 
-                        val watchingRowIndexes =
-                            settings.rows
-                                .mapIndexedNotNull { index, row ->
-                                    if (isWatchingRow(row.config)) index else null
-                                }
                         val deferred =
                             settings.rows
-                                // Load the watching rows first
-                                .sortedByDescending { isWatchingRow(it.config) }
                                 .map { row ->
                                     viewModelScope.async(Dispatchers.IO) {
                                         semaphore.withPermit {
@@ -123,48 +128,57 @@ class HomeViewModel
                                                 )
                                             } catch (ex: Exception) {
                                                 Timber.e(ex, "Error on row %s", row)
-                                                HomeRowLoadingState.Error(row.title, exception = ex)
+                                                HomeRowLoadingState.Error(
+                                                    row.title,
+                                                    exception = ex,
+                                                )
                                             }
                                         }
                                     }
                                 }
 
-                        if (refresh && state.homeRows.isNotEmpty() && watchingRowIndexes.isNotEmpty()) {
-                            // Replace watching rows first
-                            Timber.v("Refreshing rows: %s", watchingRowIndexes)
-                            val rows =
-                                deferred
-                                    .filterIndexed { index, _ -> index in watchingRowIndexes }
-                                    .awaitAll()
-                            _state.update {
-                                val newRows =
-                                    it.homeRows.toMutableList().apply {
-                                        rows.forEachIndexed { index, row ->
-                                            set(watchingRowIndexes[index], row)
-                                        }
+                        if (refresh) {
+                            // Replace rows as they complete
+                            val remaining = deferred.withIndex().toMutableList()
+                            while (remaining.isNotEmpty()) {
+                                val (rowIndex, rowData) =
+                                    select {
+                                        // "Return" the first remaining that is completed
+                                        remaining
+                                            .forEach { (rowIndex, deferred) ->
+                                                deferred.onAwait { rowIndex to it }
+                                            }
                                     }
+                                Timber.v("Got row data index=%s", rowIndex)
+                                _state.update { state ->
+                                    val newRows =
+                                        state.homeRows.toMutableList().apply {
+                                            set(rowIndex, rowData)
+                                        }
+                                    state.copy(
+                                        homeRows = newRows,
+                                    )
+                                }
+                                remaining.removeIf { it.index == rowIndex }
+                            }
+                            _state.update {
                                 it.copy(
                                     loadingState = LoadingState.Success,
-                                    homeRows = newRows,
+                                    refreshState = LoadingState.Success,
+                                )
+                            }
+                        } else {
+                            val rows = deferred.awaitAll()
+                            Timber.v("Got all rows")
+                            _state.update {
+                                it.copy(
+                                    loadingState = LoadingState.Success,
+                                    refreshState = LoadingState.Success,
+                                    homeRows = rows,
                                 )
                             }
                         }
-                        val rows =
-                            deferred
-                                .awaitAll()
-                                .filter {
-                                    // Include only errors & non-empty successes
-                                    it is HomeRowLoadingState.Error ||
-                                        (it is HomeRowLoadingState.Success && it.items.isNotEmpty())
-                                }
-                        Timber.v("Got all rows")
-                        _state.update {
-                            it.copy(
-                                loadingState = LoadingState.Success,
-                                refreshState = LoadingState.Success,
-                                homeRows = rows,
-                            )
-                        }
+                        Timber.d("Home page load complete")
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception during home page loading")
