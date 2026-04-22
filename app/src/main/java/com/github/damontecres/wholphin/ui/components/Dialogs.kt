@@ -104,11 +104,13 @@ data class DialogItem(
     val trailingContent: @Composable (() -> Unit)? = null,
     val enabled: Boolean = true,
     val selected: Boolean = false,
+    val dismissOnClick: Boolean = false,
 ) : DialogItemEntry {
     constructor(
         @StringRes text: Int,
         @StringRes iconStringRes: Int,
         iconColor: Color = Color.Unspecified,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -124,11 +126,13 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
         @StringRes iconStringRes: Int,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -145,12 +149,14 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
         icon: ImageVector,
         iconColor: Color? = null,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -167,10 +173,12 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -180,6 +188,7 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     companion object {
@@ -296,7 +305,7 @@ fun DialogPopupContent(
                             selected = item.selected,
                             enabled = !waiting && item.enabled,
                             onClick = {
-                                if (dismissOnClick) {
+                                if (dismissOnClick || item.dismissOnClick) {
                                     onDismissRequest.invoke()
                                 }
                                 item.onClick.invoke()

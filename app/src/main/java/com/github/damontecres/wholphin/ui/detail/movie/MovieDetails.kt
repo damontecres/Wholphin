@@ -46,7 +46,8 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -57,7 +58,6 @@ import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
@@ -112,7 +112,7 @@ fun MovieDetails(
             ?.subtitleLanguagePreference
 
     val moreActions =
-        MoreDialogActions(
+        ContextMenuActions(
             navigateTo = viewModel::navigateTo,
             onClickWatch = { itemId, watched ->
                 viewModel.setWatched(itemId, watched)
@@ -126,6 +126,22 @@ fun MovieDetails(
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
             onClickDelete = { showDeleteDialog = it },
+            onChooseVersion = { item, source ->
+                viewModel.savePlayVersion(
+                    item,
+                    source.id!!.toUUID(),
+                )
+            },
+            onChooseTracks = { result ->
+                viewModel.saveTrackSelection(
+                    result.item,
+                    result.itemPlayback,
+                    result.trackIndex,
+                    result.streamType,
+                )
+            },
+            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+            onClearChosenStreams = { viewModel.clearChosenStreams(it) },
         )
 
     when (val s = state.loading) {
@@ -260,7 +276,8 @@ fun MovieDetails(
                         buildMoreDialogItemsForPerson(
                             context = context,
                             person = person,
-                            actions = moreActions,
+                            navigateTo = viewModel::navigateTo,
+                            onClickFavorite = viewModel::setFavorite,
                         )
                     moreDialog =
                         DialogParams(
@@ -302,7 +319,7 @@ fun MovieDetails(
                 modifier = modifier,
             )
             showContextMenu?.let { item ->
-                ContextMenu(
+                ContextMenuDialog(
                     onDismissRequest = { showContextMenu = null },
                     fromLongClick = false,
                     streamChoiceService = viewModel.streamChoiceService,
@@ -311,22 +328,6 @@ fun MovieDetails(
                     canDelete = state.canDelete,
                     preferredSubtitleLanguage = preferredSubtitleLanguage,
                     actions = moreActions,
-                    onChooseVersion = { items, source ->
-                        viewModel.savePlayVersion(
-                            movie,
-                            source.id!!.toUUID(),
-                        )
-                    },
-                    onChooseTracks = { type, trackIndex ->
-                        viewModel.saveTrackSelection(
-                            item,
-                            chosenStreams?.itemPlayback,
-                            trackIndex,
-                            type,
-                        )
-                    },
-                    onShowOverview = {},
-                    onClearChosenStreams = { viewModel.clearChosenStreams(chosenStreams) },
                 )
             }
         }

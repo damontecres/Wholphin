@@ -179,7 +179,7 @@ fun SeriesOverview(
                     }
                 }
 
-                suspend fun buildMoreForEpisode(
+                fun buildMoreForEpisode(
                     ep: BaseItem,
                     chosenStreams: ChosenStreams?,
                     fromLongClick: Boolean,
@@ -196,7 +196,7 @@ fun SeriesOverview(
                                 seriesId = series.id,
                                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                 canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
-                                canDelete = viewModel.canDelete(ep),
+                                canDelete = viewModel.canDelete(ep, preferences.appPreferences),
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,

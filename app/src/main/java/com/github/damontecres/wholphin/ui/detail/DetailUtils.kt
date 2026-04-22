@@ -428,7 +428,8 @@ fun buildMoreDialogItemsForHome(
 fun buildMoreDialogItemsForPerson(
     context: Context,
     person: Person,
-    actions: MoreDialogActions,
+    navigateTo: (Destination) -> Unit,
+    onClickFavorite: (UUID, Boolean) -> Unit,
 ): List<DialogItem> =
     buildList {
         val itemId = person.id
@@ -437,7 +438,7 @@ fun buildMoreDialogItemsForPerson(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON, null))
+                navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON, null))
             },
         )
         add(
@@ -446,7 +447,7 @@ fun buildMoreDialogItemsForPerson(
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (person.favorite) Color.Red else Color.Unspecified,
             ) {
-                actions.onClickFavorite.invoke(itemId, !person.favorite)
+                onClickFavorite.invoke(itemId, !person.favorite)
             },
         )
     }

@@ -1,41 +1,80 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.services.StreamChoiceService
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
+import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.util.supportedPlayableTypes
+import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import kotlin.time.Duration
+
+data class ContextMenuActions(
+    val navigateTo: (Destination) -> Unit,
+    val onShowOverview: (BaseItem) -> Unit,
+    val onClickWatch: (UUID, Boolean) -> Unit,
+    val onClickFavorite: (UUID, Boolean) -> Unit,
+    val onClickAddPlaylist: (UUID) -> Unit,
+    val onSendMediaInfo: (UUID) -> Unit,
+    val onClickDelete: (BaseItem) -> Unit,
+    val onChooseVersion: (BaseItem, MediaSourceInfo) -> Unit,
+    val onChooseTracks: (ChosenTrackResult) -> Unit,
+    val onClearChosenStreams: (ChosenStreams?) -> Unit,
+    val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
+    val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
+    val onClickAddToQueue: (BaseItem) -> Unit = {},
+)
+
+data class ChosenTrackResult(
+    val item: BaseItem,
+    val streamType: MediaStreamType,
+    val trackIndex: Int,
+    val itemPlayback: ItemPlayback?,
+)
 
 @Composable
-fun ContextMenu(
+fun ContextMenuDialog(
     onDismissRequest: () -> Unit,
     fromLongClick: Boolean,
     streamChoiceService: StreamChoiceService,
     item: BaseItem,
     chosenStreams: ChosenStreams?,
+    showGoTo: Boolean,
+    showStreamChoices: Boolean,
     canDelete: Boolean,
+    canRemoveContinueWatching: Boolean,
+    canRemoveNextUp: Boolean,
     preferredSubtitleLanguage: String?,
-    actions: MoreDialogActions,
-    onChooseVersion: (BaseItem, MediaSourceInfo) -> Unit,
-    onChooseTracks: (MediaStreamType, Int) -> Unit,
-    onShowOverview: () -> Unit,
-    onClearChosenStreams: () -> Unit,
+    actions: ContextMenuActions,
 ) {
     val context = LocalContext.current
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
 
     val dialogItems =
-        remember(item, chosenStreams) {
-            buildMoreDialogItems(
+        remember(context, item, chosenStreams) {
+            buildContextMenuItems(
                 context = context,
                 item = item,
                 watched = item.played,
@@ -43,7 +82,11 @@ fun ContextMenu(
                 seriesId = item.data.seriesId,
                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                 canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
+                showGoTo = showGoTo,
+                showStreamChoices = showStreamChoices,
                 canDelete = canDelete,
+                canRemoveContinueWatching = canRemoveContinueWatching,
+                canRemoveNextUp = canRemoveNextUp,
                 actions = actions,
                 onChooseVersion = {
                     chooseVersion =
@@ -53,9 +96,8 @@ fun ContextMenu(
                             chosenStreams?.source?.id?.toUUIDOrNull(),
                         ) { idx ->
                             val source = item.data.mediaSources!![idx]
-                            onChooseVersion.invoke(item, source)
+                            actions.onChooseVersion.invoke(item, source)
                         }
-                    onDismissRequest.invoke()
                 },
                 onChooseTracks = { type ->
                     streamChoiceService
@@ -75,16 +117,22 @@ fun ContextMenu(
                                             chosenStreams?.subtitleStream?.index
                                         },
                                     onClick = { trackIndex ->
-                                        onChooseTracks.invoke(type, trackIndex)
+                                        actions.onChooseTracks.invoke(
+                                            ChosenTrackResult(
+                                                item = item,
+                                                streamType = type,
+                                                trackIndex = trackIndex,
+                                                itemPlayback = chosenStreams?.itemPlayback,
+                                            ),
+                                        )
                                     },
                                     preferredSubtitleLanguage = preferredSubtitleLanguage,
                                 )
                         }
                 },
-                onShowOverview = onShowOverview,
+                onShowOverview = { actions.onShowOverview.invoke(item) },
                 onClearChosenStreams = {
-                    onClearChosenStreams.invoke()
-                    onDismissRequest.invoke()
+                    actions.onClearChosenStreams.invoke(chosenStreams)
                 },
             )
         }
@@ -109,3 +157,306 @@ fun ContextMenu(
         }
     }
 }
+
+private fun buildContextMenuItems(
+    context: Context,
+    item: BaseItem,
+    seriesId: UUID?,
+    sourceId: UUID?,
+    watched: Boolean,
+    favorite: Boolean,
+    canClearChosenStreams: Boolean,
+    showGoTo: Boolean,
+    showStreamChoices: Boolean,
+    canDelete: Boolean,
+    canRemoveContinueWatching: Boolean,
+    canRemoveNextUp: Boolean,
+    actions: ContextMenuActions,
+    onChooseVersion: () -> Unit,
+    onChooseTracks: (MediaStreamType) -> Unit,
+    onShowOverview: () -> Unit,
+    onClearChosenStreams: () -> Unit,
+): List<DialogItem> =
+    buildList {
+        if (showGoTo) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to),
+                    Icons.Default.ArrowForward,
+                    dismissOnClick = true,
+                ) {
+                    actions.onClickGoTo(item)
+                },
+            )
+        }
+        if (item.type in supportedPlayableTypes) {
+            if (item.playbackPosition >= Duration.ZERO) {
+                add(
+                    DialogItem(
+                        context.getString(R.string.resume),
+                        Icons.Default.PlayArrow,
+                        iconColor = Color.Green.copy(alpha = .8f),
+                        dismissOnClick = true,
+                    ) {
+                        actions.navigateTo(
+                            Destination.Playback(
+                                item.id,
+                                item.playbackPosition.inWholeMilliseconds,
+                            ),
+                        )
+                    },
+                )
+                add(
+                    DialogItem(
+                        context.getString(R.string.restart),
+                        Icons.Default.Refresh,
+                        dismissOnClick = true,
+                    ) {
+                        actions.navigateTo(
+                            Destination.Playback(
+                                item.id,
+                                0L,
+                            ),
+                        )
+                    },
+                )
+            } else {
+                add(
+                    DialogItem(
+                        context.getString(R.string.play),
+                        Icons.Default.PlayArrow,
+                        iconColor = Color.Green.copy(alpha = .8f),
+                        dismissOnClick = true,
+                    ) {
+                        actions.navigateTo(
+                            Destination.Playback(
+                                item.id,
+                                0L,
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+        item.data.mediaSources?.letNotEmpty { sources ->
+            val source =
+                sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
+                    ?: sources.firstOrNull()
+            source?.mediaStreams?.letNotEmpty { streams ->
+                val audioCount = streams.count { it.type == MediaStreamType.AUDIO }
+                val subtitleCount = streams.count { it.type == MediaStreamType.SUBTITLE }
+                if (audioCount > 1) {
+                    add(
+                        DialogItem(
+                            context.getString(
+                                R.string.choose_stream,
+                                context.getString(R.string.audio),
+                            ),
+                            R.string.fa_volume_low,
+                            dismissOnClick = false,
+                        ) {
+                            onChooseTracks.invoke(MediaStreamType.AUDIO)
+                        },
+                    )
+                }
+                if (subtitleCount > 0) {
+                    add(
+                        DialogItem(
+                            context.getString(
+                                R.string.choose_stream,
+                                context.getString(R.string.subtitles),
+                            ),
+                            R.string.fa_closed_captioning,
+                            dismissOnClick = false,
+                        ) {
+                            onChooseTracks.invoke(MediaStreamType.SUBTITLE)
+                        },
+                    )
+                }
+            }
+            if (sources.size > 1) {
+                add(
+                    DialogItem(
+                        context.getString(
+                            R.string.choose_stream,
+                            context.getString(R.string.version),
+                        ),
+                        R.string.fa_file_video,
+                        dismissOnClick = false,
+                    ) {
+                        onChooseVersion.invoke()
+                    },
+                )
+            }
+        }
+        if (item.type == BaseItemKind.MUSIC_ALBUM) {
+            add(
+                DialogItem(
+                    context.getString(R.string.add_to_queue),
+                    Icons.Default.Add,
+                    dismissOnClick = true,
+                ) {
+                    actions.onClickAddToQueue(item)
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = R.string.add_to_playlist,
+                iconStringRes = R.string.fa_list_ul,
+                dismissOnClick = true,
+            ) {
+                actions.onClickAddPlaylist.invoke(item.id)
+            },
+        )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                    dismissOnClick = true,
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        if (canRemoveContinueWatching && !watched && item.playbackPosition > Duration.ZERO) {
+            add(
+                DialogItem(
+                    text = R.string.remove_continue_watching,
+                    iconStringRes = R.string.fa_eye,
+                    dismissOnClick = true,
+                ) {
+                    actions.onClickWatch.invoke(item.id, false)
+                },
+            )
+        }
+        if (canRemoveNextUp && item.type == BaseItemKind.EPISODE && item.data.seriesId != null) {
+            add(
+                DialogItem(
+                    text = R.string.remove_next_up,
+                    iconStringRes = R.string.fa_tag,
+                    dismissOnClick = true,
+                ) {
+                    actions.onClickRemoveFromNextUp.invoke(item)
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
+                dismissOnClick = true,
+            ) {
+                actions.onClickWatch.invoke(item.id, !watched)
+            },
+        )
+        add(
+            DialogItem(
+                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+                dismissOnClick = true,
+            ) {
+                actions.onClickFavorite.invoke(item.id, !favorite)
+            },
+        )
+        item.data.albumId?.let { albumId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    R.string.fa_compact_disc,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            albumId,
+                            BaseItemKind.MUSIC_ALBUM,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
+        item.data.artistItems?.firstOrNull()?.id?.let { artistId ->
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    R.string.fa_user,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            artistId,
+                            BaseItemKind.MUSIC_ARTIST,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
+        seriesId?.let {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_series),
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(
+                        Destination.MediaItem(
+                            seriesId,
+                            BaseItemKind.SERIES,
+                            null,
+                        ),
+                    )
+                },
+            )
+        }
+        if (item.data.mediaSources?.isNotEmpty() == true) {
+            add(
+                DialogItem(
+                    context.getString(R.string.media_information),
+                    Icons.Default.Info,
+                    dismissOnClick = true,
+                ) {
+                    onShowOverview.invoke()
+                },
+            )
+        }
+        if (canClearChosenStreams) {
+            add(
+                DialogItem(
+                    context.getString(R.string.clear_track_choices),
+                    Icons.Default.Delete,
+                    dismissOnClick = true,
+                ) {
+                    onClearChosenStreams()
+                },
+            )
+        }
+        add(
+            DialogItem(
+                context.getString(R.string.play_with_transcoding),
+                Icons.Default.PlayArrow,
+                dismissOnClick = true,
+            ) {
+                actions.navigateTo(
+                    Destination.Playback(
+                        item.id,
+                        item.resumeMs ?: 0L,
+                        forceTranscoding = true,
+                    ),
+                )
+            },
+        )
+        add(
+            DialogItem(
+                text = R.string.send_media_info_log_to_server,
+                iconStringRes = R.string.fa_file_video,
+                dismissOnClick = true,
+            ) {
+                actions.onSendMediaInfo.invoke(item.id)
+            },
+        )
+    }
