@@ -309,7 +309,7 @@ class PlayExternalViewModel
                                 position =
                                     data
                                         .getLongExtra("extra_position", Long.MIN_VALUE)
-                                        .takeIf { it >= 0 }
+                                        .takeIf { it > 0 }
                             }
 
                             // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
