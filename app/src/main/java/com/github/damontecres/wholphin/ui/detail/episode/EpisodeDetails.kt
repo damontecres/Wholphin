@@ -35,7 +35,6 @@ import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -79,7 +78,6 @@ fun EpisodeDetails(
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
-    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
@@ -202,7 +200,7 @@ fun EpisodeDetails(
     showContextMenu?.let { contextMenu ->
         ContextMenuDialog(
             onDismissRequest = { showContextMenu = null },
-            streamChoiceService = viewModel.streamChoiceService,
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
             actions = moreActions,

@@ -336,7 +336,7 @@ fun SeriesOverview(
     showContextMenu?.let { contextMenu ->
         ContextMenuDialog(
             onDismissRequest = { showContextMenu = null },
-            streamChoiceService = viewModel.streamChoiceService,
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
             actions = contextActions,

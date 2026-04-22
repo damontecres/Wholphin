@@ -22,11 +22,11 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
-import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.supportedPlayableTypes
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -78,7 +78,7 @@ data class ChosenTrackResult(
 fun ContextMenuDialog(
     onDismissRequest: () -> Unit,
     contextMenu: ContextMenu,
-    streamChoiceService: StreamChoiceService,
+    getMediaSource: ((dto: BaseItemDto, itemPlayback: ItemPlayback?) -> MediaSourceInfo?)?,
     preferredSubtitleLanguage: String?,
     actions: ContextMenuActions,
 ) {
@@ -87,7 +87,7 @@ fun ContextMenuDialog(
             ContextMenuDialog(
                 onDismissRequest,
                 contextMenu.fromLongClick,
-                streamChoiceService,
+                getMediaSource,
                 contextMenu.item,
                 contextMenu.chosenStreams,
                 contextMenu.showGoTo,
@@ -115,7 +115,7 @@ fun ContextMenuDialog(
 fun ContextMenuDialog(
     onDismissRequest: () -> Unit,
     fromLongClick: Boolean,
-    streamChoiceService: StreamChoiceService,
+    getMediaSource: ((dto: BaseItemDto, itemPlayback: ItemPlayback?) -> MediaSourceInfo?)?,
     item: BaseItem,
     chosenStreams: ChosenStreams?,
     showGoTo: Boolean,
@@ -157,8 +157,8 @@ fun ContextMenuDialog(
                         }
                 },
                 onChooseTracks = { type ->
-                    streamChoiceService
-                        .chooseSource(
+                    getMediaSource
+                        ?.invoke(
                             item.data,
                             chosenStreams?.itemPlayback,
                         )?.let { source ->
@@ -494,21 +494,23 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        add(
-            DialogItem(
-                context.getString(R.string.play_with_transcoding),
-                Icons.Default.PlayArrow,
-                dismissOnClick = true,
-            ) {
-                actions.navigateTo(
-                    Destination.Playback(
-                        item.id,
-                        item.resumeMs ?: 0L,
-                        forceTranscoding = true,
-                    ),
-                )
-            },
-        )
+        if (item.type in supportedPlayableTypes) {
+            add(
+                DialogItem(
+                    context.getString(R.string.play_with_transcoding),
+                    Icons.Default.PlayArrow,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(
+                        Destination.Playback(
+                            item.id,
+                            item.resumeMs ?: 0L,
+                            forceTranscoding = true,
+                        ),
+                    )
+                },
+            )
+        }
         if (item.data.mediaSources?.isNotEmpty() == true) {
             add(
                 DialogItem(
