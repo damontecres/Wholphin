@@ -31,6 +31,17 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 
+data class ContextMenu(
+    val fromLongClick: Boolean,
+    val item: BaseItem,
+    val chosenStreams: ChosenStreams?,
+    val showGoTo: Boolean,
+    val showStreamChoices: Boolean,
+    val canDelete: Boolean,
+    val canRemoveContinueWatching: Boolean,
+    val canRemoveNextUp: Boolean,
+)
+
 data class ContextMenuActions(
     val navigateTo: (Destination) -> Unit,
     val onShowOverview: (BaseItem) -> Unit,
@@ -52,6 +63,28 @@ data class ChosenTrackResult(
     val streamType: MediaStreamType,
     val trackIndex: Int,
     val itemPlayback: ItemPlayback?,
+)
+
+@Composable
+fun ContextMenuDialog(
+    onDismissRequest: () -> Unit,
+    contextMenu: ContextMenu,
+    streamChoiceService: StreamChoiceService,
+    preferredSubtitleLanguage: String?,
+    actions: ContextMenuActions,
+) = ContextMenuDialog(
+    onDismissRequest,
+    contextMenu.fromLongClick,
+    streamChoiceService,
+    contextMenu.item,
+    contextMenu.chosenStreams,
+    contextMenu.showGoTo,
+    contextMenu.showStreamChoices,
+    contextMenu.canDelete,
+    contextMenu.canRemoveContinueWatching,
+    contextMenu.canRemoveNextUp,
+    preferredSubtitleLanguage,
+    actions,
 )
 
 @Composable
@@ -238,55 +271,57 @@ private fun buildContextMenuItems(
                 )
             }
         }
-        item.data.mediaSources?.letNotEmpty { sources ->
-            val source =
-                sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
-                    ?: sources.firstOrNull()
-            source?.mediaStreams?.letNotEmpty { streams ->
-                val audioCount = streams.count { it.type == MediaStreamType.AUDIO }
-                val subtitleCount = streams.count { it.type == MediaStreamType.SUBTITLE }
-                if (audioCount > 1) {
+        if (showStreamChoices) {
+            item.data.mediaSources?.letNotEmpty { sources ->
+                val source =
+                    sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
+                        ?: sources.firstOrNull()
+                source?.mediaStreams?.letNotEmpty { streams ->
+                    val audioCount = streams.count { it.type == MediaStreamType.AUDIO }
+                    val subtitleCount = streams.count { it.type == MediaStreamType.SUBTITLE }
+                    if (audioCount > 1) {
+                        add(
+                            DialogItem(
+                                context.getString(
+                                    R.string.choose_stream,
+                                    context.getString(R.string.audio),
+                                ),
+                                R.string.fa_volume_low,
+                                dismissOnClick = false,
+                            ) {
+                                onChooseTracks.invoke(MediaStreamType.AUDIO)
+                            },
+                        )
+                    }
+                    if (subtitleCount > 0) {
+                        add(
+                            DialogItem(
+                                context.getString(
+                                    R.string.choose_stream,
+                                    context.getString(R.string.subtitles),
+                                ),
+                                R.string.fa_closed_captioning,
+                                dismissOnClick = false,
+                            ) {
+                                onChooseTracks.invoke(MediaStreamType.SUBTITLE)
+                            },
+                        )
+                    }
+                }
+                if (sources.size > 1) {
                     add(
                         DialogItem(
                             context.getString(
                                 R.string.choose_stream,
-                                context.getString(R.string.audio),
+                                context.getString(R.string.version),
                             ),
-                            R.string.fa_volume_low,
+                            R.string.fa_file_video,
                             dismissOnClick = false,
                         ) {
-                            onChooseTracks.invoke(MediaStreamType.AUDIO)
+                            onChooseVersion.invoke()
                         },
                     )
                 }
-                if (subtitleCount > 0) {
-                    add(
-                        DialogItem(
-                            context.getString(
-                                R.string.choose_stream,
-                                context.getString(R.string.subtitles),
-                            ),
-                            R.string.fa_closed_captioning,
-                            dismissOnClick = false,
-                        ) {
-                            onChooseTracks.invoke(MediaStreamType.SUBTITLE)
-                        },
-                    )
-                }
-            }
-            if (sources.size > 1) {
-                add(
-                    DialogItem(
-                        context.getString(
-                            R.string.choose_stream,
-                            context.getString(R.string.version),
-                        ),
-                        R.string.fa_file_video,
-                        dismissOnClick = false,
-                    ) {
-                        onChooseVersion.invoke()
-                    },
-                )
             }
         }
         if (item.type == BaseItemKind.MUSIC_ALBUM) {
@@ -424,7 +459,7 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (canClearChosenStreams) {
+        if (showStreamChoices && canClearChosenStreams) {
             add(
                 DialogItem(
                     context.getString(R.string.clear_track_choices),
@@ -450,13 +485,15 @@ private fun buildContextMenuItems(
                 )
             },
         )
-        add(
-            DialogItem(
-                text = R.string.send_media_info_log_to_server,
-                iconStringRes = R.string.fa_file_video,
-                dismissOnClick = true,
-            ) {
-                actions.onSendMediaInfo.invoke(item.id)
-            },
-        )
+        if (item.data.mediaSources?.isNotEmpty() == true) {
+            add(
+                DialogItem(
+                    text = R.string.send_media_info_log_to_server,
+                    iconStringRes = R.string.fa_file_video,
+                    dismissOnClick = true,
+                ) {
+                    actions.onSendMediaInfo.invoke(item.id)
+                },
+            )
+        }
     }
