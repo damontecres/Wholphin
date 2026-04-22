@@ -610,4 +610,6 @@
     <string name="ass_subtitle_playback">Riproduzione sottotitoli SSA/ASS</string>
     <string name="next_up_never">Mai</string>
     <string name="external_player">Player esterno</string>
+    <string name="system_default">Predefinito sistema</string>
+    <string name="last_played">Ultima riproduzione</string>
 </resources>
