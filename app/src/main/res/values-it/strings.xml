@@ -608,4 +608,6 @@
     <string name="ass_subtitle_mode_exoplayer">Riproduzione diretta con ExoPlayer integrato</string>
     <string name="ass_subtitle_mode_transcode">Masterizza/trascodifica sul server</string>
     <string name="ass_subtitle_playback">Riproduzione sottotitoli SSA/ASS</string>
+    <string name="next_up_never">Mai</string>
+    <string name="external_player">Player esterno</string>
 </resources>
