@@ -257,7 +257,7 @@ fun SeriesOverview(
                     },
                     onLongClick = { ep ->
                         showContextMenu =
-                            ContextMenu(
+                            ContextMenu.ForBaseItem(
                                 fromLongClick = true,
                                 item = ep,
                                 chosenStreams = chosenStreams,
@@ -295,7 +295,7 @@ fun SeriesOverview(
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
                             showContextMenu =
-                                ContextMenu(
+                                ContextMenu.ForBaseItem(
                                     fromLongClick = false,
                                     item = ep,
                                     chosenStreams = chosenStreams,

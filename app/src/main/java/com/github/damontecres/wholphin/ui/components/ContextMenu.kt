@@ -16,10 +16,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -31,16 +33,23 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 
-data class ContextMenu(
-    val fromLongClick: Boolean,
-    val item: BaseItem,
-    val chosenStreams: ChosenStreams?,
-    val showGoTo: Boolean,
-    val showStreamChoices: Boolean,
-    val canDelete: Boolean,
-    val canRemoveContinueWatching: Boolean,
-    val canRemoveNextUp: Boolean,
-)
+sealed interface ContextMenu {
+    data class ForBaseItem(
+        val fromLongClick: Boolean,
+        val item: BaseItem,
+        val chosenStreams: ChosenStreams?,
+        val showGoTo: Boolean,
+        val showStreamChoices: Boolean,
+        val canDelete: Boolean,
+        val canRemoveContinueWatching: Boolean,
+        val canRemoveNextUp: Boolean,
+    ) : ContextMenu
+
+    data class ForPerson(
+        val fromLongClick: Boolean,
+        val person: Person,
+    ) : ContextMenu
+}
 
 data class ContextMenuActions(
     val navigateTo: (Destination) -> Unit,
@@ -72,20 +81,35 @@ fun ContextMenuDialog(
     streamChoiceService: StreamChoiceService,
     preferredSubtitleLanguage: String?,
     actions: ContextMenuActions,
-) = ContextMenuDialog(
-    onDismissRequest,
-    contextMenu.fromLongClick,
-    streamChoiceService,
-    contextMenu.item,
-    contextMenu.chosenStreams,
-    contextMenu.showGoTo,
-    contextMenu.showStreamChoices,
-    contextMenu.canDelete,
-    contextMenu.canRemoveContinueWatching,
-    contextMenu.canRemoveNextUp,
-    preferredSubtitleLanguage,
-    actions,
-)
+) {
+    when (contextMenu) {
+        is ContextMenu.ForBaseItem -> {
+            ContextMenuDialog(
+                onDismissRequest,
+                contextMenu.fromLongClick,
+                streamChoiceService,
+                contextMenu.item,
+                contextMenu.chosenStreams,
+                contextMenu.showGoTo,
+                contextMenu.showStreamChoices,
+                contextMenu.canDelete,
+                contextMenu.canRemoveContinueWatching,
+                contextMenu.canRemoveNextUp,
+                preferredSubtitleLanguage,
+                actions,
+            )
+        }
+
+        is ContextMenu.ForPerson -> {
+            PersonContextMenu(
+                onDismissRequest = onDismissRequest,
+                fromLongClick = contextMenu.fromLongClick,
+                person = contextMenu.person,
+                actions = actions,
+            )
+        }
+    }
+}
 
 @Composable
 fun ContextMenuDialog(
@@ -497,3 +521,41 @@ private fun buildContextMenuItems(
             )
         }
     }
+
+@Composable
+fun PersonContextMenu(
+    onDismissRequest: () -> Unit,
+    fromLongClick: Boolean,
+    person: Person,
+    actions: ContextMenuActions,
+) {
+    val dialogItems =
+        buildList {
+            val itemId = person.id
+            add(
+                DialogItem(
+                    stringResource(R.string.go_to),
+                    Icons.Default.ArrowForward,
+                ) {
+                    actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON, null))
+                },
+            )
+            add(
+                DialogItem(
+                    text = if (person.favorite) R.string.remove_favorite else R.string.add_favorite,
+                    iconStringRes = R.string.fa_heart,
+                    iconColor = if (person.favorite) Color.Red else Color.Unspecified,
+                ) {
+                    actions.onClickFavorite.invoke(itemId, !person.favorite)
+                },
+            )
+        }
+    DialogPopup(
+        showDialog = true,
+        title = person.name ?: "",
+        dialogItems = dialogItems,
+        onDismissRequest = onDismissRequest,
+        dismissOnClick = true,
+        waitToLoad = fromLongClick,
+    )
+}

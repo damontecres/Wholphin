@@ -49,8 +49,6 @@ import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -61,7 +59,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -97,9 +94,7 @@ fun MovieDetails(
     val state by viewModel.state.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
-    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
@@ -197,7 +192,7 @@ fun MovieDetails(
                 },
                 moreOnClick = {
                     showContextMenu =
-                        ContextMenu(
+                        ContextMenu.ForBaseItem(
                             fromLongClick = false,
                             item = movie,
                             chosenStreams = chosenStreams,
@@ -215,23 +210,11 @@ fun MovieDetails(
                     viewModel.setFavorite(movie.id, !movie.favorite)
                 },
                 onLongClickPerson = { index, person ->
-                    val items =
-                        buildMoreDialogItemsForPerson(
-                            context = context,
-                            person = person,
-                            navigateTo = viewModel::navigateTo,
-                            onClickFavorite = viewModel::setFavorite,
-                        )
-                    moreDialog =
-                        DialogParams(
-                            fromLongClick = true,
-                            title = person.name ?: "",
-                            items = items,
-                        )
+                    showContextMenu = ContextMenu.ForPerson(true, person)
                 },
                 onLongClickSimilar = { _, similar ->
                     showContextMenu =
-                        ContextMenu(
+                        ContextMenu.ForBaseItem(
                             fromLongClick = true,
                             item = similar,
                             chosenStreams = null,
@@ -274,27 +257,6 @@ fun MovieDetails(
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
-    }
-    chooseVersion?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { chooseVersion = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
         )
     }
     showPlaylistDialog.compose { itemId ->

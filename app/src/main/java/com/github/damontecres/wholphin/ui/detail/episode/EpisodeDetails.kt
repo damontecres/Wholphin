@@ -165,7 +165,7 @@ fun EpisodeDetails(
                     },
                     moreOnClick = {
                         showContextMenu =
-                            ContextMenu(
+                            ContextMenu.ForBaseItem(
                                 fromLongClick = false,
                                 item = ep,
                                 chosenStreams = chosenStreams,

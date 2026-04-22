@@ -65,7 +65,6 @@ import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -82,7 +81,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -226,7 +224,7 @@ fun SeriesDetails(
                     },
                     onLongClickItem = { index, season ->
                         showContextMenu =
-                            ContextMenu(
+                            ContextMenu.ForBaseItem(
                                 fromLongClick = true,
                                 item = season,
                                 chosenStreams = null,
@@ -388,7 +386,6 @@ fun SeriesDetailsContent(
     val focusRequesters = remember { List(DISCOVER_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     RequestOrRestoreFocus(focusRequesters.getOrNull(position))
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     Box(
         modifier = modifier,
@@ -576,19 +573,7 @@ fun SeriesDetailsContent(
                             },
                             onLongClick = { index, person ->
                                 position = PEOPLE_ROW
-                                val items =
-                                    buildMoreDialogItemsForPerson(
-                                        context = context,
-                                        person = person,
-                                        navigateTo = actions.navigateTo,
-                                        onClickFavorite = actions.onClickFavorite,
-                                    )
-                                moreDialog =
-                                    DialogParams(
-                                        fromLongClick = true,
-                                        title = person.name ?: "",
-                                        items = items,
-                                    )
+                                onShowContextMenu.invoke(ContextMenu.ForPerson(true, person))
                             },
                             modifier =
                                 Modifier
@@ -625,7 +610,7 @@ fun SeriesDetailsContent(
                             onLongClickItem = { index, item ->
                                 position = SIMILAR_ROW
                                 onShowContextMenu.invoke(
-                                    ContextMenu(
+                                    ContextMenu.ForBaseItem(
                                         fromLongClick = true,
                                         item = item,
                                         chosenStreams = null,
@@ -676,16 +661,6 @@ fun SeriesDetailsContent(
                 }
             }
         }
-    }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
     }
 }
 
