@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
@@ -49,6 +50,20 @@ sealed interface ContextMenu {
         val fromLongClick: Boolean,
         val person: Person,
     ) : ContextMenu
+
+    data class ForMusic(
+        val fromLongClick: Boolean,
+        val item: BaseItem,
+        val index: Int,
+        val canDelete: Boolean,
+        val canRemoveFromQueue: Boolean,
+    ) : ContextMenu
+
+    data class ForQueue(
+        val fromLongClick: Boolean,
+        val item: AudioItem,
+        val index: Int,
+    ) : ContextMenu
 }
 
 data class ContextMenuActions(
@@ -65,6 +80,38 @@ data class ContextMenuActions(
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
     val onClickAddToQueue: (BaseItem) -> Unit = {},
+)
+
+data class MusicContextActions(
+    val navigateTo: (Destination) -> Unit,
+    val onClickPlay: (Int, BaseItem) -> Unit,
+    val onClickPlayNext: (Int, BaseItem) -> Unit,
+    val onClickFavorite: (UUID, Boolean) -> Unit,
+    val onClickAddPlaylist: (UUID) -> Unit,
+    val onClickDelete: (BaseItem) -> Unit,
+    val onClickPlayMusic: (BaseItem) -> Unit,
+    val onClickPlayNextMusic: (BaseItem) -> Unit,
+    val onClickAddToQueue: (BaseItem) -> Unit,
+    val onClickRemoveFromQueue: (Int, BaseItem) -> Unit,
+    val onClickGoToAlbum: (UUID) -> Unit = {
+        navigateTo.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ALBUM))
+    },
+    val onClickGoToArtist: (UUID) -> Unit = {
+        navigateTo.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
+    },
+)
+
+data class QueueContextActions(
+    val onNavigate: (Destination) -> Unit,
+    val onClickPlay: (Int, AudioItem) -> Unit,
+    val onClickPlayNext: (Int, AudioItem) -> Unit,
+    val onClickGoToAlbum: (java.util.UUID) -> Unit = {
+        onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ALBUM))
+    },
+    val onClickGoToArtist: (java.util.UUID) -> Unit = {
+        onNavigate.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
+    },
+    val onClickRemoveFromQueue: (Int, AudioItem) -> Unit,
 )
 
 data class ChosenTrackResult(
@@ -84,48 +131,39 @@ fun ContextMenuDialog(
 ) {
     when (contextMenu) {
         is ContextMenu.ForBaseItem -> {
-            ContextMenuDialog(
+            ContextMenu(
                 onDismissRequest,
-                contextMenu.fromLongClick,
+                contextMenu,
                 getMediaSource,
-                contextMenu.item,
-                contextMenu.chosenStreams,
-                contextMenu.showGoTo,
-                contextMenu.showStreamChoices,
-                contextMenu.canDelete,
-                contextMenu.canRemoveContinueWatching,
-                contextMenu.canRemoveNextUp,
                 preferredSubtitleLanguage,
                 actions,
             )
         }
 
         is ContextMenu.ForPerson -> {
-            PersonContextMenu(
+            ContextMenu(
                 onDismissRequest = onDismissRequest,
-                fromLongClick = contextMenu.fromLongClick,
-                person = contextMenu.person,
+                item = contextMenu,
                 actions = actions,
             )
+        }
+
+        else -> {
+            throw IllegalArgumentException("Unsupported context menu type: ${contextMenu::class}")
         }
     }
 }
 
 @Composable
-fun ContextMenuDialog(
+fun ContextMenu(
     onDismissRequest: () -> Unit,
-    fromLongClick: Boolean,
+    contextMenu: ContextMenu.ForBaseItem,
     getMediaSource: ((dto: BaseItemDto, itemPlayback: ItemPlayback?) -> MediaSourceInfo?)?,
-    item: BaseItem,
-    chosenStreams: ChosenStreams?,
-    showGoTo: Boolean,
-    showStreamChoices: Boolean,
-    canDelete: Boolean,
-    canRemoveContinueWatching: Boolean,
-    canRemoveNextUp: Boolean,
     preferredSubtitleLanguage: String?,
     actions: ContextMenuActions,
 ) {
+    val item = contextMenu.item
+    val chosenStreams = contextMenu.chosenStreams
     val context = LocalContext.current
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
 
@@ -139,11 +177,11 @@ fun ContextMenuDialog(
                 seriesId = item.data.seriesId,
                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                 canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
-                showGoTo = showGoTo,
-                showStreamChoices = showStreamChoices,
-                canDelete = canDelete,
-                canRemoveContinueWatching = canRemoveContinueWatching,
-                canRemoveNextUp = canRemoveNextUp,
+                showGoTo = contextMenu.showGoTo,
+                showStreamChoices = contextMenu.showStreamChoices,
+                canDelete = contextMenu.canDelete,
+                canRemoveContinueWatching = contextMenu.canRemoveContinueWatching,
+                canRemoveNextUp = contextMenu.canRemoveNextUp,
                 actions = actions,
                 onChooseVersion = {
                     chooseVersion =
@@ -199,7 +237,7 @@ fun ContextMenuDialog(
         dialogItems = dialogItems,
         onDismissRequest = onDismissRequest,
         dismissOnClick = false,
-        waitToLoad = fromLongClick,
+        waitToLoad = contextMenu.fromLongClick,
     )
     if (chooseVersion != null) {
         chooseVersion?.let { params ->
@@ -525,12 +563,12 @@ private fun buildContextMenuItems(
     }
 
 @Composable
-fun PersonContextMenu(
+fun ContextMenu(
     onDismissRequest: () -> Unit,
-    fromLongClick: Boolean,
-    person: Person,
+    item: ContextMenu.ForPerson,
     actions: ContextMenuActions,
 ) {
+    val person = item.person
     val dialogItems =
         buildList {
             val itemId = person.id
@@ -558,6 +596,205 @@ fun PersonContextMenu(
         dialogItems = dialogItems,
         onDismissRequest = onDismissRequest,
         dismissOnClick = true,
-        waitToLoad = fromLongClick,
+        waitToLoad = item.fromLongClick,
     )
 }
+
+@Composable
+fun ContextMenu(
+    onDismissRequest: () -> Unit,
+    music: ContextMenu.ForMusic,
+    actions: MusicContextActions,
+) {
+    val context = LocalContext.current
+    val dialogItems =
+        remember(context, music, actions) { buildContextForMusic(context, music, actions) }
+    DialogPopup(
+        showDialog = true,
+        title = music.item.title ?: "",
+        dialogItems = dialogItems,
+        onDismissRequest = onDismissRequest,
+        dismissOnClick = true,
+        waitToLoad = music.fromLongClick,
+    )
+}
+
+fun buildContextForMusic(
+    context: Context,
+    music: ContextMenu.ForMusic,
+    actions: MusicContextActions,
+): List<DialogItem> =
+    buildList {
+        val item = music.item
+        val index = music.index
+        add(
+            DialogItem(
+                context.getString(R.string.play),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlay(index, item)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.play_next),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlayNext(index, item)
+            },
+        )
+        if (music.canRemoveFromQueue) {
+            add(
+                DialogItem(
+                    context.getString(R.string.remove_from_queue),
+                    Icons.Default.Delete,
+                ) {
+                    actions.onClickRemoveFromQueue(index, item)
+                },
+            )
+        } else {
+            add(
+                DialogItem(
+                    context.getString(R.string.add_to_queue),
+                    Icons.Default.Add,
+                ) {
+                    actions.onClickAddToQueue(item)
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = R.string.add_to_playlist,
+                iconStringRes = R.string.fa_list_ul,
+            ) {
+                actions.onClickAddPlaylist.invoke(item.id)
+            },
+        )
+        if (music.canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = if (item.favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (item.favorite) Color.Red else Color.Unspecified,
+            ) {
+                actions.onClickFavorite.invoke(item.id, !item.favorite)
+            },
+        )
+        if (item.type == BaseItemKind.AUDIO && item.data.albumId != null) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    R.string.fa_compact_disc,
+                ) {
+                    actions.onClickGoToAlbum.invoke(item.data.albumId!!)
+                },
+            )
+        }
+        if ((item.type == BaseItemKind.AUDIO || item.type == BaseItemKind.MUSIC_ALBUM) && item.data.artistItems?.isNotEmpty() == true) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    R.string.fa_user,
+                ) {
+                    actions.onClickGoToArtist.invoke(
+                        item.data.artistItems!!
+                            .first()
+                            .id,
+                    )
+                },
+            )
+        }
+    }
+
+@Composable
+fun ContextMenu(
+    onDismissRequest: () -> Unit,
+    item: ContextMenu.ForQueue,
+    actions: QueueContextActions,
+) {
+    val context = LocalContext.current
+    val dialogItems =
+        remember(context, item, actions) {
+            buildContextForMusicQueue(
+                context,
+                item.item,
+                item.index,
+                actions,
+            )
+        }
+    DialogPopup(
+        showDialog = true,
+        title = item.item.title ?: "",
+        dialogItems = dialogItems,
+        onDismissRequest = onDismissRequest,
+        dismissOnClick = true,
+        waitToLoad = item.fromLongClick,
+    )
+}
+
+fun buildContextForMusicQueue(
+    context: Context,
+    item: AudioItem,
+    index: Int,
+    actions: QueueContextActions,
+): List<DialogItem> =
+    buildList {
+        add(
+            DialogItem(
+                context.getString(R.string.play),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlay(index, item)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.play_next),
+                Icons.Default.PlayArrow,
+                iconColor = Color.Green.copy(alpha = .8f),
+            ) {
+                actions.onClickPlayNext(index, item)
+            },
+        )
+        add(
+            DialogItem(
+                context.getString(R.string.remove_from_queue),
+                Icons.Default.Delete,
+            ) {
+                actions.onClickRemoveFromQueue(index, item)
+            },
+        )
+        if (item.albumId != null) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_album),
+                    Icons.Default.ArrowForward,
+                ) {
+                    actions.onClickGoToAlbum.invoke(item.albumId)
+                },
+            )
+        }
+        if (item.artistId != null) {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_artist),
+                    Icons.Default.ArrowForward,
+                ) {
+                    actions.onClickGoToArtist.invoke(item.artistId)
+                },
+            )
+        }
+    }
