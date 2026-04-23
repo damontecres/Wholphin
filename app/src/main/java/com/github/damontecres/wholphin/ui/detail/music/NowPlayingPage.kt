@@ -60,9 +60,10 @@ import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.QueueContextActions
 import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.nav.Backdrop
 import com.github.damontecres.wholphin.ui.playback.BottomDialog
@@ -129,18 +130,9 @@ fun NowPlayingPage(
             )
         }
 
-    val actions =
-        remember {
-            MusicQueueDialogActions(
-                onNavigate = { viewModel.navigationManager.navigateTo(it) },
-                onClickPlay = { index, _ -> viewModel.play(index) },
-                onClickPlayNext = { index, _ -> viewModel.playNext(index) },
-                onClickRemoveFromQueue = { index, _ -> viewModel.removeFromQueue(index) },
-            )
-        }
-
     var showViewOptionsDialog by remember { mutableStateOf(false) }
-    var itemMoreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu.ForQueue?>(null) }
+
     var lyricsHaveFocus by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
@@ -209,6 +201,7 @@ fun NowPlayingPage(
                     remember {
                         shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut()
                     }
+                //noinspection UnnecessaryFullyQualifiedName
                 androidx.compose.animation.AnimatedVisibility(
                     visible = musicPrefs.showAlbumArt,
                     enter = enter,
@@ -250,6 +243,7 @@ fun NowPlayingPage(
                         }
                     }
                 }
+                //noinspection UnnecessaryFullyQualifiedName
                 androidx.compose.animation.AnimatedVisibility(
                     visible = musicPrefs.showVisualizer,
                     enter = enter,
@@ -308,17 +302,21 @@ fun NowPlayingPage(
         val showContextForItem =
             remember {
                 { fromLongClick: Boolean, index: Int, song: AudioItem ->
-                    itemMoreDialog =
-                        DialogParams(
-                            title = song.title ?: "",
+                    showContextMenu =
+                        ContextMenu.ForQueue(
                             fromLongClick = fromLongClick,
-                            items =
-                                buildMoreDialogForMusicQueue(
-                                    context = context,
-                                    actions = actions,
-                                    item = song,
-                                    index = index,
-                                    canRemove = true,
+                            item = song,
+                            index = index,
+                            actions =
+                                QueueContextActions(
+                                    onNavigate = { viewModel.navigationManager.navigateTo(it) },
+                                    onClickPlay = { index, _ -> viewModel.play(index) },
+                                    onClickPlayNext = { index, _ -> viewModel.playNext(index) },
+                                    onClickRemoveFromQueue = { index, _ ->
+                                        viewModel.removeFromQueue(
+                                            index,
+                                        )
+                                    },
                                 ),
                         )
                 }
@@ -368,14 +366,12 @@ fun NowPlayingPage(
             LoadingPage(focusEnabled = false)
         }
     }
-    itemMoreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { itemMoreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = null,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
         )
     }
     if (showViewOptionsDialog) {

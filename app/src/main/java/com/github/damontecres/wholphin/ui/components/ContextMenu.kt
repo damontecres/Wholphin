@@ -98,8 +98,6 @@ data class MusicContextActions(
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
     val onClickDelete: (BaseItem) -> Unit,
-    val onClickPlayMusic: (BaseItem) -> Unit,
-    val onClickPlayNextMusic: (BaseItem) -> Unit,
     val onClickAddToQueue: (BaseItem) -> Unit,
     val onClickRemoveFromQueue: (Int, BaseItem) -> Unit,
     val onClickGoToAlbum: (UUID) -> Unit = {
