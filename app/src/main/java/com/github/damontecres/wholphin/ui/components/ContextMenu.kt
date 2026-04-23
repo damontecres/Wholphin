@@ -77,7 +77,7 @@ data class ContextMenuActions(
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
     val onSendMediaInfo: (UUID) -> Unit,
-    val onClickDelete: (BaseItem) -> Unit,
+    val onDeleteItem: (BaseItem) -> Unit,
     val onChooseVersion: (BaseItem, MediaSourceInfo) -> Unit,
     val onChooseTracks: (ChosenTrackResult) -> Unit,
     val onClearChosenStreams: (ChosenStreams?) -> Unit,
@@ -97,7 +97,7 @@ data class MusicContextActions(
     val onClickPlayNext: (Int, BaseItem) -> Unit,
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
-    val onClickDelete: (BaseItem) -> Unit,
+    val onDeleteItem: (BaseItem) -> Unit,
     val onClickAddToQueue: (BaseItem) -> Unit,
     val onClickRemoveFromQueue: (Int, BaseItem) -> Unit,
     val onClickGoToAlbum: (UUID) -> Unit = {
@@ -184,6 +184,7 @@ fun ContextMenu(
     val chosenStreams = contextMenu.chosenStreams
     val context = LocalContext.current
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     val dialogItems =
         remember(context, item, chosenStreams) {
@@ -247,6 +248,7 @@ fun ContextMenu(
                 onClearChosenStreams = {
                     actions.onClearChosenStreams.invoke(chosenStreams)
                 },
+                onClickDelete = { showDeleteDialog = true },
             )
         }
     DialogPopup(
@@ -269,6 +271,16 @@ fun ContextMenu(
             )
         }
     }
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = false },
+            onConfirm = {
+                actions.onDeleteItem.invoke(item)
+                onDismissRequest.invoke()
+            },
+        )
+    }
 }
 
 private fun buildContextMenuItems(
@@ -289,6 +301,7 @@ private fun buildContextMenuItems(
     onChooseTracks: (MediaStreamType) -> Unit,
     onShowOverview: () -> Unit,
     onClearChosenStreams: () -> Unit,
+    onClickDelete: () -> Unit,
 ): List<DialogItem> =
     buildList {
         if (showGoTo) {
@@ -430,9 +443,9 @@ private fun buildContextMenuItems(
                     context.getString(R.string.delete),
                     Icons.Default.Delete,
                     iconColor = Color.Red.copy(alpha = .8f),
-                    dismissOnClick = true,
+                    dismissOnClick = false,
                 ) {
-                    actions.onClickDelete.invoke(item)
+                    onClickDelete.invoke()
                 },
             )
         }
@@ -625,22 +638,38 @@ fun ContextMenu(
     actions: MusicContextActions,
 ) {
     val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val dialogItems =
-        remember(context, item, actions) { buildContextForMusic(context, item, actions) }
+        remember(context, item, actions) {
+            buildContextForMusic(context, item, actions, onClickDelete = {
+                showDeleteDialog = true
+            })
+        }
     DialogPopup(
         showDialog = true,
         title = item.item.title ?: "",
         dialogItems = dialogItems,
         onDismissRequest = onDismissRequest,
-        dismissOnClick = true,
+        dismissOnClick = false,
         waitToLoad = item.fromLongClick,
     )
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            itemTitle = item.item.title ?: "",
+            onCancel = { showDeleteDialog = false },
+            onConfirm = {
+                actions.onDeleteItem.invoke(item.item)
+                onDismissRequest.invoke()
+            },
+        )
+    }
 }
 
 fun buildContextForMusic(
     context: Context,
     music: ContextMenu.ForMusic,
     actions: MusicContextActions,
+    onClickDelete: () -> Unit,
 ): List<DialogItem> =
     buildList {
         val item = music.item
@@ -650,6 +679,7 @@ fun buildContextForMusic(
                 context.getString(R.string.play),
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
+                dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
             },
@@ -659,6 +689,7 @@ fun buildContextForMusic(
                 context.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
+                dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)
             },
@@ -668,6 +699,7 @@ fun buildContextForMusic(
                 DialogItem(
                     context.getString(R.string.remove_from_queue),
                     Icons.Default.Delete,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickRemoveFromQueue(index, item)
                 },
@@ -677,6 +709,7 @@ fun buildContextForMusic(
                 DialogItem(
                     context.getString(R.string.add_to_queue),
                     Icons.Default.Add,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickAddToQueue(item)
                 },
@@ -686,6 +719,7 @@ fun buildContextForMusic(
             DialogItem(
                 text = R.string.add_to_playlist,
                 iconStringRes = R.string.fa_list_ul,
+                dismissOnClick = true,
             ) {
                 actions.onClickAddPlaylist.invoke(item.id)
             },
@@ -696,8 +730,9 @@ fun buildContextForMusic(
                     context.getString(R.string.delete),
                     Icons.Default.Delete,
                     iconColor = Color.Red.copy(alpha = .8f),
+                    dismissOnClick = false,
                 ) {
-                    actions.onClickDelete.invoke(item)
+                    onClickDelete.invoke()
                 },
             )
         }
@@ -706,6 +741,7 @@ fun buildContextForMusic(
                 text = if (item.favorite) R.string.remove_favorite else R.string.add_favorite,
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (item.favorite) Color.Red else Color.Unspecified,
+                dismissOnClick = true,
             ) {
                 actions.onClickFavorite.invoke(item.id, !item.favorite)
             },
@@ -715,6 +751,7 @@ fun buildContextForMusic(
                 DialogItem(
                     context.getString(R.string.go_to_album),
                     R.string.fa_compact_disc,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickGoToAlbum.invoke(item.data.albumId!!)
                 },
@@ -725,6 +762,7 @@ fun buildContextForMusic(
                 DialogItem(
                     context.getString(R.string.go_to_artist),
                     R.string.fa_user,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickGoToArtist.invoke(
                         item.data.artistItems!!
@@ -757,7 +795,7 @@ fun ContextMenu(
         title = item.item.title ?: "",
         dialogItems = dialogItems,
         onDismissRequest = onDismissRequest,
-        dismissOnClick = true,
+        dismissOnClick = false,
         waitToLoad = item.fromLongClick,
     )
 }
@@ -774,6 +812,7 @@ fun buildContextForMusicQueue(
                 context.getString(R.string.play),
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
+                dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
             },
@@ -783,6 +822,7 @@ fun buildContextForMusicQueue(
                 context.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
+                dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)
             },
@@ -791,6 +831,7 @@ fun buildContextForMusicQueue(
             DialogItem(
                 context.getString(R.string.remove_from_queue),
                 Icons.Default.Delete,
+                dismissOnClick = true,
             ) {
                 actions.onClickRemoveFromQueue(index, item)
             },
@@ -800,6 +841,7 @@ fun buildContextForMusicQueue(
                 DialogItem(
                     context.getString(R.string.go_to_album),
                     Icons.Default.ArrowForward,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickGoToAlbum.invoke(item.albumId)
                 },
@@ -810,6 +852,7 @@ fun buildContextForMusicQueue(
                 DialogItem(
                     context.getString(R.string.go_to_artist),
                     Icons.Default.ArrowForward,
+                    dismissOnClick = true,
                 ) {
                     actions.onClickGoToArtist.invoke(item.artistId)
                 },

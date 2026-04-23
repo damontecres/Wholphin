@@ -21,10 +21,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -37,7 +35,6 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
@@ -118,7 +115,6 @@ fun SeriesOverview(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var rowFocused by rememberInt()
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     val contextActions =
         ContextMenuActions(
@@ -134,7 +130,7 @@ fun SeriesOverview(
                 showPlaylistDialog = itemId
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
             onChooseVersion = { item, source ->
                 viewModel.savePlayVersion(
                     item,
@@ -329,7 +325,7 @@ fun SeriesOverview(
                         viewModel.navigateTo(extra.destination)
                     },
                     canDelete = { viewModel.canDelete(it, preferences.appPreferences) },
-                    deleteOnClick = { showDeleteDialog = it },
+                    onConfirmDelete = viewModel::deleteItem,
                     modifier = modifier,
                 )
             }
@@ -368,17 +364,6 @@ fun SeriesOverview(
                 showPlaylistDialog = null
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.subtitle ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                episodeRowFocusRequester.tryRequestFocus()
-                showDeleteDialog = null
-            },
         )
     }
 }

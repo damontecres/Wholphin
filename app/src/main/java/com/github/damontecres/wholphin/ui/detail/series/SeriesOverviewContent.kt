@@ -95,7 +95,7 @@ fun SeriesOverviewContent(
     overviewOnClick: () -> Unit,
     personOnClick: (Person) -> Unit,
     canDelete: (BaseItem) -> Boolean,
-    deleteOnClick: (BaseItem) -> Unit,
+    onConfirmDelete: (BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -322,7 +322,7 @@ fun SeriesOverviewContent(
                             }
                         },
                         canDelete = canDelete.invoke(ep),
-                        deleteOnClick = { deleteOnClick.invoke(ep) },
+                        onConfirmDelete = { onConfirmDelete.invoke(ep) },
                         modifier =
                             Modifier
                                 .padding(top = 4.dp)

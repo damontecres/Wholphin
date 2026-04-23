@@ -28,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -57,7 +56,6 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
@@ -132,7 +130,6 @@ fun SeriesDetails(
 
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     val contextActions =
         ContextMenuActions(
@@ -153,7 +150,7 @@ fun SeriesDetails(
                 showPlaylistDialog = Optional.present(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
             onChooseVersion = { item, source ->
                 viewModel.savePlayVersion(
                     item,
@@ -327,19 +324,6 @@ fun SeriesDetails(
             elevation = 3.dp,
         )
     }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                if (seasons?.lastOrNull()?.id == item.id) {
-                    focusManager.moveFocus(FocusDirection.Previous)
-                }
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
-        )
-    }
 }
 
 private const val HEADER_ROW = 0
@@ -499,9 +483,10 @@ fun SeriesDetailsContent(
                         )
                         if (canDelete) {
                             DeleteButton(
-                                onClick = {
+                                title = series.title ?: "",
+                                onConfirmDelete = {
                                     position = HEADER_ROW
-                                    actions.onClickDelete.invoke(series)
+                                    actions.onDeleteItem.invoke(series)
                                 },
                                 modifier =
                                     Modifier

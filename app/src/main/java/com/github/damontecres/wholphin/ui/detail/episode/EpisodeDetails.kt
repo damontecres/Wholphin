@@ -31,7 +31,6 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -79,7 +78,6 @@ fun EpisodeDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     val canDelete by viewModel.canDelete.collectAsState()
 
@@ -104,7 +102,7 @@ fun EpisodeDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
             onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
             onChooseVersion = { item, source ->
                 viewModel.savePlayVersion(
@@ -182,7 +180,7 @@ fun EpisodeDetails(
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
                     canDelete = canDelete,
-                    deleteOnClick = { showDeleteDialog = ep },
+                    onConfirmDelete = { viewModel.deleteItem(ep) },
                     modifier = modifier,
                 )
             }
@@ -223,16 +221,6 @@ fun EpisodeDetails(
             elevation = 3.dp,
         )
     }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
-        )
-    }
 }
 
 private const val HEADER_ROW = 0
@@ -248,7 +236,7 @@ fun EpisodeDetailsContent(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     canDelete: Boolean,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -286,6 +274,7 @@ fun EpisodeDetailsContent(
                                 .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
+                        title = ep.title ?: "",
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
                         favorite = dto.userData?.isFavorite ?: false,
@@ -307,7 +296,7 @@ fun EpisodeDetailsContent(
                         trailers = null,
                         trailerOnClick = {},
                         canDelete = canDelete,
-                        deleteOnClick = deleteOnClick,
+                        onConfirmDelete = onConfirmDelete,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

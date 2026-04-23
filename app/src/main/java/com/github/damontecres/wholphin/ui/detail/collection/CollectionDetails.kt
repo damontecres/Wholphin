@@ -39,7 +39,6 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -47,7 +46,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.RowColumnItem
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -82,7 +80,6 @@ fun CollectionDetails(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
-    var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
     var showViewOptionsDialog by remember { mutableStateOf(false) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
@@ -100,7 +97,7 @@ fun CollectionDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = RowColumnItem(position ?: RowColumn(-1, -1), it) },
+            onDeleteItem = { viewModel.deleteItem(it, position) },
             onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
             onChooseVersion = { _, _ ->
                 // Not supported on this page
@@ -201,7 +198,7 @@ fun CollectionDetails(
                             }
                         }
                     },
-                deleteOnClick =
+                onConfirmDelete =
                     remember {
                         {
                             state.collection?.let {
@@ -278,16 +275,6 @@ fun CollectionDetails(
             elevation = 3.dp,
         )
     }
-    showDeleteDialog?.let { (position, item) ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item, position)
-                showDeleteDialog = null
-            },
-        )
-    }
 }
 
 @Composable
@@ -306,7 +293,7 @@ fun CollectionDetailsContent(
     onClickViewOptions: () -> Unit,
     overviewOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     canDelete: Boolean,
     moreOnClick: () -> Unit,
     modifier: Modifier,
@@ -411,7 +398,7 @@ fun CollectionDetailsContent(
                             getPossibleFilterValues = getPossibleFilterValues,
                             onClickViewOptions = onClickViewOptions,
                             favoriteOnClick = favoriteOnClick,
-                            deleteOnClick = deleteOnClick,
+                            onConfirmDelete = onConfirmDelete,
                             canDelete = canDelete,
                             moreOnClick = moreOnClick,
                             modifier =

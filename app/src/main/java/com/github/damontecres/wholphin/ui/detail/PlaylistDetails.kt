@@ -72,7 +72,6 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -404,7 +403,6 @@ fun PlaylistDetails(
             }
         }
     }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val musicContextActions =
         MusicContextActions(
             navigateTo = { viewModel.navigationManager.navigateTo(it) },
@@ -417,7 +415,7 @@ fun PlaylistDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onClickRemoveFromQueue = { _, _ -> },
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
         )
     val contextActions =
         ContextMenuActions(
@@ -429,7 +427,7 @@ fun PlaylistDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel::sendMediaReport,
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
             onClickAddToQueue = { viewModel.addToQueue(it, 0) },
             onShowOverview = {},
             onChooseVersion = { _, _ -> },
@@ -511,16 +509,6 @@ fun PlaylistDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
         )
     }
 }

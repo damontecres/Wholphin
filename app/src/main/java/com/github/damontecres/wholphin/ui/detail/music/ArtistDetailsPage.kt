@@ -59,7 +59,6 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -314,7 +313,6 @@ fun ArtistDetailsPage(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val moreDialogActions =
         remember {
             MusicContextActions(
@@ -328,7 +326,7 @@ fun ArtistDetailsPage(
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onClickRemoveFromQueue = { _, _ -> },
-                onClickDelete = { showDeleteDialog = it },
+                onDeleteItem = viewModel::deleteItem,
             )
         }
 
@@ -625,17 +623,6 @@ fun ArtistDetailsPage(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                focusRequesters.getOrNull(position.row)?.tryRequestFocus()
-                showDeleteDialog = null
-            },
         )
     }
 }

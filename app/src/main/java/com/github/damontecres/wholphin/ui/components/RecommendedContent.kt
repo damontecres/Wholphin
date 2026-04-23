@@ -171,7 +171,6 @@ fun RecommendedContent(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     OneTimeLaunchedEffect {
@@ -224,9 +223,7 @@ fun RecommendedContent(
                                         showPlaylistDialog.makePresent(itemId)
                                     },
                                     onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                                    onClickDelete = {
-                                        showDeleteDialog = RowColumnItem(position, it)
-                                    },
+                                    onDeleteItem = { viewModel.deleteItem(position, it) },
                                     onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
                                     onChooseVersion = { _, _ ->
                                         // Not supported on this page
@@ -298,16 +295,6 @@ fun RecommendedContent(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { (position, item) ->
-        ConfirmDeleteDialog(
-            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(position, item)
-                showDeleteDialog = null
-            },
         )
     }
 }

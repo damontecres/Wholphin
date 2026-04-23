@@ -45,7 +45,6 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -98,7 +97,6 @@ fun MovieDetails(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     val preferredSubtitleLanguage =
         viewModel.serverRepository.currentUserDto
@@ -121,7 +119,7 @@ fun MovieDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
+            onDeleteItem = viewModel::deleteItem,
             onChooseVersion = { item, source ->
                 viewModel.savePlayVersion(
                     item,
@@ -247,7 +245,7 @@ fun MovieDetails(
                     viewModel.navigateTo(item.destination)
                 },
                 canDelete = state.canDelete,
-                deleteOnClick = { showDeleteDialog = state.movie },
+                onConfirmDelete = { state.movie?.let { viewModel.deleteItem(it) } },
                 modifier = modifier,
             )
         }
@@ -287,16 +285,6 @@ fun MovieDetails(
             elevation = 3.dp,
         )
     }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
-        )
-    }
 }
 
 private const val HEADER_ROW = 0
@@ -325,7 +313,7 @@ fun MovieDetailsContent(
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -365,6 +353,7 @@ fun MovieDetailsContent(
                                 .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
+                        title = movie.title ?: "",
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
                         favorite = dto.userData?.isFavorite ?: false,
@@ -389,7 +378,7 @@ fun MovieDetailsContent(
                             trailerOnClick.invoke(it)
                         },
                         canDelete = canDelete,
-                        deleteOnClick = deleteOnClick,
+                        onConfirmDelete = onConfirmDelete,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
