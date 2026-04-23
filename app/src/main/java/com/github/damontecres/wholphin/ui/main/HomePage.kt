@@ -66,7 +66,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.FocusableItemRow
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.PositionContextMenu
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.RowColumnItem
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
@@ -123,7 +122,7 @@ fun HomePage(
         }
 
         LoadingState.Success -> {
-            var showContextMenu by remember { mutableStateOf<PositionContextMenu?>(null) }
+            var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
             var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
@@ -150,22 +149,43 @@ fun HomePage(
                         val canRemoveNextUp =
                             row?.rowType is HomeRowConfig.NextUp || row?.rowType is HomeRowConfig.ContinueWatchingCombined
                         showContextMenu =
-                            PositionContextMenu(
-                                clickedPosition,
-                                ContextMenu.ForBaseItem(
-                                    fromLongClick = true,
-                                    item = item,
-                                    chosenStreams = null,
-                                    showGoTo = true,
-                                    showStreamChoices = false,
-                                    canDelete =
-                                        viewModel.canDelete(
-                                            item,
-                                            preferences.appPreferences,
-                                        ),
-                                    canRemoveContinueWatching = canRemoveContinueWatching,
-                                    canRemoveNextUp = canRemoveNextUp,
-                                ),
+                            ContextMenu.ForBaseItem(
+                                fromLongClick = true,
+                                item = item,
+                                chosenStreams = null,
+                                showGoTo = true,
+                                showStreamChoices = false,
+                                canDelete =
+                                    viewModel.canDelete(
+                                        item,
+                                        preferences.appPreferences,
+                                    ),
+                                canRemoveContinueWatching = canRemoveContinueWatching,
+                                canRemoveNextUp = canRemoveNextUp,
+                                actions =
+                                    ContextMenuActions(
+                                        navigateTo = viewModel.navigationManager::navigateTo,
+                                        onClickWatch = viewModel::setWatched,
+                                        onClickFavorite = viewModel::setFavorite,
+                                        onClickAddPlaylist = { itemId ->
+                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            showPlaylistDialog = itemId
+                                        },
+                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                        onClickDelete = {
+                                            showDeleteDialog = RowColumnItem(position, it)
+                                        },
+                                        onChooseVersion = { _, _ ->
+                                            // Not supported on this page
+                                        },
+                                        onChooseTracks = {
+                                            // Not supported on this page
+                                        },
+                                        onShowOverview = {
+                                            overviewDialog = ItemDetailsDialogInfo(it)
+                                        },
+                                        onClearChosenStreams = {},
+                                    ),
                             )
                     }
                 }
@@ -196,32 +216,12 @@ fun HomePage(
                     onDismissRequest = { overviewDialog = null },
                 )
             }
-            showContextMenu?.let { (position, contextMenu) ->
+            showContextMenu?.let { contextMenu ->
                 ContextMenuDialog(
                     onDismissRequest = { showContextMenu = null },
                     getMediaSource = null,
                     contextMenu = contextMenu,
                     preferredSubtitleLanguage = null,
-                    actions =
-                        ContextMenuActions(
-                            navigateTo = viewModel.navigationManager::navigateTo,
-                            onClickWatch = viewModel::setWatched,
-                            onClickFavorite = viewModel::setFavorite,
-                            onClickAddPlaylist = { itemId ->
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog = itemId
-                            },
-                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                            onClickDelete = { showDeleteDialog = RowColumnItem(position, it) },
-                            onChooseVersion = { _, _ ->
-                                // Not supported on this page
-                            },
-                            onChooseTracks = {
-                                // Not supported on this page
-                            },
-                            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                            onClearChosenStreams = {},
-                        ),
                 )
             }
             showPlaylistDialog?.let { itemId ->

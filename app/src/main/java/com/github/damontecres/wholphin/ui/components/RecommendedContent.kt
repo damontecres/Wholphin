@@ -168,7 +168,7 @@ fun RecommendedContent(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     onFocusPosition: ((RowColumn) -> Unit)? = null,
 ) {
-    var showContextMenu by remember { mutableStateOf<PositionContextMenu?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
@@ -201,18 +201,43 @@ fun RecommendedContent(
                 },
                 onLongClickItem = { position, item ->
                     showContextMenu =
-                        PositionContextMenu(
-                            position,
-                            ContextMenu.ForBaseItem(
-                                fromLongClick = true,
-                                item = item,
-                                chosenStreams = null,
-                                showGoTo = true,
-                                showStreamChoices = false,
-                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                                canRemoveContinueWatching = false,
-                                canRemoveNextUp = false,
-                            ),
+                        ContextMenu.ForBaseItem(
+                            fromLongClick = true,
+                            item = item,
+                            chosenStreams = null,
+                            showGoTo = true,
+                            showStreamChoices = false,
+                            canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions =
+                                ContextMenuActions(
+                                    navigateTo = viewModel.navigationManager::navigateTo,
+                                    onClickWatch = { itemId, watched ->
+                                        viewModel.setWatched(position, itemId, watched)
+                                    },
+                                    onClickFavorite = { itemId, favorite ->
+                                        viewModel.setFavorite(position, itemId, favorite)
+                                    },
+                                    onClickAddPlaylist = { itemId ->
+                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                        showPlaylistDialog.makePresent(itemId)
+                                    },
+                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                    onClickDelete = {
+                                        showDeleteDialog = RowColumnItem(position, it)
+                                    },
+                                    onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                                    onChooseVersion = { _, _ ->
+                                        // Not supported on this page
+                                    },
+                                    onChooseTracks = { result ->
+                                        // Not supported on this page
+                                    },
+                                    onClearChosenStreams = {
+                                        // Not supported on this page
+                                    },
+                                ),
                         )
                 },
                 onClickPlay = { _, item ->
@@ -250,38 +275,12 @@ fun RecommendedContent(
             onDismissRequest = { overviewDialog = null },
         )
     }
-    showContextMenu?.let { (position, contextMenu) ->
+    showContextMenu?.let { contextMenu ->
         ContextMenuDialog(
             onDismissRequest = { showContextMenu = null },
             getMediaSource = null,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = null,
-            actions =
-                ContextMenuActions(
-                    navigateTo = viewModel.navigationManager::navigateTo,
-                    onClickWatch = { itemId, watched ->
-                        viewModel.setWatched(position, itemId, watched)
-                    },
-                    onClickFavorite = { itemId, favorite ->
-                        viewModel.setFavorite(position, itemId, favorite)
-                    },
-                    onClickAddPlaylist = { itemId ->
-                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                        showPlaylistDialog.makePresent(itemId)
-                    },
-                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                    onClickDelete = { showDeleteDialog = RowColumnItem(position, it) },
-                    onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                    onChooseVersion = { _, _ ->
-                        // Not supported on this page
-                    },
-                    onChooseTracks = { result ->
-                        // Not supported on this page
-                    },
-                    onClearChosenStreams = {
-                        // Not supported on this page
-                    },
-                ),
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -316,9 +315,4 @@ fun RecommendedContent(
 data class RowColumnItem(
     val position: RowColumn,
     val item: BaseItem,
-)
-
-data class PositionContextMenu(
-    val position: RowColumn,
-    val contextMenu: ContextMenu,
 )

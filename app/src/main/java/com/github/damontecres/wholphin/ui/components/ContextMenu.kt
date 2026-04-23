@@ -44,11 +44,13 @@ sealed interface ContextMenu {
         val canDelete: Boolean,
         val canRemoveContinueWatching: Boolean,
         val canRemoveNextUp: Boolean,
+        val actions: ContextMenuActions,
     ) : ContextMenu
 
     data class ForPerson(
         val fromLongClick: Boolean,
         val person: Person,
+        val actions: PersonContextActions,
     ) : ContextMenu
 
     data class ForMusic(
@@ -57,12 +59,14 @@ sealed interface ContextMenu {
         val index: Int,
         val canDelete: Boolean,
         val canRemoveFromQueue: Boolean,
+        val actions: MusicContextActions,
     ) : ContextMenu
 
     data class ForQueue(
         val fromLongClick: Boolean,
         val item: AudioItem,
         val index: Int,
+        val actions: QueueContextActions,
     ) : ContextMenu
 }
 
@@ -80,6 +84,11 @@ data class ContextMenuActions(
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
     val onClickAddToQueue: (BaseItem) -> Unit = {},
+)
+
+data class PersonContextActions(
+    val navigateTo: (Destination) -> Unit,
+    val onClickFavorite: (UUID, Boolean) -> Unit,
 )
 
 data class MusicContextActions(
@@ -127,7 +136,6 @@ fun ContextMenuDialog(
     contextMenu: ContextMenu,
     getMediaSource: ((dto: BaseItemDto, itemPlayback: ItemPlayback?) -> MediaSourceInfo?)?,
     preferredSubtitleLanguage: String?,
-    actions: ContextMenuActions,
 ) {
     when (contextMenu) {
         is ContextMenu.ForBaseItem -> {
@@ -136,7 +144,7 @@ fun ContextMenuDialog(
                 contextMenu,
                 getMediaSource,
                 preferredSubtitleLanguage,
-                actions,
+                contextMenu.actions,
             )
         }
 
@@ -144,12 +152,24 @@ fun ContextMenuDialog(
             ContextMenu(
                 onDismissRequest = onDismissRequest,
                 item = contextMenu,
-                actions = actions,
+                actions = contextMenu.actions,
             )
         }
 
-        else -> {
-            throw IllegalArgumentException("Unsupported context menu type: ${contextMenu::class}")
+        is ContextMenu.ForMusic -> {
+            ContextMenu(
+                onDismissRequest = onDismissRequest,
+                item = contextMenu,
+                actions = contextMenu.actions,
+            )
+        }
+
+        is ContextMenu.ForQueue -> {
+            ContextMenu(
+                onDismissRequest = onDismissRequest,
+                item = contextMenu,
+                actions = contextMenu.actions,
+            )
         }
     }
 }
@@ -566,7 +586,7 @@ private fun buildContextMenuItems(
 fun ContextMenu(
     onDismissRequest: () -> Unit,
     item: ContextMenu.ForPerson,
-    actions: ContextMenuActions,
+    actions: PersonContextActions,
 ) {
     val person = item.person
     val dialogItems =
@@ -603,19 +623,19 @@ fun ContextMenu(
 @Composable
 fun ContextMenu(
     onDismissRequest: () -> Unit,
-    music: ContextMenu.ForMusic,
+    item: ContextMenu.ForMusic,
     actions: MusicContextActions,
 ) {
     val context = LocalContext.current
     val dialogItems =
-        remember(context, music, actions) { buildContextForMusic(context, music, actions) }
+        remember(context, item, actions) { buildContextForMusic(context, item, actions) }
     DialogPopup(
         showDialog = true,
-        title = music.item.title ?: "",
+        title = item.item.title ?: "",
         dialogItems = dialogItems,
         onDismissRequest = onDismissRequest,
         dismissOnClick = true,
-        waitToLoad = music.fromLongClick,
+        waitToLoad = item.fromLongClick,
     )
 }
 

@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
+import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -106,7 +107,7 @@ fun MovieDetails(
             ?.configuration
             ?.subtitleLanguagePreference
 
-    val moreActions =
+    val contextActions =
         ContextMenuActions(
             navigateTo = viewModel::navigateTo,
             onClickWatch = { itemId, watched ->
@@ -201,6 +202,7 @@ fun MovieDetails(
                             canDelete = state.canDelete,
                             canRemoveContinueWatching = false,
                             canRemoveNextUp = false,
+                            actions = contextActions,
                         )
                 },
                 watchOnClick = {
@@ -210,7 +212,16 @@ fun MovieDetails(
                     viewModel.setFavorite(movie.id, !movie.favorite)
                 },
                 onLongClickPerson = { index, person ->
-                    showContextMenu = ContextMenu.ForPerson(true, person)
+                    showContextMenu =
+                        ContextMenu.ForPerson(
+                            fromLongClick = true,
+                            person = person,
+                            actions =
+                                PersonContextActions(
+                                    navigateTo = viewModel::navigateTo,
+                                    onClickFavorite = viewModel::setFavorite,
+                                ),
+                        )
                 },
                 onLongClickSimilar = { _, similar ->
                     showContextMenu =
@@ -223,6 +234,7 @@ fun MovieDetails(
                             canDelete = false,
                             canRemoveContinueWatching = false,
                             canRemoveNextUp = false,
+                            actions = contextActions,
                         )
                 },
                 trailerOnClick = {
@@ -246,7 +258,6 @@ fun MovieDetails(
             getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
-            actions = moreActions,
         )
     }
     overviewDialog?.let { info ->

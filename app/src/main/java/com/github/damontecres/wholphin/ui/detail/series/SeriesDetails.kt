@@ -73,6 +73,7 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.TrailerButton
@@ -233,6 +234,7 @@ fun SeriesDetails(
                                 canDelete = viewModel.canDelete(season, preferences.appPreferences),
                                 canRemoveContinueWatching = false,
                                 canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     overviewOnClick = {
@@ -299,7 +301,6 @@ fun SeriesDetails(
             getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = null,
-            actions = contextActions,
         )
     }
     overviewDialog?.let { info ->
@@ -573,7 +574,17 @@ fun SeriesDetailsContent(
                             },
                             onLongClick = { index, person ->
                                 position = PEOPLE_ROW
-                                onShowContextMenu.invoke(ContextMenu.ForPerson(true, person))
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForPerson(
+                                        fromLongClick = true,
+                                        person = person,
+                                        actions =
+                                            PersonContextActions(
+                                                navigateTo = actions.navigateTo,
+                                                onClickFavorite = actions.onClickFavorite,
+                                            ),
+                                    ),
+                                )
                             },
                             modifier =
                                 Modifier
@@ -619,6 +630,7 @@ fun SeriesDetailsContent(
                                         canDelete = false,
                                         canRemoveContinueWatching = false,
                                         canRemoveNextUp = false,
+                                        actions = actions,
                                     ),
                                 )
                             },

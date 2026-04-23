@@ -633,7 +633,7 @@ fun CollectionFolderGrid(
     var showDeleteDialog by remember { mutableStateOf<PositionItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
-    val moreActions =
+    val contextActions =
         ContextMenuActions(
             navigateTo = viewModel::navigateTo,
             onClickWatch = { itemId, watched ->
@@ -704,6 +704,7 @@ fun CollectionFolderGrid(
                                 canDelete = viewModel.canDelete(item, preferences.appPreferences),
                                 canRemoveContinueWatching = false,
                                 canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     onSortChange = {
@@ -807,7 +808,6 @@ fun CollectionFolderGrid(
             getMediaSource = null,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = null,
-            actions = moreActions,
         )
     }
     showPlaylistDialog.compose { itemId ->

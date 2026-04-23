@@ -47,7 +47,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.PositionContextMenu
 import com.github.damontecres.wholphin.ui.components.RowColumnItem
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
@@ -80,12 +79,39 @@ fun CollectionDetails(
     val state by viewModel.state.collectAsState()
 
     // Dialogs
-    var showContextMenu by remember { mutableStateOf<PositionContextMenu?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
     var showViewOptionsDialog by remember { mutableStateOf(false) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+
+    fun contextActionsFor(position: RowColumn?) =
+        ContextMenuActions(
+            navigateTo = viewModel::navigateTo,
+            onClickWatch = { itemId, watched ->
+                viewModel.setWatched(itemId, watched, position)
+            },
+            onClickFavorite = { itemId, favorite ->
+                viewModel.setFavorite(itemId, favorite, position)
+            },
+            onClickAddPlaylist = { itemId ->
+                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                showPlaylistDialog.makePresent(itemId)
+            },
+            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+            onClickDelete = { showDeleteDialog = RowColumnItem(position ?: RowColumn(-1, -1), it) },
+            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+            onChooseVersion = { _, _ ->
+                // Not supported on this page
+            },
+            onChooseTracks = { result ->
+                // Not supported on this page
+            },
+            onClearChosenStreams = {
+                // Not supported on this page
+            },
+        )
 
     // Actions
     val onClickItem =
@@ -96,18 +122,16 @@ fun CollectionDetails(
         remember {
             { position: RowColumn, item: BaseItem ->
                 showContextMenu =
-                    PositionContextMenu(
-                        position,
-                        ContextMenu.ForBaseItem(
-                            fromLongClick = true,
-                            item = item,
-                            chosenStreams = null,
-                            showGoTo = true,
-                            showStreamChoices = false,
-                            canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                            canRemoveContinueWatching = false,
-                            canRemoveNextUp = false,
-                        ),
+                    ContextMenu.ForBaseItem(
+                        fromLongClick = true,
+                        item = item,
+                        chosenStreams = null,
+                        showGoTo = true,
+                        showStreamChoices = false,
+                        canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                        canRemoveContinueWatching = false,
+                        canRemoveNextUp = false,
+                        actions = contextActionsFor(position),
                     )
             }
         }
@@ -193,22 +217,20 @@ fun CollectionDetails(
                     },
                 moreOnClick = {
                     showContextMenu =
-                        PositionContextMenu(
-                            RowColumn(-1, -1),
-                            ContextMenu.ForBaseItem(
-                                fromLongClick = false,
-                                item = state.collection!!,
-                                chosenStreams = null,
-                                showGoTo = false,
-                                showStreamChoices = false,
-                                canDelete =
-                                    viewModel.canDelete(
-                                        state.collection!!,
-                                        preferences.appPreferences,
-                                    ),
-                                canRemoveContinueWatching = false,
-                                canRemoveNextUp = false,
-                            ),
+                        ContextMenu.ForBaseItem(
+                            fromLongClick = false,
+                            item = state.collection!!,
+                            chosenStreams = null,
+                            showGoTo = false,
+                            showStreamChoices = false,
+                            canDelete =
+                                viewModel.canDelete(
+                                    state.collection!!,
+                                    preferences.appPreferences,
+                                ),
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions = contextActionsFor(null),
                         )
                 },
             )
@@ -231,38 +253,12 @@ fun CollectionDetails(
             onDismissRequest = { overviewDialog = null },
         )
     }
-    showContextMenu?.let { (position, contextMenu) ->
+    showContextMenu?.let { contextMenu ->
         ContextMenuDialog(
             onDismissRequest = { showContextMenu = null },
             getMediaSource = null,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = null,
-            actions =
-                ContextMenuActions(
-                    navigateTo = viewModel::navigateTo,
-                    onClickWatch = { itemId, watched ->
-                        viewModel.setWatched(itemId, watched, position)
-                    },
-                    onClickFavorite = { itemId, favorite ->
-                        viewModel.setFavorite(itemId, favorite, position)
-                    },
-                    onClickAddPlaylist = { itemId ->
-                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                        showPlaylistDialog.makePresent(itemId)
-                    },
-                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                    onClickDelete = { showDeleteDialog = RowColumnItem(position, it) },
-                    onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                    onChooseVersion = { _, _ ->
-                        // Not supported on this page
-                    },
-                    onChooseTracks = { result ->
-                        // Not supported on this page
-                    },
-                    onClearChosenStreams = {
-                        // Not supported on this page
-                    },
-                ),
         )
     }
     showPlaylistDialog.compose { itemId ->

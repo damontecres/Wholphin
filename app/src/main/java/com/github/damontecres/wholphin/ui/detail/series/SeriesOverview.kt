@@ -266,6 +266,7 @@ fun SeriesOverview(
                                 canDelete = viewModel.canDelete(ep, preferences.appPreferences),
                                 canRemoveContinueWatching = false,
                                 canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     playOnClick = { resume ->
@@ -304,6 +305,7 @@ fun SeriesOverview(
                                     canDelete = viewModel.canDelete(ep, preferences.appPreferences),
                                     canRemoveContinueWatching = false,
                                     canRemoveNextUp = false,
+                                    actions = contextActions,
                                 )
                         }
                     },
@@ -339,7 +341,6 @@ fun SeriesOverview(
             getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
-            actions = contextActions,
         )
     }
     overviewDialog?.let { info ->

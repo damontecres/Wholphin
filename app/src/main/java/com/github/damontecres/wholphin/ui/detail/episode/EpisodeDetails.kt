@@ -90,7 +90,7 @@ fun EpisodeDetails(
             ?.configuration
             ?.subtitleLanguagePreference
 
-    val moreActions =
+    val contextActions =
         ContextMenuActions(
             navigateTo = viewModel::navigateTo,
             onClickWatch = { itemId, watched ->
@@ -172,6 +172,7 @@ fun EpisodeDetails(
                                 canDelete = canDelete,
                                 canRemoveContinueWatching = false,
                                 canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     watchOnClick = {
@@ -203,7 +204,6 @@ fun EpisodeDetails(
             getMediaSource = viewModel.streamChoiceService::chooseSource,
             contextMenu = contextMenu,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
-            actions = moreActions,
         )
     }
     showPlaylistDialog.compose { itemId ->
