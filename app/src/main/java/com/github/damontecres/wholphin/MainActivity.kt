@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
@@ -82,6 +83,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
+    private val playExternalViewModel: PlayExternalViewModel by viewModels()
 
     @Inject
     lateinit var userPreferencesDataStore: DataStore<AppPreferences>
@@ -152,12 +154,10 @@ class MainActivity : AppCompatActivity() {
         if (backStackStr != null) {
             Timber.d("Restoring back stack")
             var backStack = json.decodeFromString<List<Destination>>(backStackStr)
-            if (!savedInstanceState.getBoolean(KEY_EXTERNAL_PLAYER)) {
+
+            if (!playExternalViewModel.launched.value) {
                 val lastDest = backStack.lastOrNull()
-                if (lastDest is Destination.Playback ||
-                    lastDest is Destination.PlaybackList ||
-                    lastDest is Destination.Slideshow
-                ) {
+                if (lastDest.isPlayback) {
                     Timber.v("Restoring back stack with playback")
                     backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
                 }
@@ -271,6 +271,14 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         Timber.d("onRestart")
         viewModel.appStart()
+        if (!playExternalViewModel.launched.value) {
+            // If restarting during playback that is not external, go back a page
+            val lastDest = navigationManager.backStack.lastOrNull()
+            if (lastDest.isPlayback) {
+                Timber.v("onRestart: go back from playback")
+                navigationManager.goBack()
+            }
+        }
     }
 
     override fun onStop() {
@@ -471,3 +479,9 @@ class MainActivityViewModel
             }
         }
     }
+
+private val Destination?.isPlayback: Boolean
+    get() =
+        this is Destination.Playback ||
+            this is Destination.PlaybackList ||
+            this is Destination.Slideshow
