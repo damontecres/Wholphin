@@ -35,7 +35,7 @@ import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavItem
-import com.github.damontecres.wholphin.ui.playback.PlaybackButton
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButton
 import com.github.damontecres.wholphin.ui.preferences.SliderPreference
 import com.github.damontecres.wholphin.ui.preferences.SwitchPreference
 import kotlinx.coroutines.flow.Flow
