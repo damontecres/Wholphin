@@ -354,7 +354,8 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
 
             val intros =
-                if (preferences.appPreferences.playbackPreferences.cinemaMode) {
+                // If not resuming playback & cinema mode is enabled, get potential intros
+                if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
                     api.userLibraryApi
                         .getIntros(
                             itemId = playlistItem.id,
