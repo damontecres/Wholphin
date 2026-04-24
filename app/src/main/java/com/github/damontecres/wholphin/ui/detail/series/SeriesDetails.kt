@@ -28,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -57,12 +56,13 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -71,20 +71,17 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
-import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -95,6 +92,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -128,10 +126,48 @@ fun SeriesDetails(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
+
     var showWatchConfirmation by remember { mutableStateOf(false) }
-    var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
+
+    val contextActions =
+        ContextMenuActions(
+            navigateTo = viewModel::navigateTo,
+            onClickWatch = { itemId, watched ->
+                if (itemId == destination.itemId) {
+                    // Confirm if marking whole series
+                    showWatchConfirmation = true
+                } else {
+                    viewModel.setWatched(itemId, watched, null)
+                }
+            },
+            onClickFavorite = { itemId, favorite ->
+                viewModel.setFavorite(itemId, favorite, null)
+            },
+            onClickAddPlaylist = { itemId ->
+                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                showPlaylistDialog = Optional.present(itemId)
+            },
+            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+            onDeleteItem = viewModel::deleteItem,
+            onChooseVersion = { item, source ->
+                viewModel.savePlayVersion(
+                    item,
+                    source.id!!.toUUID(),
+                )
+            },
+            onChooseTracks = { result ->
+                viewModel.saveTrackSelection(
+                    result.item,
+                    result.itemPlayback,
+                    result.trackIndex,
+                    result.streamType,
+                )
+            },
+            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+            onClearChosenStreams = {},
+        )
 
     LifecycleResumeEffect(destination.itemId) {
         viewModel.refresh()
@@ -185,29 +221,18 @@ fun SeriesDetails(
                         )
                     },
                     onLongClickItem = { index, season ->
-                        scope.launchDefault {
-                            seasonDialog =
-                                buildDialogForSeason(
-                                    context = context,
-                                    s = season,
-                                    canDelete = viewModel.canDelete(season),
-                                    onClickItem = { viewModel.navigateTo(it.destination()) },
-                                    markPlayed = { played ->
-                                        viewModel.setSeasonWatched(season.id, played)
-                                    },
-                                    onClickPlay = { shuffle ->
-                                        viewModel.navigateTo(
-                                            Destination.PlaybackList(
-                                                itemId = season.id,
-                                                shuffle = shuffle,
-                                            ),
-                                        )
-                                    },
-                                    onClickDelete = {
-                                        showDeleteDialog = it
-                                    },
-                                )
-                        }
+                        showContextMenu =
+                            ContextMenu.ForBaseItem(
+                                fromLongClick = true,
+                                item = season,
+                                chosenStreams = null,
+                                showGoTo = true,
+                                showStreamChoices = false,
+                                canDelete = viewModel.canDelete(season, preferences.appPreferences),
+                                canRemoveContinueWatching = false,
+                                canRemoveNextUp = false,
+                                actions = contextActions,
+                            )
                     },
                     overviewOnClick = {
                         overviewDialog = ItemDetailsDialogInfo(item)
@@ -245,24 +270,10 @@ fun SeriesDetails(
                     onClickDiscover = { index, item ->
                         viewModel.navigateTo(item.destination)
                     },
-                    moreActions =
-                        MoreDialogActions(
-                            navigateTo = { viewModel.navigateTo(it) },
-                            onClickWatch = { itemId, played ->
-                                viewModel.setWatched(itemId, played, null)
-                            },
-                            onClickFavorite = { itemId, played ->
-                                viewModel.setFavorite(itemId, played, null)
-                            },
-                            onClickAddPlaylist = { itemId ->
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog.makePresent(itemId)
-                            },
-                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                            onClickDelete = {
-                                showDeleteDialog = it
-                            },
-                        ),
+                    onShowContextMenu = {
+                        showContextMenu = it
+                    },
+                    actions = contextActions,
                 )
                 if (showWatchConfirmation) {
                     ConfirmDialog(
@@ -281,20 +292,19 @@ fun SeriesDetails(
             }
         }
     }
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
+        )
+    }
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
             showFilePath = false,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-    seasonDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            waitToLoad = params.fromLongClick,
-            onDismissRequest = { seasonDialog = null },
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -312,19 +322,6 @@ fun SeriesDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                if (seasons?.lastOrNull()?.id == item.id) {
-                    focusManager.moveFocus(FocusDirection.Previous)
-                }
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
         )
     }
 }
@@ -359,7 +356,8 @@ fun SeriesDetailsContent(
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
-    moreActions: MoreDialogActions,
+    onShowContextMenu: (ContextMenu) -> Unit,
+    actions: ContextMenuActions,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     discoverSeries: DiscoverItem?,
     onClickDiscoverSeries: () -> Unit,
@@ -373,7 +371,6 @@ fun SeriesDetailsContent(
     val focusRequesters = remember { List(DISCOVER_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     RequestOrRestoreFocus(focusRequesters.getOrNull(position))
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     Box(
         modifier = modifier,
@@ -486,9 +483,10 @@ fun SeriesDetailsContent(
                         )
                         if (canDelete) {
                             DeleteButton(
-                                onClick = {
+                                title = series.title ?: "",
+                                onConfirmDelete = {
                                     position = HEADER_ROW
-                                    moreActions.onClickDelete.invoke(series)
+                                    actions.onDeleteItem.invoke(series)
                                 },
                                 modifier =
                                     Modifier
@@ -561,18 +559,17 @@ fun SeriesDetailsContent(
                             },
                             onLongClick = { index, person ->
                                 position = PEOPLE_ROW
-                                val items =
-                                    buildMoreDialogItemsForPerson(
-                                        context = context,
-                                        person = person,
-                                        actions = moreActions,
-                                    )
-                                moreDialog =
-                                    DialogParams(
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForPerson(
                                         fromLongClick = true,
-                                        title = person.name ?: "",
-                                        items = items,
-                                    )
+                                        person = person,
+                                        actions =
+                                            PersonContextActions(
+                                                navigateTo = actions.navigateTo,
+                                                onClickFavorite = actions.onClickFavorite,
+                                            ),
+                                    ),
+                                )
                             },
                             modifier =
                                 Modifier
@@ -608,23 +605,19 @@ fun SeriesDetailsContent(
                             },
                             onLongClickItem = { index, item ->
                                 position = SIMILAR_ROW
-                                val items =
-                                    buildMoreDialogItemsForHome(
-                                        context = context,
-                                        item = item,
-                                        seriesId = null,
-                                        playbackPosition = item.playbackPosition,
-                                        watched = item.played,
-                                        favorite = item.favorite,
-                                        actions = moreActions,
-                                        canDelete = false,
-                                    )
-                                moreDialog =
-                                    DialogParams(
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForBaseItem(
                                         fromLongClick = true,
-                                        title = item.name ?: "",
-                                        items = items,
-                                    )
+                                        item = item,
+                                        chosenStreams = null,
+                                        showGoTo = true,
+                                        showStreamChoices = false,
+                                        canDelete = false,
+                                        canRemoveContinueWatching = false,
+                                        canRemoveNextUp = false,
+                                        actions = actions,
+                                    ),
+                                )
                             },
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
@@ -665,16 +658,6 @@ fun SeriesDetailsContent(
                 }
             }
         }
-    }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
     }
 }
 
