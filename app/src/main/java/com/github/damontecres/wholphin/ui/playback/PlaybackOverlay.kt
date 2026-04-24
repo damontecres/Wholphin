@@ -71,6 +71,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -429,12 +430,19 @@ fun PlaybackOverlay(
                                     }
                                 },
                     ) {
-                        itemsIndexed(items) { index, item ->
+                        itemsIndexed(items) { index, playlistItem ->
                             val interactionSource = remember { MutableInteractionSource() }
                             val isFocused = interactionSource.collectIsFocusedAsState().value
                             LaunchedEffect(isFocused) {
                                 if (isFocused) controllerViewState.pulseControls()
                             }
+                            val item =
+                                remember(playlistItem) {
+                                    when (playlistItem) {
+                                        is PlaylistItem.Intro -> playlistItem.item
+                                        is PlaylistItem.Media -> playlistItem.item
+                                    }
+                                }
                             SeasonCard(
                                 item = item,
                                 onClick = {

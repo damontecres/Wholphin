@@ -12,7 +12,7 @@ import java.util.UUID
  * This is not the same thing as a Jellyfin server playlist
  */
 class Playlist(
-    items: List<BaseItem>,
+    items: List<PlaylistItem>,
     startIndex: Int = 0,
 ) {
     val items = items.subList(startIndex, items.size)
@@ -23,15 +23,15 @@ class Playlist(
 
     fun hasNext(): Boolean = (index + 1) < items.size
 
-    fun getPreviousAndReverse(): BaseItem = items[--index]
+    fun getPreviousAndReverse(): PlaylistItem = items[--index]
 
-    fun getAndAdvance(): BaseItem = items[++index]
+    fun getAndAdvance(): PlaylistItem = items[++index]
 
-    fun peek(): BaseItem? = items.getOrNull(index + 1)
+    fun peek(): PlaylistItem? = items.getOrNull(index + 1)
 
-    fun upcomingItems(): List<BaseItem> = items.subList(index + 1, items.size)
+    fun upcomingItems(): List<PlaylistItem> = items.subList(index + 1, items.size)
 
-    fun advanceTo(id: UUID): BaseItem? {
+    fun advanceTo(id: UUID): PlaylistItem? {
         while (hasNext()) {
             val potential = getAndAdvance()
             if (potential.id == id) {
@@ -52,3 +52,21 @@ data class PlaylistInfo(
     val count: Int,
     val mediaType: MediaType,
 )
+
+sealed interface PlaylistItem {
+    val id: UUID
+
+    data class Media(
+        val item: BaseItem,
+    ) : PlaylistItem {
+        override val id: UUID
+            get() = item.id
+    }
+
+    data class Intro(
+        val item: BaseItem,
+    ) : PlaylistItem {
+        override val id: UUID
+            get() = item.id
+    }
+}
