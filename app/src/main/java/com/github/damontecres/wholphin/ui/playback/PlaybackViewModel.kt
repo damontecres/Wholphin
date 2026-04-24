@@ -354,14 +354,18 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
 
             val intros =
-                api.userLibraryApi
-                    .getIntros(
-                        itemId = playlistItem.id,
-                        userId = serverRepository.currentUser.value?.id,
-                    ).content.items
-                    .map {
-                        PlaylistItem.Intro(BaseItem(it))
-                    }
+                if (preferences.appPreferences.playbackPreferences.cinemaMode) {
+                    api.userLibraryApi
+                        .getIntros(
+                            itemId = playlistItem.id,
+                            userId = serverRepository.currentUser.value?.id,
+                        ).content.items
+                        .map {
+                            PlaylistItem.Intro(BaseItem(it))
+                        }
+                } else {
+                    emptyList()
+                }
             val firstItem =
                 if (intros.isNotEmpty()) {
                     val currentPlaylist =

@@ -479,6 +479,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val CinemaMode =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.cinema_mode,
+                defaultValue = true,
+                getter = { it.playbackPreferences.cinemaMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { cinemaMode = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -1168,6 +1180,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
