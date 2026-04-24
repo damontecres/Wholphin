@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
 import androidx.annotation.OptIn
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -35,7 +32,6 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.media3.ui.compose.state.rememberRepeatButtonState
 import androidx.media3.ui.compose.state.rememberShuffleButtonState
-import androidx.tv.material3.Border
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -45,11 +41,10 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
-import com.github.damontecres.wholphin.ui.playback.PlaybackAction
-import com.github.damontecres.wholphin.ui.playback.PlaybackButton
-import com.github.damontecres.wholphin.ui.playback.PlaybackButtons
-import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import com.github.damontecres.wholphin.ui.playback.buttonSpacing
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButton
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButtons
+import com.github.damontecres.wholphin.ui.playback.overlay.buttonSpacing
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlin.time.Duration.Companion.seconds

@@ -65,10 +65,10 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.nav.Backdrop
-import com.github.damontecres.wholphin.ui.playback.BottomDialog
-import com.github.damontecres.wholphin.ui.playback.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import org.jellyfin.sdk.model.extensions.ticks

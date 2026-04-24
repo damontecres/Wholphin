@@ -1,6 +1,6 @@
 @file:kotlin.OptIn(ExperimentalMaterial3Api::class)
 
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import android.view.Gravity
 import androidx.annotation.DrawableRes
@@ -69,6 +69,8 @@ import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
@@ -123,7 +125,7 @@ sealed interface PlaybackAction {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
-    playerControls: Player,
+    player: Player,
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
@@ -164,7 +166,7 @@ fun PlaybackControls(
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         SeekBar(
-            player = playerControls,
+            player = player,
             controllerViewState = controllerViewState,
             onSeekProgress = onSeekProgress,
             interactionSource = seekBarInteractionSource,
@@ -190,7 +192,7 @@ fun PlaybackControls(
                 modifier = Modifier.align(Alignment.CenterStart),
             )
             PlaybackButtons(
-                player = playerControls,
+                player = player,
                 initialFocusRequester = initialFocusRequester,
                 onControllerInteraction = onControllerInteraction,
                 onPlaybackActionClick = onPlaybackActionClick,
@@ -209,7 +211,7 @@ fun PlaybackControls(
                     TextButton(
                         stringRes = segment.type.skipStringRes,
                         onClick = {
-                            playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                            player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                         },
                         modifier =
                             Modifier

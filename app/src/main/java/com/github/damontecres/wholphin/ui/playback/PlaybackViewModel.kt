@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.content.Context
+import android.media.MediaCodecList
+import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.ui.text.intl.Locale
@@ -51,6 +53,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -104,6 +107,7 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
@@ -117,6 +121,7 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.Date
 import java.util.UUID
+import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -174,6 +179,7 @@ class PlaybackViewModel
         val currentPlayback = MutableStateFlow<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
         val currentSegment = MutableStateFlow<MediaSegmentState?>(null)
+        val analyticsState = MutableStateFlow(AnalyticsState())
 
         val subtitleCues = MutableLiveData<List<Cue>>(listOf())
 
@@ -353,7 +359,6 @@ class PlaybackViewModel
                 }
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
-
             val item = BaseItem.from(base, api)
             val played =
                 play(
@@ -1343,6 +1348,35 @@ class PlaybackViewModel
                 }
             }
 
+        private fun updateDecoder(
+            decoderName: String,
+            type: MediaType,
+        ) {
+            viewModelScope.launchDefault {
+                val codecInfo =
+                    MediaCodecList(MediaCodecList.ALL_CODECS)
+                        .codecInfos
+                        .firstOrNull { !it.isEncoder && it.name == decoderName }
+                val decoderString =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        if (codecInfo?.isHardwareAccelerated == true) {
+                            "$decoderName (HW)"
+                        } else {
+                            decoderName
+                        }
+                    } else {
+                        decoderName
+                    }
+                currentPlayback.update {
+                    when (type) {
+                        MediaType.VIDEO -> it?.copy(videoDecoder = decoderString)
+                        MediaType.AUDIO -> it?.copy(audioDecoder = decoderString)
+                        else -> throw IllegalArgumentException("Unsupported type: $type")
+                    }
+                }
+            }
+        }
+
         override fun onVideoDecoderInitialized(
             eventTime: AnalyticsListener.EventTime,
             decoderName: String,
@@ -1350,7 +1384,7 @@ class PlaybackViewModel
             initializationDurationMs: Long,
         ) {
             Timber.v("onVideoDecoderInitialized: decoder=$decoderName")
-            currentPlayback.update { it?.copy(videoDecoder = decoderName) }
+            updateDecoder(decoderName, MediaType.VIDEO)
         }
 
         override fun onVideoDisabled(
@@ -1369,7 +1403,7 @@ class PlaybackViewModel
             decoderReuseEvaluation?.let { decoder ->
                 if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
                     Timber.d("onVideoInputFormatChanged: decoder=${decoder.decoderName}")
-                    currentPlayback.update { it?.copy(videoDecoder = decoder.decoderName) }
+                    updateDecoder(decoder.decoderName, MediaType.VIDEO)
                 }
             }
         }
@@ -1381,7 +1415,7 @@ class PlaybackViewModel
             initializationDurationMs: Long,
         ) {
             Timber.d("decoder: onAudioDecoderInitialized: decoder=$decoderName")
-            currentPlayback.update { it?.copy(audioDecoder = decoderName) }
+            updateDecoder(decoderName, MediaType.AUDIO)
         }
 
         override fun onAudioInputFormatChanged(
@@ -1392,7 +1426,7 @@ class PlaybackViewModel
             decoderReuseEvaluation?.let { decoder ->
                 if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
                     Timber.d("decoder: onAudioInputFormatChanged: decoder=${decoder.decoderName}")
-                    currentPlayback.update { it?.copy(audioDecoder = decoder.decoderName) }
+                    updateDecoder(decoder.decoderName, MediaType.AUDIO)
                 }
             }
         }
@@ -1451,6 +1485,37 @@ class PlaybackViewModel
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             screensaverService.keepScreenOn(isPlaying)
         }
+
+        override fun onBandwidthEstimate(
+            eventTime: AnalyticsListener.EventTime,
+            totalLoadTimeMs: Int,
+            totalBytesLoaded: Long,
+            bitrateEstimate: Long,
+        ) {
+            Timber.v(
+                "onBandwidthEstimate: totalLoadTimeMs=%s, totalBytesLoaded=%s, bitrateEstimate=%s",
+                totalLoadTimeMs,
+                totalBytesLoaded,
+                bitrateEstimate,
+            )
+            if (totalLoadTimeMs > 0 && totalBytesLoaded > 0) {
+                analyticsState.update {
+                    it.copy(
+                        bitrate = formatBitrate((totalBytesLoaded.toDouble() / (totalLoadTimeMs / 1000.0) * 8).roundToInt()),
+                        bitrateEstimate = formatBitrate(bitrateEstimate.toInt()),
+                    )
+                }
+            }
+        }
+
+        override fun onDroppedVideoFrames(
+            eventTime: AnalyticsListener.EventTime,
+            droppedFrames: Int,
+            elapsedMs: Long,
+        ) {
+//            Timber.v("onDroppedVideoFrames: droppedFrames=%s", droppedFrames)
+            analyticsState.update { it.copy(droppedFrames = it.droppedFrames + droppedFrames) }
+        }
     }
 
 data class PlayerState(
@@ -1462,4 +1527,10 @@ data class PlayerState(
 data class MediaSegmentState(
     val segment: MediaSegmentDto,
     val interacted: Boolean,
+)
+
+data class AnalyticsState(
+    val bitrate: String = formatBitrate(0),
+    val bitrateEstimate: String = formatBitrate(0),
+    val droppedFrames: Int = 0,
 )
