@@ -120,7 +120,7 @@ fun PlaybackDebugOverlay(
                             add("Play method:" to currentPlayback?.playMethod?.serialName)
                             if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
                                 add("Video Decoder:" to currentPlayback.videoDecoder)
-                                add("Audio Decoder:" to (currentPlayback.audioDecoder ?: "Pass through"))
+                                add("Audio Decoder:" to (currentPlayback.audioDecoder ?: "Non-ExoPlayer"))
                             }
                             add("Display Mode: " to displayMode)
                         }

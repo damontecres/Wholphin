@@ -371,9 +371,9 @@ fun PlaybackOverlay(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
+                        .heightIn(max = height)
                         .padding(bottom = 16.dp)
                         .background(AppColors.TransparentBlack50)
-                        .heightIn(max = height)
                         .padding(8.dp)
                         .onFocusChanged {
                             if (it.hasFocus) {

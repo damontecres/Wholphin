@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.content.Context
+import android.media.MediaCodecList
+import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.ui.text.intl.Locale
@@ -105,6 +107,7 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
@@ -1345,6 +1348,35 @@ class PlaybackViewModel
                 }
             }
 
+        private fun updateDecoder(
+            decoderName: String,
+            type: MediaType,
+        ) {
+            viewModelScope.launchDefault {
+                val codecInfo =
+                    MediaCodecList(MediaCodecList.ALL_CODECS)
+                        .codecInfos
+                        .firstOrNull { !it.isEncoder && it.name == decoderName }
+                val decoderString =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        if (codecInfo?.isHardwareAccelerated == true) {
+                            "$decoderName (HW)"
+                        } else {
+                            decoderName
+                        }
+                    } else {
+                        decoderName
+                    }
+                currentPlayback.update {
+                    when (type) {
+                        MediaType.VIDEO -> it?.copy(videoDecoder = decoderString)
+                        MediaType.AUDIO -> it?.copy(audioDecoder = decoderString)
+                        else -> throw IllegalArgumentException("Unsupported type: $type")
+                    }
+                }
+            }
+        }
+
         override fun onVideoDecoderInitialized(
             eventTime: AnalyticsListener.EventTime,
             decoderName: String,
@@ -1352,7 +1384,7 @@ class PlaybackViewModel
             initializationDurationMs: Long,
         ) {
             Timber.v("onVideoDecoderInitialized: decoder=$decoderName")
-            currentPlayback.update { it?.copy(videoDecoder = decoderName) }
+            updateDecoder(decoderName, MediaType.VIDEO)
         }
 
         override fun onVideoDisabled(
@@ -1371,7 +1403,7 @@ class PlaybackViewModel
             decoderReuseEvaluation?.let { decoder ->
                 if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
                     Timber.d("onVideoInputFormatChanged: decoder=${decoder.decoderName}")
-                    currentPlayback.update { it?.copy(videoDecoder = decoder.decoderName) }
+                    updateDecoder(decoder.decoderName, MediaType.VIDEO)
                 }
             }
         }
@@ -1383,7 +1415,7 @@ class PlaybackViewModel
             initializationDurationMs: Long,
         ) {
             Timber.d("decoder: onAudioDecoderInitialized: decoder=$decoderName")
-            currentPlayback.update { it?.copy(audioDecoder = decoderName) }
+            updateDecoder(decoderName, MediaType.AUDIO)
         }
 
         override fun onAudioInputFormatChanged(
@@ -1394,7 +1426,7 @@ class PlaybackViewModel
             decoderReuseEvaluation?.let { decoder ->
                 if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
                     Timber.d("decoder: onAudioInputFormatChanged: decoder=${decoder.decoderName}")
-                    currentPlayback.update { it?.copy(audioDecoder = decoder.decoderName) }
+                    updateDecoder(decoder.decoderName, MediaType.AUDIO)
                 }
             }
         }
