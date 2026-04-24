@@ -55,16 +55,17 @@ data class PlaylistInfo(
 
 sealed interface PlaylistItem {
     val id: UUID
+    val item: BaseItem
 
     data class Media(
-        val item: BaseItem,
+        override val item: BaseItem,
     ) : PlaylistItem {
         override val id: UUID
             get() = item.id
     }
 
     data class Intro(
-        val item: BaseItem,
+        override val item: BaseItem,
     ) : PlaylistItem {
         override val id: UUID
             get() = item.id

@@ -180,7 +180,7 @@ class PlaybackViewModel
 
         private lateinit var preferences: UserPreferences
         internal lateinit var itemId: UUID
-        internal lateinit var item: BaseItem
+        internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
         private val jobs = mutableListOf<Job>()
@@ -368,6 +368,7 @@ class PlaybackViewModel
                 }
             val firstItem =
                 if (intros.isNotEmpty()) {
+                    Timber.v("Got %s intros", intros.size)
                     val currentPlaylist =
                         this@PlaybackViewModel
                             .playlist.value
@@ -408,7 +409,7 @@ class PlaybackViewModel
         /**
          * Play an item
          *
-         * @param item the item to play
+         * @param currentItem the item to play
          * @param positionMs the starting playback position in milliseconds
          * @param itemPlayback the parameters for playback such chosen subtitle or audio streams
          * @param forceTranscoding whether the user has requested to force playback via transcoding
@@ -445,7 +446,7 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
-                this@PlaybackViewModel.item = item
+                this@PlaybackViewModel.currentItem = playlistItem
                 this@PlaybackViewModel.itemId = item.id
 
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
@@ -905,7 +906,7 @@ class PlaybackViewModel
                 Timber.d("Changing audio track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
-                        item = item,
+                        item = currentItem.item,
                         itemPlayback = currentItemPlayback.value!!,
                         trackIndex = index,
                         type = MediaStreamType.AUDIO,
@@ -919,7 +920,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = source,
                             audioStreamIndex = index,
-                            seriesId = item.data.seriesId,
+                            seriesId = currentItem.item.data.seriesId,
                             subtitleIndex = itemPlayback.subtitleIndex,
                             prefs = preferences,
                         )
@@ -928,7 +929,7 @@ class PlaybackViewModel
                     }
 
                 changeStreams(
-                    item,
+                    currentItem.item,
                     itemPlayback,
                     index,
                     resolvedSubtitleIndex,
@@ -943,7 +944,7 @@ class PlaybackViewModel
                 Timber.d("Changing subtitle track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
-                        item = item,
+                        item = currentItem.item,
                         itemPlayback = currentItemPlayback.value!!,
                         trackIndex = index,
                         type = MediaStreamType.SUBTITLE,
@@ -957,7 +958,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = source,
                             audioStreamIndex = itemPlayback.audioIndex,
-                            seriesId = item.data.seriesId,
+                            seriesId = currentItem.item.data.seriesId,
                             subtitleIndex = index,
                             prefs = preferences,
                         )
@@ -966,7 +967,7 @@ class PlaybackViewModel
                     }
 
                 changeStreams(
-                    item,
+                    currentItem.item,
                     itemPlayback,
                     itemPlayback.audioIndex,
                     resolvedIndex,
@@ -1001,7 +1002,7 @@ class PlaybackViewModel
             mediaSourceId: UUID? = currentItemPlayback.value?.sourceId,
         ): String? =
             trickPlayInfo?.let {
-                val itemId = item.id
+                val itemId = currentItem.id
                 return api.trickplayApi.getTrickplayTileImageUrl(
                     itemId,
                     trickPlayInfo.width,
@@ -1012,20 +1013,28 @@ class PlaybackViewModel
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
+                Timber.v("Playback state is STATE_ENDED")
                 viewModelScope.launchDefault {
                     when (val nextItem = playlist.value?.peek()) {
                         is PlaylistItem.Intro -> {
+                            Timber.v("Next item is intro, so playing immediately")
                             playNextUp()
                         }
 
                         is PlaylistItem.Media -> {
-                            Timber.v("Setting next up to ${nextItem.id}")
-                            withContext(Dispatchers.Main) {
-                                nextUp.value = nextItem.item
+                            if (currentItem is PlaylistItem.Intro) {
+                                Timber.v("Current item is intro, so playing next up immediately")
+                                playNextUp()
+                            } else {
+                                Timber.v("Setting next up to ${nextItem.id}")
+                                withContext(Dispatchers.Main) {
+                                    nextUp.value = nextItem.item
+                                }
                             }
                         }
 
                         null -> {
+                            Timber.v("No next up")
                             navigationManager.goBack()
                         }
                     }
@@ -1296,7 +1305,7 @@ class PlaybackViewModel
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
                             Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
                             changeStreams(
-                                item,
+                                currentItem.item,
                                 currentItemPlayback.value!!,
                                 currentItemPlayback.value?.audioIndex,
                                 currentItemPlayback.value?.subtitleIndex,
