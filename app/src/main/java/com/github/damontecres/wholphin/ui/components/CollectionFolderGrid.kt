@@ -675,31 +675,33 @@ fun CollectionFolderGrid(
                     actions.onLongClickItem ?: { position, item ->
                         moreDialog.makePresent(PositionItem(position, item))
                     },
-                onClickPlayAll = { shuffle ->
-                    itemId.toUUIDOrNull()?.let {
-                        val destination =
-                            if (item?.type == BaseItemKind.PHOTO_ALBUM) {
-                                Destination.Slideshow(
-                                    parentId = it,
-                                    index = 0,
-                                    filter = CollectionFolderFilter(filter = filter),
-                                    sortAndDirection = sortAndDirection,
-                                    recursive = true,
-                                    startSlideshow = true,
-                                )
-                            } else {
-                                Destination.PlaybackList(
-                                    itemId = it,
-                                    startIndex = 0,
-                                    shuffle = shuffle,
-                                    recursive = recursive,
-                                    sortAndDirection = sortAndDirection,
-                                    filter = filter,
-                                )
-                            }
-                        viewModel.navigateTo(destination)
-                    }
-                },
+                onClickPlayAll =
+                    actions.onClickPlayAll ?: { shuffle ->
+                        itemId.toUUIDOrNull()?.let {
+                            val destination =
+                                if (item?.type == BaseItemKind.PHOTO_ALBUM) {
+                                    Destination.Slideshow(
+                                        parentId = it,
+                                        index = 0,
+                                        filter = CollectionFolderFilter(filter = filter),
+                                        sortAndDirection = sortAndDirection,
+                                        recursive = true,
+                                        startSlideshow = true,
+                                    )
+                                } else {
+                                    Destination.PlaybackList(
+                                        itemId = it,
+                                        startIndex = 0,
+                                        shuffle = shuffle,
+                                        recursive = recursive,
+                                        sortAndDirection = sortAndDirection,
+                                        filter = filter,
+                                    )
+                                }
+                            viewModel.navigateTo(destination)
+                        }
+                        Unit
+                    },
                 onClickPlayRemoteButton =
                     actions.onClickPlayRemoteButton ?: { index, item ->
                         val destination =
