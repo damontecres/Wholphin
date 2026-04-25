@@ -595,4 +595,6 @@
     <string name="external_player">Externer Player</string>
     <string name="system_default">Systemstandard</string>
     <string name="show_more">Zeige %1$s mehr</string>
+    <string name="skip_behavior">\"Überspringen\" Verhalten</string>
+    <string name="skip_behavior_summary">Für Intros, Credits, etc</string>
 </resources>
