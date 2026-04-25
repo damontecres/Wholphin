@@ -79,9 +79,9 @@ fun QueueRowOverlay(
                     if (isFocused) controllerViewState.pulseControls()
                 }
                 SeasonCard(
-                    item = item,
+                    item = item.item,
                     onClick = {
-                        onClickPlaylist.invoke(item)
+                        onClickPlaylist.invoke(item.item)
                         controllerViewState.hideControls()
                     },
                     onLongClick = {},
