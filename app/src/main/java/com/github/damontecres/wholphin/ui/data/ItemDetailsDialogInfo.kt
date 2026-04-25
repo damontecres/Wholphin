@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -30,6 +32,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
+import com.mikepenz.markdown.m3.Markdown
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -103,10 +106,7 @@ fun ItemDetailsDialog(
                     )
                 }
                 if (info.overview.isNotNullOrBlank()) {
-                    Text(
-                        text = info.overview,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    Markdown(content = info.overview)
                 }
                 val lastPlayed =
                     remember(info.lastPlayed) { info.lastPlayed?.let { formatDate(it) } }
