@@ -594,4 +594,5 @@
     <string name="ass_subtitle_playback">SSA/ASS Untertitel Wiedergabe</string>
     <string name="external_player">Externer Player</string>
     <string name="system_default">Systemstandard</string>
+    <string name="show_more">Zeige %1$s mehr</string>
 </resources>
