@@ -570,7 +570,44 @@ fun CollectionFolderGrid(
     itemId.toServerString(),
     initialFilter,
     recursive,
-    onClickItem,
+    GridClickActions(onClickItem = onClickItem),
+    sortOptions,
+    playEnabled,
+    viewModelKey = viewModelKey,
+    defaultViewOptions = defaultViewOptions,
+    modifier = modifier,
+    initialSortAndDirection = initialSortAndDirection,
+    showTitle = showTitle,
+    positionCallback = positionCallback,
+    useSeriesForPrimary = useSeriesForPrimary,
+    filterOptions = filterOptions,
+    focusRequesterOnEmpty = focusRequesterOnEmpty,
+)
+
+@Composable
+fun CollectionFolderGrid(
+    preferences: UserPreferences,
+    itemId: UUID,
+    initialFilter: CollectionFolderFilter,
+    recursive: Boolean,
+    actions: GridClickActions,
+    sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
+    defaultViewOptions: ViewOptions,
+    modifier: Modifier = Modifier,
+    viewModelKey: String? = itemId.toServerString(),
+    initialSortAndDirection: SortAndDirection? = null,
+    showTitle: Boolean = true,
+    positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+    useSeriesForPrimary: Boolean = true,
+    filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    focusRequesterOnEmpty: FocusRequester? = null,
+) = CollectionFolderGrid(
+    preferences,
+    itemId.toServerString(),
+    initialFilter,
+    recursive,
+    actions,
     sortOptions,
     playEnabled,
     viewModelKey = viewModelKey,
@@ -590,7 +627,7 @@ fun CollectionFolderGrid(
     itemId: String,
     initialFilter: CollectionFolderFilter,
     recursive: Boolean,
-    onClickItem: (Int, BaseItem) -> Unit,
+    actions: GridClickActions,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
@@ -630,6 +667,59 @@ fun CollectionFolderGrid(
     var showDeleteDialog by remember { mutableStateOf<PositionItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
+    val gridActions =
+        remember(actions) {
+            GridClickActions(
+                onClickItem = actions.onClickItem,
+                onLongClickItem =
+                    actions.onLongClickItem ?: { position, item ->
+                        moreDialog.makePresent(PositionItem(position, item))
+                    },
+                onClickPlayAll = { shuffle ->
+                    itemId.toUUIDOrNull()?.let {
+                        val destination =
+                            if (item?.type == BaseItemKind.PHOTO_ALBUM) {
+                                Destination.Slideshow(
+                                    parentId = it,
+                                    index = 0,
+                                    filter = CollectionFolderFilter(filter = filter),
+                                    sortAndDirection = sortAndDirection,
+                                    recursive = true,
+                                    startSlideshow = true,
+                                )
+                            } else {
+                                Destination.PlaybackList(
+                                    itemId = it,
+                                    startIndex = 0,
+                                    shuffle = shuffle,
+                                    recursive = recursive,
+                                    sortAndDirection = sortAndDirection,
+                                    filter = filter,
+                                )
+                            }
+                        viewModel.navigateTo(destination)
+                    }
+                },
+                onClickPlayRemoteButton =
+                    actions.onClickPlayRemoteButton ?: { index, item ->
+                        val destination =
+                            if (item.type == BaseItemKind.PHOTO_ALBUM) {
+                                Destination.Slideshow(
+                                    parentId = item.id,
+                                    index = index,
+                                    filter = CollectionFolderFilter(filter = filter),
+                                    sortAndDirection = sortAndDirection,
+                                    recursive = true,
+                                    startSlideshow = true,
+                                )
+                            } else {
+                                Destination.Playback(item)
+                            }
+                        viewModel.navigateTo(destination)
+                    },
+            )
+        }
+
     when (val state = loading) {
         DataLoadingState.Loading,
         DataLoadingState.Pending,
@@ -662,10 +752,8 @@ fun CollectionFolderGrid(
                     sortAndDirection = sortAndDirection!!,
                     modifier = Modifier.fillMaxSize(),
                     focusRequesterOnEmpty = focusRequesterOnEmpty,
-                    onClickItem = onClickItem,
-                    onLongClickItem = { position, item ->
-                        moreDialog.makePresent(PositionItem(position, item))
-                    },
+                    onClickItem = gridActions.onClickItem,
+                    onLongClickItem = gridActions.onLongClickItem!!,
                     onSortChange = {
                         viewModel.onSortChange(it, recursive, filter)
                     },
@@ -689,47 +777,8 @@ fun CollectionFolderGrid(
                     onSaveViewOptions = { viewModel.saveViewOptions(it) },
                     onChangeBackdrop = viewModel::updateBackdrop,
                     playEnabled = playEnabled,
-                    onClickPlay = { index, item ->
-                        val destination =
-                            if (item.type == BaseItemKind.PHOTO_ALBUM) {
-                                Destination.Slideshow(
-                                    parentId = item.id,
-                                    index = index,
-                                    filter = CollectionFolderFilter(filter = filter),
-                                    sortAndDirection = sortAndDirection,
-                                    recursive = true,
-                                    startSlideshow = true,
-                                )
-                            } else {
-                                Destination.Playback(item)
-                            }
-                        viewModel.navigateTo(destination)
-                    },
-                    onClickPlayAll = { shuffle ->
-                        itemId.toUUIDOrNull()?.let {
-                            val destination =
-                                if (item?.type == BaseItemKind.PHOTO_ALBUM) {
-                                    Destination.Slideshow(
-                                        parentId = it,
-                                        index = 0,
-                                        filter = CollectionFolderFilter(filter = filter),
-                                        sortAndDirection = sortAndDirection,
-                                        recursive = true,
-                                        startSlideshow = true,
-                                    )
-                                } else {
-                                    Destination.PlaybackList(
-                                        itemId = it,
-                                        startIndex = 0,
-                                        shuffle = shuffle,
-                                        recursive = recursive,
-                                        sortAndDirection = sortAndDirection,
-                                        filter = filter,
-                                    )
-                                }
-                            viewModel.navigateTo(destination)
-                        }
-                    },
+                    onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                    onClickPlayAll = gridActions.onClickPlayAll!!,
                 )
 
                 AnimatedVisibility(
@@ -782,7 +831,7 @@ fun CollectionFolderGrid(
                                 showDeleteDialog = PositionItem(position, item)
                             },
                             onClickGoTo = {
-                                onClickItem.invoke(position, it)
+                                gridActions.onClickItem.invoke(position, it)
                             },
                             onClickAddToQueue = {
                                 viewModel.addToQueue(it, 0)
@@ -1164,4 +1213,11 @@ fun GridTitle(
     maxLines = 1,
     overflow = TextOverflow.Ellipsis,
     modifier = modifier.fillMaxWidth(),
+)
+
+data class GridClickActions(
+    val onClickItem: (Int, BaseItem) -> Unit,
+    val onLongClickItem: ((Int, BaseItem) -> Unit)? = null,
+    val onClickPlayAll: ((shuffle: Boolean) -> Unit)? = null,
+    val onClickPlayRemoteButton: ((Int, BaseItem) -> Unit)? = null,
 )
