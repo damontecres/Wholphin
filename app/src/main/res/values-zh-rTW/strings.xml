@@ -576,4 +576,6 @@
     <string name="next_up_never">不顯示</string>
     <string name="external_player">外部播放器</string>
     <string name="system_default">系統預設</string>
+    <string name="skip_behavior">跳過行為</string>
+    <string name="skip_behavior_summary">用於片頭、片尾等段落</string>
 </resources>
