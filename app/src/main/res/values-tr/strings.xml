@@ -13,7 +13,7 @@
     <string name="cancel_series_recording">Dizi kaydını iptal et</string>
     <string name="cancel">İptal</string>
     <string name="chapters">Bölümler</string>
-    <string name="choose_stream">Seç: %1$s</string>
+    <string name="choose_stream">%1$s seç</string>
     <string name="clear_image_cache">Resim önbelleğini temizle</string>
     <string name="collection">Koleksiyon</string>
     <string name="collections">Koleksiyonlar</string>
@@ -603,4 +603,7 @@
     <string name="next_up_never">Asla</string>
     <string name="external_player">Harici Oynatıcı</string>
     <string name="system_default">Sistem varsayılanı</string>
+    <string name="skip_behavior">Atlama Davranışı</string>
+    <string name="skip_behavior_summary">İntrolar, jenerikler vb. için</string>
+    <string name="show_more">%1$s daha göster</string>
 </resources>
