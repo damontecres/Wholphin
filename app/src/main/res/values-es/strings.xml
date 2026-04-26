@@ -615,4 +615,5 @@
     <string name="show_more">Muestra %1$s más</string>
     <string name="skip_behavior">Comportamiento al saltar</string>
     <string name="skip_behavior_summary">Para cabecera, créditos finales, etc</string>
+    <string name="cinema_mode">Modo cine</string>
 </resources>
