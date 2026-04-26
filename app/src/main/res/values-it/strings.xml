@@ -612,4 +612,8 @@
     <string name="external_player">Player esterno</string>
     <string name="system_default">Predefinito sistema</string>
     <string name="last_played">Ultima riproduzione</string>
+    <string name="cinema_mode">Modalità cinema</string>
+    <string name="show_more">Mostra %1$s altri</string>
+    <string name="skip_behavior">Comportamento di salto</string>
+    <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
 </resources>
