@@ -576,4 +576,7 @@
     <string name="last_played">上次播放</string>
     <string name="external_player">外部播放器</string>
     <string name="system_default">系统默认</string>
+    <string name="show_more">显示更多 %1$s 条</string>
+    <string name="skip_behavior">跳过行为</string>
+    <string name="skip_behavior_summary">适用于片头、片尾等</string>
 </resources>
