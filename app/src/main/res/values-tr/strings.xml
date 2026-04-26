@@ -606,4 +606,5 @@
     <string name="skip_behavior">Atlama Davranışı</string>
     <string name="skip_behavior_summary">İntrolar, jenerikler vb. için</string>
     <string name="show_more">%1$s daha göster</string>
+    <string name="cinema_mode">Sinema Modu</string>
 </resources>
