@@ -132,4 +132,93 @@
     <string name="shuffle">Naključno</string>
     <string name="skip">Preskoči</string>
     <string name="sort_by_date_added">Datum dodajanja</string>
+    <string name="sort_by_date_episode_added">Datum dodanih epizod</string>
+    <string name="sort_by_date_played">Datum predvajanja</string>
+    <string name="sort_by_date_released">Datum izdaje</string>
+    <string name="sort_by_name">Imenu</string>
+    <string name="sort_by_random">Naključno</string>
+    <string name="studios">Studiji</string>
+    <string name="submit">Pošlji</string>
+    <string name="subtitle_download_too_long">Prenos traja dolgo, morda boste morali ponovno zagnati predvajanje</string>
+    <string name="subtitle">Podnapis</string>
+    <string name="subtitles">Podnapisi</string>
+    <string name="suggestions">Predlogi</string>
+    <string name="switch_servers">Zamenjaj strežnik</string>
+    <string name="switch_user">Preklopi</string>
+    <string name="top_unwatched">Najbolje ocenjeno, neogledano</string>
+    <string name="trailer">Napovednik</string>
+    <plurals name="trailers">
+        <item quantity="one">Napovedniki</item>
+    </plurals>
+    <string name="tv_dvr_schedule">Program snemalnika</string>
+    <string name="tv_guide">Vodnik</string>
+    <string name="tv_season">Sezona</string>
+    <string name="tv_seasons">Sezone</string>
+    <plurals name="tv_shows">
+        <item quantity="one">TV oddaje</item>
+    </plurals>
+    <string name="ui_interface">Vmesnik</string>
+    <string name="unknown">Neznano</string>
+    <string name="updates">Novosti</string>
+    <string name="version">Različica</string>
+    <string name="video_scale">Povečava videa</string>
+    <string name="video">Video</string>
+    <string name="videos">Videji</string>
+    <string name="watch_live">Glej v živo</string>
+    <string name="years_old">%1$d let staro</string>
+    <string name="play_with_transcoding">Igrajte s transkodiranjem</string>
+    <string name="media_information">Informacije o mediji</string>
+    <string name="show_clock">Prikaži uro</string>
+    <string name="aired_episode_order">Vrstni red predvajanih epizod</string>
+    <string name="create_playlist">Ustvari nov seznam predvajanja</string>
+    <string name="add_to_playlist">Dodaj na seznam predvajanja</string>
+    <string name="one_click_pause">Zaustavi z enim klikom</string>
+    <string name="one_click_pause_summary_on">Pritisni sredino smerne tipke za zaustavitev/predvajanje</string>
+    <string name="italic_font">Poševna pisava</string>
+    <string name="font">Vrsta pisave</string>
+    <string name="background">Ozadje</string>
+    <string name="success">Uspeh</string>
+    <string name="official_rating">Starševska ocena</string>
+    <string name="runtime_sort">Trajanje izvajanja</string>
+    <string name="extras">Dodatki</string>
+    <plurals name="other_extras">
+        <item quantity="one">Ostalo</item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="one">V zakulisju</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="one">Tematske pesmi</item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">Tematski videi</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="one">Posnetki</item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Izbrisane scene</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">Intervjuji</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="one">Prizori</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Vzorci</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Kratki filmi</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Kratki filmi</item>
+    </plurals>
+    <string name="favorite_items">Dodaj %s med priljubljene</string>
+    <plurals name="downloads">
+        <item quantity="one">%s prenos</item>
+        <item quantity="two">%s prenosa</item>
+        <item quantity="few">%s prenosi</item>
+        <item quantity="other">%s prenosov</item>
+    </plurals>
 </resources>
