@@ -594,4 +594,8 @@
     <string name="next_up_never">Mitte kunagi</string>
     <string name="external_player">Väline meediapleier</string>
     <string name="system_default">Süsteemi vaikeväärtus</string>
+    <string name="cinema_mode">Kinovaade</string>
+    <string name="show_more">Näita veel: %1$s tk</string>
+    <string name="skip_behavior">Käitumine vahelejätmisel</string>
+    <string name="skip_behavior_summary">Sissejuhatuste, lõputiitrite jmt jaoks</string>
 </resources>
