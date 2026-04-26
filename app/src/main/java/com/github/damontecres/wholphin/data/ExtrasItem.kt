@@ -15,7 +15,11 @@ sealed interface ExtrasItem {
     val parentId: UUID
     val type: ExtraType
     val destination: Destination
-    val title: String?
+    val imageUrl: String?
+    val title: String
+    val subtitle: String?
+    val isPlayed: Boolean
+    val playedPercentage: Double
 
     /**
      * Represents multiple extras of the same type
@@ -24,11 +28,17 @@ sealed interface ExtrasItem {
         override val parentId: UUID,
         override val type: ExtraType,
         val items: List<BaseItem>,
+        override val imageUrl: String?,
+        override val title: String,
+        override val subtitle: String,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.ItemGrid(null, type.stringRes, items.map { it.id })
 
-        override val title: String? = null
+        override val isPlayed: Boolean
+            get() = false
+        override val playedPercentage
+            get() = -1.0
     }
 
     /**
@@ -38,12 +48,18 @@ sealed interface ExtrasItem {
         override val parentId: UUID,
         override val type: ExtraType,
         val item: BaseItem,
+        override val imageUrl: String?,
+        override val title: String,
+        override val subtitle: String?,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.Playback(
                 item = item,
             )
-        override val title: String? get() = item.title
+        override val isPlayed: Boolean
+            get() = item.played
+        override val playedPercentage
+            get() = item.data.userData?.playedPercentage ?: 0.0
     }
 }
 
