@@ -28,6 +28,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.LocationType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlaylistUserPermissions
 import org.jellyfin.sdk.model.api.SortOrder
@@ -276,15 +277,17 @@ class PlaylistCreator
 
         private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<BaseItem> =
             buildList {
-                this@convertAndAddParts.forEach { ep ->
-                    add(BaseItem(ep, useSeriesForPrimary))
-                    if (ep.partCount.gt(1)) {
-                        val parts =
-                            api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
-                                BaseItem(part, useSeriesForPrimary)
-                            }
-                        addAll(parts)
-                    }
+                this@convertAndAddParts
+                    .filter { it.locationType != LocationType.VIRTUAL }
+                    .forEach { ep ->
+                        add(BaseItem(ep, useSeriesForPrimary))
+                        if (ep.partCount.gt(1)) {
+                            val parts =
+                                api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
+                                    BaseItem(part, useSeriesForPrimary)
+                                }
+                            addAll(parts)
+                        }
                 }
             }
 
