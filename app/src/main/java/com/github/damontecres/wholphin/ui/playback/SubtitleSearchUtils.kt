@@ -5,6 +5,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
@@ -106,12 +107,13 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                     while (maxAttempts > 0 && subtitleCount == newCount) {
                         maxAttempts--
                         delay(1500)
-                        item =
-                            BaseItem.from(
-                                api.userLibraryApi.getItem(itemId = it.itemId).content,
-                                api,
-                            )
-                        mediaSource = streamChoiceService.chooseSource(item.data, it)
+                        val base = BaseItem(api.userLibraryApi.getItem(itemId = it.itemId).content)
+                        currentItem =
+                            when (currentItem) {
+                                is PlaylistItem.Intro -> PlaylistItem.Intro(base)
+                                is PlaylistItem.Media -> PlaylistItem.Media(base)
+                            }
+                        mediaSource = streamChoiceService.chooseSource(currentItem.item.data, it)
                         if (mediaSource == null) {
                             // This shouldn't happen, but just in case
                             showToast(
@@ -158,7 +160,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 )
                             }
                             this@downloadAndSwitchSubtitles.changeStreams(
-                                item,
+                                currentItem.item,
                                 currentItemPlayback.value!!,
                                 audioIndex,
                                 newStream.index,

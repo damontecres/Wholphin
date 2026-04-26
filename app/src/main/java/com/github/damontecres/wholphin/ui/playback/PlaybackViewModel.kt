@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -185,7 +186,7 @@ class PlaybackViewModel
 
         private lateinit var preferences: UserPreferences
         internal lateinit var itemId: UUID
-        internal lateinit var item: BaseItem
+        internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
         private val jobs = mutableListOf<Job>()
@@ -319,9 +320,9 @@ class PlaybackViewModel
                 }
             this.itemId = itemId
             val queriedItem = api.userLibraryApi.getItem(itemId).content
-            val base =
+            val playlistItem =
                 if (queriedItem.type.playable) {
-                    queriedItem
+                    PlaylistItem.Media(BaseItem(queriedItem, false))
                 } else if (destination is Destination.PlaybackList) {
                     val playlistResult =
                         playlistCreator.createFrom(
@@ -349,9 +350,7 @@ class PlaybackViewModel
                                     this@PlaybackViewModel.playlist.value = r.playlist
                                 }
                             }
-                            r.playlist.items
-                                .first()
-                                .data
+                            r.playlist.items.first()
                         }
                     }
                 } else {
@@ -359,10 +358,39 @@ class PlaybackViewModel
                 }
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
-            val item = BaseItem.from(base, api)
+
+            val intros =
+                // If not resuming playback & cinema mode is enabled, get potential intros
+                if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
+                    api.userLibraryApi
+                        .getIntros(
+                            itemId = playlistItem.id,
+                            userId = serverRepository.currentUser.value?.id,
+                        ).content.items
+                        .map {
+                            PlaylistItem.Intro(BaseItem(it))
+                        }
+                } else {
+                    emptyList()
+                }
+            val firstItem =
+                if (intros.isNotEmpty()) {
+                    Timber.v("Got %s intros", intros.size)
+                    val currentPlaylist =
+                        this@PlaybackViewModel
+                            .playlist.value
+                            ?.items
+                            .orEmpty()
+                    val newPlaylist = Playlist(intros + currentPlaylist)
+                    this@PlaybackViewModel.playlist.setValueOnMain(newPlaylist)
+                    intros.first()
+                } else {
+                    playlistItem
+                }
+
             val played =
                 play(
-                    item,
+                    firstItem,
                     positionMs,
                     itemPlayback,
                     forceTranscoding,
@@ -374,9 +402,13 @@ class PlaybackViewModel
             if (!isPlaylist && preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
-                    withContext(Dispatchers.Main) {
-                        this@PlaybackViewModel.playlist.value = result.playlist
-                    }
+                    val currentPlaylist =
+                        this@PlaybackViewModel
+                            .playlist.value
+                            ?.items
+                            .orEmpty()
+                    val newPlaylist = Playlist(currentPlaylist + result.playlist.items)
+                    this@PlaybackViewModel.playlist.setValueOnMain(newPlaylist)
                 }
             }
         }
@@ -384,18 +416,24 @@ class PlaybackViewModel
         /**
          * Play an item
          *
-         * @param item the item to play
+         * @param currentItem the item to play
          * @param positionMs the starting playback position in milliseconds
          * @param itemPlayback the parameters for playback such chosen subtitle or audio streams
          * @param forceTranscoding whether the user has requested to force playback via transcoding
          */
         private suspend fun play(
-            item: BaseItem,
+            playlistItem: PlaylistItem,
             positionMs: Long,
             itemPlayback: ItemPlayback? = null,
             forceTranscoding: Boolean = this.forceTranscoding,
         ): Boolean =
             withContext(Dispatchers.IO) {
+                val item =
+                    when (playlistItem) {
+                        is PlaylistItem.Intro -> playlistItem.item
+                        is PlaylistItem.Media -> playlistItem.item
+                    }
+
                 Timber.i("Playing ${item.id}")
 
                 // New item, so we can clear the media segment tracker & subtitle cues
@@ -415,7 +453,7 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
-                this@PlaybackViewModel.item = item
+                this@PlaybackViewModel.currentItem = playlistItem
                 this@PlaybackViewModel.itemId = item.id
 
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
@@ -875,7 +913,7 @@ class PlaybackViewModel
                 Timber.d("Changing audio track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
-                        item = item,
+                        item = currentItem.item,
                         itemPlayback = currentItemPlayback.value!!,
                         trackIndex = index,
                         type = MediaStreamType.AUDIO,
@@ -889,7 +927,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = source,
                             audioStreamIndex = index,
-                            seriesId = item.data.seriesId,
+                            seriesId = currentItem.item.data.seriesId,
                             subtitleIndex = itemPlayback.subtitleIndex,
                             prefs = preferences,
                         )
@@ -898,7 +936,7 @@ class PlaybackViewModel
                     }
 
                 changeStreams(
-                    item,
+                    currentItem.item,
                     itemPlayback,
                     index,
                     resolvedSubtitleIndex,
@@ -913,7 +951,7 @@ class PlaybackViewModel
                 Timber.d("Changing subtitle track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
-                        item = item,
+                        item = currentItem.item,
                         itemPlayback = currentItemPlayback.value!!,
                         trackIndex = index,
                         type = MediaStreamType.SUBTITLE,
@@ -927,7 +965,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = source,
                             audioStreamIndex = itemPlayback.audioIndex,
-                            seriesId = item.data.seriesId,
+                            seriesId = currentItem.item.data.seriesId,
                             subtitleIndex = index,
                             prefs = preferences,
                         )
@@ -936,7 +974,7 @@ class PlaybackViewModel
                     }
 
                 changeStreams(
-                    item,
+                    currentItem.item,
                     itemPlayback,
                     itemPlayback.audioIndex,
                     resolvedIndex,
@@ -971,7 +1009,7 @@ class PlaybackViewModel
             mediaSourceId: UUID? = currentItemPlayback.value?.sourceId,
         ): String? =
             trickPlayInfo?.let {
-                val itemId = item.id
+                val itemId = currentItem.id
                 return api.trickplayApi.getTrickplayTileImageUrl(
                     itemId,
                     trickPlayInfo.width,
@@ -982,12 +1020,28 @@ class PlaybackViewModel
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
-                viewModelScope.launchIO {
-                    val nextItem = playlist.value?.peek()
-                    Timber.v("Setting next up to ${nextItem?.id}")
-                    withContext(Dispatchers.Main) {
-                        nextUp.value = nextItem
-                        if (nextItem == null) {
+                Timber.v("Playback state is STATE_ENDED")
+                viewModelScope.launchDefault {
+                    when (val nextItem = playlist.value?.peek()) {
+                        is PlaylistItem.Intro -> {
+                            Timber.v("Next item is intro, so playing immediately")
+                            playNextUp()
+                        }
+
+                        is PlaylistItem.Media -> {
+                            if (currentItem is PlaylistItem.Intro) {
+                                Timber.v("Current item is intro, so playing next up immediately")
+                                playNextUp()
+                            } else {
+                                Timber.v("Setting next up to ${nextItem.id}")
+                                withContext(Dispatchers.Main) {
+                                    nextUp.value = nextItem.item
+                                }
+                            }
+                        }
+
+                        null -> {
+                            Timber.v("No next up")
                             navigationManager.goBack()
                         }
                     }
@@ -1053,9 +1107,11 @@ class PlaybackViewModel
                                     outroShownSegments.add(currentSegment.id)
                                 ) {
                                     val nextItem = playlist.peek()
-                                    Timber.v("Setting next up during outro to ${nextItem?.id}")
-                                    withContext(Dispatchers.Main) {
-                                        nextUp.value = nextItem
+                                    if (nextItem is PlaylistItem.Media) {
+                                        Timber.v("Setting next up during outro to ${nextItem?.id}")
+                                        withContext(Dispatchers.Main) {
+                                            nextUp.value = nextItem.item
+                                        }
                                     }
                                 } else {
                                     val behavior =
@@ -1180,7 +1236,7 @@ class PlaybackViewModel
         fun playNextUp() {
             playlist.value?.let {
                 if (it.hasNext()) {
-                    viewModelScope.launchIO {
+                    viewModelScope.launchDefault {
                         cancelUpNextEpisode()
                         val item = it.getAndAdvance()
                         val played = play(item, 0)
@@ -1195,7 +1251,7 @@ class PlaybackViewModel
         fun playPrevious() {
             playlist.value?.let {
                 if (it.hasPrevious()) {
-                    viewModelScope.launchIO {
+                    viewModelScope.launchDefault {
                         cancelUpNextEpisode()
                         val item = it.getPreviousAndReverse()
                         val played = play(item, 0)
@@ -1256,7 +1312,7 @@ class PlaybackViewModel
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
                             Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
                             changeStreams(
-                                item,
+                                currentItem.item,
                                 currentItemPlayback.value!!,
                                 currentItemPlayback.value?.audioIndex,
                                 currentItemPlayback.value?.subtitleIndex,

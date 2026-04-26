@@ -54,6 +54,7 @@ class AppPreferencesSerializer
                                 refreshRateSwitching =
                                     AppPreference.RefreshRateSwitching.defaultValue
                                 resolutionSwitching = AppPreference.ResolutionSwitching.defaultValue
+                                cinemaMode = AppPreference.CinemaMode.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
