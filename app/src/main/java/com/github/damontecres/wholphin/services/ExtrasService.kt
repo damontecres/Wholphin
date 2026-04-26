@@ -78,6 +78,7 @@ class ExtrasService
                                 items = items,
                                 title = title,
                                 subtitle = subtitle,
+                                isPlayed = items.all { it.played },
                                 imageUrl =
                                     imageUrlService.getItemImageUrl(
                                         items.random(),

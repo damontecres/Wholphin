@@ -31,12 +31,11 @@ sealed interface ExtrasItem {
         override val imageUrl: String?,
         override val title: String,
         override val subtitle: String,
+        override val isPlayed: Boolean,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.ItemGrid(null, type.stringRes, items.map { it.id })
 
-        override val isPlayed: Boolean
-            get() = false
         override val playedPercentage
             get() = -1.0
     }
