@@ -630,4 +630,8 @@
     <string name="ass_subtitle_mode_exoplayer">Bezpośrednie odtwarzanie z wbudowanym ExoPlayer</string>
     <string name="ass_subtitle_mode_transcode">Wypalaj napisy/transkoduj źródło na serwerze</string>
     <string name="ass_subtitle_playback">Odtwarzanie napisów SSA/ASS</string>
+    <string name="cinema_mode">Tryb kinowy</string>
+    <string name="show_more">Pokaż %1$s więcej</string>
+    <string name="skip_behavior">Zachowanie pomijania</string>
+    <string name="skip_behavior_summary">Dla wstępu, napisów końcowych itp.</string>
 </resources>
