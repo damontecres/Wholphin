@@ -31,33 +31,27 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.chooseStream
-import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -82,10 +76,8 @@ fun EpisodeDetails(
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
-    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     val canDelete by viewModel.canDelete.collectAsState()
 
@@ -96,22 +88,36 @@ fun EpisodeDetails(
             ?.configuration
             ?.subtitleLanguagePreference
 
-    val moreActions =
-        MoreDialogActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                viewModel.setWatched(itemId, watched)
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(itemId, favorite)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
-        )
+    val contextActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = viewModel::setWatched,
+                onClickFavorite = viewModel::setFavorite,
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onClearChosenStreams = { viewModel.clearChosenStreams(it) },
+            )
+        }
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -152,75 +158,17 @@ fun EpisodeDetails(
                             ItemDetailsDialogInfo(ep)
                     },
                     moreOnClick = {
-                        moreDialog =
-                            DialogParams(
+                        showContextMenu =
+                            ContextMenu.ForBaseItem(
                                 fromLongClick = false,
-                                title = ep.name + " (${ep.data.productionYear ?: ""})",
-                                items =
-                                    buildMoreDialogItems(
-                                        context = context,
-                                        item = ep,
-                                        watched = ep.data.userData?.played ?: false,
-                                        favorite = ep.data.userData?.isFavorite ?: false,
-                                        seriesId = ep.data.seriesId,
-                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
-                                        canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
-                                        actions = moreActions,
-                                        onChooseVersion = {
-                                            chooseVersion =
-                                                chooseVersionParams(
-                                                    context,
-                                                    ep.data.mediaSources!!,
-                                                    chosenStreams?.source?.id?.toUUIDOrNull(),
-                                                ) { idx ->
-                                                    val source = ep.data.mediaSources!![idx]
-                                                    viewModel.savePlayVersion(
-                                                        ep,
-                                                        source.id!!.toUUID(),
-                                                    )
-                                                }
-                                            moreDialog = null
-                                        },
-                                        onChooseTracks = { type ->
-                                            viewModel.streamChoiceService
-                                                .chooseSource(
-                                                    ep.data,
-                                                    chosenStreams?.itemPlayback,
-                                                )?.let { source ->
-                                                    chooseVersion =
-                                                        chooseStream(
-                                                            context = context,
-                                                            streams = source.mediaStreams.orEmpty(),
-                                                            currentIndex =
-                                                                if (type == MediaStreamType.AUDIO) {
-                                                                    chosenStreams?.audioStream?.index
-                                                                } else {
-                                                                    chosenStreams?.subtitleStream?.index
-                                                                },
-                                                            type = type,
-                                                            onClick = { trackIndex ->
-                                                                viewModel.saveTrackSelection(
-                                                                    ep,
-                                                                    chosenStreams?.itemPlayback,
-                                                                    trackIndex,
-                                                                    type,
-                                                                )
-                                                            },
-                                                            preferredSubtitleLanguage = preferredSubtitleLanguage,
-                                                        )
-                                                }
-                                        },
-                                        onShowOverview = {
-                                            val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
-                                            if (source != null) {
-                                                overviewDialog = ItemDetailsDialogInfo(ep)
-                                            }
-                                        },
-                                        onClearChosenStreams = {
-                                            viewModel.clearChosenStreams(chosenStreams)
-                                        },
-                                        canDelete = canDelete,
-                                    ),
+                                item = ep,
+                                chosenStreams = chosenStreams,
+                                showGoTo = false,
+                                showStreamChoices = true,
+                                canDelete = canDelete,
+                                canRemoveContinueWatching = false,
+                                canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     watchOnClick = {
@@ -230,7 +178,7 @@ fun EpisodeDetails(
                         viewModel.setFavorite(ep.id, !ep.favorite)
                     },
                     canDelete = canDelete,
-                    deleteOnClick = { showDeleteDialog = ep },
+                    onConfirmDelete = { viewModel.deleteItem(ep) },
                     modifier = modifier,
                 )
             }
@@ -246,24 +194,12 @@ fun EpisodeDetails(
             onDismissRequest = { overviewDialog = null },
         )
     }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
-    }
-    chooseVersion?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { chooseVersion = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = preferredSubtitleLanguage,
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -283,16 +219,6 @@ fun EpisodeDetails(
             elevation = 3.dp,
         )
     }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
-        )
-    }
 }
 
 private const val HEADER_ROW = 0
@@ -308,7 +234,7 @@ fun EpisodeDetailsContent(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     canDelete: Boolean,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -346,6 +272,7 @@ fun EpisodeDetailsContent(
                                 .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
+                        title = ep.title ?: "",
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
                         favorite = dto.userData?.isFavorite ?: false,
@@ -367,7 +294,7 @@ fun EpisodeDetailsContent(
                         trailers = null,
                         trailerOnClick = {},
                         canDelete = canDelete,
-                        deleteOnClick = deleteOnClick,
+                        onConfirmDelete = onConfirmDelete,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

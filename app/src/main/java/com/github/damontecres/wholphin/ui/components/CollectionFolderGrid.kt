@@ -66,6 +66,7 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
@@ -74,13 +75,13 @@ import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -133,7 +134,7 @@ class CollectionFolderViewModel
         private val savedStateHandle: SavedStateHandle,
         api: ApiClient,
         @param:ApplicationContext private val context: Context,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
@@ -142,6 +143,7 @@ class CollectionFolderViewModel
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
         private val musicService: MusicService,
+        val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
         @Assisted itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
@@ -662,10 +664,39 @@ fun CollectionFolderGrid(
     val item by viewModel.item.observeAsState()
     val viewOptions by viewModel.viewOptions.observeAsState(defaultViewOptions)
 
-    var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
+    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var showDeleteDialog by remember { mutableStateOf<PositionItem?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+
+    val contextActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = { itemId, watched ->
+                    viewModel.setWatched(viewModel.position, itemId, watched)
+                },
+                onClickFavorite = { itemId, favorite ->
+                    viewModel.setFavorite(viewModel.position, itemId, favorite)
+                },
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = { viewModel.deleteItem(viewModel.position, it) },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onChooseVersion = { _, _ ->
+                    // Not supported on this page
+                },
+                onChooseTracks = { result ->
+                    // Not supported on this page
+                },
+                onClearChosenStreams = {
+                    // Not supported on this page
+                },
+            )
+        }
 
     val gridActions =
         remember(actions) {
@@ -673,7 +704,18 @@ fun CollectionFolderGrid(
                 onClickItem = actions.onClickItem,
                 onLongClickItem =
                     actions.onLongClickItem ?: { position, item ->
-                        moreDialog.makePresent(PositionItem(position, item))
+                        showContextMenu =
+                            ContextMenu.ForBaseItem(
+                                fromLongClick = true,
+                                item = item,
+                                chosenStreams = null,
+                                showGoTo = true,
+                                showStreamChoices = false,
+                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                                canRemoveContinueWatching = false,
+                                canRemoveNextUp = false,
+                                actions = contextActions,
+                            )
                     },
                 onClickPlayAll =
                     actions.onClickPlayAll ?: { shuffle ->
@@ -802,47 +844,22 @@ fun CollectionFolderGrid(
             }
         }
     }
-    moreDialog.compose { (position, item) ->
-        DialogPopup(
-            showDialog = true,
-            title = item.title ?: "",
-            dialogItems =
-                buildMoreDialogItemsForHome(
-                    context = context,
-                    item = item,
-                    seriesId = null,
-                    playbackPosition = item.playbackPosition,
-                    watched = item.played,
-                    favorite = item.favorite,
-                    canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                    actions =
-                        MoreDialogActions(
-                            navigateTo = { viewModel.navigateTo(it) },
-                            onClickWatch = { itemId, watched ->
-                                viewModel.setWatched(position, itemId, watched)
-                            },
-                            onClickFavorite = { itemId, watched ->
-                                viewModel.setFavorite(position, itemId, watched)
-                            },
-                            onClickAddPlaylist = {
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog.makePresent(it)
-                            },
-                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                            onClickDelete = {
-                                showDeleteDialog = PositionItem(position, item)
-                            },
-                            onClickGoTo = {
-                                gridActions.onClickItem.invoke(position, it)
-                            },
-                            onClickAddToQueue = {
-                                viewModel.addToQueue(it, 0)
-                            },
-                        ),
-                ),
-            onDismissRequest = { moreDialog.makeAbsent() },
-            dismissOnClick = true,
-            waitToLoad = true,
+    overviewDialog?.let { info ->
+        ItemDetailsDialog(
+            info = info,
+            showFilePath =
+                viewModel.serverRepository.currentUserDto.value
+                    ?.policy
+                    ?.isAdministrator == true,
+            onDismissRequest = { overviewDialog = null },
+        )
+    }
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = null,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -860,16 +877,6 @@ fun CollectionFolderGrid(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { (position, item) ->
-        ConfirmDeleteDialog(
-            itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(position, item)
-                showDeleteDialog = null
-            },
         )
     }
 }

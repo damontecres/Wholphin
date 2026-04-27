@@ -72,14 +72,15 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.MusicContextActions
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SortByButton
@@ -87,10 +88,8 @@ import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
-import com.github.damontecres.wholphin.ui.detail.music.MusicMoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.music.MusicQueueMarker
 import com.github.damontecres.wholphin.ui.detail.music.MusicViewModel
-import com.github.damontecres.wholphin.ui.detail.music.buildMoreDialogForMusic
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
@@ -371,7 +370,7 @@ fun PlaylistDetails(
     val state by viewModel.state.collectAsState()
     val musicState by viewModel.musicState.collectAsState()
 
-    var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showConfirmTypeDialog by remember { mutableStateOf<Triple<Int, BaseItem, Boolean>?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val addPlaylistState by addToPlaylistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
@@ -404,34 +403,40 @@ fun PlaylistDetails(
             }
         }
     }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
-    val musicMoreActions =
-        MusicMoreDialogActions(
-            onNavigate = { viewModel.navigationManager.navigateTo(it) },
+    val musicContextActions =
+        MusicContextActions(
+            navigateTo = { viewModel.navigationManager.navigateTo(it) },
             onClickPlay = { index, item -> play(index, item, false, MediaType.AUDIO) },
             onClickPlayNext = { index, item -> viewModel.playNext(item) },
-            onClickAddToQueue = { index, item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
+            onClickAddToQueue = { item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
             onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
             onClickAddPlaylist = { itemId ->
                 addToPlaylistViewModel.loadPlaylists(MediaType.AUDIO)
                 showPlaylistDialog.makePresent(itemId)
             },
-            onClickRemoveFromQueue = {},
-            onClickDelete = { showDeleteDialog = it },
+            onClickRemoveFromQueue = { _, _ -> },
+            onDeleteItem = viewModel::deleteItem,
         )
-    val moreActions =
-        MoreDialogActions(
-            navigateTo = { viewModel.navigationManager.navigateTo(it) },
-            onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
-            onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
-            onClickAddPlaylist = { itemId ->
-                addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel::sendMediaReport,
-            onClickDelete = { showDeleteDialog = it },
-            onClickAddToQueue = { viewModel.addToQueue(it, 0) },
-        )
+    val contextActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
+                onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
+                onClickAddPlaylist = { itemId ->
+                    addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel::sendMediaReport,
+                onDeleteItem = viewModel::deleteItem,
+                onClickAddToQueue = { viewModel.addToQueue(it, 0) },
+                onShowOverview = {},
+                onChooseVersion = { _, _ -> },
+                onChooseTracks = {},
+                onClearChosenStreams = {},
+                onClickRemoveFromNextUp = {},
+            )
+        }
 
     PlaylistDetailsContent(
         loadingState = state.loading,
@@ -448,43 +453,41 @@ fun PlaylistDetails(
             }
         },
         onLongClickIndex = { index, item ->
-            longClickDialog =
-                DialogParams(
-                    fromLongClick = true,
-                    title = item.name ?: "",
-                    items =
-                        if (item.type == BaseItemKind.AUDIO) {
-                            buildMoreDialogForMusic(
-                                context = context,
-                                actions = musicMoreActions,
-                                item = item,
-                                index = index,
-                                canRemove = false,
-                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                            )
-                        } else {
-                            buildMoreDialogItemsForHome(
-                                context = context,
-                                item = item,
-                                seriesId = item.data.seriesId,
-                                playbackPosition = item.playbackPosition,
-                                watched = item.played,
-                                favorite = item.favorite,
-                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                                actions = moreActions,
-                            )
-                        },
-                )
+            showContextMenu =
+                if (item.type == BaseItemKind.AUDIO) {
+                    ContextMenu.ForMusic(
+                        fromLongClick = true,
+                        item = item,
+                        index = index,
+                        canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                        canRemoveFromQueue = false,
+                        actions = musicContextActions,
+                    )
+                } else {
+                    ContextMenu.ForBaseItem(
+                        fromLongClick = true,
+                        item = item,
+                        chosenStreams = null,
+                        showGoTo = true,
+                        showStreamChoices = false,
+                        canDelete = viewModel.canDelete(item, preferences.appPreferences),
+                        canRemoveContinueWatching = false,
+                        canRemoveNextUp = false,
+                        actions = contextActions,
+                    )
+                }
         },
         filterAndSort = state.filterAndSort,
         onFilterAndSortChange = viewModel::loadItems,
         getPossibleFilterValues = viewModel::getFilterOptionValues,
         modifier = modifier,
     )
-    longClickDialog?.let { params ->
-        DialogPopup(
-            params = params,
-            onDismissRequest = { longClickDialog = null },
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = null,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
         )
     }
     showConfirmTypeDialog?.let { (index, item, shuffle) ->
@@ -508,16 +511,6 @@ fun PlaylistDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
         )
     }
 }

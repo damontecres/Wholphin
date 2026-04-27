@@ -382,7 +382,7 @@ class CollectionViewModel
                 result.totalRecordCount
             }
 
-        fun navigate(destination: Destination) {
+        fun navigateTo(destination: Destination) {
             release()
             navigationManager.navigateTo(destination)
         }
@@ -393,7 +393,9 @@ class CollectionViewModel
             position: RowColumn?,
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             favoriteWatchManager.setWatched(itemId, played)
-            if (position != null) {
+            if (itemId == state.value.collection?.id) {
+                refreshCollection()
+            } else if (position != null) {
                 refreshItem(itemId, position, false)
             }
         }
@@ -404,8 +406,21 @@ class CollectionViewModel
             position: RowColumn?,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
-            if (position != null) {
+            if (itemId == state.value.collection?.id) {
+                refreshCollection()
+            } else if (position != null) {
                 refreshItem(itemId, position, false)
+            }
+        }
+
+        private fun refreshCollection() {
+            viewModelScope.launchDefault {
+                val collection =
+                    api.userLibraryApi
+                        .getItem(itemId)
+                        .content
+                        .let { BaseItem(it, false) }
+                _state.update { it.copy(collection = collection) }
             }
         }
 

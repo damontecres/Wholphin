@@ -40,7 +40,7 @@ fun CollectionButtons(
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     onClickViewOptions: () -> Unit,
     favoriteOnClick: () -> Unit,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     canDelete: Boolean,
     moreOnClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -91,9 +91,9 @@ fun CollectionButtons(
             if (canDelete) {
                 item("delete") {
                     DeleteButton(
-                        onClick = deleteOnClick,
-                        modifier =
-                        Modifier,
+                        title = state.collection?.title ?: "",
+                        onConfirmDelete = onConfirmDelete,
+                        modifier = Modifier,
                     )
                 }
             }
