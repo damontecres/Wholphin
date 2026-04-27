@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween

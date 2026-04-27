@@ -184,6 +184,10 @@ class SeriesViewModel
                             it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
                     }
+                    viewModelScope.launchIO {
+                        val extras = extrasService.getExtras(seasonEpisodeIds.seasonId)
+                        this@SeriesViewModel.extras.setValueOnMain(extras)
+                    }
                 }
                 val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
@@ -388,6 +392,7 @@ class SeriesViewModel
             if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
                 this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
                 this@SeriesViewModel.episodes.value = EpisodeList.Loading
+                this@SeriesViewModel.extras.value = emptyList()
             }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
@@ -400,6 +405,10 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
+            }
+            viewModelScope.launchIO {
+                val extras = extrasService.getExtras(seasonId)
+                this@SeriesViewModel.extras.setValueOnMain(extras)
             }
         }
 
