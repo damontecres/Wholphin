@@ -24,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -105,9 +106,9 @@ class PlayExternalViewModel
                     }
                 try {
                     val queriedItem = api.userLibraryApi.getItem(itemId).content
-                    val base =
+                    val playlistItem =
                         if (queriedItem.type.playable) {
-                            queriedItem
+                            PlaylistItem.Media(BaseItem(queriedItem))
                         } else if (destination is Destination.PlaybackList) {
                             val playlistResult =
                                 playlistCreator.createFrom(
@@ -134,18 +135,15 @@ class PlayExternalViewModel
                                         navigationManager.goBack()
                                         return@launchDefault
                                     }
-                                    r.playlist.items
-                                        .first()
-                                        .data
+                                    r.playlist.items.first()
                                 }
                             }
                         } else {
                             throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                         }
-                    val item = BaseItem(base, false)
                     val playbackConfig =
                         serverRepository.currentUser.value?.let { user ->
-                            itemPlaybackDao.getItem(user, base.id)?.let {
+                            itemPlaybackDao.getItem(user, playlistItem.id)?.let {
                                 Timber.v("Fetched itemPlayback from DB: %s", it)
                                 if (it.sourceId != null) {
                                     it
@@ -154,20 +152,25 @@ class PlayExternalViewModel
                                 }
                             }
                         }
-                    val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
-                    val plc = streamChoiceService.getPlaybackLanguageChoice(base)
+                    val item =
+                        when (playlistItem) {
+                            is PlaylistItem.Intro -> playlistItem.item
+                            is PlaylistItem.Media -> playlistItem.item
+                        }
+                    val mediaSource = streamChoiceService.chooseSource(item.data, playbackConfig)
+                    val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                     if (mediaSource == null) {
                         Timber.w("Media source is null")
                         return@launchDefault
                     }
-                    savedStateHandle[KEY_ID] = base.id
+                    savedStateHandle[KEY_ID] = playlistItem.id
                     savedStateHandle[KEY_MEDIA_ID] = mediaSource.id
                     val subtitleIndex =
                         streamChoiceService
                             .chooseSubtitleStream(
                                 source = mediaSource,
                                 audioStream = null,
-                                seriesId = base.seriesId,
+                                seriesId = item.data.seriesId,
                                 itemPlayback = playbackConfig,
                                 plc = plc,
                                 prefs = prefs,

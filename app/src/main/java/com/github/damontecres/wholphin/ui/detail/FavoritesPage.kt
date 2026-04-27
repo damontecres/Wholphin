@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
@@ -109,13 +110,20 @@ fun FavoritesPage(
                 focusRequesters = tabFocusRequesters,
             )
         }
+        val actions =
+            remember {
+                GridClickActions(
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                )
+            }
+
         // TODO playEnabled = true for movies & episodes
         when (selectedTabIndex) {
             // Movies
             0 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
                         CollectionFolderFilter(
@@ -147,7 +155,7 @@ fun FavoritesPage(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
                         CollectionFolderFilter(
@@ -179,7 +187,7 @@ fun FavoritesPage(
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
                         CollectionFolderFilter(
@@ -212,7 +220,7 @@ fun FavoritesPage(
             3 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_videos",
                     initialFilter =
                         CollectionFolderFilter(
@@ -244,7 +252,7 @@ fun FavoritesPage(
             4 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_playlists",
                     initialFilter =
                         CollectionFolderFilter(
@@ -276,7 +284,7 @@ fun FavoritesPage(
             5 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_people",
                     initialFilter =
                         CollectionFolderFilter(

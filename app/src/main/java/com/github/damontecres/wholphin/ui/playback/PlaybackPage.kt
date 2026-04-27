@@ -76,6 +76,12 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.overlay.PauseIndicator
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
+import com.github.damontecres.wholphin.ui.playback.overlay.SkipIndicator
+import com.github.damontecres.wholphin.ui.playback.overlay.SkipSegmentButton
+import com.github.damontecres.wholphin.ui.playback.overlay.rememberSeekBarState
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
@@ -167,6 +173,7 @@ fun PlaybackPageContent(
         ),
     )
     val currentSegment by viewModel.currentSegment.collectAsState()
+    val analyticsState by viewModel.analyticsState.collectAsState()
 
     val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -389,7 +396,7 @@ fun PlaybackPageContent(
                         .fillMaxSize()
                         .background(Color.Transparent),
                 item = currentPlayback?.item,
-                playerControls = player,
+                player = player,
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,
                 previousEnabled = true,
@@ -412,6 +419,7 @@ fun PlaybackPageContent(
                 },
                 currentSegment = currentSegment?.segment,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                analyticsState = analyticsState,
             )
 
             val subtitleSettings =

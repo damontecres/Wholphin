@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +43,7 @@ import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
+import com.github.damontecres.wholphin.ui.components.HiddenFocusBox
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -332,15 +332,9 @@ fun CollectionDetailsContent(
                     ) {
                         // This box exists so that there is something focusable above the item content
                         // allowing focus to move up to restore the collection's header
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(0.dp)
-                                    .onFocusChanged {
-                                        if (it.isFocused) itemsContentHasFocus = false
-                                    }.focusable(),
-                        )
+                        HiddenFocusBox {
+                            itemsContentHasFocus = false
+                        }
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
                                 item = focusedItem,
