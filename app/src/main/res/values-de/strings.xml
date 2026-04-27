@@ -227,7 +227,7 @@
         <item quantity="other">Shorts</item>
     </plurals>
     <string name="combine_continue_next_summary">Trifft nur auf Serien zu</string>
-    <string name="direct_play_ass">Direktes abspielen von ASS Untertitel</string>
+    <string name="direct_play_ass">Libass für ASS Untertitel verwenden</string>
     <string name="direct_play_pgs">Direktes abspielen von PGS Untertitel</string>
     <string name="downmix_stereo">Immer zu Stereo heruntermischen</string>
     <string name="ffmpeg_extension_pref">FFmpeg decoder Modul verwenden</string>
@@ -579,4 +579,22 @@
     <string name="separate_types">Verschiedene Arten</string>
     <string name="prefer_logos">Logos anstatt Titelnamen anzeigen</string>
     <string name="updated_toast">Wholphin aktualisiert auf %s</string>
+    <string name="remove_continue_watching">Von \"Weiterschauen\" entfernen</string>
+    <string name="remove_next_up">Serie aus \"Als nächstes Anschauen\" entfernen</string>
+    <string name="view_more">Mehr anzeigen</string>
+    <string name="discover_tv">TV Serien entdecken</string>
+    <string name="discover_movies">Filme entdecken</string>
+    <string name="studios_in">Studios in %1$s</string>
+    <string name="view_removed_next_up">Serien anzeigen, die von \"Als nächstes Anschauen\" entfernt wurden</string>
+    <string name="next_up_never">Nie</string>
+    <string name="last_played">Zuletzt wiedergegeben</string>
+    <string name="ass_subtitle_mode_libass">Direkte Wiedergabe mit Libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Direkte Wiedergabe mit ExoPlayer (eingebaut)</string>
+    <string name="ass_subtitle_mode_transcode">Einbrennen/Auf Server transkodieren</string>
+    <string name="ass_subtitle_playback">SSA/ASS Untertitel Wiedergabe</string>
+    <string name="external_player">Externer Player</string>
+    <string name="system_default">Systemstandard</string>
+    <string name="show_more">Zeige %1$s mehr</string>
+    <string name="skip_behavior">\"Überspringen\" Verhalten</string>
+    <string name="skip_behavior_summary">Für Intros, Credits, etc</string>
 </resources>

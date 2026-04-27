@@ -596,4 +596,12 @@
     <string name="continue_string">Continuar</string>
     <string name="separate_types">Separar por tipos</string>
     <string name="prefer_logos">Prefiro mostrar logótipos nos títulos</string>
+    <string name="updated_toast">Wholphin foi atualizado para %s</string>
+    <string name="remove_continue_watching">Remover de «Continuar a ver»</string>
+    <string name="remove_next_up">Remover série do «Continuar a ver»</string>
+    <string name="view_removed_next_up">Ver séries removidas do «Continuar a ver»</string>
+    <string name="view_more">Ver mais</string>
+    <string name="discover_tv">Descobrir Séries</string>
+    <string name="discover_movies">Descobrir Filmes</string>
+    <string name="studios_in">Estúdios em %1$s</string>
 </resources>
