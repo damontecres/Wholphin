@@ -670,31 +670,33 @@ fun CollectionFolderGrid(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     val contextActions =
-        ContextMenuActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                viewModel.setWatched(viewModel.position, itemId, watched)
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(viewModel.position, itemId, favorite)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onDeleteItem = { viewModel.deleteItem(viewModel.position, it) },
-            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-            onChooseVersion = { _, _ ->
-                // Not supported on this page
-            },
-            onChooseTracks = { result ->
-                // Not supported on this page
-            },
-            onClearChosenStreams = {
-                // Not supported on this page
-            },
-        )
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = { itemId, watched ->
+                    viewModel.setWatched(viewModel.position, itemId, watched)
+                },
+                onClickFavorite = { itemId, favorite ->
+                    viewModel.setFavorite(viewModel.position, itemId, favorite)
+                },
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = { viewModel.deleteItem(viewModel.position, it) },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onChooseVersion = { _, _ ->
+                    // Not supported on this page
+                },
+                onChooseTracks = { result ->
+                    // Not supported on this page
+                },
+                onClearChosenStreams = {
+                    // Not supported on this page
+                },
+            )
+        }
 
     val gridActions =
         remember(actions) {

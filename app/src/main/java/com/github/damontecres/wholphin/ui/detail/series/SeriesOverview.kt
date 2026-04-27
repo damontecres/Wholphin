@@ -117,45 +117,47 @@ fun SeriesOverview(
     var rowFocused by rememberInt()
 
     val contextActions =
-        ContextMenuActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                viewModel.setWatched(itemId, watched, currentPosition.episodeRowIndex)
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(itemId, favorite, currentPosition.episodeRowIndex)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog = itemId
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onDeleteItem = viewModel::deleteItem,
-            onChooseVersion = { item, source ->
-                viewModel.savePlayVersion(
-                    item,
-                    source.id!!.toUUID(),
-                )
-            },
-            onChooseTracks = { result ->
-                viewModel.saveTrackSelection(
-                    result.item,
-                    result.itemPlayback,
-                    result.trackIndex,
-                    result.streamType,
-                )
-            },
-            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-            onClearChosenStreams = {
-                val focusedEpisode =
-                    (episodes as? EpisodeList.Success)
-                        ?.episodes
-                        ?.getOrNull(currentPosition.episodeRowIndex)
-                if (focusedEpisode != null) {
-                    viewModel.clearChosenStreams(focusedEpisode, it)
-                }
-            },
-        )
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = { itemId, watched ->
+                    viewModel.setWatched(itemId, watched, currentPosition.episodeRowIndex)
+                },
+                onClickFavorite = { itemId, favorite ->
+                    viewModel.setFavorite(itemId, favorite, currentPosition.episodeRowIndex)
+                },
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog = itemId
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onClearChosenStreams = {
+                    val focusedEpisode =
+                        (episodes as? EpisodeList.Success)
+                            ?.episodes
+                            ?.getOrNull(currentPosition.episodeRowIndex)
+                    if (focusedEpisode != null) {
+                        viewModel.clearChosenStreams(focusedEpisode, it)
+                    }
+                },
+            )
+        }
 
     LaunchedEffect(position, episodes) {
         val focusedEpisode =

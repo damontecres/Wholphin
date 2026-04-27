@@ -192,6 +192,35 @@ fun RecommendedContent(
 
         LoadingState.Success -> {
             var position by rememberPosition()
+            val contextActions =
+                remember {
+                    ContextMenuActions(
+                        navigateTo = viewModel.navigationManager::navigateTo,
+                        onClickWatch = { itemId, watched ->
+                            viewModel.setWatched(position, itemId, watched)
+                        },
+                        onClickFavorite = { itemId, favorite ->
+                            viewModel.setFavorite(position, itemId, favorite)
+                        },
+                        onClickAddPlaylist = { itemId ->
+                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                            showPlaylistDialog.makePresent(itemId)
+                        },
+                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                        onDeleteItem = { viewModel.deleteItem(position, it) },
+                        onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                        onChooseVersion = { _, _ ->
+                            // Not supported on this page
+                        },
+                        onChooseTracks = { result ->
+                            // Not supported on this page
+                        },
+                        onClearChosenStreams = {
+                            // Not supported on this page
+                        },
+                    )
+                }
+
             HomePageContent(
                 homeRows = rows,
                 position = position,
@@ -209,32 +238,7 @@ fun RecommendedContent(
                             canDelete = viewModel.canDelete(item, preferences.appPreferences),
                             canRemoveContinueWatching = false,
                             canRemoveNextUp = false,
-                            actions =
-                                ContextMenuActions(
-                                    navigateTo = viewModel.navigationManager::navigateTo,
-                                    onClickWatch = { itemId, watched ->
-                                        viewModel.setWatched(position, itemId, watched)
-                                    },
-                                    onClickFavorite = { itemId, favorite ->
-                                        viewModel.setFavorite(position, itemId, favorite)
-                                    },
-                                    onClickAddPlaylist = { itemId ->
-                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                        showPlaylistDialog.makePresent(itemId)
-                                    },
-                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                                    onDeleteItem = { viewModel.deleteItem(position, it) },
-                                    onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                                    onChooseVersion = { _, _ ->
-                                        // Not supported on this page
-                                    },
-                                    onChooseTracks = { result ->
-                                        // Not supported on this page
-                                    },
-                                    onClearChosenStreams = {
-                                        // Not supported on this page
-                                    },
-                                ),
+                            actions = contextActions,
                         )
                 },
                 onClickPlay = { _, item ->

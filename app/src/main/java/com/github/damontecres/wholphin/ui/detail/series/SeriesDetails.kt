@@ -132,42 +132,44 @@ fun SeriesDetails(
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
 
     val contextActions =
-        ContextMenuActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                if (itemId == destination.itemId) {
-                    // Confirm if marking whole series
-                    showWatchConfirmation = true
-                } else {
-                    viewModel.setWatched(itemId, watched, null)
-                }
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(itemId, favorite, null)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog = Optional.present(itemId)
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onDeleteItem = viewModel::deleteItem,
-            onChooseVersion = { item, source ->
-                viewModel.savePlayVersion(
-                    item,
-                    source.id!!.toUUID(),
-                )
-            },
-            onChooseTracks = { result ->
-                viewModel.saveTrackSelection(
-                    result.item,
-                    result.itemPlayback,
-                    result.trackIndex,
-                    result.streamType,
-                )
-            },
-            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-            onClearChosenStreams = {},
-        )
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = { itemId, watched ->
+                    if (itemId == destination.itemId) {
+                        // Confirm if marking whole series
+                        showWatchConfirmation = true
+                    } else {
+                        viewModel.setWatched(itemId, watched, null)
+                    }
+                },
+                onClickFavorite = { itemId, favorite ->
+                    viewModel.setFavorite(itemId, favorite, null)
+                },
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog = Optional.present(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onClearChosenStreams = {},
+            )
+        }
 
     LifecycleResumeEffect(destination.itemId) {
         viewModel.refresh()

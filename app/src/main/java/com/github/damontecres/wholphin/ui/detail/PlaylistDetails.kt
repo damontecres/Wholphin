@@ -418,23 +418,25 @@ fun PlaylistDetails(
             onDeleteItem = viewModel::deleteItem,
         )
     val contextActions =
-        ContextMenuActions(
-            navigateTo = { viewModel.navigationManager.navigateTo(it) },
-            onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
-            onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
-            onClickAddPlaylist = { itemId ->
-                addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel::sendMediaReport,
-            onDeleteItem = viewModel::deleteItem,
-            onClickAddToQueue = { viewModel.addToQueue(it, 0) },
-            onShowOverview = {},
-            onChooseVersion = { _, _ -> },
-            onChooseTracks = {},
-            onClearChosenStreams = {},
-            onClickRemoveFromNextUp = {},
-        )
+        remember {
+            ContextMenuActions(
+                navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
+                onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
+                onClickAddPlaylist = { itemId ->
+                    addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel::sendMediaReport,
+                onDeleteItem = viewModel::deleteItem,
+                onClickAddToQueue = { viewModel.addToQueue(it, 0) },
+                onShowOverview = {},
+                onChooseVersion = { _, _ -> },
+                onChooseTracks = {},
+                onClearChosenStreams = {},
+                onClickRemoveFromNextUp = {},
+            )
+        }
 
     PlaylistDetailsContent(
         loadingState = state.loading,

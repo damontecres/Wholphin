@@ -89,37 +89,35 @@ fun EpisodeDetails(
             ?.subtitleLanguagePreference
 
     val contextActions =
-        ContextMenuActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                viewModel.setWatched(itemId, watched)
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(itemId, favorite)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onDeleteItem = viewModel::deleteItem,
-            onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-            onChooseVersion = { item, source ->
-                viewModel.savePlayVersion(
-                    item,
-                    source.id!!.toUUID(),
-                )
-            },
-            onChooseTracks = { result ->
-                viewModel.saveTrackSelection(
-                    result.item,
-                    result.itemPlayback,
-                    result.trackIndex,
-                    result.streamType,
-                )
-            },
-            onClearChosenStreams = { viewModel.clearChosenStreams(it) },
-        )
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = viewModel::setWatched,
+                onClickFavorite = viewModel::setFavorite,
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onClearChosenStreams = { viewModel.clearChosenStreams(it) },
+            )
+        }
 
     when (val state = loading) {
         is LoadingState.Error -> {
