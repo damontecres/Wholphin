@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.preferences.LiveTvPreferences
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
@@ -133,13 +134,20 @@ fun TvGuideGrid(
                 if (channels.isEmpty()) {
                     ErrorMessage("Live TV is enabled, but no channels were found.", null)
                 } else {
-                    AnimatedVisibility(tvPrefs.showHeader) {
+                    AnimatedVisibility(
+                        visible = tvPrefs.showHeader,
+                        enter = expandVertically(),
+                        exit = shrinkVertically(),
+                    ) {
                         TvGuideHeader(
                             program = focusedProgram,
                             modifier =
                                 Modifier
-                                    .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
-                                    .fillMaxHeight(.30f),
+                                    .padding(
+                                        top = HeaderUtils.topPadding,
+                                        bottom = 0.dp,
+                                        start = HeaderUtils.startPadding,
+                                    ).fillMaxHeight(.30f),
                         )
                     }
                     AnimatedVisibility(
