@@ -631,7 +631,6 @@ private fun buildPlayWith(
         add(
             DialogItem(
                 title,
-                Icons.Default.PlayArrow,
                 dismissOnClick = true,
             ) {
                 onClick.invoke(false, backend)
@@ -641,7 +640,6 @@ private fun buildPlayWith(
     add(
         DialogItem(
             context.getString(R.string.transcoding),
-            Icons.Default.PlayArrow,
             dismissOnClick = true,
         ) {
             onClick.invoke(true, null)
