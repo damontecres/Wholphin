@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +32,6 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -76,23 +74,14 @@ fun TvGuideGrid(
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
-//    var firstLoad by rememberSaveable { mutableStateOf(true) }
-//    LaunchedEffect(Unit) {
-//        viewModel.init(firstLoad)
-//        firstLoad = false
-//    }
-    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val channels by viewModel.channels.observeAsState(listOf())
-    val programs by viewModel.programs.observeAsState(FetchedPrograms(0..0, listOf(), mapOf()))
-//    val programsByChannel by viewModel.programsByChannel.observeAsState(mapOf())
-//    val fetchedRange by viewModel.fetchedRange.observeAsState(0..0)
+    val state by viewModel.state.collectAsState()
     val preferences by viewModel.preferences.data
         .collectAsState(AppPreferences.getDefaultInstance())
     val tvPrefs = preferences.interfacePreferences.liveTvPreferences
     var showViewOptions by remember { mutableStateOf(false) }
-    when (val state = loading) {
+    when (val st = state.loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+            ErrorMessage(st, modifier)
         }
 
         LoadingState.Pending,
@@ -104,9 +93,11 @@ fun TvGuideGrid(
         LoadingState.Success,
         -> {
             val context = LocalContext.current
-            val guideTimes by viewModel.guideTimes.observeAsState(listOf())
-            val fetchedItem by viewModel.fetchedItem.observeAsState(null)
-            val loadingItem by viewModel.fetchingItem.observeAsState(LoadingState.Pending)
+            val programDialogState =
+                viewModel.programDialogState
+                    .collectAsState()
+                    .value.loading
+
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
             val focusRequester = remember { FocusRequester() }
             val buttonFocusRequester = remember { FocusRequester() }
@@ -119,15 +110,15 @@ fun TvGuideGrid(
             val focusedProgram =
                 remember(focusedPosition) {
                     focusedPosition.let {
-                        val channelId = channels.getOrNull(it.row)?.id
-                        programs.programsByChannel[channelId]?.getOrNull(it.column)
+                        val channelId = state.channels.getOrNull(it.row)?.id
+                        state.programs.programsByChannel[channelId]?.getOrNull(it.column)
                     }
                 }
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = modifier,
             ) {
-                if (channels.isEmpty()) {
+                if (state.channels.isEmpty()) {
                     ErrorMessage("Live TV is enabled, but no channels were found.", null)
                 } else {
                     AnimatedVisibility(
@@ -164,10 +155,10 @@ fun TvGuideGrid(
                     TvGuideGridContent(
                         preferences = tvPrefs,
                         loading = state is LoadingState.Loading,
-                        channels = channels,
-                        programs = programs,
-                        channelProgramCount = viewModel.channelProgramCount,
-                        guideTimes = guideTimes,
+                        channels = state.channels,
+                        programs = state.programs,
+                        channelProgramCount = state.channelProgramCount,
+                        guideTimes = state.guideTimes,
                         onClickChannel = { index, channel ->
                             viewModel.navigationManager.navigateTo(
                                 Destination.Playback(
@@ -200,7 +191,7 @@ fun TvGuideGrid(
                                         ).show()
                                 }
                             } else {
-                                viewModel.getItem(program.id)
+                                viewModel.fetchProgramForDialog(program.id)
                                 showItemDialog = index
                             }
                         },
@@ -215,13 +206,12 @@ fun TvGuideGrid(
             if (showItemDialog != null) {
                 val onDismissRequest = { showItemDialog = null }
                 ProgramDialog(
-                    item = fetchedItem,
+                    state = programDialogState,
                     canRecord = true,
-                    loading = loadingItem,
                     onDismissRequest = onDismissRequest,
                     onWatch = {
                         onDismissRequest.invoke()
-                        fetchedItem?.data?.channelId?.let {
+                        it.data.channelId?.let {
                             viewModel.navigationManager.navigateTo(
                                 Destination.Playback(
                                     itemId = it,
@@ -230,22 +220,18 @@ fun TvGuideGrid(
                             )
                         }
                     },
-                    onRecord = { series ->
-                        fetchedItem?.let {
-                            viewModel.record(
-                                programId = it.id,
-                                series = series,
-                            )
-                        }
+                    onRecord = { program, series ->
+                        viewModel.record(
+                            programId = program.id,
+                            series = series,
+                        )
                         onDismissRequest.invoke()
                     },
-                    onCancelRecord = { series ->
-                        fetchedItem?.data?.let {
-                            viewModel.cancelRecording(
-                                series = series,
-                                timerId = if (series) it.seriesTimerId else it.timerId,
-                            )
-                        }
+                    onCancelRecord = { program, series ->
+                        viewModel.cancelRecording(
+                            series = series,
+                            timerId = if (series) program.data.seriesTimerId else program.data.timerId,
+                        )
                         onDismissRequest.invoke()
                     },
                 )
@@ -290,13 +276,11 @@ fun TvGuideGridContent(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
-    val guideStart = guideTimes.first()
+    val guideStart = remember(guideTimes) { guideTimes.first() }
 
     var focusedItem by rememberPosition(RowColumn(0, 0))
-    val focusedChannelIndex = focusedItem.row
     var focusedProgramIndex by remember { mutableIntStateOf(0) }
     LaunchedEffect(onFocus, focusedProgramIndex) {
         withContext(Dispatchers.Default) {
@@ -349,208 +333,6 @@ fun TvGuideGridContent(
                     .focusProperties {
                         onEnter = { programFocusRequester.tryRequestFocus() }
                     },
-//                    .focusProperties {
-//                        up = buttonFocusRequester
-//                    },
-//                    .focusable()
-//                    .onPreviewKeyEvent {
-//                        if (it.type == KeyEventType.KeyUp) {
-//                            return@onPreviewKeyEvent false
-//                        }
-//                        val item = focusedItem
-//                        val newFocusedItem =
-//                            when (it.key) {
-//                                Key.Back -> {
-//                                    if (item.column > 0) {
-//                                        // Not at beginning of row, so move to beginning
-//                                        item.copy(column = 0)
-//                                    } else if (item.row > 0) {
-//                                        item.copy(row = 0)
-//                                    } else {
-//                                        // At beginning, so allow normal back button behavior
-//                                        return@onPreviewKeyEvent false
-//                                    }
-//                                }
-//
-//                                Key.DirectionRight -> {
-//                                    if (channelColumnFocused) {
-//                                        channelColumnFocused = false
-//                                        item.copy(column = 0)
-//                                    } else {
-//                                        item.copy(column = item.column + 1)
-//                                    }
-//                                }
-//
-//                                Key.DirectionLeft -> {
-//                                    if (channelColumnFocused) {
-//                                        focusManager.moveFocus(FocusDirection.Left)
-//                                        null
-//                                    } else if (item.column == 0) {
-//                                        channelColumnFocused = true
-//                                        item
-//                                    } else {
-//                                        item.copy(column = item.column - 1)
-//                                    }
-//                                }
-//
-//                                Key.DirectionUp -> {
-//                                    if (item.row <= 0) {
-// //                                        focusManager.moveFocus(FocusDirection.Up)
-//                                        null
-//                                    } else {
-//                                        val newChannelIndex = item.row - 1
-//                                        if (channelColumnFocused) {
-//                                            RowColumn(newChannelIndex, 0)
-//                                        } else {
-//                                            val currentChannel = channels[item.row].id
-//                                            val currentProgram =
-//                                                programs.programsByChannel[currentChannel]?.get(item.column)
-//                                            val newChannelId = channels[newChannelIndex].id
-//                                            val newChannelPrograms =
-//                                                programs.programsByChannel[newChannelId]
-//                                            if (newChannelPrograms == null) {
-//                                                return@onPreviewKeyEvent true
-//                                            }
-//                                            if (currentProgram == null) {
-//                                                item
-//                                            } else {
-//                                                val start = currentProgram.startHours
-//                                                val pIndex =
-//                                                    newChannelPrograms.indexOfFirst { start in (it.startHours..<it.endHours) }
-//                                                if (pIndex >= 0) {
-//                                                    RowColumn(newChannelIndex, pIndex)
-//                                                } else {
-//                                                    val pIndex =
-//                                                        newChannelPrograms.indexOfFirst { it.startHours >= start }
-//                                                    if (pIndex >= 0) {
-//                                                        RowColumn(newChannelIndex, pIndex)
-//                                                    } else {
-//                                                        RowColumn(newChannelIndex, 0)
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//
-//                                Key.DirectionDown -> {
-//                                    // Move channel focus down
-//                                    val newChannelIndex = item.row + 1
-//                                    if (newChannelIndex >= channels.size) {
-//                                        // If trying to move below the final channel, then move focus out of the grid
-//                                        focusManager.moveFocus(FocusDirection.Down)
-//                                        null
-//                                    } else {
-//                                        // Otherwise, moving to a new row
-//                                        // Get the new row/channel's programs
-//                                        val newChannelId = channels[newChannelIndex].id
-//                                        val newChannelPrograms =
-//                                            programs.programsByChannel[newChannelId]
-//                                        if (newChannelPrograms == null) {
-//                                            // This means there is no data for the new channel and it is loading in the background
-//                                            return@onPreviewKeyEvent true
-//                                        }
-//                                        if (channelColumnFocused) {
-//                                            // If focused on the channel column, move down a channel
-//                                            RowColumn(newChannelIndex, 0)
-//                                        } else {
-//                                            // Get current program & its start time
-//                                            val currentChannel = channels[item.row].id
-//                                            val currentProgram =
-//                                                programs.programsByChannel[currentChannel]?.get(item.column)
-//                                            if (currentProgram == null) {
-//                                                // Data is loading in the background
-//                                                item
-//                                            } else {
-//                                                val start = currentProgram.startHours
-//                                                // Find the first program where the start time (of the previously focused program) is in the middle of a program
-//                                                val pIndex =
-//                                                    newChannelPrograms.indexOfFirst { start in (it.startHours..<it.endHours) }
-//                                                if (pIndex >= 0) {
-//                                                    // Found one, so focus on it
-//                                                    RowColumn(newChannelIndex, pIndex)
-//                                                } else {
-//                                                    // Didn't find one, probably due to missing data
-//                                                    // So now first the first one that starts after the previously focused program
-//                                                    val pIndex =
-//                                                        newChannelPrograms.indexOfFirst { it.startHours >= start }
-//                                                    if (pIndex >= 0) {
-//                                                        // Found one, so focus on it
-//                                                        RowColumn(newChannelIndex, pIndex)
-//                                                    } else {
-//                                                        // Did not find one, so focus on the final program in the list
-//                                                        RowColumn(
-//                                                            newChannelIndex,
-//                                                            newChannelPrograms.size - 1,
-//                                                        )
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//
-//                                Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-//                                    if (channelColumnFocused) {
-//                                        val channel = channels[focusedChannelIndex]
-//                                        Timber.v("Clicked on %s", channel)
-//                                        onClickChannel.invoke(focusedChannelIndex, channel)
-//                                    } else {
-//                                        val currentChannel = channels[item.row].id
-//                                        val currentProgram =
-//                                            programs.programsByChannel[currentChannel]?.get(item.column)
-//                                        if (currentProgram == null) {
-//                                            // Data is loading in the background
-//                                            return@onPreviewKeyEvent true
-//                                        }
-//                                        Timber.v("Clicked on %s", currentProgram)
-//                                        onClickProgram.invoke(
-//                                            focusedProgramIndex,
-//                                            currentProgram,
-//                                        )
-//                                    }
-//                                    null
-//                                }
-//
-//                                else -> {
-//                                    null
-//                                }
-//                            }
-//
-//                        if (newFocusedItem != null) {
-//                            val channel = channels[newFocusedItem.row]
-//                            val channelPrograms = programs.programsByChannel[channel.id].orEmpty()
-//                            // Ensure it isn't going out of range
-//                            val toFocus =
-//                                newFocusedItem
-//                                    .copy(
-//                                        row = newFocusedItem.row.coerceIn(0, channels.size - 1),
-//                                        column =
-//                                            newFocusedItem.column.coerceIn(
-//                                                0,
-//                                                (channelPrograms.size - 1).coerceAtLeast(0),
-//                                            ),
-//                                    )
-//                            focusedItem = toFocus
-//                            focusedProgramIndex =
-//                                toFocus.let { focus ->
-//                                    (programs.range.first..<focus.row).sumOf {
-//                                        val channelId = channels[it].id
-//                                        channelProgramCount[channelId] ?: 0
-//                                    } + focus.column
-//                                }
-//                            scope.launch {
-//                                try {
-//                                    state.animateToProgram(focusedProgramIndex, Alignment.Center)
-//                                } catch (ex: Exception) {
-//                                    Timber.e(ex, "Couldn't scroll to $focusedProgramIndex")
-//                                }
-//                            }
-//                            onFocus(toFocus)
-//                            return@onPreviewKeyEvent true
-//                        }
-//                        return@onPreviewKeyEvent false
-//                    },
         ) {
             guideStartHour = 0f
             currentTime(
