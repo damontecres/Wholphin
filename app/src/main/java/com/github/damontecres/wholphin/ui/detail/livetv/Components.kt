@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -147,24 +148,36 @@ fun Channel(
                     shape = RoundedCornerShape(4.dp),
                 ),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Box(
             modifier =
                 Modifier
                     .padding(4.dp)
                     .fillMaxSize(),
         ) {
-            Text(
-                text = channel.number ?: channel.name ?: channelIndex.toString(),
-                color = textColor,
-                modifier = Modifier,
-            )
-            AsyncImage(
-                model = channel.imageUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxHeight(.66f),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = channel.number ?: channel.name ?: channelIndex.toString(),
+                    color = textColor,
+                    modifier = Modifier,
+                )
+                AsyncImage(
+                    model = channel.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxHeight(.66f),
+                )
+            }
+            if (channel.favorite) {
+                Text(
+                    color = colorResource(android.R.color.holo_red_light),
+                    text = stringResource(R.string.fa_heart),
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
         }
     }
 }

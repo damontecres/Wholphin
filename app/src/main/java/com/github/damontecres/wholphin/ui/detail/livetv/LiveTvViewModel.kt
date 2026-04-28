@@ -43,7 +43,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.GetProgramsDto
@@ -149,10 +148,12 @@ class LiveTvViewModel
                     channelData.items
                         .map {
                             TvChannel(
-                                it.id,
-                                it.channelNumber,
-                                it.channelName,
-                                api.imageApi.getItemImageUrl(it.id, ImageType.PRIMARY),
+                                id = it.id,
+                                number = it.channelNumber,
+                                name = it.channelName,
+                                imageUrl =
+                                    imageUrlService.getItemImageUrl(it.id, ImageType.PRIMARY),
+                                favorite = it.userData?.isFavorite == true,
                             )
                         }
                 Timber.d("Got ${channels.size} channels")
@@ -555,6 +556,7 @@ data class TvChannel(
     val number: String?,
     val name: String?,
     val imageUrl: String?,
+    val favorite: Boolean,
 )
 
 @Stable
