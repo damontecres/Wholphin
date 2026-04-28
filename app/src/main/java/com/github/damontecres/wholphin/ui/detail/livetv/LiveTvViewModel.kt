@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -78,6 +79,7 @@ class LiveTvViewModel
         val navigationManager: NavigationManager,
         val preferences: DataStore<AppPreferences>,
         private val serverRepository: ServerRepository,
+        private val imageUrlService: ImageUrlService,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
@@ -282,6 +284,11 @@ class LiveTvViewModel
                                 isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
                                 isRepeat = dto.isRepeat ?: false,
                                 category = category,
+                                imageUrl =
+                                    imageUrlService.getItemImageUrl(
+                                        dto.id,
+                                        ImageType.PRIMARY,
+                                    ),
                             )
                         if (index == 0) {
                             if (p.startHours > 0) {
@@ -568,6 +575,7 @@ data class TvProgram(
     val isRepeat: Boolean,
     val category: ProgramCategory?,
     val officialRating: String? = null,
+    val imageUrl: String? = null,
 ) {
     val isFake = category == ProgramCategory.FAKE
 
