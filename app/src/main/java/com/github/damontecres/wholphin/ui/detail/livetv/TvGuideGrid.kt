@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.text.format.DateUtils
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -24,7 +25,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -317,8 +317,28 @@ fun TvGuideGridContent(
     }
     val programFocusRequester = remember { FocusRequester() }
 
-    var gridHasFocus by rememberSaveable { mutableStateOf(false) }
-    var channelColumnFocused by rememberSaveable { mutableStateOf(false) }
+    BackHandler(focusedItem.row > 0) {
+        scope.launch {
+            focusedProgramIndex = 0
+            state.animateToProgram(0, Alignment.Center)
+            programFocusRequester.tryRequestFocus()
+        }
+    }
+
+    BackHandler(focusedItem.column > 0) {
+        scope.launch {
+            val programIndex =
+                (0..<focusedItem.row)
+                    .mapNotNull {
+                        val channel = channels[it]
+                        channelProgramCount[channel.id]
+                    }.sum()
+            focusedProgramIndex = programIndex
+            state.animateToProgram(programIndex, Alignment.Center)
+            programFocusRequester.tryRequestFocus()
+        }
+    }
+
     Box(modifier = modifier) {
         ProgramGuide(
             state = state,
@@ -326,9 +346,7 @@ fun TvGuideGridContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .onFocusChanged {
-                        gridHasFocus = it.hasFocus
-                    }.focusProperties {
+                    .focusProperties {
                         onEnter = { programFocusRequester.tryRequestFocus() }
                     },
 //                    .focusProperties {
