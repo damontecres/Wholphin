@@ -17,12 +17,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.supportedPlayableTypes
@@ -185,6 +187,7 @@ fun ContextMenu(
     val context = LocalContext.current
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showPlayWithDialog by remember { mutableStateOf(false) }
 
     val dialogItems =
         remember(context, item, chosenStreams) {
@@ -211,6 +214,7 @@ fun ContextMenu(
                         ) { idx ->
                             val source = item.data.mediaSources!![idx]
                             actions.onChooseVersion.invoke(item, source)
+                            onDismissRequest.invoke()
                         }
                 },
                 onChooseTracks = { type ->
@@ -239,6 +243,7 @@ fun ContextMenu(
                                                 itemPlayback = chosenStreams?.itemPlayback,
                                             ),
                                         )
+                                        onDismissRequest.invoke()
                                     },
                                     preferredSubtitleLanguage = preferredSubtitleLanguage,
                                 )
@@ -249,6 +254,7 @@ fun ContextMenu(
                     actions.onClearChosenStreams.invoke(chosenStreams)
                 },
                 onClickDelete = { showDeleteDialog = true },
+                onClickPlayWith = { showPlayWithDialog = true },
             )
         }
     DialogPopup(
@@ -281,6 +287,31 @@ fun ContextMenu(
             },
         )
     }
+    if (showPlayWithDialog) {
+        val dialogItems =
+            remember {
+                buildPlayWith(context) { transcode, backend ->
+                    onDismissRequest.invoke()
+                    actions.navigateTo(
+                        Destination.Playback(
+                            itemId = item.id,
+                            positionMs = item.resumeMs,
+                            forceTranscoding = transcode,
+                            backend = backend,
+                        ),
+                    )
+                }
+            }
+        DialogPopup(
+            showDialog = true,
+            title = stringResource(R.string.play_with),
+            dialogItems = dialogItems,
+            onDismissRequest = { showPlayWithDialog = false },
+            dismissOnClick = true,
+            waitToLoad = false,
+            elevation = 3.dp,
+        )
+    }
 }
 
 private fun buildContextMenuItems(
@@ -302,6 +333,7 @@ private fun buildContextMenuItems(
     onShowOverview: () -> Unit,
     onClearChosenStreams: () -> Unit,
     onClickDelete: () -> Unit,
+    onClickPlayWith: () -> Unit,
 ): List<DialogItem> =
     buildList {
         if (showGoTo) {
@@ -316,7 +348,7 @@ private fun buildContextMenuItems(
             )
         }
         if (item.type in supportedPlayableTypes) {
-            if (item.playbackPosition >= Duration.ZERO) {
+            if (item.playbackPosition > Duration.ZERO) {
                 add(
                     DialogItem(
                         context.getString(R.string.resume),
@@ -566,18 +598,11 @@ private fun buildContextMenuItems(
         if (item.type in supportedPlayableTypes) {
             add(
                 DialogItem(
-                    context.getString(R.string.play_with_transcoding),
+                    context.getString(R.string.play_with),
                     Icons.Default.PlayArrow,
-                    dismissOnClick = true,
-                ) {
-                    actions.navigateTo(
-                        Destination.Playback(
-                            item.id,
-                            item.resumeMs ?: 0L,
-                            forceTranscoding = true,
-                        ),
-                    )
-                },
+                    dismissOnClick = false,
+                    onClick = onClickPlayWith,
+                ),
             )
         }
         if (item.data.mediaSources?.isNotEmpty() == true) {
@@ -592,6 +617,37 @@ private fun buildContextMenuItems(
             )
         }
     }
+
+private fun buildPlayWith(
+    context: Context,
+    onClick: (Boolean, PlayerBackend?) -> Unit,
+) = buildList {
+    val entries =
+        PlayerBackend.entries
+            .filterNot { it == PlayerBackend.UNRECOGNIZED }
+            .zip(context.resources.getStringArray(R.array.player_backend_options))
+            .filterNot { it.first == PlayerBackend.PREFER_MPV }
+    entries.forEach { (backend, title) ->
+        add(
+            DialogItem(
+                title,
+                Icons.Default.PlayArrow,
+                dismissOnClick = true,
+            ) {
+                onClick.invoke(false, backend)
+            },
+        )
+    }
+    add(
+        DialogItem(
+            context.getString(R.string.transcoding),
+            Icons.Default.PlayArrow,
+            dismissOnClick = true,
+        ) {
+            onClick.invoke(true, null)
+        },
+    )
+}
 
 @Composable
 fun ContextMenu(
