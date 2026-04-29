@@ -69,6 +69,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @Composable
 fun ExpandablePlayButtons(
+    title: String,
     resumePosition: Duration,
     watched: Boolean,
     favorite: Boolean,
@@ -79,7 +80,7 @@ fun ExpandablePlayButtons(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -163,7 +164,8 @@ fun ExpandablePlayButtons(
         if (canDelete) {
             item("delete") {
                 DeleteButton(
-                    onClick = deleteOnClick,
+                    title = title,
+                    onConfirmDelete = onConfirmDelete,
                     modifier =
                         Modifier
                             .onFocusChanged(buttonOnFocusChanged),
@@ -381,10 +383,12 @@ fun TrailerButton(
 
 @Composable
 fun DeleteButton(
-    onClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    title: String,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val focused by interactionSource.collectIsFocusedAsState()
     val iconTint by
         animateColorAsState(
@@ -415,10 +419,20 @@ fun DeleteButton(
                         .size(24.dp),
             )
         },
-        onClick = { onClick.invoke() },
+        onClick = { showDeleteDialog = true },
         interactionSource = interactionSource,
         modifier = modifier,
     )
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            itemTitle = title,
+            onCancel = { showDeleteDialog = false },
+            onConfirm = {
+                onConfirmDelete.invoke()
+                showDeleteDialog = false
+            },
+        )
+    }
 }
 
 @PreviewTvSpec
@@ -426,6 +440,7 @@ fun DeleteButton(
 private fun ExpandablePlayButtonsPreview() {
     WholphinTheme(true) {
         ExpandablePlayButtons(
+            title = "Movie",
             resumePosition = 10.seconds,
             watched = false,
             favorite = false,
@@ -437,7 +452,7 @@ private fun ExpandablePlayButtonsPreview() {
             trailers = listOf(),
             trailerOnClick = {},
             canDelete = true,
-            deleteOnClick = {},
+            onConfirmDelete = {},
             modifier = Modifier,
         )
     }
@@ -482,7 +497,8 @@ private fun ViewOptionsPreview() {
                     modifier = Modifier,
                 )
                 DeleteButton(
-                    onClick = {},
+                    onConfirmDelete = {},
+                    title = "Movie",
                 )
                 SortByButton(
                     sortOptions = listOf(),
@@ -491,7 +507,8 @@ private fun ViewOptionsPreview() {
                 )
             }
             DeleteButton(
-                onClick = {},
+                onConfirmDelete = {},
+                title = "Movie",
                 interactionSource = source,
             )
         }

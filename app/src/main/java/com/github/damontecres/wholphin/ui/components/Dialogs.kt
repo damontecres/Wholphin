@@ -104,11 +104,13 @@ data class DialogItem(
     val trailingContent: @Composable (() -> Unit)? = null,
     val enabled: Boolean = true,
     val selected: Boolean = false,
+    val dismissOnClick: Boolean = false,
 ) : DialogItemEntry {
     constructor(
         @StringRes text: Int,
         @StringRes iconStringRes: Int,
         iconColor: Color = Color.Unspecified,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -124,11 +126,13 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
         @StringRes iconStringRes: Int,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -145,12 +149,14 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
         icon: ImageVector,
         iconColor: Color? = null,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -167,10 +173,12 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     constructor(
         text: String,
+        dismissOnClick: Boolean = false,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -180,6 +188,7 @@ data class DialogItem(
             )
         },
         onClick = onClick,
+        dismissOnClick = dismissOnClick,
     )
 
     companion object {
@@ -201,7 +210,7 @@ fun DialogPopup(
     dismissOnClick: Boolean = true,
     waitToLoad: Boolean = true,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 8.dp,
+    elevation: Dp = 1.dp,
 ) {
     var waiting by remember { mutableStateOf(waitToLoad) }
     if (showDialog) {
@@ -296,7 +305,7 @@ fun DialogPopupContent(
                             selected = item.selected,
                             enabled = !waiting && item.enabled,
                             onClick = {
-                                if (dismissOnClick) {
+                                if (dismissOnClick || item.dismissOnClick) {
                                     onDismissRequest.invoke()
                                 }
                                 item.onClick.invoke()
@@ -349,7 +358,7 @@ fun DialogPopup(
     onDismissRequest: () -> Unit,
     dismissOnClick: Boolean = true,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 8.dp,
+    elevation: Dp = 1.dp,
 ) = DialogPopup(
     showDialog = true,
     waitToLoad = params.fromLongClick,
@@ -427,7 +436,7 @@ fun ScrollableDialog(
 fun BasicDialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 8.dp,
+    elevation: Dp = 1.dp,
     content: @Composable () -> Unit,
 ) {
     Dialog(
@@ -458,7 +467,7 @@ fun ConfirmDialog(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 8.dp,
+    elevation: Dp = 1.dp,
     bodyColor: Color = MaterialTheme.colorScheme.onSurface,
 ) = BasicDialog(
     onDismissRequest = onCancel,
@@ -527,10 +536,12 @@ fun ConfirmDeleteDialog(
     itemTitle: String,
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
+    elevation: Dp = 3.dp,
 ) {
     BasicDialog(
         onDismissRequest = onCancel,
         properties = DialogProperties(usePlatformDefaultWidth = false),
+        elevation = elevation,
     ) {
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,

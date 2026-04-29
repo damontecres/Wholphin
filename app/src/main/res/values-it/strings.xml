@@ -59,7 +59,7 @@
     <string name="restart">Riavvia</string>
     <string name="resume">Riprendi</string>
     <string name="save">Salva</string>
-    <string name="search_and_download"><![CDATA[Cerca & Scarica]]></string>
+    <string name="search_and_download"><![CDATA[Cerca &amp; Scarica]]></string>
     <string name="search">Cerca</string>
     <string name="select_server">Seleziona Server</string>
     <string name="select_user">Seleziona Utente</string>
@@ -110,7 +110,7 @@
     <string name="critic_rating">Valutazione della critica</string>
     <string name="default_track">Predefinita</string>
     <string name="discovered_servers">Server Scoperti</string>
-    <string name="download_and_update"><![CDATA[Scarica & Aggiorna]]></string>
+    <string name="download_and_update"><![CDATA[Scarica &amp; Aggiorna]]></string>
     <string name="downloading">Scaricando…</string>
     <string name="forced_track">Forzata</string>
     <string name="go_to">Vai a</string>
@@ -233,7 +233,7 @@
     <string name="app_theme">Tema Applicazione</string>
     <string name="auto_check_for_updates">Cerca automaticamente aggiornamenti</string>
     <string name="auto_play_next">Riproduci automaticamente il prossimo episodio</string>
-    <string name="direct_play_ass">Riproduzione diretta sottotitoli ASS</string>
+    <string name="direct_play_ass">Usa libass per i sottotitoli ASS</string>
     <string name="direct_play_pgs">Riproduzione diretta sottotitoli PGS</string>
     <string name="ffmpeg_extension_pref">Usa il modulo di decodifica FFmpeg</string>
     <string name="play_theme_music">Riproduci musica tema</string>
@@ -263,7 +263,7 @@
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
-    <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare & Prossimo Episodio]]></string>
+    <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare &amp; Prossimo Episodio]]></string>
     <string name="downmix_stereo">Converti sempre in stereo</string>
     <string name="max_homepage_items">Numero massimo di elementi per riga nella home</string>
     <string name="global_content_scale">Scala contenuti predefinita</string>
@@ -597,4 +597,23 @@
     <string name="separate_types">Tipi separati</string>
     <string name="prefer_logos">Preferisci mostrare i loghi per i titoli</string>
     <string name="updated_toast">Wholphin aggiornato a %s</string>
+    <string name="remove_continue_watching">Rimuovi da Continua a guardare</string>
+    <string name="remove_next_up">Rimuovi serie da Prossimo</string>
+    <string name="view_removed_next_up">Visualizza serie rimosse da Prossimo</string>
+    <string name="view_more">Mostra altro</string>
+    <string name="discover_tv">Scopri serie TV</string>
+    <string name="discover_movies">Scopri film</string>
+    <string name="studios_in">Studi in %1$s</string>
+    <string name="ass_subtitle_mode_libass">Riproduzione diretta con libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Riproduzione diretta con ExoPlayer integrato</string>
+    <string name="ass_subtitle_mode_transcode">Masterizza/trascodifica sul server</string>
+    <string name="ass_subtitle_playback">Riproduzione sottotitoli SSA/ASS</string>
+    <string name="next_up_never">Mai</string>
+    <string name="external_player">Player esterno</string>
+    <string name="system_default">Predefinito sistema</string>
+    <string name="last_played">Ultima riproduzione</string>
+    <string name="cinema_mode">Modalità cinema</string>
+    <string name="show_more">Mostra %1$s altri</string>
+    <string name="skip_behavior">Comportamento di salto</string>
+    <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
 </resources>

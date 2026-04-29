@@ -34,6 +34,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -56,24 +57,23 @@ import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.StudioCard
 import com.github.damontecres.wholphin.ui.components.CircularProgress
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.FocusableItemRow
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
-import com.github.damontecres.wholphin.ui.components.RowColumnItem
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.rememberLogoUrl
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -120,9 +120,10 @@ fun HomePage(
         }
 
         LoadingState.Success -> {
-            var dialog by remember { mutableStateOf<DialogParams?>(null) }
+            var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
-            var showDeleteDialog by remember { mutableStateOf<RowColumnItem?>(null) }
+            var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             var position by rememberPosition()
 
@@ -144,42 +145,44 @@ fun HomePage(
                             row?.rowType is HomeRowConfig.ContinueWatching || row?.rowType is HomeRowConfig.ContinueWatchingCombined
                         val canRemoveNextUp =
                             row?.rowType is HomeRowConfig.NextUp || row?.rowType is HomeRowConfig.ContinueWatchingCombined
-                        val dialogItems =
-                            buildMoreDialogItemsForHome(
-                                context = context,
+                        showContextMenu =
+                            ContextMenu.ForBaseItem(
+                                fromLongClick = true,
                                 item = item,
-                                seriesId = item.data.seriesId,
-                                playbackPosition = item.playbackPosition,
-                                watched = item.played,
-                                favorite = item.favorite,
-                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                                canRemoveNextUp = canRemoveNextUp,
+                                chosenStreams = null,
+                                showGoTo = true,
+                                showStreamChoices = false,
+                                canDelete =
+                                    viewModel.canDelete(
+                                        item,
+                                        preferences.appPreferences,
+                                    ),
                                 canRemoveContinueWatching = canRemoveContinueWatching,
+                                canRemoveNextUp = canRemoveNextUp,
                                 actions =
-                                    MoreDialogActions(
+                                    ContextMenuActions(
                                         navigateTo = viewModel.navigationManager::navigateTo,
-                                        onClickWatch = { itemId, played ->
-                                            viewModel.setWatched(itemId, played)
-                                        },
-                                        onClickFavorite = { itemId, favorite ->
-                                            viewModel.setFavorite(itemId, favorite)
-                                        },
+                                        onClickWatch = viewModel::setWatched,
+                                        onClickFavorite = viewModel::setFavorite,
                                         onClickAddPlaylist = { itemId ->
                                             playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                             showPlaylistDialog = itemId
                                         },
                                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                                        onClickDelete = {
-                                            showDeleteDialog = RowColumnItem(position, item)
+                                        onDeleteItem = {
+                                            viewModel.deleteItem(position, it)
                                         },
-                                        onClickRemoveFromNextUp = viewModel::removeFromNextUp,
+                                        onChooseVersion = { _, _ ->
+                                            // Not supported on this page
+                                        },
+                                        onChooseTracks = {
+                                            // Not supported on this page
+                                        },
+                                        onShowOverview = {
+                                            overviewDialog = ItemDetailsDialogInfo(it)
+                                        },
+                                        onClearChosenStreams = {},
                                     ),
-                            )
-                        dialog =
-                            DialogParams(
-                                title = item.title ?: "",
-                                fromLongClick = true,
-                                items = dialogItems,
                             )
                     }
                 }
@@ -203,10 +206,19 @@ fun HomePage(
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                 modifier = modifier,
             )
-            dialog?.let { params ->
-                DialogPopup(
-                    params = params,
-                    onDismissRequest = { dialog = null },
+            overviewDialog?.let { info ->
+                ItemDetailsDialog(
+                    info = info,
+                    showFilePath = false,
+                    onDismissRequest = { overviewDialog = null },
+                )
+            }
+            showContextMenu?.let { contextMenu ->
+                ContextMenuDialog(
+                    onDismissRequest = { showContextMenu = null },
+                    getMediaSource = null,
+                    contextMenu = contextMenu,
+                    preferredSubtitleLanguage = null,
                 )
             }
             showPlaylistDialog?.let { itemId ->
@@ -226,19 +238,7 @@ fun HomePage(
                     elevation = 3.dp,
                 )
             }
-            showDeleteDialog?.let { (position, item) ->
-                ConfirmDeleteDialog(
-                    itemTitle = listOfNotNull(item.title, item.subtitle).joinToString(" - "),
-                    onCancel = { showDeleteDialog = null },
-                    onConfirm = {
-                        viewModel.deleteItem(position, item)
-                        showDeleteDialog = null
-                    },
-                )
-            }
         }
-
-        else -> {}
     }
 }
 
@@ -406,7 +406,7 @@ fun HomePageContent(
                                                     }
                                                 val onKey =
                                                     remember(item) {
-                                                        { event: androidx.compose.ui.input.key.KeyEvent ->
+                                                        { event: KeyEvent ->
                                                             if (isPlayKeyUp(event) && item?.type?.playable == true) {
                                                                 Timber.v("Clicked play on ${item.id}")
                                                                 currentOnClickPlay(
