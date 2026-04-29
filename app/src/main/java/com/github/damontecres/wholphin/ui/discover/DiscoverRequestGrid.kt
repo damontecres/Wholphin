@@ -182,7 +182,7 @@ fun DiscoverRequestGrid(
                     gridFocusRequester = gridFocusRequester,
                     showJumpButtons = false,
                     showLetterButtons = false,
-                    cardContent = { item, onClick, onLongClick, mod ->
+                    cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                         DiscoverItemCard(
                             item = item,
                             onClick = onClick,

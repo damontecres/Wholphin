@@ -79,6 +79,7 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
+import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
@@ -1060,7 +1061,7 @@ fun CollectionFolderGridContent(
                             position = newPosition
                             positionCallback?.invoke(columns, newPosition)
                         },
-                        cardContent = { item, onClick, onLongClick, mod ->
+                        cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                             GridCard(
                                 item = item,
                                 onClick = onClick,
@@ -1069,6 +1070,7 @@ fun CollectionFolderGridContent(
                                 imageAspectRatio = viewOptions.aspectRatio.ratio,
                                 imageType = viewOptions.imageType,
                                 showTitle = viewOptions.showTitles,
+                                fillWidth = widthPx,
                                 modifier = mod,
                             )
                         },
@@ -1109,17 +1111,13 @@ data class PositionItem(
 data class CollectionFolderGridParameters(
     val columns: Int = 6,
     val spacing: Dp = 16.dp,
-    val cardContent: @Composable (
-        item: BaseItem?,
-        onClick: () -> Unit,
-        onLongClick: () -> Unit,
-        mod: Modifier,
-    ) -> Unit = { item, onClick, onLongClick, mod ->
+    val cardContent: @Composable (GridItemDetails<BaseItem>) -> Unit = { (item, index, onClick, onLongClick, widthPx, mod) ->
         GridCard(
             item = item,
             onClick = onClick,
             onLongClick = onLongClick,
             imageContentScale = ContentScale.FillBounds,
+            fillWidth = widthPx,
             modifier = mod,
         )
     },
@@ -1129,13 +1127,14 @@ data class CollectionFolderGridParameters(
             CollectionFolderGridParameters(
                 columns = 6,
                 spacing = 16.dp,
-                cardContent = { item, onClick, onLongClick, mod ->
+                cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                     GridCard(
                         item = item,
                         onClick = onClick,
                         onLongClick = onLongClick,
                         imageContentScale = ContentScale.FillBounds,
                         imageAspectRatio = AspectRatios.TALL,
+                        fillWidth = widthPx,
                         modifier = mod,
                     )
                 },
@@ -1144,13 +1143,14 @@ data class CollectionFolderGridParameters(
             CollectionFolderGridParameters(
                 columns = 4,
                 spacing = 24.dp,
-                cardContent = { item, onClick, onLongClick, mod ->
+                cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                     GridCard(
                         item = item,
                         onClick = onClick,
                         onLongClick = onLongClick,
                         imageContentScale = ContentScale.Crop,
                         imageAspectRatio = AspectRatios.WIDE,
+                        fillWidth = widthPx,
                         modifier = mod,
                     )
                 },
@@ -1159,13 +1159,14 @@ data class CollectionFolderGridParameters(
             CollectionFolderGridParameters(
                 columns = 6,
                 spacing = 16.dp,
-                cardContent = { item, onClick, onLongClick, mod ->
+                cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                     GridCard(
                         item = item,
                         onClick = onClick,
                         onLongClick = onLongClick,
                         imageContentScale = ContentScale.FillBounds,
                         imageAspectRatio = AspectRatios.SQUARE,
+                        fillWidth = widthPx,
                         modifier = mod,
                     )
                 },

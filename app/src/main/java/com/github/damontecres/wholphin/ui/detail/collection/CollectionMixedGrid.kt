@@ -60,7 +60,7 @@ fun CollectionMixedGrid(
                 positionCallback = { _, newPosition ->
                     onFocusPosition.invoke(RowColumn(0, newPosition))
                 },
-                cardContent = { item, onClick, onLongClick, mod ->
+                cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                     GridCard(
                         item = item,
                         onClick = onClick,
@@ -69,6 +69,7 @@ fun CollectionMixedGrid(
                         imageAspectRatio = cardViewOptions.aspectRatio.ratio,
                         imageType = cardViewOptions.imageType,
                         showTitle = cardViewOptions.showTitles,
+                        fillWidth = widthPx,
                         modifier = mod,
                     )
                 },
