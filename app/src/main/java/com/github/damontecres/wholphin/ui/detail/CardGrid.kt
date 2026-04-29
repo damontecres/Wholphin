@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -117,13 +118,16 @@ fun <T : CardGridItem> CardGrid(
     spacing: Dp = 16.dp,
     bringIntoViewSpec: BringIntoViewSpec = LocalBringIntoViewSpec.current,
 ) {
-    val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
+    val startPosition =
+        remember(initialPosition, pager.size) {
+            initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
+        }
 
-    val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 2f, behindFraction = 0.5f)
     var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
+    val currentFocusedIndex by rememberUpdatedState(focusedIndex)
     val gridState =
         rememberLazyGridState(
-            cacheWindow = fractionCacheWindow,
+            cacheWindow = LazyLayoutCacheWindow(aheadFraction = 2f, behindFraction = 0.5f),
             initialFirstVisibleItemIndex = focusedIndex,
         )
     val scope = rememberCoroutineScope()
@@ -132,13 +136,16 @@ fun <T : CardGridItem> CardGrid(
     var previouslyFocusedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     var alphabetFocus by remember { mutableStateOf(false) }
-    val focusOn = { index: Int ->
-        if (DEBUG) Timber.v("focusOn: focusedIndex=$focusedIndex, index=$index")
-        if (index != focusedIndex) {
-            previouslyFocusedIndex = focusedIndex
+    val focusOn =
+        remember {
+            { index: Int ->
+                if (DEBUG) Timber.v("focusOn: focusedIndex=$currentFocusedIndex, index=$index")
+                if (index != currentFocusedIndex) {
+                    previouslyFocusedIndex = focusedIndex
+                }
+                focusedIndex = index
+            }
         }
-        focusedIndex = index
-    }
 
     // Wait for a recomposition to focus
     val alphabetFocusRequester = remember { FocusRequester() }
@@ -177,27 +184,33 @@ fun <T : CardGridItem> CardGrid(
             }
         }
 
-    val jump = { jump: Int ->
-        scope.launch(ExceptionHandler()) {
-            val newPosition =
-                (gridState.firstVisibleItemIndex + jump).coerceIn(0..<pager.size)
-            if (DEBUG) Timber.d("newPosition=$newPosition")
-            focusOn(newPosition)
-            gridState.scrollToItem(newPosition, 0)
-        }
-    }
-    val jumpToTop = {
-        scope.launch(ExceptionHandler()) {
-            if (focusedIndex < (columns * 6)) {
-                // If close, animate the scroll
-                gridState.animateScrollToItem(0, 0)
-            } else {
-                gridState.scrollToItem(0, 0)
+    val jump =
+        remember {
+            { jump: Int ->
+                scope.launch(ExceptionHandler()) {
+                    val newPosition =
+                        (gridState.firstVisibleItemIndex + jump).coerceIn(0..<pager.size)
+                    if (DEBUG) Timber.d("newPosition=$newPosition")
+                    focusOn(newPosition)
+                    gridState.scrollToItem(newPosition, 0)
+                }
             }
-            focusOn(0)
-            zeroFocus.tryRequestFocus()
         }
-    }
+    val jumpToTop =
+        remember {
+            {
+                scope.launch(ExceptionHandler()) {
+                    if (currentFocusedIndex < (columns * 6)) {
+                        // If close, animate the scroll
+                        gridState.animateScrollToItem(0, 0)
+                    } else {
+                        gridState.scrollToItem(0, 0)
+                    }
+                    focusOn(0)
+                    zeroFocus.tryRequestFocus()
+                }
+            }
+        }
 
     val jumpToLetter: (Char) -> Unit =
         remember {
@@ -296,7 +309,7 @@ fun <T : CardGridItem> CardGrid(
                 )
             }
             val density = LocalDensity.current
-            var cardWidthPx by remember { mutableIntStateOf(0) }
+            var cardWidthPx by rememberSaveable { mutableIntStateOf(0) }
 
             Box(
                 modifier = Modifier.weight(1f),
@@ -314,10 +327,6 @@ fun <T : CardGridItem> CardGrid(
                                 .focusGroup()
                                 .focusRestorer(firstFocus)
                                 .focusProperties {
-                                    onExit = {
-                                        // Leaving the grid, so "forget" the position
-//                                focusedIndex = -1
-                                    }
                                     onEnter = {
                                         if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
                                             focusedIndex = startPosition
@@ -337,7 +346,7 @@ fun <T : CardGridItem> CardGrid(
                             val details =
                                 remember(index, item) {
                                     val mod =
-                                        if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
+                                        if ((index == currentFocusedIndex) or (currentFocusedIndex < 0 && index == 0)) {
                                             if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
                                             Modifier
                                                 .focusRequester(firstFocus)
