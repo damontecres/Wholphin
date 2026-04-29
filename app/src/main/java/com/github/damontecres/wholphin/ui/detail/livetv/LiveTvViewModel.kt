@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -187,15 +188,17 @@ class LiveTvViewModel
                 }
             }
 
-        private suspend fun fetchProgramsWithLoading(
+        private suspend fun refreshPrograms(
             channels: List<TvChannel>,
             range: IntRange,
         ) {
-            _state.update { it.copy(loading = LoadingState.Loading) }
+            _state.update { it.copy(refreshing = true) }
             val guideStart = _state.value.guideTimes.first()
             try {
                 fetchPrograms(guideStart, channels, range)
-                _state.update { it.copy(loading = LoadingState.Success) }
+                _state.update { it.copy(refreshing = false) }
+            } catch (_: CancellationException) {
+                // no-op
             } catch (ex: Exception) {
                 Timber.e(ex, "Error fetching programs")
                 _state.update { it.copy(loading = LoadingState.Error(ex)) }
@@ -449,7 +452,7 @@ class LiveTvViewModel
                         api.liveTvApi.cancelTimer(timerId)
                     }
                     state.value.let {
-                        fetchProgramsWithLoading(it.channels, it.programs.range)
+                        refreshPrograms(it.channels, it.programs.range)
                     }
                 }
             }
@@ -490,7 +493,7 @@ class LiveTvViewModel
                     api.liveTvApi.createTimer(payload)
                 }
                 state.value.let {
-                    fetchProgramsWithLoading(it.channels, it.programs.range)
+                    refreshPrograms(it.channels, it.programs.range)
                 }
             }
         }
@@ -539,7 +542,7 @@ class LiveTvViewModel
                 focusLoadingJob?.cancel()
                 focusLoadingJob =
                     viewModelScope.launchIO {
-                        fetchProgramsWithLoading(channels, newFetchRange)
+                        refreshPrograms(channels, newFetchRange)
                     }
             }
         }
@@ -560,6 +563,7 @@ fun hoursBetween(
 
 data class LiveTvState(
     val loading: LoadingState = LoadingState.Pending,
+    val refreshing: Boolean = false,
     val guideTimes: List<LocalDateTime> = emptyList(),
     val channels: List<TvChannel> = emptyList(),
     val channelProgramCount: Map<UUID, Int> = emptyMap(),

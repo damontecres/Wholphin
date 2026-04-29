@@ -68,7 +68,6 @@ import kotlin.math.abs
 
 @Composable
 fun TvGuideGrid(
-    requestFocusAfterLoading: Boolean,
     onRowPosition: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
@@ -101,10 +100,8 @@ fun TvGuideGrid(
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
             val focusRequester = remember { FocusRequester() }
             val buttonFocusRequester = remember { FocusRequester() }
-            if (requestFocusAfterLoading) {
-                LaunchedEffect(Unit) {
-                    focusRequester.tryRequestFocus()
-                }
+            LaunchedEffect(Unit) {
+                focusRequester.tryRequestFocus()
             }
             var focusedPosition by rememberPosition(0, 0)
             val focusedProgram =
@@ -154,7 +151,7 @@ fun TvGuideGrid(
                     }
                     TvGuideGridContent(
                         preferences = tvPrefs,
-                        loading = state is LoadingState.Loading,
+                        refreshing = state.refreshing,
                         channels = state.channels,
                         programs = state.programs,
                         channelProgramCount = state.channelProgramCount,
@@ -265,7 +262,7 @@ val tvGuideDimensions =
 @Composable
 fun TvGuideGridContent(
     preferences: LiveTvPreferences,
-    loading: Boolean,
+    refreshing: Boolean,
     channels: List<TvChannel>,
     programs: FetchedPrograms,
     channelProgramCount: Map<UUID, Int>,
@@ -489,7 +486,7 @@ fun TvGuideGridContent(
                 )
             }
         }
-        if (loading) {
+        if (refreshing) {
             CircularProgress(
                 Modifier
                     .background(
