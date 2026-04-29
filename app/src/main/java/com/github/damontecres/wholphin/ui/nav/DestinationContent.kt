@@ -76,9 +76,25 @@ fun DestinationContent(
             HomeSettingsPage(preferences, modifier)
         }
 
-        is Destination.PlaybackList,
-        is Destination.Playback,
-        -> {
+        is Destination.Playback -> {
+            val backend =
+                destination.backend ?: preferences.appPreferences.playbackPreferences.playerBackend
+            if (backend == PlayerBackend.EXTERNAL_PLAYER) {
+                PlayExternalPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            } else {
+                PlaybackPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            }
+        }
+
+        is Destination.PlaybackList -> {
             if (preferences.appPreferences.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER) {
                 PlayExternalPage(
                     preferences = preferences,
