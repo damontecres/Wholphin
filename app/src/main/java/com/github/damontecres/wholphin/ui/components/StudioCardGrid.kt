@@ -205,7 +205,7 @@ fun StudioCardGrid(
                     },
                     columns = columns,
                     spacing = spacing,
-                    cardContent = { item: Studio?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
+                    cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                         StudioCard(
                             studio = item,
                             onClick = onClick,

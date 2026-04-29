@@ -309,7 +309,7 @@ fun GenreCardGrid(
                     },
                     columns = columns,
                     spacing = spacing,
-                    cardContent = { item: Genre?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
+                    cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                         GenreCard(
                             genre = item,
                             onClick = onClick,

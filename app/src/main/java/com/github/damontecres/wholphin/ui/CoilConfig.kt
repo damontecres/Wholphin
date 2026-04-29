@@ -38,8 +38,8 @@ fun CoilConfig(
             }
         },
     okHttpClient = okHttpClient,
-    debugLogging = false,
-    enableCache = true,
+    debugLogging = debugLogging,
+    enableCache = enableCache,
 )
 
 /**

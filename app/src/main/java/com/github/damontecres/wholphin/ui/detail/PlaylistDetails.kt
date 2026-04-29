@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -781,6 +782,9 @@ fun PlaylistItem(
     isQueued: Boolean = false,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
+    val imageWidth = 160.dp
+    val density = LocalDensity.current
+    val imageWidthPx = remember(imageWidth) { with(density) { imageWidth.roundToPx() } }
     ListItem(
         selected = false,
         onClick = onClick,
@@ -843,8 +847,9 @@ fun PlaylistItem(
                         unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
                         watchedPercent = 0.0,
                         numberOfVersions = item?.data?.mediaSourceCount ?: 0,
-                        modifier = Modifier.width(160.dp),
+                        modifier = Modifier.width(imageWidth),
                         useFallbackText = false,
+                        fillWidth = imageWidthPx,
                     )
                 }
             }

@@ -51,7 +51,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -62,10 +63,8 @@ import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.FontAwesome
-import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isBackwardButton
 import com.github.damontecres.wholphin.ui.playback.isForwardButton
@@ -76,6 +75,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import kotlin.math.ceil
 
 private const val DEBUG = false
 
@@ -84,6 +84,15 @@ interface CardGridItem {
     val playable: Boolean
     val sortName: String
 }
+
+data class GridItemDetails<T : CardGridItem>(
+    val item: T?,
+    val index: Int,
+    val onClick: () -> Unit,
+    val onLongClick: () -> Unit,
+    val widthPx: Int,
+    val mod: Modifier,
+)
 
 /**
  * Shows a vertical grid of [CardGridItem]s
@@ -102,27 +111,14 @@ fun <T : CardGridItem> CardGrid(
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    cardContent: @Composable (
-        item: T?,
-        onClick: () -> Unit,
-        onLongClick: () -> Unit,
-        mod: Modifier,
-    ) -> Unit = { item, onClick, onLongClick, mod ->
-        GridCard(
-            item = item as BaseItem?,
-            onClick = onClick,
-            onLongClick = onLongClick,
-            imageContentScale = ContentScale.FillBounds,
-            modifier = mod,
-        )
-    },
+    cardContent: @Composable (GridItemDetails<T>) -> Unit,
     columns: Int = 6,
     spacing: Dp = 16.dp,
     bringIntoViewSpec: BringIntoViewSpec = LocalBringIntoViewSpec.current,
 ) {
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
 
-    val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 0.5f)
+    val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 2f, behindFraction = 0.5f)
     var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
     val gridState =
         rememberLazyGridState(
@@ -298,6 +294,9 @@ fun <T : CardGridItem> CardGrid(
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
             }
+            val density = LocalDensity.current
+            var cardWidthPx by remember { mutableIntStateOf(0) }
+
             Box(
                 modifier = Modifier.weight(1f),
             ) {
@@ -323,48 +322,64 @@ fun <T : CardGridItem> CardGrid(
                                             focusedIndex = startPosition
                                         }
                                     }
+                                }.onGloballyPositioned {
+                                    val width = it.size.width
+                                    val spacingPx = with(density) { spacing.toPx() }
+                                    val cardWidth =
+                                        ceil((width - (spacingPx * (columns - 1))) / columns)
+                                    cardWidthPx = cardWidth.toInt()
+                                    Timber.v("cardWidthPx=%s", cardWidthPx)
                                 },
                     ) {
                         items(pager.size) { index ->
-                            val mod =
-                                if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
-                                    if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
-                                    Modifier
-                                        .focusRequester(firstFocus)
-                                        .focusRequester(gridFocusRequester)
-                                        .focusRequester(alphabetFocusRequester)
-                                } else {
-                                    Modifier
-                                }
                             val item = pager[index]
-                            cardContent(
-                                item,
-                                {
-                                    if (item != null) {
-                                        focusedIndex = index
-                                        onClickItem.invoke(index, item)
-                                    }
-                                },
-                                { if (item != null) onLongClickItem.invoke(index, item) },
-                                mod
-                                    .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
-                                    .onFocusChanged { focusState ->
-                                        if (DEBUG) {
-                                            Timber.v(
-                                                "$index isFocused=${focusState.isFocused}",
-                                            )
+                            val details =
+                                remember(index, item) {
+                                    val mod =
+                                        if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
+                                            if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
+                                            Modifier
+                                                .focusRequester(firstFocus)
+                                                .focusRequester(gridFocusRequester)
+                                                .focusRequester(alphabetFocusRequester)
+                                        } else {
+                                            Modifier
                                         }
-                                        if (focusState.isFocused) {
-                                            // Focused, so set that up
-                                            focusOn(index)
-                                            positionCallback?.invoke(columns, index)
-                                        } else if (focusedIndex == index) {
-//                                        savedFocusedIndex = index
-//                                        // Was focused on this, so mark unfocused
-//                                        focusedIndex = -1
-                                        }
-                                    },
-                            )
+                                    GridItemDetails(
+                                        item = item,
+                                        index = index,
+                                        onClick = {
+                                            if (item != null) {
+                                                focusedIndex = index
+                                                onClickItem.invoke(index, item)
+                                            }
+                                        },
+                                        onLongClick = {
+                                            if (item != null) {
+                                                onLongClickItem.invoke(index, item)
+                                            }
+                                        },
+                                        widthPx = cardWidthPx,
+                                        mod =
+                                            mod
+                                                .ifElse(
+                                                    index == 0,
+                                                    Modifier.focusRequester(zeroFocus),
+                                                ).onFocusChanged { focusState ->
+                                                    if (DEBUG) {
+                                                        Timber.v(
+                                                            "$index isFocused=${focusState.isFocused}",
+                                                        )
+                                                    }
+                                                    if (focusState.isFocused) {
+                                                        // Focused, so set that up
+                                                        focusOn(index)
+                                                        positionCallback?.invoke(columns, index)
+                                                    }
+                                                },
+                                    )
+                                }
+                            cardContent.invoke(details)
                         }
                     }
                     if (pager.isEmpty()) {

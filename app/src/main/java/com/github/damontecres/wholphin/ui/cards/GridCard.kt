@@ -47,6 +47,8 @@ fun GridCard(
     imageContentScale: ContentScale = ContentScale.Fit,
     imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     showTitle: Boolean = true,
+    fillWidth: Int? = null,
+    fillHeight: Int? = null,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -95,6 +97,8 @@ fun GridCard(
                 numberOfVersions = dto?.mediaSourceCount ?: 0,
                 useFallbackText = false,
                 contentScale = imageContentScale,
+                fillWidth = fillWidth,
+                fillHeight = fillHeight,
                 modifier =
                     Modifier
                         .fillMaxWidth()
