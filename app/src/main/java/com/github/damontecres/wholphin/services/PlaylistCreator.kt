@@ -7,12 +7,14 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistInfo
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
@@ -22,6 +24,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -248,14 +251,14 @@ class PlaylistCreator
                 -> {
                     val list =
                         buildList {
-                            add(BaseItem(item, false))
+                            add(PlaylistItem.Media(BaseItem(item, false)))
 
                             if (item.partCount.gt(1)) {
                                 api.videosApi
                                     .getAdditionalPart(item.id)
                                     .content.items
                                     .map {
-                                        BaseItem(it, false)
+                                        PlaylistItem.Media(BaseItem(it, false))
                                     }.let(::addAll)
                             }
                         }
@@ -275,19 +278,17 @@ class PlaylistCreator
                 }
             }
 
-        private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<BaseItem> =
+        private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<PlaylistItem> =
             buildList {
-                this@convertAndAddParts
-                    .filter { it.locationType != LocationType.VIRTUAL }
-                    .forEach { ep ->
-                        add(BaseItem(ep, useSeriesForPrimary))
-                        if (ep.partCount.gt(1)) {
-                            val parts =
-                                api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
-                                    BaseItem(part, useSeriesForPrimary)
-                                }
-                            addAll(parts)
-                        }
+                this@convertAndAddParts.forEach { ep ->
+                    add(PlaylistItem.Media(BaseItem(ep, useSeriesForPrimary)))
+                    if (ep.partCount.gt(1)) {
+                        val parts =
+                            api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
+                                PlaylistItem.Media(BaseItem(part, useSeriesForPrimary))
+                            }
+                        addAll(parts)
+                    }
                 }
             }
 

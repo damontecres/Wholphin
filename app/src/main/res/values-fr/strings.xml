@@ -289,16 +289,14 @@
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
-    <string name="combine_continue_next"><![CDATA[Combiner "Continuer à regarder" & "À suivre"]]></string>
-    <string name="download_and_update"><![CDATA[Télécharger & Mettre à jour]]></string>
-    <string name="search_and_download"><![CDATA[Rechercher & Télécharger]]></string>
+    <string name="combine_continue_next"><![CDATA[Combiner Continuer à regarder &amp; À suivre]]></string>
+    <string name="download_and_update"><![CDATA[Télécharger &amp; Mettre à jour]]></string>
+    <string name="search_and_download"><![CDATA[Rechercher &amp; Télécharger]]></string>
     <string name="tv_dvr_schedule">Calendrier du DVR</string>
     <string name="aired_episode_order">Trié par date de diffusion</string>
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
-        <item quantity="one">Featurettes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
@@ -323,7 +321,7 @@
     <string name="spacing">Espacement</string>
     <string name="aspect_ratio">Format d\'image</string>
     <string name="show_details">Afficher les détails</string>
-    <string name="cast_and_crew">Distribution et équipe</string>
+    <string name="cast_and_crew"><![CDATA[Distribution et équipe]]></string>
     <string name="guest_stars">Invités spéciaux</string>
     <string name="edge_size">Taille des bordures</string>
     <string name="refresh_rate_switching">Changement de fréquence de rafraîchissement</string>
@@ -545,12 +543,12 @@
     <string name="image_type_thumb">Miniature</string>
     <string name="backdrop_style_dynamic">Image avec couleur dynamique</string>
     <string name="backdrop_style_image">Image uniquement</string>
-    <string name="enter_url_api_key">Saisir l\'URL et la clé API</string>
+    <string name="enter_url_api_key"><![CDATA[Saisir l\'URL et la clé API]]></string>
     <string name="api_key">Clé API</string>
     <string name="seerr_login">Se connecter au serveur Seerr</string>
     <string name="seerr_jellyfin_user">Utilisateur Jellyfin</string>
     <string name="seerr_local_user">Utilisateur local</string>
-    <string name="search_and_download_subtitles">Rechercher et télécharger des sous-titres</string>
+    <string name="search_and_download_subtitles"><![CDATA[Rechercher et télécharger des sous-titres]]></string>
     <string name="no_subtitles_found">Aucun sous-titre distant n\'a été trouvé</string>
     <string name="series_continueing">En cours</string>
     <string name="in_app_screensaver">Utiliser l\'économiseur d\'écran intégré</string>
@@ -600,4 +598,16 @@
     <string name="view_more">Voir plus</string>
     <string name="discover_tv">Parcourir les séries</string>
     <string name="discover_movies">Parcourir les films</string>
+    <string name="remove_continue_watching">Supprimer de continuer à regarder</string>
+    <string name="remove_next_up">Supprimer la série de la liste suivante</string>
+    <string name="view_removed_next_up">Voir les séries supprimées de la liste suivante</string>
+    <string name="studios_in">Studios en %1$s</string>
+    <string name="next_up_never">Jamais</string>
+    <string name="last_played">Dernière lecture</string>
+    <string name="ass_subtitle_mode_libass">Lecture directe avec libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Lecture directe avec ExoPlayer intégré</string>
+    <string name="ass_subtitle_mode_transcode">Incruster / Transcoder sur le serveur</string>
+    <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
+    <string name="external_player">Lecteur externe</string>
+    <string name="system_default">Paramètres système par défaut</string>
 </resources>
