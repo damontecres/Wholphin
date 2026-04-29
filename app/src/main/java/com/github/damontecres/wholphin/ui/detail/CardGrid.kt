@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,7 +52,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onLayoutRectChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -322,8 +323,8 @@ fun <T : CardGridItem> CardGrid(
                                             focusedIndex = startPosition
                                         }
                                     }
-                                }.onGloballyPositioned {
-                                    val width = it.size.width
+                                }.onLayoutRectChanged(0, 0) {
+                                    val width = it.width
                                     val spacingPx = with(density) { spacing.toPx() }
                                     val cardWidth =
                                         ceil((width - (spacingPx * (columns - 1))) / columns)
@@ -444,10 +445,20 @@ fun <T : CardGridItem> CardGrid(
                     // Add end padding to push away from edge
                     letterClicked = jumpToLetter,
                 )
+            } else {
+                // Spacer ensures card sizes do not change if the alphabet buttons are not shown
+                Spacer(
+                    Modifier
+                        .padding(start = 16.dp)
+                        .width(letterHorizontalPadding * 2 + letterButtonSize),
+                )
             }
         }
     }
 }
+
+private val letterHorizontalPadding = 2.dp
+private val letterButtonSize = 14.dp
 
 @Composable
 fun JumpButtons(
@@ -515,7 +526,7 @@ fun AlphabetButtons(
     var alphabetPickerFocused by remember { mutableStateOf(false) }
 
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp),
+        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = letterHorizontalPadding),
         verticalArrangement = Arrangement.spacedBy(1.1.dp),
         state = listState,
         modifier =
@@ -549,14 +560,14 @@ fun AlphabetButtons(
             Box(
                 modifier =
                     Modifier
-                        .size(14.dp)
+                        .size(letterButtonSize)
                         .clip(CircleShape)
                         .alpha(itemAlpha),
             ) {
                 Button(
                     modifier =
                         Modifier
-                            .size(14.dp)
+                            .size(letterButtonSize)
                             .focusRequester(focusRequesters[index]),
                     contentPadding = PaddingValues(0.dp), // No padding to maximize text space
                     interactionSource = interactionSource,
