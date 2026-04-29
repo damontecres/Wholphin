@@ -32,7 +32,7 @@
     <string name="record_program">Zapisz program</string>
     <string name="skip">Pomiń</string>
     <string name="sort_by_date_added">Data dodania</string>
-    <string name="sort_by_date_episode_added">Data Dodania Odcinka</string>
+    <string name="sort_by_date_episode_added">Data dodania odcinka</string>
     <string name="tv_shows">Seriale</string>
     <string name="tv_season">Sezon</string>
     <string name="tv_seasons">Sezony</string>
@@ -41,7 +41,7 @@
     <string name="suggestions">Propozycje</string>
     <string name="switch_servers">Zmień serwer</string>
     <string name="switch_user">Zmień</string>
-    <string name="top_unwatched">Najlepiej Oceniane Nieobejrzane</string>
+    <string name="top_unwatched">Najlepiej oceniane nieobejrzane</string>
     <string name="trailer">Zwiastun</string>
     <plurals name="trailers">
         <item quantity="one">Zwiastun</item>
@@ -50,14 +50,14 @@
         <item quantity="other">Zwiastunów</item>
     </plurals>
     <string name="submit">Potwierdź</string>
-    <string name="sort_by_date_released">Data Wydania</string>
+    <string name="sort_by_date_released">Data wydania</string>
     <string name="sort_by_name">Nazwa</string>
     <string name="sort_by_random">Losowy</string>
     <string name="tv_guide">Przewodnik TV</string>
-    <string name="studios">Studia Filmowe</string>
+    <string name="studios">Studia filmowe</string>
     <string name="shuffle">Losuj</string>
     <string name="show_next_up_when">Pokaż następne</string>
-    <string name="recently_released">Ostatnio Wydane</string>
+    <string name="recently_released">Ostatnio wydane</string>
     <string name="play">Odtwórz</string>
     <string name="playback_debug_info">Pokaż informacje debugowania odtwarzacza</string>
     <string name="outro">Napisy końcowe</string>
@@ -73,7 +73,7 @@
     <string name="recently_recorded">Ostatnio Nagrane</string>
     <string name="recently_added_in">Ostatnio dodane w %1$s</string>
     <string name="resume">Wznów</string>
-    <string name="sort_by_date_played">Data Odtworzenia</string>
+    <string name="sort_by_date_played">Data odtworzenia</string>
     <string name="add_favorite">Ulubione</string>
     <string name="cancel">Anuluj</string>
     <string name="chapters">Rozdziały</string>
@@ -92,7 +92,7 @@
     <string name="favorites">Ulubione</string>
     <string name="delete">Usuń</string>
     <string name="default_track">Domyślna ścieżka</string>
-    <string name="discovered_servers">Odnalezione Serwery</string>
+    <string name="discovered_servers">Odnalezione serwery</string>
     <string name="enter_server_url">Wprowadż IP serwera lub adres URL</string>
     <string name="file_size">Rozmiar</string>
     <string name="forced_track">Wymuszona ścieżka</string>
@@ -100,8 +100,8 @@
     <string name="name">Nazwa</string>
     <string name="remove_favorite">Usuń z ulubionych</string>
     <string name="restart">Uruchom ponownie</string>
-    <string name="select_server">Wybierz Serwer</string>
-    <string name="select_user">Wybierz Użytkownika</string>
+    <string name="select_server">Wybierz serwer</string>
+    <string name="select_user">Wybierz użytkownika</string>
     <string name="show_debug_info">Pokaż infomacje o debugowaniu</string>
     <string name="username_or_password">Użyj nazwy użytkownika/hasła</string>
     <string name="login">Login</string>
@@ -115,7 +115,7 @@
     <string name="remove">Usuń</string>
     <string name="live_tv">Telewizja</string>
     <string name="play_with_transcoding">Odtwórz z transkodowaniem</string>
-    <string name="show_clock">Pokaż Zegar</string>
+    <string name="show_clock">Pokaż zegar</string>
     <string name="font">Czcionka</string>
     <string name="background">Tło</string>
     <string name="one_click_pause">Pauza jednym kliknięciem</string>
@@ -142,7 +142,7 @@
     <string name="add_to_playlist">Dodaj do playlisty</string>
     <string name="version">Wersja</string>
     <string name="updates">Aktualizacje</string>
-    <string name="cancel_recording">Anuluj Nagrywanie</string>
+    <string name="cancel_recording">Anuluj nagrywanie</string>
     <string name="view_options">Zobacz opcje</string>
     <string name="confirm_pin">Potwierdź PIN</string>
     <string name="incorrect">Nieprawidłowe</string>
@@ -158,8 +158,8 @@
     <string name="disable_if_crash">Wyłącz jeśli doświadczasz problemów</string>
     <string name="mpv_options">Opcje MPV</string>
     <string name="exoplayer_options">Opcje odtwarzacza ExoPlayer</string>
-    <string name="skip_segment_unknown">Pomiń Segment</string>
-    <string name="skip_segment_commercial">Pomiń Reklamy</string>
+    <string name="skip_segment_unknown">Pomiń segmenty</string>
+    <string name="skip_segment_commercial">Pomiń reklamy</string>
     <string name="skip_segment_intro">Pomiń czołówkę</string>
     <string name="skip_segment_outro">Pomiń napisy końcowe</string>
     <string name="sign_in_auto">Loguj automatycznie</string>
@@ -178,7 +178,7 @@
     <string name="send_crash_reports">Wyślij raport o błędach</string>
     <string name="update_available">Dostępna aktualizacja</string>
     <string name="mpv_hardware_decoding">MPV: używaj dekodowania sprzętowego</string>
-    <string name="filter">Filtr</string>
+    <string name="filter">Filtruj</string>
     <string name="italic_font">Czcionka kursywy</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Za kulisami</item>
@@ -195,14 +195,14 @@
     <string name="edge_size">Rozmiar ramki</string>
     <string name="about">O Wholphin</string>
     <string name="active_recordings">Nagrania w toku</string>
-    <string name="born">Data Urodzenia</string>
-    <string name="cancel_series_recording">Anuluj Nagrywanie Serialu</string>
+    <string name="born">Data urodzenia</string>
+    <string name="cancel_series_recording">Anuluj nagrywanie serialu</string>
     <string name="collection">Kolekcja</string>
     <string name="collections">Kolekcje</string>
     <string name="commercial">Reklama</string>
     <string name="decimal_seconds">%.2f sekundy</string>
     <string name="disabled">Nieaktywne</string>
-    <string name="download_and_update"><![CDATA[Download & Update]]></string>
+    <string name="download_and_update"><![CDATA[Pobierz i zaktualizuj]]></string>
     <string name="directed_by">Wyreżyserowane przez %1$s</string>
     <string name="enabled">Aktywne</string>
     <string name="error_loading_collection">Błąd podczas ładowania kolekcji %1$s</string>
@@ -215,7 +215,7 @@
         <item quantity="other">%d godzin</item>
     </plurals>
     <string name="image_type">Typ obrazu</string>
-    <string name="cast_and_crew"><![CDATA[Obsada]]></string>
+    <string name="cast_and_crew"><![CDATA[Obsada i ekipa]]></string>
     <string name="global_content_scale">Domyślne skalowanie</string>
     <string name="direct_play_ass">Używaj libass do napisów ASS</string>
     <string name="direct_play_pgs">Odtwarzaj bezpośrednio napisy PGS</string>
@@ -262,11 +262,11 @@
     <string name="font_opacity">Przezroczystość czcionki</string>
     <string name="update_url_summary">Adres URL do sprawdzenia aktualizacji</string>
     <string name="people">Obsada</string>
-    <string name="none">Żaden</string>
+    <string name="none">Brak</string>
     <string name="unknown">Nieznany</string>
     <string name="years_old">%1$d lat temu</string>
     <string name="success">Powodzenie</string>
-    <string name="official_rating">Ocena Rodzicielska</string>
+    <string name="official_rating">Ocena rodzicielska</string>
     <string name="extras">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Inne</item>
@@ -386,8 +386,8 @@
     <string name="content_scale_fit">Dopasuj</string>
     <string name="content_scale_crop">Przytnij</string>
     <string name="content_scale_fill">Wypełnij</string>
-    <string name="content_scale_fill_width">Szerokość ramki</string>
-    <string name="content_scale_fill_height">Wysokość ramki</string>
+    <string name="content_scale_fill_width">Pełna szerokość</string>
+    <string name="content_scale_fill_height">Pełna wysokość</string>
     <string name="display_preset_default">Domyślny Wholphin</string>
     <string name="display_preset_compact">Kompaktowy Wholphin</string>
     <string name="display_preset_series_thumb">Miniatury seriali</string>
@@ -425,7 +425,7 @@
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>
     <string name="aspect_ratios_square">Kwadrat (1:1)</string>
-    <string name="image_type_primary">Główne</string>
+    <string name="image_type_primary">Plakat</string>
     <string name="image_type_thumb">Miniatura</string>
     <string name="backdrop_style_dynamic">Zdjęcie z dynamicznym kolorem</string>
     <string name="backdrop_style_image">Tylko zdjęcie</string>
@@ -474,10 +474,10 @@
     <string name="voice_error_start_failed">Nie udało się uruchomić rozpoznawania głosu</string>
     <string name="voice_error_timeout">Przekroczono limit czasu rozpoznawania głosu</string>
     <plurals name="theme_songs">
-        <item quantity="one">Piosenki tematyczne</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Piosenka tematyczne</item>
+        <item quantity="few">Piosenki tematyczne</item>
+        <item quantity="many">Piosenek tematycznych</item>
+        <item quantity="other">Piosenek tematycznych</item>
     </plurals>
     <string name="nav_drawer_switch_on_focus">Przełącz fokus na szufladę nawigacyjną</string>
     <string name="playback_overrides">Nadpisywanie odtwarzania</string>
