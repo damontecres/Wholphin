@@ -580,4 +580,6 @@
     <string name="skip_behavior_summary">用於片頭、片尾等段落</string>
     <string name="show_more">顯示更多 (%1$s 筆)</string>
     <string name="cinema_mode">影院模式</string>
+    <string name="play_with">播放方式</string>
+    <string name="transcoding">轉碼</string>
 </resources>
