@@ -252,7 +252,7 @@
     <string name="skip_commercials_behavior">Reclame</string>
     <string name="skip_forward_preference">Vooruitspoelen</string>
     <string name="skip_intro_behavior">Intro\'s</string>
-    <string name="skip_outro_behavior">Afftitelingen</string>
+    <string name="skip_outro_behavior">Aftitelingen</string>
     <string name="skip_previews_behavior">Voorvertoningen</string>
     <string name="skip_recap_behavior">Samenvattingen</string>
     <string name="update_available">Update beschikbaar</string>
@@ -540,4 +540,8 @@
     <string name="discover_tv">Series ontdekken</string>
     <string name="discover_movies">Films ontdekken</string>
     <string name="view_removed_next_up">Uit Volgende verwijderd bekijken</string>
+    <string name="skip_behavior">Overslaan</string>
+    <string name="skip_behavior_summary">Voor intro\'s, aftiteling, etc</string>
+    <string name="ass_subtitle_playback">SSA/ASS ondertiteling tonen</string>
+    <string name="ass_subtitle_mode_libass">Direct play met libass</string>
 </resources>
