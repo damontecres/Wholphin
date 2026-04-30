@@ -580,4 +580,6 @@
     <string name="skip_behavior">跳过行为</string>
     <string name="skip_behavior_summary">适用于片头、片尾等</string>
     <string name="cinema_mode">影院模式</string>
+    <string name="play_with">播放方式</string>
+    <string name="transcoding">转码</string>
 </resources>
