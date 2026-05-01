@@ -598,4 +598,6 @@
     <string name="skip_behavior">\"Überspringen\" Verhalten</string>
     <string name="skip_behavior_summary">Für Intros, Credits, etc</string>
     <string name="cinema_mode">Kinomodus</string>
+    <string name="play_with">Abspielen mit</string>
+    <string name="transcoding">Transkodieren</string>
 </resources>
