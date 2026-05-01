@@ -192,7 +192,6 @@ fun PinArrowRow(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall,
         )
-
     }
 }
 
