@@ -24,11 +24,9 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onLayoutRectChanged
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
@@ -63,20 +61,19 @@ fun ItemCardImage(
     imageType: ImageType = ImageType.PRIMARY,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    fillWidth: Int? = null,
+    fillHeight: Int? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
-    var size by remember { mutableStateOf(IntSize.Zero) }
     val imageUrl =
-        remember(size, item) {
-            if (size != IntSize.Zero && item != null) {
+        remember(item) {
+            item?.let {
                 imageUrlService.getItemImageUrl(
                     item,
                     imageType,
-                    fillWidth = size.width,
-                    fillHeight = size.height,
+                    fillWidth = fillWidth,
+                    fillHeight = fillHeight,
                 )
-            } else {
-                null
             }
         }
     ItemCardImage(
@@ -88,13 +85,7 @@ fun ItemCardImage(
         unwatchedCount = unwatchedCount,
         watchedPercent = watchedPercent,
         numberOfVersions = numberOfVersions,
-        modifier =
-            modifier.onLayoutRectChanged(
-                throttleMillis = 100,
-                debounceMillis = 25,
-            ) {
-                size = IntSize(width = it.width, height = it.height)
-            },
+        modifier = modifier,
         useFallbackText = useFallbackText,
         contentScale = contentScale,
     )

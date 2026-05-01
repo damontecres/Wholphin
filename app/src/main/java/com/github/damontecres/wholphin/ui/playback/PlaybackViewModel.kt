@@ -231,8 +231,11 @@ class PlaybackViewModel
         ) {
             val softwareDecoding =
                 !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
+            val requestBackend =
+                (destination as? Destination.Playback)?.backend
+                    ?: preferences.appPreferences.playbackPreferences.playerBackend
             val playerBackend =
-                when (preferences.appPreferences.playbackPreferences.playerBackend) {
+                when (requestBackend) {
                     PlayerBackend.UNRECOGNIZED,
                     PlayerBackend.EXO_PLAYER,
                     -> PlayerBackend.EXO_PLAYER

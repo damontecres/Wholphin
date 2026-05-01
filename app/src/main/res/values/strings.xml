@@ -772,6 +772,8 @@
     <string name="show_more">Show %1$s more</string>
     <string name="skip_behavior">Skip behavior</string>
     <string name="skip_behavior_summary">For intros, credits, etc</string>
+    <string name="play_with">Play with</string>
+    <string name="transcoding">Transcoding</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>

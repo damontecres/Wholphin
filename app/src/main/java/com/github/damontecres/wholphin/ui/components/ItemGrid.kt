@@ -133,11 +133,12 @@ fun ItemGrid(
                     showJumpButtons = false,
                     showLetterButtons = false,
                     spacing = 24.dp,
-                    cardContent = @Composable { item, onClick, onLongClick, mod ->
+                    cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                         GridCard(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
+                            fillWidth = widthPx,
                             modifier = mod,
                             imageAspectRatio = AspectRatios.WIDE, // TODO
                         )
