@@ -92,6 +92,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -135,6 +136,11 @@ class ArtistViewModel
 
         init {
             init()
+            viewModelScope.launchDefault {
+                mediaManagementService.collectCanDelete(state.map { it.artist }) { canDelete ->
+                    _state.update { it.copy(canDelete = canDelete) }
+                }
+            }
         }
 
         override fun init() {
@@ -269,6 +275,7 @@ data class ArtistState(
     val similar: List<BaseItem>,
     val loading: LoadingState,
     val musicVideos: List<BaseItem?>,
+    val canDelete: Boolean,
 ) {
     companion object {
         val EMPTY =
@@ -280,6 +287,7 @@ data class ArtistState(
                 emptyList(),
                 LoadingState.Pending,
                 emptyList(),
+                false,
             )
     }
 }
@@ -378,6 +386,7 @@ fun ArtistDetailsPage(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             MusicExpandableButtons(
+                                title = artist.title ?: "",
                                 actions =
                                     remember {
                                         MusicButtonActions(
@@ -406,9 +415,11 @@ fun ArtistDetailsPage(
                                                         actions = moreDialogActions,
                                                     )
                                             },
+                                            onConfirmDelete = { viewModel.deleteItem(artist) },
                                         )
                                     },
                                 favorite = artist.favorite,
+                                canDelete = state.canDelete,
                                 buttonOnFocusChanged = {
                                     if (it.isFocused) {
                                         position = RowColumn(HEADER_ROW, 0)

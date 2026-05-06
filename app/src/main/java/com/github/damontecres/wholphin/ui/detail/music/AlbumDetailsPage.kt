@@ -94,6 +94,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -136,6 +137,11 @@ class AlbumViewModel
 
         init {
             init()
+            viewModelScope.launchDefault {
+                mediaManagementService.collectCanDelete(state.map { it.album }) { canDelete ->
+                    _state.update { it.copy(canDelete = canDelete) }
+                }
+            }
         }
 
         override fun init() {
@@ -275,6 +281,7 @@ data class AlbumState(
     val similar: List<BaseItem>,
     val loading: LoadingState,
     val musicVideos: List<BaseItem?> = emptyList(),
+    val canDelete: Boolean = false,
 ) {
     companion object {
         val EMPTY = AlbumState(null, false, null, emptyList(), emptyList(), LoadingState.Pending)
@@ -389,6 +396,7 @@ fun AlbumDetailsPage(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             MusicExpandableButtons(
+                                title = album.title ?: "",
                                 actions =
                                     remember {
                                         MusicButtonActions(
@@ -415,9 +423,13 @@ fun AlbumDetailsPage(
                                                         actions = moreDialogActions,
                                                     )
                                             },
+                                            onConfirmDelete = {
+                                                viewModel.deleteItem(album)
+                                            },
                                         )
                                     },
                                 favorite = album.favorite,
+                                canDelete = state.canDelete,
                                 buttonOnFocusChanged = {
                                     if (it.isFocused) {
                                         position = RowColumn(HEADER_ROW, 0)

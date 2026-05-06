@@ -18,14 +18,17 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import kotlin.time.Duration
 
 @Composable
 fun MusicExpandableButtons(
+    title: String,
     actions: MusicButtonActions,
     favorite: Boolean,
+    canDelete: Boolean,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -75,6 +78,15 @@ fun MusicExpandableButtons(
                 modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
+        if (canDelete) {
+            item("delete") {
+                DeleteButton(
+                    title = title,
+                    onConfirmDelete = actions.onConfirmDelete,
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        }
         item("more") {
             ExpandablePlayButton(
                 title = R.string.more,
@@ -92,4 +104,5 @@ data class MusicButtonActions(
     val onClickInstantMix: () -> Unit,
     val onClickFavorite: () -> Unit,
     val onClickMore: () -> Unit,
+    val onConfirmDelete: () -> Unit,
 )
