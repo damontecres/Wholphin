@@ -298,21 +298,18 @@ class PlaybackViewModel
             this.forceTranscoding =
                 (destination as? Destination.Playback)?.forceTranscoding ?: false
             val positionMs: Long
-            val itemPlayback: ItemPlayback?
             val forceTranscoding: Boolean
 
             val itemId =
                 when (val d = destination) {
                     is Destination.Playback -> {
                         positionMs = d.positionMs
-                        itemPlayback = d.itemPlayback
                         forceTranscoding = d.forceTranscoding
                         d.itemId
                     }
 
                     is Destination.PlaybackList -> {
                         positionMs = 0
-                        itemPlayback = null
                         forceTranscoding = false
                         d.itemId
                     }
@@ -395,7 +392,6 @@ class PlaybackViewModel
                 play(
                     firstItem,
                     positionMs,
-                    itemPlayback,
                     forceTranscoding,
                 )
             if (!played) {
@@ -427,7 +423,6 @@ class PlaybackViewModel
         private suspend fun play(
             playlistItem: PlaylistItem,
             positionMs: Long,
-            itemPlayback: ItemPlayback? = null,
             forceTranscoding: Boolean = this.forceTranscoding,
         ): Boolean =
             withContext(Dispatchers.IO) {
@@ -463,19 +458,18 @@ class PlaybackViewModel
                 val base = item.data
 
                 // Use the provided playback parameters or else check if the database has some
-                val playbackConfig =
-                    itemPlayback
-                        ?: serverRepository.currentUser.value?.let { user ->
-                            itemPlaybackDao.getItem(user, base.id)?.let {
-                                Timber.v("Fetched itemPlayback from DB: %s", it)
-                                if (it.sourceId != null) {
-                                    it
-                                } else {
-                                    null
-                                }
+                val itemPlayback =
+                    serverRepository.currentUser.value?.let { user ->
+                        itemPlaybackDao.getItem(user, base.id)?.let {
+                            Timber.v("Fetched itemPlayback from DB: %s", it)
+                            if (it.sourceId != null) {
+                                it
+                            } else {
+                                null
                             }
                         }
-                val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
+                    }
+                val mediaSource = streamChoiceService.chooseSource(base, itemPlayback)
                 val plc = streamChoiceService.getPlaybackLanguageChoice(base)
 
                 if (mediaSource == null) {
@@ -531,7 +525,7 @@ class PlaybackViewModel
                         .chooseAudioStream(
                             source = mediaSource,
                             seriesId = base.seriesId,
-                            itemPlayback = playbackConfig,
+                            itemPlayback = itemPlayback,
                             plc = plc,
                             prefs = preferences,
                         )
@@ -543,7 +537,7 @@ class PlaybackViewModel
                             source = mediaSource,
                             audioStream = audioStream,
                             seriesId = base.seriesId,
-                            itemPlayback = playbackConfig,
+                            itemPlayback = itemPlayback,
                             plc = plc,
                             prefs = preferences,
                         )?.index
@@ -551,7 +545,7 @@ class PlaybackViewModel
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
                 val itemPlaybackToUse =
-                    playbackConfig ?: ItemPlayback(
+                    itemPlayback ?: ItemPlayback(
                         rowId = -1,
                         userId = -1,
                         itemId = base.id,
@@ -821,6 +815,7 @@ class PlaybackViewModel
                                                 subtitleIndex,
                                                 source,
                                             )
+                                        Timber.v("onTracksChanged: %s", result)
                                         if (result.bothSelected) {
                                             player.trackSelectionParameters =
                                                 result.trackSelectionParameters
