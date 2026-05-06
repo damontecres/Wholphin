@@ -627,5 +627,7 @@
     <string name="cinema_mode">Modo cinema</string>
     <string name="show_more">Mostrar mais %1$s</string>
     <string name="skip_behavior">Comportamento de pulo</string>
-    <string name="skip_behavior_summary">Para introduções, créditos, e etc.</string>
+    <string name="skip_behavior_summary">Para introduções, créditos, e etc</string>
+    <string name="play_with">Reproduzir com</string>
+    <string name="transcoding">Transcodificação</string>
 </resources>
