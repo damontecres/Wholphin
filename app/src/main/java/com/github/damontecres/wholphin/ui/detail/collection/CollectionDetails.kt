@@ -207,7 +207,10 @@ fun CollectionDetails(
                         }
                     },
                 canDelete =
-                    remember(state.collection) {
+                    remember(
+                        state.collection,
+                        preferences.appPreferences.interfacePreferences.enableMediaManagement,
+                    ) {
                         state.collection?.let {
                             viewModel.canDelete(it, preferences.appPreferences)
                         } ?: false
