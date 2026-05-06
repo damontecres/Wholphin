@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.ui.combinePair
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -66,6 +69,16 @@ class MediaManagementService
                 } else {
                     true
                 }
+        }
+
+        suspend fun collectCanDelete(
+            itemFlow: Flow<BaseItem?>,
+            update: (Boolean) -> Unit,
+        ) {
+            itemFlow.combinePair(userPreferencesService.flow).collectLatest { (item, prefs) ->
+                val canDelete = item?.let { canDelete(item, prefs.appPreferences) } ?: false
+                update.invoke(canDelete)
+            }
         }
 
         /**
