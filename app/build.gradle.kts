@@ -1,4 +1,6 @@
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.ProductFlavor
+import com.android.build.api.variant.FilterConfiguration
 import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
@@ -37,7 +39,15 @@ val gitDescribe =
         .standardOutput.asText
         .getOrElse("v0.0.0")
 
-android {
+kotlin {
+    compilerOptions {
+        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
+        jvmTarget = JvmTarget.JVM_11
+        javaParameters = true
+    }
+}
+
+configure<ApplicationExtension> {
     namespace = "com.github.damontecres.wholphin"
     compileSdk = 36
 
@@ -98,18 +108,6 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
         }
-
-        applicationVariants.all {
-            val variant = this
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
-                    val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    output.outputFileName = outputFileName
-                }
-        }
     }
     flavorDimensions += "version"
     productFlavors {
@@ -148,19 +146,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlin {
-        compilerOptions {
-            languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
-            jvmTarget = JvmTarget.JVM_11
-            javaParameters = true
-        }
-    }
+
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-    room {
-        schemaDirectory("$projectDir/schemas")
     }
 
     splits {
@@ -193,6 +182,26 @@ android {
     lint {
         disable.add("MissingTranslation")
     }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs
+            .map { it as com.android.build.api.variant.impl.VariantOutputImpl }
+            .forEach { output ->
+                val abi =
+                    output
+                        .getFilter(FilterConfiguration.FilterType.ABI)
+                        .let { if (it != null) "-${it.identifier}" else "" }
+                val outputFileName =
+                    "Wholphin-${variant.flavorName}-${variant.buildType}-${output.versionName.get()}-${output.versionCode.get()}$abi.apk"
+                output.outputFileName = outputFileName
+            }
+    }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 protobuf {
