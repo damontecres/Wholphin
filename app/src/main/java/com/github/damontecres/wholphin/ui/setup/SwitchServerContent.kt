@@ -20,8 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,11 +43,14 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.ifElse
@@ -60,16 +63,30 @@ fun SwitchServerContent(
     modifier: Modifier = Modifier,
     viewModel: SwitchServerViewModel = hiltViewModel(),
 ) {
-    val servers by viewModel.servers.observeAsState(listOf())
-    val serverStatus by viewModel.serverStatus.observeAsState(mapOf())
-
-    var showAddServer by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf<com.github.damontecres.wholphin.data.model.JellyfinServer?>(null) }
-
+    val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) {
         viewModel.init()
     }
 
+    when (val st = state.loading) {
+        is LoadingState.Error -> ErrorMessage(st, modifier)
+
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage(modifier)
+
+        LoadingState.Success -> SwitchServerContentInternal(state, viewModel, modifier)
+    }
+}
+
+@Composable
+private fun SwitchServerContentInternal(
+    state: SwitchServerState,
+    viewModel: SwitchServerViewModel,
+    modifier: Modifier = Modifier,
+) {
+    var showAddServer by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf<JellyfinServer?>(null) }
     Box(
         modifier = modifier.dimAndBlur(showAddServer || showDeleteDialog != null),
     ) {
@@ -108,7 +125,7 @@ fun SwitchServerContent(
             ) {
                 val focusRequester = remember { FocusRequester() }
                 val firstServerFocus = remember { FocusRequester() }
-                if (servers.isNotEmpty()) {
+                if (state.servers.isNotEmpty()) {
                     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                 }
                 LazyRow(
@@ -120,16 +137,15 @@ fun SwitchServerContent(
                             .focusRestorer(firstServerFocus)
                             .focusRequester(focusRequester),
                 ) {
-                    itemsIndexed(servers) { index, server ->
-                        val status = serverStatus[server.id] ?: ServerConnectionStatus.Pending
+                    itemsIndexed(state.servers) { index, server ->
                         ServerIconCard(
-                            server = server,
-                            connectionStatus = status,
+                            server = server.server,
+                            connectionStatus = server.status,
                             isCurrentServer = false, // TODO: Determine current server if needed
                             onClick = {
-                                when (status) {
+                                when (server.status) {
                                     is ServerConnectionStatus.Success -> {
-                                        viewModel.switchServer(server)
+                                        viewModel.switchServer(server.server)
                                     }
 
                                     ServerConnectionStatus.Pending -> {
@@ -137,15 +153,19 @@ fun SwitchServerContent(
                                     }
 
                                     is ServerConnectionStatus.Error -> {
-                                        viewModel.testServer(server)
+                                        viewModel.testServer(server.server)
                                     }
                                 }
                             },
                             onLongClick = {
-                                showDeleteDialog = server
+                                showDeleteDialog = server.server
                             },
                             allowDelete = true,
-                            modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstServerFocus)),
+                            modifier =
+                                Modifier.ifElse(
+                                    index == 0,
+                                    Modifier.focusRequester(firstServerFocus),
+                                ),
                         )
                     }
                     // Add Server card - always rightmost
@@ -207,13 +227,11 @@ fun SwitchServerContent(
                 }
             }
 
-            val discoveredServers by viewModel.discoveredServers.observeAsState(listOf())
-
             // Filter out duplicates within the discovered servers list (same URL appearing multiple times)
             val filteredDiscoveredServers =
-                remember(discoveredServers) {
+                remember(state.discoveredServers) {
                     val seenUrls = mutableSetOf<String>()
-                    discoveredServers.filter { server ->
+                    state.discoveredServers.filter { server ->
                         val normalizedUrl = server.url.lowercase().trim()
                         if (normalizedUrl in seenUrls) {
                             false // Duplicate, filter it out
@@ -258,7 +276,7 @@ fun SwitchServerContent(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
 
-                        if (filteredDiscoveredServers.isEmpty() && discoveredServers.isEmpty()) {
+                        if (filteredDiscoveredServers.isEmpty() && state.discoveredServers.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.searching),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -294,7 +312,9 @@ fun SwitchServerContent(
                                         selected = false,
                                         headlineContent = {
                                             Text(
-                                                text = server.name?.ifBlank { null } ?: server.url,
+                                                text =
+                                                    server.name?.ifBlank { null }
+                                                        ?: server.url,
                                                 style = MaterialTheme.typography.bodyLarge,
                                             )
                                         },
@@ -323,7 +343,7 @@ fun SwitchServerContent(
                         }
                     } else {
                         // Show enter server address form
-                        val state by viewModel.addServerState.observeAsState(LoadingState.Pending)
+                        val addServerState = state.addServerState
                         var url by remember { mutableStateOf("") }
                         val submit = {
                             viewModel.addServer(url)
@@ -357,7 +377,7 @@ fun SwitchServerContent(
                                     .focusRequester(textBoxFocusRequester)
                                     .fillMaxWidth(),
                         )
-                        when (val st = state) {
+                        when (val st = addServerState) {
                             is LoadingState.Error -> {
                                 Text(
                                     text =
