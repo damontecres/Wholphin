@@ -229,7 +229,14 @@ class SwitchUserViewModel
                         .getServer(server.id)
                         ?.users
                         .orEmpty()
-                val knownUserIds = knownUsers.map { it.id }
+                        .map {
+                            JellyfinUserAndImage(
+                                user = it,
+                                imageUrl = api.imageApi.getUserImageUrl(it.id),
+                                known = true,
+                            )
+                        }
+                val knownUserIds = knownUsers.map { it.user.id }
                 val publicUsers =
                     api.userApi
                         .getPublicUsers()
@@ -242,9 +249,15 @@ class SwitchUserViewModel
                                 accessToken = null,
                             )
                         }.filter { it.id !in knownUserIds }
+                        .map {
+                            JellyfinUserAndImage(
+                                user = it,
+                                imageUrl = api.imageApi.getUserImageUrl(it.id),
+                                known = false,
+                            )
+                        }
 
-                return@withContext (knownUsers + publicUsers)
-                    .map { JellyfinUserAndImage(it, api.imageApi.getUserImageUrl(it.id)) }
+                knownUsers + publicUsers
             }
 
         private fun setError(
@@ -263,6 +276,7 @@ class SwitchUserViewModel
 data class JellyfinUserAndImage(
     val user: JellyfinUser,
     val imageUrl: String?,
+    val known: Boolean,
 )
 
 data class SwitchUserState(
