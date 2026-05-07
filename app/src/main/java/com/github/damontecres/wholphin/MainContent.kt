@@ -85,7 +85,7 @@ fun MainContent(
 
                         is SetupDestination.UserList -> {
                             SwitchUserContent(
-                                currentServer = key.server,
+                                server = key.server,
                                 Modifier.fillMaxSize(),
                             )
                         }
