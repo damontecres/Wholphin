@@ -93,6 +93,7 @@ class ServerRepository
                     user.copy(
                         id = userDto.id,
                         name = userDto.name,
+                        lastUsedAt = System.currentTimeMillis(),
                     )
                 serverDao.addOrUpdateServer(updatedServer)
                 updatedUser = serverDao.addOrUpdateUser(updatedUser)
