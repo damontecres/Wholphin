@@ -15,12 +15,10 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.extensions.systemApi
@@ -134,9 +132,7 @@ class SwitchServerViewModel
                             version = result.systemInfo.version,
                         )
                     serverRepository.addAndChangeServer(updatedServer)
-                    withContext(Dispatchers.Main) {
-                        navigationManager.navigateTo(SetupDestination.UserList(updatedServer))
-                    }
+                    navigationManager.navigateTo(SetupDestination.UserList(updatedServer))
                 } else if (result is ServerConnectionStatus.Error) {
                     showToast(context, "Error connecting: $${result.message}")
                 }

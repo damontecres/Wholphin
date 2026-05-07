@@ -188,7 +188,7 @@ class BasicUiTests {
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        switchServerViewModel.addServerState.value.let {
+        switchServerViewModel.state.value.addServerState.let {
             if (it is LoadingState.Error) throw it.exception ?: Exception(it.message)
         }
 
@@ -253,7 +253,7 @@ class BasicUiTests {
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        Assert.assertTrue(switchServerViewModel.addServerState.value is LoadingState.Error)
+        Assert.assertTrue(switchServerViewModel.state.value.addServerState is LoadingState.Error)
 
         composeTestRule.onNodeWithText("Server returned invalid response").assertIsDisplayed()
     }

@@ -172,6 +172,11 @@ private fun SwitchServerContentInternal(
                     item {
                         AddServerCard(
                             onClick = { showAddServer = true },
+                            modifier =
+                                Modifier.ifElse(
+                                    state.servers.isEmpty(),
+                                    Modifier.focusRequester(firstServerFocus),
+                                ),
                         )
                     }
                 }
@@ -391,10 +396,10 @@ private fun SwitchServerContentInternal(
                         }
                         TextButton(
                             onClick = { submit.invoke() },
-                            enabled = url.isNotNullOrBlank() && state == LoadingState.Pending,
+                            enabled = url.isNotNullOrBlank() && addServerState == LoadingState.Pending,
                             modifier = Modifier,
                         ) {
-                            if (state == LoadingState.Loading) {
+                            if (addServerState == LoadingState.Loading) {
                                 CircularProgress(Modifier.size(32.dp))
                             } else {
                                 Text(text = stringResource(R.string.submit))
