@@ -439,6 +439,9 @@ fun PlaybackPageContent(
             val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
             val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
             var cueCount by remember { mutableIntStateOf(0) }
+            
+            val subtitleVisible = skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface
+            
             AndroidView(
                 factory = { context ->
                     SubtitleView(context).apply {
@@ -465,13 +468,12 @@ fun PlaybackPageContent(
                     }
                 },
                 update = { subtitleView ->
-                    val subtitleVisible =
-                        skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface
-                    subtitleView.visibility = if (subtitleVisible) View.VISIBLE else View.INVISIBLE
+                    
+                    subtitleView.visibility = View.VISIBLE 
+                    subtitleView.setCues(cues)
 
                     subtitleView.setCues(cues)
                     if (cues.size > cueCount) {
-                        // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(subtitleView)
                         cueCount = cues.size
@@ -480,7 +482,8 @@ fun PlaybackPageContent(
                         (it as? AssSubtitleView)?.apply {
                             val resized =
                                 layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
-                            if (resized) {
+                                
+                            if (resized && playerSurfaceSize.width > 0 && playerSurfaceSize.height > 0) {
                                 Timber.v("Resizing AssSubtitleView: %s", playerSurfaceSize)
                                 layoutParams =
                                     FrameLayout
@@ -501,7 +504,13 @@ fun PlaybackPageContent(
                         .align(Alignment.TopCenter)
                         .background(Color.Transparent)
                         .graphicsLayer {
-                            alpha = if (isImageSubtitles) subtitleImageOpacity else 1f
+                            alpha = if (!subtitleVisible) {
+                                0.01f 
+                            } else if (isImageSubtitles) {
+                                subtitleImageOpacity 
+                            } else {
+                                1f
+                            }
                         },
             )
         }
