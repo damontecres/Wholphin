@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -184,7 +185,11 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
@@ -249,7 +254,11 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 

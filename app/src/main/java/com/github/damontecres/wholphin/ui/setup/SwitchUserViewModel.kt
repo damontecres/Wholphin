@@ -18,8 +18,10 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -116,19 +118,23 @@ class SwitchUserViewModel
             }
         }
 
-        fun switchUser(user: JellyfinUser) {
-            viewModelScope.launchIO {
+        fun trySwitchUser(user: JellyfinUser): Deferred<String?> =
+            viewModelScope.async(Dispatchers.IO) {
                 try {
                     val current = serverRepository.changeUser(server, user)
-                    if (current != null) {
-                        setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                    setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                    null
+                } catch (ex: InvalidStatusException) {
+                    if (ex.status == 401) {
+                        "Credentials expired, please login in again"
+                    } else {
+                        ex.localizedMessage
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error switching user")
-                    setError("Error switching user", ex)
+                    ex.localizedMessage
                 }
             }
-        }
 
         fun login(
             server: JellyfinServer,
@@ -144,9 +150,7 @@ class SwitchUserViewModel
                         password = password,
                     )
                     val current = serverRepository.changeUser(server.url, authenticationResult)
-                    if (current != null) {
-                        setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
-                    }
+                    setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
                     if (ex is InvalidStatusException && ex.status == 401) {
@@ -184,9 +188,7 @@ class SwitchUserViewModel
                             QuickConnectDto(secret = quickConnectStatus.secret),
                         )
                         val current = serverRepository.changeUser(server.url, authenticationResult)
-                        if (current != null) {
-                            setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
-                        }
+                        setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                     } catch (_: CancellationException) {
                         // no-op, user may have canceled
                     } catch (ex: Exception) {

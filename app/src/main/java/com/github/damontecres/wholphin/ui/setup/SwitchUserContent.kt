@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,9 +49,9 @@ import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.launch
 
 @Composable
 fun SwitchUserContent(
@@ -62,6 +63,7 @@ fun SwitchUserContent(
         ),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.init()
     }
@@ -70,7 +72,12 @@ fun SwitchUserContent(
 
     val currentUser by viewModel.serverRepository.currentUser.observeAsState()
     var showAddUser by remember { mutableStateOf(false) }
-    var username by remember { mutableStateOf("") }
+    var username by remember(server) { mutableStateOf("") }
+
+    fun showAddUserDialog(user: JellyfinUser?) {
+        username = user?.name ?: ""
+        showAddUser = true
+    }
 
     LaunchedEffect(state.switchUserState) {
         if (!showAddUser) {
@@ -130,15 +137,22 @@ fun SwitchUserContent(
                         currentUser = currentUser,
                         onSwitchUser = { user ->
                             if (user.accessToken == null) {
-                                username = user.name ?: user.id.toServerString()
-                                showAddUser = true
+                                showAddUserDialog(user)
                             } else if (user.hasPin) {
                                 switchUserWithPin = user
                             } else {
-                                viewModel.switchUser(user)
+                                val result = viewModel.trySwitchUser(user)
+                                scope.launch {
+                                    result.await()?.let {
+                                        Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                                        showAddUserDialog(user)
+                                    }
+                                }
                             }
                         },
-                        onAddUser = { showAddUser = true },
+                        onAddUser = {
+                            showAddUserDialog(null)
+                        },
                         onRemoveUser = { user ->
                             viewModel.removeUser(user)
                         },
@@ -236,7 +250,13 @@ fun SwitchUserContent(
                     }
                     val focusRequester = remember { FocusRequester() }
                     val passwordFocusRequester = remember { FocusRequester() }
-                    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                    LaunchedEffect(Unit) {
+                        if (username.isBlank()) {
+                            focusRequester.tryRequestFocus()
+                        } else {
+                            passwordFocusRequester.tryRequestFocus()
+                        }
+                    }
                     Text(
                         text = "Enter username/password to login to ${server.name ?: server.url}",
                         style = MaterialTheme.typography.titleMedium,
@@ -250,7 +270,7 @@ fun SwitchUserContent(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     ) {
                         Text(
-                            text = "Username",
+                            text = stringResource(R.string.username),
                             modifier = Modifier.padding(end = 8.dp),
                         )
                         EditTextBox(
@@ -281,7 +301,7 @@ fun SwitchUserContent(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     ) {
                         Text(
-                            text = "Password",
+                            text = stringResource(R.string.password),
                             modifier = Modifier.padding(end = 8.dp),
                         )
                         LaunchedEffect(password) {
@@ -332,11 +352,20 @@ fun SwitchUserContent(
         PinEntryDialog(
             onDismissRequest = { switchUserWithPin = null },
             onClickServerAuth = {
-                showAddUser = true
+                showAddUserDialog(user)
                 switchUserWithPin = null
             },
             onTextChange = {
-                if (it == user.pin) viewModel.switchUser(user)
+                if (it == user.pin) {
+                    val result = viewModel.trySwitchUser(user)
+                    scope.launch {
+                        result.await()?.let {
+                            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                            showAddUserDialog(user)
+                            switchUserWithPin = null
+                        }
+                    }
+                }
             },
         )
     }
