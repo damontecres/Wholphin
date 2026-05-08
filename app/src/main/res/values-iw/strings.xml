@@ -299,4 +299,19 @@
     <string name="disable_if_crash">יש לבטל במקרה של קריסות</string>
     <string name="mpv_options">אפשרויות MPV</string>
     <string name="exoplayer_options">אפשרויות ExoPlayer</string>
+    <string name="skip_segment_unknown">דלג על המקטע</string>
+    <string name="skip_segment_commercial">דלג על הפרסומות</string>
+    <string name="skip_segment_preview">דלג על התצוגה המקדימה</string>
+    <string name="skip_segment_recap">דלג על התקציר</string>
+    <string name="skip_segment_outro">דלג על כתוביות הסיום</string>
+    <string name="skip_segment_intro">דלג על הפתיח</string>
+    <string name="played">נוגן</string>
+    <string name="filter">סנן</string>
+    <string name="year">שנה</string>
+    <string name="decade">עשור</string>
+    <string name="remove">הסר</string>
+    <string name="dolby_vision"></string>
+    <string name="mpv_use_gpu_next">MPV: השתמש ב־gpu-next</string>
+    <string name="mpv_conf">ערוך mpv.conf</string>
+    <string name="discard_change">לבטל את השינויים?</string>
 </resources>
