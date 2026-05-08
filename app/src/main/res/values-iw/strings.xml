@@ -203,4 +203,100 @@
     <string name="sort_by_random">אקראי</string>
     <string name="studios">אולפנים</string>
     <string name="submit">שלח</string>
+    <string name="voice_starting">מאתחל</string>
+    <string name="subtitle_download_too_long">ההורדה לוקחת זמן רב, ייתכן שיצטרכו לנגן מחדש</string>
+    <string name="suggestions">הצעות</string>
+    <string name="switch_user">החלף</string>
+    <string name="top_unwatched">עם הדירוג הגבוה ביותר שלא נצפו</string>
+    <string name="tv_dvr_schedule">תזמון הקלטות</string>
+    <string name="tv_guide">מדריך</string>
+    <string name="unknown">לא ידוע</string>
+    <string name="updates">עדכונים</string>
+    <string name="version">גרסה</string>
+    <string name="video_scale">קנה מידה של הוידאו</string>
+    <string name="video">וידאו</string>
+    <string name="watch_live">צפה בשידור חי</string>
+    <string name="years_old">בגיל %1$d</string>
+    <string name="play_with_transcoding">נגן עם המרת קידוד</string>
+    <string name="media_information">פרטי המדיה</string>
+    <string name="show_clock">הצג שעון</string>
+    <string name="aired_episode_order">סדר שידור הפרקים</string>
+    <string name="create_playlist">צור פלייליסט חדש</string>
+    <string name="add_to_playlist">הוסף לפלייליסט</string>
+    <string name="one_click_pause">השהה בלחיצה אחת</string>
+    <string name="one_click_pause_summary_on">לחץ על מרכז כפתור הניווט להשהייה/ניגון</string>
+    <string name="italic_font">גופן נטוי</string>
+    <string name="font">גופן</string>
+    <string name="background">רקע</string>
+    <string name="success">הצלחה</string>
+    <string name="official_rating">דירוג הורים</string>
+    <string name="runtime_sort">אורך</string>
+    <string name="extras">תכנים נוספים</string>
+    <plurals name="other_extras">
+        <item quantity="one">אחר</item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="one">מאחורי הקלעים</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="one">שירי נושא</item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">סרטוני נושא</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="one">קליפים</item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">סצינות שנמחקו</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">ראיונות</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="one">סצינות</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">דגימות</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">סרטונים מיוחדים</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">קטעים קצרים</item>
+    </plurals>
+    <string name="favorite_items">מועדפים: %s</string>
+    <string name="ac3_supported">המכשיר תומך ב-AC3/Dolby Digital</string>
+    <string name="advanced_settings">הגדרות מתקדמות</string>
+    <string name="advanced_ui">ממשק מתקדם</string>
+    <string name="app_theme">ערכת נושא של האפליקציה</string>
+    <string name="auto_check_for_updates">בדוק עדכונים אוטומטית</string>
+    <string name="auto_play_next_delay">זמן השהייה לפני הבא בתור</string>
+    <string name="auto_play_next">נגן אוטומטית את הבא בתור</string>
+    <string name="check_for_updates">בדוק עדכונים</string>
+    <string name="combine_continue_next_summary">תקף לסדרות בלבד</string>
+    <string name="combine_continue_next"><![CDATA[מזג המשך צפייה והבא בתור]]></string>
+    <string name="direct_play_ass">השתמש ב-libass עבור כתוביות ASS</string>
+    <string name="direct_play_pgs">ניגון ישיר של כתוביות PGS</string>
+    <string name="downmix_stereo">המר לסטריאו תמיד</string>
+    <string name="ffmpeg_extension_pref">השתמש במפענח FFmpeg</string>
+    <string name="global_content_scale">קנה מידה ברירת המחדל של התוכן</string>
+    <string name="install_update">התקן עדכון</string>
+    <string name="installed_version">גרסה מותקנת</string>
+    <string name="max_homepage_items">מספר פריטים מקסימלי בשורות מסך הבית</string>
+    <string name="nav_drawer_pins_summary">בחר בפריטים ברירת המחדל להצגה, אחרים יוסתרו</string>
+    <string name="nav_drawer_pins">התאמה אישית של תפריט הניווט</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">לחץ כדי לעבור בין דפים</string>
+    <string name="nav_drawer_switch_on_focus">עבור לדף הנבחר בתפריט הניווט אוטומטית</string>
+    <string name="pass_out_protection">הגנת שינה</string>
+    <string name="play_theme_music">נגן מוזיקת נושא</string>
+    <string name="playback_overrides">עקיפת הגדרות ניגון</string>
+    <string name="rewatch_next_up">אפשר צפייה חוזרת ב-\"הבא בתור\"</string>
+    <string name="reset">איפוס</string>
+    <string name="bold_font">גופן מודגש</string>
+    <string name="player_backend">מנוע ניגון</string>
+    <string name="mpv_hardware_decoding">MPV: השתמש בפענוח חומרתי</string>
+    <string name="disable_if_crash">יש לבטל במקרה של קריסות</string>
+    <string name="mpv_options">אפשרויות MPV</string>
+    <string name="exoplayer_options">אפשרויות ExoPlayer</string>
 </resources>
