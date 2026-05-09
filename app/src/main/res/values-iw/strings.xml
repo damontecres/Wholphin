@@ -310,7 +310,6 @@
     <string name="year">שנה</string>
     <string name="decade">עשור</string>
     <string name="remove">הסר</string>
-    <string name="dolby_vision"></string>
     <string name="mpv_use_gpu_next">MPV: השתמש ב־gpu-next</string>
     <string name="mpv_conf">ערוך mpv.conf</string>
     <string name="discard_change">לבטל את השינויים?</string>
