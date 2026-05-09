@@ -59,13 +59,31 @@ class SuggestionService
                     val cachedSuggestions = cache.get(userId, parentId, itemKind)
                     if (cachedSuggestions == null) {
                         val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, itemKind)
+                        Timber.d(
+                            "No cached suggestions for parent=%s kind=%s; scheduling one-time suggestions refresh",
+                            parentId,
+                            itemKind,
+                        )
                         enqueueSuggestionsWork(user, parentId, itemKind, workName)
                         workManager
                             .getWorkInfosForUniqueWorkFlow(workName)
                             .map { workInfos ->
                                 cache.get(userId, parentId, itemKind)?.let {
-                                    return@map it.toResource(itemKind)
+                                    Timber.d(
+                                        "Loaded cached suggestions after work update for parent=%s kind=%s count=%d",
+                                        parentId,
+                                        itemKind,
+                                        it.ids.size,
+                                    )
+                                    return@map it.toResource(parentId, itemKind)
                                 }
+                                val states = workInfos.map { it.state }.distinct()
+                                Timber.v(
+                                    "Observed suggestions work states for parent=%s kind=%s states=%s",
+                                    parentId,
+                                    itemKind,
+                                    states,
+                                )
                                 val isActive =
                                     workInfos.any {
                                         it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED
@@ -73,8 +91,14 @@ class SuggestionService
                                 if (isActive) SuggestionsResource.Loading else SuggestionsResource.Empty
                             }
                     } else {
+                        Timber.v(
+                            "Using cached suggestions for parent=%s kind=%s count=%d",
+                            parentId,
+                            itemKind,
+                            cachedSuggestions.ids.size,
+                        )
                         flow {
-                            emit(cachedSuggestions.toResource(itemKind))
+                            emit(cachedSuggestions.toResource(parentId, itemKind))
                         }
                     }
                 }
@@ -109,10 +133,21 @@ class SuggestionService
                 ExistingWorkPolicy.KEEP,
                 request,
             )
+            Timber.d(
+                "Enqueued on-demand suggestions for parent=%s kind=%s",
+                parentId,
+                itemKind,
+            )
         }
 
-        private suspend fun CachedSuggestions.toResource(itemKind: BaseItemKind): SuggestionsResource {
-            if (ids.isEmpty()) return SuggestionsResource.Empty
+        private suspend fun CachedSuggestions.toResource(
+            parentId: UUID,
+            itemKind: BaseItemKind,
+        ): SuggestionsResource {
+            if (ids.isEmpty()) {
+                Timber.d("Cached suggestions are empty for parent=%s kind=%s", parentId, itemKind)
+                return SuggestionsResource.Empty
+            }
             return try {
                 SuggestionsResource.Success(fetchItemsByIds(ids, itemKind))
             } catch (e: CancellationException) {

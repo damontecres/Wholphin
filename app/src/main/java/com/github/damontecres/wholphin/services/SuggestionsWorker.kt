@@ -48,7 +48,6 @@ class SuggestionsWorker
         private val cache: SuggestionsCache,
     ) : CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
-            Timber.d("Start")
             val serverId = inputData.getString(PARAM_SERVER_ID)?.toUUIDOrNull() ?: return Result.failure()
             val userId = inputData.getString(PARAM_USER_ID)?.toUUIDOrNull() ?: return Result.failure()
             val requestedParentId = inputData.getString(PARAM_PARENT_ID)?.toUUIDOrNull()
@@ -56,8 +55,10 @@ class SuggestionsWorker
                 inputData
                     .getString(PARAM_ITEM_KIND)
                     ?.let { runCatching { BaseItemKind.fromName(it) }.getOrNull() }
+            val mode = if (requestedParentId == null && requestedItemKind == null) "periodic" else "on-demand"
+            Timber.d("Starting SuggestionsWorker mode=%s", mode)
             if ((requestedParentId == null) != (requestedItemKind == null)) {
-                Timber.w("Invalid on-demand suggestions input")
+                Timber.w("Invalid on-demand suggestions input parent=%s kind=%s", requestedParentId, requestedItemKind)
                 return Result.failure()
             }
 
@@ -82,7 +83,11 @@ class SuggestionsWorker
 
                 val context = Dispatchers.IO.limitedParallelism(2, "fetchSuggestions")
                 if (requestedParentId != null && requestedItemKind != null) {
-                    Timber.v("Fetching on-demand suggestions for view %s", requestedParentId)
+                    Timber.d(
+                        "Fetching on-demand suggestions for parent=%s kind=%s",
+                        requestedParentId,
+                        requestedItemKind,
+                    )
                     fetchAndCacheSuggestions(
                         context,
                         requestedParentId,
@@ -90,7 +95,11 @@ class SuggestionsWorker
                         requestedItemKind,
                         itemsPerRow,
                     )
-                    Timber.d("Completed on-demand suggestions")
+                    Timber.d(
+                        "Completed on-demand suggestions for parent=%s kind=%s",
+                        requestedParentId,
+                        requestedItemKind,
+                    )
                     return Result.success()
                 }
 
@@ -100,31 +109,42 @@ class SuggestionsWorker
                         .content.items
                         .orEmpty()
                 if (views.isEmpty()) {
+                    Timber.d("No user views found for periodic suggestions refresh")
                     return Result.success()
                 }
+                val supportedViews =
+                    views.mapNotNull { view ->
+                        getTypeForCollection(view.collectionType)?.let {
+                            SuggestionsView(view.id, it)
+                        }
+                    }
+                val skippedCount = views.size - supportedViews.size
+                Timber.d(
+                    "Refreshing periodic suggestions for %d supported views; skipped=%d",
+                    supportedViews.size,
+                    skippedCount,
+                )
                 val results =
                     supervisorScope {
-                        views
-                            .mapNotNull { view ->
-                                val itemKind =
-                                    getTypeForCollection(view.collectionType)
-                                        ?: return@mapNotNull null
+                        supportedViews
+                            .map { view ->
                                 async(Dispatchers.IO) {
                                     runCatching {
-                                        Timber.v("Fetching suggestions for view %s", view.id)
+                                        Timber.v("Fetching suggestions for parent=%s kind=%s", view.id, view.itemKind)
                                         fetchAndCacheSuggestions(
                                             context,
                                             view.id,
                                             userId,
-                                            itemKind,
+                                            view.itemKind,
                                             itemsPerRow,
                                         )
                                         ensureActive()
                                     }.onFailure { e ->
                                         Timber.e(
                                             e,
-                                            "Failed to fetch suggestions for view %s",
+                                            "Failed to fetch suggestions for parent=%s kind=%s",
                                             view.id,
+                                            view.itemKind,
                                         )
                                     }
                                 }
@@ -165,7 +185,12 @@ class SuggestionsWorker
             val newIds = suggestions.map { it.id }
             val cachedIds = cache.get(userId, parentId, itemKind)?.ids
             if (cachedIds == newIds) {
-                Timber.v("Suggestions unchanged for view %s, skipping cache write", parentId)
+                Timber.v(
+                    "Suggestions unchanged for parent=%s kind=%s count=%d; skipping cache write",
+                    parentId,
+                    itemKind,
+                    newIds.size,
+                )
                 return
             }
             cache.put(
@@ -174,6 +199,16 @@ class SuggestionsWorker
                 itemKind,
                 newIds,
             )
+            if (newIds.isEmpty()) {
+                Timber.d("Cached empty suggestions for parent=%s kind=%s", parentId, itemKind)
+            } else {
+                Timber.d(
+                    "Cached %d suggestions for parent=%s kind=%s",
+                    newIds.size,
+                    parentId,
+                    itemKind,
+                )
+            }
         }
 
         private suspend fun fetchSuggestions(
@@ -330,4 +365,9 @@ class SuggestionsWorker
                     else -> null
                 }
         }
+
+        private data class SuggestionsView(
+            val id: UUID,
+            val itemKind: BaseItemKind,
+        )
     }
