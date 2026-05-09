@@ -55,6 +55,8 @@ class SuggestionsWorkerTest {
     private fun createWorker(
         userId: UUID? = testUserId,
         serverId: UUID? = testServerId,
+        parentId: UUID? = null,
+        itemKind: BaseItemKind? = null,
     ): SuggestionsWorker {
         val inputData =
             Data
@@ -62,6 +64,8 @@ class SuggestionsWorkerTest {
                 .apply {
                     userId?.let { putString(SuggestionsWorker.PARAM_USER_ID, it.toString()) }
                     serverId?.let { putString(SuggestionsWorker.PARAM_SERVER_ID, it.toString()) }
+                    parentId?.let { putString(SuggestionsWorker.PARAM_PARENT_ID, it.toString()) }
+                    itemKind?.let { putString(SuggestionsWorker.PARAM_ITEM_KIND, it.serialName) }
                 }.build()
         every { mockWorkerParams.inputData } returns inputData
         return SuggestionsWorker(
@@ -91,6 +95,17 @@ class SuggestionsWorkerTest {
         }
 
     @Test
+    fun returns_failure_on_partial_onDemand_input() =
+        runTest {
+            listOf(
+                createWorker(parentId = UUID.randomUUID()),
+                createWorker(itemKind = BaseItemKind.MOVIE),
+            ).forEach { worker ->
+                assertEquals(ListenableWorker.Result.failure(), worker.doWork())
+            }
+        }
+
+    @Test
     fun restores_session_when_api_not_configured() =
         runTest {
             every { mockApi.baseUrl } returns null
@@ -109,6 +124,21 @@ class SuggestionsWorkerTest {
 
             coVerify { mockServerRepository.restoreSession(testServerId, testUserId) }
             assertEquals(ListenableWorker.Result.success(), result)
+        }
+
+    @Test
+    fun onDemand_work_caches_only_requested_library() =
+        runTest {
+            val parentId = UUID.randomUUID()
+            every { mockPreferences.data } returns flowOf(mockPrefs())
+            mockkObject(GetItemsRequestHandler)
+            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(emptyList())
+
+            val result = createWorker(parentId = parentId, itemKind = BaseItemKind.MOVIE).doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            coVerify(exactly = 0) { mockUserViewsApi.getUserViews(userId = any()) }
+            coVerify { mockCache.put(testUserId, parentId, BaseItemKind.MOVIE, emptyList()) }
         }
 
     @Test
@@ -134,6 +164,43 @@ class SuggestionsWorkerTest {
                 assertEquals(ListenableWorker.Result.success(), result)
                 coVerify { mockCache.put(testUserId, viewId, itemKind, any()) }
             }
+        }
+
+    @Test
+    fun caches_empty_suggestions_for_supported_types() =
+        runTest {
+            val viewId = UUID.randomUUID()
+            val view =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns viewId
+                    every { this@mockk.collectionType } returns CollectionType.MOVIES
+                }
+            every { mockPreferences.data } returns flowOf(mockPrefs())
+            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            mockkObject(GetItemsRequestHandler)
+            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(emptyList())
+
+            val result = createWorker().doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            coVerify { mockCache.put(testUserId, viewId, BaseItemKind.MOVIE, emptyList()) }
+        }
+
+    @Test
+    fun skips_unsupported_collection_types() =
+        runTest {
+            val view =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns UUID.randomUUID()
+                    every { this@mockk.collectionType } returns CollectionType.MUSIC
+                }
+            every { mockPreferences.data } returns flowOf(mockPrefs())
+            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+
+            val result = createWorker().doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            coVerify(exactly = 0) { mockCache.put(any(), any(), any(), any()) }
         }
 
     @Test
@@ -227,7 +294,12 @@ class SuggestionsWorkerTest {
         }
 }
 
-fun mockQueryResult(items: List<BaseItemDto> = emptyList()) =
-    mockk<org.jellyfin.sdk.api.client.Response<BaseItemDtoQueryResult>>(relaxed = true) {
-        every { content } returns mockk { every { this@mockk.items } returns items }
+fun mockQueryResult(items: List<BaseItemDto> = emptyList()): org.jellyfin.sdk.api.client.Response<BaseItemDtoQueryResult> {
+    val queryResult =
+        mockk<BaseItemDtoQueryResult> {
+            every { this@mockk.items } returns items
+        }
+    return mockk(relaxed = true) {
+        every { content } returns queryResult
     }
+}

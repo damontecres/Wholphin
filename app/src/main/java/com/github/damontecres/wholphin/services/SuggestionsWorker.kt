@@ -51,6 +51,15 @@ class SuggestionsWorker
             Timber.d("Start")
             val serverId = inputData.getString(PARAM_SERVER_ID)?.toUUIDOrNull() ?: return Result.failure()
             val userId = inputData.getString(PARAM_USER_ID)?.toUUIDOrNull() ?: return Result.failure()
+            val requestedParentId = inputData.getString(PARAM_PARENT_ID)?.toUUIDOrNull()
+            val requestedItemKind =
+                inputData
+                    .getString(PARAM_ITEM_KIND)
+                    ?.let { runCatching { BaseItemKind.fromName(it) }.getOrNull() }
+            if ((requestedParentId == null) != (requestedItemKind == null)) {
+                Timber.w("Invalid on-demand suggestions input")
+                return Result.failure()
+            }
 
             if (api.baseUrl.isNullOrBlank() || api.accessToken.isNullOrBlank()) {
                 var currentUser = serverRepository.current.value
@@ -71,6 +80,20 @@ class SuggestionsWorker
                         .takeIf { it > 0 }
                         ?: AppPreference.HomePageItems.defaultValue.toInt()
 
+                val context = Dispatchers.IO.limitedParallelism(2, "fetchSuggestions")
+                if (requestedParentId != null && requestedItemKind != null) {
+                    Timber.v("Fetching on-demand suggestions for view %s", requestedParentId)
+                    fetchAndCacheSuggestions(
+                        context,
+                        requestedParentId,
+                        userId,
+                        requestedItemKind,
+                        itemsPerRow,
+                    )
+                    Timber.d("Completed on-demand suggestions")
+                    return Result.success()
+                }
+
                 val views =
                     api.userViewsApi
                         .getUserViews(userId = userId)
@@ -81,7 +104,6 @@ class SuggestionsWorker
                 }
                 val results =
                     supervisorScope {
-                        val context = Dispatchers.IO.limitedParallelism(2, "fetchSuggestions")
                         views
                             .mapNotNull { view ->
                                 val itemKind =
@@ -90,27 +112,14 @@ class SuggestionsWorker
                                 async(Dispatchers.IO) {
                                     runCatching {
                                         Timber.v("Fetching suggestions for view %s", view.id)
-                                        val suggestions =
-                                            fetchSuggestions(
-                                                context,
-                                                view.id,
-                                                userId,
-                                                itemKind,
-                                                itemsPerRow,
-                                            )
-                                        ensureActive()
-                                        val newIds = suggestions.map { it.id }
-                                        val cachedIds = cache.get(userId, view.id, itemKind)?.ids
-                                        if (cachedIds == newIds) {
-                                            Timber.v("Suggestions unchanged for view %s, skipping cache write", view.id)
-                                            return@runCatching
-                                        }
-                                        cache.put(
-                                            userId,
+                                        fetchAndCacheSuggestions(
+                                            context,
                                             view.id,
+                                            userId,
                                             itemKind,
-                                            newIds,
+                                            itemsPerRow,
                                         )
+                                        ensureActive()
                                     }.onFailure { e ->
                                         Timber.e(
                                             e,
@@ -136,6 +145,35 @@ class SuggestionsWorker
                 Timber.e(e, "SuggestionsWorker failed")
                 return Result.failure()
             }
+        }
+
+        private suspend fun fetchAndCacheSuggestions(
+            coroutineContext: CoroutineContext,
+            parentId: UUID,
+            userId: UUID,
+            itemKind: BaseItemKind,
+            itemsPerRow: Int,
+        ) {
+            val suggestions =
+                fetchSuggestions(
+                    coroutineContext,
+                    parentId,
+                    userId,
+                    itemKind,
+                    itemsPerRow,
+                )
+            val newIds = suggestions.map { it.id }
+            val cachedIds = cache.get(userId, parentId, itemKind)?.ids
+            if (cachedIds == newIds) {
+                Timber.v("Suggestions unchanged for view %s, skipping cache write", parentId)
+                return
+            }
+            cache.put(
+                userId,
+                parentId,
+                itemKind,
+                newIds,
+            )
         }
 
         private suspend fun fetchSuggestions(
@@ -270,6 +308,20 @@ class SuggestionsWorker
             const val WORK_NAME = "com.github.damontecres.wholphin.services.SuggestionsWorker"
             const val PARAM_USER_ID = "userId"
             const val PARAM_SERVER_ID = "serverId"
+            const val PARAM_PARENT_ID = "parentId"
+            const val PARAM_ITEM_KIND = "itemKind"
+
+            fun getOnDemandWorkName(
+                userId: UUID,
+                parentId: UUID,
+                itemKind: BaseItemKind,
+            ): String = "$WORK_NAME.onDemand.$userId.$parentId.${itemKind.serialName}"
+
+            fun getOnDemandWorkTag(
+                userId: UUID,
+                parentId: UUID,
+                itemKind: BaseItemKind,
+            ): String = "suggestions:$userId:$parentId:${itemKind.serialName}"
 
             fun getTypeForCollection(collectionType: CollectionType?): BaseItemKind? =
                 when (collectionType) {
