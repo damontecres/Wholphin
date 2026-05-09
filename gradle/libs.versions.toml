@@ -45,7 +45,7 @@ kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
 openapi-generator = "7.22.0"
 runner = "1.7.0"
-wholphin-extensions = "0.1.2"
+wholphin-extensions = "0.2.0"
 
 [libraries]
 wholphin-extensions-mpv = { module = "com.github.damontecres.wholphin.mpv:wholphin-mpv", version.ref = "wholphin-extensions" }
