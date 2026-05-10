@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -23,9 +24,12 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.DisplayToggle
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.getTimeFormatter
 import com.github.damontecres.wholphin.ui.util.LocalClock
+import java.util.EnumSet
 import kotlin.time.Duration
 
 @Composable
@@ -35,13 +39,20 @@ fun QuickDetails(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
+    val enabled = LocalQuickDetailsPreferences.current.enabled
     val inlineContentMap = rememberQuickDetailsContentMap(textStyle)
     Row(modifier = modifier) {
         if (details != null) {
             QuickDetailsText(details.basic, Modifier, textStyle, inlineContentMap)
-            QuickDetailsText(details.officialRating, Modifier, textStyle, inlineContentMap)
-            QuickDetailsText(details.communityRating, Modifier, textStyle, inlineContentMap)
-            QuickDetailsText(details.criticRating, Modifier, textStyle, inlineContentMap)
+            if (DisplayToggle.OFFICIAL_RATING in enabled) {
+                QuickDetailsText(details.officialRating, Modifier, textStyle, inlineContentMap)
+            }
+            if (DisplayToggle.COMMUNITY_RATING in enabled) {
+                QuickDetailsText(details.communityRating, Modifier, textStyle, inlineContentMap)
+            }
+            if (DisplayToggle.CRITIC_RATING in enabled) {
+                QuickDetailsText(details.criticRating, Modifier, textStyle, inlineContentMap)
+            }
         }
         timeRemaining?.let { TimeRemaining(it, textStyle = textStyle) }
     }
@@ -140,3 +151,22 @@ fun TimeRemaining(
         modifier = modifier,
     )
 }
+
+data class QuickDetailsPreferences(
+    val enabled: EnumSet<DisplayToggle>,
+) {
+    constructor(prefs: AppPreferences) : this(
+        prefs.interfacePreferences.displayTogglesList.let {
+            if (it.isEmpty()) {
+                EnumSet.noneOf(DisplayToggle::class.java)
+            } else {
+                EnumSet.copyOf(it)
+            }
+        },
+    )
+}
+
+val LocalQuickDetailsPreferences =
+    staticCompositionLocalOf<QuickDetailsPreferences> {
+        QuickDetailsPreferences(EnumSet.allOf(DisplayToggle::class.java))
+    }
