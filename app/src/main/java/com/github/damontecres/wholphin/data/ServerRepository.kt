@@ -73,7 +73,7 @@ class ServerRepository
         suspend fun changeUser(
             server: JellyfinServer,
             user: JellyfinUser,
-        ): CurrentUser? =
+        ): CurrentUser =
             withContext(ioDispatcher) {
                 if (server.id != user.serverId) {
                     throw IllegalStateException("User is not part of the server")
@@ -104,15 +104,16 @@ class ServerRepository
                             currentUserId = updatedUser.id.toServerString()
                         }.build()
                 }
+                val currentUser = CurrentUser(updatedServer, updatedUser)
                 withContext(Dispatchers.Main) {
-                    _current.value = CurrentUser(updatedServer, updatedUser)
+                    _current.value = currentUser
                     _currentUserDto.value = userDto
                 }
                 getServerSharedPreferences(context).edit(true) {
                     putString(SERVER_URL_KEY, updatedServer.url)
                     putString(ACCESS_TOKEN_KEY, updatedUser.accessToken)
                 }
-                return@withContext _current.value
+                return@withContext currentUser
             }
 
         /**
