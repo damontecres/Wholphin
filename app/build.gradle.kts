@@ -391,7 +391,8 @@ dependencies {
         logger.info("Using prebuilt libMPV")
         implementation(libs.wholphin.extensions.mpv)
     } else {
-        logger.warn("libMPV was NOT found")
+        logger.warn("libMPV was NOT found, using stub library")
+        implementation(project(":wholphin-mpv-stub"))
     }
 
     testImplementation(libs.mockk.android)
