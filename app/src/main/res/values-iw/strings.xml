@@ -40,22 +40,22 @@
     <string name="home">דף הבית</string>
     <string name="favorites">מועדפים</string>
     <plurals name="movies">
-        <item quantity="one">סרטים</item>
-        <item quantity="two"/>
-        <item quantity="other"/>
+        <item quantity="one">סרט</item>
+        <item quantity="two">סרטים</item>
+        <item quantity="other">סרטים</item>
     </plurals>
     <plurals name="tv_shows">
-        <item quantity="one">סדרות</item>
-        <item quantity="two"/>
-        <item quantity="other"/>
+        <item quantity="one">סדרה</item>
+        <item quantity="two">סדרות</item>
+        <item quantity="other">סדרות</item>
     </plurals>
     <string name="tv_seasons">עונות</string>
     <string name="tv_season">עונה</string>
     <string name="trailer">טריילר</string>
     <plurals name="trailers">
-        <item quantity="one">טריילרים</item>
-        <item quantity="two"/>
-        <item quantity="other"/>
+        <item quantity="one">טריילר</item>
+        <item quantity="two">טריילרים</item>
+        <item quantity="other">טריילרים</item>
     </plurals>
     <string name="subtitle">כתובית</string>
     <string name="subtitles">כתוביות</string>
@@ -97,9 +97,9 @@
     <string name="outro">סיום</string>
     <string name="none">ללא</string>
     <plurals name="people">
-        <item quantity="one">אנשים</item>
-        <item quantity="two"/>
-        <item quantity="other"/>
+        <item quantity="one">איש</item>
+        <item quantity="two">אנשים</item>
+        <item quantity="other">אנשים</item>
     </plurals>
     <string name="play_from_here">נגן מכאן</string>
     <string name="play">נגן</string>
@@ -469,7 +469,7 @@
     <string name="suggestions_for">הצעות עבור %1$s</string>
     <string name="increase_all_cards_size">הגדלה של כל הכרטיסיות</string>
     <string name="decrease_all_cards_size">הקטנה של כל הכרטיסיות</string>
-    <string name="use_thumb_images">השתמש בתמונות ממוזערות</string>
+    <string name="use_thumb_images">השתמש בתמונות־ממוזערות</string>
     <string name="settings_saved">ההגדרות נשמרו</string>
     <string name="display_presets">תבניות תצוגה</string>
     <string name="display_presets_description">תבניות מוטמעות לעיצוב מהיר של כל השורות</string>
@@ -494,8 +494,8 @@
     <string name="content_scale_fill_height">מתיחה לגובה</string>
     <string name="display_preset_default">ברירת המחדל של Wholphin</string>
     <string name="display_preset_compact">Wholphin קומפקטי</string>
-    <string name="display_preset_series_thumb">תמונות ממוזערות של סדרה</string>
-    <string name="display_preset_episode_thumbnails">תמונות ממוזערות של פרק</string>
+    <string name="display_preset_series_thumb">תמונות־ממוזערות של סדרה</string>
+    <string name="display_preset_episode_thumbnails">תמונות־ממוזערות של פרק</string>
     <string name="bold_blue">כחול עז</string>
     <string name="skip_ignore">התעלם</string>
     <string name="skip_automatically">דלג אוטומטית</string>
