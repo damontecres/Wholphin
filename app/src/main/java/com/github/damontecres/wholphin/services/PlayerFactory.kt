@@ -106,11 +106,12 @@ class PlayerFactory
                                 .setExtensionRendererMode(rendererMode)
                         val mediaSourceFactory =
                             if (useLibAss) {
-                                val renderType = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                                    AssRenderType.OVERLAY_CANVAS
-                                } else {
-                                    AssRenderType.OVERLAY_OPEN_GL
-                                }
+                                val renderType = 
+                                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                                        AssRenderType.OVERLAY_CANVAS
+                                    } else {
+                                        AssRenderType.OVERLAY_OPEN_GL
+                                    }
                                 assHandler = AssHandler(renderType)
                                 val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)

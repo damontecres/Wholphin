@@ -468,10 +468,8 @@ fun PlaybackPageContent(
                     }
                 },
                 update = { subtitleView ->
-                    
+                        
                     subtitleView.visibility = View.VISIBLE 
-                    subtitleView.setCues(cues)
-
                     subtitleView.setCues(cues)
                     if (cues.size > cueCount) {
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
@@ -504,13 +502,14 @@ fun PlaybackPageContent(
                         .align(Alignment.TopCenter)
                         .background(Color.Transparent)
                         .graphicsLayer {
-                            alpha = if (!subtitleVisible) {
-                                0.01f 
-                            } else if (isImageSubtitles) {
-                                subtitleImageOpacity 
-                            } else {
-                                1f
-                            }
+                            alpha =
+                                if (!subtitleVisible) {
+                                    0.01f
+                                } else if (isImageSubtitles) {
+                                    subtitleImageOpacity
+                                } else {
+                                    1f
+                                }
                         },
             )
         }
