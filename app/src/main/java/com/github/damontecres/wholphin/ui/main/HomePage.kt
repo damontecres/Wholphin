@@ -39,7 +39,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -49,6 +48,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
@@ -479,7 +479,7 @@ fun HomePageHeader(
         subtitle = if (isEpisode) dto?.name else null,
         overview = dto?.overview,
         overviewTwoLines = isEpisode,
-        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
         showLogo = showLogo,
         logoImageUrl = rememberLogoUrl(item),
@@ -493,7 +493,7 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString?,
+    quickDetails: QuickDetailsData?,
     timeRemaining: Duration?,
     showLogo: Boolean,
     logoImageUrl: String?,
@@ -518,7 +518,7 @@ fun HomePageHeader(
             if (subtitle != null) {
                 EpisodeName(subtitle)
             }
-            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
+            QuickDetails(quickDetails, timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)

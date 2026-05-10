@@ -117,61 +117,71 @@ data class BaseItem(
                     null
                 },
             quickDetails =
-                buildAnnotatedString {
-                    val details =
-                        buildList {
-                            if (type == BaseItemKind.EPISODE) {
-                                data.seasonEpisode?.let(::add)
-                                data.premiereDate?.let { add(getDateFormatter().format(it)) }
-                            } else if (type == BaseItemKind.SERIES) {
-                                data.seriesProductionYears?.let(::add)
-                            } else if (type == BaseItemKind.PHOTO) {
-                                if (data.productionYear != null) {
-                                    add(data.productionYear!!.toString())
-                                } else if (data.premiereDate != null) {
-                                    add(data.premiereDate!!.toLocalDate().toString())
+                QuickDetailsData(
+                    basic =
+                        buildAnnotatedString {
+                            val details =
+                                buildList {
+                                    if (type == BaseItemKind.EPISODE) {
+                                        data.seasonEpisode?.let(::add)
+                                        data.premiereDate?.let { add(getDateFormatter().format(it)) }
+                                    } else if (type == BaseItemKind.SERIES) {
+                                        data.seriesProductionYears?.let(::add)
+                                    } else if (type == BaseItemKind.PHOTO) {
+                                        if (data.productionYear != null) {
+                                            add(data.productionYear!!.toString())
+                                        } else if (data.premiereDate != null) {
+                                            add(data.premiereDate!!.toLocalDate().toString())
+                                        }
+                                    } else if (type == BaseItemKind.BOX_SET) {
+                                        data.productionYear?.let { add(it.toString()) }
+                                        data.childCount?.let { add("$it items") }
+                                    } else {
+                                        data.productionYear?.let { add(it.toString()) }
+                                    }
+                                    data.runTimeTicks
+                                        ?.ticks
+                                        ?.roundMinutes
+                                        ?.let { add(it.toString()) }
+                                    data.timeRemaining
+                                        ?.roundMinutes
+                                        ?.let { add("$it left") }
                                 }
-                            } else if (type == BaseItemKind.BOX_SET) {
-                                data.productionYear?.let { add(it.toString()) }
-                                data.childCount?.let { add("$it items") }
-                            } else {
-                                data.productionYear?.let { add(it.toString()) }
+                            details.forEachIndexed { index, string ->
+                                append(string)
+                                if (index != details.lastIndex) {
+                                    dot()
+                                }
                             }
-                            data.runTimeTicks
-                                ?.ticks
-                                ?.roundMinutes
-                                ?.let { add(it.toString()) }
-                            data.timeRemaining
-                                ?.roundMinutes
-                                ?.let { add("$it left") }
-                        }
-                    details.forEachIndexed { index, string ->
-                        append(string)
-                        if (index != details.lastIndex) {
-                            dot()
-                        }
-                    }
-                    // TODO time remaining
-
-                    data.officialRating?.let {
-                        dot()
-                        append(it)
-                    }
-                    data.communityRating?.let {
-                        dot()
-                        append(String.format(Locale.getDefault(), "%.1f", it))
-                        appendInlineContent(id = "star")
-                    }
-                    data.criticRating?.let {
-                        dot()
-                        append("${it.toInt()}%")
-                        if (it >= 60f) {
-                            appendInlineContent(id = "fresh")
-                        } else {
-                            appendInlineContent(id = "rotten")
-                        }
-                    }
-                },
+                        },
+                    officialRating =
+                        data.officialRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append(it)
+                            }
+                        },
+                    communityRating =
+                        data.communityRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append(String.format(Locale.getDefault(), "%.1f", it))
+                                appendInlineContent(id = "star")
+                            }
+                        },
+                    criticRating =
+                        data.criticRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append("${it.toInt()}%")
+                                if (it >= 60f) {
+                                    appendInlineContent(id = "fresh")
+                                } else {
+                                    appendInlineContent(id = "rotten")
+                                }
+                            }
+                        },
+                ),
         )
 
     private fun dateAsIndex(): Int? =
@@ -254,7 +264,14 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 data class BaseItemUi(
     val episodeCornerText: String?,
     val episodeUnplayedCornerText: String?,
-    val quickDetails: AnnotatedString,
+    val quickDetails: QuickDetailsData,
+)
+
+data class QuickDetailsData(
+    val basic: AnnotatedString,
+    val officialRating: AnnotatedString? = null,
+    val criticRating: AnnotatedString? = null,
+    val communityRating: AnnotatedString? = null,
 )
 
 /**

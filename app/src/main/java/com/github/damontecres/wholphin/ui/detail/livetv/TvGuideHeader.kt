@@ -15,7 +15,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.StreamLabel
 
 @Composable
@@ -53,7 +53,7 @@ fun TvGuideHeader(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                program?.quickDetails?.let { QuickDetails(it, null) }
+                program?.quickDetails?.let { QuickDetailsText(it) }
                 if (program?.isRepeat == true) {
                     StreamLabel(stringResource(R.string.live_tv_repeat))
                 }
