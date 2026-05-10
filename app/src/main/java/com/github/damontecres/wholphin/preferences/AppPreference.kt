@@ -504,6 +504,24 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val DisplayTogglesPref =
+            AppMultiChoicePreference<AppPreferences, DisplayToggle>(
+                title = R.string.display_toggles_title,
+                summary = null,
+                defaultValue = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
+                allValues = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
+                displayValues = R.array.display_toggle_types,
+                getter = {
+                    it.interfacePreferences.displayTogglesList
+                },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences {
+                        clearDisplayToggles()
+                        addAllDisplayToggles(value)
+                    }
+                },
+            )
+
         val InstalledVersion =
             AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
@@ -1049,6 +1067,7 @@ val basicPreferences =
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
+                    AppPreference.DisplayTogglesPref,
                     AppPreference.ThemeColors,
                     AppPreference.ScreensaverSettings,
                 ),

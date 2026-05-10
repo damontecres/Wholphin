@@ -720,6 +720,12 @@
         <item>@string/photos</item>
     </string-array>
 
+    <string-array name="display_toggle_types">
+        <item>@string/official_rating</item>
+        <item>@string/critic_rating</item>
+        <item>@string/community_rating</item>
+    </string-array>
+
     <string name="search_for">Search %s</string>
 
     <string name="actor">Actor</string>
@@ -773,6 +779,7 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
+    <string name="display_toggles_title">Show ratings</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>
