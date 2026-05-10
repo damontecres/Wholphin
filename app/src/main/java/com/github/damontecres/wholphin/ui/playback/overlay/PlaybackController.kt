@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -225,10 +224,6 @@ fun Controller(
                 )
             }
         }
-        // TODO need to move these up a level?
-        val moreFocusRequester = remember { FocusRequester() }
-        val captionFocusRequester = remember { FocusRequester() }
-        val settingsFocusRequester = remember { FocusRequester() }
         PlaybackControls(
             modifier = Modifier.fillMaxWidth(),
             player = player,
@@ -248,9 +243,6 @@ fun Controller(
             skipBackOnResume = skipBackOnResume,
             currentSegment = currentSegment,
             onClickPlaybackDialogType = onClickPlaybackDialogType,
-            moreFocusRequester = moreFocusRequester,
-            captionFocusRequester = captionFocusRequester,
-            settingsFocusRequester = settingsFocusRequester,
         )
     }
 }
