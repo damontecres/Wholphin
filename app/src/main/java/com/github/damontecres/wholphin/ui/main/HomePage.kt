@@ -182,6 +182,7 @@ fun HomePage(
                                             overviewDialog = ItemDetailsDialogInfo(it)
                                         },
                                         onClearChosenStreams = {},
+                                        onClickRemoveFromNextUp = viewModel::removeFromNextUp,
                                     ),
                             )
                     }
