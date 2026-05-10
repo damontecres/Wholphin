@@ -11,7 +11,7 @@
     <string name="cancel_recording">בטל הקלטה</string>
     <string name="cancel_series_recording">בטל הקלטת סדרה</string>
     <string name="cancel">בטל</string>
-    <string name="chapters">פרקים</string>
+    <string name="chapters">פרקי משנה</string>
     <string name="clear_image_cache">נקה זיכרון מטמון</string>
     <string name="collection">אוסף</string>
     <string name="collections">אוספים</string>
@@ -169,8 +169,8 @@
     <string name="record_program">הקלט תוכנית</string>
     <string name="record_series">הקלט סדרה</string>
     <string name="remove_favorite">הסרה ממועדפים</string>
-    <string name="restart">הפעלה מחדש</string>
-    <string name="resume">המשך</string>
+    <string name="restart">התחל מחדש</string>
+    <string name="resume">המשך ניגון</string>
     <string name="save">שמור</string>
     <string name="search_and_download"><![CDATA[חיפוש &amp; הורדה]]></string>
     <string name="voice_search">חיפוש קולי</string>
@@ -184,7 +184,7 @@
     <string name="voice_error_network_timeout">הרשת לא הגיבה בזמן</string>
     <string name="voice_error_speech_timeout">לא זוהה דיבור</string>
     <string name="voice_error_timeout">הזמן לזיהוי דיבור פג</string>
-    <string name="voice_error_no_match">לא זוהה דיבור</string>
+    <string name="voice_error_no_match">הדיבור לא הובן</string>
     <string name="voice_error_busy">זיהוי דיבור לא זמין</string>
     <string name="voice_error_server">שגיאת שרת</string>
     <string name="voice_error_unknown">שגיאה לא ידועה</string>
@@ -487,11 +487,11 @@
     <string name="photos">תמונות</string>
     <string name="include_types">סוגי תוכן כלולים</string>
     <string name="include_types_summary">עבור אילו סוגי פריטים להציג תמונות</string>
-    <string name="content_scale_fit">התאמה למסגרת</string>
-    <string name="content_scale_crop">חיתוך למילוי</string>
-    <string name="content_scale_fill">מילוי המסגרת</string>
-    <string name="content_scale_fill_width">רוחב מילוי</string>
-    <string name="content_scale_fill_height">גובה מילוי</string>
+    <string name="content_scale_fit">התאמה לתצוגה</string>
+    <string name="content_scale_crop">חיתוך לתצוגה</string>
+    <string name="content_scale_fill">מתיחה לתצוגה</string>
+    <string name="content_scale_fill_width">מתיחה לרוחב</string>
+    <string name="content_scale_fill_height">מתיחה לגובה</string>
     <string name="display_preset_default">ברירת המחדל של Wholphin</string>
     <string name="display_preset_compact">Wholphin קומפקטי</string>
     <string name="display_preset_series_thumb">תמונות ממוזערות של סדרה</string>
@@ -554,7 +554,7 @@
     <string name="album">אלבום</string>
     <string name="popular_songs">שירים פופולרים</string>
     <string name="play_next">נגן מיד אחרי</string>
-    <string name="music_videos">קליפים</string>
+    <string name="music_videos">קליפי־מוזיקה</string>
     <string name="lyrics">מילים</string>
     <string name="hide_lyrics">הסתר מילים</string>
     <string name="show_lyrics">הצג מילים</string>
@@ -604,4 +604,8 @@
     <string name="dolby_digital_plus">DD+</string>
     <string name="dts">DTS</string>
     <string name="anamorphic">אנאמורפי</string>
+    <string name="image_subtitle_opacity">אטימות כתוביות מבוססות־תמונה</string>
+    <string name="live_tv_repeat">שידור חוזר</string>
+    <string name="color_code_programs">קידוד צבע לתוכניות</string>
+    <string name="slideshow_at_beginning">מההתחלה</string>
 </resources>
