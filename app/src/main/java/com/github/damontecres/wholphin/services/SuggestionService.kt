@@ -130,7 +130,7 @@ class SuggestionService
 
             workManager.enqueueUniqueWork(
                 workName,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 request,
             )
             Timber.d(

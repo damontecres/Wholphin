@@ -159,7 +159,10 @@ class SuggestionsWorker
                 Timber.d("Completed with $successCount successes and $failureCount failures")
                 return Result.success()
             } catch (ex: ApiClientException) {
-                Timber.w(ex, "SuggestionsWorker ApiClientException, will retry")
+                Timber.w(ex, "SuggestionsWorker ApiClientException, mode=%s", mode)
+                if (mode == "on-demand") {
+                    return Result.failure()
+                }
                 return Result.retry()
             } catch (e: Exception) {
                 Timber.e(e, "SuggestionsWorker failed")
