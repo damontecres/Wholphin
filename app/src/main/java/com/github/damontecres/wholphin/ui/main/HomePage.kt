@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -307,7 +308,15 @@ fun HomePageContent(
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
     }
     Box(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier =
+                Modifier
+                    .focusProperties {
+                        onEnter = {
+                            rowFocusRequesters.getOrNull(currentPosition.row)?.tryRequestFocus()
+                        }
+                    }.fillMaxSize(),
+        ) {
             headerComposable.invoke(focusedItem)
 
             val density = LocalDensity.current
