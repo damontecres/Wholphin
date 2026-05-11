@@ -618,4 +618,5 @@
     <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
     <string name="play_with">Riproduci con</string>
     <string name="transcoding">Trascodifica</string>
+    <string name="pin_digits_hint">[0-9]</string>
 </resources>
