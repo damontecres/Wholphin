@@ -106,7 +106,7 @@ class PlayerFactory
                                 .setExtensionRendererMode(rendererMode)
                         val mediaSourceFactory =
                             if (useLibAss) {
-                                val renderType = 
+                                val renderType =
                                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                                         AssRenderType.OVERLAY_CANVAS
                                     } else {
