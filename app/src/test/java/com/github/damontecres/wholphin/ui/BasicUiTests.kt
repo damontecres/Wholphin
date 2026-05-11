@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -184,11 +185,15 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        switchServerViewModel.addServerState.value.let {
+        switchServerViewModel.state.value.addServerState.let {
             if (it is LoadingState.Error) throw it.exception ?: Exception(it.message)
         }
 
@@ -249,11 +254,15 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        Assert.assertTrue(switchServerViewModel.addServerState.value is LoadingState.Error)
+        Assert.assertTrue(switchServerViewModel.state.value.addServerState is LoadingState.Error)
 
         composeTestRule.onNodeWithText("Server returned invalid response").assertIsDisplayed()
     }

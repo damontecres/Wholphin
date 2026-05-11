@@ -59,9 +59,7 @@ fun MainContent(
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
         val quickDetailsPreferences =
-            remember(appPreferences) {
-                QuickDetailsPreferences(appPreferences)
-            }
+            remember(appPreferences) { QuickDetailsPreferences(appPreferences) }
         CompositionLocalProvider(LocalQuickDetailsPreferences provides quickDetailsPreferences) {
             NavDisplay(
                 backStack = backStack,
@@ -93,7 +91,7 @@ fun MainContent(
 
                             is SetupDestination.UserList -> {
                                 SwitchUserContent(
-                                    currentServer = key.server,
+                                    server = key.server,
                                     Modifier.fillMaxSize(),
                                 )
                             }

@@ -390,6 +390,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
+    <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
