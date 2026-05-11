@@ -600,4 +600,5 @@
     <string name="skip_behavior_summary">Sissejuhatuste, lõputiitrite jmt jaoks</string>
     <string name="play_with">Esita rakendusega</string>
     <string name="transcoding">Teisendan</string>
+    <string name="pin_digits_hint">[0-9]</string>
 </resources>
