@@ -34,11 +34,11 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.AppScreensaver
-import com.github.damontecres.wholphin.ui.components.LocalQuickDetailsPreferences
-import com.github.damontecres.wholphin.ui.components.QuickDetailsPreferences
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
+import com.github.damontecres.wholphin.ui.util.InterfaceCustomization
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 
 @Composable
 fun MainContent(
@@ -58,9 +58,9 @@ fun MainContent(
     ) {
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
-        val quickDetailsPreferences =
-            remember(appPreferences) { QuickDetailsPreferences(appPreferences) }
-        CompositionLocalProvider(LocalQuickDetailsPreferences provides quickDetailsPreferences) {
+        val interfaceCustomization =
+            remember(appPreferences) { InterfaceCustomization(appPreferences) }
+        CompositionLocalProvider(LocalInterfaceCustomization provides interfaceCustomization) {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeLastOrNull() },
