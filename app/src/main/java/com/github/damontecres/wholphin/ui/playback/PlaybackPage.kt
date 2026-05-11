@@ -468,8 +468,6 @@ fun PlaybackPageContent(
                     }
                 },
                 update = { subtitleView ->
-                        
-                    subtitleView.visibility = View.VISIBLE 
                     subtitleView.setCues(cues)
                     if (cues.size > cueCount) {
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
