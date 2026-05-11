@@ -668,7 +668,15 @@ fun PlaybackPageContent(
                     playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || currentPlayback?.audioDecoder != null,
                 ),
             onDismissRequest = {
-                playbackDialog = null
+                playbackDialog =
+                    when (type) {
+                        // Go back to settings dialog
+                        PlaybackDialogType.PLAYBACK_SPEED,
+                        PlaybackDialogType.VIDEO_SCALE,
+                        -> PlaybackDialogType.SETTINGS
+
+                        else -> null
+                    }
                 if (controllerViewState.controlsVisible) {
                     controllerViewState.pulseControls()
                 }
