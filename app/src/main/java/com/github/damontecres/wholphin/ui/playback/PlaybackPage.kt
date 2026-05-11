@@ -502,7 +502,7 @@ fun PlaybackPageContent(
                         .graphicsLayer {
                             alpha =
                                 if (!subtitleVisible) {
-                                    0.01f
+                                    0f
                                 } else if (isImageSubtitles) {
                                     subtitleImageOpacity
                                 } else {
