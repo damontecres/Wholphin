@@ -240,7 +240,7 @@
     <string name="check_for_updates">Buscar actualizaciones</string>
     <string name="combine_continue_next_summary">Aplica solo a series</string>
     <string name="combine_continue_next"><![CDATA[Combinar “Continuar viendo” y “Siguiente”]]></string>
-    <string name="direct_play_ass">Reproducción directa de subtítulos ASS</string>
+    <string name="direct_play_ass">Usar libass para reproducir subtítulos ASS</string>
     <string name="direct_play_pgs">Reproducción directa de subtítulos PGS</string>
     <string name="downmix_stereo">Convertir siempre a estéreo</string>
     <string name="ffmpeg_extension_pref">Usar módulo decodificador FFmpeg</string>
@@ -604,4 +604,16 @@
     <string name="remove_next_up">Eliminar de \"Siguiente\"</string>
     <string name="view_removed_next_up">Ver series eliminadas de \"Siguiente\"</string>
     <string name="studios_in">Estudios en %1$s</string>
+    <string name="ass_subtitle_mode_libass">Reproducción directa con libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Reproducción directa con ExoPlayer</string>
+    <string name="ass_subtitle_mode_transcode">Incrustar/transcodificar en el servidor</string>
+    <string name="ass_subtitle_playback">Reproducción de subtítulos SSA/ASS</string>
+    <string name="last_played">Última reproducción</string>
+    <string name="next_up_never">Nunca</string>
+    <string name="external_player">Reproductor externo</string>
+    <string name="system_default">Predeterminado del sistema</string>
+    <string name="show_more">Muestra %1$s más</string>
+    <string name="skip_behavior">Comportamiento al saltar</string>
+    <string name="skip_behavior_summary">Para cabecera, créditos finales, etc</string>
+    <string name="cinema_mode">Modo cine</string>
 </resources>

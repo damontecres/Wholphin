@@ -251,7 +251,7 @@
     <string name="check_for_updates">Kontrolli uuendusi</string>
     <string name="combine_continue_next_summary">Kehtib vaid telesarjade puhul</string>
     <string name="settings">Seadistused</string>
-    <string name="direct_play_ass">Esita ASS-vormingus subtiitreid otse</string>
+    <string name="direct_play_ass">Kasuta ASS-vormingus subtiitrite jaoks libass teeki</string>
     <string name="direct_play_pgs">Esita PGS-vormingus subtiitreid otse</string>
     <string name="downmix_stereo">Alati vähenda helikanalite arvu stereoni</string>
     <string name="ffmpeg_extension_pref">Kasuta FFmpegi dekooderi moodulit</string>
@@ -586,4 +586,16 @@
     <string name="discover_tv">Leia telesaateid</string>
     <string name="discover_movies">Leia filme</string>
     <string name="studios_in">Stuudiod: %1$s</string>
+    <string name="last_played">Viimati esitatud</string>
+    <string name="ass_subtitle_mode_libass">Otseesitus libass teegiga</string>
+    <string name="ass_subtitle_mode_exoplayer">Otseesitus sisseehitatud ExoPlayeri teegiga</string>
+    <string name="ass_subtitle_mode_transcode">Kodeeri serveris</string>
+    <string name="ass_subtitle_playback">SSA/ASS subtiitrite esitus</string>
+    <string name="next_up_never">Mitte kunagi</string>
+    <string name="external_player">Väline meediapleier</string>
+    <string name="system_default">Süsteemi vaikeväärtus</string>
+    <string name="cinema_mode">Kinovaade</string>
+    <string name="show_more">Näita veel: %1$s tk</string>
+    <string name="skip_behavior">Käitumine vahelejätmisel</string>
+    <string name="skip_behavior_summary">Sissejuhatuste, lõputiitrite jmt jaoks</string>
 </resources>

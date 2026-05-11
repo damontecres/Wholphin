@@ -52,7 +52,7 @@ import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
-import com.github.damontecres.wholphin.ui.playback.SeekBar
+import com.github.damontecres.wholphin.ui.playback.overlay.SeekBar
 import com.github.damontecres.wholphin.ui.preferences.MoveButton
 import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.tryRequestFocus

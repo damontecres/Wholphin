@@ -16,7 +16,7 @@ concurrency:
 
 env:
   BRANCH_NAME: ${{ github.ref_name }}
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx4g -XX:MaxMetaspaceSize=512m'"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx8g -XX:MaxMetaspaceSize=512m'"
 
 jobs:
   build:

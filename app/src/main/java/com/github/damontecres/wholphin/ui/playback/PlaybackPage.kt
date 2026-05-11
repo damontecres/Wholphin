@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -28,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,12 +37,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -74,8 +76,13 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.overlay.PauseIndicator
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
+import com.github.damontecres.wholphin.ui.playback.overlay.SkipIndicator
+import com.github.damontecres.wholphin.ui.playback.overlay.SkipSegmentButton
+import com.github.damontecres.wholphin.ui.playback.overlay.rememberSeekBarState
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
@@ -167,6 +174,7 @@ fun PlaybackPageContent(
         ),
     )
     val currentSegment by viewModel.currentSegment.collectAsState()
+    val analyticsState by viewModel.analyticsState.collectAsState()
 
     val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -389,7 +397,7 @@ fun PlaybackPageContent(
                         .fillMaxSize()
                         .background(Color.Transparent),
                 item = currentPlayback?.item,
-                playerControls = player,
+                player = player,
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,
                 previousEnabled = true,
@@ -412,6 +420,7 @@ fun PlaybackPageContent(
                 },
                 currentSegment = currentSegment?.segment,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                analyticsState = analyticsState,
             )
 
             val subtitleSettings =
@@ -427,65 +436,81 @@ fun PlaybackPageContent(
                 remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
-            if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface) {
-                val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
-                val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
-                AndroidView(
-                    factory = { context ->
-                        SubtitleView(context).apply {
-                            subtitleSettings.let {
-                                setStyle(it.toSubtitleStyle())
-                                setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
-                                setBottomPaddingFraction(it.margin.toFloat() / 100f)
-                            }
-                            playerState.assHandler?.let { assHandler ->
-                                if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
-                                    Timber.v("Adding AssSubtitleView")
-                                    addView(
-                                        AssSubtitleView(context, assHandler).apply {
-                                            layoutParams =
-                                                FrameLayout
-                                                    .LayoutParams(
-                                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                                    ).apply { gravity = Gravity.CENTER }
-                                        },
-                                    )
-                                }
+            val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+            val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
+            var cueCount by remember { mutableIntStateOf(0) }
+
+            val subtitleVisible = skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface
+
+            AndroidView(
+                factory = { context ->
+                    SubtitleView(context).apply {
+                        subtitleSettings.let {
+                            setStyle(it.toSubtitleStyle())
+                            setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                            setBottomPaddingFraction(it.margin.toFloat() / 100f)
+                        }
+                        playerState.assHandler?.let { assHandler ->
+                            if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
+                                Timber.v("Adding AssSubtitleView")
+                                addView(
+                                    AssSubtitleView(context, assHandler).apply {
+                                        layoutParams =
+                                            FrameLayout
+                                                .LayoutParams(
+                                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                                ).apply { gravity = Gravity.CENTER }
+                                    },
+                                )
                             }
                         }
-                    },
-                    update = {
-                        it.setCues(cues)
+                    }
+                },
+                update = { subtitleView ->
+                    subtitleView.setCues(cues)
+                    if (cues.size > cueCount) {
+                        // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
-                            .apply(it)
-                        it.children.firstOrNull { it is AssSubtitleView }?.let {
-                            (it as? AssSubtitleView)?.apply {
-                                val resized =
-                                    layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
-                                if (resized) {
-                                    Timber.v("Resizing AssSubtitleView: $playerSurfaceSize")
-                                    layoutParams =
-                                        FrameLayout
-                                            .LayoutParams(
-                                                playerSurfaceSize.width,
-                                                playerSurfaceSize.height,
-                                            ).apply { gravity = Gravity.CENTER }
-                                }
+                            .apply(subtitleView)
+                        cueCount = cues.size
+                    }
+                    subtitleView.children.firstOrNull { it is AssSubtitleView }?.let {
+                        (it as? AssSubtitleView)?.apply {
+                            val resized =
+                                layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
+
+                            if (resized && playerSurfaceSize.width > 0 && playerSurfaceSize.height > 0) {
+                                Timber.v("Resizing AssSubtitleView: %s", playerSurfaceSize)
+                                layoutParams =
+                                    FrameLayout
+                                        .LayoutParams(
+                                            playerSurfaceSize.width,
+                                            playerSurfaceSize.height,
+                                        ).apply { gravity = Gravity.CENTER }
                             }
                         }
-                    },
-                    onReset = {
-                        it.setCues(null)
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxSize(maxSize)
-                            .align(Alignment.TopCenter)
-                            .background(Color.Transparent)
-                            .ifElse(isImageSubtitles, Modifier.alpha(subtitleImageOpacity)),
-                )
-            }
+                    }
+                },
+                onReset = {
+                    it.setCues(null)
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize(subtitleMaxSize)
+                        .align(Alignment.TopCenter)
+                        .background(Color.Transparent)
+                        .graphicsLayer {
+                            alpha =
+                                if (!subtitleVisible) {
+                                    0f
+                                } else if (isImageSubtitles) {
+                                    subtitleImageOpacity
+                                } else {
+                                    1f
+                                }
+                        },
+            )
         }
 
         // Ask to skip intros, etc button
@@ -642,7 +667,15 @@ fun PlaybackPageContent(
                     playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || currentPlayback?.audioDecoder != null,
                 ),
             onDismissRequest = {
-                playbackDialog = null
+                playbackDialog =
+                    when (type) {
+                        // Go back to settings dialog
+                        PlaybackDialogType.PLAYBACK_SPEED,
+                        PlaybackDialogType.VIDEO_SCALE,
+                        -> PlaybackDialogType.SETTINGS
+
+                        else -> null
+                    }
                 if (controllerViewState.controlsVisible) {
                     controllerViewState.pulseControls()
                 }

@@ -87,6 +87,7 @@ message PlaybackPreferences {
   bool refresh_rate_switching = 22;
   bool resolution_switching = 23;
   string external_player = 24;
+  bool cinema_mode = 25;
 }
 
 message HomePagePreferences{

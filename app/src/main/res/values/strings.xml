@@ -390,6 +390,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
+    <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -769,6 +770,12 @@
     <string name="ass_subtitle_mode_exoplayer">Direct play with ExoPlayer built-in</string>
     <string name="ass_subtitle_mode_transcode">Burn in/transcode on server</string>
     <string name="ass_subtitle_playback">SSA/ASS subtitle playback</string>
+    <string name="cinema_mode">Cinema mode</string>
+    <string name="show_more">Show %1$s more</string>
+    <string name="skip_behavior">Skip behavior</string>
+    <string name="skip_behavior_summary">For intros, credits, etc</string>
+    <string name="play_with">Play with</string>
+    <string name="transcoding">Transcoding</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>

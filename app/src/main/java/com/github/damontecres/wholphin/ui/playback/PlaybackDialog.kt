@@ -36,11 +36,14 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
-    MORE,
+    DEBUG,
     CAPTIONS,
     SETTINGS,
     AUDIO,
@@ -65,10 +68,10 @@ data class PlaybackSettings(
 /**
  * Centralized UI component for displaying dialogs during playback
  *
- * Typically, the user will click something generating a [PlaybackAction] which translates into the
+ * Typically, the user will click something generating a [com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction] which translates into the
  * [PlaybackDialogType] determining which dialog is shown by this component.
  *
- * @see PlaybackAction
+ * @see com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
  */
 @Composable
 fun PlaybackDialog(
@@ -83,28 +86,8 @@ fun PlaybackDialog(
     onChangeSubtitleDelay: (Duration) -> Unit,
 ) {
     when (type) {
-        PlaybackDialogType.MORE -> {
-            val options =
-                buildList {
-                    add(
-                        BottomDialogItem(
-                            data = 0,
-                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
-                            supporting = null,
-                        ),
-                    )
-                }
-            BottomDialog(
-                choices = options,
-                onDismissRequest = {
-                    onDismissRequest.invoke()
-//                    focusRequester.tryRequestFocus()
-                },
-                onSelectChoice = { index, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
-                },
-                gravity = Gravity.START,
-            )
+        PlaybackDialogType.DEBUG -> {
+            throw IllegalStateException("Should not open a dialog with " + PlaybackDialogType.DEBUG)
         }
 
         PlaybackDialogType.CAPTIONS -> {
@@ -135,17 +118,8 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.SETTINGS -> {
-            val currentAudio =
-                remember(settings) { settings.audioStreams.firstOrNull { it.index == settings.audioIndex } }
             val options =
                 buildList {
-                    add(
-                        BottomDialogItem(
-                            data = PlaybackDialogType.AUDIO,
-                            headline = stringResource(R.string.audio),
-                            supporting = currentAudio?.displayTitle,
-                        ),
-                    )
                     add(
                         BottomDialogItem(
                             data = PlaybackDialogType.PLAYBACK_SPEED,
@@ -174,15 +148,26 @@ fun PlaybackDialog(
                             ),
                         )
                     }
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.DEBUG,
+                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
+                            supporting = null,
+                        ),
+                    )
                 }
             BottomDialog(
                 choices = options,
                 currentChoice = null,
                 onDismissRequest = onDismissRequest,
                 onSelectChoice = { _, choice ->
-                    onClickPlaybackDialogType(choice.data)
+                    if (choice.data == PlaybackDialogType.DEBUG) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
+                    } else {
+                        onClickPlaybackDialogType(choice.data)
+                    }
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 
@@ -193,10 +178,6 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                    scope.launch {
-//                        delay(250L)
-//                        settingsFocusRequester.tryRequestFocus()
-//                    }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
@@ -220,15 +201,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, value ->
                     onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.data))
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 
@@ -247,15 +224,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.Scale(choice.data))
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 

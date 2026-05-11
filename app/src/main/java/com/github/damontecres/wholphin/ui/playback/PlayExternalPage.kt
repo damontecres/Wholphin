@@ -8,14 +8,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -25,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -40,9 +41,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.getExternalPlayers
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -54,17 +52,22 @@ import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.PlayMethod
+import org.jellyfin.sdk.model.api.PlaybackOrder
+import org.jellyfin.sdk.model.api.PlaybackStartInfo
 import org.jellyfin.sdk.model.api.PlaybackStopInfo
+import org.jellyfin.sdk.model.api.RepeatMode
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
-@HiltViewModel(assistedFactory = PlayExternalViewModel.Factory::class)
+@HiltViewModel
 class PlayExternalViewModel
-    @AssistedInject
+    @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
         @param:ApplicationContext private val context: Context,
@@ -75,16 +78,13 @@ class PlayExternalViewModel
         private val streamChoiceService: StreamChoiceService,
         private val navigationManager: NavigationManager,
         private val userPreferencesService: UserPreferencesService,
-        @Assisted val destination: Destination,
     ) : ViewModel() {
-        @AssistedFactory
-        interface Factory {
-            fun create(destination: Destination): PlayExternalViewModel
-        }
-
+        val launched = savedStateHandle.getMutableStateFlow("launched", false)
         val state = MutableStateFlow(PlayExternalState())
 
-        fun init() {
+        fun init(destination: Destination) {
+            Timber.v("init called: %s", destination)
+            state.update { it.copy(loading = LoadingState.Loading) }
             viewModelScope.launchDefault {
                 val prefs = userPreferencesService.getCurrent()
                 val positionMs: Long
@@ -106,9 +106,9 @@ class PlayExternalViewModel
                     }
                 try {
                     val queriedItem = api.userLibraryApi.getItem(itemId).content
-                    val base =
+                    val playlistItem =
                         if (queriedItem.type.playable) {
-                            queriedItem
+                            PlaylistItem.Media(BaseItem(queriedItem))
                         } else if (destination is Destination.PlaybackList) {
                             val playlistResult =
                                 playlistCreator.createFrom(
@@ -135,18 +135,15 @@ class PlayExternalViewModel
                                         navigationManager.goBack()
                                         return@launchDefault
                                     }
-                                    r.playlist.items
-                                        .first()
-                                        .data
+                                    r.playlist.items.first()
                                 }
                             }
                         } else {
                             throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                         }
-                    val item = BaseItem(base, false)
                     val playbackConfig =
                         serverRepository.currentUser.value?.let { user ->
-                            itemPlaybackDao.getItem(user, base.id)?.let {
+                            itemPlaybackDao.getItem(user, playlistItem.id)?.let {
                                 Timber.v("Fetched itemPlayback from DB: %s", it)
                                 if (it.sourceId != null) {
                                     it
@@ -155,20 +152,25 @@ class PlayExternalViewModel
                                 }
                             }
                         }
-                    val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
-                    val plc = streamChoiceService.getPlaybackLanguageChoice(base)
+                    val item =
+                        when (playlistItem) {
+                            is PlaylistItem.Intro -> playlistItem.item
+                            is PlaylistItem.Media -> playlistItem.item
+                        }
+                    val mediaSource = streamChoiceService.chooseSource(item.data, playbackConfig)
+                    val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                     if (mediaSource == null) {
                         Timber.w("Media source is null")
                         return@launchDefault
                     }
-                    savedStateHandle[KEY_ID] = base.id
+                    savedStateHandle[KEY_ID] = playlistItem.id
                     savedStateHandle[KEY_MEDIA_ID] = mediaSource.id
                     val subtitleIndex =
                         streamChoiceService
                             .chooseSubtitleStream(
                                 source = mediaSource,
                                 audioStream = null,
-                                seriesId = base.seriesId,
+                                seriesId = item.data.seriesId,
                                 itemPlayback = playbackConfig,
                                 plc = plc,
                                 prefs = prefs,
@@ -252,7 +254,17 @@ class PlayExternalViewModel
                                     putExtra("forcedsrt", subtitleUrls[it])
                                 }
                         }
-
+                    api.playStateApi.reportPlaybackStart(
+                        PlaybackStartInfo(
+                            canSeek = false,
+                            itemId = itemId,
+                            isPaused = false,
+                            playMethod = PlayMethod.DIRECT_PLAY,
+                            repeatMode = RepeatMode.REPEAT_NONE,
+                            playbackOrder = PlaybackOrder.DEFAULT,
+                            isMuted = false,
+                        ),
+                    )
                     state.update {
                         PlayExternalState(
                             loading = LoadingState.Success,
@@ -278,10 +290,10 @@ class PlayExternalViewModel
                         return@launchDefault
                     }
                     Timber.v(
-                        "Result: result=%s, itemId=%s action=%s",
+                        "Result: result=%s, action=%s, itemId=%s",
                         result.resultCode,
-                        itemId,
                         result.data?.action,
+                        itemId,
                     )
                     if (result.resultCode == Activity.RESULT_OK || result.resultCode == Activity.RESULT_CANCELED ||
                         // Vimu return 1 for video completion
@@ -295,7 +307,7 @@ class PlayExternalViewModel
                                 position =
                                     data
                                         .getLongExtra("extra_position", Long.MIN_VALUE)
-                                        .takeIf { it >= 0 }
+                                        .takeIf { it > 0 }
                             }
 
                             // mpv-android: https://mpv-android.github.io/mpv-android/intent.html
@@ -326,19 +338,27 @@ class PlayExternalViewModel
                             }
                         }
                         Timber.v("Result position: %s", position?.milliseconds)
-                        api.playStateApi.reportPlaybackStopped(
-                            PlaybackStopInfo(
-                                itemId = itemId,
-                                mediaSourceId = mediaSourceId,
-                                positionTicks = position?.milliseconds?.inWholeTicks,
-                                failed = false,
-                            ),
-                        )
+                        if (position != null || result.data?.action != null) {
+                            api.playStateApi.reportPlaybackStopped(
+                                PlaybackStopInfo(
+                                    itemId = itemId,
+                                    mediaSourceId = mediaSourceId,
+                                    positionTicks = position?.milliseconds?.inWholeTicks,
+                                    failed = false,
+                                ),
+                            )
+                        }
                     } else {
-                        Timber.w("Activity result: %s", result.resultCode)
+                        Timber.w(
+                            "Activity result: %s, action=%s",
+                            result.resultCode,
+                            result.data?.action,
+                        )
                         showToast(context, "Unknown result from external player")
                     }
                     navigationManager.goBack()
+                    state.update { PlayExternalState() }
+                    launched.update { false }
                 } catch (_: CancellationException) {
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error during external playback of %s", itemId)
@@ -359,7 +379,7 @@ class PlayExternalViewModel
     }
 
 data class PlayExternalState(
-    val loading: LoadingState = LoadingState.Loading,
+    val loading: LoadingState = LoadingState.Pending,
     val intent: Intent = Intent(),
 )
 
@@ -369,8 +389,8 @@ fun PlayExternalPage(
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlayExternalViewModel =
-        hiltViewModel<PlayExternalViewModel, PlayExternalViewModel.Factory>(
-            creationCallback = { it.create(destination) },
+        hiltViewModel(
+            viewModelStoreOwner = LocalContext.current.findActivity() as AppCompatActivity,
         ),
 ) {
     val launcher =
@@ -380,15 +400,18 @@ fun PlayExternalPage(
         )
 
     val state by viewModel.state.collectAsState()
-    var launched by rememberSaveable { mutableStateOf(false) }
-    if (!launched) {
-        LaunchedEffect(Unit) {
-            viewModel.init()
+    val launched by viewModel.launched.collectAsState()
+    LaunchedEffect(Unit) {
+        if (!launched) {
+            viewModel.init(destination)
         }
     }
 
     when (val l = state.loading) {
-        LoadingState.Pending,
+        LoadingState.Pending -> {
+            LoadingPage(modifier, false)
+        }
+
         LoadingState.Loading,
         -> {
             LoadingPage(modifier)
@@ -403,7 +426,7 @@ fun PlayExternalPage(
             if (!launched) {
                 LifecycleStartEffect(Unit) {
                     Timber.i("Launching external playback")
-                    launched = true
+                    viewModel.launched.update { true }
                     try {
                         launcher.launch(state.intent)
                     } catch (ex: Exception) {

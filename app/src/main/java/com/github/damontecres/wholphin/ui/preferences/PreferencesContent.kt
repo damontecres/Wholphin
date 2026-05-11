@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
+import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
@@ -142,6 +143,7 @@ fun PreferencesContent(
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
+            PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -150,6 +152,7 @@ fun PreferencesContent(
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
+            PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -707,6 +710,7 @@ fun PreferencesPage(
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
             PreferenceScreenOption.SCREENSAVER,
+            PreferenceScreenOption.SKIP_SEGMENTS,
             -> {
                 PreferencesContent(
                     initialPreferences,

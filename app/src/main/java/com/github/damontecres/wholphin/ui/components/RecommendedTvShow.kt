@@ -61,7 +61,7 @@ class RecommendedTvShowViewModel
         @ApplicationContext context: Context,
         api: ApiClient,
         musicService: MusicService,
-        private val serverRepository: ServerRepository,
+        serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
         private val lastestNextUpService: LatestNextUpService,
         private val suggestionService: SuggestionService,
@@ -74,6 +74,7 @@ class RecommendedTvShowViewModel
     ) : RecommendedViewModel(
             context,
             api,
+            serverRepository,
             navigationManager,
             favoriteWatchManager,
             mediaReportService,

@@ -59,6 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -138,7 +139,11 @@ class SeriesViewModel
                 Timber.v("Start")
                 addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
-                canDeleteSeries.update { mediaManagementService.canDelete(item) }
+                viewModelScope.launchDefault {
+                    mediaManagementService.collectCanDelete(flowOf(item)) { canDelete ->
+                        canDeleteSeries.update { canDelete }
+                    }
+                }
                 backdropService.submit(item)
 
                 val seasonsDeferred = getSeasons(item, seasonEpisodeIds?.seasonNumber)
@@ -183,6 +188,10 @@ class SeriesViewModel
                         position.update {
                             it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
+                    }
+                    viewModelScope.launchIO {
+                        val extras = extrasService.getExtras(seasonEpisodeIds.seasonId)
+                        this@SeriesViewModel.extras.setValueOnMain(extras)
                     }
                 }
                 val remoteTrailers = trailerService.getRemoteTrailers(item)
@@ -388,6 +397,7 @@ class SeriesViewModel
             if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
                 this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
                 this@SeriesViewModel.episodes.value = EpisodeList.Loading
+                this@SeriesViewModel.extras.value = emptyList()
             }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
@@ -400,6 +410,10 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
+            }
+            viewModelScope.launchIO {
+                val extras = extrasService.getExtras(seasonId)
+                this@SeriesViewModel.extras.setValueOnMain(extras)
             }
         }
 

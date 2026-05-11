@@ -42,7 +42,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
@@ -85,18 +85,9 @@ class MovieViewModel
         init {
             init()
             viewModelScope.launchDefault {
-                userPreferencesService.flow.collectLatest { preferences ->
+                mediaManagementService.collectCanDelete(state.map { it.movie }) { canDelete ->
                     _state.update {
-                        val canDelete =
-                            it.movie?.let {
-                                mediaManagementService.canDelete(
-                                    it,
-                                    preferences.appPreferences,
-                                )
-                            }
-                        it.copy(
-                            canDelete = canDelete ?: false,
-                        )
+                        it.copy(canDelete = canDelete)
                     }
                 }
             }

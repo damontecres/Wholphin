@@ -10,7 +10,7 @@
     <string name="bitrate">Bitrate</string>
     <string name="born">Lahir</string>
     <string name="cancel_recording">Batalkan Perekaman</string>
-    <string name="cancel_series_recording">Batalkan Perekaman Serial</string>
+    <string name="cancel_series_recording">Batalkan Perekaman Seri</string>
     <string name="cancel">Batal</string>
     <string name="chapters">Chapter</string>
     <string name="choose_stream">Pilih %1$s</string>
@@ -41,7 +41,7 @@
     <string name="disabled">Nonaktif</string>
     <string name="enabled">Aktif</string>
     <string name="genres">Genre</string>
-    <string name="go_to_series">Buka serial</string>
+    <string name="go_to_series">Buka seri</string>
     <string name="go_to">Masuk ke</string>
     <string name="forced_track">Paksa</string>
     <string name="hide_controller_timeout">Sembunyikan kontrol pemutaran</string>
@@ -91,7 +91,7 @@
     <string name="recently_released">Baru Dirilis</string>
     <string name="recommended">Rekomendasi</string>
     <string name="record_program">Rekam Program</string>
-    <string name="record_series">Rekam Serial</string>
+    <string name="record_series">Rekam Seri</string>
     <string name="remove_favorite">Hapus dari Favorit</string>
     <string name="restart">Mulai ulang</string>
     <string name="resume">Lanjutkan</string>
@@ -203,7 +203,7 @@
     <string name="auto_play_next_delay">Jeda sebelum putar selanjutnya</string>
     <string name="auto_play_next">Putar otomatis selanjutnya</string>
     <string name="check_for_updates">Periksa Pembaruan</string>
-    <string name="combine_continue_next_summary">Hanya berlaku untuk Serial TV</string>
+    <string name="combine_continue_next_summary">Hanya berlaku untuk Seri TV</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
     <string name="direct_play_ass">Putar langsung subtitel ASS</string>
     <string name="direct_play_pgs">Putar langsung subtitel PGS</string>
@@ -466,7 +466,7 @@
     <string name="include_types_summary">Tampilkan gambar untuk jenis item</string>
     <string name="display_preset_default">Wholphin Bawaan</string>
     <string name="display_preset_compact">Wholphin Ringkas</string>
-    <string name="display_preset_series_thumb">Gambar Thumbnail Serial</string>
+    <string name="display_preset_series_thumb">Gambar Thumbnail Seri</string>
     <string name="display_preset_episode_thumbnails">Gambar Thumbnail Episode</string>
     <string name="volume_lowest">Terendah</string>
     <string name="volume_low">Rendah</string>
@@ -560,4 +560,12 @@
     <string name="separate_types">Pisahkan jenis</string>
     <string name="go_to_artist">Buka artis</string>
     <string name="go_to_album">Buka album</string>
+    <string name="updated_toast">Wholphin diperbarui ke %s</string>
+    <string name="remove_continue_watching">Hapus dari \"Lanjutkan menonton\"</string>
+    <string name="remove_next_up">Hapus seri dari \"Berikutnya\"</string>
+    <string name="view_removed_next_up">Lihat seri yang dihapus dari \"Berikutnya\"</string>
+    <string name="view_more">Lihat semua</string>
+    <string name="discover_tv">Jelajahi acara TV</string>
+    <string name="discover_movies">Jelajahi film</string>
+    <string name="studios_in">Studio dari %1$s</string>
 </resources>

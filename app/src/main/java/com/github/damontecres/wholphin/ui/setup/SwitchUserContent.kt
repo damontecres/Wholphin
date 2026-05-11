@@ -14,10 +14,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,40 +43,45 @@ import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.launch
 
 @Composable
 fun SwitchUserContent(
-    currentServer: JellyfinServer,
+    server: JellyfinServer,
     modifier: Modifier = Modifier,
     viewModel: SwitchUserViewModel =
         hiltViewModel<SwitchUserViewModel, SwitchUserViewModel.Factory>(
-            creationCallback = { it.create(currentServer) },
+            creationCallback = { it.create(server) },
         ),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.init()
     }
 
-//    val currentServer by viewModel.serverRepository.currentServer.observeAsState()
+    val state by viewModel.state.collectAsState()
+
     val currentUser by viewModel.serverRepository.currentUser.observeAsState()
-    val users by viewModel.users.observeAsState(listOf())
-
-    val quickConnectEnabled by viewModel.serverQuickConnect.observeAsState(false)
-    val quickConnect by viewModel.quickConnectState.observeAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
+    var username by remember(server) { mutableStateOf("") }
 
-    val userState by viewModel.switchUserState.observeAsState(LoadingState.Pending)
-    val loginAttempts by viewModel.loginAttempts.observeAsState(0)
-    LaunchedEffect(userState) {
+    fun showAddUserDialog(user: JellyfinUser?) {
+        username = user?.name ?: ""
+        showAddUser = true
+    }
+
+    LaunchedEffect(state.switchUserState) {
         if (!showAddUser) {
-            when (val s = userState) {
+            when (val s = state.switchUserState) {
                 is LoadingState.Error -> {
                     val msg = s.message ?: s.exception?.localizedMessage
                     Toast.makeText(context, "Error: $msg", Toast.LENGTH_LONG).show()
@@ -86,247 +93,281 @@ fun SwitchUserContent(
     }
     var switchUserWithPin by remember { mutableStateOf<JellyfinUser?>(null) }
 
-    currentServer?.let { server ->
-        Box(
-            modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center)
-                        .padding(16.dp),
+    when (val st = state.loading) {
+        is LoadingState.Error -> {
+            ErrorMessage(st, modifier)
+        }
+
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> {
+            LoadingPage(modifier)
+        }
+
+        LoadingState.Success -> {
+            Box(
+                modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.select_user),
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = server.name ?: server.url,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                UserList(
-                    users = users,
-                    currentUser = currentUser,
-                    onSwitchUser = { user ->
-                        if (user.hasPin) {
-                            switchUserWithPin = user
-                        } else {
-                            viewModel.switchUser(user)
-                        }
-                    },
-                    onAddUser = { showAddUser = true },
-                    onRemoveUser = { user ->
-                        viewModel.removeUser(user)
-                    },
-                    onSwitchServer = {
-                        viewModel.setupNavigationManager.navigateTo(
-                            SetupDestination.ServerList,
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
-        if (showAddUser) {
-            var useQuickConnect by remember { mutableStateOf(quickConnectEnabled) }
-            LaunchedEffect(Unit) {
-                viewModel.clearSwitchUserState()
-                viewModel.resetAttempts()
-                if (useQuickConnect) {
-                    viewModel.initiateQuickConnect(server)
-                }
-            }
-            BasicDialog(
-                onDismissRequest = {
-                    viewModel.cancelQuickConnect()
-                    showAddUser = false
-                },
-                properties =
-                    DialogProperties(
-                        usePlatformDefaultWidth = false,
-                    ),
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                     modifier =
                         Modifier
-                            .focusGroup()
-                            .padding(16.dp)
-                            .fillMaxWidth(.4f),
+                            .fillMaxWidth()
+                            .align(Alignment.Center)
+                            .padding(16.dp),
                 ) {
-                    if (useQuickConnect) {
-                        if (quickConnect == null && userState !is LoadingState.Error) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier =
-                                    Modifier
-                                        .height(32.dp)
-                                        .align(Alignment.CenterHorizontally),
-                            ) {
-                                CircularProgress(Modifier.size(20.dp))
-                                Text(
-                                    text = "Waiting for Quick Connect code...",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier,
-                                )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.select_user),
+                            style = MaterialTheme.typography.displaySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = server.name ?: server.url,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    UserList(
+                        users = state.users,
+                        currentUser = currentUser,
+                        onSwitchUser = { user ->
+                            if (user.accessToken == null) {
+                                showAddUserDialog(user)
+                            } else if (user.hasPin) {
+                                switchUserWithPin = user
+                            } else {
+                                val result = viewModel.trySwitchUser(user)
+                                scope.launch {
+                                    result.await()?.let {
+                                        Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                                        showAddUserDialog(user)
+                                    }
+                                }
                             }
-                        } else if (quickConnect != null) {
+                        },
+                        onAddUser = {
+                            showAddUserDialog(null)
+                        },
+                        onRemoveUser = { user ->
+                            viewModel.removeUser(user)
+                        },
+                        onSwitchServer = {
+                            viewModel.setupNavigationManager.navigateTo(
+                                SetupDestination.ServerList,
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+    }
+
+    if (showAddUser) {
+        var useQuickConnect by remember { mutableStateOf(state.quickConnectEnabled) }
+        LaunchedEffect(Unit) {
+            viewModel.clearSwitchUserState()
+            viewModel.resetAttempts()
+            if (useQuickConnect) {
+                viewModel.initiateQuickConnect(server)
+            }
+        }
+        BasicDialog(
+            onDismissRequest = {
+                viewModel.cancelQuickConnect()
+                showAddUser = false
+            },
+            properties =
+                DialogProperties(
+                    usePlatformDefaultWidth = false,
+                ),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .focusGroup()
+                        .padding(16.dp)
+                        .fillMaxWidth(.4f),
+            ) {
+                if (useQuickConnect) {
+                    if (state.quickConnectStatus == null && state.switchUserState !is LoadingState.Error) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                Modifier
+                                    .height(32.dp)
+                                    .align(Alignment.CenterHorizontally),
+                        ) {
+                            CircularProgress(Modifier.size(20.dp))
                             Text(
-                                text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
+                                text = "Waiting for Quick Connect code...",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Text(
-                                text = quickConnect?.code ?: "Failed to get code",
-                                style = MaterialTheme.typography.displayMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                modifier = Modifier,
                             )
                         }
-                        UserStateError(userState)
-                        TextButton(
-                            stringRes = R.string.username_or_password,
-                            onClick = {
-                                viewModel.cancelQuickConnect()
-                                viewModel.clearSwitchUserState()
-                                useQuickConnect = false
-                            },
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                        )
-                    } else {
-//                        val username = rememberTextFieldState()
-//                        val password = rememberTextFieldState()
-                        var username by remember { mutableStateOf("") }
-                        var password by remember { mutableStateOf("") }
-                        val onSubmit = {
-                            viewModel.login(
-                                server,
-                                username,
-                                password,
-                            )
-                        }
-                        val focusRequester = remember { FocusRequester() }
-                        val passwordFocusRequester = remember { FocusRequester() }
-                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                    } else if (state.quickConnectStatus != null) {
                         Text(
-                            text = "Enter username/password to login to ${server.name ?: server.url}",
+                            text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        UserStateError(userState)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        Text(
+                            text = state.quickConnectStatus?.code ?: "Failed to get code",
+                            style = MaterialTheme.typography.displayMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text(
-                                text = "Username",
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
-                            EditTextBox(
-                                value = username,
-                                onValueChange = { username = it },
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.None,
-                                        autoCorrectEnabled = false,
-                                        keyboardType = KeyboardType.Text,
-                                        imeAction = ImeAction.Next,
-                                    ),
-                                keyboardActions =
-                                    KeyboardActions(
-                                        onNext = {
-                                            passwordFocusRequester.tryRequestFocus()
-                                        },
-                                    ),
-                                //                                onKeyboardAction = {
+                        )
+                    }
+                    UserStateError(state.switchUserState)
+                    TextButton(
+                        stringRes = R.string.username_or_password,
+                        onClick = {
+                            viewModel.cancelQuickConnect()
+                            viewModel.clearSwitchUserState()
+                            useQuickConnect = false
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
+                } else {
+                    var password by remember { mutableStateOf("") }
+                    val onSubmit = {
+                        viewModel.login(
+                            server,
+                            username,
+                            password,
+                        )
+                    }
+                    val focusRequester = remember { FocusRequester() }
+                    val passwordFocusRequester = remember { FocusRequester() }
+                    LaunchedEffect(Unit) {
+                        if (username.isBlank()) {
+                            focusRequester.tryRequestFocus()
+                        } else {
+                            passwordFocusRequester.tryRequestFocus()
+                        }
+                    }
+                    Text(
+                        text = "Enter username/password to login to ${server.name ?: server.url}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    UserStateError(state.switchUserState)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.username),
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                        EditTextBox(
+                            value = username,
+                            onValueChange = { username = it },
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Next,
+                                ),
+                            keyboardActions =
+                                KeyboardActions(
+                                    onNext = {
+                                        passwordFocusRequester.tryRequestFocus()
+                                    },
+                                ),
+                            //                                onKeyboardAction = {
 //                                    passwordFocusRequester.tryRequestFocus()
 //                                },
-                                isInputValid = { userState !is LoadingState.Error },
-                                modifier = Modifier.focusRequester(focusRequester),
-                            )
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text(
-                                text = "Password",
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
-                            LaunchedEffect(password) {
-                                viewModel.clearSwitchUserState()
-                            }
-                            EditTextBox(
-                                value = password,
-                                onValueChange = { password = it },
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.None,
-                                        autoCorrectEnabled = false,
-                                        keyboardType = KeyboardType.Password,
-                                        imeAction = ImeAction.Go,
-                                    ),
-                                keyboardActions =
-                                    KeyboardActions(
-                                        onGo = { onSubmit.invoke() },
-                                    ),
-                                isInputValid = { userState !is LoadingState.Error },
-                                modifier = Modifier.focusRequester(passwordFocusRequester),
-                            )
-                        }
-                        TextButton(
-                            stringRes = R.string.login,
-                            onClick = { onSubmit.invoke() },
-                            enabled = username.isNotNullOrBlank(),
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            isInputValid = { state.switchUserState !is LoadingState.Error },
+                            modifier = Modifier.focusRequester(focusRequester),
                         )
                     }
-                    if (loginAttempts > 2) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    ) {
                         Text(
-                            text = "Trouble logging in?",
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            text = stringResource(R.string.password),
+                            modifier = Modifier.padding(end = 8.dp),
                         )
-                        TextButton(
-                            stringRes = R.string.show_debug_info,
-                            onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.Debug)
-                            },
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        LaunchedEffect(password) {
+                            viewModel.clearSwitchUserState()
+                        }
+                        EditTextBox(
+                            value = password,
+                            onValueChange = { password = it },
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Password,
+                                    imeAction = ImeAction.Go,
+                                ),
+                            keyboardActions =
+                                KeyboardActions(
+                                    onGo = { onSubmit.invoke() },
+                                ),
+                            isInputValid = { state.switchUserState !is LoadingState.Error },
+                            modifier = Modifier.focusRequester(passwordFocusRequester),
                         )
                     }
+                    TextButton(
+                        stringRes = R.string.login,
+                        onClick = { onSubmit.invoke() },
+                        enabled = username.isNotNullOrBlank(),
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
+                }
+                if (state.loginAttempts > 2) {
+                    Text(
+                        text = "Trouble logging in?",
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
+                    TextButton(
+                        stringRes = R.string.show_debug_info,
+                        onClick = {
+                            viewModel.navigationManager.navigateTo(Destination.Debug)
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
                 }
             }
         }
-        switchUserWithPin?.let { user ->
-            PinEntryDialog(
-                onDismissRequest = { switchUserWithPin = null },
-                onClickServerAuth = {
-                    showAddUser = true
-                    switchUserWithPin = null
-                },
-                onTextChange = {
-                    if (it == user.pin) viewModel.switchUser(user)
-                },
-            )
-        }
+    }
+    switchUserWithPin?.let { user ->
+        PinEntryDialog(
+            onDismissRequest = { switchUserWithPin = null },
+            onClickServerAuth = {
+                showAddUserDialog(user)
+                switchUserWithPin = null
+            },
+            onTextChange = {
+                if (it == user.pin) {
+                    val result = viewModel.trySwitchUser(user)
+                    scope.launch {
+                        result.await()?.let {
+                            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                            showAddUserDialog(user)
+                            switchUserWithPin = null
+                        }
+                    }
+                }
+            },
+        )
     }
 }
 
