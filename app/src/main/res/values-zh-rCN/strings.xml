@@ -582,4 +582,5 @@
     <string name="cinema_mode">影院模式</string>
     <string name="play_with">播放方式</string>
     <string name="transcoding">转码</string>
+    <string name="pin_digits_hint">[0-9]</string>
 </resources>
