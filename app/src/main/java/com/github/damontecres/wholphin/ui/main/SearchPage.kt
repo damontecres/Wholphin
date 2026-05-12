@@ -76,6 +76,7 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
@@ -569,7 +570,7 @@ fun SearchPage(
                                 top = 8.dp,
                                 bottom = 44.dp,
                             ),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
                         modifier = Modifier.focusGroup(),
                     ) {
                         searchResultRow(
@@ -651,9 +652,9 @@ fun SearchPage(
                         searchResultRow(
                             title = R.string.artists,
                             result = artists,
-                            rowIndex = COLLECTION_ROW,
+                            rowIndex = ARTIST_ROW,
                             position = position,
-                            focusRequester = focusRequesters[COLLECTION_ROW],
+                            focusRequester = focusRequesters[ARTIST_ROW],
                             onClickItem = onClickItem,
                             onClickPosition = { position = it },
                             modifier = Modifier.fillMaxWidth(),
@@ -661,7 +662,7 @@ fun SearchPage(
                                 SeasonCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(ALBUM_ROW, index)
+                                        position = RowColumn(ARTIST_ROW, index)
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -685,7 +686,7 @@ fun SearchPage(
                                 SeasonCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(ALBUM_ROW, index)
+                                        position = RowColumn(SONG_ROW, index)
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -849,15 +850,11 @@ fun SearchCombinedResults(
             } else {
                 RequestOrRestoreFocus(focusRequester)
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    modifier = modifier,
                 ) {
-                    Text(
-                        text = stringResource(R.string.results),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
+                    ItemRowTitle(stringResource(R.string.results))
+
                     CardGrid(
                         pager = r.items,
                         onClickItem = { index, item ->
@@ -873,10 +870,7 @@ fun SearchCombinedResults(
                         gridFocusRequester = focusRequester,
                         showJumpButtons = false,
                         showLetterButtons = false,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                         cardContent = { details ->
                             GridCard(
                                 item = details.item,
