@@ -616,4 +616,6 @@
     <string name="show_more">Mostra %1$s altri</string>
     <string name="skip_behavior">Comportamento di salto</string>
     <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
+    <string name="play_with">Riproduci con</string>
+    <string name="transcoding">Trascodifica</string>
 </resources>
