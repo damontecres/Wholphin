@@ -65,7 +65,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
+import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -128,7 +128,7 @@ class SearchViewModel
 
         val combinedModeFlow: StateFlow<Boolean> =
             appPreferences.data
-                .map { it.interfacePreferences.combinedSearchResults }
+                .map { it.interfacePreferences.searchPreferences.combinedSearchResults }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -261,7 +261,7 @@ class SearchViewModel
         fun setCombinedResults(enabled: Boolean) {
             viewModelScope.launchIO {
                 appPreferences.updateData {
-                    it.updateInterfacePreferences {
+                    it.updateSearchPreferences {
                         combinedSearchResults = enabled
                     }
                 }
