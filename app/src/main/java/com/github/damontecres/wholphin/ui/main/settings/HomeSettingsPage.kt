@@ -32,8 +32,11 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.search.SearchForDialog
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
@@ -43,12 +46,14 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 
 val settingsWidth = 360.dp
 
 @Composable
 fun HomeSettingsPage(
+    preferences: UserPreferences,
     modifier: Modifier,
     viewModel: HomeSettingsViewModel = hiltViewModel(),
 ) {
@@ -56,6 +61,8 @@ fun HomeSettingsPage(
     val listState = rememberLazyListState()
     val backStack = rememberNavBackStack(HomeSettingsDestination.RowList)
     var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
+    var searchForDialog by remember { mutableStateOf<BaseItemKind?>(null) }
+    var showRemovedNextUpDialog by remember { mutableStateOf(false) }
 
     val state by viewModel.state.collectAsState()
     var position by rememberPosition(0, 0)
@@ -63,13 +70,18 @@ fun HomeSettingsPage(
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
 
     // Adds a row, waits until its done loading, then scrolls to the new row
-    fun addRow(func: () -> Job) {
+    fun addRow(
+        scrollToBottom: Boolean = true,
+        func: () -> Job,
+    ) {
         scope.launch(ExceptionHandler(autoToast = true)) {
             while (backStack.size > 1) {
                 backStack.removeAt(backStack.lastIndex)
             }
             func.invoke().join()
-            listState.animateScrollToItem(state.rows.lastIndex)
+            if (scrollToBottom) {
+                listState.animateScrollToItem(state.rows.lastIndex)
+            }
         }
     }
 
@@ -149,6 +161,14 @@ fun HomeSettingsPage(
                                             MetaRowType.DISCOVER -> {
                                                 backStack.add(HomeSettingsDestination.ChooseDiscover)
                                             }
+
+                                            MetaRowType.COLLECTION -> {
+                                                searchForDialog = BaseItemKind.BOX_SET
+                                            }
+
+                                            MetaRowType.PLAYLIST -> {
+                                                searchForDialog = BaseItemKind.PLAYLIST
+                                            }
                                         }
                                     },
                                     modifier = destModifier,
@@ -159,7 +179,19 @@ fun HomeSettingsPage(
                                 HomeLibraryRowTypeList(
                                     library = dest.library,
                                     onClick = { type ->
-                                        addRow { viewModel.addRow(dest.library, type) }
+                                        when (type) {
+                                            LibraryRowType.COLLECTION -> {
+                                                searchForDialog = BaseItemKind.BOX_SET
+                                            }
+
+                                            LibraryRowType.PLAYLIST -> {
+                                                searchForDialog = BaseItemKind.PLAYLIST
+                                            }
+
+                                            else -> {
+                                                addRow { viewModel.addRow(dest.library, type) }
+                                            }
+                                        }
                                     },
                                     modifier = destModifier,
                                 )
@@ -212,6 +244,7 @@ fun HomeSettingsPage(
                                     onClick = { type ->
                                         addRow { viewModel.addFavoriteRow(type) }
                                     },
+                                    modifier = destModifier,
                                 )
                             }
 
@@ -250,8 +283,11 @@ fun HomeSettingsPage(
                                     onClickReset = {
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_local_settings) {
-                                                viewModel.resetToDefault()
+                                                addRow(false) { viewModel.resetToDefault() }
                                             }
+                                    },
+                                    onClickViewNextUp = {
+                                        showRemovedNextUpDialog = true
                                     },
                                     modifier = destModifier,
                                 )
@@ -281,6 +317,7 @@ fun HomeSettingsPage(
             listState = listState,
             takeFocus = false,
             showEmptyRows = true,
+            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
             modifier =
                 Modifier
                     .fillMaxHeight()
@@ -297,6 +334,25 @@ fun HomeSettingsPage(
                 showConfirmDialog = null
             },
         )
+    }
+    searchForDialog?.let { searchType ->
+        SearchForDialog(
+            onDismissRequest = { searchForDialog = null },
+            searchType = searchType,
+            onClick = {
+                searchForDialog = null
+                addRow { viewModel.addRow(searchType, it) }
+            },
+        )
+    }
+    if (showRemovedNextUpDialog) {
+        BasicDialog(
+            onDismissRequest = { showRemovedNextUpDialog = false },
+        ) {
+            RemovedNextUpContent(
+                modifier = Modifier.padding(16.dp),
+            )
+        }
     }
 }
 

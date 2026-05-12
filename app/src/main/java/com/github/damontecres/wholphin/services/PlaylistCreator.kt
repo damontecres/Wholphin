@@ -7,12 +7,14 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistInfo
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
@@ -22,6 +24,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -38,6 +41,11 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Create [Playlist]s (not Jellyfin server playlist) for playback
+ *
+ * Used to create a queue of episodes or from Play All button
+ */
 @Singleton
 class PlaylistCreator
     @Inject
@@ -74,6 +82,9 @@ class PlaylistCreator
             return Playlist(episodes, startIndex)
         }
 
+        /**
+         * Create from a server playlist ID
+         */
         suspend fun createFromPlaylistId(
             playlistId: UUID,
             startIndex: Int?,
@@ -114,7 +125,12 @@ class PlaylistCreator
                     req =
                         GetItemsRequest(
                             parentId = item.id,
-                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            enableImageTypes =
+                                listOf(
+                                    ImageType.PRIMARY,
+                                    ImageType.THUMB,
+                                    ImageType.LOGO,
+                                ),
                             includeItemTypes = includeItemTypes,
                             recursive = true,
                             excludeItemIds = listOf(item.id),
@@ -133,6 +149,11 @@ class PlaylistCreator
             return Playlist(items, 0)
         }
 
+        /**
+         * Create a [Playlist] contextually based on the given item.
+         *
+         * For example, an episode creates a queue of next up episodes in the series, or a movie creates one for its parts if needed
+         */
         suspend fun createFrom(
             item: BaseItemDto,
             startIndex: Int = 0,
@@ -229,14 +250,14 @@ class PlaylistCreator
                 -> {
                     val list =
                         buildList {
-                            add(BaseItem(item, false))
+                            add(PlaylistItem.Media(BaseItem(item, false)))
 
                             if (item.partCount.gt(1)) {
                                 api.videosApi
                                     .getAdditionalPart(item.id)
                                     .content.items
                                     .map {
-                                        BaseItem(it, false)
+                                        PlaylistItem.Media(BaseItem(it, false))
                                     }.let(::addAll)
                             }
                         }
@@ -256,20 +277,23 @@ class PlaylistCreator
                 }
             }
 
-        private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<BaseItem> =
+        private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<PlaylistItem> =
             buildList {
                 this@convertAndAddParts.forEach { ep ->
-                    add(BaseItem(ep, useSeriesForPrimary))
+                    add(PlaylistItem.Media(BaseItem(ep, useSeriesForPrimary)))
                     if (ep.partCount.gt(1)) {
                         val parts =
                             api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
-                                BaseItem(part, useSeriesForPrimary)
+                                PlaylistItem.Media(BaseItem(part, useSeriesForPrimary))
                             }
                         addAll(parts)
                     }
                 }
             }
 
+        /**
+         * Get the playlists on the server for a given media type
+         */
         suspend fun getServerPlaylists(
             mediaType: MediaType?,
             scope: CoroutineScope,

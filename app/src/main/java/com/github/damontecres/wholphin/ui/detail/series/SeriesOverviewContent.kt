@@ -30,31 +30,35 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -71,6 +75,7 @@ fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
+    seasonExtras: List<ExtrasItem>,
     chosenStreams: ChosenStreams?,
     peopleInEpisode: List<Person>,
     position: SeriesOverviewPosition,
@@ -78,6 +83,7 @@ fun SeriesOverviewContent(
     episodeRowFocusRequester: FocusRequester,
     castCrewRowFocusRequester: FocusRequester,
     guestStarRowFocusRequester: FocusRequester,
+    extrasRowFocusRequester: FocusRequester,
     onChangeSeason: (Int) -> Unit,
     onFocusEpisode: (Int) -> Unit,
     onClick: (BaseItem) -> Unit,
@@ -88,11 +94,14 @@ fun SeriesOverviewContent(
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
     personOnClick: (Person) -> Unit,
+    canDelete: (BaseItem) -> Boolean,
+    onConfirmDelete: (BaseItem) -> Unit,
+    onClickExtra: (Int, ExtrasItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
+    var selectedTabIndex by rememberSaveable(position.seasonTabIndex) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
     }
@@ -117,6 +126,8 @@ fun SeriesOverviewContent(
         }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
 
+    val currentOnChangeSeason by rememberUpdatedState(onChangeSeason)
+
     Box(
         modifier =
             modifier
@@ -134,34 +145,44 @@ fun SeriesOverviewContent(
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier =
                     Modifier
                         .focusGroup()
                         .bringIntoViewRequester(bringIntoViewRequester),
             ) {
                 val paddingValues =
-                    if (preferences.appPreferences.interfacePreferences.showClock) {
-                        PaddingValues(start = 0.dp, end = 184.dp)
-                    } else {
-                        PaddingValues(start = 0.dp, end = 16.dp)
+                    remember(preferences.appPreferences.interfacePreferences.showClock) {
+                        if (preferences.appPreferences.interfacePreferences.showClock) {
+                            PaddingValues(start = 0.dp, end = 184.dp)
+                        } else {
+                            PaddingValues(start = 0.dp, end = 16.dp)
+                        }
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     tabs = tabs,
-                    onClick = {
-                        selectedTabIndex = it
-                        onChangeSeason.invoke(it)
-                        requestFocusAfterSeason = true
-                    },
+                    onClick =
+                        remember {
+                            {
+                                selectedTabIndex = it
+                                currentOnChangeSeason(it)
+                                requestFocusAfterSeason = true
+                            }
+                        },
                     focusRequesters = focusRequesters,
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
                             .padding(paddingValues)
+                            .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier)
+                TitleOrLogo(
+                    item = series,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
@@ -244,14 +265,21 @@ fun SeriesOverviewContent(
                                             ).ifElse(
                                                 episodeIndex == epPosition,
                                                 Modifier.focusRequester(episodeRowFocusRequester),
-                                            ).ifElse(
-                                                episodeIndex != position.episodeRowIndex,
-                                                Modifier
-                                                    .background(
-                                                        Color.Black,
-                                                        shape = RoundedCornerShape(8.dp),
-                                                    ).alpha(dimming),
-                                            ).onFocusChanged {
+                                            ).background(
+                                                if (episodeIndex != position.episodeRowIndex) {
+                                                    Color.Black
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                                shape = RoundedCornerShape(8.dp),
+                                            ).graphicsLayer {
+                                                alpha =
+                                                    if (episodeIndex != position.episodeRowIndex) {
+                                                        dimming
+                                                    } else {
+                                                        1f
+                                                    }
+                                            }.onFocusChanged {
                                                 if (it.isFocused) {
                                                     scope.launch {
                                                         bringIntoViewRequester.bringIntoView()
@@ -266,6 +294,7 @@ fun SeriesOverviewContent(
                                             },
                                     interactionSource = interactionSource,
                                     cardHeight = 120.dp,
+                                    useSeriesForPrimary = false,
                                 )
                             }
                         }
@@ -292,25 +321,19 @@ fun SeriesOverviewContent(
                                 }
                             }
                         },
+                        canDelete = canDelete.invoke(ep),
+                        onConfirmDelete = { onConfirmDelete.invoke(ep) },
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp),
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
 
-            val castAndCrew =
+            val (guestStars, castAndCrew) =
                 remember(peopleInEpisode) {
-                    peopleInEpisode.filterNot {
-                        it.type == PersonKind.GUEST_STAR
-                    }
-                }
-            val guestStars =
-                remember(peopleInEpisode) {
-                    peopleInEpisode.filter {
-                        it.type == PersonKind.GUEST_STAR
-                    }
+                    peopleInEpisode.partition { it.type == PersonKind.GUEST_STAR }
                 }
 
             AnimatedVisibility(
@@ -345,6 +368,21 @@ fun SeriesOverviewContent(
                         )
                     }
                 }
+            }
+            AnimatedVisibility(
+                visible = seasonExtras.isNotEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                ExtrasRow(
+                    extras = seasonExtras,
+                    onClickItem = onClickExtra,
+                    onLongClickItem = { _, _ -> },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(extrasRowFocusRequester),
+                )
             }
         }
     }

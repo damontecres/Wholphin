@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -10,8 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,36 +19,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.runtime.NavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
@@ -61,21 +52,28 @@ import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
-import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.nav.ApplicationContent
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
-import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
+import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -85,6 +83,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
+    private val playExternalViewModel: PlayExternalViewModel by viewModels()
 
     @Inject
     lateinit var userPreferencesDataStore: DataStore<AppPreferences>
@@ -101,9 +100,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var updateChecker: UpdateChecker
-
-    @Inject
-    lateinit var appUpgradeHandler: AppUpgradeHandler
 
     @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
@@ -123,6 +119,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
+    @Inject
+    lateinit var latestNextUpSchedulerService: LatestNextUpSchedulerService
+
+    @Inject
+    lateinit var backdropService: BackdropService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -131,7 +133,15 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
 
+    @Inject
+    lateinit var screensaverService: ScreensaverService
+
     private var signInAuto = true
+
+    private val json =
+        Json {
+            classDiscriminator = "_type"
+        }
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -139,11 +149,25 @@ class MainActivity : AppCompatActivity() {
         instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
-        if (savedInstanceState == null) {
-            lifecycleScope.launchIO {
-                appUpgradeHandler.copySubfont(false)
+
+        val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
+        if (backStackStr != null) {
+            Timber.d("Restoring back stack")
+            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
+
+            if (!playExternalViewModel.launched.value) {
+                val lastDest = backStack.lastOrNull()
+                if (lastDest.isPlayback) {
+                    Timber.v("Restoring back stack with playback")
+                    backStack = backStack.toMutableList().apply { removeAt(lastIndex) }
+                }
             }
+            navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
+        } else {
+            val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
+            navigationManager.backStack = NavBackStack(startDestination)
         }
+
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
                 window?.setFlags(
@@ -154,6 +178,20 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
+        screensaverService.keepScreenOn
+            .onEach { keepScreenOn ->
+                Timber.v("keepScreenOn: %s", keepScreenOn)
+                withContext(Dispatchers.Main) {
+                    if (keepScreenOn) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    }
+                }
+            }.catch { ex ->
+                Timber.e(ex, "Error with keepScreenOn")
+            }.launchIn(lifecycleScope)
+
         viewModel.appStart()
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
@@ -181,14 +219,7 @@ class MainActivity : AppCompatActivity() {
                     signInAuto = appPreferences.signInAutomatically
                 }
                 CoilConfig(
-                    diskCacheSizeBytes =
-                        appPreferences.advancedPreferences.imageDiskCacheSizeBytes.let {
-                            if (it < AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT) {
-                                AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
-                            } else {
-                                it
-                            }
-                        },
+                    prefs = appPreferences,
                     okHttpClient = okHttpClient,
                     debugLogging = false,
                     enableCache = true,
@@ -201,115 +232,14 @@ class MainActivity : AppCompatActivity() {
                         true,
                         appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                     ) {
-                        Surface(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background),
-                            shape = RectangleShape,
-                        ) {
-//                            val backStack = rememberNavBackStack(SetupDestination.Loading)
-//                            setupNavigationManager.backStack = backStack
-                            val backStack = setupNavigationManager.backStack
-                            NavDisplay(
-                                backStack = backStack,
-                                onBack = { backStack.removeLastOrNull() },
-                                entryDecorators =
-                                    listOf(
-                                        rememberSaveableStateHolderNavEntryDecorator(),
-                                        rememberViewModelStoreNavEntryDecorator(),
-                                    ),
-                                entryProvider = { key ->
-                                    key as SetupDestination
-                                    NavEntry(key) {
-                                        when (key) {
-                                            SetupDestination.Loading -> {
-                                                Box(
-                                                    modifier = Modifier.size(200.dp),
-                                                    contentAlignment = Alignment.Center,
-                                                ) {
-                                                    CircularProgressIndicator(
-                                                        color = MaterialTheme.colorScheme.border,
-                                                        modifier = Modifier.align(Alignment.Center),
-                                                    )
-                                                }
-                                            }
-
-                                            SetupDestination.ServerList -> {
-                                                SwitchServerContent(Modifier.fillMaxSize())
-                                            }
-
-                                            is SetupDestination.UserList -> {
-                                                SwitchUserContent(
-                                                    currentServer = key.server,
-                                                    Modifier.fillMaxSize(),
-                                                )
-                                            }
-
-                                            is SetupDestination.AppContent -> {
-                                                val current = key.current
-                                                ProvideLocalClock {
-                                                    if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
-                                                        LaunchedEffect(Unit) {
-                                                            try {
-                                                                updateChecker.maybeShowUpdateToast(
-                                                                    appPreferences.updateUrl,
-                                                                )
-                                                            } catch (ex: Exception) {
-                                                                Timber.w(
-                                                                    ex,
-                                                                    "Exception during update check",
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    val appPreferences by userPreferencesDataStore.data.collectAsState(
-                                                        appPreferences,
-                                                    )
-                                                    val preferences =
-                                                        remember(appPreferences) {
-                                                            UserPreferences(appPreferences)
-                                                        }
-                                                    var showContent by remember {
-                                                        mutableStateOf(true)
-                                                    }
-                                                    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                                                        if (!preferences.appPreferences.signInAutomatically) {
-                                                            showContent = false
-                                                        }
-                                                    }
-
-                                                    if (showContent) {
-                                                        val requestedDestination =
-                                                            remember(intent) {
-                                                                intent?.let(::extractDestination)
-                                                            }
-                                                        ApplicationContent(
-                                                            user = current.user,
-                                                            server = current.server,
-                                                            startDestination =
-                                                                requestedDestination
-                                                                    ?: Destination.Home(),
-                                                            navigationManager = navigationManager,
-                                                            preferences = preferences,
-                                                            modifier = Modifier.fillMaxSize(),
-                                                        )
-                                                    } else {
-                                                        Box(
-                                                            modifier = Modifier.size(200.dp),
-                                                            contentAlignment = Alignment.Center,
-                                                        ) {
-                                                            CircularProgressIndicator(
-                                                                color = MaterialTheme.colorScheme.border,
-                                                                modifier = Modifier.align(Alignment.Center),
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
+                        ProvideLocalClock {
+                            MainContent(
+                                backStack = setupNavigationManager.backStack,
+                                navigationManager = navigationManager,
+                                appPreferences = appPreferences,
+                                backdropService = backdropService,
+                                screensaverService = screensaverService,
+                                modifier = Modifier.fillMaxSize(),
                             )
                         }
                     }
@@ -318,11 +248,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (screensaverService.state.value.show) {
+            screensaverService.stop(false)
+            screensaverService.pulse()
+            return true
+        } else {
+            screensaverService.pulse()
+            return super.dispatchKeyEvent(event)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Timber.d("onResume")
-        lifecycleScope.launchIO {
-            appUpgradeHandler.run()
+        lifecycleScope.launchDefault {
+            screensaverService.pulse()
         }
     }
 
@@ -330,11 +271,20 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         Timber.d("onRestart")
         viewModel.appStart()
+        if (!playExternalViewModel.launched.value) {
+            // If restarting during playback that is not external, go back a page
+            val lastDest = navigationManager.backStack.lastOrNull()
+            if (lastDest.isPlayback) {
+                Timber.v("onRestart: go back from playback")
+                navigationManager.goBack()
+            }
+        }
     }
 
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        screensaverService.stop(true)
         tvProviderSchedulerService.launchOneTimeRefresh()
     }
 
@@ -346,11 +296,32 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         Timber.d("onStart")
+
+        lifecycleScope.launchDefault {
+            val appPreferences = userPreferencesDataStore.data.first()
+            if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
+                try {
+                    updateChecker.maybeShowUpdateToast(
+                        appPreferences.updateUrl,
+                    )
+                } catch (ex: Exception) {
+                    Timber.w(
+                        ex,
+                        "Exception during update check",
+                    )
+                }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Timber.d("onSaveInstanceState")
+        val str = json.encodeToString(navigationManager.backStack.toList())
+        outState.putString(KEY_BACK_STACK, str)
+        val playerBackend =
+            runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
+        outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -426,6 +397,9 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
 
+        private const val KEY_BACK_STACK = "backStack"
+        private const val KEY_EXTERNAL_PLAYER = "extPlayer"
+
         lateinit var instance: MainActivity
             private set
     }
@@ -435,15 +409,29 @@ class MainActivity : AppCompatActivity() {
 class MainActivityViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val preferences: DataStore<AppPreferences>,
         val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
+        private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 try {
+                    val needUpgrade = appUpgradeHandler.needUpgrade()
+                    if (needUpgrade) {
+                        showToast(
+                            context,
+                            context.getString(
+                                R.string.updated_toast,
+                                appUpgradeHandler.currentVersion.toString(),
+                            ),
+                        )
+                        appUpgradeHandler.run()
+                    }
+                    appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
@@ -485,9 +473,15 @@ class MainActivityViewModel
                     navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }
         }
     }
+
+private val Destination?.isPlayback: Boolean
+    get() =
+        this is Destination.Playback ||
+            this is Destination.PlaybackList ||
+            this is Destination.Slideshow

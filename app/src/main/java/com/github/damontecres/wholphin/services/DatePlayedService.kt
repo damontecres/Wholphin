@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Caches when media was lasted played. This is mostly used by the combined Continue Watching & Next Up home row.
+ */
 @Singleton
 class DatePlayedService
     @Inject
@@ -80,6 +83,12 @@ class DatePlayedService
             }
         }
 
+        /**
+         * Get the logical timestamp when the item was last played.
+         *
+         * This is calculated using lastest of the actual last played timestamp of the item,
+         * the previous episode's last played timestamp, and the episode's premiere date
+         */
         suspend fun getLastPlayed(item: BaseItem): LocalDateTime? =
             withContext(Dispatchers.IO) {
                 val seriesId = item.data.seriesId
@@ -93,6 +102,11 @@ class DatePlayedService
                 }
             }
 
+        /**
+         * Remove the cached last date played for the given item's series
+         *
+         * Used for when a user plays this item
+         */
         fun invalidate(item: BaseItem) {
             item.data.seriesId?.let { seriesId ->
                 Timber.d("Invalidating %s", seriesId)
@@ -100,6 +114,9 @@ class DatePlayedService
             }
         }
 
+        /**
+         * Remove the cached last data played for the given item or its series
+         */
         suspend fun invalidate(itemId: UUID) {
             val seriesId =
                 api.userLibraryApi.getItem(itemId = itemId).content.let {
@@ -121,6 +138,9 @@ class DatePlayedService
         }
     }
 
+/**
+ * Invalidates the date played cached when the current user changes
+ */
 @ActivityScoped
 class DatePlayedInvalidationService
     @Inject

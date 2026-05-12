@@ -8,10 +8,12 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
-import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.SEERR_PAGE_SIZE
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -76,8 +78,8 @@ sealed class Destination(
     data class Playback(
         val itemId: UUID,
         val positionMs: Long,
-        val itemPlayback: ItemPlayback? = null,
         val forceTranscoding: Boolean = false,
+        val backend: PlayerBackend? = null,
     ) : Destination(true) {
         constructor(item: BaseItem) : this(item.id, item.resumeMs)
     }
@@ -97,6 +99,7 @@ sealed class Destination(
     @Serializable
     data class FilteredCollection(
         val itemId: UUID,
+        val parentType: BaseItemKind,
         val filter: CollectionFolderFilter,
         val recursive: Boolean,
     ) : Destination(false)
@@ -128,6 +131,14 @@ sealed class Destination(
     data class DiscoveredItem(
         val item: DiscoverItem,
     ) : Destination(false)
+
+    data class DiscoverMoreResult(
+        val type: DiscoverRequestType,
+        val startIndex: Int = SEERR_PAGE_SIZE,
+    ) : Destination(false)
+
+    @Serializable
+    data object NowPlaying : Destination(true)
 
     @Serializable
     data object UpdateApp : Destination(true)

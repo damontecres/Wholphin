@@ -25,6 +25,8 @@ fun FocusedEpisodeFooter(
     moreOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
+    canDelete: Boolean,
+    onConfirmDelete: () -> Unit,
     modifier: Modifier = Modifier,
     buttonOnFocusChanged: (FocusState) -> Unit = {},
 ) {
@@ -37,6 +39,7 @@ fun FocusedEpisodeFooter(
         modifier = modifier,
     ) {
         ExpandablePlayButtons(
+            title = ep.title ?: "",
             resumePosition = resumePosition,
             watched = dto.userData?.played ?: false,
             favorite = dto.userData?.isFavorite ?: false,
@@ -47,6 +50,8 @@ fun FocusedEpisodeFooter(
             buttonOnFocusChanged = buttonOnFocusChanged,
             trailers = null,
             trailerOnClick = {},
+            canDelete = canDelete,
+            onConfirmDelete = onConfirmDelete,
             modifier = Modifier.fillMaxWidth(),
         )
     }

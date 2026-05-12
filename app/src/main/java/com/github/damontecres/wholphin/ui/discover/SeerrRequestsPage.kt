@@ -64,7 +64,7 @@ class SeerrRequestsViewModel
             viewModelScope.launchIO {
                 backdropService.clearBackdrop()
             }
-            seerrServerRepository.current
+            seerrServerRepository.connection
                 .onEach { user ->
                     state.update { it.copy(requests = DataLoadingState.Loading) }
                     if (user != null) {
@@ -85,13 +85,13 @@ class SeerrRequestsViewModel
                                                     seerrService.api.moviesApi
                                                         .movieMovieIdGet(
                                                             movieId = request.media.tmdbId,
-                                                        ).let { DiscoverItem(it) }
+                                                        ).let { seerrService.createDiscoverItem(it) }
                                                 }
 
                                                 SeerrItemType.TV -> {
                                                     seerrService.api.tvApi
                                                         .tvTvIdGet(tvId = request.media.tmdbId)
-                                                        .let { DiscoverItem(it) }
+                                                        .let { seerrService.createDiscoverItem(it) }
                                                 }
 
                                                 SeerrItemType.PERSON -> {
@@ -204,7 +204,7 @@ fun SeerrRequestsPage(
                         showJumpButtons = false,
                         showLetterButtons = false,
                         spacing = 16.dp,
-                        cardContent = @Composable { item, onClick, onLongClick, mod ->
+                        cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                             DiscoverItemCard(
                                 item = item?.item,
                                 onClick = onClick,

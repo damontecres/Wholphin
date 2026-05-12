@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.SeerrApi
+import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
@@ -17,6 +18,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,21 +34,51 @@ import org.jellyfin.sdk.model.DeviceInfo
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
+/**
+ * An [OkHttpClient] that includes the user's access token when making requests
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AuthOkHttpClient
 
+/**
+ * A basic [OkHttpClient] that does not include auth
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class StandardOkHttpClient
 
+/**
+ * A [CoroutineScope] with [Dispatchers.IO]
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
+/**
+ * A [CoroutineScope] with [Dispatchers.Default]
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCoroutineScope
+
+/**
+ * [Dispatchers.IO]
+ *
+ * @see IoCoroutineScope
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class IoDispatcher
+
+/**
+ * [Dispatchers.Default]
+ *
+ * @see DefaultCoroutineScope
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -60,12 +92,6 @@ object AppModule {
             name = context.getString(R.string.app_name),
             version = BuildConfig.VERSION_NAME,
         )
-
-    @Provides
-    @Singleton
-    fun deviceInfo(
-        @ApplicationContext context: Context,
-    ): DeviceInfo = androidDevice(context)
 
     @StandardOkHttpClient
     @Provides
@@ -111,12 +137,12 @@ object AppModule {
     @Singleton
     fun okHttpFactory(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
-    ) = OkHttpFactory(okHttpClient)
+    ) = CoroutineContextApiClientFactory(OkHttpFactory(okHttpClient))
 
     @Provides
     @Singleton
     fun jellyfin(
-        okHttpFactory: OkHttpFactory,
+        okHttpFactory: CoroutineContextApiClientFactory,
         @ApplicationContext context: Context,
         clientInfo: ClientInfo,
         deviceInfo: DeviceInfo,
@@ -167,7 +193,7 @@ object AppModule {
             if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {
                 scope.launch(ExceptionHandler()) {
                     appPreference.updateData {
-                        preferences.appPreferences.updateInterfacePreferences {
+                        it.updateInterfacePreferences {
                             putRememberedTabs(key(itemId), tabIndex)
                         }
                     }
@@ -178,13 +204,27 @@ object AppModule {
 
     @Provides
     @Singleton
+    @IoDispatcher
+    fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+    @Provides
+    @Singleton
     @IoCoroutineScope
-    fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    fun ioCoroutineScope(
+        @IoDispatcher dispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+
+    @Provides
+    @Singleton
+    @DefaultDispatcher
+    fun defaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
 
     @Provides
     @Singleton
     @DefaultCoroutineScope
-    fun defaultCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    fun defaultCoroutineScope(
+        @DefaultDispatcher dispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     @Provides
     @Singleton
@@ -197,4 +237,14 @@ object AppModule {
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DeviceModule {
+    @Provides
+    @Singleton
+    fun deviceInfo(
+        @ApplicationContext context: Context,
+    ): DeviceInfo = androidDevice(context)
 }

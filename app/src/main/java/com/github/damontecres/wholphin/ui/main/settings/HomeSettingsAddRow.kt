@@ -69,11 +69,17 @@ fun HomeSettingsAddRow(
                 TitleText(stringResource(R.string.more))
                 HorizontalDivider()
             }
-            item {
+            itemsIndexed(
+                listOf(
+                    MetaRowType.FAVORITES,
+                    MetaRowType.COLLECTION,
+                    MetaRowType.PLAYLIST,
+                ),
+            ) { index, type ->
                 HomeSettingsListItem(
                     selected = false,
-                    headlineText = stringResource(MetaRowType.FAVORITES.stringId),
-                    onClick = { onClickMeta.invoke(MetaRowType.FAVORITES) },
+                    headlineText = stringResource(type.stringId),
+                    onClick = { onClickMeta.invoke(type) },
                     modifier = Modifier,
                 )
             }
@@ -99,4 +105,6 @@ enum class MetaRowType(
     COMBINED_CONTINUE_WATCHING(R.string.combine_continue_next),
     FAVORITES(R.string.favorites),
     DISCOVER(R.string.discover),
+    COLLECTION(R.string.collection),
+    PLAYLIST(R.string.playlist),
 }

@@ -6,15 +6,17 @@ import androidx.compose.ui.Modifier
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
+import com.github.damontecres.wholphin.data.filter.DefaultForStudiosFilterOptions
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
-import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderMusic
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPhotoAlbum
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
@@ -23,17 +25,23 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
+import com.github.damontecres.wholphin.ui.detail.music.AlbumDetailsPage
+import com.github.damontecres.wholphin.ui.detail.music.ArtistDetailsPage
+import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
+import com.github.damontecres.wholphin.ui.discover.DiscoverRequestGrid
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
+import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
@@ -65,17 +73,41 @@ fun DestinationContent(
         }
 
         is Destination.HomeSettings -> {
-            HomeSettingsPage(modifier)
+            HomeSettingsPage(preferences, modifier)
         }
 
-        is Destination.PlaybackList,
-        is Destination.Playback,
-        -> {
-            PlaybackPage(
-                preferences = preferences,
-                destination = destination,
-                modifier = modifier,
-            )
+        is Destination.Playback -> {
+            val backend =
+                destination.backend ?: preferences.appPreferences.playbackPreferences.playerBackend
+            if (backend == PlayerBackend.EXTERNAL_PLAYER) {
+                PlayExternalPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            } else {
+                PlaybackPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            }
+        }
+
+        is Destination.PlaybackList -> {
+            if (preferences.appPreferences.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER) {
+                PlayExternalPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            } else {
+                PlaybackPage(
+                    preferences = preferences,
+                    destination = destination,
+                    modifier = modifier,
+                )
+            }
         }
 
         is Destination.Settings -> {
@@ -121,7 +153,9 @@ fun DestinationContent(
                     )
                 }
 
-                BaseItemKind.VIDEO -> {
+                BaseItemKind.VIDEO,
+                BaseItemKind.MUSIC_VIDEO,
+                -> {
                     // TODO Use VideoDetails
                     MovieDetails(
                         preferences,
@@ -140,11 +174,9 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionFolderBoxSet(
+                    CollectionDetails(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        recursive = false,
-                        playEnabled = true,
                         modifier = modifier,
                     )
                 }
@@ -152,6 +184,7 @@ fun DestinationContent(
                 BaseItemKind.PLAYLIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PlaylistDetails(
+                        preferences = preferences,
                         destination = destination,
                         modifier = modifier,
                     )
@@ -207,7 +240,25 @@ fun DestinationContent(
                     CollectionFolderPhotoAlbum(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        recursive = true,
+                        recursive = false,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.MUSIC_ALBUM -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    AlbumDetailsPage(
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.MUSIC_ARTIST -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    ArtistDetailsPage(
+                        preferences = preferences,
+                        itemId = destination.itemId,
                         modifier = modifier,
                     )
                 }
@@ -228,7 +279,12 @@ fun DestinationContent(
                 recursive = destination.recursive,
                 usePosters = true,
                 playEnabled = true, // TODO only genres use this currently, so might need to change in future
-                filterOptions = DefaultForGenresFilterOptions,
+                filterOptions =
+                    when (destination.parentType) {
+                        BaseItemKind.GENRE -> DefaultForGenresFilterOptions
+                        BaseItemKind.STUDIO -> DefaultForStudiosFilterOptions
+                        else -> throw IllegalArgumentException("Unsupported parentType ${destination.parentType}")
+                    },
                 modifier = modifier,
             )
         }
@@ -263,6 +319,10 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
+        Destination.NowPlaying -> {
+            NowPlayingPage(modifier)
         }
 
         Destination.UpdateApp -> {
@@ -326,6 +386,14 @@ fun DestinationContent(
                 }
             }
         }
+
+        is Destination.DiscoverMoreResult -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            DiscoverRequestGrid(
+                destination = destination,
+                modifier = modifier,
+            )
+        }
     }
 }
 
@@ -384,11 +452,27 @@ fun CollectionFolder(
             )
         }
 
+        CollectionType.MUSIC -> {
+            CollectionFolderMusic(
+                preferences,
+                destination,
+                modifier,
+            )
+        }
+
         CollectionType.HOMEVIDEOS,
-        CollectionType.MUSICVIDEOS,
-        CollectionType.MUSIC,
-        CollectionType.BOOKS,
         CollectionType.PHOTOS,
+        -> {
+            CollectionFolderPhotoAlbum(
+                preferences = preferences,
+                itemId = destination.itemId,
+                recursive = recursiveOverride ?: false,
+                modifier = modifier,
+            )
+        }
+
+        CollectionType.MUSICVIDEOS,
+        CollectionType.BOOKS,
         -> {
             CollectionFolderGeneric(
                 preferences,

@@ -2,9 +2,12 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -24,9 +27,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,6 +59,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.DrawerState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
@@ -70,6 +76,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
@@ -77,7 +84,9 @@ import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.setup.UserIconCardImage
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
@@ -87,6 +96,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.CollectionType
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -99,6 +109,7 @@ class NavDrawerViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
+        private val musicService: MusicService,
     ) : ViewModel() {
         val state = navDrawerService.state
 
@@ -145,8 +156,73 @@ class NavDrawerViewModel
         }
 
         fun getUserImage(user: JellyfinUser): String = api.imageApi.getUserImageUrl(user.id)
+
+        /**
+         * Determine which nav drawer item should be highlighted as currently selected
+         */
+        fun updateSelectedIndex() {
+            viewModelScope.launchDefault {
+                val asDestinations =
+                    (
+                        state.value.items +
+                            listOf(
+                                NavDrawerItem.More,
+                                NavDrawerItem.Discover,
+                            ) + state.value.moreItems
+                    ).map {
+                        if (it is ServerNavDrawerItem) {
+                            it.destination
+                        } else if (it is NavDrawerItem.Favorites) {
+                            Destination.Favorites
+                        } else if (it is NavDrawerItem.Discover) {
+                            Destination.Discover
+                        } else {
+                            null
+                        }
+                    }
+
+                val backstack = navigationManager.backStack.toList().reversed()
+                for (i in 0..<backstack.size) {
+                    val key = backstack[i]
+                    if (key is Destination) {
+                        val index =
+                            if (key is Destination.Home) {
+                                HOME_INDEX
+                            } else if (key is Destination.Search) {
+                                SEARCH_INDEX
+                            } else if (key is Destination.NowPlaying) {
+                                NOW_PLAYING_INDEX
+                            } else {
+                                val idx = asDestinations.indexOf(key)
+                                if (idx >= 0) {
+                                    idx
+                                } else {
+                                    null
+                                }
+                            }
+                        Timber.v("Found $index => $key")
+                        if (index != null) {
+                            selectedIndex.setValueOnMain(index)
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        fun navigateToSetup(userList: SetupDestination) {
+            viewModelScope.launchDefault {
+                musicService.stop()
+                setupNavigationManager.navigateTo(userList)
+            }
+        }
     }
 
+/**
+ * An item that can be shown in the nav drawer
+ *
+ * Some are built-in such as Favorites. Others are created dynamically for libraries.
+ */
 sealed interface NavDrawerItem {
     val id: String
 
@@ -174,6 +250,9 @@ sealed interface NavDrawerItem {
     }
 }
 
+/**
+ * A server provided nav drawer item, typically a library
+ */
 data class ServerNavDrawerItem(
     val itemId: UUID,
     val name: String,
@@ -188,6 +267,10 @@ data class ServerNavDrawerItem(
         fun getId(itemId: UUID) = "s_" + itemId.toServerString()
     }
 }
+
+private const val HOME_INDEX = -1
+private const val SEARCH_INDEX = -2
+private const val NOW_PLAYING_INDEX = -3
 
 /**
  * Display the left side navigation drawer with [DestinationContent] on the right
@@ -208,6 +291,7 @@ fun NavDrawer(
             key = "${server.id}_${user.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
+    LaunchedEffect(Unit) { viewModel.updateSelectedIndex() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -270,12 +354,37 @@ fun NavDrawer(
                         drawerOpen = isOpen,
                         interactionSource = interactionSource,
                         onClick = {
-                            viewModel.setupNavigationManager.navigateTo(
+                            viewModel.navigateToSetup(
                                 SetupDestination.UserList(server),
                             )
                         },
                         modifier = Modifier,
                     )
+                    AnimatedVisibility(
+                        visible = state.nowPlayingEnabled,
+                        enter = expandVertically(expandFrom = Alignment.Top),
+                        exit = shrinkVertically(shrinkTowards = Alignment.Top),
+                    ) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        IconNavItem(
+                            text = stringResource(R.string.now_playing),
+                            subtext = state.nowPlayingTitle,
+                            icon = Icons.Default.PlayArrow,
+                            selected = selectedIndex == NOW_PLAYING_INDEX,
+                            drawerOpen = isOpen,
+                            interactionSource = interactionSource,
+                            onClick = {
+                                viewModel.setIndex(NOW_PLAYING_INDEX)
+                                viewModel.navigationManager.navigateTo(Destination.NowPlaying)
+                            },
+                            modifier =
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == NOW_PLAYING_INDEX,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
+                        )
+                    }
                     LazyColumn(
                         state = navDrawerListState,
                         contentPadding = PaddingValues(0.dp),
@@ -299,18 +408,18 @@ fun NavDrawer(
                             IconNavItem(
                                 text = stringResource(R.string.search),
                                 icon = Icons.Default.Search,
-                                selected = selectedIndex == -2,
+                                selected = selectedIndex == SEARCH_INDEX,
                                 drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
-                                    viewModel.setIndex(-2)
+                                    viewModel.setIndex(SEARCH_INDEX)
                                     viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
                                 },
                                 modifier =
                                     Modifier
                                         .focusRequester(searchFocusRequester)
                                         .ifElse(
-                                            selectedIndex == -2,
+                                            selectedIndex == SEARCH_INDEX,
                                             Modifier.focusRequester(focusRequester),
                                         ),
                             )
@@ -320,11 +429,11 @@ fun NavDrawer(
                             IconNavItem(
                                 text = stringResource(R.string.home),
                                 icon = Icons.Default.Home,
-                                selected = selectedIndex == -1,
+                                selected = selectedIndex == HOME_INDEX,
                                 drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
-                                    viewModel.setIndex(-1)
+                                    viewModel.setIndex(HOME_INDEX)
                                     if (destination is Destination.Home) {
                                         viewModel.navigationManager.reloadHome()
                                     } else {
@@ -334,7 +443,7 @@ fun NavDrawer(
                                 modifier =
                                     Modifier
                                         .ifElse(
-                                            selectedIndex == -1,
+                                            selectedIndex == HOME_INDEX,
                                             Modifier.focusRequester(focusRequester),
                                         ),
                             )

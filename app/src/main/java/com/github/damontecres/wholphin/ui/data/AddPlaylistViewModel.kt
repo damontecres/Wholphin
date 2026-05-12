@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.launchIO
@@ -14,9 +15,14 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.model.api.MediaType
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+/**
+ * A supplementary [ViewModel] for adding items to a server playlist
+ * @see com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+ */
 @HiltViewModel
 class AddPlaylistViewModel
     @Inject
@@ -43,7 +49,13 @@ class AddPlaylistViewModel
             itemId: UUID,
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                playlistCreator.addToServerPlaylist(playlistId, itemId)
+                try {
+                    playlistCreator.addToServerPlaylist(playlistId, itemId)
+                    showToast(context, context.getString(R.string.success), Toast.LENGTH_SHORT)
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error adding %s to playlist %s", itemId, playlistId)
+                    showToast(context, "Error: ${ex.localizedMessage}", Toast.LENGTH_SHORT)
+                }
             }
         }
 
@@ -55,6 +67,8 @@ class AddPlaylistViewModel
                 val playlistId = playlistCreator.createServerPlaylist(playlistName, listOf(itemId))
                 if (playlistId == null) {
                     showToast(context, "Error creating playlist", Toast.LENGTH_LONG)
+                } else {
+                    showToast(context, context.getString(R.string.success), Toast.LENGTH_SHORT)
                 }
             }
         }

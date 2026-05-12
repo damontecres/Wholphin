@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,21 +34,20 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
@@ -54,37 +57,42 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
+import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.GenreText
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -102,21 +110,74 @@ fun SeriesDetails(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
+    val canDelete by viewModel.canDeleteSeries.collectAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
     val extras by viewModel.extras.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val discovered by viewModel.discovered.collectAsState()
+    val discoverSeries by viewModel.discoverSeries.collectAsState()
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
+
     var showWatchConfirmation by remember { mutableStateOf(false) }
-    var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+
+    val contextActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = { itemId, watched ->
+                    if (itemId == destination.itemId) {
+                        // Confirm if marking whole series
+                        showWatchConfirmation = true
+                    } else {
+                        viewModel.setWatched(itemId, watched, null)
+                    }
+                },
+                onClickFavorite = { itemId, favorite ->
+                    viewModel.setFavorite(itemId, favorite, null)
+                },
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog = Optional.present(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onClearChosenStreams = {},
+            )
+        }
+
+    LifecycleResumeEffect(destination.itemId) {
+        viewModel.refresh()
+
+        onPauseOrDispose {
+            viewModel.release()
+        }
+    }
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -134,9 +195,7 @@ fun SeriesDetails(
                 LifecycleResumeEffect(destination.itemId) {
                     viewModel.onResumePage()
 
-                    onPauseOrDispose {
-                        viewModel.release()
-                    }
+                    onPauseOrDispose {}
                 }
 
                 val played = item.data.userData?.played ?: false
@@ -150,6 +209,7 @@ fun SeriesDetails(
                     similar = similar,
                     played = played,
                     favorite = item.data.userData?.isFavorite ?: false,
+                    canDelete = canDelete,
                     modifier = modifier,
                     onClickItem = { index, item ->
                         viewModel.navigateTo(item.destination())
@@ -163,32 +223,21 @@ fun SeriesDetails(
                         )
                     },
                     onLongClickItem = { index, season ->
-                        seasonDialog =
-                            buildDialogForSeason(
-                                context = context,
-                                s = season,
-                                onClickItem = { viewModel.navigateTo(it.destination()) },
-                                markPlayed = { played ->
-                                    viewModel.setSeasonWatched(season.id, played)
-                                },
-                                onClickPlay = { shuffle ->
-                                    viewModel.navigateTo(
-                                        Destination.PlaybackList(
-                                            itemId = season.id,
-                                            shuffle = shuffle,
-                                        ),
-                                    )
-                                },
+                        showContextMenu =
+                            ContextMenu.ForBaseItem(
+                                fromLongClick = true,
+                                item = season,
+                                chosenStreams = null,
+                                showGoTo = true,
+                                showStreamChoices = false,
+                                canDelete = viewModel.canDelete(season, preferences.appPreferences),
+                                canRemoveContinueWatching = false,
+                                canRemoveNextUp = false,
+                                actions = contextActions,
                             )
                     },
                     overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = item.name ?: context.getString(R.string.unknown),
-                                overview = item.data.overview,
-                                genres = item.data.genres.orEmpty(),
-                                files = listOf(),
-                            )
+                        overviewDialog = ItemDetailsDialogInfo(item)
                     },
                     playOnClick = { shuffle ->
                         if (shuffle) {
@@ -213,25 +262,20 @@ fun SeriesDetails(
                     onClickExtra = { _, extra ->
                         viewModel.navigateTo(extra.destination)
                     },
+                    discoverSeries = discoverSeries,
+                    onClickDiscoverSeries = {
+                        discoverSeries?.let {
+                            viewModel.navigateTo(Destination.DiscoveredItem(it))
+                        }
+                    },
                     discovered = discovered,
                     onClickDiscover = { index, item ->
                         viewModel.navigateTo(item.destination)
                     },
-                    moreActions =
-                        MoreDialogActions(
-                            navigateTo = { viewModel.navigateTo(it) },
-                            onClickWatch = { itemId, played ->
-                                viewModel.setWatched(itemId, played, null)
-                            },
-                            onClickFavorite = { itemId, played ->
-                                viewModel.setFavorite(itemId, played, null)
-                            },
-                            onClickAddPlaylist = { itemId ->
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog.makePresent(itemId)
-                            },
-                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                        ),
+                    onShowContextMenu = {
+                        showContextMenu = it
+                    },
+                    actions = contextActions,
                 )
                 if (showWatchConfirmation) {
                     ConfirmDialog(
@@ -250,20 +294,19 @@ fun SeriesDetails(
             }
         }
     }
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
+        )
+    }
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
             showFilePath = false,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-    seasonDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            waitToLoad = params.fromLongClick,
-            onDismissRequest = { seasonDialog = null },
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -305,6 +348,7 @@ fun SeriesDetailsContent(
     discovered: List<DiscoverItem>,
     played: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -314,8 +358,11 @@ fun SeriesDetailsContent(
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
-    moreActions: MoreDialogActions,
+    onShowContextMenu: (ContextMenu) -> Unit,
+    actions: ContextMenuActions,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    discoverSeries: DiscoverItem?,
+    onClickDiscoverSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -326,7 +373,6 @@ fun SeriesDetailsContent(
     val focusRequesters = remember { List(DISCOVER_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     RequestOrRestoreFocus(focusRequesters.getOrNull(position))
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     Box(
         modifier = modifier,
@@ -334,7 +380,6 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
@@ -345,18 +390,20 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
+                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 8.dp)
+                                .padding(start = HeaderUtils.startPadding)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
@@ -436,6 +483,43 @@ fun SeriesDetailsContent(
                                     }
                                 },
                         )
+                        if (canDelete) {
+                            DeleteButton(
+                                title = series.title ?: "",
+                                onConfirmDelete = {
+                                    position = HEADER_ROW
+                                    actions.onDeleteItem.invoke(series)
+                                },
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            if (it.isFocused) {
+                                                scope.launch(ExceptionHandler()) {
+                                                    bringIntoViewRequester.bringIntoView()
+                                                }
+                                            }
+                                        },
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = discoverSeries != null,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            ExpandableFaButton(
+                                title = R.string.discover,
+                                iconStringRes = R.string.fa_magnifying_glass_plus,
+                                onClick = onClickDiscoverSeries,
+                                modifier =
+                                    Modifier.onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(ExceptionHandler()) {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
+                                        }
+                                    },
+                            )
+                        }
                     }
                 }
                 item {
@@ -477,18 +561,17 @@ fun SeriesDetailsContent(
                             },
                             onLongClick = { index, person ->
                                 position = PEOPLE_ROW
-                                val items =
-                                    buildMoreDialogItemsForPerson(
-                                        context = context,
-                                        person = person,
-                                        actions = moreActions,
-                                    )
-                                moreDialog =
-                                    DialogParams(
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForPerson(
                                         fromLongClick = true,
-                                        title = person.name ?: "",
-                                        items = items,
-                                    )
+                                        person = person,
+                                        actions =
+                                            PersonContextActions(
+                                                navigateTo = actions.navigateTo,
+                                                onClickFavorite = actions.onClickFavorite,
+                                            ),
+                                    ),
+                                )
                             },
                             modifier =
                                 Modifier
@@ -524,22 +607,19 @@ fun SeriesDetailsContent(
                             },
                             onLongClickItem = { index, item ->
                                 position = SIMILAR_ROW
-                                val items =
-                                    buildMoreDialogItemsForHome(
-                                        context = context,
-                                        item = item,
-                                        seriesId = null,
-                                        playbackPosition = item.playbackPosition,
-                                        watched = item.played,
-                                        favorite = item.favorite,
-                                        actions = moreActions,
-                                    )
-                                moreDialog =
-                                    DialogParams(
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForBaseItem(
                                         fromLongClick = true,
-                                        title = item.name ?: "",
-                                        items = items,
-                                    )
+                                        item = item,
+                                        chosenStreams = null,
+                                        showGoTo = true,
+                                        showStreamChoices = false,
+                                        canDelete = false,
+                                        canRemoveContinueWatching = false,
+                                        canRemoveNextUp = false,
+                                        actions = actions,
+                                    ),
+                                )
                             },
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
@@ -566,6 +646,7 @@ fun SeriesDetailsContent(
                                 DiscoverRowData(
                                     stringResource(R.string.discover),
                                     DataLoadingState.Success(discovered),
+                                    type = DiscoverRequestType.UNKNOWN,
                                 ),
                             onClickItem = { index: Int, item: DiscoverItem ->
                                 position = DISCOVER_ROW
@@ -580,22 +661,14 @@ fun SeriesDetailsContent(
             }
         }
     }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
-    }
 }
 
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    showLogo: Boolean,
     overviewOnClick: () -> Unit,
+    bringIntoViewRequester: BringIntoViewRequester,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -604,24 +677,33 @@ fun SeriesDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        Text(
-            text = series.name ?: stringResource(R.string.unknown),
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        TitleOrLogo(
+            item = series,
+            showLogo = showLogo,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
-                    .padding(start = 8.dp),
+                    .padding(start = HeaderUtils.startPadding),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
+            QuickDetails(
+                series.ui.quickDetails,
+                null,
+                Modifier.padding(start = HeaderUtils.startPadding),
+            )
+            dto.studios?.let {
+                val studios = remember { series.studioNames }
+                GenreText(
+                    studios,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                )
+            }
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 12.dp))
+                GenreText(it, Modifier.padding(start = HeaderUtils.startPadding, bottom = 4.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
@@ -629,6 +711,14 @@ fun SeriesDetailsHeader(
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
+                    modifier =
+                        Modifier.onFocusChanged {
+                            if (it.isFocused) {
+                                scope.launch(ExceptionHandler()) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
                 )
             }
         }
@@ -638,9 +728,11 @@ fun SeriesDetailsHeader(
 fun buildDialogForSeason(
     context: Context,
     s: BaseItem,
+    canDelete: Boolean,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
     onClickPlay: (Boolean) -> Unit,
+    onClickDelete: (BaseItem) -> Unit,
 ): DialogParams {
     val items =
         buildList {
@@ -679,6 +771,17 @@ fun buildDialogForSeason(
                     onClickPlay.invoke(true)
                 },
             )
+            if (canDelete) {
+                add(
+                    DialogItem(
+                        context.getString(R.string.delete),
+                        Icons.Default.Delete,
+                        iconColor = Color.Red.copy(alpha = .8f),
+                    ) {
+                        onClickDelete.invoke(s)
+                    },
+                )
+            }
         }
     return DialogParams(
         title = s.name ?: context.getString(R.string.tv_season),

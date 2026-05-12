@@ -13,9 +13,11 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -24,10 +26,12 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.gt
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.lt
@@ -53,6 +57,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -90,6 +99,7 @@ class SeriesViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
+        private val mediaManagementService: MediaManagementService,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
         @Assisted val seriesPageType: SeriesPageType,
@@ -111,9 +121,11 @@ class SeriesViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
+        val canDeleteSeries = MutableStateFlow(false)
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
+        val discoverSeries = MutableStateFlow<DiscoverItem?>(null)
 
         val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
 
@@ -127,6 +139,11 @@ class SeriesViewModel
                 Timber.v("Start")
                 addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
+                viewModelScope.launchDefault {
+                    mediaManagementService.collectCanDelete(flowOf(item)) { canDelete ->
+                        canDeleteSeries.update { canDelete }
+                    }
+                }
                 backdropService.submit(item)
 
                 val seasonsDeferred = getSeasons(item, seasonEpisodeIds?.seasonNumber)
@@ -171,6 +188,10 @@ class SeriesViewModel
                         position.update {
                             it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
+                    }
+                    viewModelScope.launchIO {
+                        val extras = extrasService.getExtras(seasonEpisodeIds.seasonId)
+                        this@SeriesViewModel.extras.setValueOnMain(extras)
                     }
                 }
                 val remoteTrailers = trailerService.getRemoteTrailers(item)
@@ -222,19 +243,61 @@ class SeriesViewModel
                         val results = seerrService.similar(item).orEmpty()
                         discovered.update { results }
                     }
+                    viewModelScope.launchIO {
+                        seerrService.active.collectLatest { active ->
+                            val tv =
+                                if (active) {
+                                    try {
+                                        seerrService
+                                            .getTvSeries(item)
+                                            ?.let { seerrService.createDiscoverItem(it) }
+                                    } catch (ex: Exception) {
+                                        Timber.e(ex)
+                                        null
+                                    }
+                                } else {
+                                    null
+                                }
+                            discoverSeries.update { tv }
+                        }
+                    }
                 }
+                mediaManagementService.deletedItemFlow
+                    .onEach { deletedItem ->
+                        if (deletedItem.item.data.seriesId == seriesId) {
+                            Timber.d(
+                                "Item %s deleted from series %s",
+                                deletedItem.item.id,
+                                seriesId,
+                            )
+                            val seasons = getSeasons(item, seasonEpisodeIds?.seasonNumber).await()
+                            this@SeriesViewModel.seasons.setValueOnMain(seasons)
+                        }
+                    }.catch { ex ->
+                        Timber.e(ex, "Error refreshing after deleted item")
+                    }.launchIn(viewModelScope)
             }
         }
 
         fun onResumePage() {
-            viewModelScope.launchIO {
-                item.value?.let {
-                    backdropService.submit(it)
+            item.value?.let { item ->
+                viewModelScope.launchDefault { backdropService.submit(item) }
+                viewModelScope.launchIO {
                     val playThemeSongs =
                         userPreferencesService
                             .getCurrent()
                             .appPreferences.interfacePreferences.playThemeSongs
                     themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                }
+            }
+        }
+
+        fun refresh() {
+            item.value?.let { item ->
+                if (loading.value == LoadingState.Success) {
+                    viewModelScope.launchIO {
+                        (seasons.value as? ApiRequestPager<*>)?.refresh()
+                    }
                 }
             }
         }
@@ -248,6 +311,7 @@ class SeriesViewModel
             seasonNum: Int?,
         ): Deferred<List<BaseItem?>> =
             viewModelScope.async(Dispatchers.IO) {
+                Timber.v("getSeasons for %s", series.id)
                 val request =
                     GetItemsRequest(
                         parentId = series.id,
@@ -259,9 +323,12 @@ class SeriesViewModel
                             if (seriesPageType == SeriesPageType.DETAILS) {
                                 listOf(
                                     ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                                    ItemFields.CAN_DELETE,
                                 )
                             } else {
-                                null
+                                listOf(
+                                    ItemFields.CAN_DELETE,
+                                )
                             },
                     )
                 val pager =
@@ -300,6 +367,7 @@ class SeriesViewModel
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                            ItemFields.CAN_DELETE,
                         ),
                 )
             Timber.v(
@@ -329,6 +397,7 @@ class SeriesViewModel
             if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
                 this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
                 this@SeriesViewModel.episodes.value = EpisodeList.Loading
+                this@SeriesViewModel.extras.value = emptyList()
             }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
@@ -341,12 +410,10 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
-                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
-                    (episodes as? EpisodeList.Success)
-                        ?.let {
-                            it.episodes.getOrNull(it.initialEpisodeIndex)
-                        }?.let { lookupPeopleInEpisode(it) }
-                }
+            }
+            viewModelScope.launchIO {
+                val extras = extrasService.getExtras(seasonId)
+                this@SeriesViewModel.extras.setValueOnMain(extras)
             }
         }
 
@@ -528,7 +595,7 @@ class SeriesViewModel
                                     api.userLibraryApi
                                         .getItem(item.id)
                                         .content.people
-                                        ?.map { Person.fromDto(it, api) }
+                                        ?.map { Person.fromDto(context, it, api) }
                                         .orEmpty()
 
                                 PeopleInItem(item.id, list)
@@ -551,6 +618,64 @@ class SeriesViewModel
                 lookUpChosenTracks(item.id, item)
             }
         }
+
+        fun deleteItem(item: BaseItem) {
+            deleteItem(context, mediaManagementService, item) {
+                viewModelScope.launchDefault {
+                    if (item.type == BaseItemKind.SERIES) {
+                        navigationManager.goBack()
+                    } else if (seriesPageType == SeriesPageType.DETAILS) {
+                        this@SeriesViewModel.item.value?.let { series ->
+                            val seasons = getSeasons(series, null).await()
+                            if (seasons.isEmpty()) {
+                                navigationManager.goBack()
+                            } else {
+                                this@SeriesViewModel.seasons.setValueOnMain(seasons)
+                            }
+                        }
+                    } else {
+                        position.value.let { (_, episodeIndex) ->
+                            val eps = episodes.value as? EpisodeList.Success
+                            if (eps != null) {
+                                val pager = eps.episodes
+                                val lastIndex = pager.lastIndex
+                                pager.refreshPagesAfter(episodeIndex)
+                                if (pager.isEmpty()) {
+                                    navigationManager.goBack()
+                                } else {
+                                    if (episodeIndex == lastIndex) {
+                                        // Deleted last episode, so need to move left
+                                        episodes.setValueOnMain(
+                                            EpisodeList.Success(
+                                                eps.seasonId,
+                                                pager,
+                                                episodeIndex - 1,
+                                            ),
+                                        )
+                                        position.update { it.copy(episodeRowIndex = episodeIndex - 1) }
+                                    } else {
+                                        episodes.setValueOnMain(
+                                            EpisodeList.Success(
+                                                eps.seasonId,
+                                                pager,
+                                                episodeIndex,
+                                            ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        suspend fun canDelete(item: BaseItem): Boolean = mediaManagementService.canDelete(item)
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
     }
 
 sealed interface EpisodeList {

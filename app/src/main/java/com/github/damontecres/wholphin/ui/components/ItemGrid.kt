@@ -82,6 +82,9 @@ class ItemGridViewModel
         }
     }
 
+/**
+ * Display a grid of a list of arbitrary item IDs such as for [com.github.damontecres.wholphin.data.ExtrasItem]
+ */
 @Composable
 fun ItemGrid(
     destination: Destination.ItemGrid,
@@ -130,11 +133,12 @@ fun ItemGrid(
                     showJumpButtons = false,
                     showLetterButtons = false,
                     spacing = 24.dp,
-                    cardContent = @Composable { item, onClick, onLongClick, mod ->
+                    cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                         GridCard(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
+                            fillWidth = widthPx,
                             modifier = mod,
                             imageAspectRatio = AspectRatios.WIDE, // TODO
                         )

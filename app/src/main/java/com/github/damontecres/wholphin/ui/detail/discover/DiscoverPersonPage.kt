@@ -67,11 +67,11 @@ class DiscoverPersonViewModel
                         .let { credits ->
                             val cast =
                                 credits.cast
-                                    ?.map(::DiscoverItem)
+                                    ?.map { seerrService.createDiscoverItem(it) }
                                     .orEmpty()
                             val crew =
                                 credits.crew
-                                    ?.map(::DiscoverItem)
+                                    ?.map { seerrService.createDiscoverItem(it) }
                                     .orEmpty()
                             cast + crew
                         }
@@ -142,7 +142,7 @@ fun DiscoverPersonPage(
                         showJumpButtons = false,
                         showLetterButtons = false,
                         spacing = 16.dp,
-                        cardContent = @Composable { item, onClick, onLongClick, mod ->
+                        cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                             DiscoverItemCard(
                                 item = item,
                                 onClick = onClick,

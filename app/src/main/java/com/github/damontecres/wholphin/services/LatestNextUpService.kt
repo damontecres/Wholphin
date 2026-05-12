@@ -1,29 +1,32 @@
+@file:UseSerializers(
+    UUIDSerializer::class,
+    LocalDateTimeSerializer::class,
+)
+
 package com.github.damontecres.wholphin.services
 
-import android.content.Context
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.LocalDateTimeSerializer
 import com.github.damontecres.wholphin.util.supportItemKinds
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.UserDto
-import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
@@ -31,14 +34,21 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Get continue watching and next up items for users
+ */
 @Singleton
 class LatestNextUpService
     @Inject
     constructor(
-        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val datePlayedService: DatePlayedService,
+        private val displayPreferencesService: DisplayPreferencesService,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) {
+        /**
+         * Get resume (continue watching) items for a user
+         */
         suspend fun getResume(
             userId: UUID,
             limit: Int,
@@ -70,6 +80,9 @@ class LatestNextUpService
             return items
         }
 
+        /**
+         * Get next up items for a user
+         */
         suspend fun getNextUp(
             userId: UUID,
             limit: Int,
@@ -78,6 +91,7 @@ class LatestNextUpService
             maxDays: Int,
             useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
+            val removedSeries = getRemovedFromNextUp(userId)
             val nextUpDateCutoff =
                 maxDays.takeIf { it > 0 }?.let { LocalDateTime.now().minusDays(it.toLong()) }
             val request =
@@ -98,68 +112,31 @@ class LatestNextUpService
                     .content
                     .items
                     .map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    .filter {
+                        val seriesId = it.data.seriesId
+                        if (seriesId != null && seriesId in removedSeries) {
+                            // User has previously removed the series
+                            val lastPlayedDate = it.data.userData?.lastPlayedDate
+                            if (lastPlayedDate != null) {
+                                // If item played it after it was removed, should include it
+                                lastPlayedDate > removedSeries[seriesId]
+                            } else {
+                                // If unknown last played, filter out
+                                false
+                            }
+                        } else {
+                            true
+                        }
+                    }
+
             return nextUp
         }
 
-        suspend fun getLatest(
-            user: UserDto,
-            limit: Int,
-            includedIds: List<UUID>,
-        ): List<LatestData> {
-            val excluded = user.configuration?.latestItemsExcludes.orEmpty()
-            val views by api.userViewsApi.getUserViews()
-            val latestData =
-                views.items
-                    .filter {
-                        it.id in includedIds && it.id !in excluded &&
-                            it.collectionType in supportedLatestCollectionTypes
-                    }.map { view ->
-                        val title =
-                            view.name?.let { context.getString(R.string.recently_added_in, it) }
-                                ?: context.getString(R.string.recently_added)
-                        val request =
-                            GetLatestMediaRequest(
-                                fields = SlimItemFields,
-                                imageTypeLimit = 1,
-                                parentId = view.id,
-                                groupItems = true,
-                                limit = limit,
-                                isPlayed = null, // Server will handle user's preference
-                            )
-                        LatestData(title, request)
-                    }
-
-            return latestData
-        }
-
-        suspend fun loadLatest(latestData: List<LatestData>): List<HomeRowLoadingState> {
-            val rows =
-                latestData.mapNotNull { (title, request) ->
-                    try {
-                        val latest =
-                            api.userLibraryApi
-                                .getLatestMedia(request)
-                                .content
-                                .map { BaseItem.from(it, api, true) }
-                        if (latest.isNotEmpty()) {
-                            HomeRowLoadingState.Success(
-                                title = title,
-                                items = latest,
-                            )
-                        } else {
-                            null
-                        }
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Exception fetching %s", title)
-                        HomeRowLoadingState.Error(
-                            title = title,
-                            exception = ex,
-                        )
-                    }
-                }
-            return rows
-        }
-
+        /**
+         * Create the combined Continue Watching & Next Up items
+         *
+         * @see [DatePlayedService]
+         */
         suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
@@ -192,18 +169,112 @@ class LatestNextUpService
                 Timber.v("buildCombined took %s", duration)
                 return@withContext result
             }
+
+        /**
+         * Remove a series from next up
+         */
+        suspend fun removeFromNextUp(
+            userId: UUID,
+            episode: BaseItem,
+        ) {
+            favoriteWatchManager.setWatched(episode.id, false)
+            episode.data.seriesId?.let { seriesId ->
+                displayPreferencesService.updateDisplayPreferences(userId) {
+                    val removedIds =
+                        get(REMOVED_KEY)
+                            ?.let {
+                                Json.decodeFromString<RemovedSeriesIds>(it).value
+                            }.orEmpty()
+                            .toMutableMap()
+                    removedIds[seriesId] = LocalDateTime.now()
+                    put(
+                        REMOVED_KEY,
+                        Json.encodeToString(RemovedSeriesIds(removedIds)),
+                    )
+                }
+            }
+        }
+
+        /**
+         * Get when series were removed from next up
+         */
+        suspend fun getRemovedFromNextUp(userId: UUID): Map<UUID, LocalDateTime> =
+            displayPreferencesService
+                .getDisplayPreferences(userId)
+                .customPrefs[REMOVED_KEY]
+                ?.let {
+                    Json.decodeFromString<RemovedSeriesIds>(it).value
+                }.orEmpty()
+
+        suspend fun allowSeriesRemovedFromNextUp(
+            userId: UUID,
+            seriesId: UUID,
+        ) {
+            displayPreferencesService.updateDisplayPreferences(userId) {
+                val ids =
+                    get(REMOVED_KEY)
+                        ?.let {
+                            Json.decodeFromString<RemovedSeriesIds>(it).value
+                        }.orEmpty()
+                        .toMutableMap()
+                ids.remove(seriesId)
+                put(
+                    REMOVED_KEY,
+                    Json.encodeToString(RemovedSeriesIds(ids)),
+                )
+            }
+        }
+
+        /**
+         * Check if user has watched a series since removing it
+         */
+        suspend fun updateRemovedFromNextUp(userId: UUID) {
+            val removed = getRemovedFromNextUp(userId)
+            val newRemoved = removed.toMutableMap()
+            var changed = false
+            removed.forEach { (seriesId, timestamp) ->
+                val item =
+                    api.itemsApi
+                        .getItems(
+                            userId = userId,
+                            parentId = seriesId,
+                            recursive = true,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            sortBy = listOf(ItemSortBy.DATE_PLAYED),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            limit = 1,
+                        ).content.items
+                        .firstOrNull()
+                if (item != null) {
+                    val lastPlayed = item.userData?.lastPlayedDate
+                    if (lastPlayed != null && lastPlayed > timestamp) {
+                        Timber.v("Updating removed next up for series %s", seriesId)
+                        newRemoved.remove(seriesId)
+                        changed = true
+                    }
+                } else {
+                    // Series doesn't exist anymore
+                    Timber.v("Updating removed next up for missing series %s", seriesId)
+                    newRemoved.remove(seriesId)
+                    changed = true
+                }
+            }
+            if (changed) {
+                displayPreferencesService.updateDisplayPreferences(userId) {
+                    put(
+                        REMOVED_KEY,
+                        Json.encodeToString(RemovedSeriesIds(newRemoved)),
+                    )
+                }
+            }
+        }
+
+        companion object {
+            const val REMOVED_KEY = "removeNextUp"
+        }
     }
 
-val supportedLatestCollectionTypes =
-    setOf(
-        CollectionType.MOVIES,
-        CollectionType.TVSHOWS,
-        CollectionType.HOMEVIDEOS,
-        // Exclude Live TV because a recording folder view will be used instead
-        null, // Recordings & mixed collection types
-    )
-
-data class LatestData(
-    val title: String,
-    val request: GetLatestMediaRequest,
+@Serializable
+data class RemovedSeriesIds(
+    val value: Map<UUID, LocalDateTime>,
 )

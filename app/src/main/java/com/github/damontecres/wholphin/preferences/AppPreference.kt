@@ -5,6 +5,7 @@ import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -59,7 +60,7 @@ sealed interface AppPreference<Pref, T> {
             AppSliderPreference<AppPreferences>(
                 title = R.string.skip_forward_preference,
                 defaultValue = 30,
-                min = 10,
+                min = 5,
                 max = 5.minutes.inWholeSeconds,
                 interval = 5,
                 getter = {
@@ -112,30 +113,6 @@ sealed interface AppPreference<Pref, T> {
                     }
                 },
             )
-
-//        val GridJumpButtons =
-//            AppSwitchPreference<AppPreferences>(
-//                title = R.string.show_grid_jump_buttons,
-//                defaultValue = true,
-//                getter = { it.interfacePreferences.showGridJumpButtons },
-//                setter = { prefs, value ->
-//                    prefs.updateInterfacePreferences { showGridJumpButtons = value }
-//                },
-//                summaryOn = R.string.enabled,
-//                summaryOff = R.string.disabled,
-//            )
-
-//        val ShowGridFooter =
-//            AppSwitchPreference<AppPreferences>(
-//                title = R.string.grid_position_footer,
-//                defaultValue = true,
-//                getter = { it.interfacePreferences.showPositionFooter },
-//                setter = { prefs, value ->
-//                    prefs.updateInterfacePreferences { showPositionFooter = value }
-//                },
-//                summaryOn = R.string.show,
-//                summaryOff = R.string.hide,
-//            )
 
         val ControllerTimeout =
             AppSliderPreference<AppPreferences>(
@@ -430,16 +407,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
-        val DirectPlayAss =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.direct_play_ass,
-                defaultValue = true,
-                getter = { it.playbackPreferences.overrides.directPlayAss },
+        val AssSubtitleMode =
+            AppChoicePreference<AppPreferences, AssPlaybackMode>(
+                title = R.string.ass_subtitle_playback,
+                defaultValue = AssPlaybackMode.ASS_LIBASS,
+                getter = { it.playbackPreferences.overrides.assPlaybackMode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { directPlayAss = value }
+                    prefs.updatePlaybackOverrides { assPlaybackMode = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.ass_subtitle_modes,
+                subtitles = R.array.ass_subtitle_modes_summary,
+                indexToValue = { AssPlaybackMode.forNumber(it) },
+                valueToIndex = { if (it != AssPlaybackMode.UNRECOGNIZED) it.number else AssPlaybackMode.ASS_LIBASS.number },
             )
         val DirectPlayPgs =
             AppSwitchPreference<AppPreferences>(
@@ -476,6 +455,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val CinemaMode =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.cinema_mode,
+                defaultValue = true,
+                getter = { it.playbackPreferences.cinemaMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { cinemaMode = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -499,6 +490,18 @@ sealed interface AppPreference<Pref, T> {
                 displayValues = R.array.app_theme_colors,
                 indexToValue = { AppThemeColors.forNumber(it) },
                 valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val ShowLogos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.prefer_logos,
+                defaultValue = true,
+                getter = { it.interfacePreferences.showLogos },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { showLogos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
             )
 
         val InstalledVersion =
@@ -613,6 +616,13 @@ sealed interface AppPreference<Pref, T> {
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
                 valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val SkipSegments =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.skip_behavior,
+                summary = R.string.skip_behavior_summary,
+                destination = Destination.Settings(PreferenceScreenOption.SKIP_SEGMENTS),
             )
 
         val GlobalContentScale =
@@ -741,6 +751,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val ManageMedia =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_media_management,
+                defaultValue = false,
+                getter = { it.interfacePreferences.enableMediaManagement },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { enableMediaManagement = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -799,8 +821,19 @@ sealed interface AppPreference<Pref, T> {
                 },
                 displayValues = R.array.player_backend_options,
                 subtitles = R.array.player_backend_options_subtitles,
-                indexToValue = { PlayerBackend.forNumber(it) },
-                valueToIndex = { it.number },
+                indexToValue = { PlayerBackend.forNumber(it) ?: PlayerBackend.EXO_PLAYER },
+                valueToIndex = { if (it != PlayerBackend.UNRECOGNIZED) it.number else PlayerBackend.EXO_PLAYER.number },
+            )
+
+        val ExternalPlayerApp =
+            AppStringPreference<AppPreferences>(
+                title = R.string.external_player,
+                defaultValue = "",
+                getter = { it.playbackPreferences.externalPlayer },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { externalPlayer = value }
+                },
+                summary = null,
             )
 
         val ExoPlayerSettings =
@@ -997,6 +1030,12 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val ScreensaverSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.screensaver_settings,
+                destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
+            )
     }
 }
 
@@ -1011,6 +1050,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ScreensaverSettings,
                 ),
         ),
         PreferenceGroup(
@@ -1054,10 +1094,12 @@ val basicPreferences =
         PreferenceGroup(
             title = R.string.more,
             preferences =
-                listOf(
-                    AppPreference.SeerrIntegration,
-                    AppPreference.AdvancedSettings,
-                ),
+                buildList {
+                    if (BuildConfig.DISCOVER_ENABLED) {
+                        add(AppPreference.SeerrIntegration)
+                    }
+                    add(AppPreference.AdvancedSettings)
+                },
         ),
     )
 
@@ -1066,7 +1108,7 @@ private val ExoPlayerSettings =
         AppPreference.FfmpegPreference,
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
-        AppPreference.DirectPlayAss,
+        AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
         AppPreference.DecodeAv1,
@@ -1095,6 +1137,21 @@ val MpvPreferences =
         ),
     )
 
+val SkipSegmentPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.skip,
+            preferences =
+                listOf(
+                    AppPreference.SkipIntros,
+                    AppPreference.SkipOutros,
+                    AppPreference.SkipCommercials,
+                    AppPreference.SkipPreviews,
+                    AppPreference.SkipRecaps,
+                ),
+        ),
+    )
+
 val advancedPreferences =
     buildList {
         add(
@@ -1103,6 +1160,8 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ShowLogos,
+                        AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
@@ -1119,24 +1178,13 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
+                        AppPreference.SkipSegments,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
-                    ),
-            ),
-        )
-        add(
-            PreferenceGroup(
-                title = R.string.skip,
-                preferences =
-                    listOf(
-                        AppPreference.SkipIntros,
-                        AppPreference.SkipOutros,
-                        AppPreference.SkipCommercials,
-                        AppPreference.SkipPreviews,
-                        AppPreference.SkipRecaps,
                     ),
             ),
         )
@@ -1160,6 +1208,10 @@ val advancedPreferences =
                                 AppPreference.ExoPlayerSettings,
                                 AppPreference.MpvSettings,
                             ),
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER },
+                            listOf(AppPreference.ExternalPlayerApp),
                         ),
                     ),
             ),
@@ -1199,6 +1251,24 @@ val liveTvPreferences =
         AppPreference.LiveTvFavoriteChannelsBeginning,
         AppPreference.LiveTvChannelSortByWatched,
         AppPreference.LiveTvColorCodePrograms,
+    )
+
+val screensaverPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.screensaver,
+            preferences =
+                listOf(
+                    ScreensaverPreference.Enabled,
+                    ScreensaverPreference.StartDelay,
+                    ScreensaverPreference.Duration,
+                    ScreensaverPreference.ShowClock,
+                    ScreensaverPreference.Animate,
+                    ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.ItemTypes,
+                    ScreensaverPreference.Start,
+                ),
+        ),
     )
 
 data class AppSwitchPreference<Pref>(
@@ -1255,8 +1325,6 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
-    val toSharedPrefs: (T) -> String,
-    val fromSharedPrefs: (String) -> T?,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

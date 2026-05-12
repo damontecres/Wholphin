@@ -28,15 +28,16 @@ class ImageUrlService
             itemType: BaseItemKind,
             seriesId: UUID?,
             useSeriesForPrimary: Boolean,
-            imageTags: Map<ImageType, String?>,
             imageType: ImageType,
+            imageTags: Map<ImageType, String?>,
+            backdropTags: List<String>,
+            parentThumbId: UUID? = null,
+            parentBackdropId: UUID? = null,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
             when (imageType) {
-                ImageType.BACKDROP,
-                ImageType.LOGO,
-                -> {
+                ImageType.LOGO -> {
                     if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
                         getItemImageUrl(
                             itemId = seriesId,
@@ -54,8 +55,86 @@ class ImageUrlService
                     }
                 }
 
+                ImageType.BACKDROP,
+                -> {
+                    if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
+                        getItemImageUrl(
+                            itemId = seriesId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (backdropTags.isNotEmpty()) {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        null
+                    }
+                }
+
+                ImageType.THUMB -> {
+                    if (useSeriesForPrimary && parentThumbId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        // Use parent's thumb
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary && parentBackdropId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        // No parent thumb, so use backdrop instead
+                        getItemImageUrl(
+                            itemId = parentBackdropId,
+                            imageType = ImageType.BACKDROP,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (parentThumbId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary &&
+                        parentThumbId == null &&
+                        itemType == BaseItemKind.EPISODE &&
+                        imageType !in imageTags
+                    ) {
+                        // Workaround to fall back to episode image if no parent thumb
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.PRIMARY,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (imageType !in imageTags && backdropTags.isNotEmpty()) {
+                        // If no thumb, use backdrop if available
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.BACKDROP,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    }
+                }
+
                 ImageType.PRIMARY,
-                ImageType.THUMB,
                 ImageType.BANNER,
                 -> {
                     if (useSeriesForPrimary && seriesId != null &&
@@ -99,15 +178,19 @@ class ImageUrlService
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
+            useSeriesForPrimary: Boolean? = null,
         ): String? =
             if (item != null) {
                 getItemImageUrl(
                     itemId = item.id,
                     itemType = item.type,
                     seriesId = item.data.seriesId,
-                    useSeriesForPrimary = item.useSeriesForPrimary,
+                    useSeriesForPrimary = useSeriesForPrimary ?: item.useSeriesForPrimary,
                     imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
+                    parentThumbId = item.data.parentThumbItemId,
+                    parentBackdropId = item.data.parentBackdropItemId,
+                    backdropTags = item.data.backdropImageTags.orEmpty(),
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
                 )

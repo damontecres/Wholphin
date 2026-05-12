@@ -9,6 +9,7 @@ val supportItemKinds =
         BaseItemKind.EPISODE,
         BaseItemKind.SERIES,
         BaseItemKind.VIDEO,
+        BaseItemKind.MUSIC_VIDEO,
         BaseItemKind.SEASON,
         BaseItemKind.COLLECTION_FOLDER,
         BaseItemKind.FOLDER,
@@ -31,6 +32,7 @@ val supportedCollectionTypes =
         CollectionType.LIVETV,
         CollectionType.MUSICVIDEOS,
         CollectionType.FOLDERS,
+        CollectionType.MUSIC,
         null, // Mixed
     )
 
@@ -47,6 +49,7 @@ val supportedPlayableTypes =
         BaseItemKind.MOVIE,
         BaseItemKind.EPISODE,
         BaseItemKind.VIDEO,
+        BaseItemKind.MUSIC_VIDEO,
         BaseItemKind.TV_CHANNEL,
         BaseItemKind.TV_PROGRAM,
         BaseItemKind.RECORDING,

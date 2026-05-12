@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewModel
+import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
@@ -51,22 +52,32 @@ fun CollectionFolderPhotoAlbum(
     var showHeader by remember { mutableStateOf(true) }
     CollectionFolderGrid(
         preferences = preferences,
-        onClickItem = { index, item ->
-            val destination =
-                if (item.type == BaseItemKind.PHOTO) {
-                    Destination.Slideshow(
-                        parentId = itemId,
-                        index = index,
-                        filter = CollectionFolderFilter(filter = viewModel.filter.value ?: GetItemsFilter()),
-                        sortAndDirection = viewModel.sortAndDirection.value ?: SortAndDirection.DEFAULT,
-                        recursive = true,
-                        startSlideshow = false,
-                    )
-                } else {
-                    item.destination(index)
-                }
-            viewModel.navigationManager.navigateTo(destination)
-        },
+        actions =
+            remember {
+                GridClickActions(
+                    onClickItem = { index, item ->
+                        val destination =
+                            if (item.type == BaseItemKind.PHOTO) {
+                                Destination.Slideshow(
+                                    parentId = itemId,
+                                    index = index,
+                                    filter =
+                                        CollectionFolderFilter(
+                                            filter = viewModel.filter.value ?: GetItemsFilter(),
+                                        ),
+                                    sortAndDirection =
+                                        viewModel.sortAndDirection.value
+                                            ?: SortAndDirection.DEFAULT,
+                                    recursive = recursive,
+                                    startSlideshow = false,
+                                )
+                            } else {
+                                item.destination(index)
+                            }
+                        viewModel.navigateTo(destination)
+                    },
+                )
+            },
         itemId = itemId.toServerString(),
         initialFilter = filter,
         showTitle = showHeader,

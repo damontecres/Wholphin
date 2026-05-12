@@ -126,16 +126,19 @@ data class SliderColors(
         @Composable
         fun default() =
             SliderColors(
-                activeFocused = SliderActiveColor(true),
-                activeUnfocused = SliderActiveColor(false),
-                inactiveFocused = SliderInactiveColor(true),
-                inactiveUnfocused = SliderInactiveColor(false),
+                activeFocused = sliderActiveColor(true),
+                activeUnfocused = sliderActiveColor(false),
+                inactiveFocused = sliderInactiveColor(true),
+                inactiveUnfocused = sliderInactiveColor(false),
             )
     }
 }
 
+/**
+ * Determines the active color for the slider. This is the "filled" left side of the slider
+ */
 @Composable
-fun SliderActiveColor(focused: Boolean): Color {
+fun sliderActiveColor(focused: Boolean): Color {
     val theme = LocalTheme.current
     return when (theme) {
         AppThemeColors.UNRECOGNIZED,
@@ -165,8 +168,11 @@ fun SliderActiveColor(focused: Boolean): Color {
     }
 }
 
+/**
+ * Determines the inactive color for the slider. This is background of "unfilled" right side of the slider.
+ */
 @Composable
-fun SliderInactiveColor(focused: Boolean): Color {
+fun sliderInactiveColor(focused: Boolean): Color {
     val theme = LocalTheme.current
     return when (theme) {
         AppThemeColors.UNRECOGNIZED,

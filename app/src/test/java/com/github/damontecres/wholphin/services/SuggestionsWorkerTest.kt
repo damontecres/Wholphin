@@ -46,6 +46,7 @@ class SuggestionsWorkerTest {
         every { mockApi.userViewsApi } returns mockUserViewsApi
         every { mockApi.baseUrl } returns "http://localhost"
         every { mockApi.accessToken } returns "test-token"
+        coEvery { mockCache.get(any(), any(), any()) } returns null
     }
 
     @After

@@ -14,7 +14,9 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SuggestionService
 import com.github.damontecres.wholphin.services.SuggestionsResource
@@ -57,8 +59,9 @@ class RecommendedTvShowViewModel
     @AssistedInject
     constructor(
         @ApplicationContext context: Context,
-        private val api: ApiClient,
-        private val serverRepository: ServerRepository,
+        api: ApiClient,
+        musicService: MusicService,
+        serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
         private val lastestNextUpService: LatestNextUpService,
         private val suggestionService: SuggestionService,
@@ -67,12 +70,17 @@ class RecommendedTvShowViewModel
         favoriteWatchManager: FavoriteWatchManager,
         mediaReportService: MediaReportService,
         backdropService: BackdropService,
+        mediaManagementService: MediaManagementService,
     ) : RecommendedViewModel(
             context,
+            api,
+            serverRepository,
             navigationManager,
             favoriteWatchManager,
             mediaReportService,
+            musicService,
             backdropService,
+            mediaManagementService,
         ) {
         @AssistedFactory
         interface Factory {

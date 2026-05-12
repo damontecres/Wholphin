@@ -2,6 +2,9 @@ package com.github.damontecres.wholphin.data.model
 
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 
+/**
+ * Permission levels for a user on a Seerr server
+ */
 enum class SeerrPermission(
     private val flag: Int,
 ) {

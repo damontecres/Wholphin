@@ -16,8 +16,10 @@ import javax.inject.Singleton
 @Singleton
 class SetupNavigationManager
     @Inject
-    constructor() {
-        var backStack: MutableList<NavKey> = mutableStateListOf(SetupDestination.Loading)
+    constructor(
+        private val navigationManager: NavigationManager,
+    ) {
+        var backStack: MutableList<SetupDestination> = mutableStateListOf(SetupDestination.Loading)
 
         /**
          * Go to the specified [SetupDestination]
@@ -25,6 +27,9 @@ class SetupNavigationManager
         fun navigateTo(destination: SetupDestination) {
             backStack[0] = destination
             log()
+            if (destination !is SetupDestination.AppContent) {
+                navigationManager.reloadHome()
+            }
         }
 
         private fun log() {

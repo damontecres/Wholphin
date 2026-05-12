@@ -23,6 +23,9 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 
+/**
+ * Show the overview text for an item. Uses a fixed size and allows for clicking.
+ */
 @Composable
 fun OverviewText(
     overview: String,

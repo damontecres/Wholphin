@@ -1,3 +1,6 @@
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.ProductFlavor
+import com.android.build.api.variant.FilterConfiguration
 import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
@@ -21,6 +24,8 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
+val mpvModuleExists = project.file("libs/wholphin-mpv-release.aar").exists()
+val extensionsRepoActive = project.hasProperty("WholphinExtensionsUsername")
 
 val gitTags =
     providers
@@ -34,7 +39,15 @@ val gitDescribe =
         .standardOutput.asText
         .getOrElse("v0.0.0")
 
-android {
+kotlin {
+    compilerOptions {
+        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
+        jvmTarget = JvmTarget.JVM_11
+        javaParameters = true
+    }
+}
+
+configure<ApplicationExtension> {
     namespace = "com.github.damontecres.wholphin"
     compileSdk = 36
 
@@ -44,43 +57,11 @@ android {
         targetSdk = 36
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
+
+        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            isDebuggable = false
-        }
-        debug {
-            isMinifyEnabled = false
-            isDebuggable = true
-            applicationIdSuffix = ".debug"
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true
-    }
-    kotlin {
-        compilerOptions {
-            languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
-            jvmTarget = JvmTarget.JVM_11
-            javaParameters = true
-        }
-    }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
-    room {
-        schemaDirectory("$projectDir/schemas")
-    }
     signingConfigs {
         if (shouldSign) {
             create("ci") {
@@ -98,14 +79,15 @@ android {
             }
         }
     }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            isDebuggable = false
             if (shouldSign) {
                 signingConfig = signingConfigs.getByName("ci")
             } else {
@@ -120,23 +102,54 @@ android {
                 }
             }
         }
-        debug {
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            }
-        }
 
-        applicationVariants.all {
-            val variant = this
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
-                    val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    output.outputFileName = outputFileName
-                }
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
         }
+    }
+    flavorDimensions += "version"
+    productFlavors {
+        val featureLeanback = "leanback"
+        val featureUpdate = "UPDATING_ENABLED"
+        val featureDiscover = "DISCOVER_ENABLED"
+
+        fun ProductFlavor.setFeatureFlag(
+            name: String,
+            enabled: Boolean,
+        ) {
+            this.buildConfigField("boolean", name, "Boolean.parseBoolean(\"${enabled}\")")
+        }
+        create("default") {
+            dimension = "version"
+            isDefault = true
+            manifestPlaceholders += mapOf(featureLeanback to false)
+            setFeatureFlag(featureUpdate, true)
+            setFeatureFlag(featureDiscover, true)
+        }
+        create("appstore") {
+            dimension = "version"
+            manifestPlaceholders += mapOf(featureLeanback to true)
+            setFeatureFlag(featureUpdate, false)
+            setFeatureFlag(featureDiscover, true)
+        }
+        create("firetv") {
+            dimension = "version"
+            manifestPlaceholders += mapOf(featureLeanback to true)
+            setFeatureFlag(featureUpdate, false)
+            setFeatureFlag(featureDiscover, false)
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    buildFeatures {
+        buildConfig = true
+        compose = true
     }
 
     splits {
@@ -147,12 +160,48 @@ android {
             isUniversalApk = true
         }
     }
+    packaging {
+        jniLibs {
+            // Work around because libass-android & wholphin-mpv both (incorrectly) package libc++_shared.so
+            pickFirsts += "lib/*/libc++_shared.so"
+        }
+    }
 
     sourceSets {
         getByName("main") {
             kotlin.directories += "$buildDir/generated/seerr_api/src/main/kotlin"
         }
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
+    lint {
+        disable.add("MissingTranslation")
+    }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs
+            .map { it as com.android.build.api.variant.impl.VariantOutputImpl }
+            .forEach { output ->
+                val abi =
+                    output
+                        .getFilter(FilterConfiguration.FilterType.ABI)
+                        .let { if (it != null) "-${it.identifier}" else "" }
+                val outputFileName =
+                    "Wholphin-${variant.flavorName}-${variant.buildType}-${output.versionName.get()}-${output.versionCode.get()}$abi.apk"
+                output.outputFileName = outputFileName
+            }
+    }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 protobuf {
@@ -226,6 +275,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.androidx.tvprovider)
     implementation(libs.androidx.work.runtime.ktx)
@@ -238,6 +288,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.ass.media)
 
     implementation(libs.coil.core)
     implementation(libs.coil.compose)
@@ -267,6 +318,7 @@ dependencies {
     implementation(libs.androidx.room.testing)
     implementation(libs.androidx.palette.ktx)
     implementation(libs.androidx.media3.effect)
+    implementation(libs.androidx.runner)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
@@ -293,11 +345,33 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    if (ffmpegModuleExists || isCI) {
+
+    if (ffmpegModuleExists) {
+        logger.info("Using local ffmpeg decoder")
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt ffmpeg decoder")
+        implementation(libs.wholphin.extensions.ffmpeg)
+    } else {
+        logger.warn("Media3 ffmpeg decoder was NOT found")
     }
-    if (av1ModuleExists || isCI) {
+    if (av1ModuleExists) {
+        logger.info("Using local av1 decoder")
         implementation(files("libs/lib-decoder-av1-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt av1 decoder")
+        implementation(libs.wholphin.extensions.av1)
+    } else {
+        logger.warn("Media3 av1 decoder was NOT found")
+    }
+    if (mpvModuleExists) {
+        logger.info("Using local libMPV build")
+        implementation(files("libs/wholphin-mpv-release.aar"))
+    } else if (extensionsRepoActive) {
+        logger.info("Using prebuilt libMPV")
+        implementation(libs.wholphin.extensions.mpv)
+    } else {
+        logger.warn("libMPV was NOT found")
     }
 
     testImplementation(libs.mockk.android)
@@ -305,4 +379,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.core.testing)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.ui.test.manifest)
 }

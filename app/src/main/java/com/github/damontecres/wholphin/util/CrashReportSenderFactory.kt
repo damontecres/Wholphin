@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.util
 import android.content.Context
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.services.hilt.AppModule
+import com.github.damontecres.wholphin.services.hilt.DeviceModule
 import com.google.auto.service.AutoService
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -19,6 +20,9 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.util.Date
 
+/**
+ * Sends a crash report to the current server
+ */
 @AutoService(ReportSenderFactory::class)
 class CrashReportSenderFactory : ReportSenderFactory {
     override fun create(
@@ -49,7 +53,7 @@ class CrashReportSender : ReportSender {
                     createJellyfin {
                         this.context = context
                         clientInfo = AppModule.clientInfo(context)
-                        deviceInfo = AppModule.deviceInfo(context)
+                        deviceInfo = DeviceModule.deviceInfo(context)
                         apiClientFactory = okHttpFactory
                         socketConnectionFactory = okHttpFactory
                         minimumServerVersion = Jellyfin.minimumVersion

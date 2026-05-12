@@ -13,6 +13,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.LocalContentColor
 
+/**
+ * Shows a dot indicator
+ *
+ * Intended for using within the `leadingContent` of a [androidx.tv.material3.ListItem]
+ */
 @Composable
 fun BoxScope.SelectedLeadingContent(
     selected: Boolean,

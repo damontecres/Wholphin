@@ -17,6 +17,19 @@ val DefaultFilterOptions =
         DecadeFilter,
     )
 
+val DefaultTvFilterOptions =
+    listOf(
+        PlayedFilter,
+        FavoriteFilter,
+        GenreFilter,
+        StudioFilter,
+        CommunityRatingFilter,
+        OfficialRatingFilter,
+        VideoTypeFilter,
+        YearFilter,
+        DecadeFilter,
+    )
+
 val DefaultForFavoritesFilterOptions =
     listOf(
         PlayedFilter,
@@ -32,6 +45,19 @@ val DefaultForGenresFilterOptions =
     listOf(
         PlayedFilter,
         FavoriteFilter,
+        StudioFilter,
+        CommunityRatingFilter,
+        OfficialRatingFilter,
+        VideoTypeFilter,
+        YearFilter,
+        DecadeFilter,
+    )
+
+val DefaultForStudiosFilterOptions =
+    listOf(
+        PlayedFilter,
+        FavoriteFilter,
+        GenreFilter,
         CommunityRatingFilter,
         OfficialRatingFilter,
         VideoTypeFilter,
@@ -50,6 +76,11 @@ val DefaultPlaylistItemsOptions =
         DecadeFilter,
     )
 
+/**
+ * A way to filter libraries
+ *
+ * Gets and sets values within a [GetItemsFilter]
+ */
 sealed interface ItemFilterBy<T> {
     @get:StringRes
     val stringRes: Int
@@ -177,4 +208,17 @@ data object CommunityRatingFilter : ItemFilterBy<Int> {
         value: Int?,
         filter: GetItemsFilter,
     ): GetItemsFilter = filter.copy(minCommunityRating = value?.toDouble())
+}
+
+data object StudioFilter : ItemFilterBy<List<UUID>> {
+    override val stringRes: Int = R.string.studios
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): List<UUID>? = filter.studios
+
+    override fun set(
+        value: List<UUID>?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(studios = value)
 }

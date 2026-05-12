@@ -27,18 +27,18 @@ object StreamFormatting {
             resolutionString(height, width, interlaced)
         } else {
             when {
-                width <= 256 && height <= 144 -> "144" + interlaced(interlaced)
-                width <= 426 && height <= 240 -> "240" + interlaced(interlaced)
-                width <= 640 && height <= 360 -> "360" + interlaced(interlaced)
-                width <= 682 && height <= 384 -> "384" + interlaced(interlaced)
-                width <= 720 && height <= 404 -> "404" + interlaced(interlaced)
-                width <= 854 && height <= 480 -> "480" + interlaced(interlaced)
-                width <= 960 && height <= 544 -> "540" + interlaced(interlaced)
-                width <= 1024 && height <= 576 -> "576" + interlaced(interlaced)
-                width <= 1280 && height <= 962 -> "720" + interlaced(interlaced)
-                width <= 2560 && height <= 1440 -> "1080" + interlaced(interlaced)
-                width <= 4096 && height <= 3072 -> "4K"
-                width <= 8192 && height <= 6144 -> "8K"
+                width > 5120 || height > 4320 -> "8K"
+                width > 2560 || height > 1440 -> "4K"
+                width > 1920 || height > 1080 -> "1440" + interlaced(interlaced)
+                width > 1280 || height > 962 -> "1080" + interlaced(interlaced)
+                width > 1024 || height > 576 -> "720" + interlaced(interlaced)
+                width > 960 || height > 544 -> "576" + interlaced(interlaced)
+                width > 845 || height > 480 -> "540" + interlaced(interlaced)
+                width > 720 || height > 404 -> "480" + interlaced(interlaced)
+                width > 682 || height > 384 -> "404" + interlaced(interlaced)
+                width > 640 || height > 360 -> "384" + interlaced(interlaced)
+                width > 426 || height > 240 -> "360" + interlaced(interlaced)
+                width > 256 || height > 144 -> "240" + interlaced(interlaced)
                 else -> height.toString() + interlaced(interlaced)
             }
         }
@@ -92,12 +92,13 @@ object StreamFormatting {
                 context.getString(R.string.dolby_atmos)
             }
 
-            profile?.contains("DTS:X", true) == true -> {
-                context.getString(R.string.dts_x)
-            }
-
-            profile?.contains("DTS:HD", true) == true -> {
-                context.getString(R.string.dts_hd)
+            profile?.contains("DTS", true) == true -> {
+                when {
+                    profile.contains("X", true) -> context.getString(R.string.dts_x)
+                    profile.contains("MA", true) -> context.getString(R.string.dts_hd_ma)
+                    profile.contains("HD", true) -> context.getString(R.string.dts_hd)
+                    else -> context.getString(R.string.dts)
+                }
             }
 
             else -> {

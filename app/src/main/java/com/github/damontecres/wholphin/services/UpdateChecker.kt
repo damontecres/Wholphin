@@ -14,7 +14,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.services.UpdateChecker.Companion.ASSET_NAME
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.showToast
@@ -43,6 +45,9 @@ import javax.inject.Singleton
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Checks if an app update is available
+ */
 @Singleton
 class UpdateChecker
     @Inject
@@ -51,9 +56,8 @@ class UpdateChecker
         @param:StandardOkHttpClient private val okHttpClient: OkHttpClient,
     ) {
         companion object {
-            // TODO apk names
-            private const val ASSET_NAME = "Wholphin"
-            private const val APK_NAME = "$ASSET_NAME.apk"
+            const val ASSET_NAME = "Wholphin"
+            const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
 
@@ -61,9 +65,14 @@ class UpdateChecker
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
 
-            val ACTIVE = true
+            val ACTIVE = BuildConfig.UPDATING_ENABLED
         }
 
+        /**
+         * If the app hasn't recently checked, check for any updates and if there is one, show a toast message
+         *
+         * This is safe to call many times because it will only show the toast at most once every 12 hours
+         */
         suspend fun maybeShowUpdateToast(
             updateUrl: String,
             showNegativeToast: Boolean = false,
@@ -111,89 +120,81 @@ class UpdateChecker
             }
         }
 
+        /**
+         * Get the currently installed version
+         */
         fun getInstalledVersion(): Version {
             val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            return Version.Companion.fromString(pkgInfo.versionName!!)
+            return Version.fromString(pkgInfo.versionName!!)
         }
 
-        suspend fun getLatestRelease(updateUrl: String): Release? {
+        suspend fun getRelease(version: Version): Release? {
+            val url =
+                "https://api.github.com/repos/damontecres/Wholphin/releases/tags/v${version.major}.${version.minor}.${version.patch}"
             return withContext(Dispatchers.IO) {
-                val preferRelease =
-                    PreferenceManager
-                        .getDefaultSharedPreferences(context)
-                        .getBoolean("updatePreferRelease", true)
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .build()
+                getRelease(request)
+            }
+        }
 
+        /**
+         * Get the latest released version
+         */
+        suspend fun getLatestRelease(updateUrl: String): Release? =
+            withContext(Dispatchers.IO) {
                 val request =
                     Request
                         .Builder()
                         .url(updateUrl)
                         .get()
                         .build()
-                okHttpClient.newCall(request).execute().use {
-                    if (it.isSuccessful && it.body != null) {
-                        val result = Json.parseToJsonElement(it.body!!.string())
-                        val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                        val version = Version.tryFromString(name)
-                        val publishedAt =
-                            result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
-                        val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
-                        val downloadUrl =
-                            result.jsonObject["assets"]
-                                ?.jsonArray
-                                ?.let { assets -> getDownloadUrl(assets, preferRelease) }
-                        Timber.v("version=$version, downloadUrl=$downloadUrl")
-                        if (version != null) {
-                            val notes =
-                                if (body.isNotNullOrBlank()) {
-                                    NOTE_REGEX
-                                        .findAll(body)
-                                        .map { m ->
-                                            m.groupValues[1]
-                                        }.toList()
-                                } else {
-                                    listOf()
-                                }
-                            return@use Release(version, downloadUrl, publishedAt, body, notes)
-                        } else {
-                            Timber.w("Update version parsing failed. name=$name")
-                        }
+                getRelease(request)
+            }
+
+        private fun getRelease(request: Request): Release? {
+            return okHttpClient.newCall(request).execute().use {
+                if (it.isSuccessful && it.body != null) {
+                    val result = Json.parseToJsonElement(it.body!!.string())
+                    val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+                    val version = Version.tryFromString(name)
+                    val publishedAt =
+                        result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
+                    val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
+                    val downloadUrl =
+                        result.jsonObject["assets"]
+                            ?.jsonArray
+                            ?.let { assets -> getDownloadUrl(assets, BuildConfig.DEBUG) }
+                    Timber.v("version=$version, downloadUrl=$downloadUrl")
+                    if (version != null) {
+                        val notes =
+                            if (body.isNotNullOrBlank()) {
+                                NOTE_REGEX
+                                    .findAll(body)
+                                    .map { m ->
+                                        m.groupValues[1]
+                                    }.toList()
+                            } else {
+                                emptyList()
+                            }
+                        return@use Release(version, downloadUrl, publishedAt, body, notes)
                     } else {
-                        Timber.w("Update check failed: ${it.message}")
+                        Timber.w("Update version parsing failed. name=$name")
                     }
-                    return@use null
+                } else {
+                    Timber.w("Update check failed ${it.code}: ${it.message}")
                 }
+                return@use null
             }
         }
 
-        private fun getDownloadUrl(
-            assets: JsonArray,
-            preferRelease: Boolean,
-        ): String? {
-            val abiSuffix = Build.SUPPORTED_ABIS.firstOrNull().let { if (it != null) "-$it" else "" }
-            val releaseSuffix = if (preferRelease) "-release" else "-debug"
-            val preferredNames =
-                listOf(
-                    "$ASSET_NAME${releaseSuffix}$abiSuffix.apk",
-                    "$ASSET_NAME$releaseSuffix.apk",
-                    "$ASSET_NAME.apk",
-                )
-            var preferredAsset: JsonObject? = null
-            outer@ for (name in preferredNames) {
-                for (asset in assets) {
-                    val assetName =
-                        asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                    if (name == assetName) {
-                        preferredAsset = asset.jsonObject
-                        break@outer
-                    }
-                }
-            }
-            return preferredAsset
-                ?.get("browser_download_url")
-                ?.jsonPrimitive
-                ?.contentOrNull
-        }
-
+        /**
+         * Download and install an update
+         */
         suspend fun installRelease(
             release: Release,
             callback: DownloadCallback,
@@ -296,6 +297,9 @@ class UpdateChecker
             return targetFile
         }
 
+        /**
+         * Check if the app has permission to write the download
+         */
         fun hasPermissions(): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
                 (
@@ -336,7 +340,7 @@ class UpdateChecker
                         context.contentResolver.delete(
                             MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                             "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ? AND ${MediaStore.MediaColumns.MIME_TYPE} = ?",
-                            arrayOf(context.getString(R.string.app_name) + "%", APK_MIME_TYPE),
+                            arrayOf("$ASSET_NAME%", APK_MIME_TYPE),
                         )
                     Timber.i("Deleted $deletedRows rows")
                 } else {
@@ -360,7 +364,19 @@ data class Release(
     val publishedAt: String?,
     val body: String?,
     val notes: List<String>,
-)
+) {
+    val content =
+        "# ${version}\n" +
+            (
+                (notes.joinToString("\n").takeIf { it.isNotNullOrBlank() } ?: "") +
+                    (body ?: "")
+            ).replace(
+                Regex("https://github.com/\\w*/\\w+/pull/(\\d+)"),
+                "#$1",
+            )
+                // Remove the last line for full changelog since its just a link
+                .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), "")
+}
 
 interface DownloadCallback {
     fun contentLength(contentLength: Long)
@@ -386,4 +402,34 @@ suspend fun copyTo(
         bytes = input.read(buffer)
     }
     return bytesCopied
+}
+
+fun getDownloadUrl(
+    assets: JsonArray,
+    debug: Boolean,
+    supportedAbis: List<String> = Build.SUPPORTED_ABIS.toList(),
+): String? {
+    val abiSuffix = supportedAbis.firstOrNull().let { if (it != null) "-$it" else "" }
+    val releaseSuffix = if (debug) "-debug" else "-release"
+    val preferredNames =
+        buildList {
+            add("$ASSET_NAME${releaseSuffix}$abiSuffix.apk")
+            add("$ASSET_NAME$releaseSuffix.apk")
+            if (!debug) add("$ASSET_NAME.apk")
+        }
+    var preferredAsset: JsonObject? = null
+    outer@ for (name in preferredNames) {
+        for (asset in assets) {
+            val assetName =
+                asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+            if (name == assetName) {
+                preferredAsset = asset.jsonObject
+                break@outer
+            }
+        }
+    }
+    return preferredAsset
+        ?.get("browser_download_url")
+        ?.jsonPrimitive
+        ?.contentOrNull
 }

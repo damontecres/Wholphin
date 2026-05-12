@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.google.protobuf.InvalidProtocolBufferException
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -53,6 +54,7 @@ class AppPreferencesSerializer
                                 refreshRateSwitching =
                                     AppPreference.RefreshRateSwitching.defaultValue
                                 resolutionSwitching = AppPreference.ResolutionSwitching.defaultValue
+                                cinemaMode = AppPreference.CinemaMode.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
@@ -60,10 +62,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             ac3Supported = AppPreference.Ac3Supported.defaultValue
                                             downmixStereo = AppPreference.DownMixStereo.defaultValue
-                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
+//                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
+                                            assPlaybackMode =
+                                                AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
 
                                 mpvOptions =
@@ -94,6 +98,8 @@ class AppPreferencesSerializer
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
                                 backdropStyle = AppPreference.BackdropStylePref.defaultValue
+                                showLogos = AppPreference.ShowLogos.defaultValue
+                                combinedSearchResults = false
 
                                 subtitlesPreferences =
                                     SubtitlePreferences
@@ -121,7 +127,19 @@ class AppPreferencesSerializer
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
 
-                                combinedSearchResults = false
+                                screensaverPreference =
+                                    ScreensaverPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                                            duration = ScreensaverPreference.DEFAULT_DURATION
+                                            animate = ScreensaverPreference.Animate.defaultValue
+                                            maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                            showClock = ScreensaverPreference.ShowClock.defaultValue
+                                            clearItemTypes()
+                                            addItemTypes(BaseItemKind.MOVIE.serialName)
+                                            addItemTypes(BaseItemKind.SERIES.serialName)
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -138,6 +156,15 @@ class AppPreferencesSerializer
                             .apply {
                                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
                                 slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
+                            }.build()
+
+                    musicPreferences =
+                        MusicPreferences
+                            .newBuilder()
+                            .apply {
+                                showBackdrop = true
+                                showLyrics = true
+                                showAlbumArt = true
                             }.build()
                 }.build()
 
@@ -200,6 +227,16 @@ inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.B
 inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
     update {
         photoPreferences = photoPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        musicPreferences = musicPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

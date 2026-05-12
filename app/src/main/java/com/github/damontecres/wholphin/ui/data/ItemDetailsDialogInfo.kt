@@ -19,9 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.byteRateSuffixes
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
+import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
@@ -33,6 +36,7 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.extensions.ticks
+import java.time.LocalDateTime
 import java.util.Locale
 
 data class ItemDetailsDialogInfo(
@@ -40,8 +44,22 @@ data class ItemDetailsDialogInfo(
     val overview: String?,
     val genres: List<String>,
     val files: List<MediaSourceInfo>,
-)
+    val studios: List<String> = emptyList(),
+    val lastPlayed: LocalDateTime? = null,
+) {
+    constructor(item: BaseItem) : this(
+        title = item.name ?: "",
+        overview = item.data.overview,
+        genres = item.data.genres.orEmpty(),
+        files = item.data.mediaSources.orEmpty(),
+        studios = item.studioNames,
+        lastPlayed = item.data.userData?.lastPlayedDate,
+    )
+}
 
+/**
+ * Dialog showing metadata about an item
+ */
 @Composable
 fun ItemDetailsDialog(
     info: ItemDetailsDialogInfo,
@@ -58,6 +76,7 @@ fun ItemDetailsDialog(
     val bitrateLabel = stringResource(R.string.bitrate)
     val unknown = stringResource(R.string.unknown)
     val runtimeLabel = stringResource(R.string.runtime_sort)
+    val lastPlayedLabel = stringResource(R.string.last_played)
 
     ScrollableDialog(
         onDismissRequest = onDismissRequest,
@@ -71,6 +90,12 @@ fun ItemDetailsDialog(
                     text = info.title,
                     style = MaterialTheme.typography.headlineSmall,
                 )
+                if (info.studios.isNotEmpty()) {
+                    Text(
+                        text = info.studios.joinToString(", "),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
                 if (info.genres.isNotEmpty()) {
                     Text(
                         text = info.genres.joinToString(", "),
@@ -80,6 +105,14 @@ fun ItemDetailsDialog(
                 if (info.overview.isNotNullOrBlank()) {
                     Text(
                         text = info.overview,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                val lastPlayed =
+                    remember(info.lastPlayed) { info.lastPlayed?.let { formatDate(it) } }
+                if (lastPlayed != null) {
+                    Text(
+                        text = "$lastPlayedLabel: $lastPlayed",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -116,7 +149,7 @@ fun ItemDetailsDialog(
                                 }
                                 source.bitrate?.let {
                                     add(
-                                        bitrateLabel to formatBytes(it, byteRateSuffixes),
+                                        bitrateLabel to formatBitrate(it),
                                     )
                                 }
                                 source.runTimeTicks?.let {
@@ -297,7 +330,7 @@ private fun buildVideoStreamInfo(
             val aspectRatio = calculateAspectRatio(stream.width!!, stream.height!!)
             add(aspectRatioLabel to aspectRatio)
         }
-        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
+        stream.bitRate?.let { add(bitrateLabel to formatBitrate(it)) }
         stream.averageFrameRate?.let {
             add(framerateLabel to String.format(Locale.getDefault(), "%.3f", it))
         }
@@ -405,7 +438,7 @@ private fun buildAudioStreamInfo(
         stream.channelLayout?.let { add(layoutLabel to it) }
         stream.channels?.let { add(channelsLabel to it.toString()) }
         stream.profile?.let { add(profileLabel to it) }
-        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
+        stream.bitRate?.let { add(bitrateLabel to formatBitrate(it)) }
         stream.sampleRate?.let { add(sampleRateLabel to "$it $sampleRateUnit") }
         stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
     }

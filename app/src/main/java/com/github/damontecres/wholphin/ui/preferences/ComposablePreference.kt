@@ -3,8 +3,6 @@ package com.github.damontecres.wholphin.ui.preferences
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
@@ -23,7 +21,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -35,7 +32,6 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppStringPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
-import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -43,7 +39,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.SortedSet
 
 @Suppress("UNCHECKED_CAST")
 @Composable
@@ -182,51 +177,28 @@ fun <T> ComposablePreference(
                         .valueToIndex(value as T)
                         .let { values[it] }
             val selectedIndex = remember(value) { preference.valueToIndex.invoke(value as T) }
-            ClickPreference(
+            ChoicePreference(
                 title = title,
                 summary = summary,
-                onClick = {
-                    dialogParams =
-                        DialogParams(
-                            title = title,
-                            fromLongClick = false,
-                            items =
-                                values.mapIndexed { index, it ->
-                                    DialogItem(
-                                        headlineContent = {
-                                            Text(it)
-                                        },
-                                        leadingContent = {
-                                            if (index == selectedIndex) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Done,
-                                                    contentDescription = "selected",
-                                                )
-                                            }
-                                        },
-                                        supportingContent = {
-                                            subtitles?.let {
-                                                val text = subtitles[index]
-                                                if (text.isNotNullOrBlank()) {
-                                                    Text(text)
-                                                }
-                                            }
-                                        },
-                                        onClick = {
-                                            onValueChange(preference.indexToValue(index))
-                                            dialogParams = null
-                                        },
-                                    )
-                                },
-                        )
+                possibleValues = values,
+                selectedIndex = selectedIndex,
+                onValueChange = { index ->
+                    onValueChange(preference.indexToValue(index))
                 },
-                interactionSource = interactionSource,
                 modifier = modifier,
+                interactionSource = interactionSource,
+                subtitleDisplay = { index, _ ->
+                    subtitles?.getOrNull(index)?.takeIf { it.isNotNullOrBlank() }?.let {
+                        {
+                            Text(text = it)
+                        }
+                    }
+                },
             )
         }
 
         is AppMultiChoicePreference<*, *> -> {
-            val values = stringArrayResource(preference.displayValues).toSortedSet()
+            val values = stringArrayResource(preference.displayValues)
             val summary =
                 preference.summary?.let { stringResource(it) }
                     ?: preference.summary(context, value)
@@ -237,12 +209,15 @@ fun <T> ComposablePreference(
                     list
                 }
             MultiChoicePreference(
-                possibleValues = values as SortedSet<Any>,
+                possibleValues = preference.allValues,
                 selectedValues = selectedValues,
                 title = title,
                 summary = summary,
                 onValueChange = {
-                    onValueChange.invoke(selectedValues.toList() as T)
+                    onValueChange.invoke(it.toList() as T)
+                },
+                valueDisplay = { index, _ ->
+                    Text(values[index])
                 },
             )
         }

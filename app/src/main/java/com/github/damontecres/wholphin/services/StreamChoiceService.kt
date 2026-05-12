@@ -20,6 +20,9 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Manage the track choices for media
+ */
 @Singleton
 class StreamChoiceService
     @Inject
@@ -94,6 +97,9 @@ class StreamChoiceService
                 result
             }
 
+        /**
+         * Returns the audio stream that should play
+         */
         suspend fun chooseAudioStream(
             source: MediaSourceInfo,
             seriesId: UUID?,
@@ -108,6 +114,9 @@ class StreamChoiceService
             }
         }
 
+        /**
+         * Returns the audio stream that should play
+         */
         fun chooseAudioStream(
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
@@ -135,6 +144,9 @@ class StreamChoiceService
                 }
             }
 
+        /**
+         * Returns the subtitle stream that should play
+         */
         suspend fun chooseSubtitleStream(
             source: MediaSourceInfo,
             audioStream: MediaStream?,
@@ -196,6 +208,9 @@ class StreamChoiceService
                 )?.index
             }
 
+        /**
+         * Returns the subtitle stream that should play
+         */
         fun chooseSubtitleStream(
             audioStreamLang: String?,
             candidates: List<MediaStream>,

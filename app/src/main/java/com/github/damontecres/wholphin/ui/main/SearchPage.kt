@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.main
 
 import android.view.Gravity
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,7 +40,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
@@ -69,6 +68,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -135,6 +135,9 @@ class SearchViewModel
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val albums = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val artists = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val songs = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val combinedResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
@@ -163,6 +166,9 @@ class SearchViewModel
                     searchInternal(query, BaseItemKind.SERIES, series)
                     searchInternal(query, BaseItemKind.EPISODE, episodes)
                     searchInternal(query, BaseItemKind.BOX_SET, collections)
+                    searchInternal(query, BaseItemKind.MUSIC_ALBUM, albums)
+                    searchInternal(query, BaseItemKind.MUSIC_ARTIST, artists)
+                    searchInternal(query, BaseItemKind.AUDIO, songs)
                 }
                 searchSeerr(query)
             } else {
@@ -269,7 +275,7 @@ class SearchViewModel
                     val results =
                         seerrService
                             .search(query)
-                            .map { DiscoverItem(it) }
+                            .map { seerrService.createDiscoverItem(it) }
                             .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
                     seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
                 }
@@ -310,7 +316,11 @@ private const val MOVIE_ROW = TAB_ROW + 1
 private const val SERIES_ROW = MOVIE_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
 private const val COLLECTION_ROW = EPISODE_ROW + 1
-private const val SEERR_ROW = COLLECTION_ROW + 1
+private const val ALBUM_ROW = COLLECTION_ROW + 1
+private const val ARTIST_ROW = ALBUM_ROW + 1
+private const val SONG_ROW = ARTIST_ROW + 1
+private const val SEERR_ROW = SONG_ROW + 1
+
 private const val COMBINED_ROW = TAB_ROW + 1
 
 /** Delay for focus to settle after voice search dialog dismisses. */
@@ -322,13 +332,15 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
+    val albums by viewModel.albums.observeAsState(SearchResult.NoQuery)
+    val artists by viewModel.artists.observeAsState(SearchResult.NoQuery)
+    val songs by viewModel.songs.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
     val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
     val combinedMode by viewModel.combinedModeFlow.collectAsState()
@@ -519,16 +531,22 @@ fun SearchPage(
                 selectedTabIndex = selectedTab,
                 tabs =
                     listOf(
-                        context.getString(R.string.library),
-                        context.getString(R.string.discover),
+                        stringResource(R.string.library),
+                        stringResource(R.string.discover),
                     ),
                 focusRequesters = tabFocusRequesters,
                 onClick = { selectedTab = it },
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp),
             )
         }
         Box(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
         ) {
             when {
                 isLibraryTab && combinedMode -> {
@@ -555,7 +573,7 @@ fun SearchPage(
                         modifier = Modifier.focusGroup(),
                     ) {
                         searchResultRow(
-                            title = context.getString(R.string.movies),
+                            title = R.string.movies,
                             result = movies,
                             rowIndex = MOVIE_ROW,
                             position = position,
@@ -565,7 +583,7 @@ fun SearchPage(
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
-                            title = context.getString(R.string.tv_shows),
+                            title = R.string.tv_shows,
                             result = series,
                             rowIndex = SERIES_ROW,
                             position = position,
@@ -575,7 +593,7 @@ fun SearchPage(
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
-                            title = context.getString(R.string.episodes),
+                            title = R.string.episodes,
                             result = episodes,
                             rowIndex = EPISODE_ROW,
                             position = position,
@@ -597,7 +615,7 @@ fun SearchPage(
                             },
                         )
                         searchResultRow(
-                            title = context.getString(R.string.collections),
+                            title = R.string.collections,
                             result = collections,
                             rowIndex = COLLECTION_ROW,
                             position = position,
@@ -605,6 +623,78 @@ fun SearchPage(
                             onClickItem = onClickItem,
                             onClickPosition = { position = it },
                             modifier = Modifier.fillMaxWidth(),
+                        )
+                        searchResultRow(
+                            title = R.string.albums,
+                            result = albums,
+                            rowIndex = ALBUM_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[ALBUM_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                SeasonCard(
+                                    item = item,
+                                    onClick = {
+                                        position = RowColumn(ALBUM_ROW, index)
+                                        onClick.invoke()
+                                    },
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.heightEpisode,
+                                    aspectRatio = AspectRatios.SQUARE,
+                                    showImageOverlay = true,
+                                    modifier = mod,
+                                )
+                            },
+                        )
+                        searchResultRow(
+                            title = R.string.artists,
+                            result = artists,
+                            rowIndex = COLLECTION_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[COLLECTION_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                SeasonCard(
+                                    item = item,
+                                    onClick = {
+                                        position = RowColumn(ALBUM_ROW, index)
+                                        onClick.invoke()
+                                    },
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.heightEpisode,
+                                    aspectRatio = AspectRatios.SQUARE,
+                                    showImageOverlay = true,
+                                    modifier = mod,
+                                )
+                            },
+                        )
+                        searchResultRow(
+                            title = R.string.songs,
+                            result = songs,
+                            rowIndex = SONG_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[SONG_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                SeasonCard(
+                                    item = item,
+                                    onClick = {
+                                        position = RowColumn(ALBUM_ROW, index)
+                                        onClick.invoke()
+                                    },
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.heightEpisode,
+                                    aspectRatio = AspectRatios.SQUARE,
+                                    showImageOverlay = true,
+                                    modifier = mod,
+                                )
+                            },
                         )
                     }
                 }
@@ -622,7 +712,7 @@ fun SearchPage(
                         modifier = Modifier.focusGroup(),
                     ) {
                         searchResultRow(
-                            title = context.getString(R.string.discover),
+                            title = R.string.discover,
                             result = seerrResults,
                             rowIndex = SEERR_ROW,
                             position = position,
@@ -783,13 +873,16 @@ fun SearchCombinedResults(
                         gridFocusRequester = focusRequester,
                         showJumpButtons = false,
                         showLetterButtons = false,
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        cardContent = { item, onClick, onLongClick, mod ->
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                        cardContent = { details ->
                             GridCard(
-                                item = item,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                modifier = mod,
+                                item = details.item,
+                                onClick = details.onClick,
+                                onLongClick = details.onLongClick,
+                                modifier = details.mod,
                             )
                         },
                     )
@@ -804,7 +897,7 @@ fun SearchCombinedResults(
 }
 
 fun LazyListScope.searchResultRow(
-    title: String,
+    @StringRes title: Int,
     result: SearchResult,
     rowIndex: Int,
     position: RowColumn,
@@ -828,6 +921,7 @@ fun LazyListScope.searchResultRow(
             },
             onLongClick = onLongClick,
             imageHeight = Cards.height2x3,
+            showImageOverlay = true,
             modifier = mod,
         )
     },
@@ -836,7 +930,7 @@ fun LazyListScope.searchResultRow(
         when (val r = result) {
             is SearchResult.Error -> {
                 SearchResultPlaceholder(
-                    title = title,
+                    title = stringResource(title),
                     message = r.ex.localizedMessage ?: "Error occurred during search",
                     messageColor = MaterialTheme.colorScheme.error,
                     modifier = Modifier,
@@ -849,7 +943,7 @@ fun LazyListScope.searchResultRow(
 
             SearchResult.Searching -> {
                 SearchResultPlaceholder(
-                    title = title,
+                    title = stringResource(title),
                     message = stringResource(R.string.searching),
                     modifier = modifier,
                 )
@@ -858,7 +952,7 @@ fun LazyListScope.searchResultRow(
             is SearchResult.Success -> {
                 if (r.items.isNotEmpty()) {
                     ItemRow(
-                        title = title,
+                        title = stringResource(title),
                         items = r.items,
                         onClickItem = onClickItem,
                         onLongClickItem = { _, _ -> },
@@ -871,7 +965,7 @@ fun LazyListScope.searchResultRow(
             is SearchResult.SuccessSeerr -> {
                 if (r.items.isNotEmpty()) {
                     ItemRow(
-                        title = title,
+                        title = stringResource(title),
                         items = r.items,
                         onClickItem = { index, item ->
                             onClickPosition.invoke(RowColumn(rowIndex, index))

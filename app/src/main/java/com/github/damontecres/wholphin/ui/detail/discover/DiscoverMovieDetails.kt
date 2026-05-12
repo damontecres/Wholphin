@@ -60,7 +60,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -101,15 +100,6 @@ fun DiscoverMovieDetails(
 
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
-
-    val moreActions =
-        MoreDialogActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched -> },
-            onClickFavorite = { itemId, favorite -> },
-            onClickAddPlaylist = { itemId -> },
-            onSendMediaInfo = {},
-        )
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -351,7 +341,7 @@ fun DiscoverMovieDetailsContent(
                                 item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                showOverlay = false,
+                                showOverlay = true,
                                 modifier = mod,
                             )
                         },

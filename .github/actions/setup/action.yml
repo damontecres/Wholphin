@@ -21,7 +21,7 @@ runs:
         echo "BUILD_TOOLS_VERSION=36.0.0" >> $GITHUB_ENV
         echo "NDK_VERSION=29.0.14206865" >> $GITHUB_ENV
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      uses: android-actions/setup-android@v4
       with:
         packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
     - name: Add NDK to path

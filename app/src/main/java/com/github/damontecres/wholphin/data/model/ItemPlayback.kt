@@ -13,6 +13,10 @@ import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Store the media source and audio/subtitle tracks chosen for a specific media item
+ *
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(

@@ -19,9 +19,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import timber.log.Timber
@@ -60,6 +59,11 @@ fun TabRow(
         }
     }
     var rowHasFocus by remember { mutableStateOf(false) }
+
+    val currentSelectedTabIndex by rememberUpdatedState(selectedTabIndex)
+    val currentFocusRequesters by rememberUpdatedState(focusRequesters)
+    val currentOnClick by rememberUpdatedState(onClick)
+
     LazyRow(
         state = state,
         modifier =
@@ -71,14 +75,16 @@ fun TabRow(
                     onEnter = {
                         // If entering from left or right, use last or first tab
                         // Otherwise use the selected tab
-                        Timber.v("onEnter requestedFocusDirection=$requestedFocusDirection, selectedTabIndex=$selectedTabIndex")
+                        val index = currentSelectedTabIndex
+                        val requesters = currentFocusRequesters
+                        Timber.v("onEnter requestedFocusDirection=$requestedFocusDirection, selectedTabIndex=$index")
                         val focusRequester =
                             if (requestedFocusDirection == FocusDirection.Left) {
-                                focusRequesters.lastOrNull()
+                                requesters.lastOrNull()
                             } else if (requestedFocusDirection == FocusDirection.Right) {
-                                focusRequesters.firstOrNull()
+                                requesters.firstOrNull()
                             } else {
-                                focusRequesters.getOrNull(selectedTabIndex)
+                                requesters.getOrNull(index)
                             }
                         (focusRequester ?: FocusRequester.Default).tryRequestFocus()
                     }
@@ -86,15 +92,19 @@ fun TabRow(
     ) {
         itemsIndexed(tabs) { index, tabTitle ->
             val interactionSource = remember { MutableInteractionSource() }
+            val onTabClick =
+                remember(index) {
+                    {
+                        currentOnClick(index)
+                    }
+                }
             Tab(
                 title = tabTitle,
                 selected = index == selectedTabIndex,
                 rowActive = rowHasFocus,
                 interactionSource = interactionSource,
-                onClick = {
-                    onClick.invoke(index)
-                },
-                modifier = Modifier.focusRequester(focusRequesters[index]),
+                onClick = onTabClick,
+                modifier = Modifier.focusRequester(focusRequesters.getOrElse(index) { FocusRequester() }),
             )
         }
     }

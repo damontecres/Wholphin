@@ -8,36 +8,63 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.ExtraType
 
+/**
+ * Represents "extras" for media such as behind-the-scenes or deleted scenes
+ */
 sealed interface ExtrasItem {
     val parentId: UUID
     val type: ExtraType
     val destination: Destination
-    val title: String?
+    val imageUrl: String?
+    val title: String
+    val subtitle: String?
+    val isPlayed: Boolean
+    val playedPercentage: Double
 
+    /**
+     * Represents multiple extras of the same type
+     */
     data class Group(
         override val parentId: UUID,
         override val type: ExtraType,
         val items: List<BaseItem>,
+        override val imageUrl: String?,
+        override val title: String,
+        override val subtitle: String,
+        override val isPlayed: Boolean,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.ItemGrid(null, type.stringRes, items.map { it.id })
 
-        override val title: String? = null
+        override val playedPercentage
+            get() = -1.0
     }
 
+    /**
+     * Represents a single extra
+     */
     data class Single(
         override val parentId: UUID,
         override val type: ExtraType,
         val item: BaseItem,
+        override val imageUrl: String?,
+        override val title: String,
+        override val subtitle: String?,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.Playback(
                 item = item,
             )
-        override val title: String? get() = item.title
+        override val isPlayed: Boolean
+            get() = item.played
+        override val playedPercentage
+            get() = item.data.userData?.playedPercentage ?: 0.0
     }
 }
 
+/**
+ * Converts [ExtraType] to the string resource ID
+ */
 @get:StringRes
 val ExtraType.stringRes: Int
     get() =
@@ -56,6 +83,9 @@ val ExtraType.stringRes: Int
             ExtraType.SHORT -> R.string.shorts
         }
 
+/**
+ * Converts [ExtraType] to the plural resource ID
+ */
 @get:PluralsRes
 val ExtraType.pluralRes: Int
     get() =

@@ -16,9 +16,31 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.Options
 import coil3.request.crossfade
 import coil3.util.DebugLogger
+import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import kotlin.time.ExperimentalTime
+
+@Composable
+fun CoilConfig(
+    prefs: AppPreferences,
+    okHttpClient: OkHttpClient,
+    debugLogging: Boolean,
+    enableCache: Boolean = true,
+) = CoilConfig(
+    diskCacheSizeBytes =
+        prefs.advancedPreferences.imageDiskCacheSizeBytes.let {
+            if (it < AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT) {
+                AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+            } else {
+                it
+            }
+        },
+    okHttpClient = okHttpClient,
+    debugLogging = debugLogging,
+    enableCache = enableCache,
+)
 
 /**
  * Configure Coil image loading

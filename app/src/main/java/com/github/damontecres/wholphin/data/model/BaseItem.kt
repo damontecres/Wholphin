@@ -5,12 +5,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
-import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
+import com.github.damontecres.wholphin.ui.detail.music.artistsString
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -25,14 +26,19 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
+import java.util.UUID
 import kotlin.time.Duration
 
+/**
+ * Wrapper for [BaseItemDto] with shortcuts for various UI elements
+ */
 @Serializable
 @Stable
 data class BaseItem(
     val data: BaseItemDto,
-    val useSeriesForPrimary: Boolean,
+    val useSeriesForPrimary: Boolean = false,
     val imageUrlOverride: String? = null,
+    val destinationOverride: Destination? = null,
 ) : CardGridItem {
     val id get() = data.id
 
@@ -55,6 +61,7 @@ data class BaseItem(
             when (type) {
                 BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
                 BaseItemKind.SERIES -> data.seriesProductionYears
+                BaseItemKind.AUDIO -> listOfNotNull(data.album, artistsString).joinToString(" - ")
                 else -> data.productionYear?.toString()
             }
 
@@ -70,8 +77,9 @@ data class BaseItem(
         }
     }
 
-    @Transient
-    val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
+    val canDelete: Boolean get() = data.canDelete == true
+
+    val aspectRatio: Float? get() = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
     val indexNumber get() = data.indexNumber
 
@@ -83,9 +91,11 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    @Transient
-    val timeRemainingOrRuntime: Duration? = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
 
+    /**
+     * Contains pre computed UI elements that would be expensive to create on the main thread
+     */
     @Transient
     val ui =
         BaseItemUi(
@@ -93,7 +103,11 @@ data class BaseItem(
                 data.indexNumber?.let { "E$it" }
                     ?: data.premiereDate?.let(::formatDateTime),
             episodeUnplayedCornerText =
-                if (type == BaseItemKind.SERIES || type == BaseItemKind.SEASON || type == BaseItemKind.BOX_SET) {
+                if (type == BaseItemKind.SERIES ||
+                    type == BaseItemKind.SEASON ||
+                    type == BaseItemKind.EPISODE ||
+                    type == BaseItemKind.BOX_SET
+                ) {
                     data.indexNumber?.let { "E$it" }
                         ?: data.userData
                             ?.unplayedItemCount
@@ -108,7 +122,7 @@ data class BaseItem(
                         buildList {
                             if (type == BaseItemKind.EPISODE) {
                                 data.seasonEpisode?.let(::add)
-                                data.premiereDate?.let { add(DateFormatter.format(it)) }
+                                data.premiereDate?.let { add(getDateFormatter().format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
                             } else if (type == BaseItemKind.PHOTO) {
@@ -117,6 +131,9 @@ data class BaseItem(
                                 } else if (data.premiereDate != null) {
                                     add(data.premiereDate!!.toLocalDate().toString())
                                 }
+                            } else if (type == BaseItemKind.BOX_SET) {
+                                data.productionYear?.let { add(it.toString()) }
+                                data.childCount?.let { add("$it items") }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -165,7 +182,11 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
+    /**
+     * Convert this [BaseItem] into a [Destination] to navigate to its page in the app
+     */
     fun destination(index: Int? = null): Destination {
+        if (destinationOverride != null) return destinationOverride
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -214,6 +235,7 @@ data class BaseItem(
     }
 
     companion object {
+        @Deprecated("Use regular constructor instead")
         fun from(
             dto: BaseItemDto,
             api: ApiClient,
@@ -234,3 +256,60 @@ data class BaseItemUi(
     val episodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
 )
+
+/**
+ * Create the special [Destination.FilteredCollection] for the given genre information
+ */
+fun createGenreDestination(
+    genreId: UUID,
+    genreName: String,
+    parentId: UUID,
+    parentName: String?,
+    includeItemTypes: List<BaseItemKind>?,
+) = Destination.FilteredCollection(
+    itemId = parentId,
+    parentType = BaseItemKind.GENRE,
+    filter =
+        CollectionFolderFilter(
+            nameOverride =
+                listOfNotNull(
+                    genreName,
+                    parentName,
+                ).joinToString(" "),
+            filter =
+                GetItemsFilter(
+                    genres = listOf(genreId),
+                    includeItemTypes = includeItemTypes,
+                ),
+            useSavedLibraryDisplayInfo = false,
+        ),
+    recursive = true,
+)
+
+fun createStudioDestination(
+    studioId: UUID,
+    name: String,
+    parentId: UUID,
+    parentName: String?,
+    includeItemTypes: List<BaseItemKind>?,
+) = Destination.FilteredCollection(
+    itemId = parentId,
+    parentType = BaseItemKind.STUDIO,
+    filter =
+        CollectionFolderFilter(
+            nameOverride =
+                listOfNotNull(
+                    name,
+                    parentName,
+                ).joinToString(" "),
+            filter =
+                GetItemsFilter(
+                    studios = listOf(studioId),
+                    includeItemTypes = includeItemTypes,
+                ),
+            useSavedLibraryDisplayInfo = false,
+        ),
+    recursive = true,
+)
+
+val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()

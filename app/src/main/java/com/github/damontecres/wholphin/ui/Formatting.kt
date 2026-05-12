@@ -5,7 +5,9 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
 import java.time.LocalDate
@@ -15,8 +17,25 @@ import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
 
-val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+private var timeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+
+fun getTimeFormatter(): DateTimeFormatter {
+    if (timeFormatter.locale != Locale.getDefault()) {
+        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
+    }
+    return timeFormatter
+}
+
+private var dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
+
+fun getDateFormatter(): DateTimeFormatter {
+    if (dateFormatter.locale != Locale.getDefault()) {
+        dateFormatter = dateFormatter.withLocale(Locale.getDefault())
+    }
+    return dateFormatter
+}
 
 // TODO server returns in UTC, but sdk converts to local time
 // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
@@ -24,9 +43,11 @@ val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy"
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
  */
-fun formatDateTime(dateTime: LocalDateTime): String = DateFormatter.format(dateTime)
+fun formatDateTime(dateTime: LocalDateTime): String = getDateFormatter().format(dateTime)
 
-fun formatDate(dateTime: LocalDate): String = DateFormatter.format(dateTime)
+fun formatDate(dateTime: LocalDate): String = getDateFormatter().format(dateTime)
+
+fun formatDate(dateTime: LocalDateTime): String = getDateFormatter().format(dateTime)
 
 fun toLocalDate(date: String?): LocalDate? =
     date?.let {
@@ -76,7 +97,7 @@ val BaseItemDto.seriesProductionYears: String?
                 append(productionYear.toString())
                 if (status == "Continuing") {
                     append(" - ")
-                    append("Present")
+                    append(WholphinApplication.instance.getString(R.string.series_continueing))
                 } else if (status == "Ended") {
                     endDate?.let {
                         if (it.year != productionYear) {
@@ -108,29 +129,24 @@ fun abbreviateNumber(number: Int): String {
     return String.format(Locale.getDefault(), "%.1f%s", count, abbrevSuffixes[unit])
 }
 
-val byteSuffixes = listOf("B", "KB", "MB", "GB", "TB")
+val byteSuffixes = listOf("B", "KiB", "MiB", "GiB", "TiB")
 val byteRateSuffixes = listOf("bps", "kbps", "mbps", "gbps", "tbps")
-
-/**
- * Format bytes
- */
-fun formatBytes(
-    bytes: Int,
-    suffixes: List<String> = byteSuffixes,
-) = formatBytes(bytes.toLong(), suffixes)
 
 fun formatBytes(
     bytes: Long,
     suffixes: List<String> = byteSuffixes,
+    divisor: Int = 1024,
 ): String {
     var unit = 0
     var count = bytes.toDouble()
-    while (count >= 1024 && unit + 1 < suffixes.size) {
-        count /= 1024
+    while (count >= divisor && unit + 1 < suffixes.size) {
+        count /= divisor
         unit++
     }
-    return String.format(Locale.getDefault(), "%.2f%s", count, suffixes[unit])
+    return String.format(Locale.getDefault(), "%.2f %s", count, suffixes[unit])
 }
+
+fun formatBitrate(bitrate: Int) = formatBytes(bitrate.toLong(), byteRateSuffixes, 1000)
 
 @get:StringRes
 val MediaSegmentType.stringRes: Int
@@ -182,4 +198,46 @@ fun listToDotString(
                 appendInlineContent(id = "rotten")
             }
         }
+    }
+
+@StringRes
+fun formatTypeName(type: BaseItemKind): Int =
+    when (type) {
+        BaseItemKind.MOVIE -> R.string.movies
+        BaseItemKind.SERIES -> R.string.tv_shows
+        BaseItemKind.EPISODE -> R.string.episodes
+        BaseItemKind.VIDEO -> R.string.videos
+        BaseItemKind.PLAYLIST -> R.string.playlists
+        BaseItemKind.PERSON -> R.string.people
+        BaseItemKind.BOX_SET -> R.string.collections
+        BaseItemKind.AUDIO -> TODO()
+        BaseItemKind.CHANNEL -> R.string.channels
+        BaseItemKind.GENRE -> R.string.genres
+        BaseItemKind.LIVE_TV_CHANNEL -> R.string.channels
+        BaseItemKind.MUSIC_ALBUM -> TODO()
+        BaseItemKind.MUSIC_ARTIST -> TODO()
+        BaseItemKind.MUSIC_GENRE -> TODO()
+        BaseItemKind.MUSIC_VIDEO -> TODO()
+        BaseItemKind.PHOTO -> R.string.photos
+        BaseItemKind.PHOTO_ALBUM -> TODO()
+        BaseItemKind.PROGRAM -> TODO()
+        BaseItemKind.RECORDING -> TODO()
+        BaseItemKind.SEASON -> R.string.tv_seasons
+        BaseItemKind.STUDIO -> R.string.studios
+        BaseItemKind.TRAILER -> R.string.trailers
+        BaseItemKind.TV_CHANNEL -> R.string.channels
+        BaseItemKind.TV_PROGRAM -> TODO()
+        BaseItemKind.USER_ROOT_FOLDER -> TODO()
+        BaseItemKind.USER_VIEW -> TODO()
+        BaseItemKind.YEAR -> TODO()
+        BaseItemKind.AGGREGATE_FOLDER -> TODO()
+        BaseItemKind.AUDIO_BOOK -> TODO()
+        BaseItemKind.BASE_PLUGIN_FOLDER -> TODO()
+        BaseItemKind.BOOK -> TODO()
+        BaseItemKind.CHANNEL_FOLDER_ITEM -> TODO()
+        BaseItemKind.COLLECTION_FOLDER -> TODO()
+        BaseItemKind.FOLDER -> TODO()
+        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
+        BaseItemKind.LIVE_TV_PROGRAM -> TODO()
+        BaseItemKind.PLAYLISTS_FOLDER -> TODO()
     }

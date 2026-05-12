@@ -1,20 +1,35 @@
 package com.github.damontecres.wholphin.services
 
+import android.content.Context
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.pluralRes
+import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.ExtraType
+import org.jellyfin.sdk.model.api.ImageType
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Get extras for media
+ *
+ * @see [ExtrasItem]
+ */
 @Singleton
 class ExtrasService
     @Inject
     constructor(
         private val api: ApiClient,
+        @param:ApplicationContext private val context: Context,
+        private val imageUrlService: ImageUrlService,
     ) {
+        /**
+         * Get the [ExtrasItem]s for the given item
+         */
         suspend fun getExtras(itemId: UUID): List<ExtrasItem> {
             val extrasMap =
                 api.userLibraryApi
@@ -31,9 +46,45 @@ class ExtrasService
                 extrasMap
                     .mapNotNull { (type, items) ->
                         if (items.size == 1) {
-                            ExtrasItem.Single(itemId, type, items.first())
+                            val item = items.first()
+                            val title =
+                                item.title ?: context.resources.getQuantityString(type.pluralRes, 1)
+                            val subtitle =
+                                if (item.title == null) {
+                                    context.resources.getQuantityString(type.pluralRes, 1)
+                                } else {
+                                    null
+                                }
+                            ExtrasItem.Single(
+                                parentId = itemId,
+                                type = type,
+                                item = item,
+                                title = title,
+                                subtitle = subtitle,
+                                imageUrl = imageUrlService.getItemImageUrl(item, ImageType.PRIMARY),
+                            )
                         } else if (items.size > 1) {
-                            ExtrasItem.Group(itemId, type, items)
+                            val title =
+                                context.resources.getQuantityString(type.pluralRes, items.size)
+                            val subtitle =
+                                context.resources.getQuantityString(
+                                    R.plurals.items,
+                                    items.size,
+                                    items.size,
+                                )
+                            ExtrasItem.Group(
+                                parentId = itemId,
+                                type = type,
+                                items = items,
+                                title = title,
+                                subtitle = subtitle,
+                                isPlayed = items.all { it.played },
+                                imageUrl =
+                                    imageUrlService.getItemImageUrl(
+                                        items.random(),
+                                        ImageType.PRIMARY,
+                                    ),
+                            )
                         } else {
                             null
                         }
@@ -42,6 +93,9 @@ class ExtrasService
         }
     }
 
+/**
+ * The order which extras should be shown
+ */
 private val ExtraType.sortOrder: Int
     get() =
         when (this) {

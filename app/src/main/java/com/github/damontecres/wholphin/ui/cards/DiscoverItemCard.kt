@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
@@ -50,14 +53,14 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlinx.coroutines.delay
 
 @Composable
-@NonRestartableComposable
 fun DiscoverItemCard(
     item: DiscoverItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    showOverlay: Boolean,
     modifier: Modifier = Modifier,
+    showOverlay: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    width: Dp = Cards.height2x3 * AspectRatios.TALL,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -77,16 +80,15 @@ fun DiscoverItemCard(
     } else {
         focusedAfterDelay = false
     }
-    val width = Cards.height2x3 * AspectRatios.TALL
-    val height = Dp.Unspecified * (1f / AspectRatios.TALL)
     Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
-        modifier = modifier.size(width, height),
+        modifier = modifier.size(width, Dp.Unspecified),
     ) {
         Card(
             modifier =
                 Modifier
-                    .size(Dp.Unspecified, Cards.height2x3)
+                    .size(width, Dp.Unspecified)
                     .aspectRatio(AspectRatios.TALL),
             onClick = onClick,
             onLongClick = onLongClick,
@@ -286,6 +288,88 @@ fun PartiallyAvailableIndicator(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun DiscoverViewMoreCard(
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
+    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
+    var focusedAfterDelay by remember { mutableStateOf(false) }
+
+    val hideOverlayDelay = 500L
+    if (focused) {
+        LaunchedEffect(Unit) {
+            delay(hideOverlayDelay)
+            if (focused) {
+                focusedAfterDelay = true
+            } else {
+                focusedAfterDelay = false
+            }
+        }
+    } else {
+        focusedAfterDelay = false
+    }
+    val width = Cards.height2x3 * AspectRatios.TALL
+    val height = Dp.Unspecified * (1f / AspectRatios.TALL)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        modifier = modifier.size(width, height),
+    ) {
+        Card(
+            modifier =
+                Modifier
+                    .size(Dp.Unspecified, Cards.height2x3)
+                    .aspectRatio(AspectRatios.TALL),
+            onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
+            colors =
+                CardDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                ),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    contentDescription = "View more",
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.view_more),
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .enableMarquee(focusedAfterDelay),
+            )
+        }
+    }
+}
+
 @PreviewTvSpec
 @Composable
 private fun Preview() {
@@ -294,6 +378,11 @@ private fun Preview() {
             PendingIndicator()
             AvailableIndicator()
             PartiallyAvailableIndicator()
+            DiscoverViewMoreCard(
+                onClick = {},
+                onLongClick = {},
+                modifier = Modifier,
+            )
         }
     }
 }

@@ -14,9 +14,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -32,10 +35,15 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
+import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
-    MORE,
+    DEBUG,
     CAPTIONS,
     SETTINGS,
     AUDIO,
@@ -54,8 +62,17 @@ data class PlaybackSettings(
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
     val hasSubtitleDownloadPermission: Boolean,
+    val playbackSpeedEnabled: Boolean,
 )
 
+/**
+ * Centralized UI component for displaying dialogs during playback
+ *
+ * Typically, the user will click something generating a [com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction] which translates into the
+ * [PlaybackDialogType] determining which dialog is shown by this component.
+ *
+ * @see com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
+ */
 @Composable
 fun PlaybackDialog(
     enableSubtitleDelay: Boolean,
@@ -69,28 +86,8 @@ fun PlaybackDialog(
     onChangeSubtitleDelay: (Duration) -> Unit,
 ) {
     when (type) {
-        PlaybackDialogType.MORE -> {
-            val options =
-                buildList {
-                    add(
-                        BottomDialogItem(
-                            data = 0,
-                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
-                            supporting = null,
-                        ),
-                    )
-                }
-            BottomDialog(
-                choices = options,
-                onDismissRequest = {
-                    onDismissRequest.invoke()
-//                    focusRequester.tryRequestFocus()
-                },
-                onSelectChoice = { index, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
-                },
-                gravity = Gravity.START,
-            )
+        PlaybackDialogType.DEBUG -> {
+            throw IllegalStateException("Should not open a dialog with " + PlaybackDialogType.DEBUG)
         }
 
         PlaybackDialogType.CAPTIONS -> {
@@ -121,22 +118,14 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.SETTINGS -> {
-            val currentAudio =
-                remember(settings) { settings.audioStreams.firstOrNull { it.index == settings.audioIndex } }
             val options =
                 buildList {
-                    add(
-                        BottomDialogItem(
-                            data = PlaybackDialogType.AUDIO,
-                            headline = stringResource(R.string.audio),
-                            supporting = currentAudio?.displayTitle,
-                        ),
-                    )
                     add(
                         BottomDialogItem(
                             data = PlaybackDialogType.PLAYBACK_SPEED,
                             headline = stringResource(R.string.playback_speed),
                             supporting = settings.playbackSpeed.toString(),
+                            enabled = settings.playbackSpeedEnabled,
                         ),
                     )
                     if (enableVideoScale) {
@@ -144,7 +133,9 @@ fun PlaybackDialog(
                             BottomDialogItem(
                                 data = PlaybackDialogType.VIDEO_SCALE,
                                 headline = stringResource(R.string.video_scale),
-                                supporting = playbackScaleOptions[settings.contentScale],
+                                supporting =
+                                    playbackScaleOptions[settings.contentScale]
+                                        ?.let { stringResource(it) },
                             ),
                         )
                     }
@@ -157,15 +148,26 @@ fun PlaybackDialog(
                             ),
                         )
                     }
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.DEBUG,
+                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
+                            supporting = null,
+                        ),
+                    )
                 }
             BottomDialog(
                 choices = options,
                 currentChoice = null,
                 onDismissRequest = onDismissRequest,
                 onSelectChoice = { _, choice ->
-                    onClickPlaybackDialogType(choice.data)
+                    if (choice.data == PlaybackDialogType.DEBUG) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
+                    } else {
+                        onClickPlaybackDialogType(choice.data)
+                    }
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 
@@ -176,10 +178,6 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                    scope.launch {
-//                        delay(250L)
-//                        settingsFocusRequester.tryRequestFocus()
-//                    }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
@@ -203,15 +201,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, value ->
                     onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.data))
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 
@@ -220,7 +214,7 @@ fun PlaybackDialog(
                 playbackScaleOptions.map { (scale, name) ->
                     BottomDialogItem(
                         data = scale,
-                        headline = name,
+                        headline = stringResource(name),
                         supporting = null,
                     )
                 }
@@ -230,15 +224,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.Scale(choice.data))
                 },
-                gravity = Gravity.END,
+                gravity = Gravity.START,
             )
         }
 
@@ -393,6 +383,14 @@ fun StreamChoiceBottomDialog(
     gravity: Int,
     currentChoice: Int? = null,
 ) {
+    val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
+    if (currentChoice != null) {
+        LaunchedEffect(Unit) {
+            choices.indexOfFirstOrNull { it.index == currentChoice }?.let {
+                focusRequesters.getOrNull(it)?.tryRequestFocus()
+            }
+        }
+    }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -443,6 +441,7 @@ fun StreamChoiceBottomDialog(
                             if (choice.streamTitle != null) Text(choice.displayTitle)
                         },
                         interactionSource = interactionSource,
+                        modifier = Modifier.focusRequester(focusRequesters[index]),
                     )
                 }
             }

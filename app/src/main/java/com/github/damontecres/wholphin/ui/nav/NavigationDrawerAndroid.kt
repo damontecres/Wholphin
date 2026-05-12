@@ -57,6 +57,11 @@ import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.rememberDrawerState
 
+/**
+ * This is a re-implementation of [androidx.tv.material3.ModalNavigationDrawer].
+ *
+ * It changes padding, sizing, and animations that couldn't be changed in the Androidx implementation.
+ */
 @Composable
 fun ModalNavigationDrawer(
     drawerContent: @Composable NavigationDrawerScope.(DrawerValue) -> Unit,

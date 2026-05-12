@@ -51,7 +51,7 @@ import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 
 @Composable
 fun DownloadSubtitlesContent(
-    state: SubtitleSearch,
+    state: SubtitleSearchStatus,
     language: String,
     onSearch: (String) -> Unit,
     onClickDownload: (RemoteSubtitleInfo) -> Unit,
@@ -59,7 +59,7 @@ fun DownloadSubtitlesContent(
     modifier: Modifier = Modifier,
 ) {
     when (val s = state) {
-        SubtitleSearch.Searching -> {
+        SubtitleSearchStatus.Searching -> {
             Wrapper {
                 Text(
                     text = stringResource(R.string.searching),
@@ -69,7 +69,7 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        SubtitleSearch.Downloading -> {
+        SubtitleSearchStatus.Downloading -> {
             Wrapper {
                 Text(
                     text = stringResource(R.string.downloading),
@@ -79,11 +79,11 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        is SubtitleSearch.Error -> {
+        is SubtitleSearchStatus.Error -> {
             Wrapper { ErrorMessage(null, s.ex, modifier) }
         }
 
-        is SubtitleSearch.Success -> {
+        is SubtitleSearchStatus.Success -> {
             val dialogItems = convertRemoteSubtitles(s.options, onClickDownload)
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
@@ -102,7 +102,7 @@ fun DownloadSubtitlesContent(
                         .padding(PaddingValues(24.dp)),
             ) {
                 Text(
-                    text = "Search & download subtitles",
+                    text = stringResource(R.string.search_and_download_subtitles),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -113,7 +113,7 @@ fun DownloadSubtitlesContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Language",
+                        text = stringResource(R.string.language),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -137,7 +137,7 @@ fun DownloadSubtitlesContent(
                 }
                 if (dialogItems.isEmpty()) {
                     Text(
-                        text = "No remote subtitles were found",
+                        text = stringResource(R.string.no_subtitles_found),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )

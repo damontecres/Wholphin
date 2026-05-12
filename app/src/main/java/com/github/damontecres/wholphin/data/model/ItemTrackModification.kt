@@ -9,6 +9,11 @@ import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Store modifications to an audio/subtitle track in a media item
+ *
+ * For example, the subtitle delay
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(

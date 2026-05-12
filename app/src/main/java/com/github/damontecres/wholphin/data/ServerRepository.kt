@@ -9,10 +9,12 @@ import androidx.lifecycle.map
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -41,9 +43,8 @@ class ServerRepository
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
         val userPreferencesDataStore: DataStore<AppPreferences>,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        private val sharedPreferences = getServerSharedPreferences(context)
-
         private var _current = EqualityMutableLiveData<CurrentUser?>(null)
         val current: LiveData<CurrentUser?> = _current
 
@@ -59,7 +60,7 @@ class ServerRepository
          * The current user is removed
          */
         suspend fun addAndChangeServer(server: JellyfinServer) {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 serverDao.addOrUpdateServer(server)
             }
             apiClient.update(baseUrl = server.url, accessToken = null)
@@ -72,8 +73,8 @@ class ServerRepository
         suspend fun changeUser(
             server: JellyfinServer,
             user: JellyfinUser,
-        ): CurrentUser? =
-            withContext(Dispatchers.IO) {
+        ): CurrentUser =
+            withContext(ioDispatcher) {
                 if (server.id != user.serverId) {
                     throw IllegalStateException("User is not part of the server")
                 }
@@ -103,15 +104,16 @@ class ServerRepository
                             currentUserId = updatedUser.id.toServerString()
                         }.build()
                 }
+                val currentUser = CurrentUser(updatedServer, updatedUser)
                 withContext(Dispatchers.Main) {
-                    _current.value = CurrentUser(updatedServer, updatedUser)
+                    _current.value = currentUser
                     _currentUserDto.value = userDto
                 }
-                sharedPreferences.edit(true) {
+                getServerSharedPreferences(context).edit(true) {
                     putString(SERVER_URL_KEY, updatedServer.url)
                     putString(ACCESS_TOKEN_KEY, updatedUser.accessToken)
                 }
-                return@withContext _current.value
+                return@withContext currentUser
             }
 
         /**
@@ -128,7 +130,7 @@ class ServerRepository
                 return null
             }
             val serverAndUsers =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     serverDao.getServer(serverId)
                 }
             if (serverAndUsers != null) {
@@ -151,7 +153,7 @@ class ServerRepository
         }
 
         suspend fun fetchLastUsedServer(serverId: UUID?): JellyfinServer? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 serverId?.let { serverDao.getServer(serverId)?.server }
             }
 
@@ -165,7 +167,7 @@ class ServerRepository
         suspend fun changeUser(
             serverUrl: String,
             authenticationResult: AuthenticationResult,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(ioDispatcher) {
             val accessToken = authenticationResult.accessToken
             if (accessToken != null) {
                 val authedUser = authenticationResult.user
@@ -215,7 +217,7 @@ class ServerRepository
                 }
                 apiClient.update(accessToken = null)
             }
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 serverDao.deleteUser(user.serverId, user.id)
             }
         }
@@ -235,7 +237,7 @@ class ServerRepository
                 }
                 apiClient.update(baseUrl = null, accessToken = null)
             }
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 serverDao.deleteServer(server.id)
             }
         }
@@ -254,7 +256,7 @@ class ServerRepository
         suspend fun setUserPin(
             user: JellyfinUser,
             pin: String?,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(ioDispatcher) {
             val newUser = user.copy(pin = pin)
             val updatedUser = serverDao.addOrUpdateUser(newUser)
             if (currentUser.value?.id == updatedUser.id && currentServer.value?.id == user.serverId) {
@@ -267,7 +269,7 @@ class ServerRepository
         }
 
         suspend fun authorizeQuickConnect(code: String): Boolean =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val userId = currentUser.value?.id
                 if (userId == null) {
                     Timber.e("No user logged in for Quick Connect authorization")

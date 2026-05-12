@@ -7,6 +7,9 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
+/**
+ * Represents a chapter within a video
+ */
 data class Chapter(
     val name: String?,
     val position: Duration,
@@ -31,6 +34,7 @@ data class Chapter(
                             )
                         },
                     )
-                }.orEmpty()
+                }?.sortedBy { it.position }
+                .orEmpty()
     }
 }

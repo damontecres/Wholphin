@@ -15,6 +15,9 @@ import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
 import timber.log.Timber
 import kotlin.math.max
 
+/**
+ * Functions for selecting which audio & subtitle tracks to activate in the [androidx.media3.common.Player]
+ */
 object TrackSelectionUtils {
     @OptIn(UnstableApi::class)
     fun createTrackSelections(
@@ -105,7 +108,7 @@ object TrackSelectionUtils {
                 true
             }
         val audioSelected =
-            if (audioIndex != null && supportsDirectPlay) {
+            if (audioIndex != null && audioIndex >= 0 && supportsDirectPlay) {
                 val indexToFind =
                     calculateIndexToFind(
                         audioIndex,
@@ -138,7 +141,7 @@ object TrackSelectionUtils {
                 }
                 chosenTrack != null
             } else {
-                audioIndex == null
+                true
             }
         return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
     }
@@ -197,6 +200,10 @@ object TrackSelectionUtils {
                         throw UnsupportedOperationException("Cannot calculate index for $type")
                     }
                 }
+            }
+
+            PlayerBackend.EXTERNAL_PLAYER -> {
+                throw IllegalStateException("Cannot calculate tracks external playback")
             }
         }
 }
@@ -258,6 +265,9 @@ fun List<MediaStream>.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
         }
     }
 
+/**
+ * The result of [TrackSelectionUtils.createTrackSelections]
+ */
 data class TrackSelectionResult(
     val trackSelectionParameters: TrackSelectionParameters,
     val audioSelected: Boolean,

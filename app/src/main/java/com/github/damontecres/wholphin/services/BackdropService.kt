@@ -32,6 +32,11 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Stores state for the backdrop of the app shown on non-full screen pages
+ *
+ * This is usually the backdrop of the currently focused media
+ */
 @Singleton
 @OptIn(FlowPreview::class)
 class BackdropService
@@ -46,19 +51,28 @@ class BackdropService
         private val _backdropFlow = MutableStateFlow<BackdropResult>(BackdropResult.NONE)
         val backdropFlow = _backdropFlow
 
+        /**
+         * Update the backdrop to use the specified item
+         */
         suspend fun submit(item: BaseItem) =
             withContext(Dispatchers.IO) {
                 val imageUrl =
                     if (item.type == BaseItemKind.GENRE) {
                         item.imageUrlOverride
                     } else {
-                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)!!
+                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                     }
                 submit(item.id.toString(), imageUrl)
             }
 
+        /**
+         * Update the backdrop to use the specified discovered item
+         */
         suspend fun submit(item: DiscoverItem) = submit("discover_${item.id}", item.backDropUrl)
 
+        /**
+         * Update the backdrop to use the specified URL
+         */
         suspend fun submit(
             itemId: String,
             imageUrl: String?,
@@ -74,6 +88,9 @@ class BackdropService
             }
         }
 
+        /**
+         * Remove the backdrop, such as when switching pages
+         */
         suspend fun clearBackdrop() {
             _backdropFlow.update {
                 BackdropResult.NONE
@@ -114,7 +131,7 @@ class BackdropService
             }
         }
 
-        private suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
+        suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
             withContext(Dispatchers.IO) {
                 if (imageUrl.isNullOrBlank()) {
                     return@withContext ExtractedColors.DEFAULT
@@ -224,6 +241,9 @@ class BackdropService
         }
     }
 
+/**
+ * The result from determining the backdrop URL and extracted colors for the dynamic backdrop
+ */
 data class BackdropResult(
     val itemId: String?,
     val imageUrl: String?,
@@ -245,6 +265,9 @@ data class BackdropResult(
     }
 }
 
+/**
+ * The colors extracted from an image
+ */
 data class ExtractedColors(
     val primary: Color,
     val secondary: Color,
