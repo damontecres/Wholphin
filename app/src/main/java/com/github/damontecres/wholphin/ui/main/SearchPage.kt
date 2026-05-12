@@ -85,6 +85,8 @@ import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.CardGrid
+import com.github.damontecres.wholphin.ui.detail.CardGridItem
+import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -393,6 +395,19 @@ fun SearchPage(
         viewModel.navigationManager.navigateTo(Destination.Playback(item))
     }
 
+    val onClickDiscover = { _: Int, item: DiscoverItem ->
+        val dest =
+            if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
+                Destination.MediaItem(
+                    itemId = item.jellyfinItemId,
+                    type = item.type.baseItemKind,
+                )
+            } else {
+                Destination.DiscoveredItem(item)
+            }
+        viewModel.navigationManager.navigateTo(dest)
+    }
+
     val showTabs = seerrActive && query.isNotBlank()
     val isLibraryTab = selectedTab == 0 || !showTabs
 
@@ -557,6 +572,7 @@ fun SearchPage(
                         onClickItem = onClickItem,
                         onPlayItem = onPlayItem,
                         onClickPosition = { position = it },
+                        onClickDiscover = onClickDiscover,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -700,43 +716,16 @@ fun SearchPage(
                     }
                 }
 
-                else -> {
-                    LazyColumn(
-                        contentPadding =
-                            PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 8.dp,
-                                bottom = 44.dp,
-                            ),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.focusGroup(),
-                    ) {
-                        searchResultRow(
-                            title = R.string.discover,
-                            result = seerrResults,
-                            rowIndex = SEERR_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[SEERR_ROW],
-                            onClickItem = { _, _ ->
-                                // no-op
-                            },
-                            onClickDiscover = { _, item ->
-                                val dest =
-                                    if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
-                                        Destination.MediaItem(
-                                            itemId = item.jellyfinItemId,
-                                            type = item.type.baseItemKind,
-                                        )
-                                    } else {
-                                        Destination.DiscoveredItem(item)
-                                    }
-                                viewModel.navigationManager.navigateTo(dest)
-                            },
-                            onClickPosition = { position = it },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                combinedMode -> {
+                    SearchCombinedResults(
+                        result = seerrResults,
+                        focusRequester = focusRequesters[COMBINED_ROW],
+                        onClickItem = onClickItem,
+                        onPlayItem = onPlayItem,
+                        onClickPosition = { position = it },
+                        onClickDiscover = onClickDiscover,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
             }
         }
@@ -816,6 +805,7 @@ fun SearchCombinedResults(
     onClickItem: (Int, BaseItem) -> Unit,
     onPlayItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
+    onClickDiscover: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (val r = result) {
@@ -848,45 +838,89 @@ fun SearchCombinedResults(
                     modifier = modifier.padding(16.dp),
                 )
             } else {
-                RequestOrRestoreFocus(focusRequester)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                SearchGrid(
+                    items = r.items,
+                    focusRequester = focusRequester,
+                    onClickItem = onClickItem,
+                    onPlayItem = onPlayItem,
+                    onClickPosition = onClickPosition,
+                    cardContent = { details ->
+                        GridCard(
+                            item = details.item,
+                            onClick = details.onClick,
+                            onLongClick = details.onLongClick,
+                            modifier = details.mod,
+                        )
+                    },
                     modifier = modifier,
-                ) {
-                    ItemRowTitle(stringResource(R.string.results))
-
-                    CardGrid(
-                        pager = r.items,
-                        onClickItem = { index, item ->
-                            onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
-                            onClickItem.invoke(index, item)
-                        },
-                        onLongClickItem = { _, _ -> },
-                        onClickPlay = { index, item ->
-                            onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
-                            onPlayItem.invoke(index, item)
-                        },
-                        letterPosition = { -1 },
-                        gridFocusRequester = focusRequester,
-                        showJumpButtons = false,
-                        showLetterButtons = false,
-                        modifier = Modifier.fillMaxSize(),
-                        cardContent = { details ->
-                            GridCard(
-                                item = details.item,
-                                onClick = details.onClick,
-                                onLongClick = details.onLongClick,
-                                modifier = details.mod,
-                            )
-                        },
-                    )
-                }
+                )
             }
         }
 
         is SearchResult.SuccessSeerr -> {
-            Unit
+            if (r.items.isEmpty()) {
+                SearchResultPlaceholder(
+                    title = stringResource(R.string.results),
+                    message = stringResource(R.string.no_results),
+                    modifier = modifier.padding(16.dp),
+                )
+            } else {
+                SearchGrid(
+                    items = r.items,
+                    focusRequester = focusRequester,
+                    onClickItem = onClickDiscover,
+                    onPlayItem = { _, _ -> },
+                    onClickPosition = onClickPosition,
+                    cardContent = { details ->
+                        DiscoverItemCard(
+                            item = details.item,
+                            onClick = details.onClick,
+                            onLongClick = details.onLongClick,
+                            modifier = details.mod,
+                        )
+                    },
+                    modifier = modifier,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun <T : CardGridItem> SearchGrid(
+    items: List<T?>,
+    focusRequester: FocusRequester,
+    onClickItem: (Int, T) -> Unit,
+    onPlayItem: (Int, T) -> Unit,
+    onClickPosition: (RowColumn) -> Unit,
+    cardContent: @Composable (GridItemDetails<T>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    RequestOrRestoreFocus(focusRequester)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+        modifier = modifier,
+    ) {
+        ItemRowTitle(stringResource(R.string.results))
+
+        CardGrid(
+            pager = items,
+            onClickItem = { index, item ->
+                onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
+                onClickItem.invoke(index, item)
+            },
+            onLongClickItem = { _, _ -> },
+            onClickPlay = { index, item ->
+                onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
+                onPlayItem.invoke(index, item)
+            },
+            letterPosition = { -1 },
+            gridFocusRequester = focusRequester,
+            showJumpButtons = false,
+            showLetterButtons = false,
+            modifier = Modifier.fillMaxSize(),
+            cardContent = cardContent,
+        )
     }
 }
 
