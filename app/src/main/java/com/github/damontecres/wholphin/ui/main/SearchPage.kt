@@ -3,6 +3,9 @@ package com.github.damontecres.wholphin.ui.main
 import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -408,8 +412,12 @@ fun SearchPage(
         viewModel.navigationManager.navigateTo(dest)
     }
 
-    val showTabs = seerrActive && query.isNotBlank()
-    val isLibraryTab = selectedTab == 0 || !showTabs
+    var showHeader by remember { mutableStateOf(true) }
+    val positionCallback = { columns: Int, index: Int ->
+        showHeader = index < columns
+    }
+    val showTabs = seerrActive && query.isNotBlank() && showHeader
+    val isLibraryTab = selectedTab == 0
 
     LaunchedEffect(seerrActive, query) {
         if (!seerrActive || query.isBlank()) {
@@ -542,7 +550,11 @@ fun SearchPage(
                 )
             }
         }
-        if (showTabs) {
+        AnimatedVisibility(
+            visible = showTabs,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
             TabRow(
                 selectedTabIndex = selectedTab,
                 tabs =
@@ -551,7 +563,15 @@ fun SearchPage(
                         stringResource(R.string.discover),
                     ),
                 focusRequesters = tabFocusRequesters,
-                onClick = { selectedTab = it },
+                onClick = {
+                    selectedTab = it
+                    val row =
+                        when (selectedTab) {
+                            0 -> COMBINED_ROW
+                            else -> SEERR_ROW
+                        }
+                    position = RowColumn(row, 0)
+                },
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -559,11 +579,11 @@ fun SearchPage(
             )
         }
         Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+            modifier = Modifier.fillMaxSize(),
         ) {
+            SideEffect {
+                Timber.v("isLibraryTab=%s, combinedMode=%s", isLibraryTab, combinedMode)
+            }
             when {
                 isLibraryTab && combinedMode -> {
                     SearchCombinedResults(
@@ -573,6 +593,20 @@ fun SearchPage(
                         onPlayItem = onPlayItem,
                         onClickPosition = { position = it },
                         onClickDiscover = onClickDiscover,
+                        positionCallback = positionCallback,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+
+                !isLibraryTab && combinedMode -> {
+                    SearchCombinedResults(
+                        result = seerrResults,
+                        focusRequester = focusRequesters[SEERR_ROW],
+                        onClickItem = onClickItem,
+                        onPlayItem = onPlayItem,
+                        onClickPosition = { position = it },
+                        onClickDiscover = onClickDiscover,
+                        positionCallback = positionCallback,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -715,18 +749,6 @@ fun SearchPage(
                         )
                     }
                 }
-
-                combinedMode -> {
-                    SearchCombinedResults(
-                        result = seerrResults,
-                        focusRequester = focusRequesters[COMBINED_ROW],
-                        onClickItem = onClickItem,
-                        onPlayItem = onPlayItem,
-                        onClickPosition = { position = it },
-                        onClickDiscover = onClickDiscover,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
             }
         }
     }
@@ -806,6 +828,7 @@ fun SearchCombinedResults(
     onPlayItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (val r = result) {
@@ -844,12 +867,14 @@ fun SearchCombinedResults(
                     onClickItem = onClickItem,
                     onPlayItem = onPlayItem,
                     onClickPosition = onClickPosition,
+                    positionCallback = positionCallback,
                     cardContent = { details ->
                         GridCard(
                             item = details.item,
                             onClick = details.onClick,
                             onLongClick = details.onLongClick,
                             modifier = details.mod,
+                            fillWidth = details.widthPx,
                         )
                     },
                     modifier = modifier,
@@ -871,6 +896,7 @@ fun SearchCombinedResults(
                     onClickItem = onClickDiscover,
                     onPlayItem = { _, _ -> },
                     onClickPosition = onClickPosition,
+                    positionCallback = positionCallback,
                     cardContent = { details ->
                         DiscoverItemCard(
                             item = details.item,
@@ -894,6 +920,7 @@ private fun <T : CardGridItem> SearchGrid(
     onPlayItem: (Int, T) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     cardContent: @Composable (GridItemDetails<T>) -> Unit,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     RequestOrRestoreFocus(focusRequester)
@@ -918,6 +945,7 @@ private fun <T : CardGridItem> SearchGrid(
             gridFocusRequester = focusRequester,
             showJumpButtons = false,
             showLetterButtons = false,
+            positionCallback = positionCallback,
             modifier = Modifier.fillMaxSize(),
             cardContent = cardContent,
         )

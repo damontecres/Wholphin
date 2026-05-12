@@ -338,7 +338,7 @@ fun <T : CardGridItem> CardGrid(
                                     val cardWidth =
                                         ceil((width - (spacingPx * (columns - 1))) / columns)
                                     cardWidthPx = cardWidth.toInt()
-                                    Timber.v("cardWidthPx=%s", cardWidthPx)
+//                                    Timber.v("cardWidthPx=%s", cardWidthPx)
                                 },
                     ) {
                         items(pager.size) { index ->
