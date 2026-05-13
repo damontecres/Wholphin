@@ -165,6 +165,10 @@ message ScreensaverPreferences{
   bool show_clock = 7;
 }
 
+message SearchPreferences {
+  bool combined_search_results = 1;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -179,6 +183,7 @@ message InterfacePreferences {
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
   bool show_logos = 13;
+  SearchPreferences search_preferences = 14;
 }
 
 message AdvancedPreferences {
