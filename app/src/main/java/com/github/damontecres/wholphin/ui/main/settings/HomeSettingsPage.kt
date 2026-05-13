@@ -65,6 +65,7 @@ fun HomeSettingsPage(
     var showRemovedNextUpDialog by remember { mutableStateOf(false) }
 
     val state by viewModel.state.collectAsState()
+    val serverPluginActive by viewModel.serverPluginActive.collectAsState()
     var position by rememberPosition(0, 0)
     // TODO discover rows
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
@@ -272,6 +273,13 @@ fun HomeSettingsPage(
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_local_settings) {
                                                 viewModel.loadFromRemote()
+                                            }
+                                    },
+                                    serverPluginActive = serverPluginActive,
+                                    onClickLoadPlugin = {
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                viewModel.loadFromRemotePlugin()
                                             }
                                     },
                                     onClickLoadWeb = {

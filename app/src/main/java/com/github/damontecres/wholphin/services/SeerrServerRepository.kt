@@ -272,6 +272,7 @@ class UserSwitchListener
         private val seerrServerDao: SeerrServerDao,
         private val seerrApi: SeerrApi,
         private val homeSettingsService: HomeSettingsService,
+        private val serverPluginApi: ServerPluginApi,
     ) {
         init {
             context as AppCompatActivity
@@ -289,8 +290,19 @@ class UserSwitchListener
 
         private suspend fun switchUser(user: JellyfinUser) =
             supervisorScope {
-                // Check for home settings
+                // Check if plugin is installed, then for home settings
                 launchIO {
+                    val serverPluginInstalled =
+                        try {
+                            serverPluginApi.public()
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error checking for server plugin")
+                            false
+                        }
+                    Timber.i("Server plugin installed: %s", serverPluginInstalled)
+                    serverRepository.serverPluginInstalled.value = serverPluginInstalled
+
+                    // Check for home settings
                     homeSettingsService.loadCurrentSettings(user.id)
                 }
                 if (BuildConfig.DISCOVER_ENABLED) {

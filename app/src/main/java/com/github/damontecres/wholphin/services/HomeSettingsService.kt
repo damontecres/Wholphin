@@ -74,6 +74,7 @@ class HomeSettingsService
     constructor(
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
+        private val serverPluginApi: ServerPluginApi,
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
@@ -194,6 +195,14 @@ class HomeSettingsService
             return HomePageSettings(rows, version)
         }
 
+        private suspend fun tryLoad(block: suspend () -> HomePageSettings?): HomePageSettings? =
+            try {
+                block.invoke()
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error loading settings")
+                null
+            }
+
         /**
          * Loads [HomePageSettings] into [currentSettings]
          *
@@ -204,22 +213,14 @@ class HomeSettingsService
         suspend fun loadCurrentSettings(userId: UUID) {
             Timber.v("Getting setting for %s", userId)
             // User local then server/remote otherwise create a default
+            // TODO figure out priority order
             val settings =
-                try {
-                    val local = loadFromLocal(userId)
-                    Timber.v("Found local? %s", local != null)
-                    local
-                } catch (ex: Exception) {
-                    Timber.w(ex, "Error loading local settings")
-                    // TODO show toast?
-                    null
-                } ?: try {
-                    val remote = loadFromServer(userId)
-                    Timber.v("Found remote? %s", remote != null)
-                    remote
-                } catch (ex: Exception) {
-                    Timber.w(ex, "Error loading remote settings")
-                    null
+                tryLoad {
+                    serverPluginApi.fetchHomePageSettings()
+                } ?: tryLoad {
+                    loadFromLocal(userId)
+                } ?: tryLoad {
+                    loadFromServer(userId)
                 }
             val resolvedSettings =
                 if (settings != null) {

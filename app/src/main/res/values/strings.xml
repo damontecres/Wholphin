@@ -774,6 +774,7 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
+    <string name="load_from_server_plugin">Load default from server</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>
