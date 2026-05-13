@@ -1,10 +1,16 @@
 package com.github.damontecres.wholphin.services
 
 import androidx.lifecycle.asFlow
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,34 +58,104 @@ class SuggestionService
                     val userId = user?.id ?: return@flatMapLatest flowOf(SuggestionsResource.Empty)
                     val cachedSuggestions = cache.get(userId, parentId, itemKind)
                     if (cachedSuggestions == null) {
+                        val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, itemKind)
+                        Timber.d(
+                            "No cached suggestions for parent=%s kind=%s; scheduling one-time suggestions refresh",
+                            parentId,
+                            itemKind,
+                        )
+                        enqueueSuggestionsWork(user, parentId, itemKind, workName)
                         workManager
-                            .getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME)
+                            .getWorkInfosForUniqueWorkFlow(workName)
                             .map { workInfos ->
+                                cache.get(userId, parentId, itemKind)?.let {
+                                    Timber.d(
+                                        "Loaded cached suggestions after work update for parent=%s kind=%s count=%d",
+                                        parentId,
+                                        itemKind,
+                                        it.ids.size,
+                                    )
+                                    return@map it.toResource(parentId, itemKind)
+                                }
+                                val states = workInfos.map { it.state }.distinct()
+                                Timber.v(
+                                    "Observed suggestions work states for parent=%s kind=%s states=%s",
+                                    parentId,
+                                    itemKind,
+                                    states,
+                                )
                                 val isActive =
                                     workInfos.any {
                                         it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED
                                     }
                                 if (isActive) SuggestionsResource.Loading else SuggestionsResource.Empty
                             }
-                    } else if (cachedSuggestions.ids.isEmpty()) {
-                        flowOf(SuggestionsResource.Empty)
                     } else {
+                        Timber.v(
+                            "Using cached suggestions for parent=%s kind=%s count=%d",
+                            parentId,
+                            itemKind,
+                            cachedSuggestions.ids.size,
+                        )
                         flow {
-                            try {
-                                emit(
-                                    SuggestionsResource.Success(
-                                        fetchItemsByIds(cachedSuggestions.ids, itemKind),
-                                    ),
-                                )
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                Timber.e(e, "Failed to fetch items")
-                                emit(SuggestionsResource.Empty)
-                            }
+                            emit(cachedSuggestions.toResource(parentId, itemKind))
                         }
                     }
                 }
+        }
+
+        private fun enqueueSuggestionsWork(
+            user: JellyfinUser,
+            parentId: UUID,
+            itemKind: BaseItemKind,
+            workName: String,
+        ) {
+            val constraints =
+                Constraints
+                    .Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            val request =
+                OneTimeWorkRequestBuilder<SuggestionsWorker>()
+                    .setConstraints(constraints)
+                    .setInputData(
+                        workDataOf(
+                            SuggestionsWorker.PARAM_USER_ID to user.id.toString(),
+                            SuggestionsWorker.PARAM_SERVER_ID to user.serverId.toString(),
+                            SuggestionsWorker.PARAM_PARENT_ID to parentId.toString(),
+                            SuggestionsWorker.PARAM_ITEM_KIND to itemKind.serialName,
+                        ),
+                    ).addTag(SuggestionsWorker.getOnDemandWorkTag(user.id, parentId, itemKind))
+                    .build()
+
+            workManager.enqueueUniqueWork(
+                workName,
+                ExistingWorkPolicy.REPLACE,
+                request,
+            )
+            Timber.d(
+                "Enqueued on-demand suggestions for parent=%s kind=%s",
+                parentId,
+                itemKind,
+            )
+        }
+
+        private suspend fun CachedSuggestions.toResource(
+            parentId: UUID,
+            itemKind: BaseItemKind,
+        ): SuggestionsResource {
+            if (ids.isEmpty()) {
+                Timber.d("Cached suggestions are empty for parent=%s kind=%s", parentId, itemKind)
+                return SuggestionsResource.Empty
+            }
+            return try {
+                SuggestionsResource.Success(fetchItemsByIds(ids, itemKind))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to fetch items")
+                SuggestionsResource.Empty
+            }
         }
 
         private suspend fun fetchItemsByIds(

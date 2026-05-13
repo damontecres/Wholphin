@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.services
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.MutableLiveData
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -63,13 +65,15 @@ class SuggestionServiceTest {
             workManager = mockWorkManager,
         )
 
-    private fun mockQueryResult(items: List<BaseItemDto>): Response<BaseItemDtoQueryResult> =
-        mockk {
-            every { content } returns
-                mockk {
-                    every { this@mockk.items } returns items
-                }
+    private fun mockQueryResult(items: List<BaseItemDto>): Response<BaseItemDtoQueryResult> {
+        val queryResult =
+            mockk<BaseItemDtoQueryResult> {
+                every { this@mockk.items } returns items
+            }
+        return mockk {
+            every { content } returns queryResult
         }
+    }
 
     private fun mockUser(id: UUID = UUID.randomUUID()): JellyfinUser =
         JellyfinUser(
@@ -81,12 +85,21 @@ class SuggestionServiceTest {
 
     private fun mockWorkInfo(state: WorkInfo.State): WorkInfo = mockk<WorkInfo> { every { this@mockk.state } returns state }
 
+    private fun mockEnqueueOnDemandWork() {
+        every {
+            mockWorkManager.enqueueUniqueWork(
+                any<String>(),
+                any<ExistingWorkPolicy>(),
+                any<OneTimeWorkRequest>(),
+            )
+        } returns mockk(relaxed = true)
+    }
+
     @Test
     fun getSuggestionsFlow_returnsEmpty_whenNoUserLoggedIn() =
         runTest {
             val currentUser = MutableLiveData<JellyfinUser?>(null)
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
             val service = createService()
             val result = service.getSuggestionsFlow(UUID.randomUUID(), BaseItemKind.MOVIE).first()
@@ -95,22 +108,31 @@ class SuggestionServiceTest {
         }
 
     @Test
-    fun maps_active_work_states_to_Loading() =
+    fun maps_active_onDemand_work_states_to_Loading() =
         runTest {
             listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED).forEach { state ->
                 val userId = UUID.randomUUID()
                 val parentId = UUID.randomUUID()
                 val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+                val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, BaseItemKind.MOVIE)
 
                 every { mockServerRepository.currentUser } returns currentUser
                 coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
-                every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
+                mockEnqueueOnDemandWork()
+                every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns
                     flowOf(listOf(mockWorkInfo(state)))
 
                 val service = createService()
                 val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
                 assertEquals(SuggestionsResource.Loading, result)
+                verify {
+                    mockWorkManager.enqueueUniqueWork(
+                        workName,
+                        ExistingWorkPolicy.REPLACE,
+                        any<OneTimeWorkRequest>(),
+                    )
+                }
             }
         }
 
@@ -121,10 +143,12 @@ class SuggestionServiceTest {
                 val userId = UUID.randomUUID()
                 val parentId = UUID.randomUUID()
                 val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+                val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, BaseItemKind.MOVIE)
 
                 every { mockServerRepository.currentUser } returns currentUser
                 coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
-                every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
+                mockEnqueueOnDemandWork()
+                every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns
                     flowOf(listOf(mockWorkInfo(state)))
 
                 val service = createService()
@@ -140,15 +164,55 @@ class SuggestionServiceTest {
             val userId = UUID.randomUUID()
             val parentId = UUID.randomUUID()
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+            val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, BaseItemKind.MOVIE)
 
             every { mockServerRepository.currentUser } returns currentUser
             coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
+            mockEnqueueOnDemandWork()
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns flowOf(emptyList())
 
             val service = createService()
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
             assertEquals(SuggestionsResource.Empty, result)
+            verify {
+                mockWorkManager.enqueueUniqueWork(
+                    workName,
+                    ExistingWorkPolicy.REPLACE,
+                    any<OneTimeWorkRequest>(),
+                )
+            }
+        }
+
+    @Test
+    fun getSuggestionsFlow_returnsSuccess_whenOnDemandWorkCachesItems() =
+        runTest {
+            val userId = UUID.randomUUID()
+            val parentId = UUID.randomUUID()
+            val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+            val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, BaseItemKind.MOVIE)
+            val cachedId = UUID.randomUUID()
+
+            every { mockServerRepository.currentUser } returns currentUser
+            coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returnsMany
+                listOf(null, CachedSuggestions(listOf(cachedId)))
+            mockEnqueueOnDemandWork()
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns
+                flowOf(listOf(mockWorkInfo(WorkInfo.State.SUCCEEDED)))
+
+            val dto =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns cachedId
+                    every { type } returns BaseItemKind.MOVIE
+                }
+            io.mockk.mockkObject(GetItemsRequestHandler)
+            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(dto))
+
+            val service = createService()
+            val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
+
+            assertTrue(result is SuggestionsResource.Success)
+            assertEquals(cachedId, (result as SuggestionsResource.Success).items.single().id)
         }
 
     @Test
@@ -160,33 +224,42 @@ class SuggestionServiceTest {
 
             every { mockServerRepository.currentUser } returns currentUser
             coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns CachedSuggestions(emptyList())
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
-                flowOf(listOf(mockWorkInfo(WorkInfo.State.ENQUEUED)))
 
             val service = createService()
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
             assertEquals(SuggestionsResource.Empty, result)
             verify(exactly = 0) { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) }
+            verify(exactly = 0) {
+                mockWorkManager.enqueueUniqueWork(
+                    any<String>(),
+                    any<ExistingWorkPolicy>(),
+                    any<OneTimeWorkRequest>(),
+                )
+            }
         }
 
     @Test
-    fun getSuggestionsFlow_returnsLoading_whenCacheMissing_andWorkIsEnqueued() =
+    fun getSuggestionsFlow_ignores_periodic_work_whenCacheMissing() =
         runTest {
             val userId = UUID.randomUUID()
             val parentId = UUID.randomUUID()
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+            val workName = SuggestionsWorker.getOnDemandWorkName(userId, parentId, BaseItemKind.MOVIE)
 
             every { mockServerRepository.currentUser } returns currentUser
             coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
+            mockEnqueueOnDemandWork()
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME) } returns
                 flowOf(listOf(mockWorkInfo(WorkInfo.State.ENQUEUED)))
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns flowOf(emptyList())
 
             val service = createService()
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
-            assertEquals(SuggestionsResource.Loading, result)
-            verify(exactly = 1) { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) }
+            assertEquals(SuggestionsResource.Empty, result)
+            verify(exactly = 0) { mockWorkManager.getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME) }
+            verify(exactly = 1) { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) }
         }
 
     @Test
@@ -196,9 +269,11 @@ class SuggestionServiceTest {
             val libraryId = UUID.randomUUID()
             val otherLibraryId = UUID.randomUUID()
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+            val workName = SuggestionsWorker.getOnDemandWorkName(userId, libraryId, BaseItemKind.MOVIE)
 
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
+            mockEnqueueOnDemandWork()
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(workName) } returns flowOf(emptyList())
 
             coEvery { mockCache.get(userId, libraryId, BaseItemKind.MOVIE) } returns null
             coEvery {
@@ -250,8 +325,6 @@ class SuggestionServiceTest {
             io.mockk.mockkObject(GetItemsRequestHandler)
             coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(dto))
 
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
-
             val service = createService()
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
@@ -281,8 +354,6 @@ class SuggestionServiceTest {
 
             io.mockk.mockkObject(GetItemsRequestHandler)
             coEvery { GetItemsRequestHandler.execute(mockApi, any()) } throws RuntimeException("Network error")
-
-            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
             val service = createService()
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
