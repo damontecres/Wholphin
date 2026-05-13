@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -53,6 +54,8 @@ class ServerRepository
 
         val currentServer: LiveData<JellyfinServer?> get() = _current.map { it?.server }
         val currentUser: LiveData<JellyfinUser?> get() = _current.map { it?.user }
+
+        val serverPluginInstalled = MutableStateFlow<Boolean>(false)
 
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL

@@ -37,6 +37,8 @@ fun HomeSettingsGlobal(
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
     onClickLoadWeb: () -> Unit,
+    serverPluginActive: Boolean,
+    onClickLoadPlugin: () -> Unit,
     onClickReset: () -> Unit,
     onClickViewNextUp: () -> Unit,
     modifier: Modifier = Modifier,
@@ -165,6 +167,22 @@ fun HomeSettingsGlobal(
                     onClick = onClickLoad,
                     modifier = Modifier,
                 )
+            }
+            if (serverPluginActive) {
+                item {
+                    HomeSettingsListItem(
+                        selected = false,
+                        headlineText = stringResource(R.string.load_from_server_plugin),
+                        leadingContent = {
+                            Text(
+                                text = stringResource(R.string.fa_download),
+                                fontFamily = FontAwesome,
+                            )
+                        },
+                        onClick = onClickLoadPlugin,
+                        modifier = Modifier,
+                    )
+                }
             }
             item {
                 HomeSettingsListItem(

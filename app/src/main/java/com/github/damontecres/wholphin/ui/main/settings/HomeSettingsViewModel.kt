@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
@@ -74,11 +75,14 @@ class HomeSettingsViewModel
         private val navDrawerService: NavDrawerService,
         private val backdropService: BackdropService,
         private val seerrServerRepository: SeerrServerRepository,
+        private val serverPluginApi: ServerPluginApi,
         val preferencesDataStore: DataStore<AppPreferences>,
         @param:IoCoroutineScope private val ioScope: CoroutineScope,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
+
+        val serverPluginActive get() = serverRepository.serverPluginInstalled
 
         private var idCounter by Delegates.notNull<Int>()
 
@@ -764,6 +768,40 @@ class HomeSettingsViewModel
                                 }
                             },
                     )
+                }
+            }
+        }
+
+        fun loadFromRemotePlugin() {
+            viewModelScope.launchIO {
+                Timber.d("Loading home settings from server plugin")
+                try {
+                    // TODO should this remove local settings?
+                    // TODO how to set up priorities
+                    _state.update { it.copy(loading = LoadingState.Loading) }
+                    val result = serverPluginApi.fetchHomePageSettings()
+                    if (result != null) {
+                        Timber.v("Got remote settings")
+                        val newRows =
+                            result.rows.mapIndexed { index, config ->
+                                homeSettingsService.resolve(index, config)
+                            }
+                        idCounter = newRows.maxOfOrNull { it.id }?.plus(1) ?: 0
+                        _state.update {
+                            it.copy(rows = newRows)
+                        }
+                    } else {
+                        Timber.v("No server plugin settings")
+                        showToast(context, "No server plugin settings found")
+                    }
+                    fetchRowData()
+                } catch (ex: UnsupportedHomeSettingsVersionException) {
+                    // TODO
+                    Timber.w(ex)
+                    showToast(context, "Error: ${ex.localizedMessage}")
+                } catch (ex: Exception) {
+                    Timber.e(ex)
+                    showToast(context, "Error: ${ex.localizedMessage}")
                 }
             }
         }

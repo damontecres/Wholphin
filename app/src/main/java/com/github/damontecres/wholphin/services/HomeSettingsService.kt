@@ -199,7 +199,7 @@ class HomeSettingsService
             try {
                 block.invoke()
             } catch (ex: Exception) {
-                Timber.w(ex, "Error loading local settings")
+                Timber.w(ex, "Error loading settings")
                 null
             }
 
@@ -213,6 +213,7 @@ class HomeSettingsService
         suspend fun loadCurrentSettings(userId: UUID) {
             Timber.v("Getting setting for %s", userId)
             // User local then server/remote otherwise create a default
+            // TODO figure out priority order
             val settings =
                 tryLoad {
                     serverPluginApi.fetchHomePageSettings()
