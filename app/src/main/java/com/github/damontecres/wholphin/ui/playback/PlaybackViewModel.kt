@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.formatBitrate
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -653,7 +654,8 @@ class PlaybackViewModel
                                 } else {
                                     mpvDeviceProfile
                                 },
-                            maxAudioChannels = null,
+                            maxAudioChannels =
+                                if (preferences.appPreferences.playbackPreferences.overrides.spdifArcSurroundAudio) 6 else null,
                             audioStreamIndex = audioIndex,
                             subtitleStreamIndex = subtitleIndex,
                             mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
@@ -844,12 +846,24 @@ class PlaybackViewModel
             userInitiated: Boolean,
         ): Boolean =
             withContext(Dispatchers.IO) {
-                // TODO there's probably no reason why we can't add external subtitles?
                 Timber.v("changeStreams direct play")
+
+                // Don't attempt DirectPlay if audio transcoding is required
+                if (preferences.appPreferences.playbackPreferences.overrides.spdifArcSurroundAudio && audioIndex != null) {
+                    currentPlayback.mediaSourceInfo.mediaStreams
+                        .orEmpty()
+                        .firstOrNull { it.index == audioIndex }
+                        ?.let {
+                            if (it.channels.gt(2) && it.codec != Codec.Audio.AC3) {
+                                return@withContext false
+                            }
+                        }
+                }
 
                 val source = currentPlayback.mediaSourceInfo
                 val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
 
+                // TODO there's probably no reason why we can't add external subtitles?
                 if (externalSubtitle == null) {
                     val result =
                         withContext(Dispatchers.Main) {

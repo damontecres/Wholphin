@@ -50,6 +50,7 @@ class DeviceProfileService
                             decodeAv1 = prefs.overrides.decodeAv1,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
+                            spdifArcSurroundAudio = prefs.overrides.spdifArcSurroundAudio,
                         )
                     if (deviceProfile == null || this@DeviceProfileService.configuration != newConfig) {
                         this@DeviceProfileService.configuration = newConfig
@@ -64,6 +65,7 @@ class DeviceProfileService
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
+                                spdifArcSurroundAudio = newConfig.spdifArcSurroundAudio,
                             )
                     }
                     this@DeviceProfileService.deviceProfile!!
@@ -83,4 +85,5 @@ data class DeviceProfileConfiguration(
     val dolbyVisionELDirectPlay: Boolean,
     val decodeAv1: Boolean,
     val jellyfinTenEleven: Boolean,
+    val spdifArcSurroundAudio: Boolean = false,
 )

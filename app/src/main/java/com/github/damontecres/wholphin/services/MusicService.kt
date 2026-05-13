@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.profile.supportedAudioCodecs
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +45,7 @@ import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
@@ -72,6 +74,7 @@ class MusicService
         private val playerFactory: PlayerFactory,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
+        private val userPreferencesService: UserPreferencesService,
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
@@ -198,7 +201,7 @@ class MusicService
             val mediaItems =
                 items
                     .filter { it.type == BaseItemKind.AUDIO }
-                    .map(::convert)
+                    .map { convert(it) }
             withContext(Dispatchers.Main) {
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
@@ -250,7 +253,7 @@ class MusicService
                                 list
                                     .getBlocking(it)
                                     ?.takeIf { it.type == BaseItemKind.AUDIO }
-                                    ?.let(::convert)
+                                    ?.let { convert(it) }
                             } else {
                                 Timber.v("Skipping $remaining")
                                 remaining--
@@ -266,12 +269,39 @@ class MusicService
         /**
          * Converts a [BaseItem] into a [MediaItem] setting an [AudioItem] as its tag
          */
-        private fun convert(audio: BaseItem): MediaItem {
+        private suspend fun convert(audio: BaseItem): MediaItem {
+            val spdifMode =
+                userPreferencesService
+                    .getCurrent()
+                    .appPreferences.playbackPreferences.overrides.spdifArcSurroundAudio
+
+            val needsAc3Transcode =
+                spdifMode &&
+                    audio.data.mediaSources
+                        ?.firstOrNull()
+                        ?.mediaStreams
+                        ?.any { stream ->
+                            stream.type == MediaStreamType.AUDIO &&
+                                (stream.channels ?: 0) > 2 &&
+                                stream.codec != Codec.Audio.AC3
+                        } ?: false
+
             val url =
-                api.universalAudioApi.getUniversalAudioStreamUrl(
-                    itemId = audio.id,
-                    container = audioFormats,
-                )
+                if (needsAc3Transcode) {
+                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                        itemId = audio.id,
+                        container = listOf("mka"),
+                        transcodingContainer = "mka",
+                        maxAudioChannels = 6,
+                        transcodingAudioChannels = 6,
+                        audioCodec = Codec.Audio.AC3,
+                    )
+                } else {
+                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                        itemId = audio.id,
+                        container = audioFormats,
+                    )
+                }
             Timber.i("url=%s", url)
             val imageUrl =
                 audio.data.albumId?.let { albumId ->

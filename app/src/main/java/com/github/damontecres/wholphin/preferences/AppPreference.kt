@@ -391,7 +391,10 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                    prefs.updatePlaybackOverrides {
+                        ac3Supported = value
+                        if (!value) spdifArcSurroundAudio = false
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -402,7 +405,10 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                    prefs.updatePlaybackOverrides {
+                        downmixStereo = value
+                        if (value) spdifArcSurroundAudio = false
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -453,6 +459,28 @@ sealed interface AppPreference<Pref, T> {
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
+            )
+
+        val SpdifArcSurroundAudio =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.spdif_arc_surround_audio,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.spdifArcSurroundAudio },
+                setter = { prefs, value ->
+                    if (value) {
+                        prefs.updatePlaybackOverrides {
+                            spdifArcSurroundAudio = true
+                            ac3Supported = true
+                            downmixStereo = false
+                        }
+                    } else {
+                        prefs.updatePlaybackOverrides {
+                            spdifArcSurroundAudio = false
+                        }
+                    }
+                },
+                summaryOn = R.string.spdif_arc_surround_audio_summary_on,
+                summaryOff = R.string.spdif_arc_surround_audio_summary_off,
             )
 
         val CinemaMode =
@@ -1108,6 +1136,7 @@ private val ExoPlayerSettings =
         AppPreference.FfmpegPreference,
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
+        AppPreference.SpdifArcSurroundAudio,
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
