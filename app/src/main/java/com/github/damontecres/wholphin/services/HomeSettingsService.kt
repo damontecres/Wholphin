@@ -619,14 +619,14 @@ class HomeSettingsService
                     val resume =
                         latestNextUpService.getResume(
                             userDto.id,
-                            limit * 2,
+                            limit,
                             true,
                             row.viewOptions.useSeries,
                         )
                     val nextUp =
                         latestNextUpService.getNextUp(
                             userDto.id,
-                            limit * 2,
+                            limit,
                             prefs.enableRewatchingNextUp,
                             false,
                             prefs.maxDaysNextUp,

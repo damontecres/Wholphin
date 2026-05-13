@@ -43,7 +43,7 @@ fun <T> ItemRow(
     modifier: Modifier = Modifier,
     horizontalPadding: Dp = 16.dp,
     showViewMore: Boolean = false,
-    viewMoreCardContent: @Composable () -> Unit = {},
+    viewMoreCardContent: @Composable (Modifier) -> Unit = {},
 ) {
     val state = rememberLazyListState()
     val firstFocus = remember { FocusRequester() }
@@ -111,7 +111,15 @@ fun <T> ItemRow(
             }
             if (showViewMore) {
                 item {
-                    viewMoreCardContent.invoke()
+                    val cardModifier =
+                        remember(items.size, position) {
+                            if (position == items.size) {
+                                Modifier.focusRequester(firstFocus)
+                            } else {
+                                Modifier
+                            }
+                        }
+                    viewMoreCardContent.invoke(cardModifier)
                 }
             }
         }

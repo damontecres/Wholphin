@@ -456,7 +456,7 @@ fun HomePageContent(
                                                 )
                                             },
                                             showViewMore = showViewMore && row.rowType != null,
-                                            viewMoreCardContent = {
+                                            viewMoreCardContent = { mod ->
                                                 HomePageViewMoreCard(
                                                     isEpisode = row.items.last()?.type == BaseItemKind.EPISODE,
                                                     onClick = {
@@ -471,7 +471,7 @@ fun HomePageContent(
                                                     onLongClick = {},
                                                     viewOptions = viewOptions,
                                                     modifier =
-                                                        Modifier.onFocusChanged {
+                                                        mod.onFocusChanged {
                                                             if (it.isFocused) {
                                                                 currentOnFocusPosition.invoke(
                                                                     RowColumn(
