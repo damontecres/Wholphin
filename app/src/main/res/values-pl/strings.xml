@@ -636,4 +636,9 @@
     <string name="skip_behavior_summary">Dla wstępu, napisów końcowych itp.</string>
     <string name="transcoding">Transkodowanie</string>
     <string name="play_with">Odtwórz z</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Połączone wyniki wyszukiwania</string>
+    <string name="combined_search_results_on">Pokaż wszystkie wyniki jako jedna lista</string>
+    <string name="combined_search_results_off">Podziel wyniki wyszukiwania na kategorie</string>
+    <string name="results">Wyniki</string>
 </resources>
