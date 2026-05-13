@@ -19,9 +19,12 @@ import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
 import com.github.damontecres.wholphin.ui.playback.getTypeFor
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.GetLiveTvChannelsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
+import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
@@ -56,6 +59,7 @@ import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
@@ -572,6 +576,7 @@ class HomeSettingsService
             libraries: List<Library>,
             limit: Int = prefs.maxItemsPerRow,
             isRefresh: Boolean,
+            usePaging: Boolean = false,
         ): HomeRowLoadingState =
             when (row) {
                 is HomeRowConfig.ContinueWatching -> {
@@ -614,14 +619,14 @@ class HomeSettingsService
                     val resume =
                         latestNextUpService.getResume(
                             userDto.id,
-                            limit,
+                            limit * 2,
                             true,
                             row.viewOptions.useSeries,
                         )
                     val nextUp =
                         latestNextUpService.getNextUp(
                             userDto.id,
-                            limit,
+                            limit * 2,
                             prefs.enableRewatchingNextUp,
                             false,
                             prefs.maxDaysNextUp,
@@ -631,10 +636,11 @@ class HomeSettingsService
                     Success(
                         title = context.getString(R.string.continue_watching),
                         items =
-                            latestNextUpService.buildCombined(
-                                resume,
-                                nextUp,
-                            ),
+                            latestNextUpService
+                                .buildCombined(
+                                    resume,
+                                    nextUp,
+                                ).take(limit),
                         viewOptions = row.viewOptions,
                         rowType = row,
                     )
@@ -769,7 +775,7 @@ class HomeSettingsService
                         api.userLibraryApi
                             .getLatestMedia(request)
                             .content
-                            .map { BaseItem.Companion.from(it, api, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
                             .let {
                                 Success(
                                     title,
@@ -799,18 +805,27 @@ class HomeSettingsService
                             fields = DefaultItemFields,
                             recursive = true,
                         )
-                    GetItemsRequestHandler
-                        .execute(api, request)
-                        .content.items
-                        .map { BaseItem.Companion.from(it, api, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                title,
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        GetItemsRequestHandler
+                            .execute(api, request)
+                            .content.items
+                            .map { BaseItem.from(it, api, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            title,
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.ByParent -> {
@@ -824,22 +839,29 @@ class HomeSettingsService
                             limit = limit,
                             fields = DefaultItemFields,
                         )
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = row.parentId)
-                            .content.name
-                    GetItemsRequestHandler
-                        .execute(api, request)
-                        .content.items
-                        .map { BaseItem(it, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                name ?: context.getString(R.string.collection),
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+
+                    val name = getItemName(row.parentId)
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        GetItemsRequestHandler
+                            .execute(api, request)
+                            .content.items
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            name ?: context.getString(R.string.collection),
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.GetItems -> {
@@ -856,18 +878,27 @@ class HomeSettingsService
                                 )
                             }
                         }
-                    GetItemsRequestHandler
-                        .execute(api, request)
-                        .content.items
-                        .map { BaseItem(it, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                row.name,
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        GetItemsRequestHandler
+                            .execute(api, request)
+                            .content.items
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            row.name,
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.Favorite -> {
@@ -907,18 +938,27 @@ class HomeSettingsService
                                 includeItemTypes = listOf(row.kind),
                                 isFavorite = true,
                             )
-                        GetItemsRequestHandler
-                            .execute(api, request)
-                            .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
-                            .let {
-                                Success(
-                                    title,
-                                    it,
-                                    row.viewOptions,
-                                    rowType = row,
-                                )
-                            }
+                        if (usePaging) {
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetItemsRequestHandler,
+                                scope,
+                                useSeriesForPrimary = row.viewOptions.useSeries,
+                            ).init()
+                        } else {
+                            GetItemsRequestHandler
+                                .execute(api, request)
+                                .content.items
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        }.let {
+                            Success(
+                                title,
+                                it,
+                                row.viewOptions,
+                                rowType = row,
+                            )
+                        }
                     }
                 }
 
@@ -931,19 +971,29 @@ class HomeSettingsService
                             limit = limit,
                             enableImages = true,
                             enableUserData = true,
+                            enableTotalRecordCount = false,
                         )
-                    api.liveTvApi
-                        .getRecordings(request)
-                        .content.items
-                        .map { BaseItem(it, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                context.getString(R.string.active_recordings),
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetRecordingsRequestHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        api.liveTvApi
+                            .getRecordings(request)
+                            .content.items
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            context.getString(R.string.active_recordings),
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.TvPrograms -> {
@@ -957,6 +1007,7 @@ class HomeSettingsService
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.LOGO),
                             imageTypeLimit = 1,
                         )
+                    // paging not supported
                     api.liveTvApi
                         .getRecommendedPrograms(request)
                         .content.items
@@ -972,21 +1023,33 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.TvChannels -> {
-                    api.liveTvApi
-                        .getLiveTvChannels(
+                    val request =
+                        GetLiveTvChannelsRequest(
                             userId = userDto.id,
                             fields = DefaultItemFields,
                             limit = limit,
                             enableImages = true,
-                        ).toBaseItems(api, row.viewOptions.useSeries)
-                        .let {
-                            Success(
-                                context.getString(R.string.channels),
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+                        )
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetLiveTvChannelsRequestHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        api.liveTvApi
+                            .getLiveTvChannels(request)
+                            .toBaseItems(api, row.viewOptions.useSeries)
+                    }.let {
+                        Success(
+                            context.getString(R.string.channels),
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.Suggestions -> {

@@ -201,7 +201,7 @@ fun HomePage(
                 remember {
                     { _: RowColumn, row: HomeRowLoadingState.Success ->
                         viewModel.navigationManager.navigateTo(
-                            Destination.MoreHomeRow(row.title, row.rowType!!),
+                            Destination.MoreHomeRow(row.title, row.rowType!!, row.items.size),
                         )
                     }
                 }

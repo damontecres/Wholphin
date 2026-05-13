@@ -116,6 +116,7 @@ sealed class Destination(
     data class MoreHomeRow(
         val title: String,
         val config: HomeRowConfig,
+        val initialPosition: Int,
     ) : Destination(false)
 
     @Serializable

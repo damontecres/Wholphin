@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -44,8 +45,11 @@ import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.GenreCardGrid
+import com.github.damontecres.wholphin.ui.components.GridTitle
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
+import com.github.damontecres.wholphin.ui.components.StudioCardGrid
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -54,6 +58,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -104,6 +109,26 @@ class HomeRowGridViewModel
 
         init {
             viewModelScope.launchDefault {
+                when (rowConfig) {
+                    is HomeRowConfig.Genres,
+                    is HomeRowConfig.Studios,
+                    -> {
+                        // Genres & Studios will be looked up by another ViewModel, so just return
+                        _state.update {
+                            it.copy(
+                                loading =
+                                    HomeRowLoadingState.Success(
+                                        title,
+                                        emptyList(),
+                                        rowConfig.viewOptions,
+                                    ),
+                            )
+                        }
+                        return@launchDefault
+                    }
+
+                    else -> {}
+                }
                 try {
                     val preferences = userPreferencesService.getCurrent()
                     val prefs = preferences.appPreferences.homePagePreferences
@@ -117,9 +142,15 @@ class HomeRowGridViewModel
                                 prefs = prefs,
                                 userDto = userDto,
                                 libraries = libraries,
-                                isRefresh = false,
-                                limit = 100, // TODO
+                                isRefresh = true,
+                                limit = 1_000, // TODO
+                                usePaging = true,
                             )
+                        Timber.v(
+                            "Got %s items for %s",
+                            (result as? HomeRowLoadingState.Success)?.items?.size,
+                            rowConfig,
+                        )
                         _state.update { it.copy(loading = result) }
                     }
                 } catch (ex: Exception) {
@@ -195,7 +226,7 @@ fun HomeRowGrid(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    var position by rememberInt(preferences.appPreferences.homePagePreferences.maxItemsPerRow)
+    var position by rememberInt(destination.initialPosition)
     val gridFocusRequester = remember { FocusRequester() }
     val viewOptions = destination.config.viewOptions
 
@@ -237,6 +268,8 @@ fun HomeRowGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        GridTitle(destination.title)
+
         when (val st = state.loading) {
             is HomeRowLoadingState.Error -> {
                 ErrorMessage(st.message, st.exception, Modifier.fillMaxSize())
@@ -249,60 +282,87 @@ fun HomeRowGrid(
             }
 
             is HomeRowLoadingState.Success -> {
-                val onClickItem =
-                    remember {
-                        { index: Int, item: BaseItem ->
-                            viewModel.navigateTo(item.destination(index))
-                        }
-                    }
-                val onLongClickItem =
-                    remember {
-                        { index: Int, item: BaseItem ->
-                            showContextMenu =
-                                ContextMenu.ForBaseItem(
-                                    fromLongClick = true,
-                                    item = item,
-                                    chosenStreams = null,
-                                    showGoTo = true,
-                                    showStreamChoices = false,
-                                    canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                                    canRemoveContinueWatching = false,
-                                    canRemoveNextUp = false, // TODO
-                                    actions = contextActions,
-                                )
-                        }
-                    }
-                CardGrid(
-                    pager = st.items,
-                    onClickItem = onClickItem,
-                    onLongClickItem = onLongClickItem,
-                    onClickPlay = { _, _ -> },
-                    letterPosition = { -1 },
-                    gridFocusRequester = gridFocusRequester,
-                    showJumpButtons = false,
-                    showLetterButtons = false,
-                    modifier = Modifier.fillMaxSize(),
-                    initialPosition = preferences.appPreferences.homePagePreferences.maxItemsPerRow,
-                    positionCallback = { columns, newPosition ->
-                        position = newPosition
-                    },
-                    cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
-                        GridCard(
-                            item = item,
-                            onClick = onClick,
-                            onLongClick = onLongClick,
-                            imageContentScale = viewOptions.contentScale.scale,
-                            imageAspectRatio = viewOptions.aspectRatio.ratio,
-                            imageType = viewOptions.imageType,
-                            showTitle = viewOptions.showTitles,
-                            fillWidth = widthPx,
-                            modifier = mod,
+                when (destination.config) {
+                    is HomeRowConfig.Genres -> {
+                        GenreCardGrid(
+                            itemId = destination.config.parentId,
+                            includeItemTypes = null,
+                            modifier = Modifier.fillMaxSize(),
+                            initialPosition = destination.initialPosition,
                         )
-                    },
-                    columns = if (viewOptions.aspectRatio.ratio > 1f) 4 else 6,
-                    spacing = viewOptions.spacing.dp,
-                    bringIntoViewSpec = LocalBringIntoViewSpec.current,
-                )
+                    }
+
+                    is HomeRowConfig.Studios -> {
+                        StudioCardGrid(
+                            itemId = destination.config.parentId,
+                            includeItemTypes = null,
+                            modifier = Modifier.fillMaxSize(),
+                            initialPosition = destination.initialPosition,
+                        )
+                    }
+
+                    else -> {
+                        val onClickItem =
+                            remember {
+                                { index: Int, item: BaseItem ->
+                                    viewModel.navigateTo(item.destination(index))
+                                }
+                            }
+                        val onLongClickItem =
+                            remember {
+                                { index: Int, item: BaseItem ->
+                                    showContextMenu =
+                                        ContextMenu.ForBaseItem(
+                                            fromLongClick = true,
+                                            item = item,
+                                            chosenStreams = null,
+                                            showGoTo = true,
+                                            showStreamChoices = false,
+                                            canDelete =
+                                                viewModel.canDelete(
+                                                    item,
+                                                    preferences.appPreferences,
+                                                ),
+                                            canRemoveContinueWatching = false,
+                                            canRemoveNextUp = false, // TODO
+                                            actions = contextActions,
+                                        )
+                                }
+                            }
+                        LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+                        CardGrid(
+                            pager = st.items,
+                            onClickItem = onClickItem,
+                            onLongClickItem = onLongClickItem,
+                            onClickPlay = { _, _ -> },
+                            letterPosition = { -1 },
+                            gridFocusRequester = gridFocusRequester,
+                            showJumpButtons = false,
+                            showLetterButtons = false,
+                            modifier = Modifier.fillMaxSize(),
+                            initialPosition = destination.initialPosition,
+                            positionCallback = { columns, newPosition ->
+                                position = newPosition
+                            },
+                            cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
+                                GridCard(
+                                    item = item,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    imageContentScale = viewOptions.contentScale.scale,
+                                    imageAspectRatio = viewOptions.aspectRatio.ratio,
+                                    imageType = viewOptions.imageType,
+                                    showTitle = true, // viewOptions.showTitles,
+                                    fillWidth = widthPx,
+                                    modifier = mod,
+                                )
+                            },
+                            columns = if (viewOptions.aspectRatio.ratio > 1f) 4 else 6,
+                            spacing = viewOptions.spacing.dp,
+                            bringIntoViewSpec = LocalBringIntoViewSpec.current,
+                        )
+                    }
+                }
             }
         }
     }
