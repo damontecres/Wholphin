@@ -601,4 +601,8 @@
     <string name="play_with">Esita rakendusega</string>
     <string name="transcoding">Teisendan</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Kombineeritud otsingutulemused</string>
+    <string name="combined_search_results_on">Näita kõiki tulemusi ühe loendina</string>
+    <string name="combined_search_results_off">Näita tulemusi kategooria alusel</string>
+    <string name="results">Tulemused</string>
 </resources>
