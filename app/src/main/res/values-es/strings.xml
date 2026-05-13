@@ -619,4 +619,8 @@
     <string name="play_with">Reproducir con</string>
     <string name="transcoding">Transcodificar</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Resultados de búsqueda combinados</string>
+    <string name="combined_search_results_on">Mostrar todos los resultados en una sola lista</string>
+    <string name="combined_search_results_off">Mostrar resultados por categoría</string>
+    <string name="results">Resultados</string>
 </resources>
