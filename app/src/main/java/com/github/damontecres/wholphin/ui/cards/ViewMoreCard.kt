@@ -50,6 +50,7 @@ fun ViewMoreCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     aspectRatio: AspectRatio = AspectRatio.TALL,
     size: DpSize = DpSize(width = Cards.height2x3 * aspectRatio.ratio, height = Cards.height2x3),
+    showTitle: Boolean = true,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -103,28 +104,29 @@ fun ViewMoreCard(
                 )
             }
         }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier =
-                Modifier
-                    .width(width)
-                    .padding(bottom = spaceBelow),
-        ) {
-            Text(
-                text = stringResource(R.string.view_more),
-                maxLines = 1,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
+        if (showTitle) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier =
                     Modifier
                         .width(width)
-                        .padding(horizontal = 4.dp)
-                        .enableMarquee(focusedAfterDelay),
-            )
+                        .padding(bottom = spaceBelow),
+            ) {
+                Text(
+                    text = stringResource(R.string.view_more),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier =
+                        Modifier
+                            .width(width)
+                            .padding(horizontal = 4.dp)
+                            .enableMarquee(focusedAfterDelay),
+                )
+            }
         }
     }
 }
@@ -140,6 +142,7 @@ private fun Preview() {
                 modifier = Modifier.padding(16.dp),
                 aspectRatio = AspectRatio.TALL,
                 size = DpSize(width = Dp.Unspecified, height = Cards.heightEpisode),
+                showTitle = false,
             )
         }
     }

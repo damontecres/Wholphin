@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -109,6 +110,12 @@ sealed class Destination(
         val title: String?,
         @param:StringRes val titleRes: Int?,
         val itemIds: List<UUID>,
+    ) : Destination(false)
+
+    @Serializable
+    data class MoreHomeRow(
+        val title: String,
+        val config: HomeRowConfig,
     ) : Destination(false)
 
     @Serializable

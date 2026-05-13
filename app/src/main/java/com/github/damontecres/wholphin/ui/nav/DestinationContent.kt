@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
+import com.github.damontecres.wholphin.ui.detail.HomeRowGrid
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
@@ -285,6 +286,15 @@ fun DestinationContent(
                         BaseItemKind.STUDIO -> DefaultForStudiosFilterOptions
                         else -> throw IllegalArgumentException("Unsupported parentType ${destination.parentType}")
                     },
+                modifier = modifier,
+            )
+        }
+
+        is Destination.MoreHomeRow -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            HomeRowGrid(
+                preferences = preferences,
+                destination = destination,
                 modifier = modifier,
             )
         }
