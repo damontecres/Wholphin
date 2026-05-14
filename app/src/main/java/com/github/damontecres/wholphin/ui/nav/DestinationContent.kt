@@ -309,7 +309,7 @@ fun DestinationContent(
             )
         }
 
-        is Destination.ItemGrid -> {
+        is Destination.ItemGrid<*> -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
                 destination,

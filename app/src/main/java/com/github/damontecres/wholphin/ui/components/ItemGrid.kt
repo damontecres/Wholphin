@@ -27,9 +27,9 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.RequestHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -44,20 +44,26 @@ class ItemGridViewModel
     constructor(
         private val api: ApiClient,
         private val navigationManager: NavigationManager,
-        @Assisted private val destination: Destination.ItemGrid,
+        @Assisted private val destination: Destination.ItemGrid<*>,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
 
         @AssistedFactory
         interface Factory {
-            fun create(destination: Destination.ItemGrid): ItemGridViewModel
+            fun create(destination: Destination.ItemGrid<*>): ItemGridViewModel
         }
 
         init {
             viewModelScope.launchIO(LoadingExceptionHandler(loading, "Error fetching items")) {
-                val request = destination.request
-                val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+                val request = destination.request as Any
+                val pager =
+                    ApiRequestPager(
+                        api,
+                        request,
+                        destination.requestHandler as RequestHandler<Any>,
+                        viewModelScope,
+                    ).init()
                 if (pager.isNotEmpty()) {
                     pager.getBlocking(0)
                 }
@@ -78,7 +84,7 @@ class ItemGridViewModel
  */
 @Composable
 fun ItemGrid(
-    destination: Destination.ItemGrid,
+    destination: Destination.ItemGrid<*>,
     modifier: Modifier = Modifier,
     viewModel: ItemGridViewModel =
         hiltViewModel<ItemGridViewModel, ItemGridViewModel.Factory>(

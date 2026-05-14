@@ -15,12 +15,13 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.RequestHandler
 import com.github.damontecres.wholphin.util.SEERR_PAGE_SIZE
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -108,10 +109,11 @@ sealed class Destination(
     ) : Destination(false)
 
     @Serializable
-    data class ItemGrid(
+    data class ItemGrid<T>(
         val title: String?,
         @param:StringRes val titleRes: Int?,
-        val request: GetItemsRequest,
+        @Contextual val request: T,
+        val requestHandler: RequestHandler<T>,
         val initialPosition: Int = 0,
         val viewOptions: ViewOptions = ViewOptions(),
     ) : Destination(false)

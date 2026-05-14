@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
 
@@ -292,12 +291,13 @@ class RecommendedViewModel
             position: RowColumn,
             row: HomeRowLoadingState.Success,
         ) {
-            val recommendedRow = recommendedRows[position.row]
+            val recommendedRow = recommendedRows[position.row] as RecommendedRow<Any>
             navigationManager.navigateTo(
                 Destination.ItemGrid(
                     title = row.title,
                     titleRes = recommendedRow.title,
-                    request = recommendedRow.request as GetItemsRequest, // TODO
+                    request = recommendedRow.request,
+                    requestHandler = recommendedRow.handler,
                     initialPosition = row.items.size,
                     viewOptions =
                         ViewOptions(

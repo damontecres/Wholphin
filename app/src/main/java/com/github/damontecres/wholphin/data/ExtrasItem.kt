@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.ExtraType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -48,6 +49,7 @@ sealed interface ExtrasItem {
                         sortBy = listOf(ItemSortBy.SORT_NAME),
                         sortOrder = listOf(SortOrder.ASCENDING),
                     ),
+                requestHandler = GetItemsRequestHandler,
                 initialPosition = 0,
                 viewOptions =
                     ViewOptions(
