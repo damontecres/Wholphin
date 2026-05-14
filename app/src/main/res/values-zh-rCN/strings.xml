@@ -583,4 +583,8 @@
     <string name="play_with">播放方式</string>
     <string name="transcoding">转码</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">综合搜索结果</string>
+    <string name="combined_search_results_on">在单个列表中显示所有结果</string>
+    <string name="combined_search_results_off">按类别显示结果</string>
+    <string name="results">结果</string>
 </resources>
