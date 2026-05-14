@@ -381,7 +381,7 @@
     <string name="start_screensaver">Pokaż wygaszacz ekranu</string>
     <string name="duration">Czas trwania</string>
     <string name="photos">Zdjęcia</string>
-    <string name="include_types">Dołącz typy</string>
+    <string name="include_types">Wybierz typ mediów</string>
     <string name="include_types_summary">Dla jakich typów mediów wyświetlać zdjęcia?</string>
     <string name="content_scale_fit">Dopasuj</string>
     <string name="content_scale_crop">Przytnij</string>
