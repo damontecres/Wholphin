@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
 
@@ -286,6 +287,25 @@ class RecommendedViewModel
             item: BaseItem,
             index: Int,
         ) = addToQueue(api, musicService, item, index)
+
+        fun onClickViewMore(
+            position: RowColumn,
+            row: HomeRowLoadingState.Success,
+        ) {
+            val recommendedRow = recommendedRows[position.row]
+            navigationManager.navigateTo(
+                Destination.ItemGrid(
+                    title = row.title,
+                    titleRes = recommendedRow.title,
+                    request = recommendedRow.request as GetItemsRequest, // TODO
+                    initialPosition = row.items.size,
+                    viewOptions =
+                        ViewOptions(
+                            aspectRatio = viewOptions.aspectRatio,
+                        ),
+                ),
+            )
+        }
     }
 
 data class RecommendedState(
@@ -400,6 +420,8 @@ fun RecommendedContent(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showViewMore = true,
+                onClickViewMore = viewModel::onClickViewMore,
                 modifier = modifier,
             )
         }

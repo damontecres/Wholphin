@@ -21,7 +21,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.launchIO
@@ -38,9 +37,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.SortOrder
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 
 @HiltViewModel(assistedFactory = ItemGridViewModel.Factory::class)
 class ItemGridViewModel
@@ -60,12 +56,7 @@ class ItemGridViewModel
 
         init {
             viewModelScope.launchIO(LoadingExceptionHandler(loading, "Error fetching items")) {
-                val request =
-                    GetItemsRequest(
-                        ids = destination.itemIds,
-                        sortBy = listOf(ItemSortBy.SORT_NAME),
-                        sortOrder = listOf(SortOrder.ASCENDING),
-                    )
+                val request = destination.request
                 val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
                 if (pager.isNotEmpty()) {
                     pager.getBlocking(0)
@@ -83,7 +74,7 @@ class ItemGridViewModel
     }
 
 /**
- * Display a grid of a list of arbitrary item IDs such as for [com.github.damontecres.wholphin.data.ExtrasItem]
+ * Display a grid of a list of arbitrary items [com.github.damontecres.wholphin.data.ExtrasItem]
  */
 @Composable
 fun ItemGrid(
@@ -132,7 +123,8 @@ fun ItemGrid(
                     gridFocusRequester = focusRequester,
                     showJumpButtons = false,
                     showLetterButtons = false,
-                    spacing = 24.dp,
+                    initialPosition = destination.initialPosition,
+                    spacing = destination.viewOptions.spacing.dp,
                     cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                         GridCard(
                             item = item,
@@ -140,10 +132,10 @@ fun ItemGrid(
                             onLongClick = onLongClick,
                             fillWidth = widthPx,
                             modifier = mod,
-                            imageAspectRatio = AspectRatios.WIDE, // TODO
+                            imageAspectRatio = destination.viewOptions.aspectRatio.ratio,
                         )
                     },
-                    columns = 3,
+                    columns = destination.viewOptions.columns,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

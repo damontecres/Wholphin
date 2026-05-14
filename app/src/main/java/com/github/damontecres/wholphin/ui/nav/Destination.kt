@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -19,6 +20,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -109,7 +111,9 @@ sealed class Destination(
     data class ItemGrid(
         val title: String?,
         @param:StringRes val titleRes: Int?,
-        val itemIds: List<UUID>,
+        val request: GetItemsRequest,
+        val initialPosition: Int = 0,
+        val viewOptions: ViewOptions = ViewOptions(),
     ) : Destination(false)
 
     @Serializable
