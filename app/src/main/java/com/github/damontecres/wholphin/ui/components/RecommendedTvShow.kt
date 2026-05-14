@@ -52,6 +52,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = RecommendedTvShowViewModel.Factory::class)
@@ -190,11 +191,24 @@ class RecommendedTvShowViewModel
                             includeItemTypes = listOf(BaseItemKind.EPISODE),
                             recursive = true,
                             enableUserData = true,
-                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                            sortOrder = listOf(SortOrder.DESCENDING),
+                            sortBy =
+                                listOf(
+                                    ItemSortBy.PREMIERE_DATE,
+                                    ItemSortBy.SERIES_SORT_NAME,
+                                    ItemSortBy.AIRED_EPISODE_ORDER,
+                                ),
+                            sortOrder =
+                                listOf(
+                                    SortOrder.DESCENDING,
+                                    SortOrder.ASCENDING,
+                                    SortOrder.DESCENDING,
+                                ),
                             startIndex = 0,
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
+                            maxPremiereDate = LocalDateTime.now(),
+                            isUnaired = false,
+                            isMissing = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
                 }.also(jobs::add)

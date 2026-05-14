@@ -14,7 +14,6 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.playable
-import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
@@ -24,13 +23,13 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.LocationType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlaylistUserPermissions
 import org.jellyfin.sdk.model.api.SortOrder
@@ -57,7 +56,7 @@ class PlaylistCreator
         /**
          * Creates a playlist of next up episodes for the given series starting with the given episode
          */
-        suspend fun createFromEpisode(
+        private suspend fun createFromEpisode(
             seriesId: UUID,
             episodeId: UUID?,
             seasonId: UUID? = null,
@@ -85,7 +84,7 @@ class PlaylistCreator
         /**
          * Create from a server playlist ID
          */
-        suspend fun createFromPlaylistId(
+        private suspend fun createFromPlaylistId(
             playlistId: UUID,
             startIndex: Int?,
             sortAndDirection: SortAndDirection,
@@ -101,6 +100,7 @@ class PlaylistCreator
                         limit = Playlist.MAX_SIZE,
                         sortBy = listOf(sortAndDirection.sort),
                         sortOrder = listOf(sortAndDirection.direction),
+                        excludeLocationTypes = listOf(LocationType.VIRTUAL),
                     ),
                 )
             val items = GetItemsRequestHandler.execute(api, request).content.items
@@ -139,6 +139,7 @@ class PlaylistCreator
                             fields = DefaultItemFields,
                             startIndex = startIndex,
                             limit = Playlist.MAX_SIZE,
+                            excludeLocationTypes = listOf(LocationType.VIRTUAL),
                         ),
                 )
             val items =
@@ -279,16 +280,18 @@ class PlaylistCreator
 
         private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<PlaylistItem> =
             buildList {
-                this@convertAndAddParts.forEach { ep ->
-                    add(PlaylistItem.Media(BaseItem(ep, useSeriesForPrimary)))
-                    if (ep.partCount.gt(1)) {
-                        val parts =
-                            api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
-                                PlaylistItem.Media(BaseItem(part, useSeriesForPrimary))
-                            }
-                        addAll(parts)
+                this@convertAndAddParts
+                    .filter { it.locationType != LocationType.VIRTUAL }
+                    .forEach { ep ->
+                        add(PlaylistItem.Media(BaseItem(ep, useSeriesForPrimary)))
+                        if (ep.partCount.gt(1)) {
+                            val parts =
+                                api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
+                                    PlaylistItem.Media(BaseItem(part, useSeriesForPrimary))
+                                }
+                            addAll(parts)
+                        }
                     }
-                }
             }
 
         /**

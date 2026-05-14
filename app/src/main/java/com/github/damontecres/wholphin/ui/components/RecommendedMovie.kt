@@ -49,6 +49,7 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = RecommendedMovieViewModel.Factory::class)
@@ -143,11 +144,21 @@ class RecommendedMovieViewModel
                             includeItemTypes = listOf(BaseItemKind.MOVIE),
                             recursive = true,
                             enableUserData = true,
-                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                            sortOrder = listOf(SortOrder.DESCENDING),
+                            sortBy =
+                                listOf(
+                                    ItemSortBy.PREMIERE_DATE,
+                                    ItemSortBy.SORT_NAME,
+                                ),
+                            sortOrder =
+                                listOf(
+                                    SortOrder.DESCENDING,
+                                    SortOrder.ASCENDING,
+                                ),
                             startIndex = 0,
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
+                            maxPremiereDate = LocalDateTime.now(),
+                            isMissing = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
                 }.also(jobs::add)

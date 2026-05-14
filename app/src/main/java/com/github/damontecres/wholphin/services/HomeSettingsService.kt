@@ -62,6 +62,7 @@ import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import timber.log.Timber
 import java.io.File
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -794,10 +795,23 @@ class HomeSettingsService
                         GetItemsRequest(
                             parentId = row.parentId,
                             limit = limit,
-                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                            sortOrder = listOf(SortOrder.DESCENDING),
+                            sortBy =
+                                listOf(
+                                    ItemSortBy.PREMIERE_DATE,
+                                    ItemSortBy.SERIES_SORT_NAME,
+                                    ItemSortBy.AIRED_EPISODE_ORDER,
+                                ),
+                            sortOrder =
+                                listOf(
+                                    SortOrder.DESCENDING,
+                                    SortOrder.ASCENDING,
+                                    SortOrder.DESCENDING,
+                                ),
                             fields = DefaultItemFields,
                             recursive = true,
+                            maxPremiereDate = LocalDateTime.now(),
+                            isUnaired = false,
+                            isMissing = false,
                         )
                     GetItemsRequestHandler
                         .execute(api, request)
