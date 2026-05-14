@@ -600,4 +600,9 @@
     <string name="cinema_mode">Kinomodus</string>
     <string name="play_with">Abspielen mit</string>
     <string name="transcoding">Transkodieren</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Zusammengefasste Suchergebnisse</string>
+    <string name="combined_search_results_on">Alle Ergebnisse in einer gemeinsamen Liste anzeigen</string>
+    <string name="combined_search_results_off">Ergebnisse nach Kategorie anzeigen</string>
+    <string name="results">Ergebnisse</string>
 </resources>
