@@ -583,4 +583,8 @@
     <string name="play_with">播放方式</string>
     <string name="transcoding">轉碼</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">合併搜尋結果</string>
+    <string name="combined_search_results_on">在單一列表中顯示所有結果</string>
+    <string name="combined_search_results_off">按類別顯示結果</string>
+    <string name="results">結果</string>
 </resources>
