@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,7 +33,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -42,6 +46,9 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.LiveTvPreferences
 import com.github.damontecres.wholphin.ui.components.CircularProgress
+import com.github.damontecres.wholphin.ui.components.DialogItem
+import com.github.damontecres.wholphin.ui.components.DialogParams
+import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -78,6 +85,8 @@ fun TvGuideGrid(
         .collectAsState(AppPreferences.getDefaultInstance())
     val tvPrefs = preferences.interfacePreferences.liveTvPreferences
     var showViewOptions by remember { mutableStateOf(false) }
+    var showChannelDialog by remember { mutableStateOf<Pair<Int, TvChannel>?>(null) }
+
     when (val st = state.loading) {
         is LoadingState.Error -> {
             ErrorMessage(st, modifier)
@@ -157,12 +166,7 @@ fun TvGuideGrid(
                         channelProgramCount = state.channelProgramCount,
                         guideTimes = state.guideTimes,
                         onClickChannel = { index, channel ->
-                            viewModel.navigationManager.navigateTo(
-                                Destination.Playback(
-                                    itemId = channel.id,
-                                    positionMs = 0L,
-                                ),
-                            )
+                            showChannelDialog = index to channel
                         },
                         onFocus = {
                             focusedPosition = it
@@ -246,6 +250,40 @@ fun TvGuideGrid(
                     }
                 }
             },
+        )
+    }
+    showChannelDialog?.let { (index, channel) ->
+        val watchLiveStr = stringResource(R.string.watch_live)
+        val dialogItems =
+            remember {
+                listOf(
+                    DialogItem(
+                        watchLiveStr,
+                        Icons.Default.PlayArrow,
+                        iconColor = Color.Green.copy(alpha = .8f),
+                        dismissOnClick = true,
+                    ) {
+                        viewModel.navigationManager.navigateTo(
+                            Destination.Playback(
+                                itemId = channel.id,
+                                positionMs = 0L,
+                            ),
+                        )
+                    },
+                    DialogItem(
+                        text = if (channel.favorite) R.string.remove_favorite else R.string.add_favorite,
+                        iconStringRes = R.string.fa_heart,
+                        iconColor = if (channel.favorite) Color.Red else Color.Unspecified,
+                        dismissOnClick = true,
+                    ) {
+                        viewModel.toggleFavorite(index, channel)
+                    },
+                )
+            }
+        DialogPopup(
+            onDismissRequest = { showChannelDialog = null },
+            params = DialogParams(false, channel.name ?: "", dialogItems),
+            elevation = 3.dp,
         )
     }
 }

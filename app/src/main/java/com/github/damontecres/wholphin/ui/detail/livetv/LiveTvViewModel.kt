@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
@@ -78,6 +79,7 @@ class LiveTvViewModel
         val preferences: DataStore<AppPreferences>,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) : ViewModel() {
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
@@ -142,7 +144,7 @@ class LiveTvViewModel
                                 TvChannel(
                                     id = it.id,
                                     number = it.channelNumber,
-                                    name = it.channelName,
+                                    name = it.channelName ?: it.name,
                                     imageUrl =
                                         imageUrlService.getItemImageUrl(it.id, ImageType.PRIMARY),
                                     favorite = it.userData?.isFavorite == true,
@@ -544,6 +546,23 @@ class LiveTvViewModel
                     viewModelScope.launchIO {
                         refreshPrograms(channels, newFetchRange)
                     }
+            }
+        }
+
+        fun toggleFavorite(
+            index: Int,
+            channel: TvChannel,
+        ) {
+            viewModelScope.launchIO {
+                favoriteWatchManager.setFavorite(channel.id, !channel.favorite)
+                _state.update {
+                    it.copy(
+                        channels =
+                            it.channels.toMutableList().apply {
+                                set(index, channel.copy(favorite = !channel.favorite))
+                            },
+                    )
+                }
             }
         }
     }
