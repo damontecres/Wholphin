@@ -610,4 +610,8 @@
     <string name="transcoding">Kod dönüştürme</string>
     <string name="play_with">Şununla Oynat</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Birleştirilmiş arama sonuçları</string>
+    <string name="combined_search_results_on">Tüm sonuçları tek listede göster</string>
+    <string name="combined_search_results_off">Sonuçları kategoriye göre göster</string>
+    <string name="results">Sonuçlar</string>
 </resources>
