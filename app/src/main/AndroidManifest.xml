@@ -30,6 +30,10 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
     </queries>
 
     <application
@@ -41,7 +45,8 @@
         android:theme="@style/Theme.Wholphin"
         android:name=".WholphinApplication"
         android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:largeHeap="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.Canvas
@@ -107,7 +107,7 @@ fun SeekPreviewImage(
         val tileIndex =
             index % numberOfTilesPerImage // Index of tile within the current image
         val x = (tileIndex % trickPlayInfo.tileWidth) // x position within tile grid
-        val y = (tileIndex / trickPlayInfo.tileHeight) // y position
+        val y = (tileIndex / trickPlayInfo.tileWidth) // y position
         Box(
             modifier =
                 modifier

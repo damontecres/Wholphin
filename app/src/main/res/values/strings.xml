@@ -390,6 +390,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
+    <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -444,6 +445,10 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
+    <string name="combined_search_results">Combined search results</string>
+    <string name="combined_search_results_on">Show all results in a single list</string>
+    <string name="combined_search_results_off">Show results by category</string>
+    <string name="results">Results</string>
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
@@ -660,10 +665,12 @@
     <string name="exoplayer" translatable="false">ExoPlayer</string>
     <string name="mpv" translatable="false">MPV</string>
     <string name="prefer_mpv">Prefer MPV</string>
+    <string name="external_player">External Player</string>
     <string-array name="player_backend_options">
         <item>@string/exoplayer</item>
         <item>@string/mpv</item>
         <item>@string/prefer_mpv</item>
+        <item>@string/external_player</item>
     </string-array>
 
     <string name="player_backend_options_subtitles_prefer_mpv">Use ExoPlayer for HDR playback</string>
@@ -671,6 +678,7 @@
         <item /><!-- Intentionally blank -->
         <item /><!-- Intentionally blank -->
         <item>@string/player_backend_options_subtitles_prefer_mpv</item>
+        <item /><!-- Intentionally blank -->
     </string-array>
 
     <string name="aspect_ratios_poster">Poster (2:3)</string>
@@ -759,11 +767,17 @@
     <string name="discover_movies">Discover Movies</string>
     <string name="studios_in">Studios in %1$s</string>
     <string name="last_played">Last played</string>
-
+    <string name="system_default">System default</string>
     <string name="ass_subtitle_mode_libass">Direct play with libass</string>
     <string name="ass_subtitle_mode_exoplayer">Direct play with ExoPlayer built-in</string>
     <string name="ass_subtitle_mode_transcode">Burn in/transcode on server</string>
     <string name="ass_subtitle_playback">SSA/ASS subtitle playback</string>
+    <string name="cinema_mode">Cinema mode</string>
+    <string name="show_more">Show %1$s more</string>
+    <string name="skip_behavior">Skip behavior</string>
+    <string name="skip_behavior_summary">For intros, credits, etc</string>
+    <string name="play_with">Play with</string>
+    <string name="transcoding">Transcoding</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>

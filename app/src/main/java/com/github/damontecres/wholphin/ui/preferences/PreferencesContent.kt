@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -50,6 +53,7 @@ import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
+import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
@@ -62,6 +66,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
@@ -99,6 +104,7 @@ fun PreferencesContent(
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
+    val players by viewModel.externalPlayers.collectAsState()
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrConnection by viewModel.seerrConnection.collectAsState()
@@ -137,6 +143,7 @@ fun PreferencesContent(
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
+            PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -145,6 +152,7 @@ fun PreferencesContent(
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
+            PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -471,6 +479,45 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                AppPreference.ExternalPlayerApp -> {
+                                    val value = pref.getter.invoke(preferences).toString()
+                                    val selectedIndex =
+                                        remember(value, players) {
+                                            players.indexOfFirstOrNull { it.identifier == value }
+                                        } ?: 0
+                                    ChoicePreference(
+                                        title = stringResource(pref.title),
+                                        summary = players[selectedIndex].name,
+                                        possibleValues = players,
+                                        selectedIndex = selectedIndex,
+                                        onValueChange = { index ->
+                                            scope.launch(ExceptionHandler()) {
+                                                val newValue =
+                                                    players.getOrNull(index)?.identifier ?: ""
+                                                preferences =
+                                                    viewModel.preferenceDataStore.updateData { prefs ->
+                                                        pref.setter.invoke(prefs, newValue)
+                                                    }
+                                            }
+                                        },
+                                        valueDisplay = { index, item ->
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                if (item.icon != null) {
+                                                    Image(
+                                                        bitmap = item.icon,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.width(40.dp),
+                                                    )
+                                                }
+                                                Text(item.name)
+                                            }
+                                        },
+                                    )
+                                }
+
                                 else -> {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
@@ -663,6 +710,7 @@ fun PreferencesPage(
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
             PreferenceScreenOption.SCREENSAVER,
+            PreferenceScreenOption.SKIP_SEGMENTS,
             -> {
                 PreferencesContent(
                     initialPreferences,

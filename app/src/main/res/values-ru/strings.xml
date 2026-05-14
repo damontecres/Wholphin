@@ -417,4 +417,17 @@
     <string name="seerr_integration">Интеграция с Seerr</string>
     <string name="search_for">Найти %s</string>
     <string name="select_all">Выбрать всё</string>
+    <string name="subtitle_delay">Задержка субтитров</string>
+    <string name="play_trailer">Воспроизвести трейлер</string>
+    <string name="no_trailers">Трейлеров нет</string>
+    <string name="duration">Длительность</string>
+    <string name="photos">Фотографии</string>
+    <string name="purple">Фиолетовый</string>
+    <string name="orange">Оранжевый</string>
+    <string name="black">Черный</string>
+    <string name="skip_automatically">Пропускать автоматически</string>
+    <string name="white">Белый</string>
+    <string name="light_gray">Светло-серый</string>
+    <string name="dark_gray">Темно-серый</string>
+    <string name="yellow">Желтый</string>
 </resources>

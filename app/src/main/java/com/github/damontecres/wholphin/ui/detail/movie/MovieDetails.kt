@@ -45,25 +45,20 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.chooseStream
-import com.github.damontecres.wholphin.ui.components.chooseVersionParams
+import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -74,11 +69,9 @@ import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -101,11 +94,9 @@ fun MovieDetails(
     val state by viewModel.state.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
-    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     val preferredSubtitleLanguage =
         viewModel.serverRepository.currentUserDto
@@ -114,22 +105,36 @@ fun MovieDetails(
             ?.configuration
             ?.subtitleLanguagePreference
 
-    val moreActions =
-        MoreDialogActions(
-            navigateTo = viewModel::navigateTo,
-            onClickWatch = { itemId, watched ->
-                viewModel.setWatched(itemId, watched)
-            },
-            onClickFavorite = { itemId, favorite ->
-                viewModel.setFavorite(itemId, favorite)
-            },
-            onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                showPlaylistDialog.makePresent(itemId)
-            },
-            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = { showDeleteDialog = it },
-        )
+    val contextActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel::navigateTo,
+                onClickWatch = viewModel::setWatched,
+                onClickFavorite = viewModel::setFavorite,
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onChooseVersion = { item, source ->
+                    viewModel.savePlayVersion(
+                        item,
+                        source.id!!.toUUID(),
+                    )
+                },
+                onChooseTracks = { result ->
+                    viewModel.saveTrackSelection(
+                        result.item,
+                        result.itemPlayback,
+                        result.trackIndex,
+                        result.streamType,
+                    )
+                },
+                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
+                onClearChosenStreams = { viewModel.clearChosenStreams(it) },
+            )
+        }
 
     when (val s = state.loading) {
         is DataLoadingState.Error -> {
@@ -183,72 +188,17 @@ fun MovieDetails(
                         ItemDetailsDialogInfo(movie)
                 },
                 moreOnClick = {
-                    moreDialog =
-                        DialogParams(
+                    showContextMenu =
+                        ContextMenu.ForBaseItem(
                             fromLongClick = false,
-                            title = movie.name + " (${movie.data.productionYear ?: ""})",
-                            items =
-                                buildMoreDialogItems(
-                                    context = context,
-                                    item = movie,
-                                    watched = movie.data.userData?.played ?: false,
-                                    favorite = movie.data.userData?.isFavorite ?: false,
-                                    seriesId = null,
-                                    sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
-                                    canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
-                                    canDelete = state.canDelete,
-                                    actions = moreActions,
-                                    onChooseVersion = {
-                                        chooseVersion =
-                                            chooseVersionParams(
-                                                context,
-                                                movie.data.mediaSources!!,
-                                                chosenStreams?.source?.id?.toUUIDOrNull(),
-                                            ) { idx ->
-                                                val source = movie.data.mediaSources!![idx]
-                                                viewModel.savePlayVersion(
-                                                    movie,
-                                                    source.id!!.toUUID(),
-                                                )
-                                            }
-                                        moreDialog = null
-                                    },
-                                    onChooseTracks = { type ->
-                                        viewModel.streamChoiceService
-                                            .chooseSource(
-                                                movie.data,
-                                                chosenStreams?.itemPlayback,
-                                            )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                        streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        currentIndex =
-                                                            if (type == MediaStreamType.AUDIO) {
-                                                                chosenStreams?.audioStream?.index
-                                                            } else {
-                                                                chosenStreams?.subtitleStream?.index
-                                                            },
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                movie,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
-                                                        preferredSubtitleLanguage = preferredSubtitleLanguage,
-                                                    )
-                                            }
-                                    },
-                                    onShowOverview = {
-                                        overviewDialog = ItemDetailsDialogInfo(movie)
-                                    },
-                                    onClearChosenStreams = {
-                                        viewModel.clearChosenStreams(chosenStreams)
-                                    },
-                                ),
+                            item = movie,
+                            chosenStreams = chosenStreams,
+                            showGoTo = false,
+                            showStreamChoices = true,
+                            canDelete = state.canDelete,
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions = contextActions,
                         )
                 },
                 watchOnClick = {
@@ -258,36 +208,29 @@ fun MovieDetails(
                     viewModel.setFavorite(movie.id, !movie.favorite)
                 },
                 onLongClickPerson = { index, person ->
-                    val items =
-                        buildMoreDialogItemsForPerson(
-                            context = context,
-                            person = person,
-                            actions = moreActions,
-                        )
-                    moreDialog =
-                        DialogParams(
+                    showContextMenu =
+                        ContextMenu.ForPerson(
                             fromLongClick = true,
-                            title = person.name ?: "",
-                            items = items,
+                            person = person,
+                            actions =
+                                PersonContextActions(
+                                    navigateTo = viewModel::navigateTo,
+                                    onClickFavorite = viewModel::setFavorite,
+                                ),
                         )
                 },
-                onLongClickSimilar = { index, similar ->
-                    val items =
-                        buildMoreDialogItemsForHome(
-                            context = context,
-                            item = similar,
-                            seriesId = null,
-                            playbackPosition = similar.playbackPosition,
-                            watched = similar.played,
-                            favorite = similar.favorite,
-                            canDelete = false,
-                            actions = moreActions,
-                        )
-                    moreDialog =
-                        DialogParams(
+                onLongClickSimilar = { _, similar ->
+                    showContextMenu =
+                        ContextMenu.ForBaseItem(
                             fromLongClick = true,
-                            title = similar.title ?: "",
-                            items = items,
+                            item = similar,
+                            chosenStreams = null,
+                            showGoTo = true,
+                            showStreamChoices = false,
+                            canDelete = false,
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions = contextActions,
                         )
                 },
                 trailerOnClick = {
@@ -300,10 +243,18 @@ fun MovieDetails(
                     viewModel.navigateTo(item.destination)
                 },
                 canDelete = state.canDelete,
-                deleteOnClick = { showDeleteDialog = state.movie },
+                onConfirmDelete = { state.movie?.let { viewModel.deleteItem(it) } },
                 modifier = modifier,
             )
         }
+    }
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = viewModel.streamChoiceService::chooseSource,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = preferredSubtitleLanguage,
+        )
     }
     overviewDialog?.let { info ->
         ItemDetailsDialog(
@@ -313,26 +264,6 @@ fun MovieDetails(
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
-        )
-    }
-    chooseVersion?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { chooseVersion = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -350,16 +281,6 @@ fun MovieDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                showDeleteDialog = null
-            },
         )
     }
 }
@@ -390,7 +311,7 @@ fun MovieDetailsContent(
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
-    deleteOnClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -430,6 +351,7 @@ fun MovieDetailsContent(
                                 .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
+                        title = movie.title ?: "",
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
                         favorite = dto.userData?.isFavorite ?: false,
@@ -454,7 +376,7 @@ fun MovieDetailsContent(
                             trailerOnClick.invoke(it)
                         },
                         canDelete = canDelete,
-                        deleteOnClick = deleteOnClick,
+                        onConfirmDelete = onConfirmDelete,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

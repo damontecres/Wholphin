@@ -18,7 +18,7 @@ class CoilTrickplayTransformation(
     val index: Int,
 ) : Transformation() {
     private val x: Int = imageIndex % numColumns
-    private val y: Int = imageIndex / numRows
+    private val y: Int = imageIndex / numColumns
 
     override val cacheKey: String
         get() = "CoilTrickplayTransformation_$index,$x,$y"

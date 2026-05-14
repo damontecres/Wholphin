@@ -208,7 +208,7 @@
     <string name="check_for_updates">检查更新</string>
     <string name="combine_continue_next_summary">仅适用于电视剧</string>
     <string name="combine_continue_next"><![CDATA[合并继续观看与即将播放]]></string>
-    <string name="direct_play_ass">直接播放 ASS 字幕</string>
+    <string name="direct_play_ass">使用 libass 处理 ASS 字幕</string>
     <string name="direct_play_pgs">直接播放 PGS 字幕</string>
     <string name="downmix_stereo">始终降混为立体声</string>
     <string name="ffmpeg_extension_pref">使用 FFmpeg 解码模块</string>
@@ -568,4 +568,18 @@
     <string name="remove_next_up">从即将播放中移除剧集</string>
     <string name="view_removed_next_up">查看已从即将播放中移除的剧集</string>
     <string name="studios_in">%1$s 制片公司</string>
+    <string name="ass_subtitle_mode_libass">通过 libass 直接播放</string>
+    <string name="ass_subtitle_mode_exoplayer">通过内置的 ExoPlayer 直接播放</string>
+    <string name="ass_subtitle_mode_transcode">服务器端烧录/转码</string>
+    <string name="ass_subtitle_playback">SSA/ASS 字幕播放</string>
+    <string name="next_up_never">从不</string>
+    <string name="last_played">上次播放</string>
+    <string name="external_player">外部播放器</string>
+    <string name="system_default">系统默认</string>
+    <string name="show_more">显示更多 %1$s 条</string>
+    <string name="skip_behavior">跳过行为</string>
+    <string name="skip_behavior_summary">适用于片头、片尾等</string>
+    <string name="cinema_mode">影院模式</string>
+    <string name="play_with">播放方式</string>
+    <string name="transcoding">转码</string>
 </resources>

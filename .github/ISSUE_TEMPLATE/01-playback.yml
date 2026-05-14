@@ -29,6 +29,7 @@ body:
       options:
         - ExoPlayer (default)
         - MPV
+        - External App (please specify)
     validations:
       required: true
   - type: input

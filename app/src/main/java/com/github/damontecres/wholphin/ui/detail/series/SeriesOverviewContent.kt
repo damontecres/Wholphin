@@ -34,7 +34,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -47,11 +46,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -74,6 +75,7 @@ fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
+    seasonExtras: List<ExtrasItem>,
     chosenStreams: ChosenStreams?,
     peopleInEpisode: List<Person>,
     position: SeriesOverviewPosition,
@@ -81,6 +83,7 @@ fun SeriesOverviewContent(
     episodeRowFocusRequester: FocusRequester,
     castCrewRowFocusRequester: FocusRequester,
     guestStarRowFocusRequester: FocusRequester,
+    extrasRowFocusRequester: FocusRequester,
     onChangeSeason: (Int) -> Unit,
     onFocusEpisode: (Int) -> Unit,
     onClick: (BaseItem) -> Unit,
@@ -92,7 +95,8 @@ fun SeriesOverviewContent(
     overviewOnClick: () -> Unit,
     personOnClick: (Person) -> Unit,
     canDelete: (BaseItem) -> Boolean,
-    deleteOnClick: (BaseItem) -> Unit,
+    onConfirmDelete: (BaseItem) -> Unit,
+    onClickExtra: (Int, ExtrasItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -318,7 +322,7 @@ fun SeriesOverviewContent(
                             }
                         },
                         canDelete = canDelete.invoke(ep),
-                        deleteOnClick = { deleteOnClick.invoke(ep) },
+                        onConfirmDelete = { onConfirmDelete.invoke(ep) },
                         modifier =
                             Modifier
                                 .padding(top = 4.dp)
@@ -364,6 +368,21 @@ fun SeriesOverviewContent(
                         )
                     }
                 }
+            }
+            AnimatedVisibility(
+                visible = seasonExtras.isNotEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                ExtrasRow(
+                    extras = seasonExtras,
+                    onClickItem = onClickExtra,
+                    onLongClickItem = { _, _ -> },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(extrasRowFocusRequester),
+                )
             }
         }
     }

@@ -34,6 +34,14 @@ Also, it's recommend to add an extra ruleset jar for Compose-specific KtLint: ht
 
 Also setup [pre-commit](https://github.com/pre-commit/pre-commit) which will run `ktlint` as well on each commit, plus check for other common issues.
 
+#### Extensions
+
+Wholphin uses several native components for extra playback compatibility. This includes Media3 ffmpeg/av1 decoders and `libmpv`. These extensions are not required to build the app, but without them some functionality will not work.
+
+If you want to include these in a local build, see the [instructions here](https://github.com/damontecres/wholphin-extensions?tab=readme-ov-file#usage) for configuring the repository.
+
+You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
+
 ## Code organization
 
 Code is split into several packages:
@@ -43,21 +51,22 @@ Code is split into several packages:
 - `ui` - User interface code and ViewModels
 - `util` - Utility classes and functions
 
-## Extensions
+### Settings
 
-Wholphin uses several native components for extra playback compatibility. This includes Media3 ffmpeg/av1 decoders and `libmpv`. These extensions are not required to build the app, but without them some functionality will not work.
+There are a few different ways user settings are stored:
+1. `AppPreferences` via DataStore
+2. Room database
+3. Key-Value DataStore
 
-If you want to include these in a local build, see the [instructions here](https://github.com/damontecres/wholphin-extensions?tab=readme-ov-file#usage) for configuring the repository.
+#### App preferences
 
-You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
+These are generally settings that apply across the whole app regardless of the currently active user.
 
-### App settings
+The `AppPreferences` object can be retrieved from the `UserPreferencesService` or directly via injecting `DataStore<AppPreferences>`.
 
-App settings are available with the `AppPreferences` object and defined by different `AppPreference` objects (note the `s` differences).
+The `AppPreference` (note the `s` differences) objects are used to create the UI for configuring settings using the composable functions in `com.github.damontecres.wholphin.ui.preferences`.
 
-The `AppPreference` objects are used to create the UI for configuring settings using the composable functions in `com.github.damontecres.wholphin.ui.preferences`.
-
-#### How to add a new app setting
+##### How to add a new app setting
 
 1. Add entry in `WholphinDataStore.proto` & build to generate classes
 2. Add new `AppPreference` object in `AppPreference.kt`
@@ -65,3 +74,24 @@ The `AppPreference` objects are used to create the UI for configuring settings u
 4. Update `AppPreferencesSerializer` to set the default value for new installs
 5. If needed, update `AppUpgradeHandler` to set the default value for app upgrades
     - Since preferences use proto3, the [default values](https://protobuf.dev/programming-guides/proto3/#default) are zero, false, or the first enum, so only need this step if the default value is different
+
+#### Room settings
+
+These are settings were generally are applied per user. They are stored in several different tables. The entities are defined in `com.github.damontecres.wholphin.data.model`.
+
+Additionally, all server and user info for both Jellyfin and Seerr are stored in Room tables.
+
+Some examples are:
+- `JellyfinServer`
+- `JellyfinUser`
+- `SeerrServer`
+- `LibraryDisplayInfo`
+- `ItemPlayback`
+
+Some of the models, such as `GetItemsFilter` or `ViewOptions`, are stored as JSON in a column instead of defined entities. This should be used sparingly.
+
+#### Key-value settings
+
+These settings are similar to Room ones and are usually stored per user. These can be accessed via `KeyValueService`. The values are `@Serializable` objects saved as JSON.
+
+This should be used sparingly.

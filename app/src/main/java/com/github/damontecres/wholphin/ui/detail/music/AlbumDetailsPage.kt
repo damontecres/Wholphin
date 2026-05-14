@@ -61,12 +61,12 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.MusicContextActions
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
@@ -94,6 +94,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -136,6 +137,11 @@ class AlbumViewModel
 
         init {
             init()
+            viewModelScope.launchDefault {
+                mediaManagementService.collectCanDelete(state.map { it.album }) { canDelete ->
+                    _state.update { it.copy(canDelete = canDelete) }
+                }
+            }
         }
 
         override fun init() {
@@ -275,6 +281,7 @@ data class AlbumState(
     val similar: List<BaseItem>,
     val loading: LoadingState,
     val musicVideos: List<BaseItem?> = emptyList(),
+    val canDelete: Boolean = false,
 ) {
     companion object {
         val EMPTY = AlbumState(null, false, null, emptyList(), emptyList(), LoadingState.Pending)
@@ -308,22 +315,21 @@ fun AlbumDetailsPage(
     val focusManager = LocalFocusManager.current
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
-    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
+    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     val moreDialogActions =
         remember {
-            MusicMoreDialogActions(
-                onNavigate = { viewModel.navigationManager.navigateTo(it) },
+            MusicContextActions(
+                navigateTo = { viewModel.navigationManager.navigateTo(it) },
                 onClickPlay = { index, _ -> viewModel.play(false, index) },
                 onClickPlayNext = { _, song -> viewModel.playNext(song) },
-                onClickAddToQueue = { index, item -> viewModel.addToQueue(item, index) },
+                onClickAddToQueue = { item -> viewModel.addToQueue(item, -1) },
                 onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
                 onClickAddPlaylist = { itemId ->
                     playlistViewModel.loadPlaylists(MediaType.AUDIO)
                     showPlaylistDialog.makePresent(itemId)
                 },
-                onClickRemoveFromQueue = {},
-                onClickDelete = { showDeleteDialog = it },
+                onClickRemoveFromQueue = { _, _ -> },
+                onDeleteItem = viewModel::deleteItem,
             )
         }
     when (val loading = state.loading) {
@@ -390,6 +396,7 @@ fun AlbumDetailsPage(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             MusicExpandableButtons(
+                                title = album.title ?: "",
                                 actions =
                                     remember {
                                         MusicButtonActions(
@@ -402,28 +409,27 @@ fun AlbumDetailsPage(
                                                 )
                                             },
                                             onClickMore = {
-                                                moreDialog =
-                                                    DialogParams(
+                                                showContextMenu =
+                                                    ContextMenu.ForMusic(
                                                         fromLongClick = false,
-                                                        title = album.name + " (${album.data.productionYear ?: ""})",
-                                                        items =
-                                                            buildMoreDialogForMusic(
-                                                                context = context,
-                                                                actions = moreDialogActions,
-                                                                item = album,
-                                                                index = 0,
-                                                                canRemove = false,
-                                                                canDelete =
-                                                                    viewModel.canDelete(
-                                                                        album,
-                                                                        preferences.appPreferences,
-                                                                    ),
+                                                        item = album,
+                                                        index = 0,
+                                                        canDelete =
+                                                            viewModel.canDelete(
+                                                                album,
+                                                                preferences.appPreferences,
                                                             ),
+                                                        canRemoveFromQueue = false,
+                                                        actions = moreDialogActions,
                                                     )
+                                            },
+                                            onConfirmDelete = {
+                                                viewModel.deleteItem(album)
                                             },
                                         )
                                     },
                                 favorite = album.favorite,
+                                canDelete = state.canDelete,
                                 buttonOnFocusChanged = {
                                     if (it.isFocused) {
                                         position = RowColumn(HEADER_ROW, 0)
@@ -459,45 +465,35 @@ fun AlbumDetailsPage(
                                 },
                                 onLongClick = {
                                     if (song != null) {
-                                        moreDialog =
-                                            DialogParams(
+                                        showContextMenu =
+                                            ContextMenu.ForMusic(
                                                 fromLongClick = true,
-                                                title = song.name ?: "",
-                                                items =
-                                                    buildMoreDialogForMusic(
-                                                        context = context,
-                                                        actions = moreDialogActions,
-                                                        item = song,
-                                                        index = index,
-                                                        canRemove = false,
-                                                        canDelete =
-                                                            viewModel.canDelete(
-                                                                song,
-                                                                preferences.appPreferences,
-                                                            ),
+                                                item = song,
+                                                index = index,
+                                                canDelete =
+                                                    viewModel.canDelete(
+                                                        song,
+                                                        preferences.appPreferences,
                                                     ),
+                                                canRemoveFromQueue = false,
+                                                actions = moreDialogActions,
                                             )
                                     }
                                 },
                                 onClickMore = {
                                     if (song != null) {
-                                        moreDialog =
-                                            DialogParams(
+                                        showContextMenu =
+                                            ContextMenu.ForMusic(
                                                 fromLongClick = false,
-                                                title = song.name ?: "",
-                                                items =
-                                                    buildMoreDialogForMusic(
-                                                        context = context,
-                                                        actions = moreDialogActions,
-                                                        item = song,
-                                                        index = index,
-                                                        canRemove = false,
-                                                        canDelete =
-                                                            viewModel.canDelete(
-                                                                song,
-                                                                preferences.appPreferences,
-                                                            ),
+                                                item = song,
+                                                index = index,
+                                                canDelete =
+                                                    viewModel.canDelete(
+                                                        song,
+                                                        preferences.appPreferences,
                                                     ),
+                                                canRemoveFromQueue = false,
+                                                actions = moreDialogActions,
                                             )
                                     }
                                 },
@@ -559,23 +555,18 @@ fun AlbumDetailsPage(
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
-                                    moreDialog =
-                                        DialogParams(
+                                    showContextMenu =
+                                        ContextMenu.ForMusic(
                                             fromLongClick = true,
-                                            title = item.name ?: "",
-                                            items =
-                                                buildMoreDialogForMusic(
-                                                    context = context,
-                                                    actions = moreDialogActions,
-                                                    item = item,
-                                                    index = index,
-                                                    canRemove = false,
-                                                    canDelete =
-                                                        viewModel.canDelete(
-                                                            item,
-                                                            preferences.appPreferences,
-                                                        ),
+                                            item = item,
+                                            index = index,
+                                            canDelete =
+                                                viewModel.canDelete(
+                                                    item,
+                                                    preferences.appPreferences,
                                                 ),
+                                            canRemoveFromQueue = false,
+                                            actions = moreDialogActions,
                                         )
                                 },
                                 cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
@@ -597,14 +588,12 @@ fun AlbumDetailsPage(
             }
         }
     }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
+    showContextMenu?.let { contextMenu ->
+        ContextMenuDialog(
+            onDismissRequest = { showContextMenu = null },
+            getMediaSource = null,
+            contextMenu = contextMenu,
+            preferredSubtitleLanguage = null,
         )
     }
     showPlaylistDialog.compose { itemId ->
@@ -622,17 +611,6 @@ fun AlbumDetailsPage(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    showDeleteDialog?.let { item ->
-        ConfirmDeleteDialog(
-            itemTitle = item.title ?: "",
-            onCancel = { showDeleteDialog = null },
-            onConfirm = {
-                viewModel.deleteItem(item)
-                focusRequesters.getOrNull(position.row)?.tryRequestFocus()
-                showDeleteDialog = null
-            },
         )
     }
 }

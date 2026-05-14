@@ -23,6 +23,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.components.AppScreensaverContent
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -30,6 +32,7 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -47,6 +50,10 @@ class WholphinDreamService :
 
     @Inject
     lateinit var preferencesDataStore: DataStore<AppPreferences>
+
+    @AuthOkHttpClient
+    @Inject
+    lateinit var okHttpClient: OkHttpClient
 
     private val lifecycleRegistry = LifecycleRegistry(this)
 
@@ -88,6 +95,12 @@ class WholphinDreamService :
                             preferencesDataStore.data.collectLatest { prefs = it }
                         }
                         prefs?.let { prefs ->
+                            CoilConfig(
+                                prefs = prefs,
+                                okHttpClient = okHttpClient,
+                                debugLogging = false,
+                                enableCache = true,
+                            )
                             WholphinTheme(appThemeColors = prefs.interfacePreferences.appThemeColors) {
                                 ProvideLocalClock {
                                     val screensaverPrefs = prefs.interfacePreferences.screensaverPreference

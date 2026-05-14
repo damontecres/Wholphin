@@ -57,7 +57,7 @@ class RecommendedMusicViewModel
         @ApplicationContext context: Context,
         api: ApiClient,
         musicService: MusicService,
-        private val serverRepository: ServerRepository,
+        serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
         private val suggestionService: SuggestionService,
         @Assisted val parentId: UUID,
@@ -69,6 +69,7 @@ class RecommendedMusicViewModel
     ) : RecommendedViewModel(
             context,
             api,
+            serverRepository,
             navigationManager,
             favoriteWatchManager,
             mediaReportService,

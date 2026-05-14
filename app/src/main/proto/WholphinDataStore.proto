@@ -34,6 +34,7 @@ enum PlayerBackend{
   EXO_PLAYER = 0;
   MPV = 1;
   PREFER_MPV = 2;
+  EXTERNAL_PLAYER = 3;
 }
 
 message MpvOptions{
@@ -84,6 +85,8 @@ message PlaybackPreferences {
   MpvOptions mpv_options = 21;
   bool refresh_rate_switching = 22;
   bool resolution_switching = 23;
+  string external_player = 24;
+  bool cinema_mode = 25;
 }
 
 message HomePagePreferences{
@@ -162,6 +165,10 @@ message ScreensaverPreferences{
   bool show_clock = 7;
 }
 
+message SearchPreferences {
+  bool combined_search_results = 1;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -176,6 +183,7 @@ message InterfacePreferences {
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
   bool show_logos = 13;
+  SearchPreferences search_preferences = 14;
 }
 
 message AdvancedPreferences {

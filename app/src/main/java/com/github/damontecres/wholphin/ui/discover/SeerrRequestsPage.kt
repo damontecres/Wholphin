@@ -204,7 +204,7 @@ fun SeerrRequestsPage(
                         showJumpButtons = false,
                         showLetterButtons = false,
                         spacing = 16.dp,
-                        cardContent = @Composable { item, onClick, onLongClick, mod ->
+                        cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                             DiscoverItemCard(
                                 item = item?.item,
                                 onClick = onClick,

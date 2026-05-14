@@ -108,7 +108,7 @@ object TrackSelectionUtils {
                 true
             }
         val audioSelected =
-            if (audioIndex != null && supportsDirectPlay) {
+            if (audioIndex != null && audioIndex >= 0 && supportsDirectPlay) {
                 val indexToFind =
                     calculateIndexToFind(
                         audioIndex,
@@ -141,7 +141,7 @@ object TrackSelectionUtils {
                 }
                 chosenTrack != null
             } else {
-                audioIndex == null
+                true
             }
         return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
     }
@@ -200,6 +200,10 @@ object TrackSelectionUtils {
                         throw UnsupportedOperationException("Cannot calculate index for $type")
                     }
                 }
+            }
+
+            PlayerBackend.EXTERNAL_PLAYER -> {
+                throw IllegalStateException("Cannot calculate tracks external playback")
             }
         }
 }

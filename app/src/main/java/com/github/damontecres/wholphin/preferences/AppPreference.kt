@@ -114,30 +114,6 @@ sealed interface AppPreference<Pref, T> {
                 },
             )
 
-//        val GridJumpButtons =
-//            AppSwitchPreference<AppPreferences>(
-//                title = R.string.show_grid_jump_buttons,
-//                defaultValue = true,
-//                getter = { it.interfacePreferences.showGridJumpButtons },
-//                setter = { prefs, value ->
-//                    prefs.updateInterfacePreferences { showGridJumpButtons = value }
-//                },
-//                summaryOn = R.string.enabled,
-//                summaryOff = R.string.disabled,
-//            )
-
-//        val ShowGridFooter =
-//            AppSwitchPreference<AppPreferences>(
-//                title = R.string.grid_position_footer,
-//                defaultValue = true,
-//                getter = { it.interfacePreferences.showPositionFooter },
-//                setter = { prefs, value ->
-//                    prefs.updateInterfacePreferences { showPositionFooter = value }
-//                },
-//                summaryOn = R.string.show,
-//                summaryOff = R.string.hide,
-//            )
-
         val ControllerTimeout =
             AppSliderPreference<AppPreferences>(
                 title = R.string.hide_controller_timeout,
@@ -479,6 +455,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val CinemaMode =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.cinema_mode,
+                defaultValue = true,
+                getter = { it.playbackPreferences.cinemaMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { cinemaMode = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -628,6 +616,13 @@ sealed interface AppPreference<Pref, T> {
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
                 valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val SkipSegments =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.skip_behavior,
+                summary = R.string.skip_behavior_summary,
+                destination = Destination.Settings(PreferenceScreenOption.SKIP_SEGMENTS),
             )
 
         val GlobalContentScale =
@@ -828,6 +823,17 @@ sealed interface AppPreference<Pref, T> {
                 subtitles = R.array.player_backend_options_subtitles,
                 indexToValue = { PlayerBackend.forNumber(it) ?: PlayerBackend.EXO_PLAYER },
                 valueToIndex = { if (it != PlayerBackend.UNRECOGNIZED) it.number else PlayerBackend.EXO_PLAYER.number },
+            )
+
+        val ExternalPlayerApp =
+            AppStringPreference<AppPreferences>(
+                title = R.string.external_player,
+                defaultValue = "",
+                getter = { it.playbackPreferences.externalPlayer },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { externalPlayer = value }
+                },
+                summary = null,
             )
 
         val ExoPlayerSettings =
@@ -1131,6 +1137,21 @@ val MpvPreferences =
         ),
     )
 
+val SkipSegmentPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.skip,
+            preferences =
+                listOf(
+                    AppPreference.SkipIntros,
+                    AppPreference.SkipOutros,
+                    AppPreference.SkipCommercials,
+                    AppPreference.SkipPreviews,
+                    AppPreference.SkipRecaps,
+                ),
+        ),
+    )
+
 val advancedPreferences =
     buildList {
         add(
@@ -1157,24 +1178,13 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
+                        AppPreference.SkipSegments,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
-                    ),
-            ),
-        )
-        add(
-            PreferenceGroup(
-                title = R.string.skip,
-                preferences =
-                    listOf(
-                        AppPreference.SkipIntros,
-                        AppPreference.SkipOutros,
-                        AppPreference.SkipCommercials,
-                        AppPreference.SkipPreviews,
-                        AppPreference.SkipRecaps,
                     ),
             ),
         )
@@ -1198,6 +1208,10 @@ val advancedPreferences =
                                 AppPreference.ExoPlayerSettings,
                                 AppPreference.MpvSettings,
                             ),
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER },
+                            listOf(AppPreference.ExternalPlayerApp),
                         ),
                     ),
             ),

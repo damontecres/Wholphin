@@ -223,7 +223,7 @@
     <string name="auto_play_next">Volgende in wachtrij automatisch afspelen</string>
     <string name="check_for_updates">Controleren op updates</string>
     <string name="combine_continue_next_summary">Alleen van toepassing op tv-series</string>
-    <string name="combine_continue_next"><![CDATA[Hervatten en hierna afspelen combineren]]></string>
+    <string name="combine_continue_next"><![CDATA[Hervatten en Volgende combineren]]></string>
     <string name="direct_play_ass">ASS-ondertiteling automatisch tonen</string>
     <string name="direct_play_pgs">PGS-ondertiteling automatisch tonen</string>
     <string name="downmix_stereo">Geluid altijd omzetten naar stereo</string>
@@ -249,14 +249,14 @@
     <string name="settings">Instellingen</string>
     <string name="skip_back_on_resume_preference">Terugspoelen na hervatten</string>
     <string name="skip_back_preference">Terugspoelen</string>
-    <string name="skip_commercials_behavior">Instellingen omtrent overslaan van reclame</string>
+    <string name="skip_commercials_behavior">Reclame</string>
     <string name="skip_forward_preference">Vooruitspoelen</string>
-    <string name="skip_intro_behavior">Instellingen omtrent overslaan van intro\'s</string>
-    <string name="skip_outro_behavior">Instellingen omtrent overslaan van aftitelingen</string>
-    <string name="skip_previews_behavior">Instellingen omtrent overslaan van voorvertoningen</string>
-    <string name="skip_recap_behavior">Instellingen omtrent overslaan van samenvattingen</string>
+    <string name="skip_intro_behavior">Intro\'s</string>
+    <string name="skip_outro_behavior">Aftitelingen</string>
+    <string name="skip_previews_behavior">Voorvertoningen</string>
+    <string name="skip_recap_behavior">Samenvattingen</string>
     <string name="update_available">Update beschikbaar</string>
-    <string name="update_url_summary">De url die moet worden gebruikt voor het controleren op updates</string>
+    <string name="update_url_summary">URL gebruikt voor het controleren op updates</string>
     <string name="update_url">Update-url</string>
     <string name="font_size">Tekstgrootte</string>
     <string name="font_color">Tekstkleur</string>
@@ -531,4 +531,17 @@
     <string name="show_backdrop">Achtergrond tonen</string>
     <string name="play_as_type">Afspelen als?</string>
     <string name="visualizer_rationale">Visualisatie van de huidig afspelende audio vereist toestemming voor opname.</string>
+    <string name="prefer_logos">Titels als logo weergeven</string>
+    <string name="select_all">Alles selecteren</string>
+    <string name="separate_types">Afzonderlijke types</string>
+    <string name="remove_continue_watching">Uit Verder kijken verwijderen</string>
+    <string name="remove_next_up">Uit Volgende verwijderen</string>
+    <string name="view_more">Bekijk meer</string>
+    <string name="discover_tv">Series ontdekken</string>
+    <string name="discover_movies">Films ontdekken</string>
+    <string name="view_removed_next_up">Uit Volgende verwijderd bekijken</string>
+    <string name="skip_behavior">Overslaan</string>
+    <string name="skip_behavior_summary">Voor intro\'s, aftiteling, etc</string>
+    <string name="ass_subtitle_playback">SSA/ASS ondertiteling tonen</string>
+    <string name="ass_subtitle_mode_libass">Direct play met libass</string>
 </resources>

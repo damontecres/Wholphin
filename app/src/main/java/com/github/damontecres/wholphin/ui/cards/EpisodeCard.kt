@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -70,6 +71,8 @@ fun EpisodeCard(
     val aspectRatio = item?.aspectRatio?.coerceAtLeast(AspectRatios.MIN) ?: AspectRatios.MIN
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
+    val density = LocalDensity.current
+    val imageWidthPx = remember(imageWidth) { with(density) { imageWidth.roundToPx() } }
     Column(
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
         modifier = modifier.size(width, height),
@@ -102,6 +105,7 @@ fun EpisodeCard(
                     watchedPercent = dto?.userData?.playedPercentage,
                     numberOfVersions = dto?.mediaSourceCount ?: 0,
                     useFallbackText = false,
+                    fillWidth = imageWidthPx,
                     modifier =
                         Modifier
                             .fillMaxSize(),

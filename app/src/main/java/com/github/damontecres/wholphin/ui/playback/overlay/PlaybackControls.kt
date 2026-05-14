@@ -1,6 +1,6 @@
 @file:kotlin.OptIn(ExperimentalMaterial3Api::class)
 
-package com.github.damontecres.wholphin.ui.playback
+package com.github.damontecres.wholphin.ui.playback.overlay
 
 import android.view.Gravity
 import androidx.annotation.DrawableRes
@@ -69,6 +69,8 @@ import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
@@ -123,13 +125,10 @@ sealed interface PlaybackAction {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
-    playerControls: Player,
+    player: Player,
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
-    moreFocusRequester: FocusRequester,
-    captionFocusRequester: FocusRequester,
-    settingsFocusRequester: FocusRequester,
     onSeekProgress: (Long) -> Unit,
     showPlay: Boolean,
     previousEnabled: Boolean,
@@ -164,7 +163,7 @@ fun PlaybackControls(
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         SeekBar(
-            player = playerControls,
+            player = player,
             controllerViewState = controllerViewState,
             onSeekProgress = onSeekProgress,
             interactionSource = seekBarInteractionSource,
@@ -184,13 +183,12 @@ fun PlaybackControls(
                     .fillMaxWidth(),
         ) {
             LeftPlaybackButtons(
-                moreFocusRequester = moreFocusRequester,
                 onControllerInteraction = onControllerInteraction,
                 onClickPlaybackDialogType = onClickPlaybackDialogType,
                 modifier = Modifier.align(Alignment.CenterStart),
             )
             PlaybackButtons(
-                player = playerControls,
+                player = player,
                 initialFocusRequester = initialFocusRequester,
                 onControllerInteraction = onControllerInteraction,
                 onPlaybackActionClick = onPlaybackActionClick,
@@ -209,7 +207,7 @@ fun PlaybackControls(
                     TextButton(
                         stringRes = segment.type.skipStringRes,
                         onClick = {
-                            playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                            player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                         },
                         modifier =
                             Modifier
@@ -218,8 +216,6 @@ fun PlaybackControls(
                     )
                 }
                 RightPlaybackButtons(
-                    captionFocusRequester = captionFocusRequester,
-                    settingsFocusRequester = settingsFocusRequester,
                     onControllerInteraction = onControllerInteraction,
                     onClickPlaybackDialogType = onClickPlaybackDialogType,
                     modifier = Modifier,
@@ -301,7 +297,6 @@ val buttonSpacing = 12.dp
 
 @Composable
 fun LeftPlaybackButtons(
-    moreFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     modifier: Modifier = Modifier,
@@ -310,24 +305,21 @@ fun LeftPlaybackButtons(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
     ) {
-        // More options
         PlaybackButton(
-            iconRes = R.drawable.baseline_more_vert_96,
+            iconRes = R.drawable.vector_settings,
             onClick = {
                 onControllerInteraction.invoke()
-                onClickPlaybackDialogType.invoke(PlaybackDialogType.MORE)
+                onClickPlaybackDialogType.invoke(PlaybackDialogType.SETTINGS)
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
-            modifier = Modifier.focusRequester(moreFocusRequester),
+            modifier = Modifier,
         )
     }
 }
 
 @Composable
 fun RightPlaybackButtons(
-    captionFocusRequester: FocusRequester,
-    settingsFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     modifier: Modifier = Modifier,
@@ -345,18 +337,18 @@ fun RightPlaybackButtons(
                 onClickPlaybackDialogType.invoke(PlaybackDialogType.CAPTIONS)
             },
             onControllerInteraction = onControllerInteraction,
-            modifier = Modifier.focusRequester(captionFocusRequester),
+            modifier = Modifier,
         )
-        // Playback speed, etc
-        PlaybackButton(
-            iconRes = R.drawable.vector_settings,
+        // Audio
+        PlaybackFaButton(
+            enabled = true,
+            iconRes = R.string.fa_volume_high,
             onClick = {
                 onControllerInteraction.invoke()
-                onClickPlaybackDialogType.invoke(PlaybackDialogType.SETTINGS)
+                onClickPlaybackDialogType.invoke(PlaybackDialogType.AUDIO)
             },
-            enabled = true,
             onControllerInteraction = onControllerInteraction,
-            modifier = Modifier.focusRequester(settingsFocusRequester),
+            modifier = Modifier,
         )
     }
 }
@@ -623,7 +615,7 @@ private fun ButtonPreview() {
                 onControllerInteraction = {},
             )
             PlaybackFaButton(
-                iconRes = R.string.fa_shuffle,
+                iconRes = R.string.fa_volume_high,
                 onClick = {},
                 onControllerInteraction = {},
                 textColor = Color.Green,

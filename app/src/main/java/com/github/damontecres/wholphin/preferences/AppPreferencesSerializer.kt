@@ -54,6 +54,7 @@ class AppPreferencesSerializer
                                 refreshRateSwitching =
                                     AppPreference.RefreshRateSwitching.defaultValue
                                 resolutionSwitching = AppPreference.ResolutionSwitching.defaultValue
+                                cinemaMode = AppPreference.CinemaMode.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
@@ -65,7 +66,8 @@ class AppPreferencesSerializer
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
-                                            assPlaybackMode = AppPreference.AssSubtitleMode.defaultValue
+                                            assPlaybackMode =
+                                                AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
 
                                 mpvOptions =
@@ -97,6 +99,13 @@ class AppPreferencesSerializer
                                 showClock = AppPreference.ShowClock.defaultValue
                                 backdropStyle = AppPreference.BackdropStylePref.defaultValue
                                 showLogos = AppPreference.ShowLogos.defaultValue
+
+                                searchPreferences =
+                                    SearchPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            combinedSearchResults = false
+                                        }.build()
 
                                 subtitlesPreferences =
                                     SubtitlePreferences
@@ -204,6 +213,11 @@ inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.B
 inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences.Builder.() -> Unit): AppPreferences =
     update {
         interfacePreferences = interfacePreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateSearchPreferences(block: SearchPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        searchPreferences = searchPreferences.toBuilder().apply(block).build()
     }
 
 inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.Builder.() -> Unit): AppPreferences =
