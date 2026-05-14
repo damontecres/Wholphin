@@ -1,15 +1,18 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
@@ -143,15 +146,17 @@ fun Channel(
     Surface(
         onClick = onClick,
         onLongClick = onLongClick,
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(4.dp)),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
         scale = ClickableSurfaceDefaults.scale(1f, 1f, .95f),
         colors =
             ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
                 focusedContainerColor = MaterialTheme.colorScheme.inverseSurface,
             ),
         modifier =
             modifier
+                .background(MaterialTheme.colorScheme.background)
+                .padding(2.dp)
                 .fillMaxSize(),
     ) {
         Box(
@@ -166,14 +171,39 @@ fun Channel(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 Text(
-                    text = channel.number ?: channel.name ?: channelIndex.toString(),
+                    text = channel.number ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier,
                 )
-                AsyncImage(
-                    model = channel.imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxHeight(.66f),
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier,
+                ) {
+                    var showImage by remember { mutableStateOf(true) }
+                    if (showImage) {
+                        AsyncImage(
+                            model = channel.imageUrl,
+                            contentDescription = channel.name,
+                            modifier = Modifier.weight(1f),
+                            onError = {
+                                showImage = false
+                            },
+                        )
+                    }
+                    channel.name?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = if (showImage) 10.sp else 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier,
+                        )
+                    }
+                }
             }
             if (channel.favorite) {
                 Text(
@@ -181,7 +211,10 @@ fun Channel(
                     text = stringResource(R.string.fa_heart),
                     fontSize = 16.sp,
                     fontFamily = FontAwesome,
-                    modifier = Modifier.align(Alignment.TopEnd),
+                    modifier =
+                        Modifier
+                            .padding(2.dp)
+                            .align(Alignment.TopEnd),
                 )
             }
         }
