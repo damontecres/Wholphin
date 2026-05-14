@@ -622,27 +622,29 @@ data class TvProgram(
                     DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
                 )
             append(time)
-            dot()
 
             if (!isFake) {
+                dot()
                 duration
                     .roundMinutes
                     .toString()
                     .let(::append)
-                dot()
                 if (now.isAfter(start) && now.isBefore(end)) {
+                    dot()
                     java.time.Duration
                         .between(now, end)
                         .toKotlinDuration()
                         .roundMinutes
                         .let { append("$it left") }
-                    dot()
                 }
                 seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let {
-                    append(it)
                     dot()
+                    append(it)
                 }
-                officialRating?.let(::append)
+                officialRating?.let {
+                    dot()
+                    append(it)
+                }
             }
         }
     }
