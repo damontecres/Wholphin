@@ -31,6 +31,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.LocationType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlaylistUserPermissions
 import org.jellyfin.sdk.model.api.SortOrder
