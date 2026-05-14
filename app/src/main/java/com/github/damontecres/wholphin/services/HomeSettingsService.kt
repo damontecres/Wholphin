@@ -795,11 +795,6 @@ class HomeSettingsService
                         GetItemsRequest(
                             parentId = row.parentId,
                             limit = limit,
-                            includeItemTypes =
-                                listOf(
-                                    BaseItemKind.EPISODE,
-                                    BaseItemKind.MOVIE,
-                                ),
                             sortBy =
                                 listOf(
                                     ItemSortBy.PREMIERE_DATE,
