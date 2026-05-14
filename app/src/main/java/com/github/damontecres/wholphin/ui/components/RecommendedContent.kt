@@ -45,6 +45,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RequestHandler
@@ -63,6 +64,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
 
@@ -291,20 +293,40 @@ class RecommendedViewModel
             position: RowColumn,
             row: HomeRowLoadingState.Success,
         ) {
-            val recommendedRow = recommendedRows[position.row] as RecommendedRow<Any>
-            navigationManager.navigateTo(
-                Destination.ItemGrid(
-                    title = row.title,
-                    titleRes = recommendedRow.title,
-                    request = recommendedRow.request,
-                    requestHandler = recommendedRow.handler,
-                    initialPosition = row.items.size,
-                    viewOptions =
-                        ViewOptions(
-                            aspectRatio = viewOptions.aspectRatio,
-                        ),
-                ),
-            )
+            if (position.row in recommendedRows.indices) {
+                val recommendedRow = recommendedRows[position.row] as RecommendedRow<Any>
+                navigationManager.navigateTo(
+                    Destination.ItemGrid(
+                        title = row.title,
+                        titleRes = recommendedRow.title,
+                        request = recommendedRow.request,
+                        requestHandler = recommendedRow.handler,
+                        initialPosition = row.items.size,
+                        viewOptions =
+                            ViewOptions(
+                                aspectRatio = viewOptions.aspectRatio,
+                            ),
+                    ),
+                )
+            } else {
+                // Suggestions
+                navigationManager.navigateTo(
+                    Destination.ItemGrid(
+                        title = row.title,
+                        titleRes = R.string.suggestions,
+                        request =
+                            GetItemsRequest(
+                                ids = row.items.mapNotNull { it?.id },
+                            ),
+                        requestHandler = GetItemsRequestHandler,
+                        initialPosition = row.items.size,
+                        viewOptions =
+                            ViewOptions(
+                                aspectRatio = viewOptions.aspectRatio,
+                            ),
+                    ),
+                )
+            }
         }
     }
 

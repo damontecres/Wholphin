@@ -63,6 +63,7 @@ class ItemGridViewModel
                         request,
                         destination.requestHandler as RequestHandler<Any>,
                         viewModelScope,
+                        useSeriesForPrimary = true,
                     ).init()
                 if (pager.isNotEmpty()) {
                     pager.getBlocking(0)
