@@ -902,9 +902,9 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val RequireProfilePin =
+        val ProtectProfilePreference =
             AppClickablePreference<AppPreferences>(
-                title = R.string.require_pin_code,
+                title = R.string.profile_protection,
             )
 
         val ImageDiskCacheSize =
@@ -1076,7 +1076,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    AppPreference.RequireProfilePin,
+                    AppPreference.ProtectProfilePreference,
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),

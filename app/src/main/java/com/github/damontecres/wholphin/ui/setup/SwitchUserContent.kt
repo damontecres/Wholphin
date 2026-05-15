@@ -72,11 +72,17 @@ fun SwitchUserContent(
 
     val currentUser by viewModel.serverRepository.currentUser.observeAsState()
     var showAddUser by remember { mutableStateOf(false) }
-    var username by remember(server) { mutableStateOf("") }
+    var addUser by remember(server) { mutableStateOf<JellyfinUser?>(null) }
+    var username by remember(addUser) { mutableStateOf(addUser?.name ?: "") }
 
     fun showAddUserDialog(user: JellyfinUser?) {
-        username = user?.name ?: ""
+        addUser = user
         showAddUser = true
+    }
+
+    fun hideAddUserDialog() {
+        addUser = null
+        showAddUser = false
     }
 
     LaunchedEffect(state.switchUserState) {
@@ -136,7 +142,7 @@ fun SwitchUserContent(
                         users = state.users,
                         currentUser = currentUser,
                         onSwitchUser = { user ->
-                            if (user.accessToken == null) {
+                            if (user.accessToken == null || user.requireLogin) {
                                 showAddUserDialog(user)
                             } else if (user.hasPin) {
                                 switchUserWithPin = user
@@ -174,13 +180,13 @@ fun SwitchUserContent(
             viewModel.clearSwitchUserState()
             viewModel.resetAttempts()
             if (useQuickConnect) {
-                viewModel.initiateQuickConnect(server)
+                viewModel.initiateQuickConnect(server, addUser)
             }
         }
         BasicDialog(
             onDismissRequest = {
                 viewModel.cancelQuickConnect()
-                showAddUser = false
+                hideAddUserDialog()
             },
             properties =
                 DialogProperties(
@@ -244,6 +250,7 @@ fun SwitchUserContent(
                     val onSubmit = {
                         viewModel.login(
                             server,
+                            addUser,
                             username,
                             password,
                         )
