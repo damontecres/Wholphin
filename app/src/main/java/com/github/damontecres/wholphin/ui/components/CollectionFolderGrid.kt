@@ -788,7 +788,7 @@ fun CollectionFolderGrid(
                         viewModel.release()
                     }
                 }
-                CollectionFolderGridContent(
+                CollectionFolderList(
                     preferences = preferences,
                     initialPosition = viewModel.position,
                     item = item,
@@ -943,82 +943,22 @@ fun CollectionFolderGridContent(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            AnimatedVisibility(
-                showHeader || loadingState !is DataLoadingState.Success,
-                enter = expandVertically(),
-                exit = shrinkVertically(),
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (showTitle) {
-                        GridTitle(title)
-                    }
-                    val endPadding =
-                        16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier
-                                .padding(start = 16.dp, end = endPadding)
-                                .fillMaxWidth()
-                                .focusRequester(headerRowFocusRequester),
-                    ) {
-                        if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier,
-                            ) {
-                                if (sortOptions.isNotEmpty()) {
-                                    SortByButton(
-                                        sortOptions = sortOptions,
-                                        current = sortAndDirection,
-                                        onSortChange = onSortChange,
-                                        modifier = Modifier,
-                                    )
-                                }
-                                if (filterOptions.isNotEmpty()) {
-                                    FilterByButton(
-                                        filterOptions = filterOptions,
-                                        current = currentFilter,
-                                        onFilterChange = onFilterChange,
-                                        getPossibleValues = getPossibleFilterValues,
-                                        modifier = Modifier,
-                                    )
-                                }
-                                ExpandableFaButton(
-                                    title = R.string.view_options,
-                                    iconStringRes = R.string.fa_sliders,
-                                    onClick = { showViewOptions = true },
-                                    modifier = Modifier,
-                                )
-                            }
-                        }
-                        if (playEnabled && pager?.isNotEmpty() == true) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier,
-                            ) {
-                                ExpandablePlayButton(
-                                    title = R.string.play,
-                                    resume = Duration.ZERO,
-                                    icon = Icons.Default.PlayArrow,
-                                    onClick = { onClickPlayAll.invoke(false) },
-                                )
-                                ExpandableFaButton(
-                                    title = R.string.shuffle,
-                                    iconStringRes = R.string.fa_shuffle,
-                                    onClick = { onClickPlayAll.invoke(true) },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            CollectionFolderHeader(
+                showHeader = showHeader || loadingState !is DataLoadingState.Success,
+                showTitle = showTitle,
+                playEnabled = playEnabled && pager?.isNotEmpty() == true,
+                title = title,
+                sortAndDirection = sortAndDirection,
+                onSortChange = onSortChange,
+                sortOptions = sortOptions,
+                getPossibleFilterValues = getPossibleFilterValues,
+                onClickShowViewOptions = { showViewOptions = true },
+                onClickPlayAll = onClickPlayAll,
+                currentFilter = currentFilter,
+                filterOptions = filterOptions,
+                onFilterChange = onFilterChange,
+                modifier = Modifier.focusRequester(headerRowFocusRequester),
+            )
             val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
             val density = LocalDensity.current
             AnimatedVisibility(viewOptions.showDetails) {
@@ -1231,3 +1171,98 @@ data class GridClickActions(
     val onClickPlayAll: ((shuffle: Boolean) -> Unit)? = null,
     val onClickPlayRemoteButton: ((Int, BaseItem) -> Unit)? = null,
 )
+
+@Composable
+fun CollectionFolderHeader(
+    showHeader: Boolean,
+    showTitle: Boolean,
+    playEnabled: Boolean,
+    title: String,
+    sortAndDirection: SortAndDirection,
+    onSortChange: (SortAndDirection) -> Unit,
+    sortOptions: List<ItemSortBy>,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    onClickShowViewOptions: () -> Unit,
+    onClickPlayAll: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    currentFilter: GetItemsFilter = GetItemsFilter(),
+    filterOptions: List<ItemFilterBy<*>> = listOf(),
+    onFilterChange: (GetItemsFilter) -> Unit = {},
+) {
+    AnimatedVisibility(
+        showHeader,
+        enter = expandVertically(),
+        exit = shrinkVertically(),
+        modifier = modifier,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (showTitle) {
+                GridTitle(title)
+            }
+            val endPadding =
+                16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .padding(start = 16.dp, end = endPadding)
+                        .fillMaxWidth(),
+            ) {
+                if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier,
+                    ) {
+                        if (sortOptions.isNotEmpty()) {
+                            SortByButton(
+                                sortOptions = sortOptions,
+                                current = sortAndDirection,
+                                onSortChange = onSortChange,
+                                modifier = Modifier,
+                            )
+                        }
+                        if (filterOptions.isNotEmpty()) {
+                            FilterByButton(
+                                filterOptions = filterOptions,
+                                current = currentFilter,
+                                onFilterChange = onFilterChange,
+                                getPossibleValues = getPossibleFilterValues,
+                                modifier = Modifier,
+                            )
+                        }
+                        ExpandableFaButton(
+                            title = R.string.view_options,
+                            iconStringRes = R.string.fa_sliders,
+                            onClick = onClickShowViewOptions,
+                            modifier = Modifier,
+                        )
+                    }
+                }
+                if (playEnabled) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier,
+                    ) {
+                        ExpandablePlayButton(
+                            title = R.string.play,
+                            resume = Duration.ZERO,
+                            icon = Icons.Default.PlayArrow,
+                            onClick = { onClickPlayAll.invoke(false) },
+                        )
+                        ExpandableFaButton(
+                            title = R.string.shuffle,
+                            iconStringRes = R.string.fa_shuffle,
+                            onClick = { onClickPlayAll.invoke(true) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
