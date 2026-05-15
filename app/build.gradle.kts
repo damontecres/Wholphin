@@ -20,12 +20,21 @@ plugins {
     alias(libs.plugins.openapi.generator)
 }
 
-val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
-val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
-val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
-val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
-val mpvModuleExists = project.file("libs/wholphin-mpv-release.aar").exists()
-val extensionsRepoActive = project.hasProperty("WholphinExtensionsUsername")
+val isCI = providers.environmentVariable("CI").orElse("false").map { it.toBoolean() }
+val shouldSign =
+    isCI.zip(
+        providers.environmentVariable("KEY_ALIAS").orElse("").map { it.isNotBlank() },
+    ) { isCI, hasKey ->
+        isCI && hasKey
+    }
+val ffmpegModuleExists =
+    providers.provider { project.file("libs/lib-decoder-ffmpeg-release.aar").exists() }
+val av1ModuleExists =
+    providers.provider { project.file("libs/lib-decoder-av1-release.aar").exists() }
+val mpvModuleExists =
+    providers.provider { project.file("libs/wholphin-mpv-release.aar").exists() }
+val extensionsRepoActive =
+    providers.provider { project.hasProperty("WholphinExtensionsUsername") }
 
 val gitTags =
     providers
@@ -63,7 +72,7 @@ configure<ApplicationExtension> {
     }
 
     signingConfigs {
-        if (shouldSign) {
+        if (shouldSign.get()) {
             create("ci") {
                 file("ci.keystore").writeBytes(
                     Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
@@ -88,7 +97,7 @@ configure<ApplicationExtension> {
                 "proguard-rules.pro",
             )
             isDebuggable = false
-            if (shouldSign) {
+            if (shouldSign.get()) {
                 signingConfig = signingConfigs.getByName("ci")
             } else {
                 val localPropertiesFile = project.rootProject.file("local.properties")
@@ -346,28 +355,28 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    if (ffmpegModuleExists) {
+    if (ffmpegModuleExists.get()) {
         logger.info("Using local ffmpeg decoder")
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
-    } else if (extensionsRepoActive) {
+    } else if (extensionsRepoActive.get()) {
         logger.info("Using prebuilt ffmpeg decoder")
         implementation(libs.wholphin.extensions.ffmpeg)
     } else {
         logger.warn("Media3 ffmpeg decoder was NOT found")
     }
-    if (av1ModuleExists) {
+    if (av1ModuleExists.get()) {
         logger.info("Using local av1 decoder")
         implementation(files("libs/lib-decoder-av1-release.aar"))
-    } else if (extensionsRepoActive) {
+    } else if (extensionsRepoActive.get()) {
         logger.info("Using prebuilt av1 decoder")
         implementation(libs.wholphin.extensions.av1)
     } else {
         logger.warn("Media3 av1 decoder was NOT found")
     }
-    if (mpvModuleExists) {
+    if (mpvModuleExists.get()) {
         logger.info("Using local libMPV build")
         implementation(files("libs/wholphin-mpv-release.aar"))
-    } else if (extensionsRepoActive) {
+    } else if (extensionsRepoActive.get()) {
         logger.info("Using prebuilt libMPV")
         implementation(libs.wholphin.extensions.mpv)
     } else {
