@@ -4,9 +4,15 @@ import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.ExtraType
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 
 /**
  * Represents "extras" for media such as behind-the-scenes or deleted scenes
@@ -34,7 +40,24 @@ sealed interface ExtrasItem {
         override val isPlayed: Boolean,
     ) : ExtrasItem {
         override val destination: Destination =
-            Destination.ItemGrid(null, type.stringRes, items.map { it.id })
+            Destination.ItemGrid(
+                title = null,
+                titleRes = type.stringRes,
+                request =
+                    GetItemsRequest(
+                        ids = items.map { it.id },
+                        sortBy = listOf(ItemSortBy.SORT_NAME),
+                        sortOrder = listOf(SortOrder.ASCENDING),
+                    ),
+                requestHandler = GetItemsRequestHandler,
+                initialPosition = 0,
+                viewOptions =
+                    ViewOptions(
+                        columns = 3,
+                        spacing = 24,
+                        aspectRatio = AspectRatio.WIDE,
+                    ),
+            )
 
         override val playedPercentage
             get() = -1.0

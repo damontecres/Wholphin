@@ -21,16 +21,15 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.RequestHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -38,9 +37,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.SortOrder
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 
 @HiltViewModel(assistedFactory = ItemGridViewModel.Factory::class)
 class ItemGridViewModel
@@ -48,25 +44,27 @@ class ItemGridViewModel
     constructor(
         private val api: ApiClient,
         private val navigationManager: NavigationManager,
-        @Assisted private val destination: Destination.ItemGrid,
+        @Assisted private val destination: Destination.ItemGrid<*>,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
 
         @AssistedFactory
         interface Factory {
-            fun create(destination: Destination.ItemGrid): ItemGridViewModel
+            fun create(destination: Destination.ItemGrid<*>): ItemGridViewModel
         }
 
         init {
             viewModelScope.launchIO(LoadingExceptionHandler(loading, "Error fetching items")) {
-                val request =
-                    GetItemsRequest(
-                        ids = destination.itemIds,
-                        sortBy = listOf(ItemSortBy.SORT_NAME),
-                        sortOrder = listOf(SortOrder.ASCENDING),
-                    )
-                val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
+                val request = destination.request as Any
+                val pager =
+                    ApiRequestPager(
+                        api,
+                        request,
+                        destination.requestHandler as RequestHandler<Any>,
+                        viewModelScope,
+                        useSeriesForPrimary = true,
+                    ).init()
                 if (pager.isNotEmpty()) {
                     pager.getBlocking(0)
                 }
@@ -83,11 +81,11 @@ class ItemGridViewModel
     }
 
 /**
- * Display a grid of a list of arbitrary item IDs such as for [com.github.damontecres.wholphin.data.ExtrasItem]
+ * Display a grid of a list of arbitrary items [com.github.damontecres.wholphin.data.ExtrasItem]
  */
 @Composable
 fun ItemGrid(
-    destination: Destination.ItemGrid,
+    destination: Destination.ItemGrid<*>,
     modifier: Modifier = Modifier,
     viewModel: ItemGridViewModel =
         hiltViewModel<ItemGridViewModel, ItemGridViewModel.Factory>(
@@ -132,7 +130,8 @@ fun ItemGrid(
                     gridFocusRequester = focusRequester,
                     showJumpButtons = false,
                     showLetterButtons = false,
-                    spacing = 24.dp,
+                    initialPosition = destination.initialPosition,
+                    spacing = destination.viewOptions.spacing.dp,
                     cardContent = @Composable { (item, index, onClick, onLongClick, widthPx, mod) ->
                         GridCard(
                             item = item,
@@ -140,10 +139,10 @@ fun ItemGrid(
                             onLongClick = onLongClick,
                             fillWidth = widthPx,
                             modifier = mod,
-                            imageAspectRatio = AspectRatios.WIDE, // TODO
+                            imageAspectRatio = destination.viewOptions.aspectRatio.ratio,
                         )
                     },
-                    columns = 3,
+                    columns = destination.viewOptions.columns,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

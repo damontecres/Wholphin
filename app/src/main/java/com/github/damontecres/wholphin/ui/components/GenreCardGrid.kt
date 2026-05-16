@@ -242,6 +242,7 @@ fun GenreCardGrid(
     itemId: UUID,
     includeItemTypes: List<BaseItemKind>?,
     modifier: Modifier = Modifier,
+    initialPosition: Int = 0,
     viewModel: GenreViewModel =
         hiltViewModel<GenreViewModel, GenreViewModel.Factory>(
             creationCallback = { it.create(itemId, includeItemTypes) },
@@ -304,7 +305,7 @@ fun GenreCardGrid(
                     showJumpButtons = false,
                     showLetterButtons = true,
                     modifier = Modifier.fillMaxSize(),
-                    initialPosition = 0,
+                    initialPosition = initialPosition,
                     positionCallback = { columns, position ->
                     },
                     columns = columns,

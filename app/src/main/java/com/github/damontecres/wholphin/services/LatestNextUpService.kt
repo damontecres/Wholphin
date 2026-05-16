@@ -70,13 +70,14 @@ class LatestNextUpService
                                     remove(BaseItemKind.EPISODE)
                                 }
                         },
+                    enableTotalRecordCount = false,
                 )
             val items =
                 api.itemsApi
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    .map { BaseItem(it, useSeriesForPrimary) }
             return items
         }
 
@@ -105,13 +106,14 @@ class LatestNextUpService
                     enableUserData = true,
                     enableRewatching = enableRewatching,
                     nextUpDateCutoff = nextUpDateCutoff,
+                    enableTotalRecordCount = false,
                 )
             val nextUp =
                 api.tvShowsApi
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    .map { BaseItem(it, useSeriesForPrimary) }
                     .filter {
                         val seriesId = it.data.seriesId
                         if (seriesId != null && seriesId in removedSeries) {
