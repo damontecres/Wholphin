@@ -1,12 +1,5 @@
 package com.github.damontecres.wholphin.services
 
-import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
-import androidx.lifecycle.asFlow
-import androidx.lifecycle.lifecycleScope
-import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.AuthJellyfinPostRequest
 import com.github.damontecres.wholphin.api.seerr.model.AuthLocalPostRequest
@@ -14,28 +7,22 @@ import com.github.damontecres.wholphin.api.seerr.model.PublicSettings
 import com.github.damontecres.wholphin.api.seerr.model.User
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
-import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
-import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.supervisorScope
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.ImageType
-import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -142,7 +129,7 @@ class SeerrServerRepository
                 serverRepository.currentUser.value?.let { jellyfinUser ->
                     // TODO Need to update server early so that cookies are saved
                     seerrApi.update(server.url, null)
-                    val userConfig = login(seerrApi.api, authMethod, username, password)
+                    val userConfig = seerrLogin(seerrApi.api, authMethod, username, password)
 
                     val user =
                         SeerrUser(
@@ -176,7 +163,7 @@ class SeerrServerRepository
                         .readTimeout(6.seconds)
                         .build(),
                 )
-            login(api, authMethod, username, passwordOrApiKey)
+            seerrLogin(api, authMethod, username, passwordOrApiKey)
             return LoadingState.Success
         }
 
@@ -229,7 +216,7 @@ data class CurrentSeerr(
                 config.hasPermission(SeerrPermission.REQUEST_4K_TV)
 }
 
-private suspend fun login(
+suspend fun seerrLogin(
     client: SeerrApiClient,
     authMethod: SeerrAuthMethod,
     username: String?,
@@ -259,91 +246,6 @@ private suspend fun login(
         SeerrAuthMethod.API_KEY -> {
             client.usersApi.authMeGet()
         }
-    }
-
-/**
- * Listens for JF user switching in the app to also switch the Seerr user/server
- */
-@ActivityScoped
-class UserSwitchListener
-    @Inject
-    constructor(
-        @param:ActivityContext private val context: Context,
-        private val serverRepository: ServerRepository,
-        private val seerrServerRepository: SeerrServerRepository,
-        private val seerrServerDao: SeerrServerDao,
-        private val seerrApi: SeerrApi,
-        private val homeSettingsService: HomeSettingsService,
-    ) {
-        init {
-            context as AppCompatActivity
-            context.lifecycleScope.launchIO {
-                serverRepository.currentUser.asFlow().collect { user ->
-                    Timber.d("New user")
-                    seerrServerRepository.clear()
-                    homeSettingsService.currentSettings.update { HomePageResolvedSettings.EMPTY }
-                    if (user != null) {
-                        switchUser(user)
-                    }
-                }
-            }
-        }
-
-        private suspend fun switchUser(user: JellyfinUser) =
-            supervisorScope {
-                val uiLanguage = user.uiLanguage
-                val localeList =
-                    user.uiLanguage?.let { LocaleListCompat.forLanguageTags(uiLanguage) }
-                        ?: LocaleListCompat.getEmptyLocaleList()
-                Timber.i("Switch locale to %s", localeList)
-                AppCompatDelegate.setApplicationLocales(localeList)
-
-                // Check for home settings
-                launchIO {
-                    homeSettingsService.loadCurrentSettings(user.id)
-                }
-                if (BuildConfig.DISCOVER_ENABLED) {
-                    // Check for seerr server
-                    launchIO {
-                        seerrServerDao
-                            .getUsersByJellyfinUser(user.rowId)
-                            .lastOrNull()
-                            ?.let { seerrUser ->
-                                val server =
-                                    seerrServerDao.getServer(seerrUser.serverId)?.server
-                                if (server != null) {
-                                    Timber.i("Found a seerr user & server")
-                                    try {
-                                        seerrApi.update(server.url, seerrUser.credential)
-                                        val userConfig =
-                                            if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
-                                                login(
-                                                    seerrApi.api,
-                                                    seerrUser.authMethod,
-                                                    seerrUser.username,
-                                                    seerrUser.password,
-                                                )
-                                            } else {
-                                                seerrApi.api.usersApi.authMeGet()
-                                            }
-                                        seerrServerRepository.set(
-                                            server,
-                                            seerrUser,
-                                            userConfig,
-                                        )
-                                    } catch (ex: Exception) {
-                                        Timber.w(
-                                            ex,
-                                            "Error logging into %s",
-                                            server.url,
-                                        )
-                                        seerrServerRepository.error(server, seerrUser, ex)
-                                    }
-                                }
-                            }
-                    }
-                }
-            }
     }
 
 fun CurrentSeerr?.imageUrlBuilder(

@@ -80,6 +80,11 @@ class LocaleChoiceViewModel
             }
         }
 
+        /**
+         * Get the available locales that can be used.
+         *
+         * Defaults to `context.assets.locales` (all locales) if can't find app specific ones
+         */
         private fun extractAvailableLocales(): List<Locale> {
             val id =
                 context.resources.getIdentifier(
@@ -90,6 +95,8 @@ class LocaleChoiceViewModel
             return if (id != 0) {
                 try {
                     val locales = mutableListOf<Locale>()
+                    // This is kind of a hack, the generated locale config is not available,
+                    // programmatically, so this code parses the raw XML
                     context.resources.getXml(id).use { parser ->
                         var eventType: Int = parser.eventType
                         while (eventType != XmlResourceParser.END_DOCUMENT) {
