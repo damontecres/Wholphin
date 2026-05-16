@@ -1,20 +1,26 @@
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -23,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,7 +38,11 @@ import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
+import coil3.compose.useExistingImageAsPlaceholder
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
@@ -42,11 +53,15 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.detail.AlphabetButtons
+import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
-import org.jellyfin.sdk.model.api.BaseItemKind
+import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.extensions.ticks
@@ -81,6 +96,7 @@ fun CollectionFolderList(
     focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val pager = (loadingState as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -88,6 +104,7 @@ fun CollectionFolderList(
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var viewOptions by remember { mutableStateOf(viewOptions) }
     val headerRowFocusRequester = remember { FocusRequester() }
+    val showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME
 
     val gridFocusRequester = remember { FocusRequester() }
     if (pager?.isNotEmpty() == true) {
@@ -97,14 +114,30 @@ fun CollectionFolderList(
             (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
         }
     }
+    val listState = rememberLazyListState()
 
+    var contentHashFocus by remember { mutableStateOf(false) }
     var position by rememberInt(initialPosition)
+    val positionFocusRequester = remember { FocusRequester() }
     val focusedItem = pager?.getOrNull(position)
     if (viewOptions.showDetails || true) {
         LaunchedEffect(focusedItem) {
             focusedItem?.let(onChangeBackdrop)
         }
     }
+
+    fun jumpTo(newPosition: Int) {
+        scope.launch {
+            position = newPosition
+            listState.animateScrollToItem(newPosition)
+            positionFocusRequester.tryRequestFocus()
+        }
+    }
+
+    BackHandler(contentHashFocus && position > 0) {
+        jumpTo(0)
+    }
+
     Column(modifier = modifier) {
         CollectionFolderHeader(
             showHeader = showHeader || loadingState !is DataLoadingState.Success,
@@ -135,25 +168,43 @@ fun CollectionFolderList(
             }
 
             is DataLoadingState.Success<List<BaseItem?>> -> {
+                val pager = state.data
+                val topPadding by animateDpAsState(
+                    targetValue =
+                        when {
+                            showHeader -> 8.dp
+
+                            // showClock-> TODO()
+                            else -> 48.dp
+                        },
+                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier,
+                    modifier =
+                        Modifier
+                            .padding(top = topPadding, bottom = 16.dp)
+                            .onFocusChanged {
+                                contentHashFocus = it.hasFocus
+                            },
                 ) {
                     CollectionFolderListDetails(
                         item = focusedItem,
                         showLogo = true,
                         modifier =
                             Modifier
-                                .padding(8.dp)
                                 .fillMaxWidth(.33f)
                                 .fillMaxHeight()
                                 .background(
-                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    color = Color.Transparent, // MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                                     shape = RoundedCornerShape(16.dp),
                                 ).padding(8.dp),
                     )
                     CollectionFolderContent(
                         items = state.data,
+                        collectionType = item?.data?.collectionType,
+                        listState = listState,
+                        position = position,
+                        positionFocusRequester = positionFocusRequester,
                         onPositionChange = {
                             showHeader = it < 1
                             positionCallback?.invoke(1, it)
@@ -166,12 +217,46 @@ fun CollectionFolderList(
                                 .weight(1f)
                                 .focusRequester(gridFocusRequester),
                     )
+                    val letters = stringResource(R.string.jump_letters)
+                    // Letters
+                    val currentLetter =
+                        remember(focusedItem) {
+                            focusedItem
+                                ?.sortName
+                                ?.firstOrNull()
+                                ?.uppercaseChar()
+                                ?.let {
+                                    when (it) {
+                                        in '0'..'9' -> '#'
+                                        in 'A'..'Z' -> it
+                                        else -> null
+                                    }
+                                }
+                                ?: letters[0]
+                        }
+                    if (showLetterButtons && pager.isNotEmpty()) {
+                        AlphabetButtons(
+                            letters = letters,
+                            currentLetter = currentLetter,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .padding(start = 16.dp),
+                            letterClicked = {
+                                scope.launchIO {
+                                    val position = letterPosition.invoke(it)
+                                    jumpTo(position)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun CollectionFolderListDetails(
     item: BaseItem?,
@@ -184,14 +269,26 @@ fun CollectionFolderListDetails(
             item?.imageUrlOverride ?: imageUrlService.getItemImageUrl(item, ImageType.PRIMARY, useSeriesForPrimary = true)
         }
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier,
     ) {
-        TitleOrLogo(item, showLogo, Modifier.fillMaxWidth())
+        SimpleTitleOrLogo(
+            item,
+            showLogo,
+            Modifier
+                .height(HeaderUtils.logoHeight)
+                .fillMaxWidth(),
+        )
 
         AsyncImage(
-            model = imageUrl,
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(300)
+                    .useExistingImageAsPlaceholder(true)
+                    .build(),
             contentDescription = null,
             modifier =
                 Modifier
@@ -199,9 +296,13 @@ fun CollectionFolderListDetails(
                     .weight(1f),
         )
 
+        item?.let {
+            QuickDetails(item.ui.quickDetails, null)
+        }
+
         OverviewText(
             overview = item?.data?.overview ?: "",
-            maxLines = 4,
+            maxLines = 5,
             onClick = {},
             enabled = false,
             modifier = Modifier,
@@ -214,24 +315,31 @@ fun CollectionFolderListDetails(
 @Composable
 fun CollectionFolderContent(
     items: List<BaseItem?>,
+    collectionType: CollectionType?,
+    listState: LazyListState,
+    position: Int,
+    positionFocusRequester: FocusRequester,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     onPositionChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier,
     ) {
         itemsIndexed(items) { index, item ->
             CollectionFolderListItem(
                 item = item,
+                collectionType = collectionType,
                 onClick = { item?.let { onClickItem.invoke(index, item) } },
-                onLongClick = { item?.let { onClickItem.invoke(index, item) } },
+                onLongClick = { item?.let { onLongClickItem.invoke(index, item) } },
                 modifier =
-                    Modifier.onFocusChanged {
-                        if (it.isFocused) onPositionChange.invoke(index)
-                    },
+                    Modifier
+                        .onFocusChanged {
+                            if (it.isFocused) onPositionChange.invoke(index)
+                        }.ifElse(index == position, Modifier.focusRequester(positionFocusRequester)),
             )
         }
     }
@@ -240,12 +348,13 @@ fun CollectionFolderContent(
 @Composable
 fun CollectionFolderListItem(
     item: BaseItem?,
+    collectionType: CollectionType?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (item?.type) {
-        BaseItemKind.MOVIE -> ListItemMovie(item, onClick, onLongClick, modifier)
+    when (collectionType) {
+        CollectionType.MOVIES -> ListItemMovie(item, onClick, onLongClick, modifier)
         else -> ListItemGeneric(item, onClick, onLongClick, modifier)
     }
 }
