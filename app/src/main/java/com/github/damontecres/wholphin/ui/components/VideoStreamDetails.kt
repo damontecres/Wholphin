@@ -3,7 +3,9 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,7 +71,7 @@ fun VideoStreamDetails(
 ) {
     val context = LocalContext.current
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         val video =
@@ -131,7 +133,7 @@ fun VideoStreamDetails(
             remember(subtitleCount, subtitleStream) {
                 if (subtitleCount > 0 && subtitleStream == null) {
                     disabled = true
-                    context.getString(R.string.disabled)
+                    context.getString(R.string.none)
                 } else if (subtitleCount == 0 || subtitleStream == null) {
                     null
                 } else {
@@ -188,20 +190,21 @@ fun StreamLabel(
                     modifier = Modifier,
                 )
             }
+            val string =
+                remember(text, disabled, count) {
+                    val countToUse = if (disabled) count else count - 1
+                    if (countToUse > 0) {
+                        "$text (+$countToUse)"
+                    } else {
+                        text
+                    }
+                }
             Text(
-                text = text,
+                text = string,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier,
             )
-            val countToUse = if (disabled) count else count - 1
-            if (countToUse > 0) {
-                Text(
-                    text = "(+$countToUse)",
-                    maxLines = 1,
-                    modifier = Modifier,
-                )
-            }
         }
     }
 }
@@ -210,21 +213,38 @@ fun StreamLabel(
 @Composable
 private fun StreamLabelPreview() {
     WholphinTheme(appThemeColors = AppThemeColors.PURPLE) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(8.dp),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            StreamLabel("1080p")
-            StreamLabel("HDR")
-            StreamLabel("H264")
-            StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(8.dp),
+            ) {
+                StreamLabel("1080p")
+                StreamLabel("HDR")
+                StreamLabel("H264")
+                StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
 
-            StreamLabel("PGS", count = 1)
-            StreamLabel("PGS", count = 1, disabled = true)
-            StreamLabel("PGS", count = 2)
+                StreamLabel("PGS", count = 1)
+                StreamLabel("PGS", count = 1, disabled = true)
+                StreamLabel("PGS", count = 2)
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(8.dp)
+                        .fillMaxWidth(.7f),
+            ) {
+                StreamLabel("1080p")
+                StreamLabel("HDR")
+                StreamLabel("English Dolby Atmos 5.1", icon = R.string.fa_volume_high, count = 2)
+                StreamLabel("English SDH SRT", icon = R.string.fa_closed_captioning, count = 35)
+            }
         }
     }
 }
