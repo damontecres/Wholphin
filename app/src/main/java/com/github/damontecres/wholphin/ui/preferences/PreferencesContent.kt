@@ -83,6 +83,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
 
 @Composable
 fun PreferencesContent(
@@ -110,6 +111,7 @@ fun PreferencesContent(
     val seerrConnection by viewModel.seerrConnection.collectAsState()
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
+    var showLocaleChoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -518,6 +520,24 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                AppPreference.UserInterfaceLanguage -> {
+                                    val locale =
+                                        remember(currentUser?.uiLanguage) {
+                                            currentUser?.uiLanguage?.let { Locale.forLanguageTag(it) }
+                                                ?: Locale.getDefault()
+                                        }
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            showLocaleChoiceDialog = true
+                                        },
+                                        modifier = Modifier,
+                                        summary = locale.getDisplayName(locale),
+                                        onLongClick = null,
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+
                                 else -> {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
@@ -692,6 +712,11 @@ fun PreferencesContent(
                 }
             }
         }
+    }
+    if (showLocaleChoiceDialog) {
+        LocaleChoiceDialog(
+            onDismissRequest = { showLocaleChoiceDialog = false },
+        )
     }
 }
 

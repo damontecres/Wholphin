@@ -673,6 +673,13 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.customize_home_summary,
             )
 
+        val UserInterfaceLanguage =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.user_interface_language,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -1079,6 +1086,7 @@ val basicPreferences =
                     AppPreference.RequireProfilePin,
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
+                    AppPreference.UserInterfaceLanguage,
                 ),
         ),
         PreferenceGroup(

@@ -58,6 +58,7 @@ data class JellyfinUser(
     val serverId: UUID,
     val accessToken: String?,
     val pin: String? = null,
+    val uiLanguage: String? = null,
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 

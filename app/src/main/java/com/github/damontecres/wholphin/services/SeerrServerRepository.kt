@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.BuildConfig
@@ -289,6 +291,13 @@ class UserSwitchListener
 
         private suspend fun switchUser(user: JellyfinUser) =
             supervisorScope {
+                val uiLanguage = user.uiLanguage
+                val localeList =
+                    user.uiLanguage?.let { LocaleListCompat.forLanguageTags(uiLanguage) }
+                        ?: LocaleListCompat.getEmptyLocaleList()
+                Timber.i("Switch locale to %s", localeList)
+                AppCompatDelegate.setApplicationLocales(localeList)
+
                 // Check for home settings
                 launchIO {
                     homeSettingsService.loadCurrentSettings(user.id)
