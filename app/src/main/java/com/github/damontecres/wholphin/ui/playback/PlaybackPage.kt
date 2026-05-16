@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -48,8 +47,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -240,26 +241,29 @@ fun PlaybackPageContent(
         skipIndicatorDuration += delta
         skipPosition = player.currentPosition
     }
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
-        PlaybackKeyHandler(
-            player = player,
-            controlsEnabled = nextUp == null,
-            skipWithLeftRight = true,
-            seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-            seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-            getDurationMs = { player.duration.coerceAtLeast(0L) },
-            controllerViewState = controllerViewState,
-            updateSkipIndicator = updateSkipIndicator,
-            skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-            onInteraction = viewModel::reportInteraction,
-            oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
-            onStop = {
-                player.stop()
-                viewModel.navigationManager.goBack()
-            },
-            onPlaybackDialogTypeClick = { playbackDialog = it },
-        )
-
+        remember(isLtr, preferences) {
+            PlaybackKeyHandler(
+                isLtr = isLtr,
+                player = player,
+                controlsEnabled = nextUp == null,
+                skipWithLeftRight = true,
+                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                getDurationMs = { player.duration.coerceAtLeast(0L) },
+                controllerViewState = controllerViewState,
+                updateSkipIndicator = updateSkipIndicator,
+                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                onInteraction = viewModel::reportInteraction,
+                oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
+                onStop = {
+                    player.stop()
+                    viewModel.navigationManager.goBack()
+                },
+                onPlaybackDialogTypeClick = { playbackDialog = it },
+            )
+        }
     val onPlaybackActionClick: (PlaybackAction) -> Unit = {
         when (it) {
             is PlaybackAction.PlaybackSpeed -> {
