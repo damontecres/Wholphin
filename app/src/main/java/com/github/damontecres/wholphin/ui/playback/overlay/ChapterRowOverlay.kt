@@ -22,7 +22,9 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
@@ -47,6 +49,7 @@ fun ChapterRowOverlay(
     onChangeState: (OverlayViewState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val chapterInteractionSources =
         remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -135,7 +138,10 @@ fun ChapterRowOverlay(
                                 index == 0,
                                 Modifier.focusProperties {
                                     // Prevent scrolling left on first card to prevent moving down
-                                    left = FocusRequester.Cancel
+                                    left =
+                                        if (isLtr) FocusRequester.Cancel else FocusRequester.Default
+                                    right =
+                                        if (isLtr) FocusRequester.Default else FocusRequester.Cancel
                                 },
                             ),
                 )
