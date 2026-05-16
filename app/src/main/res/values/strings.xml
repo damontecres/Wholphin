@@ -778,6 +778,9 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
+    <string name="continue_watching_click_behavior">Continue watching/Next up click behavior</string>
+    <string name="continue_watching_click_summary_on">Play on click</string>
+    <string name="continue_watching_click_summary_off">Show details on click</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>

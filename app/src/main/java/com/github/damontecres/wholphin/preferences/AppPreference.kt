@@ -226,6 +226,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val HomeClickToPlay =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.continue_watching_click_behavior,
+                defaultValue = false,
+                getter = { it.homePagePreferences.clickToPlay },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { clickToPlay = value }
+                },
+                summaryOn = R.string.continue_watching_click_summary_on,
+                summaryOff = R.string.continue_watching_click_summary_off,
+            )
+
         val PlayThemeMusic =
             AppChoicePreference<AppPreferences, ThemeSongVolume>(
                 title = R.string.play_theme_music,

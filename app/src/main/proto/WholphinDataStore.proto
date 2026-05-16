@@ -94,6 +94,7 @@ message HomePagePreferences{
   bool enable_rewatching_next_up = 2;
   bool combine_continue_next = 3;
   int32 max_days_next_up = 4;
+  bool click_to_play = 5;
 }
 
 enum ThemeSongVolume {
