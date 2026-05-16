@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -159,14 +160,13 @@ fun DvrSchedule(
             )
             showDialog?.let { item ->
                 ProgramDialog(
-                    item = item,
+                    state = DataLoadingState.Success(item),
                     canRecord = true,
-                    loading = LoadingState.Success,
                     onDismissRequest = {
                         showDialog = null
                     },
-                    onWatch = {
-                        item.data.channelId?.let {
+                    onWatch = { program ->
+                        program.data.channelId?.let {
                             viewModel.navigationManager.navigateTo(
                                 Destination.Playback(
                                     itemId = it,
@@ -175,12 +175,13 @@ fun DvrSchedule(
                             )
                         }
                     },
-                    onRecord = {
+                    onRecord = { _, _ ->
                         // no-op
                     },
-                    onCancelRecord = { series ->
+                    onCancelRecord = { program, series ->
                         showDialog = null
-                        val timerId = if (series) item.data.seriesTimerId else item.data.timerId
+                        val timerId =
+                            if (series) program.data.seriesTimerId else program.data.timerId
                         if (timerId != null) {
                             viewModel.cancelRecording(timerId, series)
                         }
