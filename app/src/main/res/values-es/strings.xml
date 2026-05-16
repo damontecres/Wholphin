@@ -616,4 +616,6 @@
     <string name="skip_behavior">Comportamiento al saltar</string>
     <string name="skip_behavior_summary">Para cabecera, créditos finales, etc</string>
     <string name="cinema_mode">Modo cine</string>
+    <string name="play_with">Reproducir con</string>
+    <string name="transcoding">Transcodificar</string>
 </resources>

@@ -598,4 +598,6 @@
     <string name="show_more">Näita veel: %1$s tk</string>
     <string name="skip_behavior">Käitumine vahelejätmisel</string>
     <string name="skip_behavior_summary">Sissejuhatuste, lõputiitrite jmt jaoks</string>
+    <string name="play_with">Esita rakendusega</string>
+    <string name="transcoding">Teisendan</string>
 </resources>
