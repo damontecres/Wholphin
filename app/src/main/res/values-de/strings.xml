@@ -448,7 +448,7 @@
     <string name="height">Höhe</string>
     <string name="apply_all_rows">Auf alle Reihen anwenden</string>
     <string name="add_row_for">Füge Reihe für %1$s hinzu</string>
-    <string name="overwrite_server_settings">Einstellungen auf dem Server übverschreiben?</string>
+    <string name="overwrite_server_settings">Einstellungen auf dem Server überschreiben?</string>
     <string name="overwrite_local_settings">Lokale Einstellungen überschreiben?</string>
     <string name="suggestions_for">Vorschläge für %1$s</string>
     <string name="send_media_info_log_to_server">Sende Media Info Log zum Server</string>
@@ -531,7 +531,7 @@
     <string name="conductor">Dirigent</string>
     <string name="lyricist">Liedtext-Schreiber</string>
     <string name="artist">Künstler</string>
-    <string name="favorite_items">%s als Favorit speichern</string>
+    <string name="favorite_items">Favorisierte %s</string>
     <string name="home_rows">Startseite - Reihen</string>
     <string name="load_from_server">Vom Server Benutzerprofil laden</string>
     <string name="save_to_server">Im Server Benutzerprofil speichern</string>
