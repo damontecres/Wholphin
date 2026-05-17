@@ -1064,10 +1064,9 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
+                    AppPreference.PlayThemeMusic,
                     AppPreference.SubtitleStyle,
-                    AppPreference.DisplayTogglesPref,
                     AppPreference.ThemeColors,
                     AppPreference.ScreensaverSettings,
                 ),
@@ -1179,13 +1178,13 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.BackdropStylePref,
                         AppPreference.ShowLogos,
                         AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
+                        AppPreference.DisplayTogglesPref,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
-                        AppPreference.ControllerTimeout,
-                        AppPreference.BackdropStylePref,
                         AppPreference.SlideshowDuration,
                         AppPreference.SlideshowPlayVideos,
                     ),
@@ -1197,6 +1196,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.ControllerTimeout,
                         AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
                         AppPreference.SkipSegments,

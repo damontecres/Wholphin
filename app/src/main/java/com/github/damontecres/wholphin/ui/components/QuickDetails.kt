@@ -37,7 +37,7 @@ fun QuickDetails(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
-    val enabled = LocalInterfaceCustomization.current.enabled
+    val enabled = LocalInterfaceCustomization.current.enabledDisplayToggles
     val inlineContentMap = rememberQuickDetailsContentMap(textStyle)
     Row(modifier = modifier) {
         if (details != null) {
