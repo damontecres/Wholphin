@@ -507,10 +507,11 @@ sealed interface AppPreference<Pref, T> {
         val DisplayTogglesPref =
             AppMultiChoicePreference<AppPreferences, DisplayToggle>(
                 title = R.string.display_toggles_title,
-                summary = null,
+                summary = R.string.display_toggles_summary,
                 defaultValue = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
                 allValues = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
                 displayValues = R.array.display_toggle_types,
+                displayValuesSubtitles = R.array.display_toggle_types_subtitles,
                 getter = {
                     it.interfacePreferences.displayTogglesList
                 },
@@ -1344,6 +1345,7 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
+    @param:ArrayRes val displayValuesSubtitles: Int? = null,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

@@ -25,6 +25,7 @@ fun <T> MultiChoicePreference(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     valueDisplay: @Composable (index: Int, item: T) -> Unit = { _, item -> Text(item.toString()) },
+    subtitleDisplay: @Composable (index: Int, item: T) -> Unit = { _, item -> },
 ) {
 //    val values = stringArrayResource(preference.displayValues).toList()
 //    val summary =
@@ -60,6 +61,7 @@ fun <T> MultiChoicePreference(
                         possibleValues.mapIndexed { index, item ->
                             DialogItem(
                                 headlineContent = { valueDisplay.invoke(index, item) },
+                                supportingContent = { subtitleDisplay.invoke(index, item) },
                                 trailingContent = {
                                     Switch(
                                         checked = selectedValues.contains(item),

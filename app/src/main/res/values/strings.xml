@@ -730,6 +730,11 @@
         <item>@string/critic_rating</item>
         <item>@string/community_rating</item>
     </string-array>
+    <string-array name="display_toggle_types_subtitles">
+        <item></item><!-- Intentionally blank -->
+        <item>@string/tomatoes</item>
+        <item>@string/stars</item>
+    </string-array>
 
     <string name="search_for">Search %s</string>
 
@@ -784,7 +789,8 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
-    <string name="display_toggles_title">Customize which ratings to display</string>
+    <string name="display_toggles_title">Ratings display</string>
+    <string name="display_toggles_summary">Customize which to display</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>
@@ -795,4 +801,6 @@
         <item></item><!-- Intentionally blank -->
         <item></item><!-- Intentionally blank -->
     </array>
+    <string name="stars">Stars</string>
+    <string name="tomatoes">Tomatoes</string>
 </resources>
