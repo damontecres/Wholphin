@@ -34,7 +34,7 @@
     <string name="download_and_update"><![CDATA[ดาวน์โหลดและอัปเดต]]></string>
     <string name="downloading">กำลังดาวน์โหลด…</string>
     <string name="enabled">ใช้งาน</string>
-    <string name="ends_at">จบเมื่อ %1$s</string>
+    <string name="ends_at">จบที่เวลา %1$s</string>
     <string name="enter_server_url">ป้อนที่อยู่ IP หรือ URL ของเซิร์ฟเวอร์</string>
     <string name="enter_server_address">ป้อนที่อยู่เซิร์ฟเวอร์</string>
     <string name="episodes">ตอน</string>
@@ -405,7 +405,7 @@
     <string name="no_more_images">ไม่มีรูปถ่ายอีกต่อไป</string>
     <string name="rotate_left">หมุนไปทางซ้าย</string>
     <string name="rotate_right">หมุนไปทางขวา</string>
-    <string name="zoom_in">ขยายเข้า</string>
+    <string name="zoom_in">ซูมเข้า</string>
     <string name="zoom_out">ซูมออก</string>
     <string name="slideshow_duration">ระยะเวลาการแสดงภาพสไลด์</string>
     <string name="play_videos_during_slideshow">เล่นวิดีโอระหว่างการนำเสนอสไลด์</string>
