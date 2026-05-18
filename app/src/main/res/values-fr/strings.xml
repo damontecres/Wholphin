@@ -297,6 +297,7 @@
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
         <item quantity="one">Bonus</item>
+        <item quantity="many">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
@@ -610,4 +611,15 @@
     <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
     <string name="external_player">Lecteur externe</string>
     <string name="system_default">Paramètres système par défaut</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Résultats de recherche combinés</string>
+    <string name="combined_search_results_on">Afficher tous les résultats dans une seule liste</string>
+    <string name="combined_search_results_off">Afficher les résultats par catégorie</string>
+    <string name="results">Résultats</string>
+    <string name="cinema_mode">Mode cinéma</string>
+    <string name="show_more">Afficher %1$s de plus</string>
+    <string name="skip_behavior">Comportement de saut</string>
+    <string name="skip_behavior_summary">Pour les génériques d\'ouverture, les génériques de fin, etc</string>
+    <string name="play_with">Jouer avec</string>
+    <string name="transcoding">Transcodage</string>
 </resources>
