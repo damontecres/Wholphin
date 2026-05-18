@@ -582,4 +582,9 @@
     <string name="play_with">Putar dengan</string>
     <string name="skip_behavior_summary">Untuk intro, kredit, dll</string>
     <string name="skip_behavior">Perilaku lewati</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Hasil pencarian gabungan</string>
+    <string name="combined_search_results_on">Tampilkan semua hasil dalam satu daftar</string>
+    <string name="combined_search_results_off">Tampilkan hasil berdasarkan kategori</string>
+    <string name="results">Hasil</string>
 </resources>
