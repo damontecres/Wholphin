@@ -132,11 +132,18 @@ fun HomePage(
             var position by rememberPosition()
 
             val onFocusPosition = remember { { it: RowColumn -> position = it } }
+            val currentHomePrefs by rememberUpdatedState(preferences.appPreferences.homePagePreferences)
             val onClickItem =
                 remember {
                     { clickedPosition: RowColumn, item: BaseItem ->
                         position = clickedPosition
-                        viewModel.navigationManager.navigateTo(item.destination())
+                        if (currentHomePrefs.clickToPlay &&
+                            homeRows.getOrNull(clickedPosition.row)?.isContinueWatchingNextUp == true
+                        ) {
+                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        } else {
+                            viewModel.navigationManager.navigateTo(item.destination())
+                        }
                     }
                 }
             val onLongClickItem =
@@ -255,6 +262,14 @@ fun HomePage(
         }
     }
 }
+
+val HomeRowLoadingState?.isContinueWatchingNextUp: Boolean
+    get() =
+        (this as? HomeRowLoadingState.Success).let { row ->
+            row?.rowType is HomeRowConfig.ContinueWatching ||
+                row?.rowType is HomeRowConfig.NextUp ||
+                row?.rowType is HomeRowConfig.ContinueWatchingCombined
+        }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
