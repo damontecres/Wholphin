@@ -623,4 +623,7 @@
     <string name="combined_search_results_on">Mostrar todos los resultados en una sola lista</string>
     <string name="combined_search_results_off">Mostrar resultados por categoría</string>
     <string name="results">Resultados</string>
+    <string name="continue_watching_click_behavior">Comportamiento al pulsar en “Seguir viendo” / “Siguiente”</string>
+    <string name="continue_watching_click_summary_on">Reproducir al pulsar</string>
+    <string name="continue_watching_click_summary_off">Ver detalles al pulsar</string>
 </resources>
