@@ -31,7 +31,7 @@ import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.ViewOptions
@@ -165,7 +165,7 @@ fun CollectionFolderLiveTv(
             else -> {
                 val folderIndex = selectedTabIndex - 2
                 if (folderIndex in folders.indices) {
-                    CollectionFolderGrid(
+                    CollectionFolderView(
                         preferences = preferences,
                         onClickItem = onClickItem,
                         itemId = folders[folderIndex].id,

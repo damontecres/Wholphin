@@ -15,6 +15,9 @@ import androidx.tv.material3.ListItemGlow
 import androidx.tv.material3.ListItemScale
 import androidx.tv.material3.ListItemShape
 
+/**
+ * Displays either a [ListItem] or [DenseListItem] based on the dense parameter
+ */
 @Composable
 @NonRestartableComposable
 fun ListItemWrapper(

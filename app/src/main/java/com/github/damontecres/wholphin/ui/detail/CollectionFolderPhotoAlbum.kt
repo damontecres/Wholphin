@@ -12,7 +12,7 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewModel
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
@@ -50,7 +50,7 @@ fun CollectionFolderPhotoAlbum(
         },
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    CollectionFolderGrid(
+    CollectionFolderView(
         preferences = preferences,
         actions =
             remember {
