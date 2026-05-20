@@ -21,7 +21,7 @@ import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.StreamLabel
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import kotlin.time.Duration.Companion.milliseconds
@@ -65,9 +65,8 @@ fun TvGuideHeader(
                     modifier = Modifier.padding(start = HeaderUtils.startPadding),
                 ) {
                     program?.quickDetails?.let {
-                        QuickDetails(
+                        QuickDetailsText(
                             it,
-                            null,
                             modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }

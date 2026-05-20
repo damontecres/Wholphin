@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -275,11 +276,13 @@ fun SeerrDiscoverPage(
                         ?.let(::add)
                 }.let {
                     val rating = focusedItem?.id?.let { ratingMap[it] }
-                    listToDotString(
-                        it,
-                        rating?.audienceRating,
-                        rating?.criticRating?.toFloat(),
-                    )
+                    val str =
+                        listToDotString(
+                            it,
+                            rating?.audienceRating,
+                            rating?.criticRating?.toFloat(),
+                        )
+                    QuickDetailsData(str)
                 }
             }
         HomePageHeader(
