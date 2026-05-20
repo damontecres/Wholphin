@@ -605,4 +605,7 @@
     <string name="combined_search_results_on">Näita kõiki tulemusi ühe loendina</string>
     <string name="combined_search_results_off">Näita tulemusi kategooria alusel</string>
     <string name="results">Tulemused</string>
+    <string name="continue_watching_click_behavior">Jätka vaatamist / järgmisena esitamisel - käitumine klõpsimisel</string>
+    <string name="continue_watching_click_summary_on">Klõpsimisel esita</string>
+    <string name="continue_watching_click_summary_off">Klõpsimisel näita üksikasju</string>
 </resources>
