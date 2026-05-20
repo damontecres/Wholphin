@@ -587,4 +587,7 @@
     <string name="combined_search_results_on">在单个列表中显示所有结果</string>
     <string name="combined_search_results_off">按类别显示结果</string>
     <string name="results">结果</string>
+    <string name="continue_watching_click_behavior">点击继续观看/即将播放时的行为</string>
+    <string name="continue_watching_click_summary_on">点击时播放</string>
+    <string name="continue_watching_click_summary_off">点击时显示详情</string>
 </resources>
