@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
+import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.AlphabetButtons
@@ -70,6 +71,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -379,6 +381,7 @@ fun CollectionFolderListItem(
     when (collectionType) {
         CollectionType.MOVIES -> ListItemMovie(dense, item, onClick, onLongClick, modifier)
         CollectionType.TVSHOWS -> ListItemSeries(dense, item, onClick, onLongClick, modifier)
+        CollectionType.MUSIC -> ListItemAlbum(dense, item, onClick, onLongClick, modifier)
         else -> ListItemGeneric(dense, item, onClick, onLongClick, modifier)
     }
 }
@@ -399,6 +402,9 @@ fun ListItemGeneric(
         onClick = onClick,
         onLongClick = onLongClick,
         leadingContent = {
+            if (item?.favorite == true) {
+                FavoriteIndicator()
+            }
         },
         headlineContent = { TitleContent(item?.title, interactionSource) },
         supportingContent =
@@ -420,7 +426,7 @@ fun ListItemGeneric(
                         ?.toString() ?: "",
             )
         },
-        scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
+        scale = scale,
         colors = listItemColors(),
         interactionSource = interactionSource,
         modifier = modifier,
@@ -437,11 +443,21 @@ fun ListItemMovie(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val title =
-        remember(item) {
-            if (item != null && item.title != null && item.data.productionYear != null) {
+        remember(item, dense) {
+            if (dense && item != null && item.title != null && item.data.productionYear != null) {
                 "${item.title} (${ item.data.productionYear})"
             } else {
                 item?.title ?: ""
+            }
+        }
+    val supportingContent =
+        remember(item, dense) {
+            if (!dense) {
+                @Composable {
+                    Text(item?.subtitle ?: "")
+                }
+            } else {
+                null
             }
         }
     ListItemWrapper(
@@ -451,24 +467,32 @@ fun ListItemMovie(
         onClick = onClick,
         onLongClick = onLongClick,
         leadingContent = {
-            if (item?.played == true) {
-                WatchedIcon()
+            if (item?.favorite == true) {
+                FavoriteIndicator()
             }
         },
         headlineContent = { TitleContent(title, interactionSource) },
-        supportingContent = null,
+        supportingContent = supportingContent,
         trailingContent = {
-            Text(
-                text =
-                    item
-                        ?.data
-                        ?.runTimeTicks
-                        ?.ticks
-                        ?.roundMinutes
-                        ?.toString() ?: "",
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text =
+                        item
+                            ?.data
+                            ?.runTimeTicks
+                            ?.ticks
+                            ?.roundMinutes
+                            ?.toString() ?: "",
+                )
+                if (item?.played == true) {
+                    WatchedIcon(padding = 0.dp)
+                }
+            }
         },
-        scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
+        scale = scale,
         colors = listItemColors(),
         interactionSource = interactionSource,
         modifier = modifier,
@@ -506,6 +530,17 @@ fun ListItemSeries(
                 null
             }
         }
+    val trailingContent =
+        remember(item) {
+            val unplayedItemCount = item?.data?.userData?.unplayedItemCount
+            if (unplayedItemCount != null && unplayedItemCount > 0) {
+                @Composable { Text(unplayedItemCount.toString()) }
+            } else if (item?.played == true) {
+                @Composable { WatchedIcon(padding = 0.dp) }
+            } else {
+                null
+            }
+        }
     ListItemWrapper(
         dense = dense,
         selected = false,
@@ -513,23 +548,93 @@ fun ListItemSeries(
         onClick = onClick,
         onLongClick = onLongClick,
         leadingContent = {
-            if (item?.played == true) {
-                WatchedIcon()
+            if (item?.favorite == true) {
+                FavoriteIndicator()
+            }
+        },
+        headlineContent = {
+            TitleContent(title, interactionSource)
+        },
+        supportingContent = supportingContent,
+        trailingContent = trailingContent,
+        scale = scale,
+        colors = listItemColors(),
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ListItemAlbum(
+    dense: Boolean,
+    item: BaseItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val title =
+        remember(item, dense) {
+            if (dense && item != null && item.title != null && item.data.productionYear != null) {
+                "${item.title} (${item.data.productionYear})"
+            } else {
+                item?.title ?: ""
+            }
+        }
+    val supportingContent =
+        remember(item, dense) {
+            if (!dense && item?.subtitle != null) {
+                @Composable {
+                    Text(item.subtitle ?: "")
+                }
+            } else {
+                null
+            }
+        }
+    val overlineContent =
+        remember(item, dense) {
+            if (!dense && item?.data?.albumArtist != null) {
+                @Composable {
+                    Text(item.data.albumArtist ?: "")
+                }
+            } else {
+                null
+            }
+        }
+    val trailingContent =
+        remember(item) {
+            if (item?.type == BaseItemKind.MUSIC_ALBUM) {
+                @Composable {
+                    Text(
+                        text =
+                            item
+                                .data
+                                .runTimeTicks
+                                ?.ticks
+                                ?.roundMinutes
+                                ?.toString() ?: "",
+                    )
+                }
+            } else {
+                null
+            }
+        }
+    ListItemWrapper(
+        dense = dense,
+        selected = false,
+        enabled = true,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        leadingContent = {
+            if (item?.favorite == true) {
+                FavoriteIndicator()
             }
         },
         headlineContent = { TitleContent(title, interactionSource) },
         supportingContent = supportingContent,
-        trailingContent = {
-            Text(
-                text =
-                    item
-                        ?.data
-                        ?.userData
-                        ?.unplayedItemCount
-                        ?.toString() ?: "",
-            )
-        },
-        scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
+        trailingContent = trailingContent,
+        overlineContent = overlineContent,
+        scale = scale,
         colors = listItemColors(),
         interactionSource = interactionSource,
         modifier = modifier,
@@ -572,3 +677,5 @@ fun listItemColors() =
                 .surfaceColorAtElevation(1.dp)
                 .copy(alpha = .5f),
     )
+
+private val scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f)
