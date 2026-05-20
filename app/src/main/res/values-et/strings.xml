@@ -608,4 +608,10 @@
     <string name="continue_watching_click_behavior">Jätka vaatamist / järgmisena esitamisel - käitumine klõpsimisel</string>
     <string name="continue_watching_click_summary_on">Klõpsimisel esita</string>
     <string name="continue_watching_click_summary_off">Klõpsimisel näita üksikasju</string>
+    <string name="require_login">Eelda profiili jaoks sisselogimist</string>
+    <string name="display_toggles_title">Hinnangute kuvamine</string>
+    <string name="display_toggles_summary">Kohenda kuvatavat</string>
+    <string name="profile_protection">Profiili kaitse</string>
+    <string name="stars">Tärne</string>
+    <string name="tomatoes">Tomateid</string>
 </resources>
