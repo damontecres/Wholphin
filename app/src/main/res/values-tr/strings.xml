@@ -614,4 +614,13 @@
     <string name="combined_search_results_on">Tüm sonuçları tek listede göster</string>
     <string name="combined_search_results_off">Sonuçları kategoriye göre göster</string>
     <string name="results">Sonuçlar</string>
+    <string name="require_login">Profil için giriş zorunlu olsun</string>
+    <string name="display_toggles_title">Puanlama gösterimi</string>
+    <string name="display_toggles_summary">Nelerin görüntüleneceğini özelleştir</string>
+    <string name="profile_protection">Profil koruması</string>
+    <string name="continue_watching_click_behavior">İzlemeye Devam Et/Sıradaki Bölümler tıklama davranışı</string>
+    <string name="continue_watching_click_summary_on">Tıklayınca oynat</string>
+    <string name="continue_watching_click_summary_off">Tıklayınca detayları göster</string>
+    <string name="stars">Yıldızlar</string>
+    <string name="tomatoes">Domatesler</string>
 </resources>
