@@ -226,6 +226,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val HomeClickToPlay =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.continue_watching_click_behavior,
+                defaultValue = false,
+                getter = { it.homePagePreferences.clickToPlay },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { clickToPlay = value }
+                },
+                summaryOn = R.string.continue_watching_click_summary_on,
+                summaryOff = R.string.continue_watching_click_summary_off,
+            )
+
         val PlayThemeMusic =
             AppChoicePreference<AppPreferences, ThemeSongVolume>(
                 title = R.string.play_theme_music,
@@ -921,9 +933,9 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val RequireProfilePin =
+        val ProtectProfilePreference =
             AppClickablePreference<AppPreferences>(
-                title = R.string.require_pin_code,
+                title = R.string.profile_protection,
             )
 
         val ImageDiskCacheSize =
@@ -1095,7 +1107,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    AppPreference.RequireProfilePin,
+                    AppPreference.ProtectProfilePreference,
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),

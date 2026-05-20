@@ -434,8 +434,11 @@ class MainActivityViewModel
                     appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
-                    if (prefs.signInAutomatically && !userHasPin) {
+                    val allowAutoSignIn =
+                        serverRepository.currentUser.value?.let {
+                            !it.hasPin && !it.requireLogin
+                        } == true
+                    if (prefs.signInAutomatically && allowAutoSignIn) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),

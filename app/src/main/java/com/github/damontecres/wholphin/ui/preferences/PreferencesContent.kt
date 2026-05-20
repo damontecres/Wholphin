@@ -67,7 +67,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
@@ -391,16 +390,45 @@ fun PreferencesContent(
                                     )
                                 }
 
-                                AppPreference.RequireProfilePin -> {
-                                    SwitchPreference(
+                                AppPreference.ProtectProfilePreference -> {
+                                    val summary =
+                                        when {
+                                            currentUser?.requireLogin == true -> R.string.require_login
+                                            currentUser?.hasPin == true -> R.string.require_pin_code
+                                            else -> R.string.none
+                                        }
+                                    ChoicePreference(
                                         title = stringResource(pref.title),
-                                        value = currentUser?.pin.isNotNullOrBlank(),
-                                        onClick = {
-                                            showPinFlow = true
+                                        summary = stringResource(summary),
+                                        possibleValues =
+                                            listOf(
+                                                stringResource(R.string.none),
+                                                stringResource(R.string.require_pin_code),
+                                                stringResource(R.string.require_login),
+                                            ),
+                                        selectedIndex =
+                                            when {
+                                                currentUser?.requireLogin == true -> ProfileProtection.LOGIN
+                                                currentUser?.hasPin == true -> ProfileProtection.PIN
+                                                else -> ProfileProtection.NONE
+                                            }.ordinal,
+                                        onValueChange = {
+                                            currentUser?.let { user ->
+                                                when (ProfileProtection.entries[it]) {
+                                                    ProfileProtection.NONE -> {
+                                                        viewModel.removeLoginAndPin(user)
+                                                    }
+
+                                                    ProfileProtection.PIN -> {
+                                                        showPinFlow = true
+                                                    }
+
+                                                    ProfileProtection.LOGIN -> {
+                                                        viewModel.setRequireLogin(user)
+                                                    }
+                                                }
+                                            }
                                         },
-                                        summaryOn = stringResource(R.string.enabled),
-                                        summaryOff = null,
-                                        modifier = Modifier,
                                     )
                                 }
 
