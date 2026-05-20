@@ -8,6 +8,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -58,12 +61,14 @@ import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.AlphabetButtons
+import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -335,15 +340,23 @@ fun CollectionFolderContent(
     LazyColumn(
         state = listState,
         verticalArrangement = Arrangement.spacedBy(viewOptions.spacing.dp),
-        modifier = modifier,
+        modifier = modifier.focusRestorer(positionFocusRequester),
     ) {
         itemsIndexed(items) { index, item ->
+            val onClick: () -> Unit =
+                remember(index, item) {
+                    { item?.let { onClickItem.invoke(index, item) } }
+                }
+            val onLongClick: () -> Unit =
+                remember(index, item) {
+                    { item?.let { onLongClickItem.invoke(index, item) } }
+                }
             CollectionFolderListItem(
                 item = item,
                 dense = viewOptions.type == ViewOptionsType.DENSE_LIST,
                 collectionType = collectionType,
-                onClick = { item?.let { onClickItem.invoke(index, item) } },
-                onLongClick = { item?.let { onLongClickItem.invoke(index, item) } },
+                onClick = onClick,
+                onLongClick = onLongClick,
                 modifier =
                     Modifier
                         .onFocusChanged {
@@ -365,6 +378,7 @@ fun CollectionFolderListItem(
 ) {
     when (collectionType) {
         CollectionType.MOVIES -> ListItemMovie(dense, item, onClick, onLongClick, modifier)
+        CollectionType.TVSHOWS -> ListItemSeries(dense, item, onClick, onLongClick, modifier)
         else -> ListItemGeneric(dense, item, onClick, onLongClick, modifier)
     }
 }
@@ -376,6 +390,7 @@ fun ListItemGeneric(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     ListItemWrapper(
         dense = dense,
@@ -385,11 +400,7 @@ fun ListItemGeneric(
         onLongClick = onLongClick,
         leadingContent = {
         },
-        headlineContent = {
-            Text(
-                text = item?.title ?: "",
-            )
-        },
+        headlineContent = { TitleContent(item?.title, interactionSource) },
         supportingContent =
             item?.subtitle?.let { subtitle ->
                 {
@@ -410,13 +421,8 @@ fun ListItemGeneric(
             )
         },
         scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
-        colors =
-            ListItemDefaults.colors(
-                containerColor =
-                    MaterialTheme.colorScheme
-                        .surfaceColorAtElevation(1.dp)
-                        .copy(alpha = .5f),
-            ),
+        colors = listItemColors(),
+        interactionSource = interactionSource,
         modifier = modifier,
     )
 }
@@ -428,6 +434,7 @@ fun ListItemMovie(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val title =
         remember(item) {
@@ -448,11 +455,7 @@ fun ListItemMovie(
                 WatchedIcon()
             }
         },
-        headlineContent = {
-            Text(
-                text = title,
-            )
-        },
+        headlineContent = { TitleContent(title, interactionSource) },
         supportingContent = null,
         trailingContent = {
             Text(
@@ -466,13 +469,106 @@ fun ListItemMovie(
             )
         },
         scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
-        colors =
-            ListItemDefaults.colors(
-                containerColor =
-                    MaterialTheme.colorScheme
-                        .surfaceColorAtElevation(1.dp)
-                        .copy(alpha = .5f),
-            ),
+        colors = listItemColors(),
+        interactionSource = interactionSource,
         modifier = modifier,
     )
 }
+
+@Composable
+fun ListItemSeries(
+    dense: Boolean,
+    item: BaseItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val title =
+        remember(item, dense) {
+            if (item != null) {
+                if (dense) {
+                    "${item.title} (${item.subtitle})"
+                } else {
+                    item.title ?: ""
+                }
+            } else {
+                ""
+            }
+        }
+    val supportingContent =
+        remember(item, dense) {
+            if (!dense) {
+                @Composable {
+                    Text(item?.subtitle ?: "")
+                }
+            } else {
+                null
+            }
+        }
+    ListItemWrapper(
+        dense = dense,
+        selected = false,
+        enabled = true,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        leadingContent = {
+            if (item?.played == true) {
+                WatchedIcon()
+            }
+        },
+        headlineContent = { TitleContent(title, interactionSource) },
+        supportingContent = supportingContent,
+        trailingContent = {
+            Text(
+                text =
+                    item
+                        ?.data
+                        ?.userData
+                        ?.unplayedItemCount
+                        ?.toString() ?: "",
+            )
+        },
+        scale = ListItemDefaults.scale(focusedScale = 1f, pressedScale = .95f),
+        colors = listItemColors(),
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun TitleContent(
+    title: String?,
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier = Modifier,
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    var focusedAfterDelay by remember { mutableStateOf(false) }
+
+    val hideOverlayDelay = 500L
+    if (focused) {
+        LaunchedEffect(Unit) {
+            delay(hideOverlayDelay)
+            if (focused) {
+                focusedAfterDelay = true
+            } else {
+                focusedAfterDelay = false
+            }
+        }
+    } else {
+        focusedAfterDelay = false
+    }
+    Text(
+        text = title ?: "",
+        modifier = modifier.enableMarquee(focusedAfterDelay),
+    )
+}
+
+@Composable
+fun listItemColors() =
+    ListItemDefaults.colors(
+        containerColor =
+            MaterialTheme.colorScheme
+                .surfaceColorAtElevation(1.dp)
+                .copy(alpha = .5f),
+    )

@@ -226,7 +226,13 @@ data class ViewOptions(
                 displayValues = R.array.view_options_types,
                 getter = { it.type },
                 setter = { viewOptions, value ->
-                    viewOptions.copy(type = value)
+                    val spacing =
+                        when (value) {
+                            ViewOptionsType.GRID -> 16
+                            ViewOptionsType.LIST -> 4
+                            ViewOptionsType.DENSE_LIST -> 2
+                        }
+                    viewOptions.copy(type = value, spacing = spacing)
                 },
                 indexToValue = { ViewOptionsType.entries[it] },
                 valueToIndex = { it.ordinal },
