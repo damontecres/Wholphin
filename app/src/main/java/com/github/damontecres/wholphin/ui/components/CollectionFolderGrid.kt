@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -109,6 +110,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -169,7 +171,7 @@ class CollectionFolderViewModel
         val backgroundLoading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
-        val viewOptions = MutableLiveData<ViewOptions>()
+        val viewOptions = MutableStateFlow<ViewOptions>(defaultViewOptions)
 
         var position: Int
             get() = savedStateHandle.get<Int>("position") ?: 0
@@ -190,9 +192,8 @@ class CollectionFolderViewModel
                         serverRepository.currentUser.value?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)
                         }
-                    this@CollectionFolderViewModel.viewOptions.setValueOnMain(
-                        libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
-                    )
+                    this@CollectionFolderViewModel.viewOptions.value =
+                        libraryDisplayInfo?.viewOptions ?: defaultViewOptions
 
                     val sortAndDirection =
                         if (collectionFilter.useSavedLibraryDisplayInfo) {
@@ -274,7 +275,7 @@ class CollectionFolderViewModel
             this.viewOptions.value = viewOptions
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
-                if (!viewOptions.showDetails) {
+                if (!viewOptions.showBackdrop) {
                     backdropService.clearBackdrop()
                 }
             }
@@ -663,12 +664,13 @@ fun CollectionFolderGrid(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
-    val viewOptions by viewModel.viewOptions.observeAsState(defaultViewOptions)
+    val viewOptions by viewModel.viewOptions.collectAsState()
 
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    var showViewOptions by rememberSaveable { mutableStateOf(false) }
 
     val contextActions =
         remember {
@@ -788,43 +790,81 @@ fun CollectionFolderGrid(
                         viewModel.release()
                     }
                 }
-                CollectionFolderList(
-                    preferences = preferences,
-                    initialPosition = viewModel.position,
-                    item = item,
-                    title = title,
-                    loadingState = state as DataLoadingState<List<BaseItem?>>,
-                    sortAndDirection = sortAndDirection!!,
-                    modifier = Modifier.fillMaxSize(),
-                    focusRequesterOnEmpty = focusRequesterOnEmpty,
-                    onClickItem = gridActions.onClickItem,
-                    onLongClickItem = gridActions.onLongClickItem!!,
-                    onSortChange = {
-                        viewModel.onSortChange(it, recursive, filter)
-                    },
-                    filterOptions = filterOptions,
-                    currentFilter = filter,
-                    onFilterChange = {
-                        viewModel.onFilterChange(it, recursive)
-                    },
-                    getPossibleFilterValues = {
-                        viewModel.getFilterOptionValues(it)
-                    },
-                    showTitle = showTitle,
-                    sortOptions = sortOptions,
-                    positionCallback = { columns, position ->
-                        viewModel.position = position
-                        positionCallback?.invoke(columns, position)
-                    },
-                    letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                    viewOptions = viewOptions,
-                    defaultViewOptions = defaultViewOptions,
-                    onSaveViewOptions = { viewModel.saveViewOptions(it) },
-                    onChangeBackdrop = viewModel::updateBackdrop,
-                    playEnabled = playEnabled,
-                    onClickPlay = gridActions.onClickPlayRemoteButton!!,
-                    onClickPlayAll = gridActions.onClickPlayAll!!,
-                )
+                if (viewOptions.type == ViewOptionsType.GRID) {
+                    CollectionFolderGridContent(
+                        preferences = preferences,
+                        initialPosition = viewModel.position,
+                        item = item,
+                        title = title,
+                        loadingState = state as DataLoadingState<List<BaseItem?>>,
+                        sortAndDirection = sortAndDirection!!,
+                        modifier = Modifier.fillMaxSize(),
+                        focusRequesterOnEmpty = focusRequesterOnEmpty,
+                        onClickItem = gridActions.onClickItem,
+                        onLongClickItem = gridActions.onLongClickItem!!,
+                        onSortChange = {
+                            viewModel.onSortChange(it, recursive, filter)
+                        },
+                        filterOptions = filterOptions,
+                        currentFilter = filter,
+                        onFilterChange = {
+                            viewModel.onFilterChange(it, recursive)
+                        },
+                        getPossibleFilterValues = {
+                            viewModel.getFilterOptionValues(it)
+                        },
+                        showTitle = showTitle,
+                        sortOptions = sortOptions,
+                        positionCallback = { columns, position ->
+                            viewModel.position = position
+                            positionCallback?.invoke(columns, position)
+                        },
+                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                        viewOptions = viewOptions,
+                        onChangeBackdrop = viewModel::updateBackdrop,
+                        playEnabled = playEnabled,
+                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                        onClickPlayAll = gridActions.onClickPlayAll!!,
+                        onClickShowViewOptions = { showViewOptions = true },
+                    )
+                } else {
+                    CollectionFolderList(
+                        preferences = preferences,
+                        initialPosition = viewModel.position,
+                        item = item,
+                        title = title,
+                        loadingState = state as DataLoadingState<List<BaseItem?>>,
+                        sortAndDirection = sortAndDirection!!,
+                        modifier = Modifier.fillMaxSize(),
+                        focusRequesterOnEmpty = focusRequesterOnEmpty,
+                        onClickItem = gridActions.onClickItem,
+                        onLongClickItem = gridActions.onLongClickItem!!,
+                        onSortChange = {
+                            viewModel.onSortChange(it, recursive, filter)
+                        },
+                        filterOptions = filterOptions,
+                        currentFilter = filter,
+                        onFilterChange = {
+                            viewModel.onFilterChange(it, recursive)
+                        },
+                        getPossibleFilterValues = {
+                            viewModel.getFilterOptionValues(it)
+                        },
+                        showTitle = showTitle,
+                        sortOptions = sortOptions,
+                        positionCallback = { columns, position ->
+                            viewModel.position = position
+                            positionCallback?.invoke(columns, position)
+                        },
+                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                        viewOptions = viewOptions,
+                        onChangeBackdrop = viewModel::updateBackdrop,
+                        playEnabled = playEnabled,
+                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                        onClickPlayAll = gridActions.onClickPlayAll!!,
+                        onClickShowViewOptions = { showViewOptions = true },
+                    )
+                }
 
                 AnimatedVisibility(
                     backgroundLoading == LoadingState.Loading,
@@ -880,6 +920,17 @@ fun CollectionFolderGrid(
             elevation = 3.dp,
         )
     }
+    AnimatedVisibility(showViewOptions) {
+        ViewOptionsDialog(
+            viewOptions = viewOptions,
+            defaultViewOptions = defaultViewOptions,
+            onDismissRequest = {
+                showViewOptions = false
+                viewModel.saveViewOptions(viewOptions)
+            },
+            onViewOptionsChange = viewModel::saveViewOptions,
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -897,12 +948,11 @@ fun CollectionFolderGridContent(
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    defaultViewOptions: ViewOptions,
-    onSaveViewOptions: (ViewOptions) -> Unit,
     viewOptions: ViewOptions,
     onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    onClickShowViewOptions: () -> Unit,
     initialPosition: Int,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
@@ -916,8 +966,6 @@ fun CollectionFolderGridContent(
 
     val pager = (loadingState as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
-    var showViewOptions by rememberSaveable { mutableStateOf(false) }
-    var viewOptions by remember { mutableStateOf(viewOptions) }
     val headerRowFocusRequester = remember { FocusRequester() }
 
     val gridFocusRequester = remember { FocusRequester() }
@@ -932,7 +980,7 @@ fun CollectionFolderGridContent(
 
     var position by rememberInt(initialPosition)
     val focusedItem = pager?.getOrNull(position)
-    if (viewOptions.showDetails) {
+    if (viewOptions.showBackdrop) {
         LaunchedEffect(focusedItem) {
             focusedItem?.let(onChangeBackdrop)
         }
@@ -952,7 +1000,7 @@ fun CollectionFolderGridContent(
                 onSortChange = onSortChange,
                 sortOptions = sortOptions,
                 getPossibleFilterValues = getPossibleFilterValues,
-                onClickShowViewOptions = { showViewOptions = true },
+                onClickShowViewOptions = onClickShowViewOptions,
                 onClickPlayAll = onClickPlayAll,
                 currentFilter = currentFilter,
                 filterOptions = filterOptions,
@@ -1026,17 +1074,6 @@ fun CollectionFolderGridContent(
                                 }
                             },
                     )
-                    AnimatedVisibility(showViewOptions) {
-                        ViewOptionsDialog(
-                            viewOptions = viewOptions,
-                            defaultViewOptions = defaultViewOptions,
-                            onDismissRequest = {
-                                showViewOptions = false
-                                onSaveViewOptions.invoke(viewOptions)
-                            },
-                            onViewOptionsChange = { viewOptions = it },
-                        )
-                    }
                 }
             }
         }

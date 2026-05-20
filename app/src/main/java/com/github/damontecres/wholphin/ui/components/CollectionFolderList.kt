@@ -1,7 +1,12 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.DenseListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -80,12 +84,11 @@ fun CollectionFolderList(
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    defaultViewOptions: ViewOptions,
-    onSaveViewOptions: (ViewOptions) -> Unit,
     viewOptions: ViewOptions,
     onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    onClickShowViewOptions: () -> Unit,
     initialPosition: Int,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
@@ -100,9 +103,6 @@ fun CollectionFolderList(
 
     val pager = (loadingState as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
-    var showDetails by rememberSaveable { mutableStateOf(true) }
-    var showViewOptions by rememberSaveable { mutableStateOf(false) }
-    var viewOptions by remember { mutableStateOf(viewOptions) }
     val headerRowFocusRequester = remember { FocusRequester() }
     val showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME
 
@@ -120,7 +120,7 @@ fun CollectionFolderList(
     var position by rememberInt(initialPosition)
     val positionFocusRequester = remember { FocusRequester() }
     val focusedItem = pager?.getOrNull(position)
-    if (viewOptions.showDetails || true) {
+    if (viewOptions.showBackdrop) {
         LaunchedEffect(focusedItem) {
             focusedItem?.let(onChangeBackdrop)
         }
@@ -148,7 +148,7 @@ fun CollectionFolderList(
             onSortChange = onSortChange,
             sortOptions = sortOptions,
             getPossibleFilterValues = getPossibleFilterValues,
-            onClickShowViewOptions = { showViewOptions = true },
+            onClickShowViewOptions = onClickShowViewOptions,
             onClickPlayAll = onClickPlayAll,
             currentFilter = currentFilter,
             filterOptions = filterOptions,
@@ -187,20 +187,27 @@ fun CollectionFolderList(
                                 contentHashFocus = it.hasFocus
                             },
                 ) {
-                    CollectionFolderListDetails(
-                        item = focusedItem,
-                        showLogo = true,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth(.33f)
-                                .fillMaxHeight()
-                                .background(
-                                    color = Color.Transparent, // MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                ).padding(8.dp),
-                    )
+                    AnimatedVisibility(
+                        visible = viewOptions.showDetails,
+                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),
+                    ) {
+                        CollectionFolderListDetails(
+                            item = focusedItem,
+                            showLogo = true,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth(.33f)
+                                    .fillMaxHeight()
+                                    .background(
+                                        color = Color.Transparent, // MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                    ).padding(8.dp),
+                        )
+                    }
                     CollectionFolderContent(
                         items = state.data,
+                        viewOptions = viewOptions,
                         collectionType = item?.data?.collectionType,
                         listState = listState,
                         position = position,
@@ -315,6 +322,7 @@ fun CollectionFolderListDetails(
 @Composable
 fun CollectionFolderContent(
     items: List<BaseItem?>,
+    viewOptions: ViewOptions,
     collectionType: CollectionType?,
     listState: LazyListState,
     position: Int,
@@ -326,12 +334,13 @@ fun CollectionFolderContent(
 ) {
     LazyColumn(
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(viewOptions.spacing.dp),
         modifier = modifier,
     ) {
         itemsIndexed(items) { index, item ->
             CollectionFolderListItem(
                 item = item,
+                dense = viewOptions.type == ViewOptionsType.DENSE_LIST,
                 collectionType = collectionType,
                 onClick = { item?.let { onClickItem.invoke(index, item) } },
                 onLongClick = { item?.let { onLongClickItem.invoke(index, item) } },
@@ -348,25 +357,28 @@ fun CollectionFolderContent(
 @Composable
 fun CollectionFolderListItem(
     item: BaseItem?,
+    dense: Boolean,
     collectionType: CollectionType?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (collectionType) {
-        CollectionType.MOVIES -> ListItemMovie(item, onClick, onLongClick, modifier)
-        else -> ListItemGeneric(item, onClick, onLongClick, modifier)
+        CollectionType.MOVIES -> ListItemMovie(dense, item, onClick, onLongClick, modifier)
+        else -> ListItemGeneric(dense, item, onClick, onLongClick, modifier)
     }
 }
 
 @Composable
 fun ListItemGeneric(
+    dense: Boolean,
     item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DenseListItem(
+    ListItemWrapper(
+        dense = dense,
         selected = false,
         enabled = true,
         onClick = onClick,
@@ -411,6 +423,7 @@ fun ListItemGeneric(
 
 @Composable
 fun ListItemMovie(
+    dense: Boolean,
     item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -424,7 +437,8 @@ fun ListItemMovie(
                 item?.title ?: ""
             }
         }
-    DenseListItem(
+    ListItemWrapper(
+        dense = dense,
         selected = false,
         enabled = true,
         onClick = onClick,

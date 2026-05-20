@@ -42,7 +42,7 @@ import org.jellyfin.sdk.model.api.ImageType
 /**
  * A dialog that shows the controls for making changes to a [ViewOptions] object. The caller must manage the state of the [ViewOptions].
  *
- * It displays the [AppPreference] objects from [ViewOptions.OPTIONS]
+ * It displays the [AppPreference] objects from [ViewOptions.GRID_OPTIONS]
  */
 @Composable
 fun ViewOptionsDialog(
@@ -66,6 +66,14 @@ fun ViewOptionsDialog(
             window.setGravity(Gravity.END)
             window.setDimAmount(0f)
         }
+        val options =
+            remember(viewOptions.type) {
+                when (viewOptions.type) {
+                    ViewOptionsType.GRID -> ViewOptions.GRID_OPTIONS
+                    ViewOptionsType.LIST -> ViewOptions.LIST_OPTIONS
+                    ViewOptionsType.DENSE_LIST -> ViewOptions.LIST_OPTIONS
+                }
+            }
         LazyColumn(
             state = columnState,
             contentPadding = PaddingValues(16.dp),
@@ -86,7 +94,7 @@ fun ViewOptionsDialog(
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-            items(ViewOptions.OPTIONS) { pref ->
+            items(options, key = { it.title }) { pref ->
                 pref as AppPreference<ViewOptions, Any>
                 val interactionSource = remember { MutableInteractionSource() }
                 val value = pref.getter.invoke(viewOptions)
@@ -122,8 +130,10 @@ data class ViewOptions(
     val contentScale: PrefContentScale = PrefContentScale.FIT,
     val aspectRatio: AspectRatio = AspectRatio.TALL,
     val showDetails: Boolean = false,
+    val showBackdrop: Boolean = false,
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     val showTitles: Boolean = true,
+    val type: ViewOptionsType = ViewOptionsType.GRID,
 ) {
     companion object {
         val ViewOptionsColumns =
@@ -176,6 +186,13 @@ data class ViewOptions(
                 getter = { it.showDetails },
                 setter = { vo, value -> vo.copy(showDetails = value) },
             )
+        val ViewOptionsBackdrop =
+            AppSwitchPreference<ViewOptions>(
+                title = R.string.show_backdrop,
+                defaultValue = false,
+                getter = { it.showBackdrop },
+                setter = { vo, value -> vo.copy(showBackdrop = value) },
+            )
         val ViewOptionsShowTitles =
             AppSwitchPreference<ViewOptions>(
                 title = R.string.show_titles,
@@ -202,20 +219,44 @@ data class ViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        val ViewOptionsTypePref =
+            AppChoicePreference<ViewOptions, ViewOptionsType>(
+                title = R.string.layout,
+                defaultValue = ViewOptionsType.GRID,
+                displayValues = R.array.view_options_types,
+                getter = { it.type },
+                setter = { viewOptions, value ->
+                    viewOptions.copy(type = value)
+                },
+                indexToValue = { ViewOptionsType.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
+
         val ViewOptionsReset =
             AppClickablePreference<ViewOptions>(
                 title = R.string.reset,
             )
 
-        val OPTIONS =
+        val GRID_OPTIONS =
             listOf(
+                ViewOptionsTypePref,
                 ViewOptionsImageType,
                 ViewOptionsAspectRatio,
                 ViewOptionsDetailHeader,
+                ViewOptionsBackdrop,
                 ViewOptionsShowTitles,
                 ViewOptionsColumns,
                 ViewOptionsSpacing,
                 ViewOptionsContentScale,
+                ViewOptionsReset,
+            )
+
+        val LIST_OPTIONS =
+            listOf(
+                ViewOptionsTypePref,
+                ViewOptionsDetailHeader,
+                ViewOptionsBackdrop,
+                ViewOptionsSpacing,
                 ViewOptionsReset,
             )
     }
@@ -248,4 +289,10 @@ enum class ViewOptionImageType(
     PRIMARY(ImageType.PRIMARY),
     THUMB(ImageType.THUMB),
 //    BANNER(ImageType.BANNER),
+}
+
+enum class ViewOptionsType {
+    GRID,
+    LIST,
+    DENSE_LIST,
 }
