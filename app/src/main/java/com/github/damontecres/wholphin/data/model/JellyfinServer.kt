@@ -1,4 +1,4 @@
-@file:UseSerializers(UUIDSerializer::class)
+@file:UseSerializers(UUIDSerializer::class, ZonedDateTimeSerializer::class)
 
 package com.github.damontecres.wholphin.data.model
 
@@ -10,11 +10,13 @@ import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.github.damontecres.wholphin.data.ZonedDateTimeSerializer
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
+import java.time.ZonedDateTime
 import java.util.UUID
 
 /**
@@ -27,6 +29,7 @@ data class JellyfinServer(
     val name: String?,
     val url: String,
     val version: String?,
+    val lastUsed: ZonedDateTime? = null,
 ) {
     @get:Ignore
     val serverVersion: ServerVersion? by lazy { version?.let(ServerVersion::fromString) }
@@ -58,11 +61,14 @@ data class JellyfinUser(
     val serverId: UUID,
     val accessToken: String?,
     val pin: String? = null,
+    @ColumnInfo(defaultValue = "false")
+    val requireLogin: Boolean = false,
+    val lastUsed: ZonedDateTime? = null,
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 
     override fun toString(): String =
-        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
+        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, lastUsed=$lastUsed, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
 }
 
 /**

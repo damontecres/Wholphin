@@ -19,11 +19,19 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.ui.components.ViewOptions
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.serializer.toUUID
 import timber.log.Timber
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Database(
@@ -40,7 +48,7 @@ import java.util.UUID
         SeerrUser::class,
 
     ],
-    version = 31,
+    version = 32,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -55,6 +63,7 @@ import java.util.UUID
         AutoMigration(12, 20),
         AutoMigration(20, 30),
         AutoMigration(30, 31),
+        AutoMigration(31, 32),
     ],
 )
 @TypeConverters(Converters::class)
@@ -116,6 +125,27 @@ class Converters {
             Timber.e(ex, "Error parsing view options")
             null
         }
+
+    @TypeConverter
+    fun convertToString(dateTime: ZonedDateTime): String = DateTimeFormatter.ISO_ZONED_DATE_TIME.format(dateTime)
+
+    @TypeConverter
+    fun convertToLocalDateTime(dateTime: String): ZonedDateTime = ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+}
+
+class ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor(ZonedDateTime::class.qualifiedName!!, PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): ZonedDateTime =
+        ZonedDateTime.parse(decoder.decodeString(), DateTimeFormatter.ISO_ZONED_DATE_TIME)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: ZonedDateTime,
+    ) {
+        encoder.encodeString(DateTimeFormatter.ISO_ZONED_DATE_TIME.format(value))
+    }
 }
 
 object Migrations {
