@@ -68,6 +68,8 @@ class AppPreferencesSerializer
                                                 AppPreference.FfmpegPreference.defaultValue
                                             assPlaybackMode =
                                                 AppPreference.AssSubtitleMode.defaultValue
+                                            spdifArcSurroundAudio =
+                                                AppPreference.SpdifArcSurroundAudio.defaultValue
                                         }.build()
 
                                 mpvOptions =

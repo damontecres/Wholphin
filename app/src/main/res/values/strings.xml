@@ -793,4 +793,7 @@
         <item></item><!-- Intentionally blank -->
         <item></item><!-- Intentionally blank -->
     </array>
+    <string name="spdif_arc_surround_audio">SPDIF/ARC Surround Audio</string>
+    <string name="spdif_arc_surround_audio_summary_on">Force all audio to AC3 5.1 for SPDIF/ARC output</string>
+    <string name="spdif_arc_surround_audio_summary_off">Use default audio settings</string>
 </resources>

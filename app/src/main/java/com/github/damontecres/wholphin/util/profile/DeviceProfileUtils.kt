@@ -71,6 +71,7 @@ fun createDeviceProfile(
     dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
+    spdifArcSurroundAudio: Boolean = false,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -142,7 +143,11 @@ fun createDeviceProfile(
         if (supportsHevc) videoCodec(Codec.Video.HEVC)
         videoCodec(Codec.Video.H264)
 
-        audioCodec(*allowedAudioCodecs)
+        if (spdifArcSurroundAudio) {
+            audioCodec(Codec.Audio.AC3)
+        } else {
+            audioCodec(*allowedAudioCodecs)
+        }
 
         copyTimestamps = false
         enableSubtitlesInManifest = true
@@ -156,7 +161,11 @@ fun createDeviceProfile(
         container = Codec.Container.TS
         protocol = MediaStreamProtocol.HLS
 
-        audioCodec(Codec.Audio.AAC)
+        if (spdifArcSurroundAudio) {
+            audioCodec(Codec.Audio.AC3)
+        } else {
+            audioCodec(Codec.Audio.AAC)
+        }
     }
 
     // / Direct play profiles
@@ -415,6 +424,29 @@ fun createDeviceProfile(
         }
     }
 
+    // SPDIF/ARC mode: restrict non-AC3 multichannel audio to stereo
+    // to force server to transcode only multichannel to AC3
+    if (spdifArcSurroundAudio) {
+        supportedAudioCodecs
+            .filterNot { it == Codec.Audio.AC3 }
+            .forEach { audioCodec ->
+                codecProfile {
+                    type = CodecType.VIDEO_AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+                codecProfile {
+                    type = CodecType.AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+            }
+    }
+
     // / HDR exclude list
 
     // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
@@ -522,7 +554,12 @@ fun createDeviceProfile(
         type = CodecType.VIDEO_AUDIO
 
         conditions {
-            ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals if (downMixAudio) 2 else 8
+            ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals
+                when {
+                    spdifArcSurroundAudio -> 6
+                    downMixAudio -> 2
+                    else -> 8
+                }
         }
     }
 
