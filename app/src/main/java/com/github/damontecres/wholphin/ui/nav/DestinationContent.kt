@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
+import com.github.damontecres.wholphin.ui.detail.HomeRowGrid
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
@@ -289,6 +290,15 @@ fun DestinationContent(
             )
         }
 
+        is Destination.MoreHomeRow -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            HomeRowGrid(
+                preferences = preferences,
+                destination = destination,
+                modifier = modifier,
+            )
+        }
+
         is Destination.Recordings -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             CollectionFolderRecordings(
@@ -299,7 +309,7 @@ fun DestinationContent(
             )
         }
 
-        is Destination.ItemGrid -> {
+        is Destination.ItemGrid<*> -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
                 destination,

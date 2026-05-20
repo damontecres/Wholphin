@@ -123,7 +123,7 @@ fun <T : CardGridItem> CardGrid(
             initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
         }
 
-    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
+    var focusedIndex by rememberSaveable { mutableIntStateOf(startPosition) }
     val currentFocusedIndex by rememberUpdatedState(focusedIndex)
     val gridState =
         rememberLazyGridState(
@@ -338,7 +338,7 @@ fun <T : CardGridItem> CardGrid(
                                     val cardWidth =
                                         ceil((width - (spacingPx * (columns - 1))) / columns)
                                     cardWidthPx = cardWidth.toInt()
-                                    Timber.v("cardWidthPx=%s", cardWidthPx)
+//                                    Timber.v("cardWidthPx=%s", cardWidthPx)
                                 },
                     ) {
                         items(pager.size) { index ->

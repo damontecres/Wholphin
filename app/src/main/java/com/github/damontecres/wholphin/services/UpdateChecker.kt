@@ -340,7 +340,7 @@ class UpdateChecker
                         context.contentResolver.delete(
                             MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                             "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ? AND ${MediaStore.MediaColumns.MIME_TYPE} = ?",
-                            arrayOf(context.getString(R.string.app_name) + "%", APK_MIME_TYPE),
+                            arrayOf("$ASSET_NAME%", APK_MIME_TYPE),
                         )
                     Timber.i("Deleted $deletedRows rows")
                 } else {

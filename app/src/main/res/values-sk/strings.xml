@@ -288,7 +288,7 @@
     <string name="auto_check_for_updates">Automaticky kontrolovať aktualizácie</string>
     <string name="check_for_updates">Skontrolovať aktualizácie</string>
     <string name="combine_continue_next_summary">Platí len pre seriály</string>
-    <string name="direct_play_ass">Priame prehrávanie ASS titulkov</string>
+    <string name="direct_play_ass">Použiť libass pre ASS titulky</string>
     <string name="direct_play_pgs">Priame prehrávanie PGS titulkov</string>
     <string name="downmix_stereo">Vždy downmixovať do stereo formátu</string>
     <string name="ffmpeg_extension_pref">Použiť modul FFmpeg dekodéra</string>
@@ -594,4 +594,19 @@
     <string name="send_media_info_log_to_server">Odoslať log informácií o médiách na server</string>
     <string name="max_days_next_up">Max. počet dní v sekcií Nasleduje</string>
     <string name="albums">Albumy</string>
+    <string name="artists">Umelci</string>
+    <string name="songs">Skladby</string>
+    <string name="go_to_artist">Zobraziť umelca</string>
+    <string name="now_playing">Práve prehrávané</string>
+    <string name="instant_mix">Okamžitý mix</string>
+    <string name="go_to_album">Zobraziť album</string>
+    <string name="add_to_queue">Pridať do fronty</string>
+    <string name="next_up_never">Nikdy</string>
+    <string name="external_player">Externý prehrávač</string>
+    <string name="album_artist">Umelec albumu</string>
+    <string name="album">Album</string>
+    <string name="popular_songs">Populárne skladby</string>
+    <string name="play_next">Prehrať nasledujúce</string>
+    <string name="music_videos">Hudobné videá</string>
+    <string name="lyrics">Texty piesní</string>
 </resources>

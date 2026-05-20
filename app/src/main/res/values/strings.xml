@@ -391,6 +391,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
+    <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -445,6 +446,10 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
+    <string name="combined_search_results">Combined search results</string>
+    <string name="combined_search_results_on">Show all results in a single list</string>
+    <string name="combined_search_results_off">Show results by category</string>
+    <string name="results">Results</string>
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
@@ -775,6 +780,9 @@
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
     <string name="profile_protection">Profile protection</string>
+    <string name="continue_watching_click_behavior">Continue watching/Next up click behavior</string>
+    <string name="continue_watching_click_summary_on">Play on click</string>
+    <string name="continue_watching_click_summary_off">Show details on click</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>
