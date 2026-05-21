@@ -626,4 +626,10 @@
     <string name="continue_watching_click_behavior">Comportamiento al pulsar en “Seguir viendo” / “Siguiente”</string>
     <string name="continue_watching_click_summary_on">Reproducir al pulsar</string>
     <string name="continue_watching_click_summary_off">Ver detalles al pulsar</string>
+    <string name="require_login">Requerir inicio de sesión para el perfil</string>
+    <string name="display_toggles_title">Visualización de valoraciones</string>
+    <string name="display_toggles_summary">Personalizar qué mostrar</string>
+    <string name="profile_protection">Protección del perfil</string>
+    <string name="stars">Estrellas</string>
+    <string name="tomatoes">\"Tomates\"</string>
 </resources>
