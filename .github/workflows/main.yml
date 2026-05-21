@@ -75,6 +75,13 @@ jobs:
         run: |
           echo "SHA256 checksums:"
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
+      - name: Upload mapping files
+        uses: actions/upload-artifact@v7
+        with:
+          name: mapping
+          path: |
+            app/build/outputs/**/mapping.txt
+          compression-level: 0
       - name: Delete ${{ env.TAG_NAME }} tag and release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
