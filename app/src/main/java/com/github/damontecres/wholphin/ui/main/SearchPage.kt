@@ -6,6 +6,8 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
@@ -517,7 +519,7 @@ fun SearchPage(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
@@ -528,8 +530,8 @@ fun SearchPage(
             ) {
                 AnimatedVisibility(
                     visible = voiceSearchButtonVisible,
-                    enter = expandHorizontally(expandFrom = Alignment.Start),
-                    exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
+                    enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+                    exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End),
                 ) {
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
@@ -537,6 +539,7 @@ fun SearchPage(
                             triggerImmediateSearch(spokenText)
                         },
                         voiceInputManager = viewModel.voiceInputManager,
+                        modifier = Modifier.padding(end = 12.dp),
                     )
                 }
 
@@ -571,6 +574,7 @@ fun SearchPage(
                     title = R.string.view_options,
                     iconStringRes = R.string.fa_sliders,
                     onClick = { showViewOptions = true },
+                    modifier = Modifier.padding(start = 12.dp),
                 )
             }
         }
