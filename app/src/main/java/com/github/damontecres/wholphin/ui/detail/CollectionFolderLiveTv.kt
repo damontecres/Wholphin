@@ -142,7 +142,6 @@ fun CollectionFolderLiveTv(
         when (selectedTabIndex) {
             0 -> {
                 TvGuideGrid(
-                    true,
                     onRowPosition = {
                         showHeader = it <= 0
                     },

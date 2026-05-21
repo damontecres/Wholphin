@@ -607,4 +607,6 @@
     <string name="skip_behavior_summary">İntrolar, jenerikler vb. için</string>
     <string name="show_more">%1$s daha göster</string>
     <string name="cinema_mode">Sinema Modu</string>
+    <string name="transcoding">Kod dönüştürme</string>
+    <string name="play_with">Şununla Oynat</string>
 </resources>

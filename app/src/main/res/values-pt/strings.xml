@@ -240,7 +240,7 @@
     <string name="check_for_updates">Verificar se há atualizações</string>
     <string name="combine_continue_next_summary">Aplica-se apenas a Séries de TV</string>
     <string name="combine_continue_next"><![CDATA[Combinar Continuar a Ver e A Seguir]]></string>
-    <string name="direct_play_ass">Reprodução direta de legendas ASS</string>
+    <string name="direct_play_ass">Utilizar libass para legendas ASS</string>
     <string name="direct_play_pgs">Reprodução direta de legendas PGS</string>
     <string name="downmix_stereo">Conversão sempre em estéreo</string>
     <string name="ffmpeg_extension_pref">Usar o módulo decodificador FFmpeg</string>
@@ -604,4 +604,18 @@
     <string name="discover_tv">Descobrir Séries</string>
     <string name="discover_movies">Descobrir Filmes</string>
     <string name="studios_in">Estúdios em %1$s</string>
+    <string name="next_up_never">Nunca</string>
+    <string name="external_player">Reprodutor Externo</string>
+    <string name="last_played">Última reprodução</string>
+    <string name="system_default">Padrão do sistema</string>
+    <string name="ass_subtitle_mode_libass">Reprodução directa com libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Reprodução directa com ExoPlayer integrado</string>
+    <string name="ass_subtitle_mode_transcode">Incorporar/transcodificar no servidor</string>
+    <string name="ass_subtitle_playback">Reprodução de legendas SSA/ASS</string>
+    <string name="cinema_mode">Modo Cinema</string>
+    <string name="show_more">Mostrar %1$s mais</string>
+    <string name="skip_behavior">Comportamento de saltar</string>
+    <string name="skip_behavior_summary">Para intros, créditos, etc</string>
+    <string name="play_with">Reproduzir com</string>
+    <string name="transcoding">Transcodificar</string>
 </resources>

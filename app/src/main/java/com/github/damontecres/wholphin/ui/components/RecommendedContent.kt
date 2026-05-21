@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
-import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -13,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
@@ -28,6 +26,9 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SuggestionService
+import com.github.damontecres.wholphin.services.SuggestionsResource
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -42,123 +43,303 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.RequestHandler
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 
-/**
- * Abstract [ViewModel] for the "Recommended" tab for a library
- */
-abstract class RecommendedViewModel(
-    @param:ApplicationContext val context: Context,
-    val api: ApiClient,
-    val serverRepository: ServerRepository,
-    val navigationManager: NavigationManager,
-    val favoriteWatchManager: FavoriteWatchManager,
-    val mediaReportService: MediaReportService,
-    private val musicService: MusicService,
-    private val backdropService: BackdropService,
-    private val mediaManagementService: MediaManagementService,
-) : ViewModel() {
-    abstract fun init()
-
-    abstract val rows: MutableStateFlow<List<HomeRowLoadingState>>
-
-    val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-
-    fun refreshItem(
-        position: RowColumn,
-        itemId: UUID,
-    ) {
-        viewModelScope.launchIO {
-            val row = rows.value.getOrNull(position.row)
-            if (row is HomeRowLoadingState.Success) {
-                (row.items as? ApiRequestPager<*>)?.refreshItem(position.column, itemId)
-            }
-        }
-    }
-
-    fun setWatched(
-        position: RowColumn,
-        itemId: UUID,
-        watched: Boolean,
-    ) {
-        viewModelScope.launchIO {
-            favoriteWatchManager.setWatched(itemId, watched)
-            refreshItem(position, itemId)
-        }
-    }
-
-    fun setFavorite(
-        position: RowColumn,
-        itemId: UUID,
-        watched: Boolean,
-    ) {
-        viewModelScope.launchIO {
-            favoriteWatchManager.setFavorite(itemId, watched)
-            refreshItem(position, itemId)
-        }
-    }
-
-    fun updateBackdrop(item: BaseItem) {
-        viewModelScope.launchIO {
-            backdropService.submit(item)
-        }
-    }
-
-    abstract fun update(
-        @StringRes title: Int,
-        row: HomeRowLoadingState,
-    ): HomeRowLoadingState
-
-    fun update(
-        @StringRes title: Int,
-        viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
-        block: suspend () -> List<BaseItem>,
-    ): Deferred<HomeRowLoadingState> =
-        viewModelScope.async(Dispatchers.IO) {
-            val titleStr = context.getString(title)
-            val row =
-                try {
-                    HomeRowLoadingState.Success(titleStr, block.invoke(), viewOptions)
-                } catch (ex: Exception) {
-                    HomeRowLoadingState.Error(titleStr, null, ex)
-                }
-            update(title, row)
+@HiltViewModel(assistedFactory = RecommendedViewModel.Factory::class)
+class RecommendedViewModel
+    @AssistedInject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
+        val serverRepository: ServerRepository,
+        val navigationManager: NavigationManager,
+        private val userPreferencesService: UserPreferencesService,
+        private val favoriteWatchManager: FavoriteWatchManager,
+        private val musicService: MusicService,
+        private val backdropService: BackdropService,
+        private val mediaManagementService: MediaManagementService,
+        private val suggestionService: SuggestionService,
+        val mediaReportService: MediaReportService,
+        @Assisted private val parentId: UUID,
+        @Assisted private val suggestionsType: BaseItemKind,
+        @Assisted private val recommendedRows: List<RecommendedRow<*>>,
+        @Assisted private val viewOptions: HomeRowViewOptions,
+    ) : ViewModel() {
+        @AssistedFactory
+        interface Factory {
+            fun create(
+                parentId: UUID,
+                suggestionsType: BaseItemKind,
+                recommendedRows: List<RecommendedRow<*>>,
+                viewOptions: HomeRowViewOptions,
+            ): RecommendedViewModel
         }
 
-    fun deleteItem(
-        position: RowColumn,
-        item: BaseItem,
-    ) {
-        deleteItem(context, mediaManagementService, item) {
+        private val _state = MutableStateFlow(RecommendedState())
+        val state: StateFlow<RecommendedState> = _state
+
+        fun init() {
             viewModelScope.launchDefault {
-                val row = rows.value.getOrNull(position.row)
-                if (row is HomeRowLoadingState.Success) {
-                    (row.items as? ApiRequestPager<*>)?.refreshPagesAfter(position.column)
+                val limit =
+                    userPreferencesService.flow
+                        .first()
+                        .appPreferences.homePagePreferences.maxItemsPerRow
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows =
+                            recommendedRows.map { HomeRowLoadingState.Loading(context.getString(it.title)) } +
+                                listOf(HomeRowLoadingState.Loading(context.getString(R.string.suggestions))),
+                    )
                 }
+                val jobs =
+                    recommendedRows.mapIndexed { index, row ->
+                        val title = context.getString(row.title)
+                        viewModelScope.launchIO {
+                            val result =
+                                try {
+                                    HomeRowLoadingState.Success(
+                                        title,
+                                        execute(row, limit),
+                                        viewOptions,
+                                    )
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Exception fetching %s", title)
+                                    HomeRowLoadingState.Error(title, null, ex)
+                                }
+                            _state.update {
+                                it.copy(
+                                    rows =
+                                        it.rows.toMutableList().apply {
+                                            set(index, result)
+                                        },
+                                )
+                            }
+                        }
+                    }
+                fetchSuggestions()
+                jobs.forEachIndexed { index, job ->
+                    job.join()
+                    val row = state.value.rows[index]
+                    if (row is HomeRowLoadingState.Success && row.items.isNotEmpty()) {
+                        // Report loading success once the first non-empty row is ready
+                        _state.update { it.copy(loading = LoadingState.Success) }
+                    }
+                }
+            }
+        }
+
+        private suspend fun <T> execute(
+            row: RecommendedRow<T>,
+            limit: Int?,
+        ): List<BaseItem?> =
+            if (limit != null) {
+                val request = row.handler.prepare(row.request, 0, limit, false)
+                row.handler
+                    .execute(api, request)
+                    .toBaseItems(api, true)
+            } else {
+                ApiRequestPager(
+                    api,
+                    row.request,
+                    row.handler,
+                    viewModelScope,
+                    useSeriesForPrimary = true,
+                ).init()
+            }
+
+        private fun fetchSuggestions() {
+            viewModelScope.launch(Dispatchers.IO) {
+                val title = context.getString(R.string.suggestions)
+                try {
+                    suggestionService
+                        .getSuggestionsFlow(parentId, suggestionsType)
+                        .collect { resource ->
+                            val result =
+                                when (resource) {
+                                    is SuggestionsResource.Loading -> {
+                                        HomeRowLoadingState.Loading(title)
+                                    }
+
+                                    is SuggestionsResource.Success -> {
+                                        HomeRowLoadingState.Success(
+                                            title,
+                                            resource.items,
+                                            viewOptions,
+                                        )
+                                    }
+
+                                    is SuggestionsResource.Empty -> {
+                                        HomeRowLoadingState.Success(
+                                            title,
+                                            emptyList(),
+                                            viewOptions,
+                                        )
+                                    }
+                                }
+                            _state.update {
+                                it.copy(
+                                    rows =
+                                        it.rows.toMutableList().apply {
+                                            set(lastIndex, result)
+                                        },
+                                )
+                            }
+                        }
+                } catch (_: CancellationException) {
+                    // no-op
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Failed to fetch suggestions")
+                    _state.update {
+                        it.copy(
+                            rows =
+                                it.rows.toMutableList().apply {
+                                    set(lastIndex, HomeRowLoadingState.Error(title, null, ex))
+                                },
+                        )
+                    }
+                }
+            }
+        }
+
+        fun refreshItem(
+            position: RowColumn,
+            itemId: UUID,
+        ) {
+            viewModelScope.launchIO {
+                val row = state.value.rows.getOrNull(position.row)
+                if (row is HomeRowLoadingState.Success) {
+                    (row.items as? ApiRequestPager<*>)?.refreshItem(position.column, itemId)
+                }
+            }
+        }
+
+        fun setWatched(
+            position: RowColumn,
+            itemId: UUID,
+            watched: Boolean,
+        ) {
+            viewModelScope.launchIO {
+                favoriteWatchManager.setWatched(itemId, watched)
+                refreshItem(position, itemId)
+            }
+        }
+
+        fun setFavorite(
+            position: RowColumn,
+            itemId: UUID,
+            watched: Boolean,
+        ) {
+            viewModelScope.launchIO {
+                favoriteWatchManager.setFavorite(itemId, watched)
+                refreshItem(position, itemId)
+            }
+        }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(item)
+            }
+        }
+
+        fun deleteItem(
+            position: RowColumn,
+            item: BaseItem,
+        ) {
+            deleteItem(context, mediaManagementService, item) {
+                viewModelScope.launchDefault {
+                    val row = state.value.rows.getOrNull(position.row)
+                    if (row is HomeRowLoadingState.Success) {
+                        (row.items as? ApiRequestPager<*>)?.refreshPagesAfter(position.column)
+                    }
+                }
+            }
+        }
+
+        fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+        fun addToQueue(
+            item: BaseItem,
+            index: Int,
+        ) = addToQueue(api, musicService, item, index)
+
+        fun onClickViewMore(
+            position: RowColumn,
+            row: HomeRowLoadingState.Success,
+        ) {
+            if (position.row in recommendedRows.indices) {
+                val recommendedRow = recommendedRows[position.row] as RecommendedRow<Any>
+                navigationManager.navigateTo(
+                    Destination.ItemGrid(
+                        title = row.title,
+                        titleRes = recommendedRow.title,
+                        request = recommendedRow.request,
+                        requestHandler = recommendedRow.handler,
+                        initialPosition = row.items.size,
+                        viewOptions =
+                            ViewOptions(
+                                aspectRatio = viewOptions.aspectRatio,
+                            ),
+                    ),
+                )
+            } else {
+                // Suggestions
+                navigationManager.navigateTo(
+                    Destination.ItemGrid(
+                        title = row.title,
+                        titleRes = R.string.suggestions,
+                        request =
+                            GetItemsRequest(
+                                ids = row.items.mapNotNull { it?.id },
+                            ),
+                        requestHandler = GetItemsRequestHandler,
+                        initialPosition = row.items.size,
+                        viewOptions =
+                            ViewOptions(
+                                aspectRatio = viewOptions.aspectRatio,
+                            ),
+                    ),
+                )
             }
         }
     }
 
-    fun canDelete(
-        item: BaseItem,
-        appPreferences: AppPreferences,
-    ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+data class RecommendedState(
+    val loading: LoadingState = LoadingState.Pending,
+    val rows: List<HomeRowLoadingState> = emptyList(),
+)
 
-    fun addToQueue(
-        item: BaseItem,
-        index: Int,
-    ) = addToQueue(api, musicService, item, index)
-}
+data class RecommendedRow<T>(
+    val title: Int,
+    val handler: RequestHandler<T>,
+    val request: T,
+)
 
 @Composable
 fun RecommendedContent(
@@ -176,12 +357,11 @@ fun RecommendedContent(
     OneTimeLaunchedEffect {
         viewModel.init()
     }
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val rows by viewModel.rows.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    when (val state = loading) {
+    when (val st = state.loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+            ErrorMessage(st, modifier)
         }
 
         LoadingState.Loading,
@@ -222,7 +402,7 @@ fun RecommendedContent(
                 }
 
             HomePageContent(
-                homeRows = rows,
+                homeRows = state.rows,
                 position = position,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
@@ -247,7 +427,7 @@ fun RecommendedContent(
                 onFocusPosition = {
                     position = it
                     val nonEmptyRowBefore =
-                        rows
+                        state.rows
                             .subList(0, it.row)
                             .count {
                                 it is HomeRowLoadingState.Success && it.items.isEmpty()
@@ -262,6 +442,8 @@ fun RecommendedContent(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showViewMore = true,
+                onClickViewMore = viewModel::onClickViewMore,
                 modifier = modifier,
             )
         }
