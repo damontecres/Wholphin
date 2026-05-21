@@ -61,6 +61,19 @@ val EpisodeSortOptions =
         ItemSortBy.RANDOM,
     )
 
+val MusicVideoSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.PLAY_COUNT,
+        ItemSortBy.RUNTIME,
+        ItemSortBy.RANDOM,
+    )
+
 val VideoSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,

@@ -470,6 +470,29 @@ fun CollectionFolder(
             )
         }
 
+        CollectionType.MUSICVIDEOS -> {
+            CollectionFolderGeneric(
+                preferences,
+                destination.itemId,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
+                playEnabled = true,
+                modifier = modifier,
+                sortOptions = MusicVideoSortOptions,
+            )
+        }
+        
+        CollectionType.BOOKS -> {
+            CollectionFolderGeneric(
+                preferences,
+                destination.itemId,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
+                playEnabled = true,
+                modifier = modifier,
+            )
+        }
+
         CollectionType.HOMEVIDEOS,
         CollectionType.PHOTOS,
         -> {
@@ -477,19 +500,6 @@ fun CollectionFolder(
                 preferences = preferences,
                 itemId = destination.itemId,
                 recursive = recursiveOverride ?: false,
-                modifier = modifier,
-            )
-        }
-
-        CollectionType.MUSICVIDEOS,
-        CollectionType.BOOKS,
-        -> {
-            CollectionFolderGeneric(
-                preferences,
-                destination.itemId,
-                usePosters = usePostersOverride ?: false,
-                recursive = recursiveOverride ?: false,
-                playEnabled = true,
                 modifier = modifier,
             )
         }
