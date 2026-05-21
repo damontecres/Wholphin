@@ -619,4 +619,14 @@
     <string name="play_with">Riproduci con</string>
     <string name="transcoding">Trascodifica</string>
     <string name="pin_digits_hint">[0-9]</string>
+    <string name="results">Risultati</string>
+    <string name="require_login">Richiedi login per il profilo</string>
+    <string name="combined_search_results">Risultati di ricerca combinati</string>
+    <string name="combined_search_results_on">Mostra tutti i risultati in una lista singola</string>
+    <string name="combined_search_results_off">Mostra risultati per categoria</string>
+    <string name="profile_protection">Protezione profilo</string>
+    <string name="continue_watching_click_summary_on">Riproduci al click</string>
+    <string name="continue_watching_click_summary_off">Mostra dettagli al click</string>
+    <string name="stars">Stelle</string>
+    <string name="tomatoes">Pomodori</string>
 </resources>
