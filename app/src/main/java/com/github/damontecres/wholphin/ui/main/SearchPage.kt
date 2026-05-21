@@ -4,7 +4,11 @@ import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -72,6 +76,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
@@ -104,11 +109,7 @@ import com.github.damontecres.wholphin.util.SearchRelevance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -127,16 +128,12 @@ class SearchViewModel
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
+        val userPreferencesService: UserPreferencesService,
     ) : ViewModel() {
         val voiceState = voiceInputManager.state
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
-
-        val combinedModeFlow: StateFlow<Boolean> =
-            appPreferences.data
-                .map { it.interfacePreferences.searchPreferences.combinedSearchResults }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -275,6 +272,16 @@ class SearchViewModel
             }
         }
 
+        fun setVoiceSearchButtonVisible(visible: Boolean) {
+            viewModelScope.launchIO {
+                appPreferences.updateData {
+                    it.updateSearchPreferences {
+                        showVoiceSearchButton = visible
+                    }
+                }
+            }
+        }
+
         private fun searchSeerr(query: String) {
             viewModelScope.launchIO {
                 if (seerrService.active.first()) {
@@ -350,7 +357,14 @@ fun SearchPage(
     val songs by viewModel.songs.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
     val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
-    val combinedMode by viewModel.combinedModeFlow.collectAsState()
+
+    // Start with current preferences, but collect updates when view options change
+    val prefs =
+        viewModel.userPreferencesService.flow
+            .collectAsState(userPreferences)
+            .value.appPreferences.interfacePreferences.searchPreferences
+    val combinedMode = prefs.combinedSearchResults
+    val voiceSearchButtonVisible = prefs.showVoiceSearchButton
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -499,7 +513,7 @@ fun SearchPage(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
@@ -508,13 +522,20 @@ fun SearchPage(
                         .focusRestorer(textFieldFocusRequester)
                         .focusRequester(focusRequesters[SEARCH_ROW]),
             ) {
-                VoiceSearchButton(
-                    onSpeechResult = { spokenText ->
-                        query = spokenText
-                        triggerImmediateSearch(spokenText)
-                    },
-                    voiceInputManager = viewModel.voiceInputManager,
-                )
+                AnimatedVisibility(
+                    visible = voiceSearchButtonVisible,
+                    enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+                    exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End),
+                ) {
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            triggerImmediateSearch(spokenText)
+                        },
+                        voiceInputManager = viewModel.voiceInputManager,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                }
 
                 SearchEditTextBox(
                     value = query,
@@ -547,6 +568,7 @@ fun SearchPage(
                     title = R.string.view_options,
                     iconStringRes = R.string.fa_sliders,
                     onClick = { showViewOptions = true },
+                    modifier = Modifier.padding(start = 12.dp),
                 )
             }
         }
@@ -757,6 +779,8 @@ fun SearchPage(
         SearchViewOptionsDialog(
             combinedResults = combinedMode,
             onCombinedResultsChange = viewModel::setCombinedResults,
+            voiceSearchButtonVisible = voiceSearchButtonVisible,
+            onVoiceSearchButtonVisibleChange = viewModel::setVoiceSearchButtonVisible,
             onDismissRequest = { showViewOptions = false },
         )
     }
@@ -766,6 +790,8 @@ fun SearchPage(
 fun SearchViewOptionsDialog(
     combinedResults: Boolean,
     onCombinedResultsChange: (Boolean) -> Unit,
+    voiceSearchButtonVisible: Boolean,
+    onVoiceSearchButtonVisibleChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     Dialog(
@@ -813,6 +839,31 @@ fun SearchViewOptionsDialog(
                         )
                     },
                     onClick = { onCombinedResultsChange(!combinedResults) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(stringResource(R.string.show_voice_search_button))
+                    },
+                    supportingContent = {
+                        Text(
+                            if (voiceSearchButtonVisible) {
+                                stringResource(R.string.visible_ui)
+                            } else {
+                                stringResource(R.string.hidden_ui)
+                            },
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = voiceSearchButtonVisible,
+                            onCheckedChange = onVoiceSearchButtonVisibleChange,
+                            colors = SwitchColors(),
+                        )
+                    },
+                    onClick = { onVoiceSearchButtonVisibleChange(!voiceSearchButtonVisible) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
