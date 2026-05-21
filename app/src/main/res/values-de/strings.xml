@@ -605,4 +605,7 @@
     <string name="combined_search_results_on">Alle Ergebnisse in einer gemeinsamen Liste anzeigen</string>
     <string name="combined_search_results_off">Ergebnisse nach Kategorie anzeigen</string>
     <string name="results">Ergebnisse</string>
+    <string name="require_login">Anmeldung erforderlich für das Profil</string>
+    <string name="visible_ui">Sichtbar</string>
+    <string name="hidden_ui">Versteckt</string>
 </resources>
