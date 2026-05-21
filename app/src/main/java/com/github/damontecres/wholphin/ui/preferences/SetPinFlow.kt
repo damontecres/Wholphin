@@ -21,6 +21,12 @@ enum class PinFlowState {
     CONFIRM_PIN,
 }
 
+enum class ProfileProtection {
+    NONE,
+    PIN,
+    LOGIN,
+}
+
 @Composable
 fun SetPinFlow(
     currentPin: String?,

@@ -168,6 +168,13 @@ message ScreensaverPreferences{
 
 message SearchPreferences {
   bool combined_search_results = 1;
+  bool show_voice_search_button = 2;
+}
+
+enum DisplayToggle{
+  OFFICIAL_RATING = 0;
+  CRITIC_RATING = 1;
+  COMMUNITY_RATING = 2;
 }
 
 message InterfacePreferences {
@@ -185,6 +192,7 @@ message InterfacePreferences {
   bool enable_media_management = 12;
   bool show_logos = 13;
   SearchPreferences search_preferences = 14;
+  repeated DisplayToggle display_toggles = 15;
 }
 
 message AdvancedPreferences {

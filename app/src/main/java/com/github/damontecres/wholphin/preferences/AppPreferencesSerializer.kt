@@ -105,6 +105,7 @@ class AppPreferencesSerializer
                                         .newBuilder()
                                         .apply {
                                             combinedSearchResults = false
+                                            showVoiceSearchButton = true
                                         }.build()
 
                                 subtitlesPreferences =

@@ -199,6 +199,7 @@ fun <T> ComposablePreference(
 
         is AppMultiChoicePreference<*, *> -> {
             val values = stringArrayResource(preference.displayValues)
+            val subtitles = preference.displayValuesSubtitles?.let { stringArrayResource(it) }
             val summary =
                 preference.summary?.let { stringResource(it) }
                     ?: preference.summary(context, value)
@@ -218,6 +219,9 @@ fun <T> ComposablePreference(
                 },
                 valueDisplay = { index, _ ->
                     Text(values[index])
+                },
+                subtitleDisplay = { index, _ ->
+                    subtitles?.getOrNull(index)?.let { Text(it) }
                 },
             )
         }

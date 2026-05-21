@@ -27,6 +27,7 @@ import org.jellyfin.sdk.model.api.AuthenticationResult
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -167,6 +168,7 @@ class ServerRepository
         suspend fun changeUser(
             serverUrl: String,
             authenticationResult: AuthenticationResult,
+            existingUser: JellyfinUser?,
         ) = withContext(ioDispatcher) {
             val accessToken = authenticationResult.accessToken
             if (accessToken != null) {
@@ -183,12 +185,24 @@ class ServerRepository
                 if (server != null) {
                     val user =
                         authedUser?.let {
-                            JellyfinUser(
-                                id = it.id,
-                                name = it.name,
-                                serverId = server.id,
-                                accessToken = accessToken,
-                            )
+                            if (existingUser != null) {
+                                Timber.d("Re-using existing user")
+                                existingUser.copy(
+                                    // If the server authenticated via the server, always remove the PIN
+                                    pin = null,
+                                    accessToken = accessToken,
+                                    lastUsed = ZonedDateTime.now(),
+                                )
+                            } else {
+                                Timber.d("Creating new user")
+                                JellyfinUser(
+                                    id = it.id,
+                                    name = it.name,
+                                    serverId = server.id,
+                                    accessToken = accessToken,
+                                    lastUsed = ZonedDateTime.now(),
+                                )
+                            }
                         }
                     if (user != null) {
                         return@withContext changeUser(server, user)
@@ -253,11 +267,12 @@ class ServerRepository
             }
         }
 
-        suspend fun setUserPin(
+        suspend fun updateUserAuth(
             user: JellyfinUser,
             pin: String?,
-        ) = withContext(ioDispatcher) {
-            val newUser = user.copy(pin = pin)
+            requireLogin: Boolean,
+        ) {
+            val newUser = user.copy(pin = pin, requireLogin = requireLogin)
             val updatedUser = serverDao.addOrUpdateUser(newUser)
             if (currentUser.value?.id == updatedUser.id && currentServer.value?.id == user.serverId) {
                 // Updating current user, so push out the change
