@@ -224,6 +224,7 @@ fun HomePage(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showViewMore = true,
                 onClickViewMore = onClickViewMore,
                 modifier = modifier,
             )
@@ -283,6 +284,7 @@ fun HomePageContent(
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     showLogo: Boolean,
+    showViewMore: Boolean,
     modifier: Modifier = Modifier,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
@@ -295,7 +297,6 @@ fun HomePageContent(
             modifier = HeaderUtils.modifier,
         )
     },
-    showViewMore: Boolean = true,
     onClickViewMore: (RowColumn, HomeRowLoadingState.Success) -> Unit = { _, _ -> },
 ) {
     val focusedItem =

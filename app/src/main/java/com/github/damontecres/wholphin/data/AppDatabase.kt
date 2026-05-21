@@ -84,6 +84,11 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 class Converters {
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+        }
+
     @TypeConverter
     fun convertToString(id: UUID): String = id.toString().replace("-", "")
 
@@ -103,24 +108,24 @@ class Converters {
     fun convertSortOrder(sort: String): SortOrder? = SortOrder.fromNameOrNull(sort)
 
     @TypeConverter
-    fun convertGetItemsFilter(filter: GetItemsFilter): String = Json.encodeToString(filter)
+    fun convertGetItemsFilter(filter: GetItemsFilter): String = json.encodeToString(filter)
 
     @TypeConverter
     fun convertGetItemsFilter(filter: String): GetItemsFilter =
         try {
-            Json.decodeFromString(filter)
+            json.decodeFromString(filter)
         } catch (ex: Exception) {
             Timber.e(ex, "Error parsing filter")
             GetItemsFilter()
         }
 
     @TypeConverter
-    fun convertViewOptions(viewOptions: ViewOptions?): String? = viewOptions?.let { Json.encodeToString(viewOptions) }
+    fun convertViewOptions(viewOptions: ViewOptions?): String? = viewOptions?.let { json.encodeToString(viewOptions) }
 
     @TypeConverter
     fun convertViewOptions(viewOptions: String?): ViewOptions? =
         try {
-            viewOptions?.let { Json.decodeFromString(viewOptions) }
+            viewOptions?.let { json.decodeFromString(viewOptions) }
         } catch (ex: Exception) {
             Timber.e(ex, "Error parsing view options")
             null
