@@ -76,6 +76,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
@@ -108,11 +109,7 @@ import com.github.damontecres.wholphin.util.SearchRelevance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -131,21 +128,12 @@ class SearchViewModel
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
+        val userPreferencesService: UserPreferencesService,
     ) : ViewModel() {
         val voiceState = voiceInputManager.state
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
-
-        val combinedModeFlow: StateFlow<Boolean> =
-            appPreferences.data
-                .map { it.interfacePreferences.searchPreferences.combinedSearchResults }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-        val voiceSearchButtonVisibleFlow: StateFlow<Boolean> =
-            appPreferences.data
-                .map { it.interfacePreferences.searchPreferences.showVoiceSearchButton }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -369,8 +357,14 @@ fun SearchPage(
     val songs by viewModel.songs.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
     val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
-    val combinedMode by viewModel.combinedModeFlow.collectAsState()
-    val voiceSearchButtonVisible by viewModel.voiceSearchButtonVisibleFlow.collectAsState()
+
+    // Start with current preferences, but collect updates when view options change
+    val prefs =
+        viewModel.userPreferencesService.flow
+            .collectAsState(userPreferences)
+            .value.appPreferences.interfacePreferences.searchPreferences
+    val combinedMode = prefs.combinedSearchResults
+    val voiceSearchButtonVisible = prefs.showVoiceSearchButton
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
