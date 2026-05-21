@@ -632,4 +632,7 @@
     <string name="profile_protection">Protección del perfil</string>
     <string name="stars">Estrellas</string>
     <string name="tomatoes">\"Tomates\"</string>
+    <string name="show_voice_search_button">Mostrar botón de búsqueda por voz</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Oculto</string>
 </resources>
