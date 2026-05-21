@@ -4,7 +4,9 @@ import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -524,7 +526,11 @@ fun SearchPage(
                         .focusRestorer(textFieldFocusRequester)
                         .focusRequester(focusRequesters[SEARCH_ROW]),
             ) {
-                if (voiceSearchButtonVisible) {
+                AnimatedVisibility(
+                    visible = voiceSearchButtonVisible,
+                    enter = expandHorizontally(expandFrom = Alignment.Start),
+                    exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
+                ) {
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
                             query = spokenText
@@ -846,9 +852,9 @@ fun SearchViewOptionsDialog(
                     supportingContent = {
                         Text(
                             if (voiceSearchButtonVisible) {
-                                stringResource(R.string.show_voice_search_button_on)
+                                stringResource(R.string.visible_ui)
                             } else {
-                                stringResource(R.string.show_voice_search_button_off)
+                                stringResource(R.string.hidden_ui)
                             },
                         )
                     },

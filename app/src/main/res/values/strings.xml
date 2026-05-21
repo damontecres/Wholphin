@@ -450,8 +450,8 @@
     <string name="combined_search_results_on">Show all results in a single list</string>
     <string name="combined_search_results_off">Show results by category</string>
     <string name="show_voice_search_button">Show voice search button</string>
-    <string name="show_voice_search_button_on">Visible</string>
-    <string name="show_voice_search_button_off">Hidden</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Hidden</string>
     <string name="results">Results</string>
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
