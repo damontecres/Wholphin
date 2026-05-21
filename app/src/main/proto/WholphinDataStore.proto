@@ -168,6 +168,7 @@ message ScreensaverPreferences{
 
 message SearchPreferences {
   bool combined_search_results = 1;
+  bool show_voice_search_button = 2;
 }
 
 enum DisplayToggle{

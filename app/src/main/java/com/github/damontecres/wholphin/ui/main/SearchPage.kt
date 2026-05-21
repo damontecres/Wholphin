@@ -138,6 +138,11 @@ class SearchViewModel
                 .map { it.interfacePreferences.searchPreferences.combinedSearchResults }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+        val voiceSearchButtonVisibleFlow: StateFlow<Boolean> =
+            appPreferences.data
+                .map { it.interfacePreferences.searchPreferences.showVoiceSearchButton }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -275,6 +280,16 @@ class SearchViewModel
             }
         }
 
+        fun setVoiceSearchButtonVisible(visible: Boolean) {
+            viewModelScope.launchIO {
+                appPreferences.updateData {
+                    it.updateSearchPreferences {
+                        showVoiceSearchButton = visible
+                    }
+                }
+            }
+        }
+
         private fun searchSeerr(query: String) {
             viewModelScope.launchIO {
                 if (seerrService.active.first()) {
@@ -351,6 +366,7 @@ fun SearchPage(
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
     val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
     val combinedMode by viewModel.combinedModeFlow.collectAsState()
+    val voiceSearchButtonVisible by viewModel.voiceSearchButtonVisibleFlow.collectAsState()
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -508,13 +524,15 @@ fun SearchPage(
                         .focusRestorer(textFieldFocusRequester)
                         .focusRequester(focusRequesters[SEARCH_ROW]),
             ) {
-                VoiceSearchButton(
-                    onSpeechResult = { spokenText ->
-                        query = spokenText
-                        triggerImmediateSearch(spokenText)
-                    },
-                    voiceInputManager = viewModel.voiceInputManager,
-                )
+                if (voiceSearchButtonVisible) {
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            triggerImmediateSearch(spokenText)
+                        },
+                        voiceInputManager = viewModel.voiceInputManager,
+                    )
+                }
 
                 SearchEditTextBox(
                     value = query,
@@ -757,6 +775,8 @@ fun SearchPage(
         SearchViewOptionsDialog(
             combinedResults = combinedMode,
             onCombinedResultsChange = viewModel::setCombinedResults,
+            voiceSearchButtonVisible = voiceSearchButtonVisible,
+            onVoiceSearchButtonVisibleChange = viewModel::setVoiceSearchButtonVisible,
             onDismissRequest = { showViewOptions = false },
         )
     }
@@ -766,6 +786,8 @@ fun SearchPage(
 fun SearchViewOptionsDialog(
     combinedResults: Boolean,
     onCombinedResultsChange: (Boolean) -> Unit,
+    voiceSearchButtonVisible: Boolean,
+    onVoiceSearchButtonVisibleChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     Dialog(
@@ -813,6 +835,31 @@ fun SearchViewOptionsDialog(
                         )
                     },
                     onClick = { onCombinedResultsChange(!combinedResults) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(stringResource(R.string.show_voice_search_button))
+                    },
+                    supportingContent = {
+                        Text(
+                            if (voiceSearchButtonVisible) {
+                                stringResource(R.string.show_voice_search_button_on)
+                            } else {
+                                stringResource(R.string.show_voice_search_button_off)
+                            },
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = voiceSearchButtonVisible,
+                            onCheckedChange = onVoiceSearchButtonVisibleChange,
+                            colors = SwitchColors(),
+                        )
+                    },
+                    onClick = { onVoiceSearchButtonVisibleChange(!voiceSearchButtonVisible) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
