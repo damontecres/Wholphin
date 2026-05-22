@@ -156,12 +156,7 @@ class CollectionViewModel
                     )
                 }
                 listenForStateUpdates()
-                themeSongPlayer.playThemeFor(
-                    itemId,
-                    preferencesService
-                        .getCurrent()
-                        .appPreferences.interfacePreferences.playThemeSongs,
-                )
+                themeSongPlayer.playThemeFor(itemId)
             }
         }
 

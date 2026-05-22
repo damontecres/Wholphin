@@ -263,7 +263,7 @@ class MovieViewModel
             playThemeSongs: ThemeSongVolume,
         ) {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                themeSongPlayer.playThemeFor(seriesId)
                 addCloseable {
                     themeSongPlayer.stop()
                 }
