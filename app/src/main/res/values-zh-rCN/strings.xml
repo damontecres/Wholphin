@@ -596,4 +596,7 @@
     <string name="profile_protection">配置保护</string>
     <string name="stars">星级评分</string>
     <string name="tomatoes">番茄评分</string>
+    <string name="show_voice_search_button">显示语音搜索按钮</string>
+    <string name="visible_ui">可见</string>
+    <string name="hidden_ui">隐藏</string>
 </resources>
