@@ -97,7 +97,7 @@ class LatestNextUpSchedulerService
             serverRepository.current.observe(activity) { user ->
                 Timber.v("New user %s", user?.user?.id)
                 if (user == null) {
-                    workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)
+                    workManager.cancelUniqueWork(LatestNextUpWorker.WORK_NAME)
                 } else {
                     activity.lifecycleScope.launch(dispatcher + ExceptionHandler()) {
                         scheduleWork(user.user.id, user.server.id)
