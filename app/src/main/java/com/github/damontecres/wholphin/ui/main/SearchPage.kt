@@ -430,7 +430,7 @@ fun SearchPage(
     val positionCallback = { columns: Int, index: Int ->
         showHeader = index < columns
     }
-    val showTabs = seerrActive && query.isNotBlank() && showHeader
+    val showTabs = seerrActive && query.isNotBlank() && showHeader && combinedMode
     val isLibraryTab = selectedTab == 0
 
     LaunchedEffect(seerrActive, query) {
@@ -768,6 +768,16 @@ fun SearchPage(
                                     modifier = mod,
                                 )
                             },
+                        )
+                        searchResultRow(
+                            title = R.string.discover,
+                            result = seerrResults,
+                            rowIndex = SEERR_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[SEERR_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
