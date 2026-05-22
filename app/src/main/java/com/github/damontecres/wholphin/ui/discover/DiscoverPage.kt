@@ -41,6 +41,7 @@ fun DiscoverPage(
         listOf(
             stringResource(R.string.discover),
             stringResource(R.string.request),
+            stringResource(R.string.search),
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val tabFocusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
@@ -89,6 +90,17 @@ fun DiscoverPage(
                     modifier =
                         Modifier
                             .fillMaxSize(),
+                )
+            }
+
+            // Search
+            2 -> {
+                LaunchedEffect(Unit) {
+                    preferencesViewModel.backdropService.clearBackdrop()
+                }
+                DiscoverSearchPage(
+                    preferences = preferences,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
 
