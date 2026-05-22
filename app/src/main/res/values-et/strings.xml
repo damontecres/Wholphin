@@ -614,4 +614,7 @@
     <string name="profile_protection">Profiili kaitse</string>
     <string name="stars">Tärne</string>
     <string name="tomatoes">Tomateid</string>
+    <string name="show_voice_search_button">Näita häälotsingu nuppu</string>
+    <string name="visible_ui">Nähtav</string>
+    <string name="hidden_ui">Peidetud</string>
 </resources>
