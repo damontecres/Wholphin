@@ -101,7 +101,19 @@ class PreferencesViewModel
             pin: String?,
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                serverRepository.setUserPin(user, pin)
+                serverRepository.updateUserAuth(user, pin, false)
+            }
+        }
+
+        fun setRequireLogin(user: JellyfinUser) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.updateUserAuth(user, null, true)
+            }
+        }
+
+        fun removeLoginAndPin(user: JellyfinUser) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.updateUserAuth(user, null, false)
             }
         }
 

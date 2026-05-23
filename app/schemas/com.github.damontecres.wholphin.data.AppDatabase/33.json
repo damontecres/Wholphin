@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 32,
-    "identityHash": "934c38e7f4eb68c9a223ddb5c7e3e35d",
+    "version": 33,
+    "identityHash": "a65eec85c027fac13948a0dd6f99d3cb",
     "entities": [
       {
         "tableName": "servers",
@@ -45,7 +45,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, `uiLanguage` TEXT, FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "rowId",
@@ -90,6 +90,11 @@
           {
             "fieldPath": "lastUsed",
             "columnName": "lastUsed",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "uiLanguage",
+            "columnName": "uiLanguage",
             "affinity": "TEXT"
           }
         ],
@@ -653,7 +658,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '934c38e7f4eb68c9a223ddb5c7e3e35d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a65eec85c027fac13948a0dd6f99d3cb')"
     ]
   }
 }
