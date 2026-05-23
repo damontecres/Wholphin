@@ -38,7 +38,9 @@ fun LoadingPage(
     focusEnabled: Boolean = true,
 ) {
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    if (focusEnabled) {
+        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    }
     Box(
         contentAlignment = Alignment.Center,
         modifier =

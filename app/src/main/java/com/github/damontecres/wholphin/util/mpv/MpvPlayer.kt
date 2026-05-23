@@ -620,6 +620,16 @@ class MpvPlayer(
                 }
                 notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(!value) }
             }
+
+            MPVProperty.PAUSED_FOR_CACHE -> {
+                Timber.v("paused-for-cache %s", value)
+                playbackState.update {
+                    it.copy(
+                        state = if (value) STATE_BUFFERING else it.state,
+                    )
+                }
+                notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) { onPlaybackStateChanged(playbackState.load().state) }
+            }
         }
     }
 
