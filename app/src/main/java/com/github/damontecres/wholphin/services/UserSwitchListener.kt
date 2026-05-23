@@ -15,8 +15,10 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -55,7 +57,9 @@ class UserSwitchListener
                     user.uiLanguage?.let { LocaleListCompat.forLanguageTags(it) }
                         ?: LocaleListCompat.getEmptyLocaleList()
                 Timber.i("Switching locale to %s", localeList)
-                AppCompatDelegate.setApplicationLocales(localeList)
+                withContext(Dispatchers.Main) {
+                    AppCompatDelegate.setApplicationLocales(localeList)
+                }
 
                 // Check for home settings
                 launchIO {
