@@ -152,10 +152,7 @@ fun MovieDetails(
             val movie by rememberUpdatedState(s.data)
             val chosenStreams by rememberUpdatedState(state.chosenStreams)
             LifecycleResumeEffect(destination.itemId) {
-                viewModel.maybePlayThemeSong(
-                    destination.itemId,
-                    preferences.appPreferences.interfacePreferences.playThemeSongs,
-                )
+                viewModel.maybePlayThemeSong(destination.itemId)
                 onPauseOrDispose {
                     viewModel.release()
                 }

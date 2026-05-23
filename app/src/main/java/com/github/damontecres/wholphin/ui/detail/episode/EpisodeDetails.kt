@@ -132,11 +132,10 @@ fun EpisodeDetails(
 
         LoadingState.Success -> {
             item?.let { ep ->
-                LifecycleResumeEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
+                LifecycleResumeEffect(ep) {
+                    ep.data.seriesId?.let { seriesId ->
+                        viewModel.maybePlayThemeSong(seriesId)
+                    }
                     onPauseOrDispose {
                         viewModel.release()
                     }
