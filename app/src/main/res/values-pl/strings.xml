@@ -641,4 +641,16 @@
     <string name="combined_search_results_on">Pokaż wszystkie wyniki jako jedna lista</string>
     <string name="combined_search_results_off">Podziel wyniki wyszukiwania na kategorie</string>
     <string name="results">Wyniki</string>
+    <string name="require_login">Wymagaj logowania do profilu</string>
+    <string name="show_voice_search_button">Pokaż przycisk wyszukiwania głosowego</string>
+    <string name="visible_ui">Widoczne</string>
+    <string name="hidden_ui">Ukryte</string>
+    <string name="display_toggles_title">Pokaż oceny</string>
+    <string name="display_toggles_summary">Dostosuj co chcesz wyświetlić</string>
+    <string name="profile_protection">Zabezpieczenie profilu</string>
+    <string name="continue_watching_click_behavior">Zachowanie kliknięcia Kontynuuj oglądanie/Następnie</string>
+    <string name="continue_watching_click_summary_on">Odtwórz po kliknięciu</string>
+    <string name="continue_watching_click_summary_off">Pokaż szczegóły po kliknięciu</string>
+    <string name="stars">Gwiazdki</string>
+    <string name="tomatoes">Pomidor</string>
 </resources>
