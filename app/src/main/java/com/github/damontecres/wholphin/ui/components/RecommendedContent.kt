@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.toBaseItems
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -111,13 +112,13 @@ class RecommendedViewModel
                     it.copy(
                         loading = LoadingState.Loading,
                         rows =
-                            recommendedRows.map { HomeRowLoadingState.Loading(context.getString(it.title)) } +
-                                listOf(HomeRowLoadingState.Loading(context.getString(R.string.suggestions))),
+                            recommendedRows.map { HomeRowLoadingState.Loading(ResStringProvider(it.title)) } +
+                                listOf(HomeRowLoadingState.Loading(ResStringProvider(R.string.suggestions))),
                     )
                 }
                 val jobs =
                     recommendedRows.mapIndexed { index, row ->
-                        val title = context.getString(row.title)
+                        val title = ResStringProvider(row.title)
                         viewModelScope.launchIO {
                             val result =
                                 try {
@@ -173,7 +174,7 @@ class RecommendedViewModel
 
         private fun fetchSuggestions() {
             viewModelScope.launch(Dispatchers.IO) {
-                val title = context.getString(R.string.suggestions)
+                val title = ResStringProvider(R.string.suggestions)
                 try {
                     suggestionService
                         .getSuggestionsFlow(parentId, suggestionsType)
@@ -298,7 +299,6 @@ class RecommendedViewModel
                 navigationManager.navigateTo(
                     Destination.ItemGrid(
                         title = row.title,
-                        titleRes = recommendedRow.title,
                         request = recommendedRow.request,
                         requestHandler = recommendedRow.handler,
                         initialPosition = row.items.size,
@@ -313,7 +313,6 @@ class RecommendedViewModel
                 navigationManager.navigateTo(
                     Destination.ItemGrid(
                         title = row.title,
-                        titleRes = R.string.suggestions,
                         request =
                             GetItemsRequest(
                                 ids = row.items.mapNotNull { it?.id },

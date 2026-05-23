@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.util.FilterUtils
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -212,7 +213,7 @@ class CollectionViewModel
                     val jobs =
                         typesInCollection.map { type ->
                             async(Dispatchers.IO) {
-                                val title = context.getString(formatTypeName(type))
+                                val title = ResStringProvider(formatTypeName(type))
                                 val result =
                                     try {
                                         val pager = fetchItems(sort, filter, listOf(type))
