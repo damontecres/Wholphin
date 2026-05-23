@@ -509,14 +509,15 @@ class PlaybackViewModel
                                 it
                             }
                         }?.map {
-                            SimpleMediaStream.from(context, it, true)
+                            // TODO should use a string provider instead
+                            SimpleMediaStream.from(context.resources, it, true)
                         }.orEmpty()
 
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
                         ?.map {
-                            SimpleMediaStream.from(context, it, true)
+                            SimpleMediaStream.from(context.resources, it, true)
                         }
 //                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()

@@ -59,7 +59,7 @@ fun DiscoverRow(
                 modifier = modifier,
             ) {
                 Text(
-                    text = row.title,
+                    text = row.title.getString(),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -73,7 +73,7 @@ fun DiscoverRow(
 
         is DataLoadingState.Success<List<DiscoverItem>> -> {
             DiscoverItemRow(
-                title = row.title,
+                title = row.title.getString(),
                 items = state.data,
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
