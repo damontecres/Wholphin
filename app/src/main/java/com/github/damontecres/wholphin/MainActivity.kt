@@ -434,15 +434,18 @@ class MainActivityViewModel
                     appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
-                    if (prefs.signInAutomatically && !userHasPin) {
+                    val profileProtected =
+                        serverRepository.currentUser.value?.let {
+                            it.hasPin || it.requireLogin
+                        } == true
+                    if (prefs.signInAutomatically && !profileProtected) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            if (current.user.hasPin) {
+                            if (current.user.hasPin || current.user.requireLogin) {
                                 navigationManager.navigateTo(SetupDestination.UserList(current.server))
                             } else {
                                 // Restored

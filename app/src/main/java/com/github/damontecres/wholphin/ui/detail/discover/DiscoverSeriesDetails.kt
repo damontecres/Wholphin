@@ -56,7 +56,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -477,7 +477,7 @@ fun DiscoverSeriesDetailsHeader(
                     }
                 }
 
-            QuickDetails(details, null)
+            QuickDetailsText(details)
             series.genres?.mapNotNull { it.name }?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
             }

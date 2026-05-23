@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
+import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
@@ -332,6 +333,12 @@ class AppUpgradeHandler
             if (previous.isEqualOrBefore(Version.fromString("0.6.2-18-g0"))) {
                 appPreferences.updateData {
                     it.updatePlaybackPreferences { cinemaMode = AppPreference.CinemaMode.defaultValue }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.4-8-g0"))) {
+                appPreferences.updateData {
+                    it.updateSearchPreferences { showVoiceSearchButton = true }
                 }
             }
         }

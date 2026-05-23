@@ -96,6 +96,18 @@ fun HomeSettingsGlobal(
                     modifier = Modifier,
                 )
             }
+            item {
+                ComposablePreference(
+                    preference = AppPreference.HomeClickToPlay,
+                    value = AppPreference.HomeClickToPlay.getter.invoke(preferences),
+                    onValueChange = {
+                        val newPrefs = AppPreference.HomeClickToPlay.setter.invoke(preferences, it)
+                        onPreferenceChange.invoke(newPrefs)
+                    },
+                    onNavigate = {},
+                    modifier = Modifier,
+                )
+            }
             item { HorizontalDivider() }
             item {
                 HomeSettingsListItem(
