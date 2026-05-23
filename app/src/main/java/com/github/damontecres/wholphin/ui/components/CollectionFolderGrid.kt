@@ -509,15 +509,11 @@ class CollectionFolderViewModel
         }
 
         fun onResumePage() {
-            viewModelScope.launchIO {
+            viewModelScope.launchDefault {
                 item.value?.let {
                     Timber.v("onResumePage: %s", loading.value!!::class)
                     if (it.type == BaseItemKind.BOX_SET && loading.value !is DataLoadingState.Error) {
-                        val volume =
-                            userPreferencesService
-                                .getCurrent()
-                                .appPreferences.interfacePreferences.playThemeSongs
-                        themeSongPlayer.playThemeFor(it.id, volume)
+                        themeSongPlayer.playThemeFor(it.id)
                     }
                 }
             }

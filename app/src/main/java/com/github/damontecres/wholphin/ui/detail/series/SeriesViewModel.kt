@@ -282,12 +282,8 @@ class SeriesViewModel
         fun onResumePage() {
             item.value?.let { item ->
                 viewModelScope.launchDefault { backdropService.submit(item) }
-                viewModelScope.launchIO {
-                    val playThemeSongs =
-                        userPreferencesService
-                            .getCurrent()
-                            .appPreferences.interfacePreferences.playThemeSongs
-                    themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                viewModelScope.launchDefault {
+                    themeSongPlayer.playThemeFor(seriesId)
                 }
             }
         }
