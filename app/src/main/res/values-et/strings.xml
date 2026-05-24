@@ -617,4 +617,5 @@
     <string name="show_voice_search_button">Näita häälotsingu nuppu</string>
     <string name="visible_ui">Nähtav</string>
     <string name="hidden_ui">Peidetud</string>
+    <string name="user_interface_language">Kasutajaliidese keel</string>
 </resources>
