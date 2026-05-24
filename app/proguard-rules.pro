@@ -8,3 +8,6 @@
   <methods>;
 }
 -dontwarn com.google.protobuf.**
+
+# TODO investigate using smaller scope
+-keep class com.google.common.cache.** { *; }
