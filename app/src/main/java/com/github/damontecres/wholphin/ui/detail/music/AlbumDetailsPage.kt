@@ -328,7 +328,7 @@ fun AlbumDetailsPage(
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val focusManager = LocalFocusManager.current
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     val moreDialogActions =
         remember {

@@ -28,7 +28,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -374,7 +373,7 @@ fun PlaylistDetails(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showConfirmTypeDialog by remember { mutableStateOf<Triple<Int, BaseItem, Boolean>?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val addPlaylistState by addToPlaylistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val addPlaylistState by addToPlaylistViewModel.playlistState.collectAsState()
 
     fun play(
         index: Int,

@@ -319,7 +319,7 @@ fun ArtistDetailsPage(
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
 
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     val moreDialogActions =
         remember {

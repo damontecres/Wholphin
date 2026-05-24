@@ -112,7 +112,7 @@ fun SeriesOverview(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
 
     var rowFocused by rememberInt()
 

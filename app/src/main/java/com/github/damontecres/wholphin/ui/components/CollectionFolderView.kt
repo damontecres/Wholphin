@@ -58,7 +58,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -634,7 +633,7 @@ fun CollectionFolderView(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
 
     val contextActions =

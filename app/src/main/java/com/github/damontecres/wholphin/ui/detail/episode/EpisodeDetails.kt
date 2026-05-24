@@ -78,7 +78,7 @@ fun EpisodeDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     val canDelete by viewModel.canDelete.collectAsState()
 
     val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)

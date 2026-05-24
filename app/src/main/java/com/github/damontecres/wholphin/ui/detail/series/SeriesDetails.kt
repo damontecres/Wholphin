@@ -124,7 +124,7 @@ fun SeriesDetails(
     val similar by viewModel.similar.observeAsState(listOf())
     val discovered by viewModel.discovered.collectAsState()
     val discoverSeries by viewModel.discoverSeries.collectAsState()
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
