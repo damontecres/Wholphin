@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,7 +28,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
@@ -43,9 +42,8 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
@@ -66,8 +64,8 @@ class DebugViewModel
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
     ) : ViewModel() {
-        val itemPlaybacks = MutableLiveData<List<ItemPlayback>>(listOf())
-        val logcat = MutableLiveData<List<LogcatLine>>(listOf())
+        val itemPlaybacks = MutableStateFlow<List<ItemPlayback>>(emptyList())
+        val logcat = MutableStateFlow<List<LogcatLine>>(emptyList())
 
         val supportedModes by lazy {
             val displayManager =
@@ -108,14 +106,12 @@ class DebugViewModel
             viewModelScope.launchIO {
                 serverRepository.currentUser?.rowId?.let {
                     val results = itemPlaybackDao.getItems(it)
-                    withContext(Dispatchers.Main) {
-                        itemPlaybacks.value = results
-                    }
+                    itemPlaybacks.value = results
                 }
+            }
+            viewModelScope.launchIO {
                 val logcat = getLogCatLines()
-                withContext(Dispatchers.Main) {
-                    this@DebugViewModel.logcat.value = logcat
-                }
+                this@DebugViewModel.logcat.value = logcat
             }
         }
 
@@ -210,8 +206,8 @@ fun DebugPage(
         }
     }
 
-    val itemPlaybacks by viewModel.itemPlaybacks.observeAsState(listOf())
-    val logcat by viewModel.logcat.observeAsState(listOf())
+    val itemPlaybacks by viewModel.itemPlaybacks.collectAsState()
+    val logcat by viewModel.logcat.collectAsState()
 
     LazyColumn(
         state = columnState,
