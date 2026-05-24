@@ -1,9 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.episode
 
 import android.content.Context
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -22,26 +20,26 @@ import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
+import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = EpisodeViewModel.Factory::class)
@@ -67,53 +65,61 @@ class EpisodeViewModel
             fun create(itemId: UUID): EpisodeViewModel
         }
 
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val item = MutableLiveData<BaseItem?>(null)
-        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+        private val _state = MutableStateFlow(EpisodeState())
+        val state: StateFlow<EpisodeState> = _state
 
         val canDelete = MutableStateFlow(false)
 
         init {
             init()
             viewModelScope.launchDefault {
-                mediaManagementService.collectCanDelete(item.asFlow()) { canDelete ->
+                mediaManagementService.collectCanDelete(
+                    state.map { (it.episode as? DataLoadingState.Success<BaseItem?>)?.data },
+                ) { canDelete ->
                     this@EpisodeViewModel.canDelete.update { canDelete }
                 }
             }
         }
 
-        private fun fetchAndSetItem(): Deferred<BaseItem> =
-            viewModelScope.async(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
-                val item =
-                    api.userLibraryApi.getItem(itemId).content.let {
-                        BaseItem.from(it, api)
-                    }
-                this@EpisodeViewModel.item.setValueOnMain(item)
-                item
+        private fun fetchAndSetItem() {
+            viewModelScope.launchIO {
+                try {
+                    val item =
+                        api.userLibraryApi.getItem(itemId).content.let {
+                            BaseItem.from(it, api)
+                        }
+                    _state.update { it.copy(episode = DataLoadingState.Success(item)) }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting episode %s", itemId)
+                    showToast(context, "Error updating episode")
+                }
             }
+        }
 
         fun init(): Job =
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
-                val prefs = userPreferencesService.getCurrent()
-                val item = fetchAndSetItem().await()
-                val result = itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
-                withContext(Dispatchers.Main) {
-                    this@EpisodeViewModel.item.value = item
-                    chosenStreams.value = result
-                    loading.value = LoadingState.Success
+            viewModelScope.launchIO {
+                try {
+                    val prefs = userPreferencesService.getCurrent()
+                    val item =
+                        api.userLibraryApi.getItem(itemId).content.let {
+                            BaseItem(it)
+                        }
+                    val chosenStreams =
+                        itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
+                    _state.update {
+                        it.copy(
+                            episode = DataLoadingState.Success(item),
+                            chosenStreams = chosenStreams,
+                        )
+                    }
                     backdropService.submit(item)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting episode %s", itemId)
+                    _state.update { it.copy(episode = DataLoadingState.Error(ex)) }
                 }
             }
 
@@ -145,9 +151,7 @@ class EpisodeViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -171,9 +175,7 @@ class EpisodeViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -195,14 +197,16 @@ class EpisodeViewModel
         fun clearChosenStreams(chosenStreams: ChosenStreams?) {
             viewModelScope.launchIO {
                 itemPlaybackRepository.deleteChosenStreams(chosenStreams)
-                item.value?.let { item ->
-                    val result =
-                        itemPlaybackRepository.getSelectedTracks(
-                            itemId,
-                            item,
-                            userPreferencesService.getCurrent(),
-                        )
-                    this@EpisodeViewModel.chosenStreams.setValueOnMain(result)
+                state.value.episode.let { item ->
+                    if (item is DataLoadingState.Success<BaseItem>) {
+                        val result =
+                            itemPlaybackRepository.getSelectedTracks(
+                                itemId,
+                                item.data,
+                                userPreferencesService.getCurrent(),
+                            )
+                        _state.update { it.copy(chosenStreams = result) }
+                    }
                 }
             }
         }
@@ -213,3 +217,8 @@ class EpisodeViewModel
             }
         }
     }
+
+data class EpisodeState(
+    val episode: DataLoadingState<BaseItem> = DataLoadingState.Pending,
+    val chosenStreams: ChosenStreams? = null,
+)
