@@ -2,7 +2,6 @@
 
 package com.github.damontecres.wholphin.ui.nav
 
-import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
@@ -14,6 +13,7 @@ import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.RequestHandler
 import com.github.damontecres.wholphin.util.SEERR_PAGE_SIZE
@@ -110,8 +110,7 @@ sealed class Destination(
 
     @Serializable
     data class ItemGrid<T>(
-        val title: String?,
-        @param:StringRes val titleRes: Int?,
+        val title: StringProvider,
         @Contextual val request: T,
         val requestHandler: RequestHandler<T>,
         val initialPosition: Int = 0,
@@ -120,7 +119,7 @@ sealed class Destination(
 
     @Serializable
     data class MoreHomeRow(
-        val title: String,
+        val title: StringProvider,
         val config: HomeRowConfig,
         val initialPosition: Int,
     ) : Destination(false)

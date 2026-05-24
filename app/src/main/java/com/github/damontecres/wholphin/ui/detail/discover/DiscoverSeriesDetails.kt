@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.discover
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -83,6 +84,7 @@ fun DiscoverSeriesDetails(
         ),
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.tvSeries.observeAsState()
@@ -147,7 +149,7 @@ fun DiscoverSeriesDetails(
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
-                                title = item.name ?: context.getString(R.string.unknown),
+                                title = item.name ?: resources.getString(R.string.unknown),
                                 overview = item.overview,
                                 genres = item.genres?.mapNotNull { it.name }.orEmpty(),
                                 files = listOf(),
@@ -494,7 +496,7 @@ fun DiscoverSeriesDetailsHeader(
 }
 
 fun buildDialogForSeason(
-    context: Context,
+    resources: Resources,
     s: BaseItem,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
@@ -503,26 +505,26 @@ fun buildDialogForSeason(
     val items =
         buildList {
             add(
-                DialogItem(context.getString(R.string.go_to), Icons.Default.PlayArrow) {
+                DialogItem(resources.getString(R.string.go_to), Icons.Default.PlayArrow) {
                     onClickItem.invoke(s)
                 },
             )
             if (s.data.userData?.played == true) {
                 add(
-                    DialogItem(context.getString(R.string.mark_unwatched), R.string.fa_eye) {
+                    DialogItem(resources.getString(R.string.mark_unwatched), R.string.fa_eye) {
                         markPlayed.invoke(false)
                     },
                 )
             } else {
                 add(
-                    DialogItem(context.getString(R.string.mark_watched), R.string.fa_eye_slash) {
+                    DialogItem(resources.getString(R.string.mark_watched), R.string.fa_eye_slash) {
                         markPlayed.invoke(true)
                     },
                 )
             }
             add(
                 DialogItem(
-                    context.getString(R.string.play),
+                    resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
                     iconColor = Color.Green.copy(alpha = .8f),
                 ) {
@@ -531,7 +533,7 @@ fun buildDialogForSeason(
             )
             add(
                 DialogItem(
-                    context.getString(R.string.shuffle),
+                    resources.getString(R.string.shuffle),
                     R.string.fa_shuffle,
                 ) {
                     onClickPlay.invoke(true)
@@ -539,7 +541,7 @@ fun buildDialogForSeason(
             )
         }
     return DialogParams(
-        title = s.name ?: context.getString(R.string.tv_season),
+        title = s.name ?: resources.getString(R.string.tv_season),
         fromLongClick = true,
         items = items,
     )

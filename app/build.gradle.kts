@@ -82,7 +82,8 @@ configure<ApplicationExtension> {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -105,6 +106,7 @@ configure<ApplicationExtension> {
 
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
         }
@@ -181,6 +183,9 @@ configure<ApplicationExtension> {
 
     lint {
         disable.add("MissingTranslation")
+    }
+    androidResources {
+        generateLocaleConfig = true
     }
 }
 

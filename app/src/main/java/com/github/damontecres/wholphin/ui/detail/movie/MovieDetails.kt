@@ -64,6 +64,7 @@ import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -152,10 +153,7 @@ fun MovieDetails(
             val movie by rememberUpdatedState(s.data)
             val chosenStreams by rememberUpdatedState(state.chosenStreams)
             LifecycleResumeEffect(destination.itemId) {
-                viewModel.maybePlayThemeSong(
-                    destination.itemId,
-                    preferences.appPreferences.interfacePreferences.playThemeSongs,
-                )
+                viewModel.maybePlayThemeSong(destination.itemId)
                 onPauseOrDispose {
                     viewModel.release()
                 }
@@ -481,7 +479,7 @@ fun MovieDetailsContent(
                     DiscoverRow(
                         row =
                             DiscoverRowData(
-                                stringResource(R.string.discover),
+                                ResStringProvider(R.string.discover),
                                 DataLoadingState.Success(discovered),
                                 type = DiscoverRequestType.UNKNOWN,
                             ),

@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -85,6 +85,7 @@ import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -644,7 +645,7 @@ fun SeriesDetailsContent(
                         DiscoverRow(
                             row =
                                 DiscoverRowData(
-                                    stringResource(R.string.discover),
+                                    ResStringProvider(R.string.discover),
                                     DataLoadingState.Success(discovered),
                                     type = DiscoverRequestType.UNKNOWN,
                                 ),
@@ -726,7 +727,7 @@ fun SeriesDetailsHeader(
 }
 
 fun buildDialogForSeason(
-    context: Context,
+    resources: Resources,
     s: BaseItem,
     canDelete: Boolean,
     onClickItem: (BaseItem) -> Unit,
@@ -737,26 +738,26 @@ fun buildDialogForSeason(
     val items =
         buildList {
             add(
-                DialogItem(context.getString(R.string.go_to), Icons.Default.PlayArrow) {
+                DialogItem(resources.getString(R.string.go_to), Icons.Default.PlayArrow) {
                     onClickItem.invoke(s)
                 },
             )
             if (s.data.userData?.played == true) {
                 add(
-                    DialogItem(context.getString(R.string.mark_unwatched), R.string.fa_eye) {
+                    DialogItem(resources.getString(R.string.mark_unwatched), R.string.fa_eye) {
                         markPlayed.invoke(false)
                     },
                 )
             } else {
                 add(
-                    DialogItem(context.getString(R.string.mark_watched), R.string.fa_eye_slash) {
+                    DialogItem(resources.getString(R.string.mark_watched), R.string.fa_eye_slash) {
                         markPlayed.invoke(true)
                     },
                 )
             }
             add(
                 DialogItem(
-                    context.getString(R.string.play),
+                    resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
                     iconColor = Color.Green.copy(alpha = .8f),
                 ) {
@@ -765,7 +766,7 @@ fun buildDialogForSeason(
             )
             add(
                 DialogItem(
-                    context.getString(R.string.shuffle),
+                    resources.getString(R.string.shuffle),
                     R.string.fa_shuffle,
                 ) {
                     onClickPlay.invoke(true)
@@ -774,7 +775,7 @@ fun buildDialogForSeason(
             if (canDelete) {
                 add(
                     DialogItem(
-                        context.getString(R.string.delete),
+                        resources.getString(R.string.delete),
                         Icons.Default.Delete,
                         iconColor = Color.Red.copy(alpha = .8f),
                     ) {
@@ -784,7 +785,7 @@ fun buildDialogForSeason(
             }
         }
     return DialogParams(
-        title = s.name ?: context.getString(R.string.tv_season),
+        title = s.name ?: resources.getString(R.string.tv_season),
         fromLongClick = true,
         items = items,
     )

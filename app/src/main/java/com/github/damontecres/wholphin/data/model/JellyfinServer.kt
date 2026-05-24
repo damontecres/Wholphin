@@ -64,6 +64,7 @@ data class JellyfinUser(
     @ColumnInfo(defaultValue = "false")
     val requireLogin: Boolean = false,
     val lastUsed: ZonedDateTime? = null,
+    val uiLanguage: String? = null,
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 

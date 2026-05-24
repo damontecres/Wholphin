@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
-import android.content.Context
+import android.content.res.Resources
 import android.view.KeyEvent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -608,14 +608,14 @@ fun ConfirmDeleteDialog(
 }
 
 fun chooseVersionParams(
-    context: Context,
+    resources: Resources,
     sources: List<MediaSourceInfo>,
     chosenSourceId: UUID?,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = context.getString(R.string.choose_stream, context.getString(R.string.version)),
+        title = resources.getString(R.string.choose_stream, resources.getString(R.string.version)),
         items =
             sources.filter { it.id.isNotNullOrBlank() }.mapIndexed { index, source ->
                 val uuid = source.id?.toUUIDOrNull()
@@ -649,7 +649,7 @@ fun resourceFor(type: MediaStreamType): Int =
     }
 
 fun chooseStream(
-    context: Context,
+    resources: Resources,
     streams: List<MediaStream>,
     currentIndex: Int?,
     type: MediaStreamType,
@@ -658,7 +658,7 @@ fun chooseStream(
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = context.getString(R.string.choose_stream, context.getString(resourceFor(type))),
+        title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
         items =
             buildList {
                 if (type == MediaStreamType.SUBTITLE) {
@@ -700,7 +700,7 @@ fun chooseStream(
                                 it
                             }
                         }.mapIndexed { index, stream ->
-                            val simpleStream = SimpleMediaStream.from(context, stream, true)
+                            val simpleStream = SimpleMediaStream.from(resources, stream, true)
                             DialogItem(
                                 selected = currentIndex == stream.index,
                                 leadingContent = {

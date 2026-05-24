@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -103,7 +104,9 @@ class HomeViewModel
                                     if (refresh) {
                                         it.homeRows
                                     } else {
-                                        List(settings.rows.size) { HomeRowLoadingState.Pending("") }
+                                        List(settings.rows.size) {
+                                            HomeRowLoadingState.Pending(EmptyStringProvider)
+                                        }
                                     },
                             )
                         }
