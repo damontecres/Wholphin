@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -126,16 +125,20 @@ fun PreferencesContent(
         updateCache = false
     }
 
-    val release by updateVM.release.observeAsState(null)
-    LaunchedEffect(Unit) {
+    val updateState by updateVM.state.collectAsState()
+    val release = updateState.release
+    LaunchedEffect(preferences.updateUrl, preferences.autoCheckForUpdates) {
         if (UpdateChecker.ACTIVE && preferences.autoCheckForUpdates) {
-            updateVM.init(preferences.updateUrl)
+            updateVM.init()
         }
     }
 
     val movementSounds = true
     val installedVersion = updateVM.currentVersion
-    val updateAvailable = release?.version?.isGreaterThan(installedVersion) ?: false
+    val updateAvailable =
+        remember(updateState.release) {
+            updateState.release?.version?.isGreaterThan(installedVersion) ?: false
+        }
 
     val prefList =
         when (preferenceScreenOption) {
@@ -306,7 +309,7 @@ fun PreferencesContent(
                                                     )
                                                 }
                                             } else {
-                                                updateVM.init(preferences.updateUrl)
+                                                updateVM.init()
                                             }
                                         },
                                         onLongClick = {
