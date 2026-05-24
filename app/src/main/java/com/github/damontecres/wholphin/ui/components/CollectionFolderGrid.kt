@@ -66,7 +66,7 @@ fun CollectionFolderGrid(
     preferences: UserPreferences,
     item: BaseItem?,
     title: String,
-    loadingState: DataLoadingState<List<BaseItem?>>,
+    items: DataLoadingState<List<BaseItem?>>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -91,7 +91,7 @@ fun CollectionFolderGrid(
 ) {
     val context = LocalContext.current
 
-    val pager = (loadingState as? DataLoadingState.Success)?.data
+    val pager = (items as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
     val headerRowFocusRequester = remember { FocusRequester() }
 
@@ -119,7 +119,7 @@ fun CollectionFolderGrid(
             modifier = Modifier.fillMaxSize(),
         ) {
             CollectionFolderHeader(
-                showHeader = showHeader || loadingState !is DataLoadingState.Success,
+                showHeader = showHeader || items !is DataLoadingState.Success,
                 showTitle = showTitle,
                 playEnabled = playEnabled && pager?.isNotEmpty() == true,
                 title = title,
@@ -147,7 +147,7 @@ fun CollectionFolderGrid(
                             .padding(HeaderUtils.padding),
                 )
             }
-            when (val state = loadingState) {
+            when (val state = items) {
                 DataLoadingState.Pending,
                 DataLoadingState.Loading,
                 -> {
