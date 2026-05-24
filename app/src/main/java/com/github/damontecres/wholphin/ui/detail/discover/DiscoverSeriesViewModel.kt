@@ -29,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +70,7 @@ class DiscoverSeriesViewModel
         }
 
         private fun fetchAndSetItem(): Deferred<TvDetails?> =
-            viewModelScope.async {
+            viewModelScope.async(Dispatchers.IO) {
                 try {
                     val tv = seerrService.api.tvApi.tvTvIdGet(tvId = item.id)
                     _state.update { it.copy(tvSeries = DataLoadingState.Success(tv)) }
