@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -25,7 +25,7 @@ fun CollectionFolderRecordings(
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    CollectionFolderGrid(
+    CollectionFolderView(
         preferences = preferences,
         onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
         itemId = itemId,

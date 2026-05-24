@@ -703,6 +703,14 @@
         <item>@string/image_type_thumb</item>
         <!--        <item>Banner</item>-->
     </string-array>
+    <string name="view_options_type_grid">Grid</string>
+    <string name="view_options_type_list">List</string>
+    <string name="view_options_type_list_compact">Compact List</string>
+    <string-array name="view_options_types">
+        <item>@string/view_options_type_grid</item>
+        <item>@string/view_options_type_list</item>
+        <item>@string/view_options_type_list_compact</item>
+    </string-array>
 
     <string name="backdrop_style_dynamic">Image with dynamic color</string>
     <string name="backdrop_style_image">Image only</string>

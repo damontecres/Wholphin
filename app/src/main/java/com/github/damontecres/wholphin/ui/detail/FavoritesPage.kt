@@ -27,7 +27,7 @@ import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.TabRow
@@ -121,7 +121,7 @@ fun FavoritesPage(
         when (selectedTabIndex) {
             // Movies
             0 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_movies",
@@ -153,7 +153,7 @@ fun FavoritesPage(
 
             // TV
             1 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_series",
@@ -185,7 +185,7 @@ fun FavoritesPage(
 
             // Episodes
             2 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_episodes",
@@ -218,7 +218,7 @@ fun FavoritesPage(
 
             // Videos
             3 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_videos",
@@ -250,7 +250,7 @@ fun FavoritesPage(
 
             // Playlists
             4 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_playlists",
@@ -282,7 +282,7 @@ fun FavoritesPage(
 
             // People
             5 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = "${NavDrawerItem.Favorites.id}_people",

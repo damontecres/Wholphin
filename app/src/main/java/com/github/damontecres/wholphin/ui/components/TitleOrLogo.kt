@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
@@ -9,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +92,31 @@ fun rememberLogoUrl(item: BaseItem?): String? {
             imageUrlService.getItemImageUrl(item, ImageType.LOGO)
         } else {
             null
+        }
+    }
+}
+
+@Composable
+fun SimpleTitleOrLogo(
+    item: BaseItem?,
+    showLogo: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val logoImageUrl = rememberLogoUrl(item)
+    var imageError by remember { mutableStateOf(false) }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier,
+    ) {
+        if (showLogo && logoImageUrl != null && !imageError) {
+            AsyncImage(
+                model = logoImageUrl,
+                contentDescription = item?.title,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Title(item?.title, Modifier)
         }
     }
 }
