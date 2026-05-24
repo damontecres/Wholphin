@@ -12,27 +12,27 @@ import androidx.media3.common.listenTo
  * Remembers the [Player]'s state as it changes. Useful for changing UI if the player is buffering.
  *
  * @see Player.State
- * @see PlaybackState
+ * @see PlayerState
  */
 @Composable
-fun rememberPlaybackState(player: Player): State<PlaybackState> {
-    val state = remember(player) { mutableStateOf(getPlaybackState(player.playbackState)) }
+fun rememberPlayerState(player: Player): State<PlayerState> {
+    val state = remember(player) { mutableStateOf(getPlayerState(player.playbackState)) }
     LaunchedEffect(player) {
         player.listenTo(Player.EVENT_PLAYBACK_STATE_CHANGED) {
-            state.value = getPlaybackState(player.playbackState)
+            state.value = getPlayerState(player.playbackState)
         }
     }
     return state
 }
 
-private fun getPlaybackState(
+private fun getPlayerState(
     @Player.State value: Int,
-): PlaybackState = PlaybackState.entries.first { it.value == value }
+): PlayerState = PlayerState.entries.first { it.value == value }
 
 /**
  * Represents [Player.State] integers as an Enum
  */
-enum class PlaybackState(
+enum class PlayerState(
     @param:Player.State val value: Int,
 ) {
     IDLE(Player.STATE_IDLE),

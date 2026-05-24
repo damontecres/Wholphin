@@ -161,7 +161,7 @@ class PlaybackViewModel
             fun create(destination: Destination): PlaybackViewModel
         }
 
-        val currentPlayer = MutableStateFlow<PlayerState?>(null)
+        val currentPlayer = MutableStateFlow<PlayerInstance?>(null)
 
         internal lateinit var player: Player
 
@@ -195,6 +195,7 @@ class PlaybackViewModel
         private val isPlaylist = destination is Destination.PlaybackList
 
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
+
         val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
@@ -261,7 +262,7 @@ class PlaybackViewModel
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
-                    PlayerState(playerCreation.player, playerBackend, playerCreation.assHandler)
+                    PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler)
                 }
                 configurePlayer()
             }
@@ -1573,7 +1574,7 @@ class PlaybackViewModel
         }
     }
 
-data class PlayerState(
+data class PlayerInstance(
     val player: Player,
     val backend: PlayerBackend,
     val assHandler: AssHandler?,

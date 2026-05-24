@@ -141,7 +141,7 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val playerState by viewModel.currentPlayer.collectAsState()
             PlaybackPageContent(
-                playerState = playerState!!,
+                playerInstance = playerState!!,
                 preferences = preferences,
                 destination = destination,
                 viewModel = viewModel,
@@ -154,14 +154,14 @@ fun PlaybackPage(
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackPageContent(
-    playerState: PlayerState,
+    playerInstance: PlayerInstance,
     preferences: UserPreferences,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel,
 ) {
-    val player = playerState.player
-    val playerBackend = playerState.backend
+    val player = playerInstance.player
+    val playerBackend = playerInstance.backend
 
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
@@ -220,10 +220,10 @@ fun PlaybackPageContent(
     }
 
     val presentationState = rememberPresentationState(player, false)
-    val playbackState by rememberPlaybackState(player)
+    val playbackState by rememberPlayerState(player)
     var showBuffering by remember { mutableStateOf(false) }
     LaunchedEffect(playbackState) {
-        if (playbackState == PlaybackState.BUFFERING) {
+        if (playbackState == PlayerState.BUFFERING) {
             // Delay before showing the loading indicator
             // So if buffering is quick, the UI won't flash
             delay(250)
@@ -481,7 +481,7 @@ fun PlaybackPageContent(
                             setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                             setBottomPaddingFraction(it.margin.toFloat() / 100f)
                         }
-                        playerState.assHandler?.let { assHandler ->
+                        playerInstance.assHandler?.let { assHandler ->
                             if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
                                 Timber.v("Adding AssSubtitleView")
                                 addView(
