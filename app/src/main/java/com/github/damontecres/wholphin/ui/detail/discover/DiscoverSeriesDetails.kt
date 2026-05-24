@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,8 +65,9 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.successValue
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -85,17 +85,8 @@ fun DiscoverSeriesDetails(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-
-    val item by viewModel.tvSeries.observeAsState()
-    val seasons by viewModel.seasons.observeAsState(listOf())
-    val people by viewModel.people.observeAsState(listOf())
-    val trailers by viewModel.trailers.observeAsState(listOf())
-    val similar by viewModel.similar.observeAsState(listOf())
-    val recommended by viewModel.recommended.observeAsState(listOf())
-    val userConfig by viewModel.userConfig.collectAsState(null)
+    val state by viewModel.state.collectAsState()
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
-    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -105,74 +96,73 @@ fun DiscoverSeriesDetails(
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
 
-    when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+    when (val st = state.tvSeries) {
+        is DataLoadingState.Error -> {
+            ErrorMessage(st, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
-            item?.let { item ->
-                val rating by viewModel.rating.observeAsState(null)
-                DiscoverSeriesDetailsContent(
-                    preferences = preferences,
-                    series = item,
-                    userConfig = userConfig,
-                    rating = rating,
-                    canCancel = canCancel,
-                    seasons = seasons,
-                    people = people,
-                    similar = similar,
-                    recommended = recommended,
-                    modifier = modifier,
-                    onClickItem = { index, item ->
-                        viewModel.navigateTo(Destination.DiscoveredItem(item))
-                    },
-                    onClickPerson = {
-                        viewModel.navigateTo(Destination.DiscoveredItem(it))
-                    },
-                    goToOnClick = {
-                        item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
-                            viewModel.navigateTo(
-                                Destination.MediaItem(
-                                    itemId = it,
-                                    type = BaseItemKind.MOVIE,
-                                ),
-                            )
-                        }
-                    },
-                    overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = item.name ?: resources.getString(R.string.unknown),
-                                overview = item.overview,
-                                genres = item.genres?.mapNotNull { it.name }.orEmpty(),
-                                files = listOf(),
-                            )
-                    },
-                    trailerOnClick = {
-                        TrailerService.onClick(context, it, viewModel::navigateTo)
-                    },
-                    trailers = trailers,
-                    requestOnClick = {
-                        item.id?.let { id ->
-                            showRequestSeasonDialog = true
-                        }
-                    },
-                    cancelOnClick = {
-                        item.id?.let { viewModel.cancelRequest(it) }
-                    },
-                    moreOnClick = {
-                    },
-                    onLongClickPerson = { _, _ -> },
-                    onLongClickSimilar = { _, _ -> },
-                )
-            }
+        is DataLoadingState.Success<TvDetails> -> {
+            val item = st.data
+            val userConfig by viewModel.userConfig.collectAsState(null)
+            DiscoverSeriesDetailsContent(
+                preferences = preferences,
+                series = item,
+                userConfig = userConfig,
+                rating = state.rating,
+                canCancel = state.canCancelRequest,
+                seasons = state.seasons,
+                people = state.people,
+                similar = state.similar,
+                recommended = state.recommended,
+                modifier = modifier,
+                onClickItem = { index, item ->
+                    viewModel.navigateTo(Destination.DiscoveredItem(item))
+                },
+                onClickPerson = {
+                    viewModel.navigateTo(Destination.DiscoveredItem(it))
+                },
+                goToOnClick = {
+                    item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                itemId = it,
+                                type = BaseItemKind.MOVIE,
+                            ),
+                        )
+                    }
+                },
+                overviewOnClick = {
+                    overviewDialog =
+                        ItemDetailsDialogInfo(
+                            title = item.name ?: resources.getString(R.string.unknown),
+                            overview = item.overview,
+                            genres = item.genres?.mapNotNull { it.name }.orEmpty(),
+                            files = listOf(),
+                        )
+                },
+                trailerOnClick = {
+                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                },
+                trailers = state.trailers,
+                requestOnClick = {
+                    item.id?.let { id ->
+                        showRequestSeasonDialog = true
+                    }
+                },
+                cancelOnClick = {
+                    item.id?.let { viewModel.cancelRequest(it) }
+                },
+                moreOnClick = {
+                },
+                onLongClickPerson = { _, _ -> },
+                onLongClickSimilar = { _, _ -> },
+            )
         }
     }
     overviewDialog?.let { info ->
@@ -203,11 +193,13 @@ fun DiscoverSeriesDetails(
     }
     if (showRequestSeasonDialog) {
         RequestSeasonsDialog(
-            title = item?.name ?: "",
-            seasons = seasons,
+            title = state.tvSeries.successValue?.name ?: "",
+            seasons = state.seasons,
             request4kEnabled = request4kEnabled,
             onSubmit = { seasons, is4k ->
-                item?.id?.let { viewModel.request(it, seasons, is4k) }
+                state.tvSeries.successValue
+                    ?.id
+                    ?.let { viewModel.request(it, seasons, is4k) }
                 showRequestSeasonDialog = false
             },
             onDismissRequest = { showRequestSeasonDialog = false },

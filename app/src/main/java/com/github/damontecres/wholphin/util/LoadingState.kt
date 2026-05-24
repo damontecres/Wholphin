@@ -103,3 +103,5 @@ sealed interface DataLoadingState<out T> {
             listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
     }
 }
+
+val <T> DataLoadingState<T>.successValue: T? get() = (this as? DataLoadingState.Success<T>)?.data
