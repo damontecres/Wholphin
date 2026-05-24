@@ -188,7 +188,7 @@ class AlbumViewModel
                                 api.libraryApi
                                     .getSimilarItems(
                                         GetSimilarItemsRequest(
-                                            userId = serverRepository.currentUser.value?.id,
+                                            userId = serverRepository.currentUser?.id,
                                             itemId = itemId,
                                             excludeArtistIds = album.data.albumArtists?.map { it.id },
                                             fields = SlimItemFields,
@@ -202,7 +202,7 @@ class AlbumViewModel
                     viewModelScope.launchIO {
                         val request =
                             GetItemsRequest(
-                                userId = serverRepository.currentUser.value?.id,
+                                userId = serverRepository.currentUser?.id,
                                 albumIds = listOf(itemId),
                                 parentId = null,
                                 fields = DefaultItemFields,

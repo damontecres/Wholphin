@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
@@ -75,7 +74,7 @@ class RemovedNextUpContentViewModel
 
         init {
             viewModelScope.launchDefault {
-                serverRepository.currentUser.asFlow().collectLatest { user ->
+                serverRepository.currentUserFlow.collectLatest { user ->
                     _state.update { RemovedNextUpState() }
                     if (user == null) {
                         return@collectLatest
@@ -105,7 +104,7 @@ class RemovedNextUpContentViewModel
         }
 
         fun remove(item: RemovedItem) {
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 viewModelScope.launchDefault {
                     mutex.withLock {
                         _state.update { it.copy(removedEnabled = false) }

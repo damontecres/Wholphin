@@ -29,7 +29,7 @@ class SwitchSeerrViewModel
         private val seerrService: SeerrService,
         private val serverRepository: ServerRepository,
     ) : ViewModel() {
-        val currentUser = serverRepository.currentUser
+        val currentUser = serverRepository.currentUserFlow
         val currentSeerrServer = seerrServerRepository.currentServer
 
         val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)

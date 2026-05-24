@@ -172,12 +172,8 @@ fun SeriesOverview(
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
-    val preferredSubtitleLanguage =
-        viewModel.serverRepository.currentUserDto
-            .observeAsState()
-            .value
-            ?.configuration
-            ?.subtitleLanguagePreference
+    val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)
+    val preferredSubtitleLanguage = userDto?.configuration?.subtitleLanguagePreference
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -345,7 +341,7 @@ fun SeriesOverview(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                userDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

@@ -166,7 +166,7 @@ class MovieViewModel
                         api.libraryApi
                             .getSimilarItems(
                                 GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser.value?.id,
+                                    userId = serverRepository.currentUser?.id,
                                     itemId = itemId,
                                     fields = SlimItemFields,
                                     limit = 25,

@@ -265,8 +265,8 @@ class HomeSettingsService
          */
         suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
             Timber.v("Creating default settings")
-            val user = serverRepository.currentUser.value?.takeIf { it.id == userId }
-            val userDto = serverRepository.currentUserDto.value?.takeIf { it.id == userId }
+            val user = serverRepository.currentUser?.takeIf { it.id == userId }
+            val userDto = serverRepository.currentUserDto?.takeIf { it.id == userId }
             val libraries =
                 if (user != null) {
                     navDrawerService.getFilteredUserLibraries(user, userDto?.tvAccess ?: false)
@@ -679,7 +679,7 @@ class HomeSettingsService
                     val genreImages =
                         getGenreImageMap(
                             api = api,
-                            userId = serverRepository.currentUser.value?.id,
+                            userId = serverRepository.currentUser?.id,
                             scope = scope,
                             imageUrlService = imageUrlService,
                             genres = genreIds,

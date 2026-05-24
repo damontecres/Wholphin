@@ -134,7 +134,7 @@ class HomeRowGridViewModel
                 try {
                     val preferences = userPreferencesService.getCurrent()
                     val prefs = preferences.appPreferences.homePagePreferences
-                    serverRepository.currentUserDto.value?.let { userDto ->
+                    serverRepository.currentUserDto?.let { userDto ->
                         val libraries =
                             navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                         val result =
@@ -381,7 +381,7 @@ fun HomeRowGrid(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                viewModel.serverRepository.currentUserDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

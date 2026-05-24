@@ -229,7 +229,7 @@ class SeriesViewModel
                                 api.libraryApi
                                     .getSimilarItems(
                                         GetSimilarItemsRequest(
-                                            userId = serverRepository.currentUser.value?.id,
+                                            userId = serverRepository.currentUser?.id,
                                             itemId = seriesId,
                                             fields = SlimItemFields,
                                             limit = 25,

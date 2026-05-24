@@ -81,12 +81,8 @@ fun EpisodeDetails(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
     val canDelete by viewModel.canDelete.collectAsState()
 
-    val preferredSubtitleLanguage =
-        viewModel.serverRepository.currentUserDto
-            .observeAsState()
-            .value
-            ?.configuration
-            ?.subtitleLanguagePreference
+    val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)
+    val preferredSubtitleLanguage = userDto?.configuration?.subtitleLanguagePreference
 
     val contextActions =
         remember {
@@ -187,7 +183,7 @@ fun EpisodeDetails(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                userDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

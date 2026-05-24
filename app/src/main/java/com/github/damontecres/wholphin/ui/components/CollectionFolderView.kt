@@ -158,7 +158,7 @@ class CollectionFolderViewModel
                         }
 
                     val libraryDisplayInfo =
-                        serverRepository.currentUser.value?.let { user ->
+                        serverRepository.currentUser?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)
                         }
                     this@CollectionFolderViewModel.viewOptions.value =
@@ -223,7 +223,7 @@ class CollectionFolderViewModel
             viewOptions: ViewOptions? = this.viewOptions.value,
         ) {
             if (collectionFilter.useSavedLibraryDisplayInfo) {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     viewModelScope.launchIO {
                         val libraryDisplayInfo =
                             LibraryDisplayInfo(
@@ -413,7 +413,7 @@ class CollectionFolderViewModel
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
             FilterUtils.getFilterOptionValues(
                 api,
-                serverRepository.currentUser.value?.id,
+                serverRepository.currentUser?.id,
                 itemUuid,
                 filterOption,
             )
@@ -854,7 +854,7 @@ fun CollectionFolderView(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                viewModel.serverRepository.currentUserDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

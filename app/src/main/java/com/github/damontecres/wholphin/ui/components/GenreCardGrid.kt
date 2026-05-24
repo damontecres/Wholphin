@@ -94,7 +94,7 @@ class GenreViewModel
                 this@GenreViewModel.item.setValueOnMain(item)
                 val request =
                     GetGenresRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = itemId,
                         fields = SlimItemFields,
                         includeItemTypes = includeItemTypes,
@@ -113,7 +113,7 @@ class GenreViewModel
                 val genreToUrl =
                     getGenreImageMap(
                         api = api,
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         scope = viewModelScope,
                         imageUrlService = imageUrlService,
                         genres = genres.map { it.id },

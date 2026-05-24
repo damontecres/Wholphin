@@ -100,7 +100,7 @@ fun PreferencesContent(
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
-    val currentUser by viewModel.currentUser.observeAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
@@ -635,7 +635,7 @@ fun PreferencesContent(
             }
 
             SeerrDialogMode.Add -> {
-                val currentUser by seerrVm.currentUser.observeAsState()
+                val currentUser by seerrVm.currentUser.collectAsState(null)
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
                 LaunchedEffect(status) {

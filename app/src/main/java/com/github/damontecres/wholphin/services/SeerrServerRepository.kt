@@ -94,7 +94,7 @@ class SeerrServerRepository
                 server = seerrServerDao.getServer(url)
             }
             server?.server?.let { server ->
-                serverRepository.currentUser.value?.let { jellyfinUser ->
+                serverRepository.currentUser?.let { jellyfinUser ->
                     // TODO test api key
                     val user =
                         SeerrUser(
@@ -126,7 +126,7 @@ class SeerrServerRepository
                 server = seerrServerDao.getServer(url)
             }
             server?.server?.let { server ->
-                serverRepository.currentUser.value?.let { jellyfinUser ->
+                serverRepository.currentUser?.let { jellyfinUser ->
                     // TODO Need to update server early so that cookies are saved
                     seerrApi.update(server.url, null)
                     val userConfig = seerrLogin(seerrApi.api, authMethod, username, password)

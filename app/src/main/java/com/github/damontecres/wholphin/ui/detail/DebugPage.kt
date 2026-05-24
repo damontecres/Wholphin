@@ -106,7 +106,7 @@ class DebugViewModel
 
         init {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.rowId?.let {
+                serverRepository.currentUser?.rowId?.let {
                     val results = itemPlaybackDao.getItems(it)
                     withContext(Dispatchers.Main) {
                         itemPlaybacks.value = results
@@ -341,17 +341,17 @@ fun DebugPage(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Current server: ${viewModel.serverRepository.currentServer.value}",
+                    text = "Current server: ${viewModel.serverRepository.currentServer}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Current user: ${viewModel.serverRepository.currentUser.value}",
+                    text = "Current user: ${viewModel.serverRepository.currentUser}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "User server settings: ${viewModel.serverRepository.currentUserDto.value?.configuration}",
+                    text = "User server settings: ${viewModel.serverRepository.currentUserDto?.configuration}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

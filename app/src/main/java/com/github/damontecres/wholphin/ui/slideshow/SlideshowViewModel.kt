@@ -152,7 +152,7 @@ class SlideshowViewModel
                                 sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
                             ),
                         )
-                    serverRepository.currentUser.value?.let { user ->
+                    serverRepository.currentUser?.let { user ->
                         val filter =
                             playbackEffectDao
                                 .getPlaybackEffect(
@@ -252,7 +252,7 @@ class SlideshowViewModel
                             updateImageFilter(albumImageFilter)
                             if (saveFilters) {
                                 viewModelScope.launchIO {
-                                    serverRepository.currentUser.value?.let { user ->
+                                    serverRepository.currentUser?.let { user ->
                                         val vf =
                                             playbackEffectDao
                                                 .getPlaybackEffect(
@@ -371,7 +371,7 @@ class SlideshowViewModel
                 viewModelScope.launchIO {
                     val vf = _imageFilter.value
                     if (vf != null) {
-                        serverRepository.currentUser.value?.let { user ->
+                        serverRepository.currentUser?.let { user ->
                             playbackEffectDao
                                 .insert(
                                     PlaybackEffect(
@@ -400,7 +400,7 @@ class SlideshowViewModel
                 val vf = _imageFilter.value
                 if (vf != null) {
                     albumImageFilter = vf
-                    serverRepository.currentUser.value?.let { user ->
+                    serverRepository.currentUser?.let { user ->
                         playbackEffectDao
                             .insert(
                                 PlaybackEffect(

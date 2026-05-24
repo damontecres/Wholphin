@@ -198,7 +198,7 @@ class PlaybackViewModel
         val subtitleSearchStatus = MutableLiveData<SubtitleSearchStatus?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
-        val currentUserDto = serverRepository.currentUserDto
+        val currentUserDto = serverRepository.currentUserDtoFlow
 
         init {
             viewModelScope.launchIO {
@@ -365,7 +365,7 @@ class PlaybackViewModel
                     api.userLibraryApi
                         .getIntros(
                             itemId = playlistItem.id,
-                            userId = serverRepository.currentUser.value?.id,
+                            userId = serverRepository.currentUser?.id,
                         ).content.items
                         .map {
                             PlaylistItem.Intro(BaseItem(it))
@@ -459,7 +459,7 @@ class PlaybackViewModel
 
                 // Use the provided playback parameters or else check if the database has some
                 val itemPlayback =
-                    serverRepository.currentUser.value?.let { user ->
+                    serverRepository.currentUser?.let { user ->
                         itemPlaybackDao.getItem(user, base.id)?.let {
                             Timber.v("Fetched itemPlayback from DB: %s", it)
                             if (it.sourceId != null) {
@@ -496,7 +496,7 @@ class PlaybackViewModel
                 // Create the correct player for the media
                 createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
                 val subtitleLanguagePreference =
-                    serverRepository.currentUserDto.value
+                    serverRepository.currentUserDto
                         ?.configuration
                         ?.subtitleLanguagePreference
                 val subtitleStreams =
@@ -649,7 +649,7 @@ class PlaybackViewModel
                                 if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
                                     deviceProfileService.getOrCreateDeviceProfile(
                                         preferences.appPreferences.playbackPreferences,
-                                        serverRepository.currentServer.value?.serverVersion,
+                                        serverRepository.currentServer?.serverVersion,
                                     )
                                 } else {
                                     mpvDeviceProfile

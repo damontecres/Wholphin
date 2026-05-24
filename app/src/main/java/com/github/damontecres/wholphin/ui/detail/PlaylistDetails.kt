@@ -168,7 +168,7 @@ class PlaylistViewModel
                             .let { BaseItem(it, false) }
                     state.update { it.copy(playlist = playlist) }
                     val libraryDisplayInfo =
-                        serverRepository.currentUser.value?.let { user ->
+                        serverRepository.currentUser?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)
                         }
                     val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
@@ -198,7 +198,7 @@ class PlaylistViewModel
                 )
             }
 
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 viewModelScope.launchIO {
                     val libraryDisplayInfo =
                         libraryDisplayInfoDao.getItem(user, itemId)?.copy(
@@ -304,7 +304,7 @@ class PlaylistViewModel
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
             FilterUtils.getFilterOptionValues(
                 api,
-                serverRepository.currentUser.value?.id,
+                serverRepository.currentUser?.id,
                 itemId,
                 filterOption,
             )

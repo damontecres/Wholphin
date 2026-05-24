@@ -48,7 +48,7 @@ class SearchForViewModel
                     try {
                         val request =
                             GetItemsRequest(
-                                userId = serverRepository.currentUser.value?.id,
+                                userId = serverRepository.currentUser?.id,
                                 searchTerm = query,
                                 includeItemTypes = listOf(searchType),
                                 recursive = true,

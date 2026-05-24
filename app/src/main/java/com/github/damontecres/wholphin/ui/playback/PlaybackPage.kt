@@ -168,7 +168,7 @@ fun PlaybackPageContent(
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val mediaInfo by viewModel.currentMediaInfo.observeAsState()
-    val userDto by viewModel.currentUserDto.observeAsState()
+    val userDto by viewModel.currentUserDto.collectAsState()
 
     val currentPlayback by viewModel.currentPlayback.collectAsState()
     val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(

@@ -159,7 +159,7 @@ class MusicService
                 val items =
                     api.instantMixApi
                         .getInstantMixFromItem(
-                            userId = serverRepository.currentUser.value?.id,
+                            userId = serverRepository.currentUser?.id,
                             itemId = itemId,
                             limit = 200,
                             fields = DefaultItemFields,

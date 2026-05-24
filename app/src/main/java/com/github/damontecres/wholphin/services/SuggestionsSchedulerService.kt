@@ -8,10 +8,10 @@ import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
@@ -47,7 +47,7 @@ class SuggestionsSchedulerService
         internal var initialDelaySecondsProvider: () -> Long = { 60L + Random.nextLong(0L, 121L) }
 
         init {
-            serverRepository.current.observe(activity) { user ->
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) { user ->
                 Timber.v("New user %s", user?.user?.id)
                 if (user == null) {
                     workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)

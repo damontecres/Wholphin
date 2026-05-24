@@ -81,7 +81,7 @@ class StudioViewModel
                 this@StudioViewModel.item.setValueOnMain(item)
                 val request =
                     GetStudiosRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = itemId,
                         fields = SlimItemFields,
                         includeItemTypes = includeItemTypes,
@@ -110,7 +110,7 @@ class StudioViewModel
             withContext(Dispatchers.IO) {
                 val request =
                     GetStudiosRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = itemId,
                         nameLessThan = letter.toString(),
                         limit = 0,
