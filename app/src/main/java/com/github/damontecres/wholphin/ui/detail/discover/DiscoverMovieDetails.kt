@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,6 +80,7 @@ fun DiscoverMovieDetails(
             creationCallback = { it.create(destination.item) },
         ),
 ) {
+    val resources = LocalResources.current
     val context = LocalContext.current
     LifecycleResumeEffect(Unit) {
         viewModel.init()
@@ -160,7 +162,7 @@ fun DiscoverMovieDetails(
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
-                                title = movie.title ?: context.getString(R.string.unknown),
+                                title = movie.title ?: resources.getString(R.string.unknown),
                                 overview = movie.overview,
                                 genres = movie.genres?.mapNotNull { it.name }.orEmpty(),
                                 files = listOf(),
@@ -244,7 +246,6 @@ fun DiscoverMovieDetailsContent(
     onLongClickSimilar: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var position by rememberInt(0)
     val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }

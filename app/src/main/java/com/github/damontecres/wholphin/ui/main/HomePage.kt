@@ -381,7 +381,7 @@ fun HomePageContent(
                                 is HomeRowLoadingState.Pending,
                                 -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = stringResource(R.string.loading),
                                         modifier = Modifier.animateItem(),
                                     )
@@ -389,7 +389,7 @@ fun HomePageContent(
 
                                 is HomeRowLoadingState.Error -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = r.localizedMessage,
                                         isError = true,
                                         modifier = Modifier.animateItem(),
@@ -400,7 +400,7 @@ fun HomePageContent(
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
                                         ItemRow(
-                                            title = row.title,
+                                            title = row.title.getString(),
                                             items = row.items,
                                             onClickItem =
                                                 remember(rowIndex, onClickItem) {
@@ -502,7 +502,7 @@ fun HomePageContent(
                                         )
                                     } else if (showEmptyRows) {
                                         FocusableItemRow(
-                                            title = r.title,
+                                            title = r.title.getString(),
                                             subtitle = stringResource(R.string.no_results),
                                             modifier = Modifier.animateItem(),
                                         )

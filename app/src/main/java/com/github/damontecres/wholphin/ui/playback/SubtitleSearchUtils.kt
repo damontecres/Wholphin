@@ -155,7 +155,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 it.copy(
                                     subtitleStreams =
                                         subtitlesStreams.map {
-                                            SimpleMediaStream.from(context, it, true)
+                                            SimpleMediaStream.from(context.resources, it, true)
                                         },
                                 )
                             }

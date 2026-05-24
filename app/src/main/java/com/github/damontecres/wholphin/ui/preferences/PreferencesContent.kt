@@ -82,6 +82,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
 
 @Composable
 fun PreferencesContent(
@@ -109,6 +110,7 @@ fun PreferencesContent(
     val seerrConnection by viewModel.seerrConnection.collectAsState()
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
+    var showLocaleChoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -255,6 +257,12 @@ fun PreferencesContent(
                         pref as AppPreference<AppPreferences, Any>
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
+                            val focusModifier =
+                                Modifier
+                                    .ifElse(
+                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                        Modifier.focusRequester(focusRequester),
+                                    )
                             val focused = interactionSource.collectIsFocusedAsState().value
                             LaunchedEffect(focused) {
                                 if (focused) {
@@ -275,12 +283,7 @@ fun PreferencesContent(
                                         },
                                         summary = installedVersion.toString(),
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -317,12 +320,7 @@ fun PreferencesContent(
                                                 null
                                             },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -348,7 +346,7 @@ fun PreferencesContent(
                                                 updateCache = true
                                             }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = summary,
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -359,7 +357,7 @@ fun PreferencesContent(
                                     NavDrawerPreference(
                                         title = stringResource(pref.title),
                                         summary = pref.summary(context, null),
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         interactionSource = interactionSource,
                                     )
                                 }
@@ -370,7 +368,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.sendAppLogs()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -383,7 +381,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.resetSubtitleSettings()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -400,6 +398,7 @@ fun PreferencesContent(
                                     ChoicePreference(
                                         title = stringResource(pref.title),
                                         summary = stringResource(summary),
+                                        interactionSource = interactionSource,
                                         possibleValues =
                                             listOf(
                                                 stringResource(R.string.none),
@@ -429,6 +428,7 @@ fun PreferencesContent(
                                                 }
                                             }
                                         },
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -456,7 +456,7 @@ fun PreferencesContent(
                                                     }
                                                 }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary =
                                             when (seerrConnection) {
                                                 is SeerrConnectionStatus.Error -> {
@@ -487,7 +487,7 @@ fun PreferencesContent(
                                                 showQuickConnectDialog = true
                                             }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -500,7 +500,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.screensaverService.start()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -516,6 +516,7 @@ fun PreferencesContent(
                                     ChoicePreference(
                                         title = stringResource(pref.title),
                                         summary = players[selectedIndex].name,
+                                        interactionSource = interactionSource,
                                         possibleValues = players,
                                         selectedIndex = selectedIndex,
                                         onValueChange = { index ->
@@ -543,6 +544,25 @@ fun PreferencesContent(
                                                 Text(item.name)
                                             }
                                         },
+                                        modifier = focusModifier,
+                                    )
+                                }
+
+                                AppPreference.UserInterfaceLanguage -> {
+                                    val locale =
+                                        remember(currentUser?.uiLanguage) {
+                                            currentUser?.uiLanguage?.let { Locale.forLanguageTag(it) }
+                                                ?: Locale.getDefault()
+                                        }
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            showLocaleChoiceDialog = true
+                                        },
+                                        modifier = focusModifier,
+                                        summary = locale.getDisplayName(locale),
+                                        onLongClick = null,
+                                        interactionSource = interactionSource,
                                     )
                                 }
 
@@ -576,12 +596,7 @@ fun PreferencesContent(
                                             }
                                         },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
                             }
@@ -720,6 +735,11 @@ fun PreferencesContent(
                 }
             }
         }
+    }
+    if (showLocaleChoiceDialog) {
+        LocaleChoiceDialog(
+            onDismissRequest = { showLocaleChoiceDialog = false },
+        )
     }
 }
 

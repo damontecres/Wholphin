@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.ExtraType
@@ -41,8 +42,7 @@ sealed interface ExtrasItem {
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.ItemGrid(
-                title = null,
-                titleRes = type.stringRes,
+                title = ResStringProvider(type.stringRes),
                 request =
                     GetItemsRequest(
                         ids = items.map { it.id },

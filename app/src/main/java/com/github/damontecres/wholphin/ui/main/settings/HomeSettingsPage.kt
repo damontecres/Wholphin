@@ -221,7 +221,7 @@ fun HomeSettingsPage(
                                         }
                                     }
                                 HomeRowSettings(
-                                    title = row.title,
+                                    title = row.title.getString(),
                                     preferenceOptions = preferenceOptions,
                                     viewOptions = row.config.viewOptions,
                                     defaultViewOptions = defaultViewOptions,

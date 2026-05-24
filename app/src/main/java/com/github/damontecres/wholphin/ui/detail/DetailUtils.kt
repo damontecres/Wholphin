@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -32,7 +32,7 @@ data class MoreDialogActions(
 )
 
 fun buildMoreDialogItemsForHome(
-    context: Context,
+    resources: Resources,
     item: BaseItem,
     seriesId: UUID?,
     playbackPosition: Duration,
@@ -47,7 +47,7 @@ fun buildMoreDialogItemsForHome(
         val itemId = item.id
         add(
             DialogItem(
-                context.getString(R.string.go_to),
+                resources.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
                 actions.onClickGoTo(item)
@@ -57,7 +57,7 @@ fun buildMoreDialogItemsForHome(
             if (playbackPosition >= 1.seconds) {
                 add(
                     DialogItem(
-                        context.getString(R.string.resume),
+                        resources.getString(R.string.resume),
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -71,7 +71,7 @@ fun buildMoreDialogItemsForHome(
                 )
                 add(
                     DialogItem(
-                        context.getString(R.string.restart),
+                        resources.getString(R.string.restart),
                         Icons.Default.Refresh,
 //                    iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -86,7 +86,7 @@ fun buildMoreDialogItemsForHome(
             } else {
                 add(
                     DialogItem(
-                        context.getString(R.string.play),
+                        resources.getString(R.string.play),
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -103,7 +103,7 @@ fun buildMoreDialogItemsForHome(
         if (item.type == BaseItemKind.MUSIC_ALBUM) {
             add(
                 DialogItem(
-                    context.getString(R.string.add_to_queue),
+                    resources.getString(R.string.add_to_queue),
                     Icons.Default.Add,
                 ) {
                     actions.onClickAddToQueue(item)
@@ -121,7 +121,7 @@ fun buildMoreDialogItemsForHome(
         if (canDelete) {
             add(
                 DialogItem(
-                    context.getString(R.string.delete),
+                    resources.getString(R.string.delete),
                     Icons.Default.Delete,
                     iconColor = Color.Red.copy(alpha = .8f),
                 ) {
@@ -169,7 +169,7 @@ fun buildMoreDialogItemsForHome(
         seriesId?.let {
             add(
                 DialogItem(
-                    context.getString(R.string.go_to_series),
+                    resources.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
                     actions.navigateTo(

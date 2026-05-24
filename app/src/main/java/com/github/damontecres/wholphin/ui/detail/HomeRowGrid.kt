@@ -59,6 +59,8 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.StringProvider
+import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -93,13 +95,13 @@ class HomeRowGridViewModel
         private val musicService: MusicService,
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
-        @Assisted private val title: String,
+        @Assisted private val title: StringProvider,
         @Assisted private val rowConfig: HomeRowConfig,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
             fun create(
-                title: String,
+                title: StringProvider,
                 rowConfig: HomeRowConfig,
             ): HomeRowGridViewModel
         }
@@ -155,7 +157,16 @@ class HomeRowGridViewModel
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error fetching: %s", rowConfig)
-                    _state.update { it.copy(loading = HomeRowLoadingState.Error(title, null, ex)) }
+                    _state.update {
+                        it.copy(
+                            loading =
+                                HomeRowLoadingState.Error(
+                                    title,
+                                    null,
+                                    ex,
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -210,7 +221,7 @@ class HomeRowGridViewModel
     }
 
 data class HomeRowGridState(
-    val loading: HomeRowLoadingState = HomeRowLoadingState.Pending(""),
+    val loading: HomeRowLoadingState = HomeRowLoadingState.Pending(StringStringProvider("")),
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -268,7 +279,7 @@ fun HomeRowGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        GridTitle(destination.title)
+        GridTitle(destination.title.getString())
 
         when (val st = state.loading) {
             is HomeRowLoadingState.Error -> {
