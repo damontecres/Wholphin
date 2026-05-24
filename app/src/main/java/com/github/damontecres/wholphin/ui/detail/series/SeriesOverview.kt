@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -160,7 +159,7 @@ fun SeriesOverview(
             viewModel.lookupPeopleInEpisode(it)
         }
     }
-    val chosenStreams by viewModel.chosenStreams.observeAsState(null)
+    val chosenStreams = state.chosenStreams
 
     val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)
     val preferredSubtitleLanguage = userDto?.configuration?.subtitleLanguagePreference

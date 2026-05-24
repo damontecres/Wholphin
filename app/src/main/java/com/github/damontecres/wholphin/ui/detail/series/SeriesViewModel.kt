@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
 import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -510,7 +509,6 @@ class SeriesViewModel
             navigationManager.navigateTo(destination)
         }
 
-        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
         private var chosenStreamsJob: Job? = null
 
         fun lookUpChosenTracks(
@@ -526,9 +524,7 @@ class SeriesViewModel
                             item,
                             userPreferencesService.getCurrent(),
                         )
-                    withContext(Dispatchers.Main) {
-                        chosenStreams.value = result
-                    }
+                    _state.update { it.copy(chosenStreams = result) }
                 }
         }
 
@@ -544,9 +540,7 @@ class SeriesViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -570,9 +564,7 @@ class SeriesViewModel
                     result?.let {
                         itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
+                _state.update { it.copy(chosenStreams = chosen) }
             }
         }
 
@@ -768,4 +760,5 @@ data class SeriesState(
     val peopleInEpisode: PeopleInItem = PeopleInItem(),
     val discovered: List<DiscoverItem> = emptyList(),
     val discoverSeries: DiscoverItem? = null,
+    val chosenStreams: ChosenStreams? = null,
 )
