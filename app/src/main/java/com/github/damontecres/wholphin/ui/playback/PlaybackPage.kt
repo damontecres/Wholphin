@@ -1,14 +1,17 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -72,6 +75,7 @@ import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -216,6 +220,18 @@ fun PlaybackPageContent(
     }
 
     val presentationState = rememberPresentationState(player, false)
+    val playbackState by rememberPlaybackState(player)
+    var showBuffering by remember { mutableStateOf(false) }
+    LaunchedEffect(playbackState) {
+        if (playbackState == PlaybackState.BUFFERING) {
+            // Delay before showing the loading indicator
+            // So if buffering is quick, the UI won't flash
+            delay(250)
+            showBuffering = true
+        } else {
+            showBuffering = false
+        }
+    }
     val scaledModifier =
         Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
     val focusRequester = remember { FocusRequester() }
@@ -348,6 +364,21 @@ fun PlaybackPageContent(
                         .background(Color.Black),
                 ) {
                     LoadingPage(focusEnabled = false)
+                }
+            } else {
+                AnimatedVisibility(
+                    visible = showBuffering,
+                    enter = fadeIn(tween(easing = LinearEasing)),
+                    exit = fadeOut(tween(easing = LinearEasing)),
+                    modifier = Modifier.matchParentSize(),
+                ) {
+                    LoadingPage(
+                        focusEnabled = false,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(AppColors.TransparentBlack25),
+                    )
                 }
             }
 
