@@ -155,7 +155,7 @@
     <string name="collection">系列</string>
     <string name="collections">系列</string>
     <string name="commercial">廣告</string>
-    <string name="community_rating">IMDb 評分</string>
+    <string name="community_rating">社群評分</string>
     <string name="compose_error_message_title">發生錯誤！請按下按鈕將日誌傳送到您的伺服器。</string>
     <string name="confirm">確認</string>
     <string name="continue_watching">繼續觀看</string>
@@ -587,4 +587,16 @@
     <string name="combined_search_results_on">在單一列表中顯示所有結果</string>
     <string name="combined_search_results_off">按類別顯示結果</string>
     <string name="results">結果</string>
+    <string name="require_login">使用密碼登入</string>
+    <string name="profile_protection">登入保護</string>
+    <string name="continue_watching_click_behavior">點擊 繼續觀看/接下來播放 時的行為</string>
+    <string name="continue_watching_click_summary_on">點擊時播放</string>
+    <string name="continue_watching_click_summary_off">點擊時顯示詳情</string>
+    <string name="display_toggles_title">評分顯示</string>
+    <string name="display_toggles_summary">自訂要顯示的項目</string>
+    <string name="stars">星級評分</string>
+    <string name="tomatoes">番茄評分</string>
+    <string name="show_voice_search_button">顯示語音搜尋按鈕</string>
+    <string name="visible_ui">顯示</string>
+    <string name="hidden_ui">隱藏</string>
 </resources>
