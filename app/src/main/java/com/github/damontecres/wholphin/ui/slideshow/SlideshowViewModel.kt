@@ -3,10 +3,7 @@ package com.github.damontecres.wholphin.ui.slideshow
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -25,9 +22,7 @@ import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
-import com.github.damontecres.wholphin.ui.util.ThrottledLiveData
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -87,28 +82,18 @@ class SlideshowViewModel
         /**
          * Whether slideshow mode is on or off
          */
-        private val _slideshow = MutableStateFlow<SlideshowState>(SlideshowState(false, false))
-        val slideshow: StateFlow<SlideshowState> = _slideshow
+        private val _state = MutableStateFlow(SlideshowState())
+        val state: StateFlow<SlideshowState> = _state
 
         /**
          * Whether the slideshow is actively running meaning slideshow mode is ON and is currently NOT paused
          */
-        val slideshowActive = slideshow.map { it.enabled && !it.paused }
+        val slideshowActive = state.map { it.enabled && !it.paused }
 
         var slideshowDelay by Delegates.notNull<Long>()
 
-        private val _pager = MutableLiveData<ApiRequestPager<GetItemsRequest>>()
-        val pager: LiveData<List<BaseItem?>> = _pager.map { it }
-        val position = MutableLiveData(0)
-
-        private val _image = MutableLiveData<ImageState>()
-        val image: LiveData<ImageState> = _image
-
-        val loading = MutableStateFlow<LoadingState>(LoadingState.Pending)
-
-        val loadingState = MutableLiveData<ImageLoadingState>(ImageLoadingState.Loading)
-        private val _imageFilter = MutableLiveData(VideoFilter())
-        val imageFilter = ThrottledLiveData(_imageFilter, 500L)
+        private val _imageFilter = MutableStateFlow(VideoFilter())
+        val imageFilter: StateFlow<VideoFilter> = _imageFilter
 
         private var albumImageFilter = VideoFilter()
 
@@ -168,21 +153,25 @@ class SlideshowViewModel
                     val pager =
                         ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
                             .init(slideshowSettings.index)
-                    this@SlideshowViewModel._pager.setValueOnMain(pager)
-                    loading.update { LoadingState.Success }
+                    _state.update {
+                        it.copy(
+                            loading = LoadingState.Success,
+                            items = pager,
+                        )
+                    }
                     updatePosition(slideshowSettings.index)?.join()
                     if (slideshowSettings.startSlideshow) onMain { startSlideshow() }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error")
-                    loading.update { LoadingState.Error(ex) }
+                    _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
             }
         }
 
         fun nextImage(): Boolean {
-            val size = pager.value?.size
-            val newPosition = position.value!! + 1
-            return if (size != null && newPosition < size) {
+            val size = state.value.items.size
+            val newPosition = state.value.position + 1
+            return if (newPosition < size) {
                 updatePosition(newPosition)
                 true
             } else {
@@ -191,7 +180,7 @@ class SlideshowViewModel
         }
 
         fun previousImage(): Boolean {
-            val newPosition = position.value!! - 1
+            val newPosition = state.value.position - 1
             return if (newPosition >= 0) {
                 updatePosition(newPosition)
                 true
@@ -201,14 +190,14 @@ class SlideshowViewModel
         }
 
         fun updatePosition(position: Int): Job? =
-            _pager.value?.let { pager ->
+            (state.value.items as? ApiRequestPager<*>)?.let { pager ->
                 viewModelScope.launchIO {
                     try {
                         val image =
                             if (position in pager.indices) pager.getBlocking(position) else null
                         Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
-                            this@SlideshowViewModel.position.setValueOnMain(position)
+                            _state.update { it.copy(position = position) }
 
                             val url =
                                 if (image.data.mediaType == MediaType.VIDEO) {
@@ -264,32 +253,38 @@ class SlideshowViewModel
                                             Timber.d(
                                                 "Loaded VideoFilter for image ${image.id}",
                                             )
-                                            withContext(Dispatchers.Main) {
-                                                // Pause throttling so that the image loads with the filter applied immediately
-                                                imageFilter.stopThrottling(true)
-                                                updateImageFilter(vf.videoFilter)
-                                                imageFilter.startThrottling()
-                                            }
+                                            updateImageFilter(vf.videoFilter)
                                         }
-                                        withContext(Dispatchers.Main) {
-                                            _image.value = imageState
-                                            loadingState.value =
-                                                ImageLoadingState.Success(imageState)
+                                        _state.update {
+                                            it.copy(
+                                                image = imageState,
+                                                imageLoading = ImageLoadingState.Success(imageState),
+                                            )
                                         }
                                     }
                                 }
                             } else {
-                                withContext(Dispatchers.Main) {
-                                    _image.value = imageState
-                                    loadingState.value = ImageLoadingState.Success(imageState)
+                                _state.update {
+                                    it.copy(
+                                        image = imageState,
+                                        imageLoading = ImageLoadingState.Success(imageState),
+                                    )
                                 }
                             }
                         } else {
-                            loadingState.setValueOnMain(ImageLoadingState.Error)
+                            _state.update {
+                                it.copy(
+                                    imageLoading = ImageLoadingState.Error,
+                                )
+                            }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex)
-                        loadingState.setValueOnMain(ImageLoadingState.Error)
+                        _state.update {
+                            it.copy(
+                                imageLoading = ImageLoadingState.Error,
+                            )
+                        }
                     }
                 }
             }
@@ -298,10 +293,10 @@ class SlideshowViewModel
 
         fun startSlideshow() {
             screensaverService.keepScreenOn(true)
-            _slideshow.update {
-                SlideshowState(enabled = true, paused = false)
+            _state.update {
+                it.copy(enabled = true, paused = false)
             }
-            if (_image.value
+            if (state.value.image
                     ?.image
                     ?.data
                     ?.mediaType != MediaType.VIDEO
@@ -313,14 +308,14 @@ class SlideshowViewModel
         fun stopSlideshow() {
             screensaverService.keepScreenOn(false)
             slideshowJob?.cancel()
-            _slideshow.update {
-                SlideshowState(enabled = false, paused = false)
+            _state.update {
+                it.copy(enabled = false, paused = false)
             }
         }
 
         fun pauseSlideshow() {
             Timber.v("pauseSlideshow")
-            _slideshow.update {
+            _state.update {
                 if (it.enabled) {
                     slideshowJob?.cancel()
                     it.copy(paused = true)
@@ -332,7 +327,7 @@ class SlideshowViewModel
 
         fun unpauseSlideshow() {
             Timber.v("unpauseSlideshow")
-            _slideshow.update {
+            _state.update {
                 if (it.enabled) {
                     it.copy(paused = false)
                 } else {
@@ -362,12 +357,12 @@ class SlideshowViewModel
 
         fun updateImageFilter(newFilter: VideoFilter) {
             viewModelScope.launchIO {
-                _imageFilter.setValueOnMain(newFilter)
+                _imageFilter.update { newFilter }
             }
         }
 
         fun saveImageFilter() {
-            image.value?.let {
+            state.value.image?.let {
                 viewModelScope.launchIO {
                     val vf = _imageFilter.value
                     if (vf != null) {
@@ -457,6 +452,11 @@ data class ImageState(
 }
 
 data class SlideshowState(
-    val enabled: Boolean,
-    val paused: Boolean,
+    val items: List<BaseItem?> = emptyList(),
+    val position: Int = 0,
+    val image: ImageState? = null,
+    val loading: LoadingState = LoadingState.Pending,
+    val imageLoading: ImageLoadingState = ImageLoadingState.Loading,
+    val enabled: Boolean = false,
+    val paused: Boolean = false,
 )
