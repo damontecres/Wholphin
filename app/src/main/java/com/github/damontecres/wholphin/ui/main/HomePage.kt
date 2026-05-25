@@ -23,7 +23,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -40,7 +39,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -52,6 +50,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
@@ -77,7 +76,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -128,15 +126,22 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
-            val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            val playlistState by playlistViewModel.playlistState.collectAsState()
             var position by rememberPosition()
 
             val onFocusPosition = remember { { it: RowColumn -> position = it } }
+            val currentHomePrefs by rememberUpdatedState(preferences.appPreferences.homePagePreferences)
             val onClickItem =
                 remember {
                     { clickedPosition: RowColumn, item: BaseItem ->
                         position = clickedPosition
-                        viewModel.navigationManager.navigateTo(item.destination())
+                        if (currentHomePrefs.clickToPlay &&
+                            homeRows.getOrNull(clickedPosition.row)?.isContinueWatchingNextUp == true
+                        ) {
+                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        } else {
+                            viewModel.navigationManager.navigateTo(item.destination())
+                        }
                     }
                 }
             val onLongClickItem =
@@ -217,6 +222,7 @@ fun HomePage(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showViewMore = true,
                 onClickViewMore = onClickViewMore,
                 modifier = modifier,
             )
@@ -256,6 +262,14 @@ fun HomePage(
     }
 }
 
+val HomeRowLoadingState?.isContinueWatchingNextUp: Boolean
+    get() =
+        (this as? HomeRowLoadingState.Success).let { row ->
+            row?.rowType is HomeRowConfig.ContinueWatching ||
+                row?.rowType is HomeRowConfig.NextUp ||
+                row?.rowType is HomeRowConfig.ContinueWatchingCombined
+        }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomePageContent(
@@ -268,6 +282,7 @@ fun HomePageContent(
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     showLogo: Boolean,
+    showViewMore: Boolean,
     modifier: Modifier = Modifier,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
@@ -280,7 +295,6 @@ fun HomePageContent(
             modifier = HeaderUtils.modifier,
         )
     },
-    showViewMore: Boolean = true,
     onClickViewMore: (RowColumn, HomeRowLoadingState.Success) -> Unit = { _, _ -> },
 ) {
     val focusedItem =
@@ -365,7 +379,7 @@ fun HomePageContent(
                                 is HomeRowLoadingState.Pending,
                                 -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = stringResource(R.string.loading),
                                         modifier = Modifier.animateItem(),
                                     )
@@ -373,7 +387,7 @@ fun HomePageContent(
 
                                 is HomeRowLoadingState.Error -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = r.localizedMessage,
                                         isError = true,
                                         modifier = Modifier.animateItem(),
@@ -384,7 +398,7 @@ fun HomePageContent(
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
                                         ItemRow(
-                                            title = row.title,
+                                            title = row.title.getString(),
                                             items = row.items,
                                             onClickItem =
                                                 remember(rowIndex, onClickItem) {
@@ -486,7 +500,7 @@ fun HomePageContent(
                                         )
                                     } else if (showEmptyRows) {
                                         FocusableItemRow(
-                                            title = r.title,
+                                            title = r.title.getString(),
                                             subtitle = stringResource(R.string.no_results),
                                             modifier = Modifier.animateItem(),
                                         )
@@ -531,7 +545,7 @@ fun HomePageHeader(
         subtitle = if (isEpisode) dto?.name else null,
         overview = dto?.overview,
         overviewTwoLines = isEpisode,
-        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
         showLogo = showLogo,
         logoImageUrl = rememberLogoUrl(item),
@@ -545,7 +559,7 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString?,
+    quickDetails: QuickDetailsData?,
     timeRemaining: Duration?,
     showLogo: Boolean,
     logoImageUrl: String?,
@@ -570,7 +584,7 @@ fun HomePageHeader(
             if (subtitle != null) {
                 EpisodeName(subtitle)
             }
-            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
+            QuickDetails(quickDetails, timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)

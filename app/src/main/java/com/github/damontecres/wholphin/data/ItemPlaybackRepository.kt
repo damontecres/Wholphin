@@ -33,7 +33,7 @@ class ItemPlaybackRepository
             item: BaseItem,
             prefs: UserPreferences,
         ): ChosenStreams? =
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 val itemPlayback = itemPlaybackDao.getItem(user = user, itemId = itemId)
                 val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 Timber.v("For ${item.id}:  itemPlayback=${itemPlayback != null}, plc=${plc != null}")
@@ -91,7 +91,7 @@ class ItemPlaybackRepository
             sourceId: UUID,
         ): ItemPlayback? =
             withContext(Dispatchers.IO) {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     val itemPlayback =
                         ItemPlayback(
                             userId = user.rowId,
@@ -168,7 +168,7 @@ class ItemPlaybackRepository
             val toSave =
                 if (itemPlayback.userId < 0) {
                     val userRowId =
-                        serverRepository.currentUser.value
+                        serverRepository.currentUser
                             ?.rowId
                             ?.takeIf { it >= 0 }
                             ?: throw IllegalStateException("Trying to save an ItemPlayback without a user, but there is no current user")
@@ -184,7 +184,7 @@ class ItemPlaybackRepository
             itemId: UUID,
             trackIndex: Int,
         ): ItemTrackModification? =
-            serverRepository.currentUser.value?.rowId?.let { userId ->
+            serverRepository.currentUser?.rowId?.let { userId ->
                 itemPlaybackDao.getTrackModifications(userId, itemId, trackIndex)
             }
 
@@ -193,7 +193,7 @@ class ItemPlaybackRepository
             trackIndex: Int,
             delay: Duration,
         ) {
-            serverRepository.currentUser.value?.rowId?.let { userId ->
+            serverRepository.currentUser?.rowId?.let { userId ->
                 Timber.v("Saving track mod item=%s, track=%s, delay=%s", itemId, trackIndex, delay)
                 itemPlaybackDao.saveItem(
                     ItemTrackModification(

@@ -15,6 +15,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
+import java.time.LocalDateTime
 import java.util.UUID
 
 private fun getRecommendedRows(parentId: UUID) =
@@ -41,9 +42,18 @@ private fun getRecommendedRows(parentId: UUID) =
                     includeItemTypes = listOf(BaseItemKind.MOVIE),
                     recursive = true,
                     enableUserData = true,
-                    sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                    sortOrder = listOf(SortOrder.DESCENDING),
+                    sortBy =
+                        listOf(
+                            ItemSortBy.PREMIERE_DATE,
+                            ItemSortBy.SORT_NAME,
+                        ),
+                    sortOrder =
+                        listOf(
+                            SortOrder.DESCENDING,
+                            SortOrder.ASCENDING,
+                        ),
                     enableTotalRecordCount = false,
+                    maxPremiereDate = LocalDateTime.now(),
                 ),
         ),
         RecommendedRow(

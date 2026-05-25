@@ -297,7 +297,7 @@ class NavDrawerPreferencesViewModel
         init {
             viewModelScope.launchDefault {
                 val state = navDrawerService.state.value
-                val user = serverRepository.currentUser.value
+                val user = serverRepository.currentUser
                 val seerr = seerrServerRepository.active.firstOrNull()
                 if (state == NavDrawerItemState.EMPTY || user == null || seerr == null) {
                     return@launchDefault
@@ -337,8 +337,8 @@ class NavDrawerPreferencesViewModel
 
         fun save() {
             viewModelScope.launchIO(ExceptionHandler(true)) {
-                serverRepository.currentUser.value?.let { user ->
-                    serverRepository.currentUserDto.value?.let { userDto ->
+                serverRepository.currentUser?.let { user ->
+                    serverRepository.currentUserDto?.let { userDto ->
                         if (user.id == userDto.id) {
                             val toSave =
                                 state.value.mapIndexed { index, item ->

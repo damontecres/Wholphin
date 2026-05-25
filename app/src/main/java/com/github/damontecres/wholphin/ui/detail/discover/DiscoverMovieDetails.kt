@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -27,6 +26,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -63,8 +63,8 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -79,21 +79,15 @@ fun DiscoverMovieDetails(
             creationCallback = { it.create(destination.item) },
         ),
 ) {
+    val resources = LocalResources.current
     val context = LocalContext.current
     LifecycleResumeEffect(Unit) {
         viewModel.init()
         onPauseOrDispose { }
     }
-    val item by viewModel.movie.observeAsState()
-    val rating by viewModel.rating.observeAsState(null)
-    val people by viewModel.people.observeAsState(listOf())
-    val trailers by viewModel.trailers.observeAsState(listOf())
-    val similar by viewModel.similar.observeAsState(listOf())
-    val recommended by viewModel.recommended.observeAsState(listOf())
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    val state by viewModel.state.collectAsState()
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
-    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -101,98 +95,97 @@ fun DiscoverMovieDetails(
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
 
-    when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+    when (val st = state.movie) {
+        is DataLoadingState.Error -> {
+            ErrorMessage(st, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
-            item?.let { movie ->
-                DiscoverMovieDetailsContent(
-                    preferences = preferences,
-                    movie = movie,
-                    userConfig = userConfig,
-                    rating = rating,
-                    canCancel = canCancel,
-                    people = people,
-                    trailers = trailers,
-                    similar = similar,
-                    recommended = recommended,
-                    requestOnClick = {
-                        movie.id?.let { id ->
-                            if (request4kEnabled) {
-                                moreDialog =
-                                    DialogParams(
-                                        fromLongClick = false,
-                                        title = movie.title + " (${movie.releaseDate ?: ""})",
-                                        items =
-                                            listOf(
-                                                DialogItem(
-                                                    text = requestStr,
-                                                    onClick = { viewModel.request(id, false) },
-                                                ),
-                                                DialogItem(
-                                                    text = request4kStr,
-                                                    onClick = { viewModel.request(id, true) },
-                                                ),
+        is DataLoadingState.Success<MovieDetails> -> {
+            val movie = st.data
+            DiscoverMovieDetailsContent(
+                preferences = preferences,
+                movie = movie,
+                userConfig = userConfig,
+                rating = state.rating,
+                canCancel = state.canCancelRequest,
+                people = state.people,
+                trailers = state.trailers,
+                similar = state.similar,
+                recommended = state.recommended,
+                requestOnClick = {
+                    movie.id?.let { id ->
+                        if (request4kEnabled) {
+                            moreDialog =
+                                DialogParams(
+                                    fromLongClick = false,
+                                    title = movie.title + " (${movie.releaseDate ?: ""})",
+                                    items =
+                                        listOf(
+                                            DialogItem(
+                                                text = requestStr,
+                                                onClick = { viewModel.request(id, false) },
                                             ),
-                                    )
-                            } else {
-                                viewModel.request(id, false)
-                            }
+                                            DialogItem(
+                                                text = request4kStr,
+                                                onClick = { viewModel.request(id, true) },
+                                            ),
+                                        ),
+                                )
+                        } else {
+                            viewModel.request(id, false)
                         }
-                    },
-                    cancelOnClick = {
-                        movie.id?.let { viewModel.cancelRequest(it) }
-                    },
-                    onClickItem = { index, item ->
-                        viewModel.navigateTo(Destination.DiscoveredItem(item))
-                    },
-                    onClickPerson = { item ->
-                        viewModel.navigateTo(Destination.DiscoveredItem(item))
-                    },
-                    overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = movie.title ?: context.getString(R.string.unknown),
-                                overview = movie.overview,
-                                genres = movie.genres?.mapNotNull { it.name }.orEmpty(),
-                                files = listOf(),
-                            )
-                    },
-                    goToOnClick = {
-                        movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
-                            viewModel.navigateTo(
-                                Destination.MediaItem(
-                                    itemId = it,
-                                    type = BaseItemKind.MOVIE,
-                                ),
-                            )
-                        }
-                    },
-                    moreOnClick = {
-                        moreDialog =
-                            DialogParams(
-                                fromLongClick = false,
-                                title = movie.title + " (${movie.releaseDate ?: ""})",
-                                items = listOf(),
-                            )
-                    },
-                    onLongClickPerson = { index, person -> },
-                    onLongClickSimilar = { index, similar ->
-                    },
-                    trailerOnClick = {
-                        TrailerService.onClick(context, it, viewModel::navigateTo)
-                    },
-                    modifier = modifier,
-                )
-            }
+                    }
+                },
+                cancelOnClick = {
+                    movie.id?.let { viewModel.cancelRequest(it) }
+                },
+                onClickItem = { index, item ->
+                    viewModel.navigateTo(Destination.DiscoveredItem(item))
+                },
+                onClickPerson = { item ->
+                    viewModel.navigateTo(Destination.DiscoveredItem(item))
+                },
+                overviewOnClick = {
+                    overviewDialog =
+                        ItemDetailsDialogInfo(
+                            title = movie.title ?: resources.getString(R.string.unknown),
+                            overview = movie.overview,
+                            genres = movie.genres?.mapNotNull { it.name }.orEmpty(),
+                            files = listOf(),
+                        )
+                },
+                goToOnClick = {
+                    movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                itemId = it,
+                                type = BaseItemKind.MOVIE,
+                            ),
+                        )
+                    }
+                },
+                moreOnClick = {
+                    moreDialog =
+                        DialogParams(
+                            fromLongClick = false,
+                            title = movie.title + " (${movie.releaseDate ?: ""})",
+                            items = listOf(),
+                        )
+                },
+                onLongClickPerson = { index, person -> },
+                onLongClickSimilar = { index, similar ->
+                },
+                trailerOnClick = {
+                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                },
+                modifier = modifier,
+            )
         }
     }
     overviewDialog?.let { info ->
@@ -244,7 +237,6 @@ fun DiscoverMovieDetailsContent(
     onLongClickSimilar: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var position by rememberInt(0)
     val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }

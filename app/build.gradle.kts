@@ -82,7 +82,8 @@ configure<ApplicationExtension> {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -105,6 +106,7 @@ configure<ApplicationExtension> {
 
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
         }
@@ -181,6 +183,9 @@ configure<ApplicationExtension> {
 
     lint {
         disable.add("MissingTranslation")
+    }
+    androidResources {
+        generateLocaleConfig = true
     }
 }
 
@@ -268,11 +273,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.datastore.preferences)

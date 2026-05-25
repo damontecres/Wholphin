@@ -24,7 +24,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedMovie
@@ -106,7 +106,7 @@ fun CollectionFolderMovie(
 
             // Library
             1 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     onClickItem = { _, item ->
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
@@ -138,7 +138,7 @@ fun CollectionFolderMovie(
 
             // Collections
             2 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     onClickItem = { _, item ->
                         preferencesViewModel.navigationManager.navigateTo(item.destination())

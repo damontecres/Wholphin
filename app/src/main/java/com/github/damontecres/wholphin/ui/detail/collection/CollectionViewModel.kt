@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.detail.collection
 import android.content.Context
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -35,6 +34,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.util.FilterUtils
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -98,16 +98,14 @@ class CollectionViewModel
         }
 
         private val viewOptionsFlow =
-            serverRepository.currentUser
-                .asFlow()
+            serverRepository.currentUserFlow
                 .filterNotNull()
                 .flatMapLatest {
                     keyValueService.get(it.id, VIEW_OPTIONS_KEY, CollectionViewOptions())
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), CollectionViewOptions())
 
         private val libraryDisplayInfoFlow =
-            serverRepository.currentUser
-                .asFlow()
+            serverRepository.currentUserFlow
                 .filterNotNull()
                 .flatMapLatest {
                     libraryDisplayInfoDao.getItemAsFlow(it.rowId, itemId.toServerString())
@@ -156,12 +154,7 @@ class CollectionViewModel
                     )
                 }
                 listenForStateUpdates()
-                themeSongPlayer.playThemeFor(
-                    itemId,
-                    preferencesService
-                        .getCurrent()
-                        .appPreferences.interfacePreferences.playThemeSongs,
-                )
+                themeSongPlayer.playThemeFor(itemId)
             }
         }
 
@@ -217,7 +210,7 @@ class CollectionViewModel
                     val jobs =
                         typesInCollection.map { type ->
                             async(Dispatchers.IO) {
-                                val title = context.getString(formatTypeName(type))
+                                val title = ResStringProvider(formatTypeName(type))
                                 val result =
                                     try {
                                         val pager = fetchItems(sort, filter, listOf(type))
@@ -286,7 +279,7 @@ class CollectionViewModel
             }
             val request =
                 GetItemsRequest(
-                    userId = serverRepository.currentUser.value?.id,
+                    userId = serverRepository.currentUser?.id,
                     parentId = itemId,
                     includeItemTypes = includeItemTypes,
                     excludeItemTypes = excludeItemTypes,
@@ -302,7 +295,7 @@ class CollectionViewModel
 
         fun changeSort(sortAndDirection: SortAndDirection) {
             viewModelScope.launchIO {
-                val user = serverRepository.currentUser.value
+                val user = serverRepository.currentUser
                 val state = _state.value
                 if (user != null) {
                     libraryDisplayInfoDao.saveItem(
@@ -321,7 +314,7 @@ class CollectionViewModel
 
         fun changeFilter(filter: GetItemsFilter) {
             viewModelScope.launchIO {
-                val user = serverRepository.currentUser.value
+                val user = serverRepository.currentUser
                 val state = _state.value
                 if (user != null) {
                     libraryDisplayInfoDao.saveItem(
@@ -348,7 +341,7 @@ class CollectionViewModel
                         backdropService.clearBackdrop()
                     }
                 }
-                serverRepository.currentUser.value?.id?.let { userId ->
+                serverRepository.currentUser?.id?.let { userId ->
                     keyValueService.save(userId, VIEW_OPTIONS_KEY, viewOptions)
                 }
             }
@@ -357,7 +350,7 @@ class CollectionViewModel
         suspend fun getPossibleFilterValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
             FilterUtils.getFilterOptionValues(
                 api,
-                serverRepository.currentUser.value?.id,
+                serverRepository.currentUser?.id,
                 itemId,
                 filterOption,
             )

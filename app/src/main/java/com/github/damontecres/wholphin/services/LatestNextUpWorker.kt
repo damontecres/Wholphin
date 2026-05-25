@@ -14,6 +14,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -94,10 +95,10 @@ class LatestNextUpSchedulerService
         internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
 
         init {
-            serverRepository.current.observe(activity) { user ->
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) { user ->
                 Timber.v("New user %s", user?.user?.id)
                 if (user == null) {
-                    workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)
+                    workManager.cancelUniqueWork(LatestNextUpWorker.WORK_NAME)
                 } else {
                     activity.lifecycleScope.launch(dispatcher + ExceptionHandler()) {
                         scheduleWork(user.user.id, user.server.id)

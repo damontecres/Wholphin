@@ -13,7 +13,6 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -167,7 +166,7 @@ class MovieViewModel
                         api.libraryApi
                             .getSimilarItems(
                                 GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser.value?.id,
+                                    userId = serverRepository.currentUser?.id,
                                     itemId = itemId,
                                     fields = SlimItemFields,
                                     limit = 25,
@@ -258,12 +257,9 @@ class MovieViewModel
             }
         }
 
-        fun maybePlayThemeSong(
-            seriesId: UUID,
-            playThemeSongs: ThemeSongVolume,
-        ) {
+        fun maybePlayThemeSong(itemId: UUID) {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                themeSongPlayer.playThemeFor(itemId)
                 addCloseable {
                     themeSongPlayer.stop()
                 }

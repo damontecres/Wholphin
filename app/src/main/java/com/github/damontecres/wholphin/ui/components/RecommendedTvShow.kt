@@ -17,6 +17,7 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
+import java.time.LocalDateTime
 import java.util.UUID
 
 private fun getRecommendedRows(
@@ -58,9 +59,21 @@ private fun getRecommendedRows(
                 includeItemTypes = listOf(BaseItemKind.EPISODE),
                 recursive = true,
                 enableUserData = true,
-                sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                sortOrder = listOf(SortOrder.DESCENDING),
+                sortBy =
+                    listOf(
+                        ItemSortBy.PREMIERE_DATE,
+                        ItemSortBy.SERIES_SORT_NAME,
+                        ItemSortBy.AIRED_EPISODE_ORDER,
+                    ),
+                sortOrder =
+                    listOf(
+                        SortOrder.DESCENDING,
+                        SortOrder.ASCENDING,
+                        SortOrder.DESCENDING,
+                    ),
                 enableTotalRecordCount = false,
+                maxPremiereDate = LocalDateTime.now(),
+                isUnaired = false,
             ),
     ),
     RecommendedRow(

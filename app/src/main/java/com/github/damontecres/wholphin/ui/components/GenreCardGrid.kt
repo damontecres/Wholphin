@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -29,12 +28,11 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
-import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -44,7 +42,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -80,54 +80,63 @@ class GenreViewModel
             ): GenreViewModel
         }
 
-        val item = MutableLiveData<BaseItem?>(null)
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val genres = MutableLiveData<List<Genre>>(listOf())
+        private val _state = MutableStateFlow(GenreGridState())
+        val state: StateFlow<GenreGridState> = _state
 
         fun init(cardWidthPx: Int) {
-            loading.value = LoadingState.Loading
-            viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to fetch genres")) {
-                val item =
-                    api.userLibraryApi.getItem(itemId = itemId).content.let {
-                        BaseItem(it, false)
-                    }
-                this@GenreViewModel.item.setValueOnMain(item)
-                val request =
-                    GetGenresRequest(
-                        userId = serverRepository.currentUser.value?.id,
-                        parentId = itemId,
-                        fields = SlimItemFields,
-                        includeItemTypes = includeItemTypes,
-                    )
-                val genres =
-                    GetGenresRequestHandler
-                        .execute(api, request)
-                        .content.items
-                        .map {
-                            Genre(it.id, it.name ?: "", null)
+            _state.update { it.copy(item = DataLoadingState.Loading) }
+            viewModelScope.launchIO {
+                try {
+                    val item =
+                        api.userLibraryApi.getItem(itemId = itemId).content.let {
+                            BaseItem(it, false)
                         }
-                withContext(Dispatchers.Main) {
-                    this@GenreViewModel.genres.value = genres
-                    loading.value = LoadingState.Success
-                }
-                val genreToUrl =
-                    getGenreImageMap(
-                        api = api,
-                        userId = serverRepository.currentUser.value?.id,
-                        scope = viewModelScope,
-                        imageUrlService = imageUrlService,
-                        genres = genres.map { it.id },
-                        parentId = itemId,
-                        includeItemTypes = includeItemTypes,
-                        cardWidthPx = cardWidthPx,
-                    )
-                val genresWithImages =
-                    genres.map {
+                    val request =
+                        GetGenresRequest(
+                            userId = serverRepository.currentUser?.id,
+                            parentId = itemId,
+                            fields = SlimItemFields,
+                            includeItemTypes = includeItemTypes,
+                        )
+                    val genres =
+                        GetGenresRequestHandler
+                            .execute(api, request)
+                            .content.items
+                            .map {
+                                Genre(it.id, it.name ?: "", null)
+                            }
+                    _state.update {
                         it.copy(
-                            imageUrl = genreToUrl[it.id],
+                            item = DataLoadingState.Success(item),
+                            genres = genres,
                         )
                     }
-                this@GenreViewModel.genres.setValueOnMain(genresWithImages)
+                    val genreToUrl =
+                        getGenreImageMap(
+                            api = api,
+                            userId = serverRepository.currentUser?.id,
+                            scope = viewModelScope,
+                            imageUrlService = imageUrlService,
+                            genres = genres.map { it.id },
+                            parentId = itemId,
+                            includeItemTypes = includeItemTypes,
+                            cardWidthPx = cardWidthPx,
+                        )
+                    val genresWithImages =
+                        genres.map {
+                            it.copy(
+                                imageUrl = genreToUrl[it.id],
+                            )
+                        }
+                    _state.update {
+                        it.copy(
+                            genres = genresWithImages,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching genres")
+                    _state.update { it.copy(item = DataLoadingState.Error(ex)) }
+                }
             }
         }
 
@@ -145,6 +154,11 @@ class GenreViewModel
                 return@withContext result.totalRecordCount
             }
     }
+
+data class GenreGridState(
+    val item: DataLoadingState<BaseItem> = DataLoadingState.Pending,
+    val genres: List<Genre> = emptyList(),
+)
 
 data class GenreCacheKey(
     val userId: UUID?,
@@ -266,34 +280,33 @@ fun GenreCardGrid(
     OneTimeLaunchedEffect {
         viewModel.init(cardWidthPx)
     }
-    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val genres by viewModel.genres.observeAsState(listOf())
+    val state by viewModel.state.collectAsState()
 
     val gridFocusRequester = remember { FocusRequester() }
-    when (val st = loading) {
-        LoadingState.Pending,
-        LoadingState.Loading,
+    when (val st = state.item) {
+        DataLoadingState.Pending,
+        DataLoadingState.Loading,
         -> {
             LoadingPage(modifier.focusable())
         }
 
-        is LoadingState.Error -> {
+        is DataLoadingState.Error -> {
             ErrorMessage(st, modifier.focusable())
         }
 
-        LoadingState.Success -> {
+        is DataLoadingState.Success<BaseItem> -> {
             Box(modifier = modifier) {
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-                val item by viewModel.item.observeAsState(null)
+                val item = st.data
                 CardGrid(
-                    pager = genres,
+                    pager = state.genres,
                     onClickItem = { _, genre ->
                         viewModel.navigationManager.navigateTo(
                             createGenreDestination(
                                 genreId = genre.id,
                                 genreName = genre.name,
                                 parentId = itemId,
-                                parentName = item?.title,
+                                parentName = item.title,
                                 includeItemTypes = includeItemTypes,
                             ),
                         )

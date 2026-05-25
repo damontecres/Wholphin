@@ -4,7 +4,11 @@ import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -25,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +57,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewModelScope
@@ -72,6 +74,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
@@ -97,18 +100,17 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.preferences.SwitchColors
 import com.github.damontecres.wholphin.ui.rememberPosition
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -127,26 +129,15 @@ class SearchViewModel
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
+        val userPreferencesService: UserPreferencesService,
     ) : ViewModel() {
         val voiceState = voiceInputManager.state
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
 
-        val combinedModeFlow: StateFlow<Boolean> =
-            appPreferences.data
-                .map { it.interfacePreferences.searchPreferences.combinedSearchResults }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-        val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val albums = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val artists = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val songs = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
-        val combinedResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        private val _state = MutableStateFlow(SearchState())
+        val state: StateFlow<SearchState> = _state
 
         private var currentQuery: String? = null
         private var combinedMode = false
@@ -162,38 +153,76 @@ class SearchViewModel
             combinedMode = combined
             if (query.isNotNullOrBlank()) {
                 if (combined) {
-                    combinedResults.value = SearchResult.Searching
+                    _state.update { it.copy(combinedResults = SearchResult.Searching) }
                     searchCombined(query)
                 } else {
-                    movies.value = SearchResult.Searching
-                    series.value = SearchResult.Searching
-                    episodes.value = SearchResult.Searching
-                    collections.value = SearchResult.Searching
-                    searchInternal(query, BaseItemKind.MOVIE, movies)
-                    searchInternal(query, BaseItemKind.SERIES, series)
-                    searchInternal(query, BaseItemKind.EPISODE, episodes)
-                    searchInternal(query, BaseItemKind.BOX_SET, collections)
-                    searchInternal(query, BaseItemKind.MUSIC_ALBUM, albums)
-                    searchInternal(query, BaseItemKind.MUSIC_ARTIST, artists)
-                    searchInternal(query, BaseItemKind.AUDIO, songs)
+                    _state.update {
+                        it.copy(
+                            movies = SearchResult.Searching,
+                            series = SearchResult.Searching,
+                            episodes = SearchResult.Searching,
+                            collections = SearchResult.Searching,
+                            albums = SearchResult.Searching,
+                            artists = SearchResult.Searching,
+                            songs = SearchResult.Searching,
+                        )
+                    }
+                    searchInternal(
+                        query,
+                        BaseItemKind.MOVIE,
+                    ) { result, state -> state.copy(movies = result) }
+                    searchInternal(
+                        query,
+                        BaseItemKind.SERIES,
+                    ) { result, state -> state.copy(series = result) }
+                    searchInternal(query, BaseItemKind.EPISODE) { result, state ->
+                        state.copy(
+                            episodes = result,
+                        )
+                    }
+                    searchInternal(query, BaseItemKind.BOX_SET) { result, state ->
+                        state.copy(
+                            collections = result,
+                        )
+                    }
+                    searchInternal(query, BaseItemKind.MUSIC_ALBUM) { result, state ->
+                        state.copy(
+                            albums = result,
+                        )
+                    }
+                    searchInternal(query, BaseItemKind.MUSIC_ARTIST) { result, state ->
+                        state.copy(
+                            artists = result,
+                        )
+                    }
+                    searchInternal(
+                        query,
+                        BaseItemKind.AUDIO,
+                    ) { result, state -> state.copy(songs = result) }
                 }
                 searchSeerr(query)
             } else {
-                movies.value = SearchResult.NoQuery
-                series.value = SearchResult.NoQuery
-                episodes.value = SearchResult.NoQuery
-                collections.value = SearchResult.NoQuery
-                seerrResults.value = SearchResult.NoQuery
-                combinedResults.value = SearchResult.NoQuery
+                _state.update {
+                    it.copy(
+                        combinedResults = SearchResult.NoQuery,
+                        movies = SearchResult.NoQuery,
+                        series = SearchResult.NoQuery,
+                        episodes = SearchResult.NoQuery,
+                        collections = SearchResult.NoQuery,
+                        albums = SearchResult.NoQuery,
+                        artists = SearchResult.NoQuery,
+                        songs = SearchResult.NoQuery,
+                    )
+                }
             }
         }
 
         private fun searchInternal(
             query: String,
             type: BaseItemKind,
-            target: MutableLiveData<SearchResult>,
+            update: (SearchResult, SearchState) -> SearchState,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launchIO {
                 try {
                     val request =
                         GetItemsRequest(
@@ -213,14 +242,12 @@ class SearchViewModel
                             compareBy<BaseItem> { SearchRelevance.score(it, query) }
                                 .thenBy { it.name ?: "" },
                         )
-                    withContext(Dispatchers.Main) {
-                        target.value = SearchResult.Success(sorted)
-                    }
+                    _state.update { update.invoke(SearchResult.Success(sorted), it) }
+                } catch (ex: CancellationException) {
+                    throw ex
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception searching for $type")
-                    withContext(Dispatchers.Main) {
-                        target.value = SearchResult.Error(ex)
-                    }
+                    _state.update { update.invoke(SearchResult.Error(ex), it) }
                 }
             }
         }
@@ -252,15 +279,10 @@ class SearchViewModel
                             compareBy<BaseItem> { SearchRelevance.score(it, query) }
                                 .thenBy { it.name ?: "" },
                         )
-
-                    withContext(Dispatchers.Main) {
-                        combinedResults.value = SearchResult.Success(sorted)
-                    }
+                    _state.update { it.copy(combinedResults = SearchResult.Success(sorted)) }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception in combined search")
-                    withContext(Dispatchers.Main) {
-                        combinedResults.value = SearchResult.Error(ex)
-                    }
+                    _state.update { it.copy(combinedResults = SearchResult.Error(ex)) }
                 }
             }
         }
@@ -275,16 +297,26 @@ class SearchViewModel
             }
         }
 
+        fun setVoiceSearchButtonVisible(visible: Boolean) {
+            viewModelScope.launchIO {
+                appPreferences.updateData {
+                    it.updateSearchPreferences {
+                        showVoiceSearchButton = visible
+                    }
+                }
+            }
+        }
+
         private fun searchSeerr(query: String) {
             viewModelScope.launchIO {
                 if (seerrService.active.first()) {
-                    seerrResults.setValueOnMain(SearchResult.Searching)
+                    _state.update { it.copy(seerrResults = SearchResult.Searching) }
                     val results =
                         seerrService
                             .search(query)
                             .map { seerrService.createDiscoverItem(it) }
                             .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
-                    seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
+                    _state.update { it.copy(seerrResults = SearchResult.SuccessSeerr(results)) }
                 }
             }
         }
@@ -317,6 +349,18 @@ sealed interface SearchResult {
     ) : SearchResult
 }
 
+data class SearchState(
+    val movies: SearchResult = SearchResult.NoQuery,
+    val series: SearchResult = SearchResult.NoQuery,
+    val episodes: SearchResult = SearchResult.NoQuery,
+    val collections: SearchResult = SearchResult.NoQuery,
+    val albums: SearchResult = SearchResult.NoQuery,
+    val artists: SearchResult = SearchResult.NoQuery,
+    val songs: SearchResult = SearchResult.NoQuery,
+    val seerrResults: SearchResult = SearchResult.NoQuery,
+    val combinedResults: SearchResult = SearchResult.NoQuery,
+)
+
 private const val SEARCH_ROW = 0
 private const val TAB_ROW = SEARCH_ROW + 1
 private const val MOVIE_ROW = TAB_ROW + 1
@@ -341,16 +385,15 @@ fun SearchPage(
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
-    val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
-    val series by viewModel.series.observeAsState(SearchResult.NoQuery)
-    val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
-    val albums by viewModel.albums.observeAsState(SearchResult.NoQuery)
-    val artists by viewModel.artists.observeAsState(SearchResult.NoQuery)
-    val songs by viewModel.songs.observeAsState(SearchResult.NoQuery)
-    val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
-    val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
-    val combinedMode by viewModel.combinedModeFlow.collectAsState()
+    val state by viewModel.state.collectAsState()
+
+    // Start with current preferences, but collect updates when view options change
+    val prefs =
+        viewModel.userPreferencesService.flow
+            .collectAsState(userPreferences)
+            .value.appPreferences.interfacePreferences.searchPreferences
+    val combinedMode = prefs.combinedSearchResults
+    val voiceSearchButtonVisible = prefs.showVoiceSearchButton
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -416,7 +459,7 @@ fun SearchPage(
     val positionCallback = { columns: Int, index: Int ->
         showHeader = index < columns
     }
-    val showTabs = seerrActive && query.isNotBlank() && showHeader
+    val showTabs = seerrActive && query.isNotBlank() && showHeader && combinedMode
     val isLibraryTab = selectedTab == 0
 
     LaunchedEffect(seerrActive, query) {
@@ -427,12 +470,7 @@ fun SearchPage(
 
     LaunchedEffect(
         searchClicked,
-        movies,
-        collections,
-        series,
-        episodes,
-        seerrResults,
-        combinedResults,
+        state,
         combinedMode,
         selectedTab,
         seerrActive,
@@ -444,12 +482,20 @@ fun SearchPage(
             val results =
                 if (isLibraryTab) {
                     if (combinedMode) {
-                        listOf(combinedResults)
+                        listOf(state.combinedResults)
                     } else {
-                        listOf(movies, series, episodes, collections)
+                        listOf(
+                            state.movies,
+                            state.series,
+                            state.episodes,
+                            state.collections,
+                            state.albums,
+                            state.artists,
+                            state.songs,
+                        )
                     }
                 } else {
-                    listOf(seerrResults)
+                    listOf(state.seerrResults)
                 }
             val firstSuccess =
                 results.indexOfFirst { it is SearchResult.Success || it is SearchResult.SuccessSeerr }
@@ -499,7 +545,7 @@ fun SearchPage(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
@@ -508,13 +554,20 @@ fun SearchPage(
                         .focusRestorer(textFieldFocusRequester)
                         .focusRequester(focusRequesters[SEARCH_ROW]),
             ) {
-                VoiceSearchButton(
-                    onSpeechResult = { spokenText ->
-                        query = spokenText
-                        triggerImmediateSearch(spokenText)
-                    },
-                    voiceInputManager = viewModel.voiceInputManager,
-                )
+                AnimatedVisibility(
+                    visible = voiceSearchButtonVisible,
+                    enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+                    exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End),
+                ) {
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            triggerImmediateSearch(spokenText)
+                        },
+                        voiceInputManager = viewModel.voiceInputManager,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                }
 
                 SearchEditTextBox(
                     value = query,
@@ -547,6 +600,7 @@ fun SearchPage(
                     title = R.string.view_options,
                     iconStringRes = R.string.fa_sliders,
                     onClick = { showViewOptions = true },
+                    modifier = Modifier.padding(start = 12.dp),
                 )
             }
         }
@@ -587,7 +641,7 @@ fun SearchPage(
             when {
                 isLibraryTab && combinedMode -> {
                     SearchCombinedResults(
-                        result = combinedResults,
+                        result = state.combinedResults,
                         focusRequester = focusRequesters[COMBINED_ROW],
                         onClickItem = onClickItem,
                         onPlayItem = onPlayItem,
@@ -600,7 +654,7 @@ fun SearchPage(
 
                 !isLibraryTab && combinedMode -> {
                     SearchCombinedResults(
-                        result = seerrResults,
+                        result = state.seerrResults,
                         focusRequester = focusRequesters[SEERR_ROW],
                         onClickItem = onClickItem,
                         onPlayItem = onPlayItem,
@@ -625,7 +679,7 @@ fun SearchPage(
                     ) {
                         searchResultRow(
                             title = R.string.movies,
-                            result = movies,
+                            result = state.movies,
                             rowIndex = MOVIE_ROW,
                             position = position,
                             focusRequester = focusRequesters[MOVIE_ROW],
@@ -635,7 +689,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.tv_shows,
-                            result = series,
+                            result = state.series,
                             rowIndex = SERIES_ROW,
                             position = position,
                             focusRequester = focusRequesters[SERIES_ROW],
@@ -645,7 +699,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.episodes,
-                            result = episodes,
+                            result = state.episodes,
                             rowIndex = EPISODE_ROW,
                             position = position,
                             focusRequester = focusRequesters[EPISODE_ROW],
@@ -667,7 +721,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.collections,
-                            result = collections,
+                            result = state.collections,
                             rowIndex = COLLECTION_ROW,
                             position = position,
                             focusRequester = focusRequesters[COLLECTION_ROW],
@@ -677,7 +731,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.albums,
-                            result = albums,
+                            result = state.albums,
                             rowIndex = ALBUM_ROW,
                             position = position,
                             focusRequester = focusRequesters[ALBUM_ROW],
@@ -701,7 +755,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.artists,
-                            result = artists,
+                            result = state.artists,
                             rowIndex = ARTIST_ROW,
                             position = position,
                             focusRequester = focusRequesters[ARTIST_ROW],
@@ -725,7 +779,7 @@ fun SearchPage(
                         )
                         searchResultRow(
                             title = R.string.songs,
-                            result = songs,
+                            result = state.songs,
                             rowIndex = SONG_ROW,
                             position = position,
                             focusRequester = focusRequesters[SONG_ROW],
@@ -747,6 +801,16 @@ fun SearchPage(
                                 )
                             },
                         )
+                        searchResultRow(
+                            title = R.string.discover,
+                            result = state.seerrResults,
+                            rowIndex = SEERR_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[SEERR_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -757,6 +821,8 @@ fun SearchPage(
         SearchViewOptionsDialog(
             combinedResults = combinedMode,
             onCombinedResultsChange = viewModel::setCombinedResults,
+            voiceSearchButtonVisible = voiceSearchButtonVisible,
+            onVoiceSearchButtonVisibleChange = viewModel::setVoiceSearchButtonVisible,
             onDismissRequest = { showViewOptions = false },
         )
     }
@@ -766,6 +832,8 @@ fun SearchPage(
 fun SearchViewOptionsDialog(
     combinedResults: Boolean,
     onCombinedResultsChange: (Boolean) -> Unit,
+    voiceSearchButtonVisible: Boolean,
+    onVoiceSearchButtonVisibleChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     Dialog(
@@ -813,6 +881,31 @@ fun SearchViewOptionsDialog(
                         )
                     },
                     onClick = { onCombinedResultsChange(!combinedResults) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(stringResource(R.string.show_voice_search_button))
+                    },
+                    supportingContent = {
+                        Text(
+                            if (voiceSearchButtonVisible) {
+                                stringResource(R.string.visible_ui)
+                            } else {
+                                stringResource(R.string.hidden_ui)
+                            },
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = voiceSearchButtonVisible,
+                            onCheckedChange = onVoiceSearchButtonVisibleChange,
+                            colors = SwitchColors(),
+                        )
+                    },
+                    onClick = { onVoiceSearchButtonVisibleChange(!voiceSearchButtonVisible) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

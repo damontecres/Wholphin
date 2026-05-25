@@ -226,6 +226,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val HomeClickToPlay =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.continue_watching_click_behavior,
+                defaultValue = false,
+                getter = { it.homePagePreferences.clickToPlay },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { clickToPlay = value }
+                },
+                summaryOn = R.string.continue_watching_click_summary_on,
+                summaryOff = R.string.continue_watching_click_summary_off,
+            )
+
         val PlayThemeMusic =
             AppChoicePreference<AppPreferences, ThemeSongVolume>(
                 title = R.string.play_theme_music,
@@ -504,6 +516,25 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val DisplayTogglesPref =
+            AppMultiChoicePreference<AppPreferences, DisplayToggle>(
+                title = R.string.display_toggles_title,
+                summary = R.string.display_toggles_summary,
+                defaultValue = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
+                allValues = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
+                displayValues = R.array.display_toggle_types,
+                displayValuesSubtitles = R.array.display_toggle_types_subtitles,
+                getter = {
+                    it.interfacePreferences.displayTogglesList
+                },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences {
+                        clearDisplayToggles()
+                        addAllDisplayToggles(value)
+                    }
+                },
+            )
+
         val InstalledVersion =
             AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
@@ -671,6 +702,13 @@ sealed interface AppPreference<Pref, T> {
                 title = R.string.customize_home,
                 destination = Destination.HomeSettings,
                 summary = R.string.customize_home_summary,
+            )
+
+        val UserInterfaceLanguage =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.user_interface_language,
+                getter = { },
+                setter = { prefs, _ -> prefs },
             )
 
         val SendCrashReports =
@@ -902,9 +940,9 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val RequireProfilePin =
+        val ProtectProfilePreference =
             AppClickablePreference<AppPreferences>(
-                title = R.string.require_pin_code,
+                title = R.string.profile_protection,
             )
 
         val ImageDiskCacheSize =
@@ -1046,8 +1084,8 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
+                    AppPreference.PlayThemeMusic,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
                     AppPreference.ScreensaverSettings,
@@ -1076,9 +1114,10 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    AppPreference.RequireProfilePin,
+                    AppPreference.ProtectProfilePreference,
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
+                    AppPreference.UserInterfaceLanguage,
                 ),
         ),
         PreferenceGroup(
@@ -1160,13 +1199,13 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.BackdropStylePref,
                         AppPreference.ShowLogos,
                         AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
+                        AppPreference.DisplayTogglesPref,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
-                        AppPreference.ControllerTimeout,
-                        AppPreference.BackdropStylePref,
                         AppPreference.SlideshowDuration,
                         AppPreference.SlideshowPlayVideos,
                     ),
@@ -1178,6 +1217,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.ControllerTimeout,
                         AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
                         AppPreference.SkipSegments,
@@ -1325,6 +1365,7 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
+    @param:ArrayRes val displayValuesSubtitles: Int? = null,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

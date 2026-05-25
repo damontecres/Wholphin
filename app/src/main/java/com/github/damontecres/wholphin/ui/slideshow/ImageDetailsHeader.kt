@@ -24,7 +24,6 @@ import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.StreamLabel
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.MediaType
 
 @OptIn(UnstableApi::class)
@@ -64,11 +63,7 @@ fun ImageDetailsHeader(
                 modifier = Modifier.fillMaxWidth(.75f),
             )
         }
-        if (image.image.ui.quickDetails
-                .isNotNullOrBlank()
-        ) {
-            QuickDetails(image.image.ui.quickDetails, null)
-        }
+        QuickDetails(image.image.ui.quickDetails, null)
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

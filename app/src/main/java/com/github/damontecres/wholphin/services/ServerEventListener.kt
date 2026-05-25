@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ActivityContext
@@ -42,7 +43,7 @@ class ServerEventListener
 
         init {
             activity.lifecycle.addObserver(this)
-            serverRepository.current.observe(activity) {
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) {
                 Timber.d("New user/server: %s", it)
                 listenJob?.cancel()
                 if (it != null) {

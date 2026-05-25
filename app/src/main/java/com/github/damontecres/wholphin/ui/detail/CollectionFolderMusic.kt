@@ -31,7 +31,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.GridClickActions
@@ -99,7 +99,7 @@ class CollectionFolderMusicViewModel
             viewModelScope.launchDefault {
                 val request =
                     GetItemsRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = itemId,
                         includeItemTypes = listOf(BaseItemKind.AUDIO),
                         recursive = true,
@@ -204,7 +204,7 @@ fun CollectionFolderMusic(
 
             // Albums
             1 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = destination.itemId,
@@ -234,7 +234,7 @@ fun CollectionFolderMusic(
 
             // Artists
             2 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = destination.itemId,
@@ -276,7 +276,7 @@ fun CollectionFolderMusic(
 
             // Songs
             4 -> {
-                CollectionFolderGrid(
+                CollectionFolderView(
                     preferences = preferences,
                     actions = actions,
                     itemId = destination.itemId,

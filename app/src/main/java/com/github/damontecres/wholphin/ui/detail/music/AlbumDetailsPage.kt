@@ -20,7 +20,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,10 +44,12 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MediaManagementService
@@ -60,6 +61,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
+import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -73,7 +75,6 @@ import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -123,6 +124,7 @@ class AlbumViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
+        private val extrasService: ExtrasService,
         @Assisted itemId: UUID,
     ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
@@ -184,7 +186,7 @@ class AlbumViewModel
                                 api.libraryApi
                                     .getSimilarItems(
                                         GetSimilarItemsRequest(
-                                            userId = serverRepository.currentUser.value?.id,
+                                            userId = serverRepository.currentUser?.id,
                                             itemId = itemId,
                                             excludeArtistIds = album.data.albumArtists?.map { it.id },
                                             fields = SlimItemFields,
@@ -198,7 +200,7 @@ class AlbumViewModel
                     viewModelScope.launchIO {
                         val request =
                             GetItemsRequest(
-                                userId = serverRepository.currentUser.value?.id,
+                                userId = serverRepository.currentUser?.id,
                                 albumIds = listOf(itemId),
                                 parentId = null,
                                 fields = DefaultItemFields,
@@ -210,6 +212,14 @@ class AlbumViewModel
                         if (musicVideos.isNotEmpty()) {
                             _state.update {
                                 it.copy(musicVideos = musicVideos)
+                            }
+                        }
+                    }
+                    viewModelScope.launchIO {
+                        val extras = extrasService.getExtras(itemId)
+                        if (extras.isNotEmpty()) {
+                            _state.update {
+                                it.copy(extras = extras)
                             }
                         }
                     }
@@ -281,6 +291,7 @@ data class AlbumState(
     val similar: List<BaseItem>,
     val loading: LoadingState,
     val musicVideos: List<BaseItem?> = emptyList(),
+    val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
 ) {
     companion object {
@@ -291,7 +302,8 @@ data class AlbumState(
 private const val HEADER_ROW = 0
 private const val SONG_ROW = HEADER_ROW + 1
 private const val MUSIC_VIDEO_ROW = SONG_ROW + 1
-private const val SIMILAR_ROW = MUSIC_VIDEO_ROW + 1
+private const val EXTRAS_ROW = SONG_ROW + 1
+private const val SIMILAR_ROW = EXTRAS_ROW + 1
 
 @Composable
 fun AlbumDetailsPage(
@@ -314,7 +326,7 @@ fun AlbumDetailsPage(
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val focusManager = LocalFocusManager.current
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     val moreDialogActions =
         remember {
@@ -542,6 +554,19 @@ fun AlbumDetailsPage(
                                     )
                                 },
                                 modifier = Modifier.focusRequester(focusRequesters[MUSIC_VIDEO_ROW]),
+                            )
+                        }
+                    }
+                    if (state.extras.isNotEmpty()) {
+                        item {
+                            ExtrasRow(
+                                extras = state.extras,
+                                onClickItem = { index, extra ->
+                                    position = RowColumn(EXTRAS_ROW, index)
+                                    viewModel.navigationManager.navigateTo(extra.destination)
+                                },
+                                onLongClickItem = { _, _ -> },
+                                modifier = Modifier.focusRequester(focusRequesters[EXTRAS_ROW]),
                             )
                         }
                     }
