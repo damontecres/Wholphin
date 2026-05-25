@@ -614,7 +614,7 @@
     <string name="show_voice_search_button">Zeige Sprachsuche-Button</string>
     <string name="user_interface_language">Sprache Benutzeroberfläche</string>
     <string name="profile_protection">Profilschutz</string>
-    <string name="continue_watching_click_behavior">Weiterschauen/Als nächstes-Klick-Verhalten</string>
+    <string name="continue_watching_click_behavior">Weiterschauen/Als nächstes Verhalten</string>
     <string name="continue_watching_click_summary_on">Mit Klick abspielen</string>
     <string name="continue_watching_click_summary_off">Mit Klick Details zeigen</string>
     <string name="stars">Sterne</string>
