@@ -274,9 +274,6 @@ class HomeSettingsService
                     navDrawerService.getAllUserLibraries(userId, userDto?.tvAccess ?: false)
                 }
 
-            val prefs =
-                userPreferencesService.getCurrent().appPreferences.homePagePreferences
-
             val includedIds =
                 libraries
                     .mapIndexed { index, it ->
@@ -296,30 +293,15 @@ class HomeSettingsService
                             )
                         }
                     }
-            val continueWatchingRows =
-                if (prefs.combineContinueNext) {
-                    listOf(
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 1,
-                            title = ResStringProvider(R.string.combine_continue_next),
-                            config = HomeRowConfig.ContinueWatchingCombined(),
-                        ),
-                    )
-                } else {
-                    listOf(
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 1,
-                            title = ResStringProvider(R.string.continue_watching),
-                            config = HomeRowConfig.ContinueWatching(),
-                        ),
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 2,
-                            title = ResStringProvider(R.string.next_up),
-                            config = HomeRowConfig.NextUp(),
-                        ),
-                    )
-                }
-            val rowConfig = continueWatchingRows + includedIds
+            val continueWatchingRow =
+                listOf(
+                    HomeRowConfigDisplay(
+                        id = includedIds.size + 1,
+                        title = ResStringProvider(R.string.combine_continue_next),
+                        config = HomeRowConfig.ContinueWatchingCombined(),
+                    ),
+                )
+            val rowConfig = continueWatchingRow + includedIds
             return HomePageResolvedSettings(rowConfig)
         }
 

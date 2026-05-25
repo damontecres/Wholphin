@@ -202,18 +202,6 @@ sealed interface AppPreference<Pref, T> {
                 },
             )
 
-        val CombineContinueNext =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.combine_continue_next,
-                defaultValue = false,
-                getter = { it.homePagePreferences.combineContinueNext },
-                setter = { prefs, value ->
-                    prefs.updateHomePagePreferences { combineContinueNext = value }
-                },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
-            )
-
         val RewatchNextUp =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.rewatch_next_up,
@@ -1202,7 +1190,6 @@ val advancedPreferences =
                         AppPreference.BackdropStylePref,
                         AppPreference.ShowLogos,
                         AppPreference.ManageMedia,
-                        AppPreference.CombineContinueNext,
                         AppPreference.DisplayTogglesPref,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
