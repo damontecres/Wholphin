@@ -853,6 +853,31 @@ class HomeSettingsViewModel
                 }
             }
         }
+
+        fun onConfigChange(
+            row: HomeRowConfigDisplay,
+            config: HomeRowConfig,
+        ) {
+            viewModelScope.launchDefault {
+                val index =
+                    state.value.rows
+                        .indexOf(row)
+                        .coerceAtLeast(0)
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows =
+                            it.rows.toMutableList().apply {
+                                set(
+                                    index,
+                                    row.copy(config = config),
+                                )
+                            },
+                    )
+                }
+                fetchRowData()
+            }
+        }
     }
 
 data class HomePageSettingsState(

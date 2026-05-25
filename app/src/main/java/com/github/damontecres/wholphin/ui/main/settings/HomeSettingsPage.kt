@@ -234,7 +234,7 @@ fun HomeSettingsPage(
                                     modifier = destModifier,
                                     config = row.config,
                                     onConfigChange = {
-                                        TODO()
+                                        viewModel.onConfigChange(row, it)
                                     },
                                     onConfigAction = {
                                         viewModel.onConfigAction(row, it)

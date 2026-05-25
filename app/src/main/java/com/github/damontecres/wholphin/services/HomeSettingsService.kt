@@ -846,8 +846,24 @@ class HomeSettingsService
                             userId = userDto.id,
                             parentId = row.parentId,
                             recursive = row.recursive,
-                            sortBy = row.sort?.let { listOf(it.sort) },
-                            sortOrder = row.sort?.let { listOf(it.direction) },
+                            sortBy =
+                                row.sort?.let {
+                                    buildList {
+                                        add(it.sort)
+                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                            add(ItemSortBy.SORT_NAME)
+                                        }
+                                    }
+                                },
+                            sortOrder =
+                                row.sort?.let {
+                                    buildList {
+                                        add(it.direction)
+                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                            add(SortOrder.ASCENDING)
+                                        }
+                                    }
+                                },
                             limit = limit,
                             fields = DefaultItemFields,
                         )

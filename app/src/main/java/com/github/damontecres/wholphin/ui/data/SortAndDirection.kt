@@ -73,6 +73,7 @@ val VideoSortOptions =
 
 val PlaylistSortOptions =
     listOf(
+        ItemSortBy.DEFAULT,
         ItemSortBy.SORT_NAME,
         ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
