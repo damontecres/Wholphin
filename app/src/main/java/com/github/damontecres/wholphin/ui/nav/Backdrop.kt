@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
@@ -75,6 +77,7 @@ fun Backdrop(
     useExistingImageAsPlaceholder: Boolean = false,
     crossfadeDuration: Duration = 800.milliseconds,
 ) {
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val baseBackgroundColor = MaterialTheme.colorScheme.background
     if (backdrop.hasColors &&
         (backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR || backdropStyle == BackdropStyle.UNRECOGNIZED)
@@ -100,12 +103,14 @@ fun Backdrop(
                     .fillMaxSize()
                     .drawBehind {
                         drawRect(color = baseBackgroundColor)
+                        val start = if (isRtl) size.width else 0f
+                        val end = if (isRtl) 0f else size.width
                         // Top Left (Vibrant/Muted)
                         drawRect(
                             brush =
                                 Brush.radialGradient(
                                     colors = listOf(animSecondary, Color.Transparent),
-                                    center = Offset(0f, 0f),
+                                    center = Offset(start, 0f),
                                     radius = size.width * 0.8f,
                                 ),
                         )
@@ -114,7 +119,7 @@ fun Backdrop(
                             brush =
                                 Brush.radialGradient(
                                     colors = listOf(animPrimary, Color.Transparent),
-                                    center = Offset(size.width, size.height),
+                                    center = Offset(end, size.height),
                                     radius = size.width * 0.8f,
                                 ),
                         )
@@ -127,7 +132,7 @@ fun Backdrop(
                                             baseBackgroundColor,
                                             Color.Transparent,
                                         ),
-                                    center = Offset(0f, size.height),
+                                    center = Offset(start, size.height),
                                     radius = size.width * 0.8f,
                                 ),
                         )
@@ -136,7 +141,7 @@ fun Backdrop(
                             brush =
                                 Brush.radialGradient(
                                     colors = listOf(animTertiary, Color.Transparent),
-                                    center = Offset(size.width, 0f),
+                                    center = Offset(end, 0f),
                                     radius = size.width * 0.8f,
                                 ),
                         )
@@ -165,6 +170,7 @@ fun Backdrop(
                         .fillMaxWidth(.7f)
                         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                         .drawWithContent {
+                            val start = if (isRtl) size.width else 0f
                             drawContent()
                             if (drawerIsOpen) {
                                 drawRect(
@@ -190,7 +196,7 @@ fun Backdrop(
                                 brush =
                                     Brush.horizontalGradient(
                                         colors = listOf(Color.Transparent, Color.Black),
-                                        startX = 0f,
+                                        startX = start,
                                         endX = size.width * 0.6f,
                                     ),
                                 blendMode = BlendMode.DstIn,

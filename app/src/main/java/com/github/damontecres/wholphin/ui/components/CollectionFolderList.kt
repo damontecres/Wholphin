@@ -57,7 +57,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -115,7 +114,9 @@ fun CollectionFolderList(
 
     val gridFocusRequester = remember { FocusRequester() }
     if (pager?.isNotEmpty() == true) {
-        RequestOrRestoreFocus(gridFocusRequester)
+        LaunchedEffect(viewOptions.type) {
+            gridFocusRequester.tryRequestFocus()
+        }
     } else {
         LaunchedEffect(Unit) {
             (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
