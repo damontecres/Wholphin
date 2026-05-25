@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,7 +69,7 @@ fun SwitchUserContent(
 
     val state by viewModel.state.collectAsState()
 
-    val currentUser by viewModel.serverRepository.currentUser.observeAsState()
+    val currentUser by viewModel.serverRepository.currentUserFlow.collectAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
     var addUser by remember(server) { mutableStateOf<JellyfinUser?>(null) }
     var username by remember(addUser) { mutableStateOf(addUser?.name ?: "") }

@@ -28,7 +28,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -168,7 +167,7 @@ class PlaylistViewModel
                             .let { BaseItem(it, false) }
                     state.update { it.copy(playlist = playlist) }
                     val libraryDisplayInfo =
-                        serverRepository.currentUser.value?.let { user ->
+                        serverRepository.currentUser?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)
                         }
                     val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
@@ -198,7 +197,7 @@ class PlaylistViewModel
                 )
             }
 
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 viewModelScope.launchIO {
                     val libraryDisplayInfo =
                         libraryDisplayInfoDao.getItem(user, itemId)?.copy(
@@ -304,7 +303,7 @@ class PlaylistViewModel
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
             FilterUtils.getFilterOptionValues(
                 api,
-                serverRepository.currentUser.value?.id,
+                serverRepository.currentUser?.id,
                 itemId,
                 filterOption,
             )
@@ -374,7 +373,7 @@ fun PlaylistDetails(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showConfirmTypeDialog by remember { mutableStateOf<Triple<Int, BaseItem, Boolean>?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val addPlaylistState by addToPlaylistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val addPlaylistState by addToPlaylistViewModel.playlistState.collectAsState()
 
     fun play(
         index: Int,

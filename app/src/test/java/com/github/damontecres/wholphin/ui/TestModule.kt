@@ -108,7 +108,7 @@ object TestModule {
         .addInterceptor {
             val request = it.request()
             val newRequest =
-                serverRepository.currentUser.value?.accessToken?.let { token ->
+                serverRepository.currentUser?.accessToken?.let { token ->
                     request
                         .newBuilder()
                         .addHeader(

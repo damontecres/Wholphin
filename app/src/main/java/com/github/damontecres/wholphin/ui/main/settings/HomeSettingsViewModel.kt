@@ -94,7 +94,7 @@ class HomeSettingsViewModel
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
-                val userDto = serverRepository.currentUserDto.value ?: return@launchIO
+                val userDto = serverRepository.currentUserDto ?: return@launchIO
                 val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
@@ -122,7 +122,7 @@ class HomeSettingsViewModel
             val limit = 8
             val semaphore = Semaphore(4)
             val rows =
-                serverRepository.currentUserDto.value?.let { userDto ->
+                serverRepository.currentUserDto?.let { userDto ->
                     val prefs = userPreferencesService.getCurrent().appPreferences.homePagePreferences
                     state.value
                         .let { state ->
@@ -508,7 +508,7 @@ class HomeSettingsViewModel
 
         fun saveToRemote() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Saving home settings to remote")
                     val rows = state.value.rows.map { it.config }
                     val settings =
@@ -527,7 +527,7 @@ class HomeSettingsViewModel
 
         fun loadFromRemote() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Loading home settings from remote")
                     try {
                         _state.update { it.copy(loading = LoadingState.Loading) }
@@ -561,7 +561,7 @@ class HomeSettingsViewModel
 
         fun loadFromRemoteWeb() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Loading home settings from web")
                     try {
                         _state.update { it.copy(loading = LoadingState.Loading) }
@@ -588,7 +588,7 @@ class HomeSettingsViewModel
         fun saveToLocal() {
             // This uses injected ioScope so that it will still run when the page is closing
             ioScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     val rows = state.value.rows.map { it.config }
                     val settings =
                         HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
@@ -655,7 +655,7 @@ class HomeSettingsViewModel
 
         fun resetToDefault() =
             viewModelScope.launchIO {
-                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
+                val userId = serverRepository.currentUser?.id ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
                 val result = homeSettingsService.createDefault(userId)
                 idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0

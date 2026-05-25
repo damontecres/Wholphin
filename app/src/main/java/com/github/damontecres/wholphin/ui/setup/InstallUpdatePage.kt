@@ -21,9 +21,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,7 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
@@ -51,6 +49,8 @@ import com.github.damontecres.wholphin.services.DownloadCallback
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -58,47 +58,56 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.formatBytes
-import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Version
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownTypography
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class UpdateViewModel
     @Inject
     constructor(
+        private val userPreferencesService: UserPreferencesService,
         val updater: UpdateChecker,
         val navigationManager: NavigationManager,
     ) : ViewModel(),
         DownloadCallback {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val release = MutableLiveData<Release?>(null)
+        private val _state = MutableStateFlow(InstallUpdateState())
+        val state: StateFlow<InstallUpdateState> = _state
 
-        val downloading = MutableLiveData<Boolean>(false)
-        val contentLength = MutableLiveData<Long>(-1)
-        val bytesDownloaded = MutableLiveData<Long>(-1)
+        private val _bytesDownloaded = MutableStateFlow(0L)
+        val bytesDownloaded: StateFlow<Long> = _bytesDownloaded
 
         val currentVersion = updater.getInstalledVersion()
 
-        fun init(updateUrl: String) {
-            loading.value = LoadingState.Loading
-            viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to check for update")) {
-                val release = updater.getLatestRelease(updateUrl)
-                withContext(Dispatchers.Main) {
-                    contentLength.value = -1
-                    bytesDownloaded.value = -1
-                    this@UpdateViewModel.release.value = release
-                    loading.value = LoadingState.Success
+        fun init() {
+            _state.update { it.copy(loading = LoadingState.Loading) }
+            viewModelScope.launchIO {
+                val updateUrl = userPreferencesService.getCurrent().appPreferences.updateUrl
+                try {
+                    val release = updater.getLatestRelease(updateUrl)
+                    _state.update {
+                        it.copy(
+                            loading = LoadingState.Success,
+                            release = release,
+                            contentLength = -1L,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching release from %s", updateUrl)
+                    _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
             }
         }
@@ -107,44 +116,49 @@ class UpdateViewModel
 
         fun installRelease(release: Release) {
             downloadJob =
-                viewModelScope.launch(
-                    Dispatchers.IO +
-                        LoadingExceptionHandler(
-                            loading,
-                            "Failed to install update",
-                        ),
-                ) {
-                    downloading.setValueOnMain(true)
-                    updater.installRelease(release, this@UpdateViewModel)
-                    downloading.setValueOnMain(false)
+                viewModelScope.launchIO {
+                    try {
+                        _bytesDownloaded.value = 0L
+                        _state.update { it.copy(downloading = true) }
+                        updater.installRelease(release, this@UpdateViewModel)
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error downloading")
+                        _state.update { it.copy(loading = LoadingState.Error(ex)) }
+                    } finally {
+                        _state.update { it.copy(downloading = false) }
+                    }
                 }
         }
 
         fun cancelDownload() {
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error",
-                    ),
-            ) {
+            viewModelScope.launchIO {
                 downloadJob?.cancel()
-                withContext(Dispatchers.Main) {
-                    downloading.value = false
-                    contentLength.value = -1
-                    bytesDownloaded.value = -1
+                _state.update {
+                    it.copy(
+                        downloading = false,
+                        contentLength = -1L,
+                    )
                 }
             }
         }
 
         override fun contentLength(contentLength: Long) {
-            this@UpdateViewModel.contentLength.value = contentLength
+            _state.update { it.copy(contentLength = contentLength) }
         }
 
         override fun bytesDownloaded(bytes: Long) {
-            this@UpdateViewModel.bytesDownloaded.value = bytes
+            _bytesDownloaded.value = bytes
         }
     }
+
+data class InstallUpdateState(
+    val loading: LoadingState = LoadingState.Pending,
+    val downloading: Boolean = false,
+    val release: Release? = null,
+    val contentLength: Long = -1L,
+)
 
 @Composable
 fun InstallUpdatePage(
@@ -152,16 +166,9 @@ fun InstallUpdatePage(
     modifier: Modifier = Modifier,
     viewModel: UpdateViewModel = hiltViewModel(),
 ) {
-    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val release by viewModel.release.observeAsState(null)
+    OneTimeLaunchedEffect { viewModel.init() }
 
-    val isDownloading by viewModel.downloading.observeAsState(false)
-    val contentLength by viewModel.contentLength.observeAsState(-1L)
-    val bytesDownloaded by viewModel.bytesDownloaded.observeAsState(-1)
-
-    LaunchedEffect(Unit) {
-        viewModel.init(preferences.appPreferences.updateUrl)
-    }
+    val state by viewModel.state.collectAsState()
     var permissions by remember { mutableStateOf(viewModel.updater.hasPermissions()) }
     val launcher =
         rememberLauncherForActivityResult(
@@ -173,9 +180,9 @@ fun InstallUpdatePage(
                 // TODO
             }
         }
-    when (val state = loading) {
+    when (val st = state.loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+            ErrorMessage(st, modifier)
         }
 
         LoadingState.Loading,
@@ -185,26 +192,32 @@ fun InstallUpdatePage(
         }
 
         LoadingState.Success -> {
-            release?.let {
+            val release = state.release
+            if (release != null) {
                 InstallUpdatePageContent(
                     currentVersion = viewModel.currentVersion,
-                    release = it,
+                    release = release,
                     onInstallRelease = {
                         if (!permissions) {
                             launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         } else {
-                            viewModel.installRelease(it)
+                            viewModel.installRelease(release)
                         }
                     },
                     onCancel = {
                         viewModel.navigationManager.goBack()
                     },
-                    modifier = modifier.dimAndBlur(isDownloading),
+                    modifier = modifier.dimAndBlur(state.downloading),
+                )
+            } else {
+                Text(
+                    text = "No release found! Check the update URL.",
                 )
             }
-            if (isDownloading) {
+            if (state.downloading) {
+                val bytesDownloaded by viewModel.bytesDownloaded.collectAsState(0L)
                 DownloadDialog(
-                    contentLength = contentLength,
+                    contentLength = state.contentLength,
                     bytesDownloaded = bytesDownloaded,
                     onDismissRequest = {
                         viewModel.cancelDownload()

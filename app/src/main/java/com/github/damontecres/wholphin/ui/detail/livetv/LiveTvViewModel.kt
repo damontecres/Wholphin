@@ -121,7 +121,7 @@ class LiveTvViewModel
                     val channelData by api.liveTvApi.getLiveTvChannels(
                         GetLiveTvChannelsRequest(
                             startIndex = 0,
-                            userId = serverRepository.currentUser.value?.id,
+                            userId = serverRepository.currentUser?.id,
                             enableFavoriteSorting = favoriteChannelsAtBeginning,
                             sortBy =
                                 if (sortByRecentlyWatched) {
@@ -229,7 +229,7 @@ class LiveTvViewModel
                     minEndDate = minEndDate,
                     channelIds = channelsToFetch.map { it.id },
                     sortBy = listOf(ItemSortBy.START_DATE),
-                    userId = serverRepository.currentUser.value?.id,
+                    userId = serverRepository.currentUser?.id,
                     fields = listOf(ItemFields.OVERVIEW),
                 )
             val fetchedPrograms =

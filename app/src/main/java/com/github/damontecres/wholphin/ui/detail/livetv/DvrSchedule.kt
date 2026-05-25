@@ -10,8 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.ListItem
@@ -44,13 +43,14 @@ import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -63,36 +63,51 @@ class DvrScheduleViewModel
         private val api: ApiClient,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val active = MutableLiveData<List<BaseItem>>()
-        val scheduled = MutableLiveData<Map<LocalDate, List<BaseItem>>>()
+        private val _state = MutableStateFlow(DvrScheduleState())
+        val state: StateFlow<DvrScheduleState> = _state
+
+        init {
+            init()
+        }
 
         fun init() {
-//            loading.value = LoadingState.Loading
-            viewModelScope.launchIO(LoadingExceptionHandler(loading, "Error fetching DVR Schedule")) {
-                val active =
-                    api.liveTvApi
-                        .getRecordings(
-                            isInProgress = true,
-                            fields = SlimItemFields,
-                            limit = 100,
-                        ).content.items
-                        .map { BaseItem.from(it, api, true) }
-                val scheduled =
-                    api.liveTvApi
-                        .getTimers(
-                            isActive = false,
-                            isScheduled = true,
-                        ).content.items
-                        .map { BaseItem.from(it.programInfo!!, api, true) } // TODO this probably breaks for time based recordings
-                        .groupBy {
-                            it.data.startDate!!.toLocalDate()
-                        }
+            viewModelScope.launchIO {
+                try {
+                    val active =
+                        api.liveTvApi
+                            .getRecordings(
+                                isInProgress = true,
+                                fields = SlimItemFields,
+                                limit = 100,
+                            ).content.items
+                            .map { BaseItem.from(it, api, true) }
+                    val scheduled =
+                        api.liveTvApi
+                            .getTimers(
+                                isActive = false,
+                                isScheduled = true,
+                            ).content.items
+                            .map {
+                                BaseItem.from(
+                                    it.programInfo!!,
+                                    api,
+                                    true,
+                                )
+                            } // TODO this probably breaks for time based recordings
+                            .groupBy {
+                                it.data.startDate!!.toLocalDate()
+                            }
 
-                withContext(Dispatchers.Main) {
-                    this@DvrScheduleViewModel.active.value = active
-                    this@DvrScheduleViewModel.scheduled.value = scheduled
-                    loading.value = LoadingState.Success
+                    _state.update {
+                        it.copy(
+                            loading = LoadingState.Success,
+                            active = active,
+                            scheduled = scheduled,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching DVR schedule")
+                    _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
             }
         }
@@ -112,6 +127,12 @@ class DvrScheduleViewModel
         }
     }
 
+data class DvrScheduleState(
+    val loading: LoadingState = LoadingState.Loading,
+    val active: List<BaseItem> = emptyList(),
+    val scheduled: Map<LocalDate, List<BaseItem>> = emptyMap(),
+)
+
 @Composable
 fun DvrSchedule(
     requestFocusAfterLoading: Boolean,
@@ -122,12 +143,10 @@ fun DvrSchedule(
     LaunchedEffect(Unit) {
         viewModel.init()
     }
-    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
-    val active by viewModel.active.observeAsState(listOf())
-    val recordings by viewModel.scheduled.observeAsState(mapOf())
-    when (val state = loading) {
+    val state by viewModel.state.collectAsState()
+    when (val st = state.loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+            ErrorMessage(st, modifier)
         }
 
         LoadingState.Loading,
@@ -141,7 +160,7 @@ fun DvrSchedule(
             val focusRequester = remember { FocusRequester() }
             if (requestFocusAfterLoading) {
                 LaunchedEffect(Unit) {
-                    if (active.isNotEmpty() || recordings.isNotEmpty()) {
+                    if (state.active.isNotEmpty() || state.scheduled.isNotEmpty()) {
                         focusRequester.tryRequestFocus()
                     } else {
                         focusRequesterOnEmpty.tryRequestFocus()
@@ -149,8 +168,8 @@ fun DvrSchedule(
                 }
             }
             DvrScheduleContent(
-                activeRecordings = active,
-                scheduledRecordings = recordings,
+                activeRecordings = state.active,
+                scheduledRecordings = state.scheduled,
                 onClickItem = {
                     showDialog = it
                 },

@@ -116,7 +116,7 @@ object AppModule {
         .addInterceptor {
             val request = it.request()
             val newRequest =
-                serverRepository.currentUser.value?.accessToken?.let { token ->
+                serverRepository.current.value?.user?.accessToken?.let { token ->
                     request
                         .newBuilder()
                         .addHeader(
@@ -170,7 +170,10 @@ object AppModule {
         appPreference: DataStore<AppPreferences>,
         @IoCoroutineScope scope: CoroutineScope,
     ) = object : RememberTabManager {
-        fun key(itemId: String) = "${serverRepository.currentServer.value?.id}_${serverRepository.currentUser.value?.id}_$itemId"
+        fun key(itemId: String): String =
+            serverRepository.current.value.let {
+                "${it?.server?.id}_${it?.user?.id}_$itemId"
+            }
 
         override fun getRememberedTab(
             preferences: UserPreferences,

@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.services
 
-import androidx.lifecycle.asFlow
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -52,8 +51,7 @@ class SuggestionService
             parentId: UUID,
             itemKind: BaseItemKind,
         ): Flow<SuggestionsResource> {
-            return serverRepository.currentUser
-                .asFlow()
+            return serverRepository.currentUserFlow
                 .flatMapLatest { user ->
                     val userId = user?.id ?: return@flatMapLatest flowOf(SuggestionsResource.Empty)
                     val cachedSuggestions = cache.get(userId, parentId, itemKind)

@@ -82,7 +82,7 @@ fun CollectionFolderList(
     preferences: UserPreferences,
     item: BaseItem?,
     title: String,
-    loadingState: DataLoadingState<List<BaseItem?>>,
+    items: DataLoadingState<List<BaseItem?>>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -108,7 +108,7 @@ fun CollectionFolderList(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val pager = (loadingState as? DataLoadingState.Success)?.data
+    val pager = (items as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
     val headerRowFocusRequester = remember { FocusRequester() }
     val showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME
@@ -147,7 +147,7 @@ fun CollectionFolderList(
 
     Column(modifier = modifier) {
         CollectionFolderHeader(
-            showHeader = showHeader || loadingState !is DataLoadingState.Success,
+            showHeader = showHeader || items !is DataLoadingState.Success,
             showTitle = showTitle,
             playEnabled = playEnabled && pager?.isNotEmpty() == true,
             title = title,
@@ -162,7 +162,7 @@ fun CollectionFolderList(
             onFilterChange = onFilterChange,
             modifier = Modifier.focusRequester(headerRowFocusRequester),
         )
-        when (val state = loadingState) {
+        when (val state = items) {
             DataLoadingState.Pending,
             DataLoadingState.Loading,
             -> {

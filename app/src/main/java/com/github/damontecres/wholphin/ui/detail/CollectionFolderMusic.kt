@@ -99,7 +99,7 @@ class CollectionFolderMusicViewModel
             viewModelScope.launchDefault {
                 val request =
                     GetItemsRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = itemId,
                         includeItemTypes = listOf(BaseItemKind.AUDIO),
                         recursive = true,

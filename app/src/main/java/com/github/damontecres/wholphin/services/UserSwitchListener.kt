@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.data.SeerrServerDao
@@ -39,7 +38,7 @@ class UserSwitchListener
         init {
             context as AppCompatActivity
             context.lifecycleScope.launchDefault {
-                serverRepository.currentUser.asFlow().collect { user ->
+                serverRepository.currentUserFlow.collect { user ->
                     Timber.d("New user")
                     seerrServerRepository.clear()
                     homeSettingsService.currentSettings.update { HomePageResolvedSettings.EMPTY }

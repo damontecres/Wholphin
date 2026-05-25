@@ -59,6 +59,8 @@ fun DownloadSubtitlesContent(
     modifier: Modifier = Modifier,
 ) {
     when (val s = state) {
+        SubtitleSearchStatus.Inactive -> {}
+
         SubtitleSearchStatus.Searching -> {
             Wrapper {
                 Text(

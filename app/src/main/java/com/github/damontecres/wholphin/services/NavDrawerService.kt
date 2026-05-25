@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import androidx.lifecycle.asFlow
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -58,9 +57,8 @@ class NavDrawerService
 
         init {
             // Handle updating the nav drawer when the user changes
-            serverRepository.currentUser
-                .asFlow()
-                .combine(serverRepository.currentUserDto.asFlow()) { user, userDto ->
+            serverRepository.currentUserFlow
+                .combine(serverRepository.currentUserDtoFlow) { user, userDto ->
                     Pair(user, userDto)
                 }.onEach { (user, userDto) ->
                     Timber.d("User updated: user=%s, userDto=%s", user?.id, userDto?.id)

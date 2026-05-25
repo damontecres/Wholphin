@@ -61,7 +61,7 @@ class LocaleChoiceViewModel
 
         init {
             viewModelScope.launchDefault {
-                serverRepository.currentUser.value?.let {
+                serverRepository.currentUser?.let {
                     val availableLocales = extractAvailableLocales()
                     Timber.v("availableLocales=%s", availableLocales)
                     _state.update {
@@ -73,7 +73,7 @@ class LocaleChoiceViewModel
                 }
             }
             viewModelScope.launchDefault {
-                serverRepository.currentUser.asFlow().collectLatest { user ->
+                serverRepository.currentUserFlow.collectLatest { user ->
                     val userLocale = user?.uiLanguage?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
                     _state.update { it.copy(userLocale = userLocale) }
                 }

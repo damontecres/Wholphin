@@ -35,7 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -56,7 +55,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
@@ -86,13 +84,15 @@ import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.setup.UserIconCardImage
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.CollectionType
@@ -111,10 +111,10 @@ class NavDrawerViewModel
         val backdropService: BackdropService,
         private val musicService: MusicService,
     ) : ViewModel() {
-        val state = navDrawerService.state
+        val serviceState = navDrawerService.state
 
-        val selectedIndex = MutableLiveData(-1)
-        val moreExpanded = MutableLiveData(false)
+        private val _state = MutableStateFlow(NavDrawerState())
+        val state: StateFlow<NavDrawerState> = _state
 
         fun onClickDrawerItem(
             index: Int,
@@ -130,7 +130,7 @@ class NavDrawerViewModel
                 }
 
                 NavDrawerItem.More -> {
-                    setShowMore(!moreExpanded.value!!)
+                    setShowMore(!state.value.moreExpanded)
                 }
 
                 NavDrawerItem.Discover -> {
@@ -148,11 +148,11 @@ class NavDrawerViewModel
         }
 
         fun setIndex(index: Int) {
-            selectedIndex.value = index
+            _state.update { it.copy(selectedIndex = index) }
         }
 
         fun setShowMore(value: Boolean) {
-            moreExpanded.value = value
+            _state.update { it.copy(moreExpanded = value) }
         }
 
         fun getUserImage(user: JellyfinUser): String = api.imageApi.getUserImageUrl(user.id)
@@ -164,11 +164,11 @@ class NavDrawerViewModel
             viewModelScope.launchDefault {
                 val asDestinations =
                     (
-                        state.value.items +
+                        serviceState.value.items +
                             listOf(
                                 NavDrawerItem.More,
                                 NavDrawerItem.Discover,
-                            ) + state.value.moreItems
+                            ) + serviceState.value.moreItems
                     ).map {
                         if (it is ServerNavDrawerItem) {
                             it.destination
@@ -202,7 +202,7 @@ class NavDrawerViewModel
                             }
                         Timber.v("Found $index => $key")
                         if (index != null) {
-                            selectedIndex.setValueOnMain(index)
+                            _state.update { it.copy(selectedIndex = index) }
                             break
                         }
                     }
@@ -217,6 +217,11 @@ class NavDrawerViewModel
             }
         }
     }
+
+data class NavDrawerState(
+    val selectedIndex: Int = -1,
+    val moreExpanded: Boolean = false,
+)
 
 /**
  * An item that can be shown in the nav drawer
@@ -303,10 +308,11 @@ fun NavDrawer(
         drawerState.setValue(DrawerValue.Open)
         focusRequester.requestFocus()
     }
+    val serviceState by viewModel.serviceState.collectAsState()
     val state by viewModel.state.collectAsState()
-    val moreExpanded by viewModel.moreExpanded.observeAsState(false)
+    val moreExpanded = state.moreExpanded
     // A negative index is a built-in page, >=0 is a library
-    val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
+    val selectedIndex = state.selectedIndex
 
     BackHandler(enabled = moreExpanded && drawerState.currentValue == DrawerValue.Open) {
         viewModel.setShowMore(false)
@@ -361,14 +367,14 @@ fun NavDrawer(
                         modifier = Modifier,
                     )
                     AnimatedVisibility(
-                        visible = state.nowPlayingEnabled,
+                        visible = serviceState.nowPlayingEnabled,
                         enter = expandVertically(expandFrom = Alignment.Top),
                         exit = shrinkVertically(shrinkTowards = Alignment.Top),
                     ) {
                         val interactionSource = remember { MutableInteractionSource() }
                         IconNavItem(
                             text = stringResource(R.string.now_playing),
-                            subtext = state.nowPlayingTitle,
+                            subtext = serviceState.nowPlayingTitle,
                             icon = Icons.Default.PlayArrow,
                             selected = selectedIndex == NOW_PLAYING_INDEX,
                             drawerOpen = isOpen,
@@ -448,8 +454,8 @@ fun NavDrawer(
                                         ),
                             )
                         }
-                        itemsIndexed(state.items) { index, it ->
-                            if (it !is NavDrawerItem.Discover || state.discoverEnabled) {
+                        itemsIndexed(serviceState.items) { index, it ->
+                            if (it !is NavDrawerItem.Discover || serviceState.discoverEnabled) {
                                 val interactionSource = remember { MutableInteractionSource() }
                                 NavItem(
                                     library = it,
@@ -469,9 +475,9 @@ fun NavDrawer(
                                 )
                             }
                         }
-                        if (state.moreItems.isNotEmpty()) {
+                        if (serviceState.moreItems.isNotEmpty()) {
                             item {
-                                val index = state.items.size
+                                val index = serviceState.items.size
                                 val interactionSource = remember { MutableInteractionSource() }
                                 NavItem(
                                     library = NavDrawerItem.More,
@@ -492,10 +498,10 @@ fun NavDrawer(
                             }
                         }
                         if (moreExpanded) {
-                            itemsIndexed(state.moreItems) { index, it ->
+                            itemsIndexed(serviceState.moreItems) { index, it ->
                                 val adjustedIndex =
-                                    remember(state) { (index + state.items.size + 1) }
-                                if (it !is NavDrawerItem.Discover || state.discoverEnabled) {
+                                    remember(serviceState) { (index + serviceState.items.size + 1) }
+                                if (it !is NavDrawerItem.Discover || serviceState.discoverEnabled) {
                                     val interactionSource = remember { MutableInteractionSource() }
                                     NavItem(
                                         library = it,

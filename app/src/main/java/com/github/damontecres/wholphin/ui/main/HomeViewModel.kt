@@ -79,7 +79,7 @@ class HomeViewModel
                     val preferences = userPreferencesService.getCurrent()
                     val prefs = preferences.appPreferences.homePagePreferences
 
-                    serverRepository.currentUserDto.value?.let { userDto ->
+                    serverRepository.currentUserDto?.let { userDto ->
                         val libraries =
                             navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                         val settings =
@@ -256,7 +256,7 @@ class HomeViewModel
         fun removeFromNextUp(item: BaseItem) {
             if (item.type == BaseItemKind.EPISODE) {
                 viewModelScope.launchDefault {
-                    serverRepository.currentUser.value?.id?.let { userId ->
+                    serverRepository.currentUser?.id?.let { userId ->
                         latestNextUpService.removeFromNextUp(userId, item)
                         init()
                     }

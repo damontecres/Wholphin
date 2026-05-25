@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,7 +21,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
@@ -41,10 +40,10 @@ import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import java.util.UUID
@@ -61,16 +60,16 @@ class LiveTvCollectionViewModel
         val backdropService: BackdropService,
     ) : ViewModel(),
         RememberTabManager by rememberTabManager {
-        val recordingFolders = MutableLiveData<List<TabId>>()
+        val recordingFolders = MutableStateFlow<List<TabId>>(emptyList())
 
         init {
             viewModelScope.launchIO {
                 val folders =
                     api.liveTvApi
-                        .getRecordingFolders(userId = serverRepository.currentUser.value?.id)
+                        .getRecordingFolders(userId = serverRepository.currentUser?.id)
                         .content.items
                         .map { TabId(it.name ?: "Recordings", it.id) }
-                this@LiveTvCollectionViewModel.recordingFolders.setValueOnMain(folders)
+                recordingFolders.value = folders
             }
         }
     }
@@ -89,7 +88,7 @@ fun CollectionFolderLiveTv(
 ) {
     val rememberedTabIndex =
         remember { viewModel.getRememberedTab(preferences, destination.itemId, 0) }
-    val folders by viewModel.recordingFolders.observeAsState(listOf())
+    val folders by viewModel.recordingFolders.collectAsState()
 
     val tvGuideStr = stringResource(R.string.tv_guide)
     val tvDvrStr = stringResource(R.string.tv_dvr_schedule)
