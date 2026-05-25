@@ -330,10 +330,8 @@ class PlaybackViewModel
                                 navigationManager.goBack()
                                 return
                             }
-                            if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
-                                _state.update {
-                                    it.copy(playlist = r.playlist)
-                                }
+                            _state.update {
+                                it.copy(playlist = r.playlist)
                             }
                             r.playlist.items.first()
                         }
@@ -344,6 +342,7 @@ class PlaybackViewModel
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
 
+            playlistItem.item.type == BaseItemKind.TRAILER
             val intros =
                 // If not resuming playback & cinema mode is enabled, get potential intros
                 if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
@@ -379,7 +378,7 @@ class PlaybackViewModel
                 playNextUp()
             }
 
-            if (!isPlaylist && preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
+            if (!isPlaylist) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
                     _state.update {
@@ -1025,9 +1024,11 @@ class PlaybackViewModel
                             if (currentItem is PlaylistItem.Intro) {
                                 Timber.v("Current item is intro, so playing next up immediately")
                                 playNextUp()
-                            } else {
+                            } else if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
                                 Timber.v("Setting next up to ${nextItem.id}")
                                 _state.update { it.copy(nextUp = nextItem.item) }
+                            } else {
+                                controllerViewState.showControls()
                             }
                         }
 
