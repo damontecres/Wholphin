@@ -599,4 +599,8 @@
     <string name="show_voice_search_button">显示语音搜索按钮</string>
     <string name="visible_ui">可见</string>
     <string name="hidden_ui">隐藏</string>
+    <string name="view_options_type_grid">网格</string>
+    <string name="view_options_type_list">列表</string>
+    <string name="view_options_type_list_compact">紧凑列表</string>
+    <string name="user_interface_language">用户界面语言</string>
 </resources>
