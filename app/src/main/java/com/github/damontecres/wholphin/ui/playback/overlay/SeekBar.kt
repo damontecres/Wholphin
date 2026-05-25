@@ -18,7 +18,6 @@ package com.github.damontecres.wholphin.ui.playback.overlay
  * limitations under the License.
  */
 
-import android.view.KeyEvent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
@@ -44,11 +43,16 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.calculateSeekAccelerationMultiplier
+import com.github.damontecres.wholphin.ui.playback.isDpadLeft
+import com.github.damontecres.wholphin.ui.playback.isDpadRight
 import kotlinx.coroutines.FlowPreview
+import timber.log.Timber
 import kotlin.time.Duration
 
 /**
@@ -174,6 +178,7 @@ private fun SeekBarDisplay(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val color = MaterialTheme.colorScheme.border
     val onSurface = MaterialTheme.colorScheme.onSurface
 
@@ -192,70 +197,75 @@ private fun SeekBarDisplay(
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
                     .onPreviewKeyEvent { event ->
-                        when (event.nativeKeyEvent.keyCode) {
-                            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
-                                when (event.type) {
-                                    KeyEventType.KeyDown -> {
-                                        val repeatCount = event.nativeKeyEvent.repeatCount
-                                        if (repeatCount > 0) {
-                                            leftHandledByRepeat = true
-                                            onLeft.invoke(
-                                                calculateSeekAccelerationMultiplier(
-                                                    repeatCount = repeatCount,
-                                                    durationMs = durationMs,
-                                                ),
-                                            )
-                                        } else {
-                                            leftHandledByRepeat = false
-                                        }
-                                    }
-
-                                    KeyEventType.KeyUp -> {
-                                        if (!leftHandledByRepeat) {
-                                            onLeft.invoke(1)
-                                        }
+                        if (!isDpadLeft(event) && !isDpadRight(event)) {
+                            Timber.v("Ignoring %s", event)
+                            return@onPreviewKeyEvent false
+                        }
+                        val seekBack =
+                            if (isLtr) {
+                                isDpadLeft(event)
+                            } else {
+                                isDpadRight(event)
+                            }
+                        if (seekBack) {
+                            when (event.type) {
+                                KeyEventType.KeyDown -> {
+                                    val repeatCount = event.nativeKeyEvent.repeatCount
+                                    if (repeatCount > 0) {
+                                        leftHandledByRepeat = true
+                                        onLeft.invoke(
+                                            calculateSeekAccelerationMultiplier(
+                                                repeatCount = repeatCount,
+                                                durationMs = durationMs,
+                                            ),
+                                        )
+                                    } else {
                                         leftHandledByRepeat = false
                                     }
-
-                                    else -> {
-                                        return@onPreviewKeyEvent false
-                                    }
                                 }
-                                return@onPreviewKeyEvent true
-                            }
 
-                            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
-                                when (event.type) {
-                                    KeyEventType.KeyDown -> {
-                                        val repeatCount = event.nativeKeyEvent.repeatCount
-                                        if (repeatCount > 0) {
-                                            rightHandledByRepeat = true
-                                            onRight.invoke(
-                                                calculateSeekAccelerationMultiplier(
-                                                    repeatCount = repeatCount,
-                                                    durationMs = durationMs,
-                                                ),
-                                            )
-                                        } else {
-                                            rightHandledByRepeat = false
-                                        }
+                                KeyEventType.KeyUp -> {
+                                    if (!leftHandledByRepeat) {
+                                        onLeft.invoke(1)
                                     }
+                                    leftHandledByRepeat = false
+                                }
 
-                                    KeyEventType.KeyUp -> {
-                                        if (!rightHandledByRepeat) {
-                                            onRight.invoke(1)
-                                        }
+                                else -> {
+                                    return@onPreviewKeyEvent false
+                                }
+                            }
+                            return@onPreviewKeyEvent true
+                        } else {
+                            when (event.type) {
+                                KeyEventType.KeyDown -> {
+                                    val repeatCount = event.nativeKeyEvent.repeatCount
+                                    if (repeatCount > 0) {
+                                        rightHandledByRepeat = true
+                                        onRight.invoke(
+                                            calculateSeekAccelerationMultiplier(
+                                                repeatCount = repeatCount,
+                                                durationMs = durationMs,
+                                            ),
+                                        )
+                                    } else {
                                         rightHandledByRepeat = false
                                     }
-
-                                    else -> {
-                                        return@onPreviewKeyEvent false
-                                    }
                                 }
-                                return@onPreviewKeyEvent true
+
+                                KeyEventType.KeyUp -> {
+                                    if (!rightHandledByRepeat) {
+                                        onRight.invoke(1)
+                                    }
+                                    rightHandledByRepeat = false
+                                }
+
+                                else -> {
+                                    return@onPreviewKeyEvent false
+                                }
                             }
+                            return@onPreviewKeyEvent true
                         }
-                        false
                     }.focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
@@ -266,33 +276,70 @@ private fun SeekBarDisplay(
                     strokeWidth = size.height,
                     cap = StrokeCap.Round,
                 )
-                drawLine(
-                    color = onSurface.copy(alpha = .65f),
-                    start = Offset(x = 0f, y = yOffset),
-                    end =
-                        Offset(
-                            x = size.width.times(bufferedProgress),
-                            y = yOffset,
-                        ),
-                    strokeWidth = size.height,
-                    cap = StrokeCap.Round,
-                )
-                drawLine(
-                    color = color,
-                    start = Offset(x = 0f, y = yOffset),
-                    end =
-                        Offset(
-//                        x = size.width.times(if (isSelected) seekProgress else progress),
-                            x = size.width.times(progress),
-                            y = yOffset,
-                        ),
-                    strokeWidth = size.height,
-                    cap = StrokeCap.Round,
-                )
+                if (isLtr) {
+                    drawLine(
+                        color = onSurface.copy(alpha = .65f),
+                        start = Offset(x = 0f, y = yOffset),
+                        end =
+                            Offset(
+                                x = size.width.times(bufferedProgress),
+                                y = yOffset,
+                            ),
+                        strokeWidth = size.height,
+                        cap = StrokeCap.Round,
+                    )
+                    drawLine(
+                        color = color,
+                        start = Offset(x = 0f, y = yOffset),
+                        end =
+                            Offset(
+                                x = size.width.times(progress),
+                                y = yOffset,
+                            ),
+                        strokeWidth = size.height,
+                        cap = StrokeCap.Round,
+                    )
+                } else {
+                    drawLine(
+                        color = onSurface.copy(alpha = .65f),
+                        start =
+                            Offset(
+                                x = size.width - size.width.times(bufferedProgress),
+                                y = yOffset,
+                            ),
+                        end =
+                            Offset(
+                                x = size.width,
+                                y = yOffset,
+                            ),
+                        strokeWidth = size.height,
+                        cap = StrokeCap.Round,
+                    )
+                    drawLine(
+                        color = color,
+                        start = Offset(x = size.width - size.width.times(progress), y = yOffset),
+                        end =
+                            Offset(
+                                x = size.width,
+                                y = yOffset,
+                            ),
+                        strokeWidth = size.height,
+                        cap = StrokeCap.Round,
+                    )
+                }
                 drawCircle(
                     color = Color.White,
                     radius = size.height + 2,
-                    center = Offset(x = size.width.times(progress), y = yOffset),
+                    center =
+                        Offset(
+                            x =
+                                if (isLtr) {
+                                    size.width.times(progress)
+                                } else {
+                                    size.width - size.width.times(progress)
+                                },
+                            y = yOffset,
+                        ),
                 )
             },
         )

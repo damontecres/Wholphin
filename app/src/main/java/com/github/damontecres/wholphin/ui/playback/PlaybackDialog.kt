@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -85,6 +87,10 @@ fun PlaybackDialog(
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onChangeSubtitleDelay: (Duration) -> Unit,
 ) {
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    // TODO, shouldn't this work out of the box?
+    val leftGravity = remember(isLtr) { if (isLtr) Gravity.START else Gravity.END }
+    val rightGravity = remember(isLtr) { if (isLtr) Gravity.END else Gravity.START }
     when (type) {
         PlaybackDialogType.DEBUG -> {
             throw IllegalStateException("Should not open a dialog with " + PlaybackDialogType.DEBUG)
@@ -113,7 +119,7 @@ fun PlaybackDialog(
                     onDismissRequest.invoke()
                     onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                 },
-                gravity = Gravity.END,
+                gravity = rightGravity,
             )
         }
 
@@ -167,7 +173,7 @@ fun PlaybackDialog(
                         onClickPlaybackDialogType(choice.data)
                     }
                 },
-                gravity = Gravity.START,
+                gravity = leftGravity,
             )
         }
 
@@ -182,7 +188,7 @@ fun PlaybackDialog(
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
                 },
-                gravity = Gravity.END,
+                gravity = rightGravity,
             )
         }
 
@@ -205,7 +211,7 @@ fun PlaybackDialog(
                 onSelectChoice = { _, value ->
                     onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.data))
                 },
-                gravity = Gravity.START,
+                gravity = leftGravity,
             )
         }
 
@@ -228,7 +234,7 @@ fun PlaybackDialog(
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.Scale(choice.data))
                 },
-                gravity = Gravity.START,
+                gravity = leftGravity,
             )
         }
 

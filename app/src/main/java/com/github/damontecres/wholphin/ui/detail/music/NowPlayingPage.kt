@@ -45,7 +45,9 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
@@ -106,9 +108,11 @@ fun NowPlayingPage(
             ).value.appPreferences
     val musicPrefs = preferences.musicPreferences
 
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
-        remember(preferences) {
+        remember(isLtr, preferences) {
             PlaybackKeyHandler(
+                isLtr = isLtr,
                 player = player,
                 controlsEnabled = true,
                 skipWithLeftRight = false,

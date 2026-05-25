@@ -32,6 +32,14 @@ fun isControllerMedia(event: KeyEvent) =
         event.key == Key.ButtonL1 ||
         event.key == Key.ButtonL2
 
+fun isDpadLeft(event: KeyEvent) =
+    event.key == Key.DirectionLeft ||
+        event.key == Key.SystemNavigationLeft
+
+fun isDpadRight(event: KeyEvent) =
+    event.key == Key.DirectionRight ||
+        event.key == Key.SystemNavigationRight
+
 fun isSkipBack(event: KeyEvent) =
     event.key == Key.DirectionLeft ||
         event.key == Key.ButtonL1 ||
