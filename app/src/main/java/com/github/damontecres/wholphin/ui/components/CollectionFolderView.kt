@@ -149,10 +149,12 @@ class CollectionFolderViewModel
             viewModelScope.launchIO {
                 try {
                     val item =
-                        api.userLibraryApi
-                            .getItem(itemId.toUUID())
-                            .content
-                            .let(::BaseItem)
+                        itemId.toUUIDOrNull()?.let {
+                            api.userLibraryApi
+                                .getItem(it)
+                                .content
+                                .let(::BaseItem)
+                        }
 
                     val libraryDisplayInfo =
                         serverRepository.currentUser?.let { user ->
@@ -184,7 +186,12 @@ class CollectionFolderViewModel
 //                    onResumePage()
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error during init")
-                    _state.update { it.copy(item = DataLoadingState.Error(ex)) }
+                    _state.update {
+                        it.copy(
+                            item = DataLoadingState.Error(ex),
+                            items = DataLoadingState.Error(ex),
+                        )
+                    }
                 }
             }
             mediaManagementService.deletedItemFlow
@@ -516,7 +523,7 @@ class CollectionFolderViewModel
     }
 
 data class CollectionFolderState(
-    val item: DataLoadingState<BaseItem> = DataLoadingState.Loading,
+    val item: DataLoadingState<BaseItem?> = DataLoadingState.Loading,
     val items: DataLoadingState<List<BaseItem?>> = DataLoadingState.Loading,
     val backgroundLoading: LoadingState = LoadingState.Loading,
     val sortAndDirection: SortAndDirection = SortAndDirection.DEFAULT,
@@ -746,6 +753,7 @@ fun CollectionFolderView(
             LoadingPage(modifier)
         }
 
+        // Error is passed down in case the error originates from sorting/filtering
         is DataLoadingState.Error,
         is DataLoadingState.Success<*>,
         -> {
