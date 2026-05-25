@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -60,8 +63,10 @@ import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.FilterUtils
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -189,7 +194,6 @@ class CollectionFolderViewModel
                     _state.update {
                         it.copy(
                             item = DataLoadingState.Error(ex),
-                            items = DataLoadingState.Error(ex),
                         )
                     }
                 }
@@ -320,7 +324,12 @@ class CollectionFolderViewModel
                     sortAndDirection,
                     filter,
                 )
-                _state.update { it.copy(items = DataLoadingState.Error(ex)) }
+                _state.update {
+                    it.copy(
+                        items = DataLoadingState.Error(ex),
+                        backgroundLoading = LoadingState.Pending,
+                    )
+                }
             }
         }
 
@@ -745,123 +754,153 @@ fun CollectionFolderView(
                     },
             )
         }
+    Box(modifier = modifier) {
+        when (val st = state.item) {
+            DataLoadingState.Loading,
+            DataLoadingState.Pending,
+            -> {
+                LoadingPage(Modifier.fillMaxSize())
+            }
 
-    when (val st = state.item) {
-        DataLoadingState.Loading,
-        DataLoadingState.Pending,
-        -> {
-            LoadingPage(modifier)
-        }
+            is DataLoadingState.Error -> {
+                ErrorMessage(st, Modifier.fillMaxSize())
+            }
 
-        // Error is passed down in case the error originates from sorting/filtering
-        is DataLoadingState.Error,
-        is DataLoadingState.Success<*>,
-        -> {
-            val item = st.successValue
-            val title =
-                initialFilter.nameOverride
-                    ?: item?.name
-                    ?: item?.data?.collectionType?.name
-                    ?: stringResource(R.string.collection)
-            Box(modifier = modifier) {
-                LifecycleResumeEffect(itemId) {
-                    viewModel.onResumePage()
+            is DataLoadingState.Success<BaseItem?> -> {
+                val item = st.successValue
+                val title =
+                    initialFilter.nameOverride
+                        ?: item?.name
+                        ?: item?.data?.collectionType?.name
+                        ?: stringResource(R.string.collection)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    val headerRowFocusRequester = remember { FocusRequester() }
+                    LifecycleResumeEffect(itemId) {
+                        viewModel.onResumePage()
 
-                    onPauseOrDispose {
-                        viewModel.release()
+                        onPauseOrDispose {
+                            viewModel.release()
+                        }
                     }
-                }
-                if (state.viewOptions.type == ViewOptionsType.GRID) {
-                    CollectionFolderGrid(
-                        preferences = preferences,
-                        initialPosition = viewModel.position,
-                        item = item,
-                        title = title,
-                        items = state.items,
-                        sortAndDirection = state.sortAndDirection,
-                        modifier = Modifier.fillMaxSize(),
-                        focusRequesterOnEmpty = focusRequesterOnEmpty,
-                        onClickItem = gridActions.onClickItem,
-                        onLongClickItem = gridActions.onLongClickItem!!,
-                        onSortChange = {
-                            viewModel.onSortChange(it, recursive, state.filter)
-                        },
-                        filterOptions = filterOptions,
-                        currentFilter = state.filter,
-                        onFilterChange = {
-                            viewModel.onFilterChange(it, recursive)
-                        },
-                        getPossibleFilterValues = {
-                            viewModel.getFilterOptionValues(it)
-                        },
-                        showTitle = showTitle,
-                        sortOptions = sortOptions,
-                        positionCallback = { columns, position ->
-                            viewModel.position = position
-                            positionCallback?.invoke(columns, position)
-                        },
-                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                        viewOptions = state.viewOptions,
-                        onChangeBackdrop = viewModel::updateBackdrop,
-                        playEnabled = playEnabled,
-                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
-                        onClickPlayAll = gridActions.onClickPlayAll!!,
-                        onClickShowViewOptions = { showViewOptions = true },
-                    )
-                } else {
-                    CollectionFolderList(
-                        preferences = preferences,
-                        initialPosition = viewModel.position,
-                        item = item,
-                        title = title,
-                        items = state.items,
-                        sortAndDirection = state.sortAndDirection,
-                        modifier = Modifier.fillMaxSize(),
-                        focusRequesterOnEmpty = focusRequesterOnEmpty,
-                        onClickItem = gridActions.onClickItem,
-                        onLongClickItem = gridActions.onLongClickItem!!,
-                        onSortChange = {
-                            viewModel.onSortChange(it, recursive, state.filter)
-                        },
-                        filterOptions = filterOptions,
-                        currentFilter = state.filter,
-                        onFilterChange = {
-                            viewModel.onFilterChange(it, recursive)
-                        },
-                        getPossibleFilterValues = {
-                            viewModel.getFilterOptionValues(it)
-                        },
-                        showTitle = showTitle,
-                        sortOptions = sortOptions,
-                        positionCallback = { columns, position ->
-                            viewModel.position = position
-                            positionCallback?.invoke(columns, position)
-                        },
-                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                        viewOptions = state.viewOptions,
-                        onChangeBackdrop = viewModel::updateBackdrop,
-                        playEnabled = playEnabled,
-                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
-                        onClickPlayAll = gridActions.onClickPlayAll!!,
-                        onClickShowViewOptions = { showViewOptions = true },
-                    )
-                }
+                    var showHeader by rememberSaveable { mutableStateOf(true) }
+                    val gridFocusRequester = remember { FocusRequester() }
+                    val pager = remember(state.items) { state.items.successValue }
+                    var position by rememberInt(viewModel.position)
 
-                AnimatedVisibility(
-                    state.backgroundLoading == LoadingState.Loading,
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
-                ) {
-                    CircularProgress(
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(alpha = .25f),
-                                shape = CircleShape,
-                            ).size(64.dp)
-                            .padding(4.dp),
+                    val focusedItem = pager?.getOrNull(position)
+                    if (state.viewOptions.showBackdrop) {
+                        LaunchedEffect(focusedItem) {
+                            focusedItem?.let(viewModel::updateBackdrop)
+                        }
+                    }
+                    CollectionFolderHeader(
+                        showHeader = showHeader || state.items !is DataLoadingState.Success,
+                        showTitle = showTitle,
+                        playEnabled = playEnabled && state.items.successValue?.isNotEmpty() == true,
+                        title = title,
+                        sortAndDirection = state.sortAndDirection,
+                        onSortChange = {
+                            viewModel.onSortChange(it, recursive, state.filter)
+                        },
+                        sortOptions = sortOptions,
+                        currentFilter = state.filter,
+                        onFilterChange = {
+                            viewModel.onFilterChange(it, recursive)
+                        },
+                        getPossibleFilterValues = {
+                            viewModel.getFilterOptionValues(it)
+                        },
+                        filterOptions = filterOptions,
+                        onClickPlayAll = gridActions.onClickPlayAll!!,
+                        onClickShowViewOptions = { showViewOptions = true },
+                        modifier = Modifier.focusRequester(headerRowFocusRequester),
                     )
+
+                    when (val pager = state.items) {
+                        is DataLoadingState.Error -> {
+                            LaunchedEffect(Unit) {
+                                (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
+                            }
+                            ErrorMessage(pager, Modifier.fillMaxSize())
+                        }
+
+                        DataLoadingState.Loading,
+                        DataLoadingState.Pending,
+                        -> {
+                            LoadingPage(Modifier.fillMaxSize())
+                        }
+
+                        is DataLoadingState.Success<List<BaseItem?>> -> {
+                            LaunchedEffect(Unit) {
+                                if (pager.data.isNotEmpty()) {
+                                    gridFocusRequester.tryRequestFocus()
+                                }
+                            }
+                            Box(Modifier.fillMaxSize()) {
+                                if (state.viewOptions.type == ViewOptionsType.GRID) {
+                                    CollectionFolderGrid(
+                                        preferences = preferences,
+                                        collectionType = item?.data?.collectionType,
+                                        initialPosition = viewModel.position,
+                                        items = pager.data,
+                                        sortAndDirection = state.sortAndDirection,
+                                        modifier = Modifier.fillMaxSize(),
+                                        gridFocusRequester = gridFocusRequester,
+                                        onClickItem = gridActions.onClickItem,
+                                        onLongClickItem = gridActions.onLongClickItem!!,
+                                        positionCallback = { columns, pos ->
+                                            viewModel.position = pos
+                                            showHeader = pos < columns
+                                            position = pos
+                                            positionCallback?.invoke(columns, pos)
+                                        },
+                                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                                        viewOptions = state.viewOptions,
+                                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                                        focusedItem = focusedItem,
+                                    )
+                                } else {
+                                    CollectionFolderList(
+                                        preferences = preferences,
+                                        collectionType = item?.data?.collectionType,
+                                        initialPosition = viewModel.position,
+                                        items = pager.data,
+                                        sortAndDirection = state.sortAndDirection,
+                                        modifier = Modifier.fillMaxSize(),
+                                        gridFocusRequester = gridFocusRequester,
+                                        onClickItem = gridActions.onClickItem,
+                                        onLongClickItem = gridActions.onLongClickItem!!,
+                                        positionCallback = { columns, pos ->
+                                            viewModel.position = pos
+                                            showHeader = pos < columns
+                                            position = pos
+                                            positionCallback?.invoke(columns, pos)
+                                        },
+                                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                                        viewOptions = state.viewOptions,
+                                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                                        focusedItem = focusedItem,
+                                    )
+                                }
+                                androidx.compose.animation.AnimatedVisibility(
+                                    state.backgroundLoading == LoadingState.Loading,
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.Center)
+                                            .padding(16.dp),
+                                ) {
+                                    CircularProgress(
+                                        Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.background.copy(alpha = .25f),
+                                                shape = CircleShape,
+                                            ).size(64.dp)
+                                            .padding(4.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

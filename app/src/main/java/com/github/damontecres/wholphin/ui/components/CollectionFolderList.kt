@@ -28,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,10 +50,7 @@ import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.filter.FilterValueOption
-import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
@@ -67,7 +63,6 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.DataLoadingState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -79,60 +74,30 @@ import org.jellyfin.sdk.model.extensions.ticks
 @Composable
 fun CollectionFolderList(
     preferences: UserPreferences,
-    item: BaseItem?,
-    title: String,
-    items: DataLoadingState<List<BaseItem?>>,
+    collectionType: CollectionType?,
+    focusedItem: BaseItem?,
+    items: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
-    onSortChange: (SortAndDirection) -> Unit,
     letterPosition: suspend (Char) -> Int,
-    sortOptions: List<ItemSortBy>,
-    playEnabled: Boolean,
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     viewOptions: ViewOptions,
-    onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
-    onChangeBackdrop: (BaseItem) -> Unit,
-    onClickShowViewOptions: () -> Unit,
     initialPosition: Int,
+    gridFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    currentFilter: GetItemsFilter = GetItemsFilter(),
-    filterOptions: List<ItemFilterBy<*>> = listOf(),
-    onFilterChange: (GetItemsFilter) -> Unit = {},
-    focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    val pager = (items as? DataLoadingState.Success)?.data
-    var showHeader by rememberSaveable { mutableStateOf(true) }
-    val headerRowFocusRequester = remember { FocusRequester() }
-    val showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME
-
-    val gridFocusRequester = remember { FocusRequester() }
-    if (pager?.isNotEmpty() == true) {
-        LaunchedEffect(viewOptions.type) {
-            gridFocusRequester.tryRequestFocus()
-        }
-    } else {
-        LaunchedEffect(Unit) {
-            (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
-        }
-    }
     val listState = rememberLazyListState()
 
     var contentHashFocus by remember { mutableStateOf(false) }
     var position by rememberInt(initialPosition)
     val positionFocusRequester = remember { FocusRequester() }
-    val focusedItem = pager?.getOrNull(position)
-    if (viewOptions.showBackdrop) {
-        LaunchedEffect(focusedItem) {
-            focusedItem?.let(onChangeBackdrop)
-        }
-    }
+    val showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME
+
+    var showHeader by remember { mutableStateOf(true) }
 
     fun jumpTo(newPosition: Int) {
         scope.launch {
@@ -147,125 +112,93 @@ fun CollectionFolderList(
     }
 
     Column(modifier = modifier) {
-        CollectionFolderHeader(
-            showHeader = showHeader || items !is DataLoadingState.Success,
-            showTitle = showTitle,
-            playEnabled = playEnabled && pager?.isNotEmpty() == true,
-            title = title,
-            sortAndDirection = sortAndDirection,
-            onSortChange = onSortChange,
-            sortOptions = sortOptions,
-            getPossibleFilterValues = getPossibleFilterValues,
-            onClickShowViewOptions = onClickShowViewOptions,
-            onClickPlayAll = onClickPlayAll,
-            currentFilter = currentFilter,
-            filterOptions = filterOptions,
-            onFilterChange = onFilterChange,
-            modifier = Modifier.focusRequester(headerRowFocusRequester),
+        val topPadding by animateDpAsState(
+            targetValue =
+                when {
+                    showHeader -> 8.dp
+
+                    // showClock-> TODO()
+                    else -> 48.dp
+                },
         )
-        when (val state = items) {
-            DataLoadingState.Pending,
-            DataLoadingState.Loading,
-            -> {
-                // This shouldn't happen, so just show placeholder
-                Text(stringResource(R.string.loading))
-            }
-
-            is DataLoadingState.Error -> {
-                ErrorMessage(state.message, state.exception)
-            }
-
-            is DataLoadingState.Success<List<BaseItem?>> -> {
-                val pager = state.data
-                val topPadding by animateDpAsState(
-                    targetValue =
-                        when {
-                            showHeader -> 8.dp
-
-                            // showClock-> TODO()
-                            else -> 48.dp
-                        },
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .padding(top = topPadding, bottom = 16.dp)
+                    .onFocusChanged {
+                        contentHashFocus = it.hasFocus
+                    },
+        ) {
+            AnimatedVisibility(
+                visible = viewOptions.showDetails,
+                enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),
+            ) {
+                CollectionFolderListDetails(
+                    item = focusedItem,
+                    showLogo = true,
                     modifier =
                         Modifier
-                            .padding(top = topPadding, bottom = 16.dp)
-                            .onFocusChanged {
-                                contentHashFocus = it.hasFocus
-                            },
-                ) {
-                    AnimatedVisibility(
-                        visible = viewOptions.showDetails,
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),
-                    ) {
-                        CollectionFolderListDetails(
-                            item = focusedItem,
-                            showLogo = true,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(.33f)
-                                    .fillMaxHeight()
-                                    .background(
-                                        color = Color.Transparent, // MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                        shape = RoundedCornerShape(16.dp),
-                                    ).padding(8.dp),
-                        )
-                    }
-                    CollectionFolderContent(
-                        items = state.data,
-                        viewOptions = viewOptions,
-                        collectionType = item?.data?.collectionType,
-                        listState = listState,
-                        position = position,
-                        positionFocusRequester = positionFocusRequester,
-                        onPositionChange = {
-                            showHeader = it < 1
-                            positionCallback?.invoke(1, it)
-                            position = it
-                        },
-                        onClickItem = onClickItem,
-                        onLongClickItem = onLongClickItem,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(gridFocusRequester),
-                    )
-                    val letters = stringResource(R.string.jump_letters)
-                    // Letters
-                    val currentLetter =
-                        remember(focusedItem) {
-                            focusedItem
-                                ?.sortName
-                                ?.firstOrNull()
-                                ?.uppercaseChar()
-                                ?.let {
-                                    when (it) {
-                                        in '0'..'9' -> '#'
-                                        in 'A'..'Z' -> it
-                                        else -> null
-                                    }
-                                }
-                                ?: letters[0]
+                            .fillMaxWidth(.33f)
+                            .fillMaxHeight()
+                            .background(
+                                color = Color.Transparent, // MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = RoundedCornerShape(16.dp),
+                            ).padding(8.dp),
+                )
+            }
+            CollectionFolderContent(
+                items = items,
+                viewOptions = viewOptions,
+                collectionType = collectionType,
+                listState = listState,
+                position = position,
+                positionFocusRequester = positionFocusRequester,
+                onPositionChange = {
+                    showHeader = it < 1
+                    positionCallback?.invoke(1, it)
+                    position = it
+                },
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .focusRequester(gridFocusRequester),
+            )
+            val letters = stringResource(R.string.jump_letters)
+            // Letters
+            val currentLetter =
+                remember(focusedItem) {
+                    focusedItem
+                        ?.sortName
+                        ?.firstOrNull()
+                        ?.uppercaseChar()
+                        ?.let {
+                            when (it) {
+                                in '0'..'9' -> '#'
+                                in 'A'..'Z' -> it
+                                else -> null
+                            }
                         }
-                    if (showLetterButtons && pager.isNotEmpty()) {
-                        AlphabetButtons(
-                            letters = letters,
-                            currentLetter = currentLetter,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .padding(start = 16.dp),
-                            letterClicked = {
-                                scope.launchIO {
-                                    val position = letterPosition.invoke(it)
-                                    jumpTo(position)
-                                }
-                            },
-                        )
-                    }
+                        ?: letters[0]
                 }
+            if (showLetterButtons && items.isNotEmpty()) {
+                AlphabetButtons(
+                    letters = letters,
+                    currentLetter = currentLetter,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterVertically)
+                            .padding(start = 16.dp),
+                    letterClicked = {
+                        scope.launchIO {
+                            val position = letterPosition.invoke(it)
+                            jumpTo(position)
+                        }
+                    },
+                )
             }
         }
     }
