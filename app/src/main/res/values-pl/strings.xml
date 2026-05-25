@@ -653,4 +653,8 @@
     <string name="continue_watching_click_summary_off">Pokaż szczegóły po kliknięciu</string>
     <string name="stars">Gwiazdki</string>
     <string name="tomatoes">Pomidor</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista kompaktowa</string>
+    <string name="user_interface_language">Język interfejsu</string>
+    <string name="view_options_type_grid">Siatka</string>
 </resources>
