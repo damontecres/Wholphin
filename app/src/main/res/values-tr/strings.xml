@@ -627,4 +627,7 @@
     <string name="visible_ui">Görünür</string>
     <string name="hidden_ui">Gizli</string>
     <string name="user_interface_language">Kullanıcı arayüzü dili</string>
+    <string name="view_options_type_grid">Izgara</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Sıkışık Liste</string>
 </resources>
