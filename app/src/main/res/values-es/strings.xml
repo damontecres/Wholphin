@@ -636,4 +636,7 @@
     <string name="visible_ui">Visible</string>
     <string name="hidden_ui">Oculto</string>
     <string name="user_interface_language">Idioma de la interfaz de usuario</string>
+    <string name="view_options_type_grid">Cuadrícula</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista compacta</string>
 </resources>
