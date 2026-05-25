@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -51,7 +50,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -69,8 +67,6 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
-import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -101,7 +97,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -125,9 +120,8 @@ fun PlaybackPage(
             viewModel.release()
         }
     }
-
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    when (val st = loading) {
+    val state by viewModel.state.collectAsState()
+    when (val st = state.loading) {
         is LoadingState.Error -> {
             ErrorMessage(st, modifier)
         }
@@ -160,6 +154,8 @@ fun PlaybackPageContent(
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel,
 ) {
+    val state by viewModel.state.collectAsState()
+    val subtitleSearchState by viewModel.subtitleSearchState.collectAsState()
     val player = playerInstance.player
     val playerBackend = playerInstance.backend
 
@@ -167,27 +163,9 @@ fun PlaybackPageContent(
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
-    val mediaInfo by viewModel.currentMediaInfo.observeAsState()
     val userDto by viewModel.currentUserDto.collectAsState()
 
-    val currentPlayback by viewModel.currentPlayback.collectAsState()
-    val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
-        ItemPlayback(
-            userId = -1,
-            itemId = UUID.randomUUID(),
-        ),
-    )
-    val currentSegment by viewModel.currentSegment.collectAsState()
-    val analyticsState by viewModel.analyticsState.collectAsState()
-
-    val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
-
-    val nextUp by viewModel.nextUp.observeAsState(null)
-    val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
-
-    val subtitleSearch by viewModel.subtitleSearchStatus.observeAsState(null)
-    val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
     LaunchedEffect(player) {
@@ -214,9 +192,9 @@ fun PlaybackPageContent(
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-    val subtitleDelay = currentPlayback?.subtitleDelay ?: Duration.ZERO
-    LaunchedEffect(subtitleDelay) {
-        (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
+    LaunchedEffect(state.currentPlayback?.subtitleDelay) {
+        (player as? MpvPlayer)?.subtitleDelay =
+            state.currentPlayback?.subtitleDelay ?: Duration.ZERO
     }
 
     val presentationState = rememberPresentationState(player, false)
@@ -259,7 +237,7 @@ fun PlaybackPageContent(
     val keyHandler =
         PlaybackKeyHandler(
             player = player,
-            controlsEnabled = nextUp == null,
+            controlsEnabled = state.nextUp == null,
             skipWithLeftRight = true,
             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -318,7 +296,7 @@ fun PlaybackPageContent(
 
             PlaybackAction.Previous -> {
                 val pos = player.currentPosition
-                if (pos < player.maxSeekToPreviousPosition && playlist.hasPrevious()) {
+                if (pos < player.maxSeekToPreviousPosition && state.playlist.hasPrevious()) {
                     viewModel.playPrevious()
                 } else {
                     player.seekToPrevious()
@@ -328,17 +306,17 @@ fun PlaybackPageContent(
     }
 
     val showSegment =
-        currentSegment?.interacted == false &&
-            nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+        state.currentSegment?.interacted == false &&
+            state.nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
     BackHandler(showSegment) {
-        viewModel.updateSegment(currentSegment?.segment?.id, true)
+        viewModel.updateSegment(state.currentSegment?.segment?.id, true)
     }
 
     Box(
         modifier
-            .background(if (nextUp == null) Color.Black else MaterialTheme.colorScheme.background),
+            .background(if (state.nextUp == null) Color.Black else MaterialTheme.colorScheme.background),
     ) {
-        val playerSize by animateFloatAsState(if (nextUp == null) 1f else .6f)
+        val playerSize by animateFloatAsState(if (state.nextUp == null) 1f else .6f)
         Box(
             modifier =
                 Modifier
@@ -427,12 +405,12 @@ fun PlaybackPageContent(
                         .padding(WindowInsets.systemBars.asPaddingValues())
                         .fillMaxSize()
                         .background(Color.Transparent),
-                item = currentPlayback?.item,
+                item = state.currentPlayback?.item,
                 player = player,
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,
                 previousEnabled = true,
-                nextEnabled = playlist.hasNext(),
+                nextEnabled = state.playlist.hasNext(),
                 seekEnabled = true,
                 seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                 seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -441,23 +419,23 @@ fun PlaybackPageContent(
                 onClickPlaybackDialogType = { playbackDialog = it },
                 onSeekBarChange = seekBarState::onValueChange,
                 showDebugInfo = showDebugInfo,
-                currentPlayback = currentPlayback,
-                chapters = mediaInfo?.chapters ?: listOf(),
-                trickplayInfo = mediaInfo?.trickPlayInfo,
+                currentPlayback = state.currentPlayback,
+                chapters = state.currentMediaInfo.chapters,
+                trickplayInfo = state.currentMediaInfo.trickPlayInfo,
                 trickplayUrlFor = viewModel::getTrickplayUrl,
-                playlist = playlist,
+                playlist = state.playlist,
                 onClickPlaylist = {
                     viewModel.playItemInPlaylist(it)
                 },
-                currentSegment = currentSegment?.segment,
+                currentSegment = state.currentSegment?.segment,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
-                analyticsState = analyticsState,
+                analyticsState = state.analyticsState,
             )
 
             val subtitleSettings =
-                remember(mediaInfo) {
-                    Timber.v("subtitle choice: ${mediaInfo?.videoStream?.hdr}")
-                    if (mediaInfo?.videoStream?.hdr == true) {
+                remember(state.currentMediaInfo) {
+                    Timber.v("subtitle choice: ${state.currentMediaInfo.videoStream?.hdr}")
+                    if (state.currentMediaInfo.videoStream?.hdr == true) {
                         preferences.appPreferences.interfacePreferences.hdrSubtitlesPreferences
                     } else {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences
@@ -468,10 +446,14 @@ fun PlaybackPageContent(
 
             // Subtitles
             val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
-            val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
+            val isImageSubtitles =
+                remember(state.subtitleCues) { state.subtitleCues.firstOrNull()?.bitmap != null }
             var cueCount by remember { mutableIntStateOf(0) }
 
-            val subtitleVisible = skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled && !presentationState.coverSurface
+            val subtitleVisible =
+                skipIndicatorDuration == 0L &&
+                    state.currentItemPlayback?.subtitleIndexEnabled == true &&
+                    !presentationState.coverSurface
 
             AndroidView(
                 factory = { context ->
@@ -499,12 +481,12 @@ fun PlaybackPageContent(
                     }
                 },
                 update = { subtitleView ->
-                    subtitleView.setCues(cues)
-                    if (cues.size > cueCount) {
+                    subtitleView.setCues(state.subtitleCues)
+                    if (state.subtitleCues.size > cueCount) {
                         // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(subtitleView)
-                        cueCount = cues.size
+                        cueCount = state.subtitleCues.size
                     }
                     subtitleView.children.firstOrNull { it is AssSubtitleView }?.let {
                         (it as? AssSubtitleView)?.apply {
@@ -552,7 +534,7 @@ fun PlaybackPageContent(
                     .padding(40.dp)
                     .align(Alignment.BottomEnd),
         ) {
-            currentSegment?.let { segment ->
+            state.currentSegment?.let { segment ->
                 val focusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) {
                     focusRequester.tryRequestFocus()
@@ -570,7 +552,7 @@ fun PlaybackPageContent(
         }
 
         // Next up episode
-        BackHandler(nextUp != null) {
+        BackHandler(state.nextUp != null) {
             if (player.isPlaying) {
                 scope.launch(ExceptionHandler()) {
                     viewModel.cancelUpNextEpisode()
@@ -580,12 +562,12 @@ fun PlaybackPageContent(
             }
         }
         AnimatedVisibility(
-            nextUp != null,
+            state.nextUp != null,
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter),
         ) {
-            nextUp?.let {
+            state.nextUp?.let {
                 var autoPlayEnabled by remember { mutableStateOf(viewModel.shouldAutoPlayNextUp()) }
                 var timeLeft by remember {
                     mutableLongStateOf(
@@ -642,7 +624,7 @@ fun PlaybackPageContent(
         }
     }
 
-    subtitleSearch?.let { state ->
+    if (subtitleSearchState.status != SubtitleSearchStatus.Inactive) {
         val wasPlaying = remember { player.isPlaying }
         LaunchedEffect(Unit) {
             player.pause()
@@ -661,8 +643,8 @@ fun PlaybackPageContent(
                 ),
         ) {
             DownloadSubtitlesContent(
-                state = state,
-                language = subtitleSearchLanguage,
+                state = subtitleSearchState.status,
+                language = subtitleSearchState.language,
                 onSearch = { lang ->
                     viewModel.searchForSubtitles(lang)
                 },
@@ -684,18 +666,18 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = currentItemPlayback?.audioIndex,
-                    audioStreams = mediaInfo?.audioStreams.orEmpty(),
-                    subtitleIndex = currentItemPlayback?.subtitleIndex,
-                    subtitleStreams = mediaInfo?.subtitleStreams.orEmpty(),
+                    audioIndex = state.currentItemPlayback?.audioIndex,
+                    audioStreams = state.currentMediaInfo.audioStreams,
+                    subtitleIndex = state.currentItemPlayback?.subtitleIndex,
+                    subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,
-                    subtitleDelay = subtitleDelay,
+                    subtitleDelay = state.currentPlayback?.subtitleDelay ?: Duration.ZERO,
                     hasSubtitleDownloadPermission =
                         remember(userDto) { userDto?.policy?.let { it.isAdministrator || it.enableSubtitleManagement } == true },
                     // TODO Passing through audio prevents changing playback speed
                     // See https://github.com/damontecres/Wholphin/issues/164
-                    playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || currentPlayback?.audioDecoder != null,
+                    playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || state.currentPlayback?.audioDecoder != null,
                 ),
             onDismissRequest = {
                 playbackDialog =
