@@ -618,4 +618,7 @@
     <string name="visible_ui">Nähtav</string>
     <string name="hidden_ui">Peidetud</string>
     <string name="user_interface_language">Kasutajaliidese keel</string>
+    <string name="view_options_type_grid">Ruudustik</string>
+    <string name="view_options_type_list">Loend</string>
+    <string name="view_options_type_list_compact">Kompaktne loend</string>
 </resources>
