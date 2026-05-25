@@ -155,7 +155,7 @@
     <string name="collection">系列</string>
     <string name="collections">系列</string>
     <string name="commercial">廣告</string>
-    <string name="community_rating">社群評分</string>
+    <string name="community_rating">IMDb 評分</string>
     <string name="compose_error_message_title">發生錯誤！請按下按鈕將日誌傳送到您的伺服器。</string>
     <string name="confirm">確認</string>
     <string name="continue_watching">繼續觀看</string>
@@ -332,7 +332,7 @@
     <string name="nal">NAL</string>
     <string name="bit_depth">位元深度</string>
     <string name="avc">AVC</string>
-    <string name="layout">聲道配置</string>
+    <string name="layout">配置</string>
     <string name="channels">聲道數</string>
     <string name="video_range">動態範圍</string>
     <string name="video_range_type">動態範圍類型</string>
@@ -599,4 +599,8 @@
     <string name="show_voice_search_button">顯示語音搜尋按鈕</string>
     <string name="visible_ui">顯示</string>
     <string name="hidden_ui">隱藏</string>
+    <string name="view_options_type_grid">網格</string>
+    <string name="view_options_type_list">列表</string>
+    <string name="view_options_type_list_compact">緊湊列表</string>
+    <string name="user_interface_language">介面語言</string>
 </resources>
