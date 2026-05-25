@@ -141,7 +141,7 @@ private fun LazyListScope.addAdditionalConfig(
         is HomeRowConfig.ContinueWatchingCombined -> {
             item {
                 ClickPreference(
-                    title = "Split into separate rows",
+                    title = stringResource(R.string.split_into_separate_rows),
                     onClick = { onConfigAction.invoke(HomeRowConfigAction.Split) },
                 )
             }
@@ -172,7 +172,7 @@ private fun LazyListScope.addAdditionalConfig(
                     selected = false,
                     onClick = { showDialog = true },
                     headlineContent = {
-                        PreferenceTitle("Sort")
+                        PreferenceTitle(stringResource(R.string.sort))
                     },
                     supportingContent = {
                         Text(
