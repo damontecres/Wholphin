@@ -492,7 +492,7 @@ class SeriesViewModel
                         .firstOrNull()
                 if (nextUp != null) {
                     withContext(Dispatchers.Main) {
-                        navigateTo(Destination.Playback(nextUp.id, 0L))
+                        navigateTo(Destination.Playback(BaseItem(nextUp)))
                     }
                 } else {
                     showToast(
