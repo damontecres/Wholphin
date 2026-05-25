@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.test
 
-import androidx.lifecycle.MutableLiveData
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
@@ -773,20 +772,19 @@ private fun serverRepo(
 ): ServerRepository {
     val mocked = mockk<ServerRepository>()
     every { mocked.currentUserDto } returns
-        MutableLiveData(
-            UserDto(
-                id = UUID.randomUUID(),
-                hasPassword = true,
-                hasConfiguredPassword = true,
-                hasConfiguredEasyPassword = true,
-                configuration =
-                    DefaultUserConfiguration.copy(
-                        audioLanguagePreference = audioLang,
-                        subtitleMode = subtitleMode ?: SubtitlePlaybackMode.DEFAULT,
-                        subtitleLanguagePreference = subtitleLang,
-                    ),
-            ),
+        UserDto(
+            id = UUID.randomUUID(),
+            hasPassword = true,
+            hasConfiguredPassword = true,
+            hasConfiguredEasyPassword = true,
+            configuration =
+                DefaultUserConfiguration.copy(
+                    audioLanguagePreference = audioLang,
+                    subtitleMode = subtitleMode ?: SubtitlePlaybackMode.DEFAULT,
+                    subtitleLanguagePreference = subtitleLang,
+                ),
         )
+
     return mocked
 }
 
