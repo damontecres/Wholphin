@@ -33,7 +33,6 @@ import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
-import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -1088,29 +1087,39 @@ class HomeSettingsService
                             .content
                     val title = ResArgStringProvider(R.string.suggestions_for, library.name ?: "")
                     val itemKind = SuggestionsWorker.getTypeForCollection(library.collectionType)
-                    val suggestions =
-                        itemKind?.let {
+                    if (itemKind != null) {
+                        val suggestions =
                             suggestionService
                                 .getSuggestionsFlow(row.parentId, itemKind)
                                 .firstOrNull()
+                        when (suggestions) {
+                            SuggestionsResource.Empty -> {
+                                Success(
+                                    title,
+                                    listOf(),
+                                    row.viewOptions,
+                                    rowType = row,
+                                )
+                            }
+
+                            is SuggestionsResource.Success -> {
+                                Success(
+                                    title,
+                                    suggestions.items,
+                                    row.viewOptions,
+                                    rowType = row,
+                                )
+                            }
+
+                            SuggestionsResource.Loading,
+                            null,
+                            -> {
+                                HomeRowLoadingState.Loading(title)
+                            }
                         }
-                    if (suggestions != null && suggestions is SuggestionsResource.Success) {
-                        Success(
-                            title,
-                            suggestions.items,
-                            row.viewOptions,
-                            rowType = row,
-                        )
-                    } else if (suggestions is SuggestionsResource.Empty) {
-                        Success(
-                            title,
-                            listOf(),
-                            row.viewOptions,
-                            rowType = row,
-                        )
                     } else {
-                        Error(
-                            title,
+                        HomeRowLoadingState.Error(
+                            title = title,
                             message = "Unsupported type ${library.collectionType}",
                         )
                     }
