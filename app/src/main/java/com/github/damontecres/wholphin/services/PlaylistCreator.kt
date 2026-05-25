@@ -248,6 +248,7 @@ class PlaylistCreator
                 BaseItemKind.MOVIE,
                 BaseItemKind.VIDEO,
                 BaseItemKind.MUSIC_VIDEO,
+                BaseItemKind.TRAILER,
                 -> {
                     val list =
                         buildList {
