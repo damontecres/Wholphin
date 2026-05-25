@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.util.ResArgStringProvider
@@ -779,6 +780,76 @@ class HomeSettingsViewModel
                                 }
                             },
                     )
+                }
+            }
+        }
+
+        fun onConfigAction(
+            row: HomeRowConfigDisplay,
+            action: HomeRowConfigAction,
+        ) {
+            viewModelScope.launchDefault {
+                when (action) {
+                    HomeRowConfigAction.Combine -> {
+                        val index =
+                            state.value.rows
+                                .indexOf(row)
+                                .coerceAtLeast(0)
+                        val rowsToRemove =
+                            state.value.rows
+                                .filter { it.config is ContinueWatching || it.config is NextUp }
+
+                        updateState {
+                            it.copy(
+                                loading = LoadingState.Loading,
+                                rows =
+                                    it.rows.toMutableList().apply {
+                                        set(
+                                            index,
+                                            HomeRowConfigDisplay(
+                                                id = it.rows[index].id,
+                                                title = ResStringProvider(R.string.combine_continue_next),
+                                                config = ContinueWatchingCombined(row.config.viewOptions),
+                                            ),
+                                        )
+                                        removeAll(rowsToRemove)
+                                    },
+                            )
+                        }
+                        fetchRowData()
+                    }
+
+                    HomeRowConfigAction.Split -> {
+                        val index =
+                            state.value.rows
+                                .indexOf(row)
+                                .coerceAtLeast(0)
+                        updateState {
+                            it.copy(
+                                loading = LoadingState.Loading,
+                                rows =
+                                    it.rows.toMutableList().apply {
+                                        set(
+                                            index,
+                                            HomeRowConfigDisplay(
+                                                id = it.rows[index].id,
+                                                title = ResStringProvider(R.string.continue_watching),
+                                                config = ContinueWatching(row.config.viewOptions),
+                                            ),
+                                        )
+                                        add(
+                                            index + 1,
+                                            HomeRowConfigDisplay(
+                                                id = idCounter++,
+                                                title = ResStringProvider(R.string.next_up),
+                                                config = NextUp(row.config.viewOptions),
+                                            ),
+                                        )
+                                    },
+                            )
+                        }
+                        fetchRowData()
+                    }
                 }
             }
         }

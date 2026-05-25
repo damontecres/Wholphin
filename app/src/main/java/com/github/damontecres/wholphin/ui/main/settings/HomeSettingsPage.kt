@@ -232,6 +232,22 @@ fun HomeSettingsPage(
                                         viewModel.updateViewOptionsForAll(row.config.viewOptions)
                                     },
                                     modifier = destModifier,
+                                    config = row.config,
+                                    onConfigChange = {
+                                        TODO()
+                                    },
+                                    onConfigAction = {
+                                        viewModel.onConfigAction(row, it)
+                                        when (it) {
+                                            HomeRowConfigAction.Combine,
+                                            HomeRowConfigAction.Split,
+                                            -> {
+                                                backStack.removeAt(
+                                                    backStack.lastIndex,
+                                                )
+                                            }
+                                        }
+                                    },
                                 )
                             }
 

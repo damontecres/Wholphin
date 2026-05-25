@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.main.settings
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +13,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
@@ -23,6 +25,7 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -30,9 +33,12 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 @Composable
 fun HomeRowSettings(
     title: String,
+    config: HomeRowConfig,
     preferenceOptions: List<PreferenceGroup<HomeRowViewOptions>>,
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,
+    onConfigChange: (HomeRowConfig) -> Unit,
+    onConfigAction: (HomeRowConfigAction) -> Unit,
     onApplyApplyAll: () -> Unit,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
@@ -95,7 +101,42 @@ fun HomeRowSettings(
                     )
                 }
             }
+            addAdditionalConfig(
+                config = config,
+                onConfigChange = onConfigChange,
+                onConfigAction = onConfigAction,
+            )
         }
+    }
+}
+
+private fun LazyListScope.addAdditionalConfig(
+    config: HomeRowConfig,
+    onConfigChange: (HomeRowConfig) -> Unit,
+    onConfigAction: (HomeRowConfigAction) -> Unit,
+) {
+    when (config) {
+        is HomeRowConfig.ContinueWatchingCombined -> {
+            item {
+                ClickPreference(
+                    title = "Split into separate rows",
+                    onClick = { onConfigAction.invoke(HomeRowConfigAction.Split) },
+                )
+            }
+        }
+
+        is HomeRowConfig.ContinueWatching,
+        is HomeRowConfig.NextUp,
+        -> {
+            item {
+                ClickPreference(
+                    title = stringResource(R.string.combine_continue_next),
+                    onClick = { onConfigAction.invoke(HomeRowConfigAction.Combine) },
+                )
+            }
+        }
+
+        else -> {}
     }
 }
 
