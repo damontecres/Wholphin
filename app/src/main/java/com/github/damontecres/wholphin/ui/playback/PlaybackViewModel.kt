@@ -1165,10 +1165,10 @@ class PlaybackViewModel
         private fun listenForTranscodeReason(): Job =
             viewModelScope.launchIO {
                 state.map { it.currentPlayback }.collectLatest {
-                    if (it != null) {
+                    if (it != null && it.playMethod == PlayMethod.TRANSCODE && it.transcodeInfo == null) {
                         try {
                             var transcodeInfo = it.transcodeInfo
-                            while (isActive && it.playMethod == PlayMethod.TRANSCODE && transcodeInfo == null) {
+                            while (isActive && transcodeInfo == null) {
                                 delay(2.seconds)
                                 transcodeInfo =
                                     api.sessionApi
