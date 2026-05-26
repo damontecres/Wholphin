@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButton
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButtons
+import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackFaButton
 import com.github.damontecres.wholphin.ui.playback.overlay.buttonSpacing
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -74,7 +75,7 @@ fun NowPlayingButtons(
             modifier = Modifier.align(Alignment.CenterStart),
         ) {
             PlaybackButton(
-                iconRes = R.drawable.baseline_more_vert_96,
+                iconRes = R.drawable.vector_settings,
                 onClick = {
                     onControllerInteraction.invoke()
                     onClickMore.invoke()
