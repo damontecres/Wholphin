@@ -653,6 +653,7 @@ fun CollectionFolderView(
         },
 ) {
     val state by viewModel.state.collectAsState()
+    var position by rememberInt(viewModel.position)
 
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
@@ -692,9 +693,15 @@ fun CollectionFolderView(
     val gridActions =
         remember(actions) {
             GridClickActions(
-                onClickItem = actions.onClickItem,
-                onLongClickItem =
-                    actions.onLongClickItem ?: { position, item ->
+                onClickItem = { index, item ->
+                    position = index
+                    actions.onClickItem.invoke(index, item)
+                },
+                onLongClickItem = { index, item ->
+                    position = index
+                    if (actions.onLongClickItem != null) {
+                        actions.onLongClickItem.invoke(index, item)
+                    } else {
                         showContextMenu =
                             ContextMenu.ForBaseItem(
                                 fromLongClick = true,
@@ -707,7 +714,8 @@ fun CollectionFolderView(
                                 canRemoveNextUp = false,
                                 actions = contextActions,
                             )
-                    },
+                    }
+                },
                 onClickPlayAll =
                     actions.onClickPlayAll ?: { shuffle ->
                         itemId.toUUIDOrNull()?.let {
@@ -785,7 +793,6 @@ fun CollectionFolderView(
                     var showHeader by rememberSaveable { mutableStateOf(true) }
                     val gridFocusRequester = remember { FocusRequester() }
                     val pager = remember(state.items) { state.items.successValue }
-                    var position by rememberInt(viewModel.position)
 
                     val focusedItem = pager?.getOrNull(position)
                     if (state.viewOptions.showBackdrop) {

@@ -239,7 +239,7 @@ fun GridTitle(
     modifier: Modifier = Modifier,
 ) = Text(
     text = title,
-    style = MaterialTheme.typography.displayMedium,
+    style = MaterialTheme.typography.displaySmall,
     color = MaterialTheme.colorScheme.onBackground,
     textAlign = TextAlign.Center,
     maxLines = 1,

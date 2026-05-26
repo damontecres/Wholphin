@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
@@ -85,7 +84,6 @@ import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipIndicator
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipSegmentButton
 import com.github.damontecres.wholphin.ui.playback.overlay.rememberSeekBarState
-import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -95,7 +93,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -163,24 +160,12 @@ fun PlaybackPageContent(
 
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val userDto by viewModel.currentUserDto.collectAsState()
 
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
-    LaunchedEffect(player) {
-        if (playerBackend == PlayerBackend.MPV) {
-            scope.launch(Dispatchers.IO + ExceptionHandler()) {
-                // MPV can't play HDR, so always use regular settings
-                preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
-                    configuration,
-                    density,
-                )
-            }
-        }
-    }
 
     var contentScale by remember(playerBackend) {
         mutableStateOf(

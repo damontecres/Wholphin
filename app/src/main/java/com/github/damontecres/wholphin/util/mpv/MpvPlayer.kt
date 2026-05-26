@@ -167,6 +167,11 @@ class MpvPlayer(
 //                    COMMAND_GET_TEXT,
                     COMMAND_RELEASE,
                 ).build()
+        notifyListeners(EVENT_AVAILABLE_COMMANDS_CHANGED) {
+            onAvailableCommandsChanged(
+                availableCommands,
+            )
+        }
         trackSelector.init(this, DefaultBandwidthMeter.getSingletonInstance(context))
     }
 
