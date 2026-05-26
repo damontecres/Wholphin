@@ -630,4 +630,6 @@
     <string name="view_options_type_grid">Izgara</string>
     <string name="view_options_type_list">Liste</string>
     <string name="view_options_type_list_compact">Sıkışık Liste</string>
+    <string name="sort">Sırala</string>
+    <string name="split_into_separate_rows">Ayrı sıralara ayır</string>
 </resources>
