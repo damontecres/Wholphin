@@ -820,4 +820,6 @@
     </array>
     <string name="stars">Stars</string>
     <string name="tomatoes">Tomatoes</string>
+    <string name="sort">Sort</string>
+    <string name="split_into_separate_rows">Split into separate rows</string>
 </resources>

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +45,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -57,7 +60,13 @@ fun SearchForContent(
     searchType: BaseItemKind,
     onClick: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SearchForViewModel = hiltViewModel(key = searchType.serialName),
+    viewModel: SearchForViewModel =
+        hiltViewModel<SearchForViewModel, SearchForViewModel.Factory>(
+            key = searchType.serialName,
+            creationCallback = {
+                it.create(searchType)
+            },
+        ),
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -92,6 +101,7 @@ fun SearchForContent(
             }
         }
     }
+
     val titleRes =
         remember {
             when (searchType) {
@@ -178,53 +188,91 @@ fun SearchForContent(
             }
         }
 
-        when (val st = state.results) {
-            is SearchResult.Error -> {
-                ErrorMessage("Error", st.ex)
-            }
-
-            SearchResult.NoQuery -> {
-                // no-op
-            }
-
-            SearchResult.Searching -> {
-                Text(
-                    text = stringResource(R.string.searching),
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                SearchForResultsRow(
+                    title = stringResource(R.string.results),
+                    results = state.results,
+                    onClick = onClick,
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
-
-            is SearchResult.SuccessSeerr -> {
-                Text(
-                    text = "Not supported",
-                    color = MaterialTheme.colorScheme.error,
+            item {
+                HorizontalDivider()
+            }
+            item {
+                SearchForResultsRow(
+                    title = stringResource(R.string.suggestions),
+                    results = state.recent,
+                    onClick = onClick,
+                    modifier = Modifier,
                 )
             }
+        }
+    }
+}
 
-            is SearchResult.Success -> {
-                if (st.items.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.no_results),
-                    )
-                } else {
-                    ItemRow(
-                        title = "",
-                        items = st.items,
-                        onClickItem = { _, item -> onClick.invoke(item) },
-                        onLongClickItem = { _, _ -> },
-                        modifier = Modifier.focusRequester(focusRequester),
-                        cardContent = { index, item, mod, onClick, onLongClick ->
-                            SeasonCard(
-                                item = item,
-                                onClick = {
-                                    onClick.invoke()
-                                },
-                                onLongClick = onLongClick,
-                                imageHeight = Cards.height2x3,
-                                modifier = mod,
-                            )
-                        },
-                    )
-                }
+@Composable
+fun SearchForResultsRow(
+    title: String,
+    results: SearchResult,
+    onClick: (BaseItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (val st = results) {
+        is SearchResult.Error -> {
+            ErrorMessage("Error", st.ex, modifier)
+        }
+
+        SearchResult.NoQuery -> {
+            ItemRowTitle(
+                title = stringResource(R.string.no_results),
+                modifier = modifier,
+            )
+        }
+
+        SearchResult.Searching -> {
+            ItemRowTitle(
+                title = stringResource(R.string.searching),
+                modifier = modifier,
+            )
+        }
+
+        is SearchResult.SuccessSeerr -> {
+            Text(
+                text = "Not supported",
+                color = MaterialTheme.colorScheme.error,
+                modifier = modifier,
+            )
+        }
+
+        is SearchResult.Success -> {
+            if (st.items.isEmpty()) {
+                ItemRowTitle(
+                    title = stringResource(R.string.no_results),
+                    modifier = modifier,
+                )
+            } else {
+                ItemRow(
+                    title = title,
+                    items = st.items,
+                    onClickItem = { _, item -> onClick.invoke(item) },
+                    onLongClickItem = { _, _ -> },
+                    modifier = modifier,
+                    cardContent = { index, item, mod, onClick, onLongClick ->
+                        SeasonCard(
+                            item = item,
+                            onClick = {
+                                onClick.invoke()
+                            },
+                            onLongClick = onLongClick,
+                            imageHeight = Cards.heightEpisode,
+                            modifier = mod,
+                        )
+                    },
+                )
             }
         }
     }
@@ -242,6 +290,7 @@ fun SearchForDialog(
             DialogProperties(
                 usePlatformDefaultWidth = false,
             ),
+        elevation = 3.dp,
     ) {
         SearchForContent(
             searchType = searchType,

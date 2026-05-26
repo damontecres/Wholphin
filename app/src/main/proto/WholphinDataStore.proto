@@ -92,7 +92,7 @@ message PlaybackPreferences {
 message HomePagePreferences{
   int32 max_items_per_row = 1;
   bool enable_rewatching_next_up = 2;
-  bool combine_continue_next = 3;
+  bool combine_continue_next = 3 [deprecated = true];
   int32 max_days_next_up = 4;
   bool click_to_play = 5;
 }

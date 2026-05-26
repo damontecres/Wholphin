@@ -33,7 +33,6 @@ import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
-import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -274,9 +273,6 @@ class HomeSettingsService
                     navDrawerService.getAllUserLibraries(userId, userDto?.tvAccess ?: false)
                 }
 
-            val prefs =
-                userPreferencesService.getCurrent().appPreferences.homePagePreferences
-
             val includedIds =
                 libraries
                     .mapIndexed { index, it ->
@@ -296,30 +292,15 @@ class HomeSettingsService
                             )
                         }
                     }
-            val continueWatchingRows =
-                if (prefs.combineContinueNext) {
-                    listOf(
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 1,
-                            title = ResStringProvider(R.string.combine_continue_next),
-                            config = HomeRowConfig.ContinueWatchingCombined(),
-                        ),
-                    )
-                } else {
-                    listOf(
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 1,
-                            title = ResStringProvider(R.string.continue_watching),
-                            config = HomeRowConfig.ContinueWatching(),
-                        ),
-                        HomeRowConfigDisplay(
-                            id = includedIds.size + 2,
-                            title = ResStringProvider(R.string.next_up),
-                            config = HomeRowConfig.NextUp(),
-                        ),
-                    )
-                }
-            val rowConfig = continueWatchingRows + includedIds
+            val continueWatchingRow =
+                listOf(
+                    HomeRowConfigDisplay(
+                        id = includedIds.size + 1,
+                        title = ResStringProvider(R.string.combine_continue_next),
+                        config = HomeRowConfig.ContinueWatchingCombined(),
+                    ),
+                )
+            val rowConfig = continueWatchingRow + includedIds
             return HomePageResolvedSettings(rowConfig)
         }
 
@@ -864,8 +845,24 @@ class HomeSettingsService
                             userId = userDto.id,
                             parentId = row.parentId,
                             recursive = row.recursive,
-                            sortBy = row.sort?.let { listOf(it.sort) },
-                            sortOrder = row.sort?.let { listOf(it.direction) },
+                            sortBy =
+                                row.sort?.let {
+                                    buildList {
+                                        add(it.sort)
+                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                            add(ItemSortBy.SORT_NAME)
+                                        }
+                                    }
+                                },
+                            sortOrder =
+                                row.sort?.let {
+                                    buildList {
+                                        add(it.direction)
+                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                            add(SortOrder.ASCENDING)
+                                        }
+                                    }
+                                },
                             limit = limit,
                             fields = DefaultItemFields,
                         )
@@ -1090,29 +1087,39 @@ class HomeSettingsService
                             .content
                     val title = ResArgStringProvider(R.string.suggestions_for, library.name ?: "")
                     val itemKind = SuggestionsWorker.getTypeForCollection(library.collectionType)
-                    val suggestions =
-                        itemKind?.let {
+                    if (itemKind != null) {
+                        val suggestions =
                             suggestionService
                                 .getSuggestionsFlow(row.parentId, itemKind)
                                 .firstOrNull()
+                        when (suggestions) {
+                            SuggestionsResource.Empty -> {
+                                Success(
+                                    title,
+                                    listOf(),
+                                    row.viewOptions,
+                                    rowType = row,
+                                )
+                            }
+
+                            is SuggestionsResource.Success -> {
+                                Success(
+                                    title,
+                                    suggestions.items,
+                                    row.viewOptions,
+                                    rowType = row,
+                                )
+                            }
+
+                            SuggestionsResource.Loading,
+                            null,
+                            -> {
+                                HomeRowLoadingState.Loading(title)
+                            }
                         }
-                    if (suggestions != null && suggestions is SuggestionsResource.Success) {
-                        Success(
-                            title,
-                            suggestions.items,
-                            row.viewOptions,
-                            rowType = row,
-                        )
-                    } else if (suggestions is SuggestionsResource.Empty) {
-                        Success(
-                            title,
-                            listOf(),
-                            row.viewOptions,
-                            rowType = row,
-                        )
                     } else {
-                        Error(
-                            title,
+                        HomeRowLoadingState.Error(
+                            title = title,
                             message = "Unsupported type ${library.collectionType}",
                         )
                     }
