@@ -639,4 +639,6 @@
     <string name="view_options_type_grid">Cuadrícula</string>
     <string name="view_options_type_list">Lista</string>
     <string name="view_options_type_list_compact">Lista compacta</string>
+    <string name="sort">Ordenar</string>
+    <string name="split_into_separate_rows">Separar en filas independientes</string>
 </resources>
