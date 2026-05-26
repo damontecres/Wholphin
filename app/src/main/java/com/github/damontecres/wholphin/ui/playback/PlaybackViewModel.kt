@@ -5,6 +5,7 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.compose.ui.unit.Density
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -57,6 +58,7 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.showToast
@@ -66,6 +68,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
+import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
@@ -1524,6 +1527,22 @@ class PlaybackViewModel
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             screensaverService.keepScreenOn(isPlaying)
+        }
+
+        override fun onAvailableCommandsChanged(availableCommands: Player.Commands) {
+            val player = this@PlaybackViewModel.player
+            if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
+                // MpvPlayer is initialized, so configure subtitles
+                Timber.i("Applying subtitle config to MPV")
+                viewModelScope.launchDefault {
+                    val configuration = context.resources.configuration
+                    val density = Density(context.resources.displayMetrics.density)
+                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                        configuration,
+                        density,
+                    )
+                }
+            }
         }
 
         override fun onBandwidthEstimate(
