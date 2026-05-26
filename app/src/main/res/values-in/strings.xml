@@ -18,11 +18,11 @@
     <string name="collection">Koleksi</string>
     <string name="collections">Koleksi</string>
     <string name="commercial">Komersial</string>
-    <string name="community_rating">Peringkat Komunitas</string>
+    <string name="community_rating">Rating Komunitas</string>
     <string name="compose_error_message_title">Terjadi kesalahan! Tekan tombol untuk mengirim log ke server kamu.</string>
     <string name="confirm">Konfirmasi</string>
     <string name="continue_watching">Lanjutkan menonton</string>
-    <string name="critic_rating">Penilaian Kritis</string>
+    <string name="critic_rating">Rating Kritis</string>
     <string name="decimal_seconds">%.2f detik</string>
     <string name="default_track">Bawaan</string>
     <string name="delete">Hapus</string>
@@ -150,7 +150,7 @@
     <string name="font">Font</string>
     <string name="background">Latar Belakang</string>
     <string name="success">Berhasil</string>
-    <string name="official_rating">Peringkat Orang Tua</string>
+    <string name="official_rating">Rating Orang Tua</string>
     <string name="runtime_sort">Durasi</string>
     <string name="extras">Ekstra</string>
     <plurals name="other_extras">
@@ -587,4 +587,20 @@
     <string name="combined_search_results_on">Tampilkan semua hasil dalam satu daftar</string>
     <string name="combined_search_results_off">Tampilkan hasil berdasarkan kategori</string>
     <string name="results">Hasil</string>
+    <string name="view_options_type_list_compact">Daftar Ringkas</string>
+    <string name="require_login">Wajibkan login untuk profil</string>
+    <string name="show_voice_search_button">Tampilkan tombol pencarian suara</string>
+    <string name="visible_ui">Terlihat</string>
+    <string name="hidden_ui">Tersembunyi</string>
+    <string name="view_options_type_grid">Grid</string>
+    <string name="view_options_type_list">List</string>
+    <string name="user_interface_language">Bahasa antarmuka pengguna</string>
+    <string name="display_toggles_title">Tampilan rating</string>
+    <string name="display_toggles_summary">Sesuaikan item yang akan ditampilkan</string>
+    <string name="profile_protection">Perlindungan profil</string>
+    <string name="continue_watching_click_behavior">Perilaku klik Lanjut menonton/Berikutnya</string>
+    <string name="continue_watching_click_summary_on">Putar saat diklik</string>
+    <string name="continue_watching_click_summary_off">Tampilkan detail saat diklik</string>
+    <string name="stars">Bintang</string>
+    <string name="tomatoes">Tomatoes</string>
 </resources>
