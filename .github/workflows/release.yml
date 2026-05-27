@@ -36,8 +36,8 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleDefaultRelease bundleAppstoreRelease bundleFiretvRelease --no-daemon
-
+          ./gradlew clean bundleAppstoreRelease bundleFiretvRelease
+          ./gradlew assembleDefaultRelease
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"

@@ -27,6 +27,12 @@ val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 val mpvModuleExists = project.file("libs/wholphin-mpv-release.aar").exists()
 val extensionsRepoActive = project.hasProperty("WholphinExtensionsUsername")
 
+// See https://issuetracker.google.com/issues/402800800
+val isBuildingBundle =
+    providers.provider {
+        gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
+    }
+
 val gitTags =
     providers
         .exec { commandLine("git", "tag", "--list", "v*", "p*") }
@@ -156,7 +162,9 @@ configure<ApplicationExtension> {
 
     splits {
         abi {
-            isEnable = true
+            // Disable split abis when building bundles
+            isEnable = !isBuildingBundle.get()
+
             reset()
             include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = true
