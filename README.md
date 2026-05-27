@@ -32,31 +32,39 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 - Customize the home page to see the content you are interested in
     - Use poster or thumb images, show/hide titles, add/remove/re-order different types of rows!
+    - Option to combine the Continue Watching & Next Up into a single row
+    - Pin collections, playlists, favorites, genres, and studios
+    - Remove series from next up
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
-- Integration with [Jellyseerr/Seerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
+- Integration with [Seerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
     - Note: only available when installed from [GitHub](https://github.com/damontecres/Wholphin/releases/latest) or the [Play store](https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin)
-- Option to combine Continue Watching & Next Up rows
-- Show Movie/TV Show titles when browsing libraries
+- Customize library display
+  - Option to show Movie/TV Show titles
+  - Choose image types & size
+  - Choose from grid or list layouts
 - Play theme music, if available
-- Customize subtitle style for plain text subtitles
+- Customize subtitle style for plain text subtitles with separate HDR settings
 - Search & download subtitles (requires compatible server plugin such as [OpenSubtitles](https://github.com/jellyfin/jellyfin-plugin-opensubtitles))
-- Customize layout grids for libraries
 - Multiple app color themes
-- Protect user profile switches with PIN code
+- Protect user profile switches with PIN code or require server login
+- Change the user interface language per user
+- In-app & Android OS screensaver support
 
 ### Playback
 
 - Different media playback engines:
-  - **ExoPlayer** w/ optional extra audio & AV1 software decoding
-  - **MPV** for direct playing anything plus ASS subtitle support
+  - **ExoPlayer** w/ optional extra audio, SSA/ASS, & AV1 software decoding
+  - **MPV** for direct playing anything with great SSA/ASS subtitle support
 - Plex inspired playback controls:
   - Using D-Pad left/right for seeking during playback
   - Quickly access video chapters & queue during playback
   - Optionally skip back a few seconds when resuming playback
 - Live TV & DVR support
+- Music & music video support
+- Cinema mode/pre-roll intro support (requires compatible server plugin such as [Intros](https://github.com/jellyfin/jellyfin-plugin-intros))
 - Auto play next episodes with pass out protection
 - Option for automatic refresh rate & resolution switching on supported displays
-- Trickplay support
+- Trickplay (video preview) support
 - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
 
 ### Roadmap
@@ -95,7 +103,7 @@ Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
 
-Jellyseerr integration is tested with `v2.7.3`. Older versions may not work.
+Seerr integration is tested with `v3.2.0`. Older versions may not work.
 
 ## Contributions
 
