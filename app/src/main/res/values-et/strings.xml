@@ -600,4 +600,27 @@
     <string name="skip_behavior_summary">Sissejuhatuste, lõputiitrite jmt jaoks</string>
     <string name="play_with">Esita rakendusega</string>
     <string name="transcoding">Teisendan</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Kombineeritud otsingutulemused</string>
+    <string name="combined_search_results_on">Näita kõiki tulemusi ühe loendina</string>
+    <string name="combined_search_results_off">Näita tulemusi kategooria alusel</string>
+    <string name="results">Tulemused</string>
+    <string name="continue_watching_click_behavior">Jätka vaatamist / järgmisena esitamisel - käitumine klõpsimisel</string>
+    <string name="continue_watching_click_summary_on">Klõpsimisel esita</string>
+    <string name="continue_watching_click_summary_off">Klõpsimisel näita üksikasju</string>
+    <string name="require_login">Eelda profiili jaoks sisselogimist</string>
+    <string name="display_toggles_title">Hinnangute kuvamine</string>
+    <string name="display_toggles_summary">Kohenda kuvatavat</string>
+    <string name="profile_protection">Profiili kaitse</string>
+    <string name="stars">Tärne</string>
+    <string name="tomatoes">Tomateid</string>
+    <string name="show_voice_search_button">Näita häälotsingu nuppu</string>
+    <string name="visible_ui">Nähtav</string>
+    <string name="hidden_ui">Peidetud</string>
+    <string name="user_interface_language">Kasutajaliidese keel</string>
+    <string name="view_options_type_grid">Ruudustik</string>
+    <string name="view_options_type_list">Loend</string>
+    <string name="view_options_type_list_compact">Kompaktne loend</string>
+    <string name="sort">Järjesta</string>
+    <string name="split_into_separate_rows">Eralda ridadena</string>
 </resources>

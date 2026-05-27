@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 import androidx.work.await
 import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.qualifiers.ActivityContext
@@ -43,7 +44,7 @@ class TvProviderSchedulerService
                 context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
         init {
-            serverRepository.current.observe(activity) { user ->
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) { user ->
                 workManager.cancelUniqueWork(TvProviderWorker.WORK_NAME)
                 if (supportsTvProvider) {
                     if (user != null) {

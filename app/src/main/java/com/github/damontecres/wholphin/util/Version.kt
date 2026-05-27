@@ -70,7 +70,7 @@ data class Version(
     private fun compareNumCommits(version: Version): Int = (this.numCommits ?: 0) - (version.numCommits ?: 0)
 
     override fun toString(): String =
-        if (numCommits != null && hash != null) {
+        if (numCommits != null && numCommits > 0 && hash != null) {
             "v$major.$minor.$patch-$numCommits-g$hash"
         } else {
             "v$major.$minor.$patch"

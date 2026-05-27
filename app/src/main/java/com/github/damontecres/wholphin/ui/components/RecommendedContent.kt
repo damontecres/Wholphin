@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,7 +35,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -44,6 +42,7 @@ import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.toBaseItems
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -111,13 +110,13 @@ class RecommendedViewModel
                     it.copy(
                         loading = LoadingState.Loading,
                         rows =
-                            recommendedRows.map { HomeRowLoadingState.Loading(context.getString(it.title)) } +
-                                listOf(HomeRowLoadingState.Loading(context.getString(R.string.suggestions))),
+                            recommendedRows.map { HomeRowLoadingState.Loading(ResStringProvider(it.title)) } +
+                                listOf(HomeRowLoadingState.Loading(ResStringProvider(R.string.suggestions))),
                     )
                 }
                 val jobs =
                     recommendedRows.mapIndexed { index, row ->
-                        val title = context.getString(row.title)
+                        val title = ResStringProvider(row.title)
                         viewModelScope.launchIO {
                             val result =
                                 try {
@@ -173,7 +172,7 @@ class RecommendedViewModel
 
         private fun fetchSuggestions() {
             viewModelScope.launch(Dispatchers.IO) {
-                val title = context.getString(R.string.suggestions)
+                val title = ResStringProvider(R.string.suggestions)
                 try {
                     suggestionService
                         .getSuggestionsFlow(parentId, suggestionsType)
@@ -298,7 +297,6 @@ class RecommendedViewModel
                 navigationManager.navigateTo(
                     Destination.ItemGrid(
                         title = row.title,
-                        titleRes = recommendedRow.title,
                         request = recommendedRow.request,
                         requestHandler = recommendedRow.handler,
                         initialPosition = row.items.size,
@@ -313,7 +311,6 @@ class RecommendedViewModel
                 navigationManager.navigateTo(
                     Destination.ItemGrid(
                         title = row.title,
-                        titleRes = R.string.suggestions,
                         request =
                             GetItemsRequest(
                                 ids = row.items.mapNotNull { it?.id },
@@ -352,7 +349,7 @@ fun RecommendedContent(
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
 
     OneTimeLaunchedEffect {
         viewModel.init()
@@ -452,7 +449,7 @@ fun RecommendedContent(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                viewModel.serverRepository.currentUserDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

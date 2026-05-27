@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,6 +81,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
 
 @Composable
 fun PreferencesContent(
@@ -99,7 +99,7 @@ fun PreferencesContent(
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
-    val currentUser by viewModel.currentUser.observeAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
@@ -109,6 +109,7 @@ fun PreferencesContent(
     val seerrConnection by viewModel.seerrConnection.collectAsState()
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
+    var showLocaleChoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -124,16 +125,20 @@ fun PreferencesContent(
         updateCache = false
     }
 
-    val release by updateVM.release.observeAsState(null)
-    LaunchedEffect(Unit) {
+    val updateState by updateVM.state.collectAsState()
+    val release = updateState.release
+    LaunchedEffect(preferences.updateUrl, preferences.autoCheckForUpdates) {
         if (UpdateChecker.ACTIVE && preferences.autoCheckForUpdates) {
-            updateVM.init(preferences.updateUrl)
+            updateVM.init()
         }
     }
 
     val movementSounds = true
     val installedVersion = updateVM.currentVersion
-    val updateAvailable = release?.version?.isGreaterThan(installedVersion) ?: false
+    val updateAvailable =
+        remember(updateState.release) {
+            updateState.release?.version?.isGreaterThan(installedVersion) ?: false
+        }
 
     val prefList =
         when (preferenceScreenOption) {
@@ -255,6 +260,12 @@ fun PreferencesContent(
                         pref as AppPreference<AppPreferences, Any>
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
+                            val focusModifier =
+                                Modifier
+                                    .ifElse(
+                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                        Modifier.focusRequester(focusRequester),
+                                    )
                             val focused = interactionSource.collectIsFocusedAsState().value
                             LaunchedEffect(focused) {
                                 if (focused) {
@@ -275,12 +286,7 @@ fun PreferencesContent(
                                         },
                                         summary = installedVersion.toString(),
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -303,7 +309,7 @@ fun PreferencesContent(
                                                     )
                                                 }
                                             } else {
-                                                updateVM.init(preferences.updateUrl)
+                                                updateVM.init()
                                             }
                                         },
                                         onLongClick = {
@@ -317,12 +323,7 @@ fun PreferencesContent(
                                                 null
                                             },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -348,7 +349,7 @@ fun PreferencesContent(
                                                 updateCache = true
                                             }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = summary,
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -359,7 +360,7 @@ fun PreferencesContent(
                                     NavDrawerPreference(
                                         title = stringResource(pref.title),
                                         summary = pref.summary(context, null),
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         interactionSource = interactionSource,
                                     )
                                 }
@@ -370,7 +371,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.sendAppLogs()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -383,7 +384,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.resetSubtitleSettings()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -400,6 +401,7 @@ fun PreferencesContent(
                                     ChoicePreference(
                                         title = stringResource(pref.title),
                                         summary = stringResource(summary),
+                                        interactionSource = interactionSource,
                                         possibleValues =
                                             listOf(
                                                 stringResource(R.string.none),
@@ -429,6 +431,7 @@ fun PreferencesContent(
                                                 }
                                             }
                                         },
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -456,7 +459,7 @@ fun PreferencesContent(
                                                     }
                                                 }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary =
                                             when (seerrConnection) {
                                                 is SeerrConnectionStatus.Error -> {
@@ -487,7 +490,7 @@ fun PreferencesContent(
                                                 showQuickConnectDialog = true
                                             }
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -500,7 +503,7 @@ fun PreferencesContent(
                                         onClick = {
                                             viewModel.screensaverService.start()
                                         },
-                                        modifier = Modifier,
+                                        modifier = focusModifier,
                                         summary = pref.summary(context, null),
                                         onLongClick = {},
                                         interactionSource = interactionSource,
@@ -516,6 +519,7 @@ fun PreferencesContent(
                                     ChoicePreference(
                                         title = stringResource(pref.title),
                                         summary = players[selectedIndex].name,
+                                        interactionSource = interactionSource,
                                         possibleValues = players,
                                         selectedIndex = selectedIndex,
                                         onValueChange = { index ->
@@ -543,6 +547,25 @@ fun PreferencesContent(
                                                 Text(item.name)
                                             }
                                         },
+                                        modifier = focusModifier,
+                                    )
+                                }
+
+                                AppPreference.UserInterfaceLanguage -> {
+                                    val locale =
+                                        remember(currentUser?.uiLanguage) {
+                                            currentUser?.uiLanguage?.let { Locale.forLanguageTag(it) }
+                                                ?: Locale.getDefault()
+                                        }
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            showLocaleChoiceDialog = true
+                                        },
+                                        modifier = focusModifier,
+                                        summary = locale.getDisplayName(locale),
+                                        onLongClick = null,
+                                        interactionSource = interactionSource,
                                     )
                                 }
 
@@ -576,12 +599,7 @@ fun PreferencesContent(
                                             }
                                         },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
+                                        modifier = focusModifier,
                                     )
                                 }
                             }
@@ -620,7 +638,7 @@ fun PreferencesContent(
             }
 
             SeerrDialogMode.Add -> {
-                val currentUser by seerrVm.currentUser.observeAsState()
+                val currentUser by seerrVm.currentUser.collectAsState(null)
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
                 LaunchedEffect(status) {
@@ -720,6 +738,11 @@ fun PreferencesContent(
                 }
             }
         }
+    }
+    if (showLocaleChoiceDialog) {
+        LocaleChoiceDialog(
+            onDismissRequest = { showLocaleChoiceDialog = false },
+        )
     }
 }
 

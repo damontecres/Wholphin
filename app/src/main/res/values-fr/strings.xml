@@ -297,6 +297,7 @@
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
         <item quantity="one">Bonus</item>
+        <item quantity="many">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
@@ -610,4 +611,31 @@
     <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
     <string name="external_player">Lecteur externe</string>
     <string name="system_default">Paramètres système par défaut</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Résultats de recherche combinés</string>
+    <string name="combined_search_results_on">Afficher tous les résultats dans une seule liste</string>
+    <string name="combined_search_results_off">Afficher les résultats par catégorie</string>
+    <string name="results">Résultats</string>
+    <string name="cinema_mode">Mode cinéma</string>
+    <string name="show_more">Afficher %1$s de plus</string>
+    <string name="skip_behavior">Comportement de saut</string>
+    <string name="skip_behavior_summary">Pour les génériques d\'ouverture, les génériques de fin, etc</string>
+    <string name="play_with">Jouer avec</string>
+    <string name="transcoding">Transcodage</string>
+    <string name="require_login">Connexion requise pour le profil</string>
+    <string name="show_voice_search_button">Afficher le bouton de recherche vocale</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Caché</string>
+    <string name="view_options_type_grid">Grille</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Liste compacte</string>
+    <string name="user_interface_language">Langue de l\'interface utilisateur</string>
+    <string name="display_toggles_title">Affichage des notes</string>
+    <string name="display_toggles_summary">Personnaliser les éléments à afficher</string>
+    <string name="profile_protection">Protection du profil</string>
+    <string name="continue_watching_click_behavior">Comportement de clic sur « Continuer à regarder »/« Suivant »</string>
+    <string name="continue_watching_click_summary_on">Jouez au clic</string>
+    <string name="continue_watching_click_summary_off">Afficher les détails en cliquant</string>
+    <string name="stars">Étoiles</string>
+    <string name="tomatoes">Tomates</string>
 </resources>

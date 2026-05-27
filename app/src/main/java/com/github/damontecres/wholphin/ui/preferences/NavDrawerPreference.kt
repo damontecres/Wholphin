@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +67,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import javax.inject.Inject
@@ -153,6 +157,8 @@ fun NavDrawerPreferenceDialog(
     onMoveUp: (Int) -> Unit,
     onMoveDown: (Int) -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    val bringIntoViewRequesters = remember { List(items.size) { BringIntoViewRequester() } }
     BasicDialog(
         onDismissRequest = onDismissRequest,
         elevation = 3.dp,
@@ -169,6 +175,13 @@ fun NavDrawerPreferenceDialog(
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             val listState = rememberLazyListState()
+
+            fun ensureVisible(index: Int) {
+                val idx = index.coerceIn(items.indices)
+                scope.launch {
+                    bringIntoViewRequesters[idx].bringIntoView()
+                }
+            }
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -180,9 +193,18 @@ fun NavDrawerPreferenceDialog(
                         moveUpAllowed = index > 0,
                         moveDownAllowed = index < items.lastIndex,
                         onClick = { onClick.invoke(index) },
-                        onMoveUp = { onMoveUp.invoke(index) },
-                        onMoveDown = { onMoveDown.invoke(index) },
-                        modifier = Modifier.animateItem(),
+                        onMoveUp = {
+                            onMoveUp.invoke(index)
+                            ensureVisible(index - 1)
+                        },
+                        onMoveDown = {
+                            onMoveDown.invoke(index)
+                            ensureVisible(index + 1)
+                        },
+                        modifier =
+                            Modifier
+                                .animateItem()
+                                .bringIntoViewRequester(bringIntoViewRequesters[index]),
                     )
                 }
             }
@@ -297,7 +319,7 @@ class NavDrawerPreferencesViewModel
         init {
             viewModelScope.launchDefault {
                 val state = navDrawerService.state.value
-                val user = serverRepository.currentUser.value
+                val user = serverRepository.currentUser
                 val seerr = seerrServerRepository.active.firstOrNull()
                 if (state == NavDrawerItemState.EMPTY || user == null || seerr == null) {
                     return@launchDefault
@@ -337,8 +359,8 @@ class NavDrawerPreferencesViewModel
 
         fun save() {
             viewModelScope.launchIO(ExceptionHandler(true)) {
-                serverRepository.currentUser.value?.let { user ->
-                    serverRepository.currentUserDto.value?.let { userDto ->
+                serverRepository.currentUser?.let { user ->
+                    serverRepository.currentUserDto?.let { userDto ->
                         if (user.id == userDto.id) {
                             val toSave =
                                 state.value.mapIndexed { index, item ->

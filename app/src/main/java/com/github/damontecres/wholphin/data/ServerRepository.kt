@@ -4,19 +4,18 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -47,14 +46,17 @@ class ServerRepository
         val userPreferencesDataStore: DataStore<AppPreferences>,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        private var _current = EqualityMutableLiveData<CurrentUser?>(null)
-        val current: LiveData<CurrentUser?> = _current
+        private var _current = MutableStateFlow<CurrentUser?>(null)
+        val current: StateFlow<CurrentUser?> = _current
 
-        private var _currentUserDto = EqualityMutableLiveData<UserDto?>(null)
-        val currentUserDto: LiveData<UserDto?> = _currentUserDto
+        private var _currentUserDto = MutableStateFlow<UserDto?>(null)
+        val currentUserDto: UserDto? get() = _currentUserDto.value
+        val currentUserDtoFlow: StateFlow<UserDto?> get() = _currentUserDto
 
-        val currentServer: LiveData<JellyfinServer?> get() = _current.map { it?.server }
-        val currentUser: LiveData<JellyfinUser?> get() = _current.map { it?.user }
+        val currentServer: JellyfinServer? get() = _current.value?.server
+        val currentServerFlow: Flow<JellyfinServer?> get() = _current.map { it?.server }
+        val currentUser: JellyfinUser? get() = _current.value?.user
+        val currentUserFlow: Flow<JellyfinUser?> get() = _current.map { it?.user }
 
         val serverPluginInstalled = MutableStateFlow<Boolean>(false)
 
@@ -68,7 +70,7 @@ class ServerRepository
                 serverDao.addOrUpdateServer(server)
             }
             apiClient.update(baseUrl = server.url, accessToken = null)
-            _current.setValueOnMain(null)
+            _current.value = null
         }
 
         /**
@@ -130,7 +132,7 @@ class ServerRepository
             userId: UUID?,
         ): CurrentUser? {
             if (serverId == null || userId == null) {
-                _current.setValueOnMain(null)
+                _current.value = null
                 return null
             }
             val serverAndUsers =
@@ -221,7 +223,7 @@ class ServerRepository
         }
 
         suspend fun removeUser(user: JellyfinUser) {
-            if (currentUser.value?.id == user.id) {
+            if (current.value?.user?.id == user.id) {
                 withContext(Dispatchers.Main) {
                     _current.value = null
                 }
@@ -240,7 +242,7 @@ class ServerRepository
         }
 
         suspend fun removeServer(server: JellyfinServer) {
-            if (currentServer.value?.id == server.id) {
+            if (current.value?.server?.id == server.id) {
                 withContext(Dispatchers.Main) {
                     _current.value = null
                 }
@@ -277,18 +279,19 @@ class ServerRepository
         ) {
             val newUser = user.copy(pin = pin, requireLogin = requireLogin)
             val updatedUser = serverDao.addOrUpdateUser(newUser)
-            if (currentUser.value?.id == updatedUser.id && currentServer.value?.id == user.serverId) {
+            val cur = current.value
+            if (cur?.user?.id == updatedUser.id && cur.server?.id == user.serverId) {
                 // Updating current user, so push out the change
                 current.value?.let {
                     val newCurrent = it.copy(user = updatedUser)
-                    _current.setValueOnMain(newCurrent)
+                    _current.value = newCurrent
                 }
             }
         }
 
         suspend fun authorizeQuickConnect(code: String): Boolean =
             withContext(ioDispatcher) {
-                val userId = currentUser.value?.id
+                val userId = current.value?.user?.id
                 if (userId == null) {
                     Timber.e("No user logged in for Quick Connect authorization")
                     throw IllegalStateException("Must be logged in to authorize Quick Connect")

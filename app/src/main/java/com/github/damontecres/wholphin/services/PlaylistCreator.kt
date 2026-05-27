@@ -93,7 +93,7 @@ class PlaylistCreator
             val request =
                 filter.applyTo(
                     GetItemsRequest(
-                        userId = serverRepository.currentUser.value?.id,
+                        userId = serverRepository.currentUser?.id,
                         parentId = playlistId,
                         fields = DefaultItemFields,
                         startIndex = startIndex,
@@ -248,6 +248,7 @@ class PlaylistCreator
                 BaseItemKind.MOVIE,
                 BaseItemKind.VIDEO,
                 BaseItemKind.MUSIC_VIDEO,
+                BaseItemKind.TRAILER,
                 -> {
                     val list =
                         buildList {
@@ -324,7 +325,7 @@ class PlaylistCreator
             name: String,
             initialItems: List<UUID>,
         ): UUID? =
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 api.playlistsApi
                     .createPlaylist(
                         CreatePlaylistDto(

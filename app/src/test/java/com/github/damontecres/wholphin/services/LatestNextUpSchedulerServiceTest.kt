@@ -5,7 +5,6 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.MutableLiveData
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -14,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -28,7 +28,7 @@ import org.junit.Test
 class LatestNextUpSchedulerServiceTest {
     @get:Rule val instantTaskExecutorRule = InstantTaskExecutorRule()
     private val testDispatcher = StandardTestDispatcher()
-    private val currentLiveData = MutableLiveData<CurrentUser?>()
+    private val currentUser = MutableStateFlow<CurrentUser?>(null)
     private val mockActivity = mockk<AppCompatActivity>(relaxed = true)
     private val mockServerRepository = mockk<ServerRepository>(relaxed = true)
     private val mockWorkManager = mockk<WorkManager>(relaxed = true)
@@ -38,7 +38,7 @@ class LatestNextUpSchedulerServiceTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { mockActivity.lifecycle } returns lifecycleRegistry
-        every { mockServerRepository.current } returns currentLiveData
+        every { mockServerRepository.current } returns currentUser
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
@@ -59,7 +59,7 @@ class LatestNextUpSchedulerServiceTest {
         runTest {
             createService()
 
-            currentLiveData.value = null
+            currentUser.value = null
             advanceUntilIdle()
 
             verify { mockWorkManager.cancelUniqueWork(LatestNextUpWorker.WORK_NAME) }

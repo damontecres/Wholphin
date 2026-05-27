@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -10,13 +11,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewModel
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
-import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toServerString
@@ -50,7 +49,8 @@ fun CollectionFolderPhotoAlbum(
         },
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    CollectionFolderGrid(
+    val state by viewModel.state.collectAsState()
+    CollectionFolderView(
         preferences = preferences,
         actions =
             remember {
@@ -63,11 +63,9 @@ fun CollectionFolderPhotoAlbum(
                                     index = index,
                                     filter =
                                         CollectionFolderFilter(
-                                            filter = viewModel.filter.value ?: GetItemsFilter(),
+                                            filter = state.filter,
                                         ),
-                                    sortAndDirection =
-                                        viewModel.sortAndDirection.value
-                                            ?: SortAndDirection.DEFAULT,
+                                    sortAndDirection = state.sortAndDirection,
                                     recursive = recursive,
                                     startSlideshow = false,
                                 )

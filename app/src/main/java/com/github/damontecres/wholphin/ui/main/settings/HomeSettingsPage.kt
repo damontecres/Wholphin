@@ -222,7 +222,7 @@ fun HomeSettingsPage(
                                         }
                                     }
                                 HomeRowSettings(
-                                    title = row.title,
+                                    title = row.title.getString(),
                                     preferenceOptions = preferenceOptions,
                                     viewOptions = row.config.viewOptions,
                                     defaultViewOptions = defaultViewOptions,
@@ -233,6 +233,22 @@ fun HomeSettingsPage(
                                         viewModel.updateViewOptionsForAll(row.config.viewOptions)
                                     },
                                     modifier = destModifier,
+                                    config = row.config,
+                                    onConfigChange = {
+                                        viewModel.onConfigChange(row, it)
+                                    },
+                                    onConfigAction = {
+                                        viewModel.onConfigAction(row, it)
+                                        when (it) {
+                                            HomeRowConfigAction.Combine,
+                                            HomeRowConfigAction.Split,
+                                            -> {
+                                                backStack.removeAt(
+                                                    backStack.lastIndex,
+                                                )
+                                            }
+                                        }
+                                    },
                                 )
                             }
 

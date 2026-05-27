@@ -341,5 +341,14 @@ class AppUpgradeHandler
                     it.updateSearchPreferences { showVoiceSearchButton = true }
                 }
             }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.4-26-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        clearDisplayToggles()
+                        addAllDisplayToggles(AppPreference.DisplayTogglesPref.defaultValue)
+                    }
+                }
+            }
         }
     }

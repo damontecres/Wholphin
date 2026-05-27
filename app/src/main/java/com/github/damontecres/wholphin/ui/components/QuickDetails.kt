@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
@@ -132,14 +133,14 @@ fun TimeRemaining(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val now by LocalClock.current.now
     val remainingStr =
-        remember(remaining, now) {
+        remember(remaining, now, resources) {
             val endTimeStr = getTimeFormatter().format(now.plusSeconds(remaining.inWholeSeconds))
             buildAnnotatedString {
                 dot()
-                append(context.getString(R.string.ends_at, endTimeStr))
+                append(resources.getString(R.string.ends_at, endTimeStr))
             }
         }
     Text(

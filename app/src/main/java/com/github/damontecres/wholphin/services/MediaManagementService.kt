@@ -63,7 +63,7 @@ class MediaManagementService
             return enabled &&
                 item.canDelete &&
                 if (item.type == BaseItemKind.RECORDING) {
-                    serverRepository.currentUserDto.value
+                    serverRepository.currentUserDto
                         ?.policy
                         ?.enableLiveTvManagement == true
                 } else {

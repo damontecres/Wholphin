@@ -35,8 +35,13 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.util.ResArgStringProvider
+import com.github.damontecres.wholphin.ui.util.ResProviderStringProvider
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
+import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,7 +99,7 @@ class HomeSettingsViewModel
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
-                val userDto = serverRepository.currentUserDto.value ?: return@launchIO
+                val userDto = serverRepository.currentUserDto ?: return@launchIO
                 val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
@@ -122,7 +127,7 @@ class HomeSettingsViewModel
             val limit = 8
             val semaphore = Semaphore(4)
             val rows =
-                serverRepository.currentUserDto.value?.let { userDto ->
+                serverRepository.currentUserDto?.let { userDto ->
                     val prefs = userPreferencesService.getCurrent().appPreferences.homePagePreferences
                     state.value
                         .let { state ->
@@ -226,7 +231,7 @@ class HomeSettingsViewModel
                         MetaRowType.CONTINUE_WATCHING -> {
                             HomeRowConfigDisplay(
                                 id = id,
-                                title = context.getString(R.string.continue_watching),
+                                title = ResStringProvider(R.string.continue_watching),
                                 config = ContinueWatching(),
                             )
                         }
@@ -234,7 +239,7 @@ class HomeSettingsViewModel
                         MetaRowType.NEXT_UP -> {
                             HomeRowConfigDisplay(
                                 id = id,
-                                title = context.getString(R.string.next_up),
+                                title = ResStringProvider(R.string.next_up),
                                 config = NextUp(),
                             )
                         }
@@ -242,7 +247,7 @@ class HomeSettingsViewModel
                         MetaRowType.COMBINED_CONTINUE_WATCHING -> {
                             HomeRowConfigDisplay(
                                 id = id,
-                                title = context.getString(R.string.combine_continue_next),
+                                title = ResStringProvider(R.string.combine_continue_next),
                                 config = ContinueWatchingCombined(),
                             )
                         }
@@ -295,7 +300,12 @@ class HomeSettingsViewModel
                     when (rowType) {
                         LibraryRowType.RECENTLY_ADDED -> {
                             val title =
-                                library.name.let { context.getString(R.string.recently_added_in, it) }
+                                library.name.let {
+                                    ResArgStringProvider(
+                                        R.string.recently_added_in,
+                                        it,
+                                    )
+                                }
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -306,7 +316,7 @@ class HomeSettingsViewModel
                         LibraryRowType.RECENTLY_RELEASED -> {
                             val title =
                                 library.name.let {
-                                    context.getString(
+                                    ResArgStringProvider(
                                         R.string.recently_released_in,
                                         it,
                                     )
@@ -319,7 +329,8 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.GENRES -> {
-                            val title = library.name.let { context.getString(R.string.genres_in, it) }
+                            val title =
+                                library.name.let { ResArgStringProvider(R.string.genres_in, it) }
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -329,7 +340,7 @@ class HomeSettingsViewModel
 
                         LibraryRowType.STUDIOS -> {
                             val title =
-                                library.name.let { context.getString(R.string.studios_in, it) }
+                                library.name.let { ResArgStringProvider(R.string.studios_in, it) }
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -339,7 +350,12 @@ class HomeSettingsViewModel
 
                         LibraryRowType.SUGGESTIONS -> {
                             val title =
-                                library.name.let { context.getString(R.string.suggestions_for, it) }
+                                library.name.let {
+                                    ResArgStringProvider(
+                                        R.string.suggestions_for,
+                                        it,
+                                    )
+                                }
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -348,7 +364,7 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.TV_CHANNELS -> {
-                            val title = context.getString(R.string.channels)
+                            val title = ResStringProvider(R.string.channels)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -360,7 +376,7 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.TV_PROGRAMS -> {
-                            val title = context.getString(R.string.watch_live)
+                            val title = ResStringProvider(R.string.watch_live)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -369,7 +385,7 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.RECENTLY_RECORDED -> {
-                            val title = context.getString(R.string.recently_recorded)
+                            val title = ResStringProvider(R.string.recently_recorded)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -400,9 +416,9 @@ class HomeSettingsViewModel
                     HomeRowConfigDisplay(
                         id = id,
                         title =
-                            context.getString(
+                            ResProviderStringProvider(
                                 R.string.favorite_items,
-                                context.getString(favoriteOptions[type]!!),
+                                ResStringProvider(favoriteOptions[type]!!),
                             ),
                         config = HomeRowConfig.Favorite(type),
                     )
@@ -424,7 +440,7 @@ class HomeSettingsViewModel
             val newRow =
                 HomeRowConfigDisplay(
                     id = id,
-                    title = parent.name ?: "",
+                    title = StringStringProvider(parent.name ?: ""),
                     config =
                         HomeRowConfig.ByParent(
                             parentId = parent.id,
@@ -497,7 +513,7 @@ class HomeSettingsViewModel
 
         fun saveToRemote() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Saving home settings to remote")
                     val rows = state.value.rows.map { it.config }
                     val settings =
@@ -516,7 +532,7 @@ class HomeSettingsViewModel
 
         fun loadFromRemote() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Loading home settings from remote")
                     try {
                         _state.update { it.copy(loading = LoadingState.Loading) }
@@ -550,7 +566,7 @@ class HomeSettingsViewModel
 
         fun loadFromRemoteWeb() {
             viewModelScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     Timber.d("Loading home settings from web")
                     try {
                         _state.update { it.copy(loading = LoadingState.Loading) }
@@ -577,7 +593,7 @@ class HomeSettingsViewModel
         fun saveToLocal() {
             // This uses injected ioScope so that it will still run when the page is closing
             ioScope.launchIO {
-                serverRepository.currentUser.value?.let { user ->
+                serverRepository.currentUser?.let { user ->
                     val rows = state.value.rows.map { it.config }
                     val settings =
                         HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
@@ -644,7 +660,7 @@ class HomeSettingsViewModel
 
         fun resetToDefault() =
             viewModelScope.launchIO {
-                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
+                val userId = serverRepository.currentUser?.id ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
                 val result = homeSettingsService.createDefault(userId)
                 idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
@@ -803,6 +819,101 @@ class HomeSettingsViewModel
                     Timber.e(ex)
                     showToast(context, "Error: ${ex.localizedMessage}")
                 }
+            }
+        }
+
+        fun onConfigAction(
+            row: HomeRowConfigDisplay,
+            action: HomeRowConfigAction,
+        ) {
+            viewModelScope.launchDefault {
+                when (action) {
+                    HomeRowConfigAction.Combine -> {
+                        val index =
+                            state.value.rows
+                                .indexOf(row)
+                                .coerceAtLeast(0)
+                        val rowsToRemove =
+                            state.value.rows
+                                .filter { it.config is ContinueWatching || it.config is NextUp }
+
+                        updateState {
+                            it.copy(
+                                loading = LoadingState.Loading,
+                                rows =
+                                    it.rows.toMutableList().apply {
+                                        set(
+                                            index,
+                                            HomeRowConfigDisplay(
+                                                id = it.rows[index].id,
+                                                title = ResStringProvider(R.string.combine_continue_next),
+                                                config = ContinueWatchingCombined(row.config.viewOptions),
+                                            ),
+                                        )
+                                        removeAll(rowsToRemove)
+                                    },
+                            )
+                        }
+                        fetchRowData()
+                    }
+
+                    HomeRowConfigAction.Split -> {
+                        val index =
+                            state.value.rows
+                                .indexOf(row)
+                                .coerceAtLeast(0)
+                        updateState {
+                            it.copy(
+                                loading = LoadingState.Loading,
+                                rows =
+                                    it.rows.toMutableList().apply {
+                                        set(
+                                            index,
+                                            HomeRowConfigDisplay(
+                                                id = it.rows[index].id,
+                                                title = ResStringProvider(R.string.continue_watching),
+                                                config = ContinueWatching(row.config.viewOptions),
+                                            ),
+                                        )
+                                        add(
+                                            index + 1,
+                                            HomeRowConfigDisplay(
+                                                id = idCounter++,
+                                                title = ResStringProvider(R.string.next_up),
+                                                config = NextUp(row.config.viewOptions),
+                                            ),
+                                        )
+                                    },
+                            )
+                        }
+                        fetchRowData()
+                    }
+                }
+            }
+        }
+
+        fun onConfigChange(
+            row: HomeRowConfigDisplay,
+            config: HomeRowConfig,
+        ) {
+            viewModelScope.launchDefault {
+                val index =
+                    state.value.rows
+                        .indexOf(row)
+                        .coerceAtLeast(0)
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows =
+                            it.rows.toMutableList().apply {
+                                set(
+                                    index,
+                                    row.copy(config = config),
+                                )
+                            },
+                    )
+                }
+                fetchRowData()
             }
         }
     }

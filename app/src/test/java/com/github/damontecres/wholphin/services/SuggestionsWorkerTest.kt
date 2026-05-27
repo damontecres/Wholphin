@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.services
 
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.MutableLiveData
 import androidx.work.Data
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
@@ -15,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
@@ -112,7 +112,7 @@ class SuggestionsWorkerTest {
             every { mockApi.accessToken } returns null
             val mockUser = mockk<CurrentUser>()
             var restored = false
-            every { mockServerRepository.current } answers { MutableLiveData(if (restored) mockUser else null) }
+            every { mockServerRepository.current } answers { MutableStateFlow(if (restored) mockUser else null) }
             coEvery { mockServerRepository.restoreSession(testServerId, testUserId) } coAnswers {
                 restored = true
                 mockUser

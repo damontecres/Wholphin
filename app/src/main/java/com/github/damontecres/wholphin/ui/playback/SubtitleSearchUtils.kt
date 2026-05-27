@@ -9,10 +9,10 @@ import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -22,6 +22,8 @@ import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 import timber.log.Timber
 
 sealed interface SubtitleSearchStatus {
+    data object Inactive : SubtitleSearchStatus
+
     data object Searching : SubtitleSearchStatus
 
     data object Downloading : SubtitleSearchStatus
@@ -40,11 +42,15 @@ sealed interface SubtitleSearchStatus {
  * Trigger a search for subtitles in the given language for the currently playing media
  */
 fun PlaybackViewModel.searchForSubtitles(language: String = Locale.current.language) {
-    subtitleSearchStatus.value = SubtitleSearchStatus.Searching
-    subtitleSearchLanguage.value = language
+    subtitleSearchState.update {
+        it.copy(
+            status = SubtitleSearchStatus.Searching,
+            language = language,
+        )
+    }
     viewModelScope.launchIO {
         try {
-            currentItemPlayback.value?.itemId?.let {
+            state.value.currentItemPlayback?.itemId?.let {
                 Timber.v("Searching for remote subtitles for %s", it)
                 val results =
                     api.subtitleApi
@@ -56,11 +62,11 @@ fun PlaybackViewModel.searchForSubtitles(language: String = Locale.current.langu
                             compareByDescending<RemoteSubtitleInfo> { it.communityRating }
                                 .thenByDescending { it.downloadCount },
                         )
-                subtitleSearchStatus.setValueOnMain(SubtitleSearchStatus.Success(results))
+                subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Success(results)) }
             }
         } catch (ex: Exception) {
             Timber.e(ex, "Exception while searching for subtitles")
-            subtitleSearchStatus.setValueOnMain(SubtitleSearchStatus.Error(null, ex))
+            subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Error(null, ex)) }
         }
     }
 }
@@ -73,12 +79,20 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
     wasPlaying: Boolean,
 ) {
     if (subtitleId == null) {
-        subtitleSearchStatus.value = SubtitleSearchStatus.Error("Subtitle has no ID", null)
+        subtitleSearchState.update {
+            it.copy(
+                status =
+                    SubtitleSearchStatus.Error(
+                        "Subtitle has no ID",
+                        null,
+                    ),
+            )
+        }
     } else {
-        subtitleSearchStatus.value = SubtitleSearchStatus.Downloading
+        subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Downloading) }
         viewModelScope.launchIO {
             try {
-                currentItemPlayback.value?.let {
+                state.value.currentItemPlayback?.let {
                     Timber.v(
                         "Downloading remote subtitles for itemId=%s, sourceId=%s: %s",
                         it.itemId,
@@ -89,8 +103,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                         itemId = it.sourceId ?: it.itemId,
                         subtitleId = subtitleId,
                     )
-                    val currentSource =
-                        this@downloadAndSwitchSubtitles.currentPlayback.value?.mediaSourceInfo
+                    val currentSource = state.value.currentPlayback?.mediaSourceInfo
                     val currentSubtitleStreams =
                         currentSource
                             ?.mediaStreams
@@ -144,7 +157,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 stream.isExternal && stream.path !in externalPaths
                             }
                         if (newStream != null) {
-                            var audioIndex = currentItemPlayback.value?.audioIndex
+                            var audioIndex = it?.audioIndex
                             if (audioIndex != null && audioIndex != TrackIndex.UNSPECIFIED) {
                                 // User has picked a specific audio track
                                 // Since, now adding a new external subtitle track, need to adjust the audio index as well
@@ -155,13 +168,13 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 it.copy(
                                     subtitleStreams =
                                         subtitlesStreams.map {
-                                            SimpleMediaStream.from(context, it, true)
+                                            SimpleMediaStream.from(context.resources, it, true)
                                         },
                                 )
                             }
                             this@downloadAndSwitchSubtitles.changeStreams(
                                 currentItem.item,
-                                currentItemPlayback.value!!,
+                                it,
                                 audioIndex,
                                 newStream.index,
                                 onMain { player.currentPosition },
@@ -169,7 +182,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                             )
                         }
                     }
-                    subtitleSearchStatus.setValueOnMain(null)
+                    subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Inactive) }
                     withContext(Dispatchers.Main) {
                         if (wasPlaying) {
                             player.play()
@@ -178,12 +191,20 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception while downloading subtitles: $subtitleId")
-                subtitleSearchStatus.setValueOnMain(SubtitleSearchStatus.Error(null, ex))
+                subtitleSearchState.update {
+                    it.copy(
+                        status =
+                            SubtitleSearchStatus.Error(
+                                null,
+                                ex,
+                            ),
+                    )
+                }
             }
         }
     }
 }
 
 fun PlaybackViewModel.cancelSubtitleSearch() {
-    subtitleSearchStatus.value = null
+    subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Inactive) }
 }

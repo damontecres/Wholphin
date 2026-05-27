@@ -23,7 +23,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -77,7 +76,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -128,7 +126,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
-            val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            val playlistState by playlistViewModel.playlistState.collectAsState()
             var position by rememberPosition()
 
             val onFocusPosition = remember { { it: RowColumn -> position = it } }
@@ -381,7 +379,7 @@ fun HomePageContent(
                                 is HomeRowLoadingState.Pending,
                                 -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = stringResource(R.string.loading),
                                         modifier = Modifier.animateItem(),
                                     )
@@ -389,7 +387,7 @@ fun HomePageContent(
 
                                 is HomeRowLoadingState.Error -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = r.localizedMessage,
                                         isError = true,
                                         modifier = Modifier.animateItem(),
@@ -400,7 +398,7 @@ fun HomePageContent(
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
                                         ItemRow(
-                                            title = row.title,
+                                            title = row.title.getString(),
                                             items = row.items,
                                             onClickItem =
                                                 remember(rowIndex, onClickItem) {
@@ -502,7 +500,7 @@ fun HomePageContent(
                                         )
                                     } else if (showEmptyRows) {
                                         FocusableItemRow(
-                                            title = r.title,
+                                            title = r.title.getString(),
                                             subtitle = stringResource(R.string.no_results),
                                             modifier = Modifier.animateItem(),
                                         )

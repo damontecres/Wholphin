@@ -1,7 +1,7 @@
 [versions]
-aboutLibraries = "14.2.0"
+aboutLibraries = "14.2.1"
 acra = "5.13.1"
-agp = "9.1.1"
+agp = "9.2.1"
 auto-service = "1.1.1"
 autoServiceKsp = "1.2.0"
 desugar_jdk_libs = "2.1.5"
@@ -12,10 +12,10 @@ kotlin = "2.3.21"
 ksp = "2.3.8"
 coreKtx = "1.18.0"
 appcompat = "1.7.1"
-composeBom = "2026.05.00"
+composeBom = "2026.05.01"
 mockk = "1.14.9"
 robolectric = "4.16.1"
-multiplatformMarkdownRenderer = "0.40.2"
+multiplatformMarkdownRenderer = "0.41.0"
 okhttpBom = "5.3.2"
 programguide = "1.6.0"
 slf4j2Timber = "1.2"
@@ -27,13 +27,13 @@ activityCompose = "1.13.0"
 androidx-media3 = "1.10.1"
 coil = "3.4.0"
 jellyfin-sdk = "1.7.1"
-nav3Core = "1.1.1"
+nav3Core = "1.1.2"
 lifecycleViewmodelNav3 = "2.10.0"
 material3AdaptiveNav3 = "1.0.0-alpha03"
 protobuf = "0.10.0"
 datastore = "1.2.1"
 kotlinx-serialization = "1.11.0"
-protobuf-javalite = "4.34.1"
+protobuf-javalite = "4.35.0"
 hilt = "2.59.2"
 room = "2.8.4"
 preferenceKtx = "1.2.1"
@@ -67,14 +67,12 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime-android" }
-androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
 
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
 androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
-androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }

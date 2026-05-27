@@ -17,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -69,7 +69,7 @@ fun VideoStreamDetails(
     numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
@@ -90,7 +90,13 @@ fun VideoStreamDetails(
                             } else {
                                 null
                             }
-                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
+                        val range =
+                            formatVideoRange(
+                                resources,
+                                it.videoRange,
+                                it.videoRangeType,
+                                it.videoDoViTitle,
+                            )
                         resName.concatWithSpace(range)
                     }
             }
@@ -108,11 +114,11 @@ fun VideoStreamDetails(
         val audio =
             remember(audioCount, audioStream) {
                 if (audioCount == 0 || audioStream == null) {
-                    context.getString(R.string.none)
+                    resources.getString(R.string.none)
                 } else {
                     listOfNotNull(
                         languageName(audioStream.language),
-                        formatAudioCodec(context, audioStream.codec, audioStream.profile),
+                        formatAudioCodec(resources, audioStream.codec, audioStream.profile),
                         audioStream.channelLayout,
                     ).joinToString(" ")
                 }
@@ -133,7 +139,7 @@ fun VideoStreamDetails(
             remember(subtitleCount, subtitleStream) {
                 if (subtitleCount > 0 && subtitleStream == null) {
                     disabled = true
-                    context.getString(R.string.none)
+                    resources.getString(R.string.none)
                 } else if (subtitleCount == 0 || subtitleStream == null) {
                     null
                 } else {

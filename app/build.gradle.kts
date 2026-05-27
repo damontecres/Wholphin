@@ -27,6 +27,12 @@ val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 val mpvModuleExists = project.file("libs/wholphin-mpv-release.aar").exists()
 val extensionsRepoActive = project.hasProperty("WholphinExtensionsUsername")
 
+// See https://issuetracker.google.com/issues/402800800
+val isBuildingBundle =
+    providers.provider {
+        gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
+    }
+
 val gitTags =
     providers
         .exec { commandLine("git", "tag", "--list", "v*", "p*") }
@@ -82,7 +88,8 @@ configure<ApplicationExtension> {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -105,6 +112,7 @@ configure<ApplicationExtension> {
 
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
         }
@@ -154,7 +162,9 @@ configure<ApplicationExtension> {
 
     splits {
         abi {
-            isEnable = true
+            // Disable split abis when building bundles
+            isEnable = !isBuildingBundle.get()
+
             reset()
             include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = true
@@ -181,6 +191,9 @@ configure<ApplicationExtension> {
 
     lint {
         disable.add("MissingTranslation")
+    }
+    androidResources {
+        generateLocaleConfig = true
     }
 }
 
@@ -268,11 +281,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.datastore.preferences)

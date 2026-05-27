@@ -216,22 +216,22 @@
     <plurals name="downloads">
         <item quantity="one">%s descarga</item>
         <item quantity="many">%s descargas</item>
-        <item quantity="other"/>
+        <item quantity="other">%s descargas</item>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d hora</item>
         <item quantity="many">%d horas</item>
-        <item quantity="other"/>
+        <item quantity="other">%d horas</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d elemento</item>
         <item quantity="many">%d elementos</item>
-        <item quantity="other"/>
+        <item quantity="other">%d elementos</item>
     </plurals>
     <plurals name="seconds">
         <item quantity="one">%d segundo</item>
         <item quantity="many">%d segundos</item>
-        <item quantity="other"/>
+        <item quantity="other">%d segundos</item>
     </plurals>
     <string name="ac3_supported">El dispositivo soporta AC3/Dolby Digital</string>
     <string name="auto_check_for_updates">Buscar actualizaciones automáticamente</string>
@@ -294,7 +294,7 @@
     <string name="skip_segment_outro">Saltar créditos finales</string>
     <string name="skip_segment_intro">Saltar cabecera</string>
     <string name="played">Reproducido</string>
-    <string name="filter">FIltrar</string>
+    <string name="filter">Filtrar</string>
     <string name="year">Año</string>
     <string name="decade">Década</string>
     <string name="remove">Eliminar</string>
@@ -374,7 +374,7 @@
     <string name="sort_channels_recently_watched">Ordenar los canales por vistos recientemente</string>
     <string name="color_code_programs">Programas codificados por colores</string>
     <string name="subtitle_delay">Retardo de subtítulos</string>
-    <string name="backdrop_display">Estilo del fondo</string>
+    <string name="backdrop_display">Estilo del fanart</string>
     <string name="only_forced_subtitles">Solo Subtítulos Forzados</string>
     <string name="voice_search">Búsqueda por voz</string>
     <string name="voice_starting">Iniciando</string>
@@ -406,7 +406,7 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="dts">DTS</string>
-    <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7">Reproducción directa de Dolby Vision Perfil 7</string>
     <string name="force_dovi_profile_7_summary">Ignora las comprobaciones de compatibilidad del dispositivo</string>
     <string name="discover">Descubrir</string>
     <string name="request">Solicitar</string>
@@ -527,7 +527,7 @@
     <string name="image_type_thumb">Miniatura</string>
     <string name="backdrop_style_dynamic">Imagen con color dinámico</string>
     <string name="backdrop_style_image">Imagen</string>
-    <string name="enter_url_api_key"><![CDATA[Enter URL & API Key]]></string>
+    <string name="enter_url_api_key"><![CDATA[Introduce la URL y la clave API]]></string>
     <string name="api_key">Clave API</string>
     <string name="seerr_login">Iniciar sesión en el servidor Seerr</string>
     <string name="seerr_jellyfin_user">Usuario de Jellyfin</string>
@@ -573,7 +573,7 @@
     <string name="show_album_cover">Mostrar portada del álbum</string>
     <string name="show_visualizer">Mostrar visualizador</string>
     <string name="show_backdrop">Mostrar imagen de fondo</string>
-    <string name="play_as_type">Reproducir como...</string>
+    <string name="play_as_type">Modo de reproducción</string>
     <string name="visualizer_rationale">Para visualizar el audio en reproducción, se requiere permiso para grabar audio.</string>
     <string name="continue_string">Continuar</string>
     <string name="albums">Álbumes</string>
@@ -618,4 +618,27 @@
     <string name="cinema_mode">Modo cine</string>
     <string name="play_with">Reproducir con</string>
     <string name="transcoding">Transcodificar</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Resultados de búsqueda combinados</string>
+    <string name="combined_search_results_on">Mostrar todos los resultados en una sola lista</string>
+    <string name="combined_search_results_off">Mostrar resultados por categoría</string>
+    <string name="results">Resultados</string>
+    <string name="continue_watching_click_behavior">Comportamiento al pulsar en “Seguir viendo” / “Siguiente”</string>
+    <string name="continue_watching_click_summary_on">Reproducir al pulsar</string>
+    <string name="continue_watching_click_summary_off">Ver detalles al pulsar</string>
+    <string name="require_login">Requerir inicio de sesión para el perfil</string>
+    <string name="display_toggles_title">Visualización de valoraciones</string>
+    <string name="display_toggles_summary">Personalizar qué mostrar</string>
+    <string name="profile_protection">Protección del perfil</string>
+    <string name="stars">Estrellas</string>
+    <string name="tomatoes">\"Tomates\"</string>
+    <string name="show_voice_search_button">Mostrar botón de búsqueda por voz</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Oculto</string>
+    <string name="user_interface_language">Idioma de la interfaz de usuario</string>
+    <string name="view_options_type_grid">Cuadrícula</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista compacta</string>
+    <string name="sort">Ordenar</string>
+    <string name="split_into_separate_rows">Separar en filas independientes</string>
 </resources>

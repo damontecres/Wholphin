@@ -2,10 +2,12 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.qualifiers.ActivityContext
@@ -152,7 +154,7 @@ class DatePlayedInvalidationService
         private val activity = (context as AppCompatActivity)
 
         init {
-            serverRepository.current.observe(activity) {
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) {
                 datePlayedService.invalidateAll()
             }
         }

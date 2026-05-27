@@ -703,6 +703,14 @@
         <item>@string/image_type_thumb</item>
         <!--        <item>Banner</item>-->
     </string-array>
+    <string name="view_options_type_grid">Grid</string>
+    <string name="view_options_type_list">List</string>
+    <string name="view_options_type_list_compact">Compact List</string>
+    <string-array name="view_options_types">
+        <item>@string/view_options_type_grid</item>
+        <item>@string/view_options_type_list</item>
+        <item>@string/view_options_type_list_compact</item>
+    </string-array>
 
     <string name="backdrop_style_dynamic">Image with dynamic color</string>
     <string name="backdrop_style_image">Image only</string>
@@ -793,6 +801,7 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
+    <string name="user_interface_language">User interface language</string>
     <string name="display_toggles_title">Ratings display</string>
     <string name="display_toggles_summary">Customize which to display</string>
     <string name="profile_protection">Profile protection</string>
@@ -811,5 +820,7 @@
     </array>
     <string name="stars">Stars</string>
     <string name="tomatoes">Tomatoes</string>
+    <string name="sort">Sort</string>
+    <string name="split_into_separate_rows">Split into separate rows</string>
     <string name="load_from_server_plugin">Load default from server</string>
 </resources>

@@ -93,19 +93,19 @@ class TvProviderWorker
                 val currentItems = getCurrentTvChannelNextUp()
                 val currentItemIds = currentItems.map { it.internalProviderId }
 
-                // TODO Remove after v0.3.10 release
-                // This cleans up duplicates added to the watch next due a bug in https://github.com/damontecres/Wholphin/pull/372
-                currentItems.groupBy { it.internalProviderId }.forEach { (id, items) ->
-                    if (items.size > 1) {
-                        Timber.v("Duplicate ID %s", id)
-                        items
-                            .subList(1, items.size)
-                            .map { TvContractCompat.buildWatchNextProgramUri(it.id) }
-                            .forEach {
-                                context.contentResolver.delete(it, null, null)
-                            }
+                // TODO Remove after v0.6.5 release
+                // This cleans up movies that are using the poster image, see https://github.com/damontecres/Wholphin/issues/1425
+                currentItems
+                    .filter {
+                        it.type == WatchNextPrograms.TYPE_MOVIE &&
+                            it.posterArtUri
+                                .toString()
+                                .lowercase()
+                                .contains("primary")
+                    }.map { TvContractCompat.buildWatchNextProgramUri(it.id) }
+                    .forEach {
+                        context.contentResolver.delete(it, null, null)
                     }
-                }
                 // End temporary clean up
 
                 val toRemove =
@@ -220,7 +220,7 @@ class TvProviderWorker
                     val imageType =
                         when (item.type) {
                             BaseItemKind.EPISODE -> ImageType.THUMB
-                            else -> ImageType.PRIMARY
+                            else -> if (ImageType.THUMB in item.data.imageTags.orEmpty()) ImageType.THUMB else ImageType.PRIMARY
                         }
                     setPosterArtUri(imageUrlService.getItemImageUrl(item, imageType)!!.toUri())
 

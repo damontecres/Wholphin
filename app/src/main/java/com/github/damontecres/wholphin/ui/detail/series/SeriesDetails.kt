@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,7 +33,6 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,16 +77,15 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
@@ -110,20 +107,9 @@ fun SeriesDetails(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
-    val item by viewModel.item.observeAsState()
-    val canDelete by viewModel.canDeleteSeries.collectAsState()
-    val seasons by viewModel.seasons.observeAsState(listOf())
-    val trailers by viewModel.trailers.observeAsState(listOf())
-    val extras by viewModel.extras.observeAsState(listOf())
-    val people by viewModel.people.observeAsState(listOf())
-    val similar by viewModel.similar.observeAsState(listOf())
-    val discovered by viewModel.discovered.collectAsState()
-    val discoverSeries by viewModel.discoverSeries.collectAsState()
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val state by viewModel.state.collectAsState()
+    val playlistState by playlistViewModel.playlistState.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
@@ -179,118 +165,116 @@ fun SeriesDetails(
         }
     }
 
-    when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+    when (val st = state.series) {
+        is DataLoadingState.Error -> {
+            ErrorMessage(st, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
-            item?.let { item ->
-                LifecycleResumeEffect(destination.itemId) {
-                    viewModel.onResumePage()
+        is DataLoadingState.Success<BaseItem> -> {
+            LifecycleResumeEffect(destination.itemId) {
+                viewModel.onResumePage()
 
-                    onPauseOrDispose {}
-                }
-
-                val played = item.data.userData?.played ?: false
-                SeriesDetailsContent(
-                    preferences = preferences,
-                    series = item,
-                    seasons = seasons,
-                    trailers = trailers,
-                    extras = extras,
-                    people = people,
-                    similar = similar,
-                    played = played,
-                    favorite = item.data.userData?.isFavorite ?: false,
-                    canDelete = canDelete,
-                    modifier = modifier,
-                    onClickItem = { index, item ->
-                        viewModel.navigateTo(item.destination())
-                    },
-                    onClickPerson = {
+                onPauseOrDispose {}
+            }
+            val series = st.data
+            val played = series.data.userData?.played ?: false
+            SeriesDetailsContent(
+                preferences = preferences,
+                series = series,
+                seasons = state.seasons,
+                trailers = state.trailers,
+                extras = state.extras,
+                people = state.people,
+                similar = state.similar,
+                played = played,
+                favorite = series.data.userData?.isFavorite ?: false,
+                canDelete = state.canDeleteSeries,
+                modifier = modifier,
+                onClickItem = { index, item ->
+                    viewModel.navigateTo(item.destination())
+                },
+                onClickPerson = {
+                    viewModel.navigateTo(
+                        Destination.MediaItem(
+                            it.id,
+                            BaseItemKind.PERSON,
+                        ),
+                    )
+                },
+                onLongClickItem = { index, season ->
+                    showContextMenu =
+                        ContextMenu.ForBaseItem(
+                            fromLongClick = true,
+                            item = season,
+                            chosenStreams = null,
+                            showGoTo = true,
+                            showStreamChoices = false,
+                            canDelete = viewModel.canDelete(season, preferences.appPreferences),
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions = contextActions,
+                        )
+                },
+                overviewOnClick = {
+                    overviewDialog = ItemDetailsDialogInfo(series)
+                },
+                playOnClick = { shuffle ->
+                    if (shuffle) {
                         viewModel.navigateTo(
-                            Destination.MediaItem(
-                                it.id,
-                                BaseItemKind.PERSON,
+                            Destination.PlaybackList(
+                                itemId = series.id,
+                                shuffle = true,
                             ),
                         )
+                    } else {
+                        viewModel.playNextUp()
+                    }
+                },
+                watchOnClick = { showWatchConfirmation = true },
+                favoriteOnClick = {
+                    val favorite = series.data.userData?.isFavorite ?: false
+                    viewModel.setFavorite(series.id, !favorite, null)
+                },
+                trailerOnClick = {
+                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                },
+                onClickExtra = { _, extra ->
+                    viewModel.navigateTo(extra.destination)
+                },
+                discoverSeries = state.discoverSeries,
+                onClickDiscoverSeries = {
+                    state.discoverSeries?.let {
+                        viewModel.navigateTo(Destination.DiscoveredItem(it))
+                    }
+                },
+                discovered = state.discovered,
+                onClickDiscover = { index, item ->
+                    viewModel.navigateTo(item.destination)
+                },
+                onShowContextMenu = {
+                    showContextMenu = it
+                },
+                actions = contextActions,
+            )
+            if (showWatchConfirmation) {
+                ConfirmDialog(
+                    title = series.name ?: "",
+                    body =
+                        stringResource(if (played) R.string.mark_entire_series_as_unplayed else R.string.mark_entire_series_as_played),
+                    onCancel = {
+                        showWatchConfirmation = false
                     },
-                    onLongClickItem = { index, season ->
-                        showContextMenu =
-                            ContextMenu.ForBaseItem(
-                                fromLongClick = true,
-                                item = season,
-                                chosenStreams = null,
-                                showGoTo = true,
-                                showStreamChoices = false,
-                                canDelete = viewModel.canDelete(season, preferences.appPreferences),
-                                canRemoveContinueWatching = false,
-                                canRemoveNextUp = false,
-                                actions = contextActions,
-                            )
+                    onConfirm = {
+                        viewModel.setWatchedSeries(!played)
+                        showWatchConfirmation = false
                     },
-                    overviewOnClick = {
-                        overviewDialog = ItemDetailsDialogInfo(item)
-                    },
-                    playOnClick = { shuffle ->
-                        if (shuffle) {
-                            viewModel.navigateTo(
-                                Destination.PlaybackList(
-                                    itemId = item.id,
-                                    shuffle = true,
-                                ),
-                            )
-                        } else {
-                            viewModel.playNextUp()
-                        }
-                    },
-                    watchOnClick = { showWatchConfirmation = true },
-                    favoriteOnClick = {
-                        val favorite = item.data.userData?.isFavorite ?: false
-                        viewModel.setFavorite(item.id, !favorite, null)
-                    },
-                    trailerOnClick = {
-                        TrailerService.onClick(context, it, viewModel::navigateTo)
-                    },
-                    onClickExtra = { _, extra ->
-                        viewModel.navigateTo(extra.destination)
-                    },
-                    discoverSeries = discoverSeries,
-                    onClickDiscoverSeries = {
-                        discoverSeries?.let {
-                            viewModel.navigateTo(Destination.DiscoveredItem(it))
-                        }
-                    },
-                    discovered = discovered,
-                    onClickDiscover = { index, item ->
-                        viewModel.navigateTo(item.destination)
-                    },
-                    onShowContextMenu = {
-                        showContextMenu = it
-                    },
-                    actions = contextActions,
                 )
-                if (showWatchConfirmation) {
-                    ConfirmDialog(
-                        title = item.name ?: "",
-                        body =
-                            stringResource(if (played) R.string.mark_entire_series_as_unplayed else R.string.mark_entire_series_as_played),
-                        onCancel = {
-                            showWatchConfirmation = false
-                        },
-                        onConfirm = {
-                            viewModel.setWatchedSeries(!played)
-                            showWatchConfirmation = false
-                        },
-                    )
-                }
             }
         }
     }
@@ -644,7 +628,7 @@ fun SeriesDetailsContent(
                         DiscoverRow(
                             row =
                                 DiscoverRowData(
-                                    stringResource(R.string.discover),
+                                    ResStringProvider(R.string.discover),
                                     DataLoadingState.Success(discovered),
                                     type = DiscoverRequestType.UNKNOWN,
                                 ),
@@ -726,7 +710,7 @@ fun SeriesDetailsHeader(
 }
 
 fun buildDialogForSeason(
-    context: Context,
+    resources: Resources,
     s: BaseItem,
     canDelete: Boolean,
     onClickItem: (BaseItem) -> Unit,
@@ -737,26 +721,26 @@ fun buildDialogForSeason(
     val items =
         buildList {
             add(
-                DialogItem(context.getString(R.string.go_to), Icons.Default.PlayArrow) {
+                DialogItem(resources.getString(R.string.go_to), Icons.Default.PlayArrow) {
                     onClickItem.invoke(s)
                 },
             )
             if (s.data.userData?.played == true) {
                 add(
-                    DialogItem(context.getString(R.string.mark_unwatched), R.string.fa_eye) {
+                    DialogItem(resources.getString(R.string.mark_unwatched), R.string.fa_eye) {
                         markPlayed.invoke(false)
                     },
                 )
             } else {
                 add(
-                    DialogItem(context.getString(R.string.mark_watched), R.string.fa_eye_slash) {
+                    DialogItem(resources.getString(R.string.mark_watched), R.string.fa_eye_slash) {
                         markPlayed.invoke(true)
                     },
                 )
             }
             add(
                 DialogItem(
-                    context.getString(R.string.play),
+                    resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
                     iconColor = Color.Green.copy(alpha = .8f),
                 ) {
@@ -765,7 +749,7 @@ fun buildDialogForSeason(
             )
             add(
                 DialogItem(
-                    context.getString(R.string.shuffle),
+                    resources.getString(R.string.shuffle),
                     R.string.fa_shuffle,
                 ) {
                     onClickPlay.invoke(true)
@@ -774,7 +758,7 @@ fun buildDialogForSeason(
             if (canDelete) {
                 add(
                     DialogItem(
-                        context.getString(R.string.delete),
+                        resources.getString(R.string.delete),
                         Icons.Default.Delete,
                         iconColor = Color.Red.copy(alpha = .8f),
                     ) {
@@ -784,7 +768,7 @@ fun buildDialogForSeason(
             }
         }
     return DialogParams(
-        title = s.name ?: context.getString(R.string.tv_season),
+        title = s.name ?: resources.getString(R.string.tv_season),
         fromLongClick = true,
         items = items,
     )
