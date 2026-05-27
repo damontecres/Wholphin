@@ -544,4 +544,5 @@
     <string name="skip_behavior_summary">Voor intro\'s, aftiteling, etc</string>
     <string name="ass_subtitle_playback">SSA/ASS ondertiteling tonen</string>
     <string name="ass_subtitle_mode_libass">Direct play met libass</string>
+    <string name="play_with">Afspelen met</string>
 </resources>

@@ -381,7 +381,7 @@
     <string name="start_screensaver">Pokaż wygaszacz ekranu</string>
     <string name="duration">Czas trwania</string>
     <string name="photos">Zdjęcia</string>
-    <string name="include_types">Dołącz typy</string>
+    <string name="include_types">Wybierz typ mediów</string>
     <string name="include_types_summary">Dla jakich typów mediów wyświetlać zdjęcia?</string>
     <string name="content_scale_fit">Dopasuj</string>
     <string name="content_scale_crop">Przytnij</string>
@@ -399,7 +399,7 @@
     <string name="volume_full">Najwyższa</string>
     <string name="purple">Fioletowy</string>
     <string name="orange">Pomarańczowy</string>
-    <string name="bold_blue">Niebieski</string>
+    <string name="bold_blue">Odważny niebieski</string>
     <string name="black">Czarny</string>
     <string name="skip_ignore">Ignoruj</string>
     <string name="skip_automatically">Pomiń automatycznie</string>
@@ -636,4 +636,25 @@
     <string name="skip_behavior_summary">Dla wstępu, napisów końcowych itp.</string>
     <string name="transcoding">Transkodowanie</string>
     <string name="play_with">Odtwórz z</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Połączone wyniki wyszukiwania</string>
+    <string name="combined_search_results_on">Pokaż wszystkie wyniki jako jedna lista</string>
+    <string name="combined_search_results_off">Podziel wyniki wyszukiwania na kategorie</string>
+    <string name="results">Wyniki</string>
+    <string name="require_login">Wymagaj logowania do profilu</string>
+    <string name="show_voice_search_button">Pokaż przycisk wyszukiwania głosowego</string>
+    <string name="visible_ui">Widoczne</string>
+    <string name="hidden_ui">Ukryte</string>
+    <string name="display_toggles_title">Pokaż oceny</string>
+    <string name="display_toggles_summary">Dostosuj co chcesz wyświetlić</string>
+    <string name="profile_protection">Zabezpieczenie profilu</string>
+    <string name="continue_watching_click_behavior">Zachowanie kliknięcia Kontynuuj oglądanie/Następnie</string>
+    <string name="continue_watching_click_summary_on">Odtwórz po kliknięciu</string>
+    <string name="continue_watching_click_summary_off">Pokaż szczegóły po kliknięciu</string>
+    <string name="stars">Gwiazdki</string>
+    <string name="tomatoes">Pomidor</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista kompaktowa</string>
+    <string name="user_interface_language">Język interfejsu</string>
+    <string name="view_options_type_grid">Siatka</string>
 </resources>

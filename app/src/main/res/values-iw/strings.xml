@@ -608,4 +608,9 @@
     <string name="live_tv_repeat">שידור חוזר</string>
     <string name="color_code_programs">קידוד צבע לתוכניות</string>
     <string name="slideshow_at_beginning">מההתחלה</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">תוצאות חיפוש ממוזגות</string>
+    <string name="combined_search_results_on">הצג את כל התוצאות ברשימה אחת</string>
+    <string name="combined_search_results_off">הצג תוצאות לפי קטגוריה</string>
+    <string name="results">תוצאות</string>
 </resources>

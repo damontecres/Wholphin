@@ -609,4 +609,27 @@
     <string name="cinema_mode">Sinema Modu</string>
     <string name="transcoding">Kod dönüştürme</string>
     <string name="play_with">Şununla Oynat</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Birleştirilmiş arama sonuçları</string>
+    <string name="combined_search_results_on">Tüm sonuçları tek listede göster</string>
+    <string name="combined_search_results_off">Sonuçları kategoriye göre göster</string>
+    <string name="results">Sonuçlar</string>
+    <string name="require_login">Profil için giriş zorunlu olsun</string>
+    <string name="display_toggles_title">Puanlama gösterimi</string>
+    <string name="display_toggles_summary">Nelerin görüntüleneceğini özelleştir</string>
+    <string name="profile_protection">Profil koruması</string>
+    <string name="continue_watching_click_behavior">İzlemeye Devam Et/Sıradaki Bölümler tıklama davranışı</string>
+    <string name="continue_watching_click_summary_on">Tıklayınca oynat</string>
+    <string name="continue_watching_click_summary_off">Tıklayınca detayları göster</string>
+    <string name="stars">Yıldızlar</string>
+    <string name="tomatoes">Domatesler</string>
+    <string name="show_voice_search_button">Sesli arama butonunu göster</string>
+    <string name="visible_ui">Görünür</string>
+    <string name="hidden_ui">Gizli</string>
+    <string name="user_interface_language">Kullanıcı arayüzü dili</string>
+    <string name="view_options_type_grid">Izgara</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Sıkışık Liste</string>
+    <string name="sort">Sırala</string>
+    <string name="split_into_separate_rows">Ayrı sıralara ayır</string>
 </resources>

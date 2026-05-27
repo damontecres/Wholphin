@@ -558,7 +558,7 @@
     <string name="play_as_type">播放方式？</string>
     <string name="visualizer_rationale">可视化当前播放的音频需要录音权限。</string>
     <string name="continue_string">继续</string>
-    <string name="separate_types">分开类型</string>
+    <string name="separate_types">分离类型</string>
     <string name="prefer_logos">优先显示标题图标</string>
     <string name="updated_toast">Wholphin 已更新至 %s</string>
     <string name="view_more">查看更多</string>
@@ -582,4 +582,27 @@
     <string name="cinema_mode">影院模式</string>
     <string name="play_with">播放方式</string>
     <string name="transcoding">转码</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">综合搜索结果</string>
+    <string name="combined_search_results_on">在单个列表中显示所有结果</string>
+    <string name="combined_search_results_off">按类别显示结果</string>
+    <string name="results">结果</string>
+    <string name="continue_watching_click_behavior">点击继续观看/即将播放时的行为</string>
+    <string name="continue_watching_click_summary_on">点击时播放</string>
+    <string name="continue_watching_click_summary_off">点击时显示详情</string>
+    <string name="require_login">配置需要登录</string>
+    <string name="display_toggles_title">评分显示</string>
+    <string name="display_toggles_summary">自定义显示内容</string>
+    <string name="profile_protection">配置保护</string>
+    <string name="stars">星级评分</string>
+    <string name="tomatoes">番茄评分</string>
+    <string name="show_voice_search_button">显示语音搜索按钮</string>
+    <string name="visible_ui">可见</string>
+    <string name="hidden_ui">隐藏</string>
+    <string name="view_options_type_grid">网格</string>
+    <string name="view_options_type_list">列表</string>
+    <string name="view_options_type_list_compact">紧凑列表</string>
+    <string name="user_interface_language">用户界面语言</string>
+    <string name="sort">排序</string>
+    <string name="split_into_separate_rows">拆分为单独的行</string>
 </resources>

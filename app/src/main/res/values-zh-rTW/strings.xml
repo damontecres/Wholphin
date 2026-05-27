@@ -332,7 +332,7 @@
     <string name="nal">NAL</string>
     <string name="bit_depth">位元深度</string>
     <string name="avc">AVC</string>
-    <string name="layout">聲道配置</string>
+    <string name="layout">配置</string>
     <string name="channels">聲道數</string>
     <string name="video_range">動態範圍</string>
     <string name="video_range_type">動態範圍類型</string>
@@ -582,4 +582,25 @@
     <string name="cinema_mode">影院模式</string>
     <string name="play_with">播放方式</string>
     <string name="transcoding">轉碼</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">合併搜尋結果</string>
+    <string name="combined_search_results_on">在單一列表中顯示所有結果</string>
+    <string name="combined_search_results_off">按類別顯示結果</string>
+    <string name="results">結果</string>
+    <string name="require_login">使用密碼登入</string>
+    <string name="profile_protection">登入保護</string>
+    <string name="continue_watching_click_behavior">點擊 繼續觀看/接下來播放 時的行為</string>
+    <string name="continue_watching_click_summary_on">點擊時播放</string>
+    <string name="continue_watching_click_summary_off">點擊時顯示詳情</string>
+    <string name="display_toggles_title">評分顯示</string>
+    <string name="display_toggles_summary">自訂要顯示的項目</string>
+    <string name="stars">星級評分</string>
+    <string name="tomatoes">番茄評分</string>
+    <string name="show_voice_search_button">顯示語音搜尋按鈕</string>
+    <string name="visible_ui">顯示</string>
+    <string name="hidden_ui">隱藏</string>
+    <string name="view_options_type_grid">網格</string>
+    <string name="view_options_type_list">列表</string>
+    <string name="view_options_type_list_compact">緊湊列表</string>
+    <string name="user_interface_language">介面語言</string>
 </resources>

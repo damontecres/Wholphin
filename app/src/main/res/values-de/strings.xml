@@ -448,7 +448,7 @@
     <string name="height">Höhe</string>
     <string name="apply_all_rows">Auf alle Reihen anwenden</string>
     <string name="add_row_for">Füge Reihe für %1$s hinzu</string>
-    <string name="overwrite_server_settings">Einstellungen auf dem Server übverschreiben?</string>
+    <string name="overwrite_server_settings">Einstellungen auf dem Server überschreiben?</string>
     <string name="overwrite_local_settings">Lokale Einstellungen überschreiben?</string>
     <string name="suggestions_for">Vorschläge für %1$s</string>
     <string name="send_media_info_log_to_server">Sende Media Info Log zum Server</string>
@@ -531,7 +531,7 @@
     <string name="conductor">Dirigent</string>
     <string name="lyricist">Liedtext-Schreiber</string>
     <string name="artist">Künstler</string>
-    <string name="favorite_items">%s als Favorit speichern</string>
+    <string name="favorite_items">Favorisierte %s</string>
     <string name="home_rows">Startseite - Reihen</string>
     <string name="load_from_server">Vom Server Benutzerprofil laden</string>
     <string name="save_to_server">Im Server Benutzerprofil speichern</string>
@@ -600,4 +600,25 @@
     <string name="cinema_mode">Kinomodus</string>
     <string name="play_with">Abspielen mit</string>
     <string name="transcoding">Transkodieren</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Zusammengefasste Suchergebnisse</string>
+    <string name="combined_search_results_on">Alle Ergebnisse in einer gemeinsamen Liste anzeigen</string>
+    <string name="combined_search_results_off">Ergebnisse nach Kategorie anzeigen</string>
+    <string name="results">Ergebnisse</string>
+    <string name="require_login">Anmeldung erforderlich für das Profil</string>
+    <string name="visible_ui">Sichtbar</string>
+    <string name="hidden_ui">Versteckt</string>
+    <string name="view_options_type_grid">Raster</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Liste kompakt</string>
+    <string name="show_voice_search_button">Zeige Sprachsuche-Button</string>
+    <string name="user_interface_language">Sprache Benutzeroberfläche</string>
+    <string name="profile_protection">Profilschutz</string>
+    <string name="continue_watching_click_behavior">Weiterschauen/Als nächstes Verhalten</string>
+    <string name="continue_watching_click_summary_on">Mit Klick abspielen</string>
+    <string name="continue_watching_click_summary_off">Mit Klick Details zeigen</string>
+    <string name="stars">Sterne</string>
+    <string name="tomatoes">Tomaten</string>
+    <string name="display_toggles_title">Zeige Bewertungen</string>
+    <string name="display_toggles_summary">Anpassen was angezeigt wird</string>
 </resources>

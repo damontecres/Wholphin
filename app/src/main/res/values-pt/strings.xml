@@ -618,4 +618,9 @@
     <string name="skip_behavior_summary">Para intros, créditos, etc</string>
     <string name="play_with">Reproduzir com</string>
     <string name="transcoding">Transcodificar</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Combinar resultados da pesquisa</string>
+    <string name="combined_search_results_on">Mostrar todos os resultados numa única lista</string>
+    <string name="combined_search_results_off">Mostrar resultados por categoria</string>
+    <string name="results">Resultados</string>
 </resources>
