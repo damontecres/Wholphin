@@ -657,4 +657,6 @@
     <string name="view_options_type_list_compact">Lista kompaktowa</string>
     <string name="user_interface_language">Język interfejsu</string>
     <string name="view_options_type_grid">Siatka</string>
+    <string name="sort">Sortuj</string>
+    <string name="split_into_separate_rows">Podziel na osobne rzędy</string>
 </resources>
