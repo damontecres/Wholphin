@@ -361,7 +361,7 @@ fun HomePageContent(
             ) {
                 LazyColumn(
                     state = listState,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                     contentPadding =
                         PaddingValues(
                             bottom = Cards.height2x3,
@@ -371,6 +371,10 @@ fun HomePageContent(
                             .focusRestorer(),
                 ) {
                     itemsIndexed(homeRows) { rowIndex, row ->
+                        val rowModifier =
+                            Modifier
+                                .animateItem()
+                                .padding(bottom = 8.dp)
                         CompositionLocalProvider(
                             LocalBringIntoViewSpec provides defaultBringIntoViewSpec,
                         ) {
@@ -381,7 +385,7 @@ fun HomePageContent(
                                     FocusableItemRow(
                                         title = r.title.getString(),
                                         subtitle = stringResource(R.string.loading),
-                                        modifier = Modifier.animateItem(),
+                                        modifier = rowModifier,
                                     )
                                 }
 
@@ -390,7 +394,7 @@ fun HomePageContent(
                                         title = r.title.getString(),
                                         subtitle = r.localizedMessage,
                                         isError = true,
-                                        modifier = Modifier.animateItem(),
+                                        modifier = rowModifier,
                                     )
                                 }
 
@@ -422,11 +426,10 @@ fun HomePageContent(
                                                     }
                                                 },
                                             modifier =
-                                                Modifier
+                                                rowModifier
                                                     .fillMaxWidth()
                                                     .focusGroup()
-                                                    .focusRequester(rowFocusRequesters[rowIndex])
-                                                    .animateItem(),
+                                                    .focusRequester(rowFocusRequesters[rowIndex]),
                                             horizontalPadding = viewOptions.spacing.dp,
                                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                                 val onFocus =
@@ -502,7 +505,7 @@ fun HomePageContent(
                                         FocusableItemRow(
                                             title = r.title.getString(),
                                             subtitle = stringResource(R.string.no_results),
-                                            modifier = Modifier.animateItem(),
+                                            modifier = rowModifier,
                                         )
                                     }
                                 }
