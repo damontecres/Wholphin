@@ -53,6 +53,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import java.util.UUID
 
@@ -267,6 +268,7 @@ fun CollectionFolderMusic(
                 GenreCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
+                    collectionType = CollectionType.MUSIC,
                     modifier =
                         Modifier
                             .fillMaxSize()

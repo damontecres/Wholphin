@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 
 @Composable
 fun CollectionFolderTv(
@@ -148,6 +149,7 @@ fun CollectionFolderTv(
                 GenreCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.SERIES),
+                    collectionType = CollectionType.TVSHOWS,
                     modifier =
                         Modifier
                             .fillMaxSize()

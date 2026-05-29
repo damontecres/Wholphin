@@ -693,6 +693,9 @@ class HomeSettingsService
                                                 listOf(it)
                                             }
                                         },
+                                    collectionType =
+                                        library?.collectionType
+                                            ?: CollectionType.UNKNOWN,
                                 ),
                             )
                         }

@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 
 @Composable
 fun CollectionFolderMovie(
@@ -173,6 +174,7 @@ fun CollectionFolderMovie(
                 GenreCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.MOVIE),
+                    collectionType = CollectionType.MOVIES,
                     modifier =
                         Modifier
                             .fillMaxSize()
