@@ -197,6 +197,10 @@ data class BaseItem(
      */
     fun destination(index: Int? = null): Destination {
         if (destinationOverride != null) return destinationOverride
+        if (data.extraType != null || type == BaseItemKind.TRAILER) {
+            // Extras including trailers should always play directly
+            return Destination.Playback(id, 0)
+        }
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
