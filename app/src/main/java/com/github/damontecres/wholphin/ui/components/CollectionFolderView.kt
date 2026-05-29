@@ -53,11 +53,7 @@ import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
-import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
-import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
-import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -95,7 +91,6 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
@@ -128,7 +123,8 @@ class CollectionFolderViewModel
         @Assisted private val collectionFilter: CollectionFolderFilter,
         @Assisted("useSeriesForPrimary") private val useSeriesForPrimary: Boolean,
         @Assisted defaultViewOptions: ViewOptions,
-    ) : ViewModel() {
+    ) : ViewModel(),
+        ContextMenuProvider {
         @AssistedFactory
         interface Factory {
             fun create(
@@ -461,25 +457,29 @@ class CollectionFolderViewModel
                 result.totalRecordCount
             }
 
-        fun setWatched(
+        override fun setWatched(
             position: Int,
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setWatched(itemId, played)
-            (state.value.items as? DataLoadingState.Success)?.let {
-                (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        ) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                favoriteWatchManager.setWatched(itemId, played)
+                (state.value.items as? DataLoadingState.Success)?.let {
+                    (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+                }
             }
         }
 
-        fun setFavorite(
+        override fun setFavorite(
             position: Int,
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setFavorite(itemId, favorite)
-            (state.value.items as? DataLoadingState.Success)?.let {
-                (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        ) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                favoriteWatchManager.setFavorite(itemId, favorite)
+                (state.value.items as? DataLoadingState.Success)?.let {
+                    (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+                }
             }
         }
 
@@ -489,7 +489,7 @@ class CollectionFolderViewModel
             }
         }
 
-        fun navigateTo(destination: Destination) {
+        override fun navigateTo(destination: Destination) {
             release()
             navigationManager.navigateTo(destination)
         }
@@ -509,7 +509,7 @@ class CollectionFolderViewModel
             }
         }
 
-        fun deleteItem(
+        override fun deleteItem(
             index: Int,
             item: BaseItem,
         ) {
@@ -520,7 +520,7 @@ class CollectionFolderViewModel
             }
         }
 
-        fun canDelete(
+        override fun canDelete(
             item: BaseItem,
             appPreferences: AppPreferences,
         ): Boolean = mediaManagementService.canDelete(item, appPreferences)
@@ -529,6 +529,10 @@ class CollectionFolderViewModel
             item: BaseItem,
             index: Int,
         ) = addToQueue(api, musicService, item, index)
+
+        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+
+        override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
     }
 
 data class CollectionFolderState(
@@ -637,7 +641,6 @@ fun CollectionFolderView(
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
     focusRequesterOnEmpty: FocusRequester? = null,
-    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     viewModel: CollectionFolderViewModel =
         hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
             key = viewModelKey,
@@ -655,40 +658,8 @@ fun CollectionFolderView(
     val state by viewModel.state.collectAsState()
     var position by rememberInt(viewModel.position)
 
-    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
-    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.collectAsState()
+    val contextMenu = rememberContextMenu(preferences, viewModel)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
-
-    val contextActions =
-        remember {
-            ContextMenuActions(
-                navigateTo = viewModel::navigateTo,
-                onClickWatch = { itemId, watched ->
-                    viewModel.setWatched(viewModel.position, itemId, watched)
-                },
-                onClickFavorite = { itemId, favorite ->
-                    viewModel.setFavorite(viewModel.position, itemId, favorite)
-                },
-                onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                    showPlaylistDialog.makePresent(itemId)
-                },
-                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                onDeleteItem = { viewModel.deleteItem(viewModel.position, it) },
-                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                onChooseVersion = { _, _ ->
-                    // Not supported on this page
-                },
-                onChooseTracks = { result ->
-                    // Not supported on this page
-                },
-                onClearChosenStreams = {
-                    // Not supported on this page
-                },
-            )
-        }
 
     val gridActions =
         remember(actions) {
@@ -702,18 +673,7 @@ fun CollectionFolderView(
                     if (actions.onLongClickItem != null) {
                         actions.onLongClickItem.invoke(index, item)
                     } else {
-                        showContextMenu =
-                            ContextMenu.ForBaseItem(
-                                fromLongClick = true,
-                                item = item,
-                                chosenStreams = null,
-                                showGoTo = true,
-                                showStreamChoices = false,
-                                canDelete = viewModel.canDelete(item, preferences.appPreferences),
-                                canRemoveContinueWatching = false,
-                                canRemoveNextUp = false,
-                                actions = contextActions,
-                            )
+                        contextMenu.showContextMenu(index, item)
                     }
                 },
                 onClickPlayAll =
@@ -912,41 +872,7 @@ fun CollectionFolderView(
             }
         }
     }
-    overviewDialog?.let { info ->
-        ItemDetailsDialog(
-            info = info,
-            showFilePath =
-                viewModel.serverRepository.currentUserDto
-                    ?.policy
-                    ?.isAdministrator == true,
-            onDismissRequest = { overviewDialog = null },
-        )
-    }
-    showContextMenu?.let { contextMenu ->
-        ContextMenuDialog(
-            onDismissRequest = { showContextMenu = null },
-            getMediaSource = null,
-            contextMenu = contextMenu,
-            preferredSubtitleLanguage = null,
-        )
-    }
-    showPlaylistDialog.compose { itemId ->
-        PlaylistDialog(
-            title = stringResource(R.string.add_to_playlist),
-            state = playlistState,
-            onDismissRequest = { showPlaylistDialog.makeAbsent() },
-            onClick = {
-                playlistViewModel.addToPlaylist(it.id, itemId)
-                showPlaylistDialog.makeAbsent()
-            },
-            createEnabled = true,
-            onCreatePlaylist = {
-                playlistViewModel.createPlaylistAndAddItem(it, itemId)
-                showPlaylistDialog.makeAbsent()
-            },
-            elevation = 3.dp,
-        )
-    }
+    contextMenu.Compose()
     AnimatedVisibility(showViewOptions) {
         ViewOptionsDialog(
             viewOptions = state.viewOptions,
