@@ -74,7 +74,9 @@
     <string name="no_servers_found">No servers found</string>
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
+    <string name="missing">Missing</string>
     <string name="none">None</string>
+    <string name="unaired">Unaired</string>
     <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
