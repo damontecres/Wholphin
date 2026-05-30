@@ -472,7 +472,7 @@ fun HomePageContent(
                                                             .onKeyEvent { onKey(it) },
                                                 )
                                             },
-                                            showViewMore = showViewMore,
+                                            showViewMore = showViewMore && row.showViewMore,
                                             viewMoreCardContent = { mod ->
                                                 HomePageViewMoreCard(
                                                     isEpisode = row.items.last()?.type == BaseItemKind.EPISODE,

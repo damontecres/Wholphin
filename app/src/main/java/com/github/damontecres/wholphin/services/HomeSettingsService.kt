@@ -592,6 +592,7 @@ class HomeSettingsService
                         items = resume,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = resume.size >= limit,
                     )
                 }
 
@@ -611,6 +612,7 @@ class HomeSettingsService
                         items = nextUp,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = nextUp.size >= limit,
                     )
                 }
 
@@ -631,17 +633,14 @@ class HomeSettingsService
                             prefs.maxDaysNextUp,
                             row.viewOptions.useSeries,
                         )
+                    val combined = latestNextUpService.buildCombined(resume, nextUp)
 
                     Success(
                         title = ResStringProvider(R.string.continue_watching),
-                        items =
-                            latestNextUpService
-                                .buildCombined(
-                                    resume,
-                                    nextUp,
-                                ).take(limit),
+                        items = combined.take(limit),
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = combined.size >= limit,
                     )
                 }
 
@@ -705,6 +704,7 @@ class HomeSettingsService
                         genres,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = genres.size >= limit,
                     )
                 }
 
@@ -756,6 +756,7 @@ class HomeSettingsService
                         title,
                         studios,
                         viewOptions = row.viewOptions,
+                        showViewMore = studios.size >= limit,
                     )
                 }
 
@@ -784,6 +785,7 @@ class HomeSettingsService
                                     it,
                                     row.viewOptions,
                                     rowType = row,
+                                    showViewMore = it.size >= limit,
                                 )
                             }
                     latest
@@ -838,6 +840,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -891,6 +894,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -928,6 +932,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -957,6 +962,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    showViewMore = it.size >= limit,
                                 )
                             }
                     } else {
@@ -988,6 +994,7 @@ class HomeSettingsService
                                 it,
                                 row.viewOptions,
                                 rowType = row,
+                                showViewMore = it.size >= limit,
                             )
                         }
                     }
@@ -1023,6 +1030,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -1049,6 +1057,7 @@ class HomeSettingsService
                                 it,
                                 row.viewOptions,
                                 rowType = row,
+                                showViewMore = it.size >= limit,
                             )
                         }
                 }
@@ -1079,6 +1088,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -1111,6 +1121,7 @@ class HomeSettingsService
                                     suggestions.items,
                                     row.viewOptions,
                                     rowType = row,
+                                    showViewMore = suggestions.items.size >= limit,
                                 )
                             }
 
