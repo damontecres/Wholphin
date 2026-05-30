@@ -73,6 +73,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
@@ -299,6 +300,7 @@ fun HomeRowGrid(
                             includeItemTypes = null,
                             modifier = Modifier.fillMaxSize(),
                             initialPosition = destination.initialPosition,
+                            collectionType = CollectionType.UNKNOWN,
                         )
                     }
 
