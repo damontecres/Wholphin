@@ -314,6 +314,7 @@ fun DestinationContent(
         is Destination.ItemGrid<*> -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
+                preferences,
                 destination,
                 modifier,
             )
