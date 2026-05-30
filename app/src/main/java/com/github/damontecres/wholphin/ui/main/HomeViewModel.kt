@@ -42,6 +42,7 @@ import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
@@ -129,6 +130,25 @@ class HomeViewModel
                                                     limit = prefs.maxItemsPerRow,
                                                     isRefresh = refresh,
                                                 )
+                                            } catch (ex: InvalidStatusException) {
+                                                if (ex.status == 404) {
+                                                    Timber.w(ex, "404 on row %s", row)
+                                                    HomeRowLoadingState.Success(
+                                                        row.title,
+                                                        emptyList(),
+                                                    )
+                                                } else {
+                                                    Timber.e(
+                                                        ex,
+                                                        "Error %s on row %s",
+                                                        ex.status,
+                                                        row,
+                                                    )
+                                                    HomeRowLoadingState.Error(
+                                                        row.title,
+                                                        exception = ex,
+                                                    )
+                                                }
                                             } catch (ex: Exception) {
                                                 Timber.e(ex, "Error on row %s", row)
                                                 HomeRowLoadingState.Error(

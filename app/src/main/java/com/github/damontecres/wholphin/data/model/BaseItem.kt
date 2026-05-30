@@ -24,6 +24,7 @@ import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
 import java.util.UUID
@@ -287,6 +288,7 @@ fun createGenreDestination(
     parentId: UUID,
     parentName: String?,
     includeItemTypes: List<BaseItemKind>?,
+    collectionType: CollectionType,
 ) = Destination.FilteredCollection(
     itemId = parentId,
     parentType = BaseItemKind.GENRE,
@@ -305,6 +307,7 @@ fun createGenreDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = collectionType,
 )
 
 fun createStudioDestination(
@@ -331,6 +334,7 @@ fun createStudioDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = CollectionType.UNKNOWN,
 )
 
 val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()
