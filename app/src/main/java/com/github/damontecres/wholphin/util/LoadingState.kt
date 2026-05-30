@@ -67,6 +67,7 @@ sealed interface HomeRowLoadingState {
         val items: List<BaseItem?>,
         val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
         val rowType: HomeRowConfig? = null,
+        val showViewMore: Boolean = true,
     ) : HomeRowLoadingState
 
     data class Error(

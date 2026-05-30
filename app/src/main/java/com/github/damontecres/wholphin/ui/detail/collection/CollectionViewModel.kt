@@ -214,7 +214,11 @@ class CollectionViewModel
                                 val result =
                                     try {
                                         val pager = fetchItems(sort, filter, listOf(type))
-                                        HomeRowLoadingState.Success(title, pager)
+                                        HomeRowLoadingState.Success(
+                                            title,
+                                            pager,
+                                            showViewMore = false,
+                                        )
                                     } catch (ex: Exception) {
                                         Timber.e(
                                             ex,

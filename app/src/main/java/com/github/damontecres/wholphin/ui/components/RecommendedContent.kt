@@ -120,10 +120,12 @@ class RecommendedViewModel
                         viewModelScope.launchIO {
                             val result =
                                 try {
+                                    val items = execute(row, limit)
                                     HomeRowLoadingState.Success(
                                         title,
-                                        execute(row, limit),
+                                        items,
                                         viewOptions,
+                                        showViewMore = items.size >= limit,
                                     )
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Exception fetching %s", title)
@@ -172,6 +174,10 @@ class RecommendedViewModel
 
         private fun fetchSuggestions() {
             viewModelScope.launch(Dispatchers.IO) {
+                val limit =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.homePagePreferences.maxItemsPerRow
                 val title = ResStringProvider(R.string.suggestions)
                 try {
                     suggestionService
@@ -188,6 +194,7 @@ class RecommendedViewModel
                                             title,
                                             resource.items,
                                             viewOptions,
+                                            showViewMore = resource.items.size >= limit,
                                         )
                                     }
 
@@ -196,6 +203,7 @@ class RecommendedViewModel
                                             title,
                                             emptyList(),
                                             viewOptions,
+                                            showViewMore = false,
                                         )
                                     }
                                 }
