@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_V
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
+import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.NavDrawerService
@@ -52,8 +53,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -88,27 +93,37 @@ class HomeSettingsViewModel
         val state: StateFlow<HomePageSettingsState> = _state
 
         val serverPluginActive get() = serverRepository.serverPluginInstalled
+        val currentUser
+            get() =
+                serverRepository.currentUserFlow.filterNotNull().stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    serverRepository.currentUser!!,
+                )
+        val settingsChanged =
+            state
+                .map { HomePageResolvedSettings(it.rows).asHomePageSettings() != originalSettings }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         private var idCounter by Delegates.notNull<Int>()
 
         val discoverEnabled = seerrServerRepository.active
 
-        private var originalLocalSettings: HomePageSettings? = null
-        private var originalRemoteSettings: HomePageSettings? = null
+        private var originalSettings: HomePageSettings? = null
 
         init {
-            addCloseable { saveToLocal() }
             viewModelScope.launchIO {
+                val user = serverRepository.currentUser ?: return@launchIO
                 val userDto = serverRepository.currentUserDto ?: return@launchIO
                 val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
-                originalLocalSettings = homeSettingsService.loadFromLocal(userDto.id)
-                originalRemoteSettings = homeSettingsService.loadFromServer(userDto.id)
+                originalSettings = currentSettings.asHomePageSettings()
                 Timber.v("currentSettings=%s", currentSettings)
                 idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
+                        source = user.config.homeSettingsSource,
                         libraries = libraries,
                         rows = currentSettings.rows,
                     )
@@ -545,7 +560,10 @@ class HomeSettingsViewModel
                                 }
                             idCounter = newRows.maxOfOrNull { it.id }?.plus(1) ?: 0
                             _state.update {
-                                it.copy(rows = newRows)
+                                it.copy(
+                                    source = HomePageSettingsSource.SERVER_PROFILE,
+                                    rows = newRows,
+                                )
                             }
                         } else {
                             Timber.v("No remote settings")
@@ -575,7 +593,10 @@ class HomeSettingsViewModel
                             Timber.v("Got web settings")
                             idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                             _state.update {
-                                it.copy(rows = result.rows)
+                                it.copy(
+                                    source = HomePageSettingsSource.LOCAL,
+                                    rows = result.rows,
+                                )
                             }
                         } else {
                             Timber.v("No web settings")
@@ -599,22 +620,12 @@ class HomeSettingsViewModel
                         HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
                     try {
                         Timber.d("saveToLocal")
-                        // Only save if there are changes based on original source
-                        val shouldSave =
-                            if (originalLocalSettings != null) {
-                                originalLocalSettings != settings
-                            } else if (originalRemoteSettings != null) {
-                                originalRemoteSettings != settings
-                            } else {
-                                true
-                            }
-                        if (shouldSave) {
-                            homeSettingsService.saveToLocal(user.id, settings)
-                            homeSettingsService.updateCurrent(settings)
-                            showSaveToast()
-                        } else {
-                            Timber.d("No changes")
-                        }
+                        homeSettingsService.saveToLocal(user.id, settings)
+                        homeSettingsService.updateCurrent(
+                            HomePageSettingsSource.LOCAL,
+                            settings,
+                        )
+                        showSaveToast()
                     } catch (ex: UnsupportedHomeSettingsVersionException) {
                         Timber.w(ex, "Overwriting local settings")
                         homeSettingsService.saveToLocal(user.id, settings)
@@ -631,7 +642,11 @@ class HomeSettingsViewModel
             _state.update {
                 update.invoke(it)
             }
-            homeSettingsService.currentSettings.update { HomePageResolvedSettings(state.value.rows) }
+            homeSettingsService.currentSettings.update {
+                HomePageResolvedSettings(
+                    state.value.rows,
+                )
+            }
         }
 
         fun resizeCards(relative: Int) {
@@ -804,7 +819,10 @@ class HomeSettingsViewModel
                             }
                         idCounter = newRows.maxOfOrNull { it.id }?.plus(1) ?: 0
                         _state.update {
-                            it.copy(rows = newRows)
+                            it.copy(
+                                source = HomePageSettingsSource.PLUGIN,
+                                rows = newRows,
+                            )
                         }
                     } else {
                         Timber.v("No server plugin settings")
@@ -920,6 +938,7 @@ class HomeSettingsViewModel
 
 data class HomePageSettingsState(
     val loading: LoadingState,
+    val source: HomePageSettingsSource,
     val rows: List<HomeRowConfigDisplay>,
     val rowData: List<HomeRowLoadingState>,
     val libraries: List<Library>,
@@ -928,6 +947,7 @@ data class HomePageSettingsState(
         val EMPTY =
             HomePageSettingsState(
                 LoadingState.Pending,
+                HomePageSettingsSource.UNSET,
                 emptyList(),
                 emptyList(),
                 emptyList(),

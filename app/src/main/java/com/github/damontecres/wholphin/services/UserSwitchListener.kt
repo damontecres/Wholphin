@@ -74,7 +74,7 @@ class UserSwitchListener
                     serverRepository.serverPluginInstalled.value = serverPluginInstalled
 
                     // Check for home settings
-                    homeSettingsService.loadCurrentSettings(user.id)
+                    homeSettingsService.loadCurrentSettings(user)
                 }
                 if (BuildConfig.DISCOVER_ENABLED) {
                     // Check for seerr server

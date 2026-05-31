@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -69,6 +70,7 @@ fun HomeSettingsPage(
     var position by rememberPosition(0, 0)
     // TODO discover rows
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
+    val settingsHaveChanged by viewModel.settingsChanged.collectAsState()
 
     // Adds a row, waits until its done loading, then scrolls to the new row
     fun addRow(
@@ -84,6 +86,10 @@ fun HomeSettingsPage(
                 listState.animateScrollToItem(state.rows.lastIndex)
             }
         }
+    }
+
+    BackHandler(settingsHaveChanged) {
+        // TODO prompt to save
     }
 
     Row(
@@ -137,6 +143,7 @@ fun HomeSettingsPage(
                                             position = RowColumn(index, 0)
                                         }
                                     },
+                                    onClickSourceSettings = { backStack.add(HomeSettingsDestination.SourceSettings) },
                                     modifier = destModifier,
                                 )
                             }
@@ -279,6 +286,22 @@ fun HomeSettingsPage(
                                         }
                                     },
                                     onClickResize = { viewModel.resizeCards(it) },
+                                    onClickReset = {
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                addRow(false) { viewModel.resetToDefault() }
+                                            }
+                                    },
+                                    onClickViewNextUp = {
+                                        showRemovedNextUpDialog = true
+                                    },
+                                    modifier = destModifier,
+                                )
+                            }
+
+                            HomeSettingsDestination.SourceSettings -> {
+                                HomeSettingsSourcePage(
+                                    source = state.source,
                                     onClickSave = {
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_server_settings) {
@@ -303,15 +326,6 @@ fun HomeSettingsPage(
                                             ShowConfirm(R.string.overwrite_local_settings) {
                                                 viewModel.loadFromRemoteWeb()
                                             }
-                                    },
-                                    onClickReset = {
-                                        showConfirmDialog =
-                                            ShowConfirm(R.string.overwrite_local_settings) {
-                                                addRow(false) { viewModel.resetToDefault() }
-                                            }
-                                    },
-                                    onClickViewNextUp = {
-                                        showRemovedNextUpDialog = true
                                     },
                                     modifier = destModifier,
                                 )
