@@ -51,6 +51,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -255,6 +256,7 @@ data class Genre(
 fun GenreCardGrid(
     itemId: UUID,
     includeItemTypes: List<BaseItemKind>?,
+    collectionType: CollectionType,
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     viewModel: GenreViewModel =
@@ -308,6 +310,7 @@ fun GenreCardGrid(
                                 parentId = itemId,
                                 parentName = item.title,
                                 includeItemTypes = includeItemTypes,
+                                collectionType = collectionType,
                             ),
                         )
                     },

@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
@@ -286,6 +287,7 @@ fun DestinationContent(
                         BaseItemKind.STUDIO -> DefaultForStudiosFilterOptions
                         else -> throw IllegalArgumentException("Unsupported parentType ${destination.parentType}")
                     },
+                sortOptions = rememberSortOptions(destination.collectionType),
                 modifier = modifier,
             )
         }
@@ -312,6 +314,7 @@ fun DestinationContent(
         is Destination.ItemGrid<*> -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
+                preferences,
                 destination,
                 modifier,
             )

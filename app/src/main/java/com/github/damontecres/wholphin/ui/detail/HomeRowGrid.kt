@@ -10,17 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
@@ -40,23 +36,17 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.cards.GridCard
-import com.github.damontecres.wholphin.ui.components.ContextMenu
-import com.github.damontecres.wholphin.ui.components.ContextMenuActions
-import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
+import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.GridTitle
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.StudioCardGrid
-import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
-import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
-import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
-import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
@@ -73,7 +63,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
 import java.util.UUID
 
@@ -96,7 +86,8 @@ class HomeRowGridViewModel
         val mediaReportService: MediaReportService,
         @Assisted private val title: StringProvider,
         @Assisted private val rowConfig: HomeRowConfig,
-    ) : ViewModel() {
+    ) : ViewModel(),
+        ContextMenuProvider {
         @AssistedFactory
         interface Factory {
             fun create(
@@ -170,27 +161,33 @@ class HomeRowGridViewModel
             }
         }
 
-        fun setWatched(
+        override fun setWatched(
             position: Int,
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setWatched(itemId, played)
-            (state.value.loading as? HomeRowLoadingState.Success)?.let {
-                (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        ) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                favoriteWatchManager.setWatched(itemId, played)
+                (state.value.loading as? HomeRowLoadingState.Success)?.let {
+                    (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+                }
             }
         }
 
-        fun setFavorite(
+        override fun setFavorite(
             position: Int,
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            favoriteWatchManager.setFavorite(itemId, favorite)
-            (state.value.loading as? HomeRowLoadingState.Success)?.let {
-                (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        ) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                favoriteWatchManager.setFavorite(itemId, favorite)
+                (state.value.loading as? HomeRowLoadingState.Success)?.let {
+                    (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+                }
             }
         }
+
+        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
@@ -198,16 +195,18 @@ class HomeRowGridViewModel
             }
         }
 
-        fun navigateTo(destination: Destination) {
+        override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
+
+        override fun navigateTo(destination: Destination) {
             navigationManager.navigateTo(destination)
         }
 
-        fun canDelete(
+        override fun canDelete(
             item: BaseItem,
             appPreferences: AppPreferences,
         ): Boolean = mediaManagementService.canDelete(item, appPreferences)
 
-        fun deleteItem(
+        override fun deleteItem(
             index: Int,
             item: BaseItem,
         ) {
@@ -233,46 +232,11 @@ fun HomeRowGrid(
         hiltViewModel<HomeRowGridViewModel, HomeRowGridViewModel.Factory>(
             creationCallback = { it.create(destination.title, destination.config) },
         ),
-    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    var position by rememberInt(destination.initialPosition)
+    val contextMenu = rememberContextMenu(preferences, viewModel)
     val gridFocusRequester = remember { FocusRequester() }
     val viewOptions = destination.config.viewOptions
-
-    var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
-    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.collectAsState()
-
-    val contextActions =
-        remember {
-            ContextMenuActions(
-                navigateTo = viewModel::navigateTo,
-                onClickWatch = { itemId, watched ->
-                    viewModel.setWatched(position, itemId, watched)
-                },
-                onClickFavorite = { itemId, favorite ->
-                    viewModel.setFavorite(position, itemId, favorite)
-                },
-                onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                    showPlaylistDialog.makePresent(itemId)
-                },
-                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-                onDeleteItem = { viewModel.deleteItem(position, it) },
-                onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
-                onChooseVersion = { _, _ ->
-                    // Not supported on this page
-                },
-                onChooseTracks = { result ->
-                    // Not supported on this page
-                },
-                onClearChosenStreams = {
-                    // Not supported on this page
-                },
-            )
-        }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -299,6 +263,7 @@ fun HomeRowGrid(
                             includeItemTypes = null,
                             modifier = Modifier.fillMaxSize(),
                             initialPosition = destination.initialPosition,
+                            collectionType = CollectionType.UNKNOWN,
                         )
                     }
 
@@ -318,32 +283,11 @@ fun HomeRowGrid(
                                     viewModel.navigateTo(item.destination(index))
                                 }
                             }
-                        val onLongClickItem =
-                            remember {
-                                { index: Int, item: BaseItem ->
-                                    showContextMenu =
-                                        ContextMenu.ForBaseItem(
-                                            fromLongClick = true,
-                                            item = item,
-                                            chosenStreams = null,
-                                            showGoTo = true,
-                                            showStreamChoices = false,
-                                            canDelete =
-                                                viewModel.canDelete(
-                                                    item,
-                                                    preferences.appPreferences,
-                                                ),
-                                            canRemoveContinueWatching = false,
-                                            canRemoveNextUp = false, // TODO
-                                            actions = contextActions,
-                                        )
-                                }
-                            }
                         LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
                         CardGrid(
                             pager = st.items,
                             onClickItem = onClickItem,
-                            onLongClickItem = onLongClickItem,
+                            onLongClickItem = contextMenu::showContextMenu,
                             onClickPlay = { _, _ -> },
                             letterPosition = { -1 },
                             gridFocusRequester = gridFocusRequester,
@@ -352,7 +296,6 @@ fun HomeRowGrid(
                             modifier = Modifier.fillMaxSize(),
                             initialPosition = destination.initialPosition,
                             positionCallback = { columns, newPosition ->
-                                position = newPosition
                             },
                             cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
                                 GridCard(
@@ -376,39 +319,5 @@ fun HomeRowGrid(
             }
         }
     }
-    overviewDialog?.let { info ->
-        ItemDetailsDialog(
-            info = info,
-            showFilePath =
-                viewModel.serverRepository.currentUserDto
-                    ?.policy
-                    ?.isAdministrator == true,
-            onDismissRequest = { overviewDialog = null },
-        )
-    }
-    showContextMenu?.let { contextMenu ->
-        ContextMenuDialog(
-            onDismissRequest = { showContextMenu = null },
-            getMediaSource = null,
-            contextMenu = contextMenu,
-            preferredSubtitleLanguage = null,
-        )
-    }
-    showPlaylistDialog.compose { itemId ->
-        PlaylistDialog(
-            title = stringResource(R.string.add_to_playlist),
-            state = playlistState,
-            onDismissRequest = { showPlaylistDialog.makeAbsent() },
-            onClick = {
-                playlistViewModel.addToPlaylist(it.id, itemId)
-                showPlaylistDialog.makeAbsent()
-            },
-            createEnabled = true,
-            onCreatePlaylist = {
-                playlistViewModel.createPlaylistAndAddItem(it, itemId)
-                showPlaylistDialog.makeAbsent()
-            },
-            elevation = 3.dp,
-        )
-    }
+    contextMenu.Compose()
 }
