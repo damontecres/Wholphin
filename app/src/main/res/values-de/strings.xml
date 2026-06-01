@@ -621,4 +621,6 @@
     <string name="tomatoes">Tomaten</string>
     <string name="display_toggles_title">Zeige Bewertungen</string>
     <string name="display_toggles_summary">Anpassen was angezeigt wird</string>
+    <string name="sort">Sortieren</string>
+    <string name="split_into_separate_rows">In unterschiedliche Zeilen aufteilen</string>
 </resources>
