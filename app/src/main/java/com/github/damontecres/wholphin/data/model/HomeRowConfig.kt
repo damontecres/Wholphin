@@ -193,7 +193,33 @@ sealed interface HomeRowConfig {
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
     }
+
+    /**
+     * Fetch items from an arbitrary Jellyfin endpoint that returns a QueryResult<BaseItemDto>.
+     * Lets third-party plugins (e.g. home-sections) contribute rows without Wholphin needing
+     * specific knowledge of them.
+     *
+     * Headers/Query are a list of [KeyValueEntry] (not a Map) because the server-side plugin
+     * config is persisted as XML, which doesn't support IDictionary.
+     */
+    @Serializable
+    @SerialName("CustomEndpoint")
+    data class CustomEndpoint(
+        val endpoint: String,
+        val title: String? = null,
+        val headers: List<KeyValueEntry>? = null,
+        val query: List<KeyValueEntry>? = null,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): CustomEndpoint = this.copy(viewOptions = viewOptions)
+    }
 }
+
+@Serializable
+data class KeyValueEntry(
+    val key: String,
+    val value: String,
+)
 
 /**
  * Root class for home page settings
