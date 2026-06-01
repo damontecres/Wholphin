@@ -554,7 +554,7 @@ class HomeSettingsService
                 is HomeRowConfig.CustomEndpoint -> {
                     HomeRowConfigDisplay(
                         id = id,
-                        title = config.title ?: config.endpoint,
+                        title = StringStringProvider(config.title ?: config.endpoint),
                         config,
                     )
                 }
@@ -1143,7 +1143,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.CustomEndpoint -> {
-                    val title = row.title ?: row.endpoint
+                    val title = StringStringProvider(row.title ?: row.endpoint)
                     try {
                         val items =
                             fetchCustomEndpointItems(row)
@@ -1151,7 +1151,7 @@ class HomeSettingsService
                         Success(title, items, row.viewOptions, rowType = row)
                     } catch (ex: Exception) {
                         Timber.w(ex, "Custom endpoint %s failed", row.endpoint)
-                        Error(title, exception = ex)
+                        HomeRowLoadingState.Error(title, exception = ex)
                     }
                 }
             }
@@ -1166,7 +1166,7 @@ class HomeSettingsService
                     .resolve(row.endpoint)
                     ?: throw IllegalStateException("Could not resolve endpoint ${row.endpoint} against $base")
             val params = buildMap {
-                serverRepository.currentUser.value
+                serverRepository.currentUser
                     ?.id
                     ?.toString()
                     ?.let { put("userId", it) }
