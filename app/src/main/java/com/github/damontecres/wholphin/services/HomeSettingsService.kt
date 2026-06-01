@@ -554,7 +554,7 @@ class HomeSettingsService
                 is HomeRowConfig.CustomEndpoint -> {
                     HomeRowConfigDisplay(
                         id = id,
-                        title = StringStringProvider(config.title ?: config.endpoint),
+                        title = StringStringProvider(config.title),
                         config,
                     )
                 }
@@ -1143,7 +1143,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.CustomEndpoint -> {
-                    val title = StringStringProvider(row.title ?: row.endpoint)
+                    val title = StringStringProvider(row.title)
                     try {
                         val items =
                             fetchCustomEndpointItems(row)
@@ -1160,6 +1160,9 @@ class HomeSettingsService
             val base =
                 api.baseUrl
                     ?: throw IllegalStateException("Jellyfin baseUrl not set")
+            if (!row.endpoint.startsWith("/") || row.endpoint.startsWith("//")) {
+                throw IllegalArgumentException("Custom endpoint must be an absolute path relative to Jellyfin baseUrl: ${row.endpoint}")
+            }
             val resolved =
                 base
                     .toHttpUrl()

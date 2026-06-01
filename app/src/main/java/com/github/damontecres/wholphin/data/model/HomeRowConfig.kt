@@ -206,7 +206,7 @@ sealed interface HomeRowConfig {
     @SerialName("CustomEndpoint")
     data class CustomEndpoint(
         val endpoint: String,
-        val title: String? = null,
+        val title: String,
         val headers: List<KeyValueEntry>? = null,
         val query: List<KeyValueEntry>? = null,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
