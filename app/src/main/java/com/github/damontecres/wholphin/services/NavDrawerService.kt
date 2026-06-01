@@ -5,9 +5,11 @@ import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.data.model.PagePosition
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.Library
+import com.github.damontecres.wholphin.ui.nav.CustomPageNavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
@@ -51,6 +53,8 @@ class NavDrawerService
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
         private val musicService: MusicService,
+        private val serverPluginApi: ServerPluginApi,
+        private val customPageRowsCache: CustomPageRowsCache,
     ) {
         private val _state = MutableStateFlow(NavDrawerItemState.EMPTY)
         val state: StateFlow<NavDrawerItemState> = _state
@@ -68,6 +72,7 @@ class NavDrawerService
                             moreItems = emptyList(),
                         )
                     }
+                    customPageRowsCache.clear()
                     if (user != null && userDto != null && user.id == userDto.id) {
                         updateNavDrawer(user, userDto)
                     }
@@ -225,12 +230,91 @@ class NavDrawerService
                     }
                 }
 
+            val customPagesByPosition =
+                fetchCustomPagesByPosition()
+
+            val itemsWithPages =
+                insertCustomPages(items, customPagesByPosition)
+            val moreItemsWithPages =
+                moreItems +
+                    customPagesByPosition[PagePosition.END].orEmpty()
+
             _state.update {
                 it.copy(
-                    items = items,
-                    moreItems = moreItems,
+                    items = itemsWithPages,
+                    moreItems = moreItemsWithPages,
                 )
             }
+        }
+
+        private suspend fun fetchCustomPagesByPosition(): Map<PagePosition, List<CustomPageNavDrawerItem>> {
+            val pages =
+                try {
+                    serverPluginApi.fetchPages()
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Failed to fetch custom pages from plugin")
+                    return emptyMap()
+                }
+            return pages
+                .map { CustomPageNavDrawerItem.create(it.id, it.title, it.icon) to it.position }
+                .groupBy({ it.second }, { it.first })
+        }
+
+        /**
+         * Inserts custom pages into the items list at their configured positions:
+         * - AfterHome → at the very start (Home itself is hardcoded in the composable, before [items])
+         * - AfterFavorites → directly after the Favorites entry
+         * - AfterDiscover → directly after the Discover entry
+         * - AfterLibraries → after the last library entry
+         *
+         * If an anchor isn't present (e.g. user moved Discover to moreItems), the pages anchored on
+         * it fall through to the end of the items list.
+         */
+        private fun insertCustomPages(
+            items: List<NavDrawerItem>,
+            byPosition: Map<PagePosition, List<CustomPageNavDrawerItem>>,
+        ): List<NavDrawerItem> {
+            if (byPosition.isEmpty()) return items
+
+            val result = mutableListOf<NavDrawerItem>()
+            result += byPosition[PagePosition.AFTER_HOME].orEmpty()
+
+            var lastLibraryIndex = -1
+            var sawFavorites = false
+            var sawDiscover = false
+            items.forEach { item ->
+                result += item
+                when (item) {
+                    NavDrawerItem.Favorites -> {
+                        result += byPosition[PagePosition.AFTER_FAVORITES].orEmpty()
+                        sawFavorites = true
+                    }
+
+                    NavDrawerItem.Discover -> {
+                        result += byPosition[PagePosition.AFTER_DISCOVER].orEmpty()
+                        sawDiscover = true
+                    }
+
+                    is ServerNavDrawerItem -> {
+                        lastLibraryIndex = result.size - 1
+                    }
+
+                    else -> {}
+                }
+            }
+
+            val afterLibraries = byPosition[PagePosition.AFTER_LIBRARIES].orEmpty()
+            if (afterLibraries.isNotEmpty()) {
+                if (lastLibraryIndex >= 0) {
+                    result.addAll(lastLibraryIndex + 1, afterLibraries)
+                } else {
+                    result += afterLibraries
+                }
+            }
+            if (!sawFavorites) result += byPosition[PagePosition.AFTER_FAVORITES].orEmpty()
+            if (!sawDiscover) result += byPosition[PagePosition.AFTER_DISCOVER].orEmpty()
+
+            return result
         }
     }
 
