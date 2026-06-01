@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,7 +55,7 @@ class CustomPageViewModel
 
         fun load(pageId: String) {
             viewModelScope.launchIO {
-                val userDto = serverRepository.currentUserDto.value
+                val userDto = serverRepository.currentUserDto
                 if (userDto == null) {
                     _state.update { it.copy(loading = LoadingState.Error("No active user")) }
                     return@launchIO
@@ -108,7 +109,7 @@ class CustomPageViewModel
                 _state.update {
                     it.copy(
                         page = page,
-                        rows = List(page.rows.size) { HomeRowLoadingState.Pending("") },
+                        rows = List(page.rows.size) { HomeRowLoadingState.Pending(EmptyStringProvider) },
                         loading = LoadingState.Success,
                     )
                 }
@@ -130,7 +131,7 @@ class CustomPageViewModel
                                 )
                             } catch (ex: Exception) {
                                 Timber.w(ex, "Error fetching row in custom page %s", pageId)
-                                HomeRowLoadingState.Error("", exception = ex)
+                                HomeRowLoadingState.Error(EmptyStringProvider, exception = ex)
                             }
                         }
                     }
