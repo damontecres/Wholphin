@@ -54,11 +54,13 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -1154,7 +1156,7 @@ class HomeSettingsService
                 }
             }
 
-        private suspend fun fetchCustomEndpointItems(row: HomeRowConfig.CustomEndpoint): List<org.jellyfin.sdk.model.api.BaseItemDto> {
+        private suspend fun fetchCustomEndpointItems(row: HomeRowConfig.CustomEndpoint): List<BaseItemDto> {
             val base =
                 api.baseUrl
                     ?: throw IllegalStateException("Jellyfin baseUrl not set")
@@ -1163,13 +1165,13 @@ class HomeSettingsService
                     .toHttpUrl()
                     .resolve(row.endpoint)
                     ?: throw IllegalStateException("Could not resolve endpoint ${row.endpoint} against $base")
-            // Build params as a map first so caller-supplied values can override our auto-injects.
-            val params = mutableMapOf<String, String>()
-            serverRepository.currentUser.value
-                ?.id
-                ?.toString()
-                ?.let { params["userId"] = it }
-            row.query?.forEach { params[it.key] = it.value }
+            val params = buildMap {
+                serverRepository.currentUser.value
+                    ?.id
+                    ?.toString()
+                    ?.let { put("userId", it) }
+                row.query?.forEach { put(it.key, it.value) }
+            }
             val urlBuilder = resolved.newBuilder()
             params.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v) }
             val requestBuilder = Request.Builder().url(urlBuilder.build()).get()
@@ -1180,7 +1182,7 @@ class HomeSettingsService
                     .execute()
             return response.use {
                 if (!it.isSuccessful) {
-                    throw IllegalStateException("HTTP ${it.code} from ${row.endpoint}")
+                    throw InvalidStatusException(it.code, null)
                 }
                 jsonParser.decodeFromString<BaseItemDtoQueryResult>(it.body.string()).items
             }
