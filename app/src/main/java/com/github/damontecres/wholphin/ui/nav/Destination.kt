@@ -137,6 +137,16 @@ sealed class Destination(
     @Serializable
     data object Favorites : Destination(false)
 
+    /**
+     * A server-plugin-defined page, identified by its [pageId]. The [title] is passed in to avoid
+     * a roundtrip just for the header before the page details have been loaded.
+     */
+    @Serializable
+    data class CustomPage(
+        val pageId: String,
+        val title: String,
+    ) : Destination(false)
+
     @Serializable
     data object Discover : Destination(false)
 

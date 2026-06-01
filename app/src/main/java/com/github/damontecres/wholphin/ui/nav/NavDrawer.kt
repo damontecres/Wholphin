@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -44,6 +45,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -68,6 +70,7 @@ import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -144,6 +147,13 @@ class NavDrawerViewModel
                     setIndex(index)
                     navigationManager.navigateToFromDrawer(item.destination)
                 }
+
+                is CustomPageNavDrawerItem -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(
+                        Destination.CustomPage(item.pageId, item.title),
+                    )
+                }
             }
         }
 
@@ -176,6 +186,8 @@ class NavDrawerViewModel
                             Destination.Favorites
                         } else if (it is NavDrawerItem.Discover) {
                             Destination.Discover
+                        } else if (it is CustomPageNavDrawerItem) {
+                            Destination.CustomPage(it.pageId, it.title)
                         } else {
                             null
                         }
@@ -271,6 +283,20 @@ data class ServerNavDrawerItem(
     companion object {
         fun getId(itemId: UUID) = "s_" + itemId.toServerString()
     }
+}
+
+/**
+ * A page declared by the Wholphin server plugin (see PageConfig in the plugin). Slotted into the
+ * drawer at the position chosen by the admin via PagePosition; not user-pinnable.
+ */
+data class CustomPageNavDrawerItem(
+    val pageId: String,
+    val title: String,
+    val iconName: String?,
+) : NavDrawerItem {
+    override val id: String = "p_$pageId"
+
+    override fun name(context: Context): String = title
 }
 
 private const val HOME_INDEX = -1
@@ -699,6 +725,12 @@ fun NavigationDrawerScope.NavItem(
                         else -> R.string.fa_film
                     }
                 }
+
+                // Dummy resource id for CustomPageNavDrawerItem — it's rendered through a
+                // dedicated branch in leadingContent below (Material icon or remote image).
+                is CustomPageNavDrawerItem -> {
+                    R.string.fa_compass
+                }
             }
         }
     val focused by interactionSource.collectIsFocusedAsState()
@@ -713,22 +745,30 @@ fun NavigationDrawerScope.NavItem(
         leadingContent = {
             val color = navItemColor(selected, focused, drawerOpen)
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (useFont) {
-                    Text(
-                        text = stringResource(icon),
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
-                        fontFamily = FontAwesome,
-                        color = color,
-                        modifier = Modifier,
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(icon),
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(DrawerIconSize),
-                    )
+                when {
+                    library is CustomPageNavDrawerItem -> {
+                        CustomPageIcon(library.iconName, color)
+                    }
+
+                    useFont -> {
+                        Text(
+                            text = stringResource(icon),
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp,
+                            fontFamily = FontAwesome,
+                            color = color,
+                            modifier = Modifier,
+                        )
+                    }
+
+                    else -> {
+                        Icon(
+                            painter = painterResource(icon),
+                            contentDescription = null,
+                            tint = color,
+                            modifier = Modifier.size(DrawerIconSize),
+                        )
+                    }
                 }
             }
         },
@@ -811,3 +851,44 @@ fun navItemColor(
 val DrawerState.isOpen: Boolean get() = this.currentValue.isOpen
 
 val DrawerValue.isOpen: Boolean get() = this == DrawerValue.Open
+
+/**
+ * Renders the leading icon for a [CustomPageNavDrawerItem]:
+ * - http(s):// URL → loaded via Coil (PNG / SVG / etc.)
+ * - one of a small Material icon name whitelist → drawn as ImageVector
+ * - anything else / null → [Icons.Default.Star] as fallback
+ */
+@Composable
+private fun CustomPageIcon(
+    iconName: String?,
+    tint: Color,
+) {
+    val trimmed = iconName?.trim().orEmpty()
+    if (trimmed.startsWith("http://", ignoreCase = true) ||
+        trimmed.startsWith("https://", ignoreCase = true)
+    ) {
+        AsyncImage(
+            model = trimmed,
+            contentDescription = null,
+            modifier = Modifier.size(DrawerIconSize),
+            colorFilter = ColorFilter.tint(tint),
+        )
+        return
+    }
+    Icon(
+        imageVector = customPageMaterialIcon(trimmed) ?: Icons.Default.Star,
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(DrawerIconSize),
+    )
+}
+
+private fun customPageMaterialIcon(name: String): ImageVector? =
+    when (name.lowercase().replace("[_\\s-]".toRegex(), "")) {
+        "home" -> Icons.Default.Home
+        "search" -> Icons.Default.Search
+        "settings" -> Icons.Default.Settings
+        "star" -> Icons.Default.Star
+        "play", "playarrow" -> Icons.Default.PlayArrow
+        else -> null
+    }

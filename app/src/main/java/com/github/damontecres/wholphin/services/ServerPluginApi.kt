@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.model.HomePageSettings
+import com.github.damontecres.wholphin.data.model.PageConfig
+import com.github.damontecres.wholphin.data.model.PageSummary
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -25,11 +27,12 @@ class ServerPluginApi
 
         private val json =
             Json {
-                ignoreUnknownKeys = false
+                ignoreUnknownKeys = true
             }
 
         companion object {
             private const val HOME_CONFIG_PATH = "homesettings"
+            private const val PAGES_PATH = "pages"
         }
 
         suspend fun public(): Boolean {
@@ -57,6 +60,46 @@ class ServerPluginApi
                     json.decodeFromStream<HomePageSettings>(res.body.byteStream())
                 } else if (res.code == 404) {
                     Timber.w("fetchHomePageSettings returned 404")
+                    null
+                } else {
+                    throw ApiClientException(res.code.toString() + " " + res.body.string())
+                }
+            }
+        }
+
+        @OptIn(ExperimentalSerializationApi::class)
+        suspend fun fetchPages(): List<PageSummary> {
+            val url = createUrl(PAGES_PATH) ?: return emptyList()
+            val request =
+                Request
+                    .Builder()
+                    .url(url)
+                    .get()
+                    .build()
+            return okHttpClient.newCall(request).execute().use { res ->
+                if (res.isSuccessful) {
+                    json.decodeFromStream<List<PageSummary>>(res.body.byteStream())
+                } else {
+                    Timber.w("fetchPages returned HTTP %d", res.code)
+                    emptyList()
+                }
+            }
+        }
+
+        @OptIn(ExperimentalSerializationApi::class)
+        suspend fun fetchPage(id: String): PageConfig? {
+            val url = createUrl("$PAGES_PATH/$id") ?: return null
+            val request =
+                Request
+                    .Builder()
+                    .url(url)
+                    .get()
+                    .build()
+            return okHttpClient.newCall(request).execute().use { res ->
+                if (res.isSuccessful) {
+                    json.decodeFromStream<PageConfig>(res.body.byteStream())
+                } else if (res.code == 404) {
+                    Timber.w("fetchPage(%s) returned 404", id)
                     null
                 } else {
                     throw ApiClientException(res.code.toString() + " " + res.body.string())
