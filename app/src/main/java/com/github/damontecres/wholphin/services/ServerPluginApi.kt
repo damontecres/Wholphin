@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.PageConfig
 import com.github.damontecres.wholphin.data.model.PageSummary
+import com.github.damontecres.wholphin.data.model.PagesResponse
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -11,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -78,7 +80,7 @@ class ServerPluginApi
                     .build()
             return okHttpClient.newCall(request).execute().use { res ->
                 if (res.isSuccessful) {
-                    json.decodeFromStream<List<PageSummary>>(res.body.byteStream())
+                    json.decodeFromStream<PagesResponse>(res.body.byteStream()).pages
                 } else {
                     Timber.w("fetchPages returned HTTP %d", res.code)
                     emptyList()
@@ -102,7 +104,7 @@ class ServerPluginApi
                     Timber.w("fetchPage(%s) returned 404", id)
                     null
                 } else {
-                    throw ApiClientException(res.code.toString() + " " + res.body.string())
+                    throw InvalidStatusException(res.code, null)
                 }
             }
         }

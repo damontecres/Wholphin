@@ -289,14 +289,60 @@ data class ServerNavDrawerItem(
  * A page declared by the Wholphin server plugin (see PageConfig in the plugin). Slotted into the
  * drawer at the position chosen by the admin via PagePosition; not user-pinnable.
  */
+enum class PageNavDrawerItemType {
+    URL,
+    ICON,
+    DEFAULT,
+}
+
 data class CustomPageNavDrawerItem(
     val pageId: String,
     val title: String,
-    val iconName: String?,
+    val iconType: PageNavDrawerItemType,
+    val iconUrl: String? = null,
+    val icon: ImageVector = Icons.Default.Star,
 ) : NavDrawerItem {
     override val id: String = "p_$pageId"
 
     override fun name(context: Context): String = title
+
+    companion object {
+        fun create(
+            pageId: String,
+            title: String,
+            iconName: String?,
+        ): CustomPageNavDrawerItem {
+            val trimmed = iconName?.trim().orEmpty()
+            if (trimmed.startsWith("http://", ignoreCase = true) ||
+                trimmed.startsWith("https://", ignoreCase = true)
+            ) {
+                return CustomPageNavDrawerItem(
+                    pageId = pageId,
+                    title = title,
+                    iconType = PageNavDrawerItemType.URL,
+                    iconUrl = trimmed,
+                )
+            }
+
+            val icon = customPageMaterialIcon(trimmed)
+            return CustomPageNavDrawerItem(
+                pageId = pageId,
+                title = title,
+                iconType = if (icon != null) PageNavDrawerItemType.ICON else PageNavDrawerItemType.DEFAULT,
+                icon = icon ?: Icons.Default.Star,
+            )
+        }
+
+        private fun customPageMaterialIcon(name: String): ImageVector? =
+            when (name.lowercase().replace("[_\\s-]".toRegex(), "")) {
+                "home" -> Icons.Default.Home
+                "search" -> Icons.Default.Search
+                "settings" -> Icons.Default.Settings
+                "star" -> Icons.Default.Star
+                "play", "playarrow" -> Icons.Default.PlayArrow
+                else -> null
+            }
+    }
 }
 
 private const val HOME_INDEX = -1
@@ -747,7 +793,7 @@ fun NavigationDrawerScope.NavItem(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 when {
                     library is CustomPageNavDrawerItem -> {
-                        CustomPageIcon(library.iconName, color)
+                        CustomPageIcon(library, color)
                     }
 
                     useFont -> {
@@ -852,43 +898,37 @@ val DrawerState.isOpen: Boolean get() = this.currentValue.isOpen
 
 val DrawerValue.isOpen: Boolean get() = this == DrawerValue.Open
 
-/**
- * Renders the leading icon for a [CustomPageNavDrawerItem]:
- * - http(s):// URL → loaded via Coil (PNG / SVG / etc.)
- * - one of a small Material icon name whitelist → drawn as ImageVector
- * - anything else / null → [Icons.Default.Star] as fallback
- */
 @Composable
 private fun CustomPageIcon(
-    iconName: String?,
+    item: CustomPageNavDrawerItem,
     tint: Color,
 ) {
-    val trimmed = iconName?.trim().orEmpty()
-    if (trimmed.startsWith("http://", ignoreCase = true) ||
-        trimmed.startsWith("https://", ignoreCase = true)
-    ) {
-        AsyncImage(
-            model = trimmed,
-            contentDescription = null,
-            modifier = Modifier.size(DrawerIconSize),
-            colorFilter = ColorFilter.tint(tint),
-        )
-        return
-    }
-    Icon(
-        imageVector = customPageMaterialIcon(trimmed) ?: Icons.Default.Star,
-        contentDescription = null,
-        tint = tint,
-        modifier = Modifier.size(DrawerIconSize),
-    )
-}
+    when (item.iconType) {
+        PageNavDrawerItemType.URL -> {
+            AsyncImage(
+                model = item.iconUrl,
+                contentDescription = null,
+                modifier = Modifier.size(DrawerIconSize),
+                colorFilter = ColorFilter.tint(tint),
+            )
+        }
 
-private fun customPageMaterialIcon(name: String): ImageVector? =
-    when (name.lowercase().replace("[_\\s-]".toRegex(), "")) {
-        "home" -> Icons.Default.Home
-        "search" -> Icons.Default.Search
-        "settings" -> Icons.Default.Settings
-        "star" -> Icons.Default.Star
-        "play", "playarrow" -> Icons.Default.PlayArrow
-        else -> null
+        PageNavDrawerItemType.ICON -> {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(DrawerIconSize),
+            )
+        }
+
+        PageNavDrawerItemType.DEFAULT -> {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(DrawerIconSize),
+            )
+        }
     }
+}

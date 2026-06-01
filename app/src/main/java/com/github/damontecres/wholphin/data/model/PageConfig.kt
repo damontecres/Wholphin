@@ -30,6 +30,11 @@ data class PageSummary(
 )
 
 @Serializable
+data class PagesResponse(
+    val pages: List<PageSummary> = emptyList(),
+)
+
+@Serializable
 data class PageConfig(
     val id: String,
     val title: String,

@@ -256,7 +256,7 @@ class NavDrawerService
                     return emptyMap()
                 }
             return pages
-                .map { CustomPageNavDrawerItem(it.id, it.title, it.icon) to it.position }
+                .map { CustomPageNavDrawerItem.create(it.id, it.title, it.icon) to it.position }
                 .groupBy({ it.second }, { it.first })
         }
 
