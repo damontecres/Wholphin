@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
@@ -168,7 +169,7 @@ class DiscoverMovieViewModel
             is4k: Boolean,
         ) {
             viewModelScope.launchIO {
-                val request =
+                try {
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
                             is4k = is4k,
@@ -176,6 +177,12 @@ class DiscoverMovieViewModel
                             mediaType = RequestPostRequest.MediaType.MOVIE,
                         ),
                     )
+                } catch (ex: kotlinx.coroutines.CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error requesting %s", id)
+                    showToast(context, "An error occurred")
+                }
                 fetchAndSetItem().await()
                 updateCanCancel()
             }
@@ -185,7 +192,14 @@ class DiscoverMovieViewModel
             viewModelScope.launchIO {
                 state.value.movie.successValue?.mediaInfo?.requests?.firstOrNull()?.let {
                     // TODO handle multiple requests? Or just delete self's request?
-                    seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    try {
+                        seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    } catch (ex: kotlinx.coroutines.CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error requesting %s", id)
+                        showToast(context, "An error occurred")
+                    }
                     fetchAndSetItem().await()
                     updateCanCancel()
                 }
