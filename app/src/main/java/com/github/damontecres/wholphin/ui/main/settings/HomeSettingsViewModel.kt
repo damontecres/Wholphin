@@ -29,11 +29,11 @@ import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.NavDrawerService
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
-import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -47,7 +47,6 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -87,7 +86,7 @@ class HomeSettingsViewModel
         private val seerrServerRepository: SeerrServerRepository,
         private val serverPluginApi: ServerPluginApi,
         val preferencesDataStore: DataStore<AppPreferences>,
-        @param:IoCoroutineScope private val ioScope: CoroutineScope,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
@@ -526,7 +525,7 @@ class HomeSettingsViewModel
             }
         }
 
-        fun saveToRemote() {
+        fun saveToRemote(): Job =
             viewModelScope.launchIO {
                 serverRepository.currentUser?.let { user ->
                     Timber.d("Saving home settings to remote")
@@ -536,6 +535,10 @@ class HomeSettingsViewModel
                     try {
                         Timber.d("saveToRemote")
                         homeSettingsService.saveToServer(user.id, settings)
+                        homeSettingsService.updateCurrent(
+                            HomePageSettingsSource.SERVER_PROFILE,
+                            settings,
+                        )
                         showSaveToast()
                     } catch (ex: Exception) {
                         Timber.e(ex)
@@ -543,7 +546,6 @@ class HomeSettingsViewModel
                     }
                 }
             }
-        }
 
         fun loadFromRemote() {
             viewModelScope.launchIO {
@@ -611,9 +613,8 @@ class HomeSettingsViewModel
             }
         }
 
-        fun saveToLocal() {
-            // This uses injected ioScope so that it will still run when the page is closing
-            ioScope.launchIO {
+        fun saveToLocal(): Job =
+            viewModelScope.launchIO {
                 serverRepository.currentUser?.let { user ->
                     val rows = state.value.rows.map { it.config }
                     val settings =
@@ -626,17 +627,12 @@ class HomeSettingsViewModel
                             settings,
                         )
                         showSaveToast()
-                    } catch (ex: UnsupportedHomeSettingsVersionException) {
-                        Timber.w(ex, "Overwriting local settings")
-                        homeSettingsService.saveToLocal(user.id, settings)
-                        showSaveToast()
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error saving: ${ex.localizedMessage}")
                     }
                 }
             }
-        }
 
         private fun updateState(update: (HomePageSettingsState) -> HomePageSettingsState) {
             _state.update {
@@ -675,12 +671,34 @@ class HomeSettingsViewModel
 
         fun resetToDefault() =
             viewModelScope.launchIO {
-                val userId = serverRepository.currentUser?.id ?: return@launchIO
+                val user = serverRepository.currentUser ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
-                val result = homeSettingsService.createDefault(userId)
+                var source = HomePageSettingsSource.UNSET
+                val result =
+                    if (serverPluginActive.value) {
+                        try {
+                            val settings =
+                                homeSettingsService.fetchSettingsFor(
+                                    user.id,
+                                    HomePageSettingsSource.PLUGIN,
+                                )
+                            source = HomePageSettingsSource.PLUGIN
+                            settings
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Plugin is active, but error fetching home settings")
+                            null
+                        }
+                    } else {
+                        null
+                    } ?: homeSettingsService.createDefault(user.id)
+
                 idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
-                    it.copy(rows = result.rows, rowData = emptyList())
+                    it.copy(
+                        source = source,
+                        rows = result.rows,
+                        rowData = emptyList(),
+                    )
                 }
                 fetchRowData()
             }
@@ -933,6 +951,10 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
+        }
+
+        fun discardChanges(): Job {
+            TODO("Not yet implemented")
         }
     }
 

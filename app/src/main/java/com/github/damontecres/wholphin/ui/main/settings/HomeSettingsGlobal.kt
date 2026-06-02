@@ -34,7 +34,6 @@ fun HomeSettingsGlobal(
     preferences: AppPreferences,
     onPreferenceChange: (AppPreferences) -> Unit,
     onClickResize: (Int) -> Unit,
-    onClickReset: () -> Unit,
     onClickViewNextUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -144,20 +143,6 @@ fun HomeSettingsGlobal(
                         )
                     },
                     onClick = onClickViewNextUp,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.reset),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_arrows_rotate),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickReset,
                     modifier = Modifier,
                 )
             }

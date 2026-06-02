@@ -50,10 +50,10 @@ enum class MoveDirection {
     DOWN,
 }
 
-private val POS_ADD_ROW = 0
-private val POS_SOURCE = POS_ADD_ROW + 1
-private val POS_SETTINGS = POS_SOURCE + 1
-private val POS_PRESETS = POS_SETTINGS + 1
+private const val POS_ADD_ROW = 0
+private const val POS_SOURCE = POS_ADD_ROW + 1
+private const val POS_SETTINGS = POS_SOURCE + 1
+private const val POS_PRESETS = POS_SETTINGS + 1
 
 @Composable
 fun HomeSettingsRowList(
@@ -118,7 +118,7 @@ fun HomeSettingsRowList(
                         )
                     },
                     supportingContent = {
-                        Text(text = state.source.toString())
+                        Text(text = stringResource(state.source.stringResId))
                     },
                     onClick = {
                         position = POS_SOURCE

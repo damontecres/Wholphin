@@ -27,6 +27,7 @@ fun HomeSettingsSourcePage(
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
     onClickLoadWeb: () -> Unit,
+    onClickReset: () -> Unit,
     serverPluginActive: Boolean,
     onClickLoadPlugin: () -> Unit,
     modifier: Modifier = Modifier,
@@ -47,20 +48,6 @@ fun HomeSettingsSourcePage(
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.save_to_server),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_cloud_arrow_up),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickSave,
-                    modifier = Modifier,
-                )
-            }
             item {
                 HomeSettingsListItem(
                     selected = false,
@@ -102,6 +89,20 @@ fun HomeSettingsSourcePage(
                         )
                     },
                     onClick = onClickLoadWeb,
+                    modifier = Modifier,
+                )
+            }
+            item {
+                HomeSettingsListItem(
+                    selected = false,
+                    headlineText = stringResource(R.string.reset),
+                    leadingContent = {
+                        Text(
+                            text = stringResource(R.string.fa_arrows_rotate),
+                            fontFamily = FontAwesome,
+                        )
+                    },
+                    onClick = onClickReset,
                     modifier = Modifier,
                 )
             }

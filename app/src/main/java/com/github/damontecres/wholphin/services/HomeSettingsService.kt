@@ -1214,11 +1214,13 @@ data class HomePageResolvedSettings(
     }
 }
 
-enum class HomePageSettingsSource {
-    UNSET,
-    LOCAL,
-    SERVER_PROFILE,
-    PLUGIN,
+enum class HomePageSettingsSource(
+    @param:StringRes val stringResId: Int,
+) {
+    UNSET(R.string.home_settings_source_unset),
+    LOCAL(R.string.home_settings_source_local),
+    SERVER_PROFILE(R.string.home_settings_source_server_profile),
+    PLUGIN(R.string.home_settings_source_plugin),
 }
 
 // https://github.com/jellyfin/jellyfin/blob/v10.11.6/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/HomeSectionType.cs

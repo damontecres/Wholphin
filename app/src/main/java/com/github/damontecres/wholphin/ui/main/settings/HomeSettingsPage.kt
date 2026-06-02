@@ -64,6 +64,7 @@ fun HomeSettingsPage(
     var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
     var searchForDialog by remember { mutableStateOf<BaseItemKind?>(null) }
     var showRemovedNextUpDialog by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
 
     val state by viewModel.state.collectAsState()
     val serverPluginActive by viewModel.serverPluginActive.collectAsState()
@@ -89,7 +90,7 @@ fun HomeSettingsPage(
     }
 
     BackHandler(settingsHaveChanged) {
-        // TODO prompt to save
+        showSaveDialog = true
     }
 
     Row(
@@ -286,12 +287,6 @@ fun HomeSettingsPage(
                                         }
                                     },
                                     onClickResize = { viewModel.resizeCards(it) },
-                                    onClickReset = {
-                                        showConfirmDialog =
-                                            ShowConfirm(R.string.overwrite_local_settings) {
-                                                addRow(false) { viewModel.resetToDefault() }
-                                            }
-                                    },
                                     onClickViewNextUp = {
                                         showRemovedNextUpDialog = true
                                     },
@@ -325,6 +320,12 @@ fun HomeSettingsPage(
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_local_settings) {
                                                 viewModel.loadFromRemoteWeb()
+                                            }
+                                    },
+                                    onClickReset = {
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                addRow(false) { viewModel.resetToDefault() }
                                             }
                                     },
                                     modifier = destModifier,
@@ -392,6 +393,29 @@ fun HomeSettingsPage(
                 modifier = Modifier.padding(16.dp),
             )
         }
+    }
+    if (showSaveDialog) {
+        SaveHomeSettingsDialog(
+            onDismissRequest = { showSaveDialog = false },
+            onSaveLocal = {
+                scope.launch {
+                    viewModel.saveToLocal().join()
+                    viewModel.navigationManager.goBack()
+                }
+            },
+            onSaveServer = {
+                scope.launch {
+                    viewModel.saveToRemote().join()
+                    viewModel.navigationManager.goBack()
+                }
+            },
+            onDiscard = {
+                scope.launch {
+                    viewModel.discardChanges().join()
+                    viewModel.navigationManager.goBack()
+                }
+            },
+        )
     }
 }
 
