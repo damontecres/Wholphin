@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetLiveTvChannelsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
+import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -54,9 +55,11 @@ import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -66,7 +69,6 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
-import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import timber.log.Timber
@@ -281,7 +283,7 @@ class HomeSettingsService
                         if (it.collectionType == CollectionType.LIVETV) {
                             HomeRowConfigDisplay(
                                 id = index,
-                                title = ResStringProvider(R.string.live_tv),
+                                title = ResStringProvider(R.string.watch_live),
                                 config = HomeRowConfig.TvPrograms(),
                             )
                         } else {
@@ -367,7 +369,7 @@ class HomeSettingsService
                                         if (userDto.tvAccess) {
                                             HomeRowConfigDisplay(
                                                 id = id++,
-                                                title = ResStringProvider(R.string.live_tv),
+                                                title = ResStringProvider(R.string.watch_live),
                                                 config = HomeRowConfig.TvPrograms(),
                                             )
                                         } else {
@@ -520,7 +522,7 @@ class HomeSettingsService
                 is HomeRowConfig.TvPrograms -> {
                     HomeRowConfigDisplay(
                         id = id,
-                        title = ResStringProvider(R.string.live_tv),
+                        title = ResStringProvider(R.string.watch_live),
                         config,
                     )
                 }
@@ -1037,7 +1039,7 @@ class HomeSettingsService
 
                 is HomeRowConfig.TvPrograms -> {
                     val request =
-                        GetRecommendedProgramsRequest(
+                        GetProgramsDto(
                             userId = userDto.id,
                             fields = DefaultItemFields,
                             limit = limit,
@@ -1045,21 +1047,31 @@ class HomeSettingsService
                             enableImages = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.LOGO),
                             imageTypeLimit = 1,
+                            isAiring = true,
+                            minEndDate = DateTime.now().plusMinutes(1),
                         )
-                    // paging not supported
-                    api.liveTvApi
-                        .getRecommendedPrograms(request)
-                        .content.items
-                        .map { BaseItem(it, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                ResStringProvider(R.string.live_tv),
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                                showViewMore = it.size >= limit,
-                            )
-                        }
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetProgramsDtoHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        api.liveTvApi
+                            .getPrograms(request)
+                            .content.items
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            ResStringProvider(R.string.watch_live),
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                            showViewMore = it.size >= limit,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.TvChannels -> {
