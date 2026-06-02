@@ -623,4 +623,22 @@
     <string name="combined_search_results_on">Mostrar todos os resultados numa única lista</string>
     <string name="combined_search_results_off">Mostrar resultados por categoria</string>
     <string name="results">Resultados</string>
+    <string name="require_login">Exigir início de sessão para o perfil</string>
+    <string name="show_voice_search_button">Mostrar botão de pesquisa por voz</string>
+    <string name="visible_ui">Visível</string>
+    <string name="hidden_ui">Escondido</string>
+    <string name="view_options_type_grid">Grelha</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista Compacta</string>
+    <string name="user_interface_language">Língua do interface</string>
+    <string name="display_toggles_title">Visualização de avaliações</string>
+    <string name="display_toggles_summary">Personalizar o que mostrar</string>
+    <string name="profile_protection">Protecção do perfil</string>
+    <string name="continue_watching_click_behavior">Comportamento ao clicar em «Continuar a ver»/«A Seguir»</string>
+    <string name="continue_watching_click_summary_on">Reproduzir ao clicar</string>
+    <string name="continue_watching_click_summary_off">Mostrar detalhes ao clicar</string>
+    <string name="stars">Estrelas</string>
+    <string name="tomatoes">Tomates</string>
+    <string name="sort">Ordenar</string>
+    <string name="split_into_separate_rows">Dividir em linhas separadas</string>
 </resources>
