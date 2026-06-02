@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.main.settings.Library
@@ -1041,7 +1042,7 @@ class HomeSettingsService
                     val request =
                         GetProgramsDto(
                             userId = userDto.id,
-                            fields = DefaultItemFields,
+                            fields = ProgramItemFields,
                             limit = limit,
                             enableUserData = true,
                             enableImages = true,
