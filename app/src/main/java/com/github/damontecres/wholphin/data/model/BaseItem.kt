@@ -92,7 +92,12 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration?
+        get() =
+            when (type) {
+                BaseItemKind.PROGRAM -> null
+                else -> data.timeRemaining ?: data.runTimeTicks?.ticks
+            }
 
     /**
      * Contains pre computed UI elements that would be expensive to create on the main thread

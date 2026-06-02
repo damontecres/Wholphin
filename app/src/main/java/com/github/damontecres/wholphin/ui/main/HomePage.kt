@@ -88,6 +88,7 @@ import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
@@ -550,6 +551,7 @@ fun HomePageHeader(
         overviewTwoLines = isEpisode,
         quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
+        endsAt = item?.data?.endDate,
         showLogo = showLogo,
         logoImageUrl = rememberLogoUrl(item),
         modifier = modifier,
@@ -564,6 +566,7 @@ fun HomePageHeader(
     overviewTwoLines: Boolean,
     quickDetails: QuickDetailsData?,
     timeRemaining: Duration?,
+    endsAt: DateTime?,
     showLogo: Boolean,
     logoImageUrl: String?,
     modifier: Modifier = Modifier,
@@ -587,7 +590,7 @@ fun HomePageHeader(
             if (subtitle != null) {
                 EpisodeName(subtitle)
             }
-            QuickDetails(quickDetails, timeRemaining)
+            QuickDetails(quickDetails, timeRemaining, endsAt = endsAt)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
