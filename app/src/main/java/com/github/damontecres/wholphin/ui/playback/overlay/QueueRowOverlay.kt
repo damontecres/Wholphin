@@ -22,7 +22,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.HiddenFocusBox
 import com.github.damontecres.wholphin.ui.ifElse
@@ -31,14 +31,13 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
 fun QueueRowOverlay(
-    playlist: Playlist,
+    queue: List<PlaylistItem>,
     controllerViewState: ControllerViewState,
     nextState: OverlayViewState,
     onChangeState: (OverlayViewState) -> Unit,
     onClickPlaylist: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val items = remember { playlist.upcomingItems() }
     val focusRequester = remember { FocusRequester() }
     val hiddenFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -70,7 +69,7 @@ fun QueueRowOverlay(
                         }
                     },
         ) {
-            itemsIndexed(items) { index, item ->
+            itemsIndexed(queue) { index, item ->
                 val interactionSource =
                     remember { MutableInteractionSource() }
                 val isFocused =
