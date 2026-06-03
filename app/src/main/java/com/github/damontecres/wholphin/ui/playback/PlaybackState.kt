@@ -6,6 +6,7 @@ import androidx.media3.common.text.Cue
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.util.LoadingState
@@ -21,8 +22,20 @@ data class PlaybackState(
     val analyticsState: AnalyticsState = AnalyticsState(),
     val subtitleCues: List<Cue> = emptyList(),
     val nextUp: BaseItem? = null,
-    val playlist: Playlist = Playlist(listOf()),
-)
+    val playlistIndex: Int = 0,
+    val playlist: Playlist = Playlist(emptyList()),
+) {
+    val hasNext: Boolean get() = (playlistIndex + 1) < playlist.items.size
+    val hasPrevious: Boolean get() = playlistIndex > 0
+    val upcomingItems: List<PlaylistItem>
+        get() =
+            playlist.items.subList(
+                (playlistIndex + 1).coerceAtMost(playlist.items.size),
+                playlist.items.size,
+            )
+
+    fun nextItem(): PlaylistItem? = playlist.items.getOrNull(playlistIndex + 1)
+}
 
 data class PlayerInstance(
     val player: Player,
