@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +60,7 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import kotlin.time.Duration
@@ -85,6 +87,14 @@ fun ExpandablePlayButtons(
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
+    val restartInteractionSource = remember { MutableInteractionSource() }
+    val restartButtonFocused by restartInteractionSource.collectIsFocusedAsState()
+    LaunchedEffect(resumePosition) {
+        // Reset focus if the restart button was focuses and it is going to disappear
+        if (restartButtonFocused && resumePosition == Duration.ZERO) {
+            firstFocus.tryRequestFocus()
+        }
+    }
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(8.dp),
@@ -114,6 +124,7 @@ fun ExpandablePlayButtons(
                     onClick = playOnClick,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
+                    interactionSource = restartInteractionSource,
                 )
             }
         }
