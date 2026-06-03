@@ -78,7 +78,7 @@ class PlaylistCreator
                     .convertAndAddParts(false)
             val startIndex =
                 episodeId?.let { episodes.indexOfFirstOrNull { it.id == episodeId } } ?: 0
-            return Playlist(episodes, startIndex)
+            return Playlist(episodes.subList(startIndex, episodes.size))
         }
 
         /**
@@ -104,7 +104,7 @@ class PlaylistCreator
                     ),
                 )
             val items = GetItemsRequestHandler.execute(api, request).content.items
-            return Playlist(items.convertAndAddParts(), 0)
+            return Playlist(items.convertAndAddParts())
         }
 
         private suspend fun createFromCollection(
@@ -147,7 +147,7 @@ class PlaylistCreator
                     .execute(api, request)
                     .content.items
                     .convertAndAddParts()
-            return Playlist(items, 0)
+            return Playlist(items)
         }
 
         /**
@@ -263,7 +263,7 @@ class PlaylistCreator
                                     }.let(::addAll)
                             }
                         }
-                    PlaylistCreationResult.Success(Playlist(list, 0))
+                    PlaylistCreationResult.Success(Playlist(list))
                 }
 
                 // Not support yet

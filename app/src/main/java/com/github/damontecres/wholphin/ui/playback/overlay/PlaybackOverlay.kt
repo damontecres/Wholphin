@@ -50,7 +50,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
-import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -91,10 +91,10 @@ fun PlaybackOverlay(
     currentPlayback: CurrentPlayback?,
     currentSegment: MediaSegmentDto?,
     analyticsState: AnalyticsState,
+    queue: List<PlaylistItem>,
     modifier: Modifier = Modifier,
     trickplayInfo: TrickplayInfo? = null,
     trickplayUrlFor: (Int) -> String? = { null },
-    playlist: Playlist = Playlist(listOf(), 0),
     onClickPlaylist: (BaseItem) -> Unit = {},
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
@@ -180,10 +180,10 @@ fun PlaybackOverlay(
                         }
                     }
                     val nextState =
-                        remember(chapters, playlist) {
+                        remember(chapters, nextEnabled) {
                             if (chapters.isNotEmpty()) {
                                 OverlayViewState.CHAPTERS
-                            } else if (playlist.hasNext()) {
+                            } else if (nextEnabled) {
                                 OverlayViewState.QUEUE
                             } else {
                                 null
@@ -225,7 +225,7 @@ fun PlaybackOverlay(
                             player = player,
                             controllerViewState = controllerViewState,
                             chapters = chapters,
-                            playlist = playlist,
+                            hasNext = nextEnabled,
                             aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
                             onChangeState = onChangeState,
                             modifier =
@@ -237,9 +237,9 @@ fun PlaybackOverlay(
                 }
 
                 OverlayViewState.QUEUE -> {
-                    if (playlist.hasNext()) {
+                    if (nextEnabled) {
                         QueueRowOverlay(
-                            playlist = playlist,
+                            queue = queue,
                             controllerViewState = controllerViewState,
                             nextState =
                                 remember(chapters) {

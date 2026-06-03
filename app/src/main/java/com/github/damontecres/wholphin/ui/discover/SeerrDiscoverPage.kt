@@ -300,6 +300,7 @@ fun SeerrDiscoverPage(
             overviewTwoLines = true,
             quickDetails = details,
             timeRemaining = null,
+            endsAt = null,
             showLogo = preferences.appPreferences.interfacePreferences.showLogos,
             logoImageUrl = null, // TODO
             modifier =

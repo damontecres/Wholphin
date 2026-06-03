@@ -92,6 +92,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
@@ -164,7 +165,10 @@ class PlaybackViewModel
         internal lateinit var player: Player
 
         private var mediaSession: MediaSession? = null
-        internal val mutex = Mutex()
+
+        // Mutex & Job for changing playlist index
+        private val playlistMutex = Mutex()
+        private var playlistJob: Job? = null
 
         val controllerViewState =
             ControllerViewState(
@@ -345,7 +349,6 @@ class PlaybackViewModel
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
 
-            playlistItem.item.type == BaseItemKind.TRAILER
             val intros =
                 // If not resuming playback & cinema mode is enabled, get potential intros
                 if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
@@ -1017,7 +1020,7 @@ class PlaybackViewModel
             if (playbackState == Player.STATE_ENDED) {
                 Timber.v("Playback state is STATE_ENDED")
                 viewModelScope.launchDefault {
-                    when (val nextItem = state.value.playlist.peek()) {
+                    when (val nextItem = state.value.nextItem()) {
                         is PlaylistItem.Intro -> {
                             Timber.v("Next item is intro, so playing immediately")
                             playNextUp()
@@ -1093,14 +1096,14 @@ class PlaybackViewModel
                                         currentSegment.type,
                                     )
                                 }
-                                val playlist = state.value.playlist
+                                val state = state.value
 
                                 if (currentSegment.type == MediaSegmentType.OUTRO &&
                                     prefs.showNextUpWhen == ShowNextUpWhen.DURING_CREDITS &&
-                                    playlist.hasNext() &&
+                                    state.hasNext &&
                                     outroShownSegments.add(currentSegment.id)
                                 ) {
-                                    val nextItem = playlist.peek()
+                                    val nextItem = state.nextItem()
                                     if (nextItem is PlaylistItem.Media) {
                                         Timber.v("Setting next up during outro to ${nextItem?.id}")
                                         _state.update { it.copy(nextUp = nextItem.item) }
@@ -1218,30 +1221,50 @@ class PlaybackViewModel
             }
 
         fun playNextUp() {
-            state.value.playlist.let {
-                if (it.hasNext()) {
-                    viewModelScope.launchDefault {
+            viewModelScope.launchDefault {
+                playlistMutex.withLock {
+                    val state = state.value
+                    if (state.hasNext) {
                         cancelUpNextEpisode()
-                        val item = it.getAndAdvance()
-                        val played = play(item, 0)
-                        if (!played) {
-                            playNextUp()
-                        }
+                        val nextIndex = state.playlistIndex + 1
+                        val item = state.playlist.items[nextIndex]
+                        _state.update { it.copy(playlistIndex = nextIndex) }
+                        playlistJob?.cancel()
+                        playlistJob =
+                            viewModelScope.launchDefault {
+                                val played = play(item, 0)
+                                if (!played) {
+                                    playNextUp()
+                                }
+                            }
+                    } else {
+                        Timber.w("Attempting to play next, but there are no more items")
+                        return@launchDefault
                     }
                 }
             }
         }
 
         fun playPrevious() {
-            state.value.playlist.let {
-                if (it.hasPrevious()) {
-                    viewModelScope.launchDefault {
+            viewModelScope.launchDefault {
+                playlistMutex.withLock {
+                    val state = state.value
+                    if (state.hasPrevious) {
                         cancelUpNextEpisode()
-                        val item = it.getPreviousAndReverse()
-                        val played = play(item, 0)
-                        if (!played) {
-                            playPrevious()
-                        }
+                        val previousIndex = state.playlistIndex - 1
+                        val item = state.playlist.items[previousIndex]
+                        _state.update { it.copy(playlistIndex = previousIndex) }
+                        playlistJob?.cancel()
+                        playlistJob =
+                            viewModelScope.launchDefault {
+                                val played = play(item, 0)
+                                if (!played) {
+                                    playPrevious()
+                                }
+                            }
+                    } else {
+                        Timber.w("Attempting to play next, but there are no more items")
+                        return@launchDefault
                     }
                 }
             }
@@ -1252,16 +1275,24 @@ class PlaybackViewModel
         }
 
         fun playItemInPlaylist(item: BaseItem) {
-            state.value.playlist.let { playlist ->
-                viewModelScope.launchIO {
-                    val toPlay = playlist.advanceTo(item.id)
-                    if (toPlay != null) {
-                        val played = play(toPlay, 0)
-                        if (!played) {
-                            playNextUp()
-                        }
+            viewModelScope.launchDefault {
+                playlistMutex.withLock {
+                    val state = state.value
+                    val index = state.playlist.items.indexOfFirst { it.id == item.id }
+                    if (index in state.playlist.items.indices) {
+                        val toPlay = state.playlist.items[index]
+                        _state.update { it.copy(playlistIndex = index) }
+                        playlistJob?.cancel()
+                        playlistJob =
+                            viewModelScope.launchDefault {
+                                val played = play(toPlay, 0)
+                                if (!played) {
+                                    playNextUp()
+                                }
+                            }
                     } else {
-                        // TODO
+                        Timber.w("Item not found in playlist %s", item.id)
+                        return@launchDefault
                     }
                 }
             }
