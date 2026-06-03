@@ -808,6 +808,7 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[SEERR_ROW],
                             onClickItem = onClickItem,
+                            onClickDiscover = onClickDiscover,
                             onClickPosition = { position = it },
                             modifier = Modifier.fillMaxWidth(),
                         )
