@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -43,8 +41,8 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.LiveTvPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -57,6 +55,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
@@ -75,14 +74,14 @@ import kotlin.math.abs
 
 @Composable
 fun TvGuideGrid(
+    preferences: UserPreferences,
     onRowPosition: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
-    val preferences by viewModel.preferences.data
-        .collectAsState(AppPreferences.getDefaultInstance())
+    val preferences by viewModel.preferences.data.collectAsState(preferences.appPreferences)
     val tvPrefs = preferences.interfacePreferences.liveTvPreferences
     var showViewOptions by remember { mutableStateOf(false) }
     var showChannelDialog by remember { mutableStateOf<Pair<Int, TvChannel>?>(null) }
@@ -196,11 +195,11 @@ fun TvGuideGrid(
                                 showItemDialog = index
                             }
                         },
+                        focusRequester = focusRequester,
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.background)
-                                .focusRequester(focusRequester),
+                                .background(MaterialTheme.colorScheme.background),
                     )
                 }
             }
@@ -308,6 +307,7 @@ fun TvGuideGridContent(
     onClickChannel: (Int, TvChannel) -> Unit,
     onClickProgram: (Int, TvProgram) -> Unit,
     onFocus: (RowColumn) -> Unit,
+    focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -315,8 +315,10 @@ fun TvGuideGridContent(
     val scope = rememberCoroutineScope()
     val guideStart = remember(guideTimes) { guideTimes.first() }
 
+    var focusedChannelIndex by rememberInt(-1)
     var focusedItem by rememberPosition(RowColumn(0, 0))
-    var focusedProgramIndex by remember { mutableIntStateOf(0) }
+    var focusedProgramIndex by rememberInt(0)
+
     LaunchedEffect(onFocus, focusedProgramIndex) {
         withContext(Dispatchers.Default) {
             val program = programs.programs.getOrNull(focusedProgramIndex)
@@ -358,16 +360,13 @@ fun TvGuideGridContent(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier,
+    ) {
         ProgramGuide(
             state = state,
             dimensions = tvGuideDimensions,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .focusProperties {
-                        onEnter = { programFocusRequester.tryRequestFocus() }
-                    },
+            modifier = Modifier.fillMaxSize(),
         ) {
             guideStartHour = 0f
             currentTime(
@@ -465,8 +464,12 @@ fun TvGuideGridContent(
                             .ifElse(
                                 programIndex == focusedProgramIndex,
                                 Modifier.focusRequester(programFocusRequester),
+                            ).ifElse(
+                                focusedChannelIndex < 0 && programIndex == focusedProgramIndex,
+                                Modifier.focusRequester(focusRequester),
                             ).onFocusChanged {
                                 if (it.isFocused) {
+                                    focusedChannelIndex = -1
                                     focusedProgramIndex = programIndex
                                     scope.launch {
                                         try {
@@ -497,8 +500,12 @@ fun TvGuideGridContent(
                     onLongClick = {},
                     modifier =
                         Modifier
-                            .onFocusChanged {
+                            .ifElse(
+                                focusedChannelIndex == channelIndex,
+                                Modifier.focusRequester(focusRequester),
+                            ).onFocusChanged {
                                 if (it.isFocused) {
+                                    focusedChannelIndex = channelIndex
                                     scope.launch {
                                         try {
                                             state.animateToChannel(
