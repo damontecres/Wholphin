@@ -93,19 +93,19 @@ fun ExpandablePlayButtons(
                 .focusGroup()
                 .focusRestorer(firstFocus),
     ) {
+        item("play") {
+            ExpandablePlayButton(
+                title = if (resumePosition > Duration.ZERO) R.string.resume else R.string.play,
+                resume = resumePosition,
+                icon = Icons.Default.PlayArrow,
+                onClick = playOnClick,
+                modifier =
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .focusRequester(firstFocus),
+            )
+        }
         if (resumePosition > Duration.ZERO) {
-            item("play") {
-                ExpandablePlayButton(
-                    title = R.string.resume,
-                    resume = resumePosition,
-                    icon = Icons.Default.PlayArrow,
-                    onClick = playOnClick,
-                    modifier =
-                        Modifier
-                            .onFocusChanged(buttonOnFocusChanged)
-                            .focusRequester(firstFocus),
-                )
-            }
             item("restart") {
                 ExpandablePlayButton(
                     title = R.string.restart,
@@ -114,19 +114,6 @@ fun ExpandablePlayButtons(
                     onClick = playOnClick,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
-                )
-            }
-        } else {
-            item("play") {
-                ExpandablePlayButton(
-                    title = R.string.play,
-                    resume = Duration.ZERO,
-                    icon = Icons.Default.PlayArrow,
-                    onClick = playOnClick,
-                    modifier =
-                        Modifier
-                            .onFocusChanged(buttonOnFocusChanged)
-                            .focusRequester(firstFocus),
                 )
             }
         }
