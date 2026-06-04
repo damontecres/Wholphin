@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
@@ -209,27 +210,34 @@ class DiscoverSeriesViewModel
                             it.requestedBy?.id ==
                                 seerrServerRepository.currentUserId.first()
                         }
-                    if (currentRequest != null) {
-                        Timber.v("User has pending request, will update")
-                        seerrService.api.requestApi.requestRequestIdPut(
-                            requestId = currentRequest.id.toString(),
-                            requestRequestIdPutRequest =
-                                RequestRequestIdPutRequest(
+                    try {
+                        if (currentRequest != null) {
+                            Timber.v("User has pending request, will update")
+                            seerrService.api.requestApi.requestRequestIdPut(
+                                requestId = currentRequest.id.toString(),
+                                requestRequestIdPutRequest =
+                                    RequestRequestIdPutRequest(
+                                        is4k = is4k,
+                                        mediaType = RequestRequestIdPutRequest.MediaType.TV,
+                                        seasons = seasons.toList(),
+                                    ),
+                            )
+                        } else {
+                            Timber.v("New request for %s seasons", seasons.size)
+                            seerrService.api.requestApi.requestPost(
+                                RequestPostRequest(
                                     is4k = is4k,
-                                    mediaType = RequestRequestIdPutRequest.MediaType.TV,
+                                    mediaId = id,
+                                    mediaType = RequestPostRequest.MediaType.TV,
                                     seasons = seasons.toList(),
                                 ),
-                        )
-                    } else {
-                        Timber.v("New request for %s seasons", seasons.size)
-                        seerrService.api.requestApi.requestPost(
-                            RequestPostRequest(
-                                is4k = is4k,
-                                mediaId = id,
-                                mediaType = RequestPostRequest.MediaType.TV,
-                                seasons = seasons.toList(),
-                            ),
-                        )
+                            )
+                        }
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error requesting %s", id)
+                        showToast(context, "An error occurred")
                     }
 
                     fetchAndSetItem().await()?.let {
@@ -244,7 +252,15 @@ class DiscoverSeriesViewModel
             viewModelScope.launchIO {
                 state.value.tvSeries.successValue?.mediaInfo?.requests?.firstOrNull()?.let {
                     // TODO handle multiple requests? Or just delete self's request?
-                    seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    try {
+                        seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error requesting %s", id)
+                        showToast(context, "An error occurred")
+                    }
+
                     fetchAndSetItem().await()?.let {
                         updateSeasonStatus(it)
                         updateCanCancel()
