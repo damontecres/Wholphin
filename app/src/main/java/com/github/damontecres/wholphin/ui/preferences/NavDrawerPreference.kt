@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,9 +43,7 @@ import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.NavDrawerItemState
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
@@ -60,7 +57,6 @@ import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -69,7 +65,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.ApiClient
 import javax.inject.Inject
 
 data class NavDrawerPin(
@@ -304,11 +299,8 @@ class NavDrawerPreferencesViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
-        private val api: ApiClient,
-        val preferenceDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
         val backdropService: BackdropService,
-        private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
         private val navDrawerService: NavDrawerService,
         private val serverPreferencesDao: ServerPreferencesDao,
@@ -321,7 +313,7 @@ class NavDrawerPreferencesViewModel
                 val state = navDrawerService.state.value
                 val user = serverRepository.currentUser
                 val seerr = seerrServerRepository.active.firstOrNull()
-                if (state == NavDrawerItemState.EMPTY || user == null || seerr == null) {
+                if (user == null || seerr == null) {
                     return@launchDefault
                 }
                 val navDrawerPins =
@@ -372,7 +364,8 @@ class NavDrawerPreferencesViewModel
                                     )
                                 }
                             serverPreferencesDao.saveNavDrawerPinnedItems(*toSave.toTypedArray())
-                            navDrawerService.updateNavDrawer(user, userDto)
+                            val discoverActive = seerrServerRepository.active.firstOrNull() == true
+                            navDrawerService.updateNavDrawer(user, userDto, discoverActive)
                         } else {
                             throw IllegalStateException("User IDs do not match")
                         }
