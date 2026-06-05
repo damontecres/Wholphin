@@ -101,7 +101,7 @@ fun ExpandablePlayButtons(
         }
     }
     val hasStreams =
-        remember {
+        remember(chooseVersionParams) {
             chooseVersionParams?.chosenStreams?.source.let {
                 it == null || !it.mediaStreams.isNullOrEmpty()
             }
