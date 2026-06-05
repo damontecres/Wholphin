@@ -100,6 +100,12 @@ fun ExpandablePlayButtons(
             firstFocus.tryRequestFocus()
         }
     }
+    val hasStreams =
+        remember {
+            chooseVersionParams?.chosenStreams?.source.let {
+                it == null || !it.mediaStreams.isNullOrEmpty()
+            }
+        }
 
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
 
@@ -117,6 +123,7 @@ fun ExpandablePlayButtons(
                 resume = resumePosition,
                 icon = Icons.Default.PlayArrow,
                 onClick = playOnClick,
+                enabled = hasStreams,
                 modifier =
                     Modifier
                         .onFocusChanged(buttonOnFocusChanged)
@@ -130,6 +137,7 @@ fun ExpandablePlayButtons(
                     resume = Duration.ZERO,
                     icon = Icons.Default.Refresh,
                     onClick = playOnClick,
+                    enabled = hasStreams,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
                     interactionSource = restartInteractionSource,
