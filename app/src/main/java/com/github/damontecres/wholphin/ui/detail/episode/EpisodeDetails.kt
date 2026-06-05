@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
@@ -47,6 +48,7 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -169,6 +171,7 @@ fun EpisodeDetails(
                 },
                 canDelete = canDelete,
                 onConfirmDelete = { viewModel.deleteItem(ep) },
+                onChooseVersion = { contextActions.onChooseVersion.invoke(ep, it) },
                 modifier = modifier,
             )
         }
@@ -224,6 +227,7 @@ fun EpisodeDetailsContent(
     moreOnClick: () -> Unit,
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
+    onChooseVersion: (MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -284,6 +288,14 @@ fun EpisodeDetailsContent(
                         trailerOnClick = {},
                         canDelete = canDelete,
                         onConfirmDelete = onConfirmDelete,
+                        chooseVersionParams =
+                            remember(chosenStreams, ep, onChooseVersion) {
+                                ChooseVersionParams(
+                                    chosenStreams = chosenStreams,
+                                    mediaSources = ep.data.mediaSources.orEmpty(),
+                                    onChooseVersion = onChooseVersion,
+                                )
+                            },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
