@@ -50,7 +50,6 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -169,16 +168,19 @@ class MainActivity : AppCompatActivity() {
             navigationManager.backStack = NavBackStack(startDestination)
         }
 
-        viewModel.serverRepository.currentUserFlow.collectLatestIn(lifecycleScope) { user ->
-            if (user?.hasPin == true) {
-                window?.setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                )
-            } else {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            }
-        }
+        viewModel.serverRepository.currentUserFlow
+            .onEach { user ->
+                withContext(Dispatchers.Main) {
+                    if (user?.hasPin == true) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
+            }.catch { ex ->
+                Timber.e(ex, "Error with settings flag secure")
+            }.launchIn(lifecycleScope)
+
         screensaverService.keepScreenOn
             .onEach { keepScreenOn ->
                 Timber.v("keepScreenOn: %s", keepScreenOn)
