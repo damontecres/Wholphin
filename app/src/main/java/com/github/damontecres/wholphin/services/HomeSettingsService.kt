@@ -553,8 +553,10 @@ class HomeSettingsService
         ): StringProvider =
             try {
                 api.userLibraryApi
-                    .getItem(itemId = itemId)
-                    .content.name
+                    .getItem(
+                        userId = serverRepository.currentUser?.id,
+                        itemId = itemId,
+                    ).content.name
                     ?.let {
                         if (stringRes == null) {
                             StringStringProvider(it)
@@ -876,8 +878,15 @@ class HomeSettingsService
                             fields = DefaultItemFields,
                         )
 
+                    // Not using getItemName because we want to throw the 404
                     val title =
-                        getItemName(null, row.parentId, ResStringProvider(R.string.collection))
+                        api.userLibraryApi
+                            .getItem(
+                                userId = serverRepository.currentUser?.id,
+                                itemId = row.parentId,
+                            ).content.name
+                            ?.let { StringStringProvider(it) }
+                            ?: ResStringProvider(R.string.collection)
                     if (usePaging) {
                         ApiRequestPager(
                             api,

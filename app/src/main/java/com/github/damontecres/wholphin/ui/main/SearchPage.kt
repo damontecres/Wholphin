@@ -77,7 +77,6 @@ import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
@@ -405,7 +404,7 @@ fun SearchPage(
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
 
     var position by rememberPosition(0, 0)
-    var searchClicked by rememberSaveable { mutableStateOf(false) }
+    var searchClicked by rememberSaveable(query) { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
     LifecycleResumeEffect(Unit) {
@@ -1017,7 +1016,6 @@ private fun <T : CardGridItem> SearchGrid(
     positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RequestOrRestoreFocus(focusRequester)
     Column(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier = modifier,

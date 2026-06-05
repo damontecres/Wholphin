@@ -613,4 +613,22 @@
     <string name="combined_search_results_on">הצג את כל התוצאות ברשימה אחת</string>
     <string name="combined_search_results_off">הצג תוצאות לפי קטגוריה</string>
     <string name="results">תוצאות</string>
+    <string name="require_login">דרוש אימות בכניסה לפרופיל</string>
+    <string name="show_voice_search_button">הצג כפתור לחיפוש קולי</string>
+    <string name="visible_ui">מוצג</string>
+    <string name="hidden_ui">חבוי</string>
+    <string name="view_options_type_grid">רשת</string>
+    <string name="view_options_type_list">רשימה</string>
+    <string name="view_options_type_list_compact">רשימה קומפקטית</string>
+    <string name="user_interface_language">שפת ממשק המשתמש</string>
+    <string name="display_toggles_title">תצוגת דירוגים</string>
+    <string name="display_toggles_summary">התאם אישית מה להציג</string>
+    <string name="profile_protection">אבטחת פרופיל</string>
+    <string name="continue_watching_click_behavior">התנהגות לחיצה על המשך צפייה / הבא בתור</string>
+    <string name="continue_watching_click_summary_on">נגן בלחיצה</string>
+    <string name="continue_watching_click_summary_off">הצג פרטים בלחיצה</string>
+    <string name="stars">כוכבים</string>
+    <string name="tomatoes">עגבניות</string>
+    <string name="sort">מיון</string>
+    <string name="split_into_separate_rows">פצל לשורות נפרדות</string>
 </resources>
