@@ -603,4 +603,6 @@
     <string name="view_options_type_list">列表</string>
     <string name="view_options_type_list_compact">緊湊列表</string>
     <string name="user_interface_language">介面語言</string>
+    <string name="sort">排序</string>
+    <string name="split_into_separate_rows">分開為不同列</string>
 </resources>

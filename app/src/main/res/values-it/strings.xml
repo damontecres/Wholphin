@@ -629,4 +629,16 @@
     <string name="continue_watching_click_summary_off">Mostra dettagli al click</string>
     <string name="stars">Stelle</string>
     <string name="tomatoes">Pomodori</string>
+    <string name="show_voice_search_button">Mostra pulsante di ricerca vocale</string>
+    <string name="visible_ui">Visibile</string>
+    <string name="hidden_ui">Nascosto</string>
+    <string name="view_options_type_grid">Griglia</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="split_into_separate_rows">Dividi in righe separate</string>
+    <string name="view_options_type_list_compact">Lista compatta</string>
+    <string name="user_interface_language">Lingua dell\'interfaccia</string>
+    <string name="display_toggles_title">Visualizzazione valutazioni</string>
+    <string name="display_toggles_summary">Personalizza quali mostrare</string>
+    <string name="continue_watching_click_behavior">Comportamento click su Continua a guardare / Prossimo</string>
+    <string name="sort">Ordina</string>
 </resources>

@@ -638,4 +638,6 @@
     <string name="continue_watching_click_summary_off">Afficher les détails en cliquant</string>
     <string name="stars">Étoiles</string>
     <string name="tomatoes">Tomates</string>
+    <string name="sort">Trier</string>
+    <string name="split_into_separate_rows">Diviser en lignes distinctes</string>
 </resources>

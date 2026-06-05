@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">Аб праграме</string>
+    <string name="add_server">Дадаць сервер</string>
+    <string name="add_user">Двдаць карыстальніка</string>
 </resources>
