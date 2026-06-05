@@ -1017,7 +1017,6 @@ private fun <T : CardGridItem> SearchGrid(
     positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RequestOrRestoreFocus(focusRequester)
     Column(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier = modifier,
