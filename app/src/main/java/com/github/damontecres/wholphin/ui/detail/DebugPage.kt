@@ -2,6 +2,10 @@ package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioFormat
+import android.media.AudioManager
 import android.os.Build
 import android.util.Log
 import android.view.Display
@@ -12,11 +16,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,7 +32,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -33,16 +39,18 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.BuildConfig
-import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.api.client.ApiClient
@@ -59,17 +67,18 @@ import javax.inject.Inject
 class DebugViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
     ) : ViewModel() {
+        val state = MutableStateFlow(DebugState())
         val itemPlaybacks = MutableStateFlow<List<ItemPlayback>>(emptyList())
         val logcat = MutableStateFlow<List<LogcatLine>>(emptyList())
 
         val supportedModes by lazy {
-            val displayManager =
-                MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
             display.supportedModes.orEmpty()
         }
@@ -103,6 +112,55 @@ class DebugViewModel
         }
 
         init {
+            viewModelScope.launchDefault {
+                val buildTime = Date(BuildConfig.BUILD_TIME)
+                val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val installInfo =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val installSource =
+                            context.packageManager.getInstallSourceInfo(context.packageName)
+                        buildList {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                add("Install source: ${installSource.packageSource}")
+                            }
+                            add("Installer: ${installSource.installingPackageName}")
+                            add("Initiator: ${installSource.initiatingPackageName}")
+                        }
+                    } else {
+                        listOf(
+                            context.packageManager
+                                .getInstallerPackageName(context.packageName)
+                                .toString(),
+                        )
+                    }
+
+                val appInfo =
+                    listOf(
+                        "Version Name: ${pkgInfo.versionName}",
+                        "Version Code: ${pkgInfo.versionCodeLong}",
+                        "ClientInfo:  $clientInfo",
+                        "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Build flavor: ${BuildConfig.FLAVOR}",
+                        "Build time: $buildTime",
+                        "FFMPEG included: $ffmpegIncluded",
+                        "AV1 included: $av1Included",
+                        "libmpv loaded: $libMpvLoaded",
+                        "Debug enabled: ${BuildConfig.DEBUG}",
+                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    ) + installInfo
+                state.update { it.copy(appInfo = appInfo) }
+            }
+            viewModelScope.launchDefault {
+                val deviceInfoList =
+                    listOf(
+                        "DeviceInfo:  $deviceInfo",
+                        "Manufacturer: ${Build.MANUFACTURER}",
+                        "Model: ${Build.MODEL}",
+                        "API Level: ${Build.VERSION.SDK_INT}",
+                        "Display Modes:",
+                    ) + supportedModes.map { it.toString() }
+                state.update { it.copy(deviceInfo = deviceInfoList) }
+            }
             viewModelScope.launchIO {
                 serverRepository.currentUser?.rowId?.let {
                     val results = itemPlaybackDao.getItems(it)
@@ -112,6 +170,39 @@ class DebugViewModel
             viewModelScope.launchIO {
                 val logcat = getLogCatLines()
                 this@DebugViewModel.logcat.value = logcat
+            }
+            viewModelScope.launchDefault {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                val callback =
+                    object : AudioDeviceCallback() {
+                        override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
+                            state.update {
+                                it.copy(
+                                    audioInfo =
+                                        it.audioInfo.toMutableList().apply {
+                                            addAll(
+                                                addedDevices
+                                                    .filter { it.isSink }
+                                                    .map { it.details },
+                                            )
+                                        },
+                                )
+                            }
+                        }
+
+                        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                            state.update {
+                                it.copy(
+                                    audioInfo =
+                                        it.audioInfo.toMutableList().apply {
+                                            removeAll(removedDevices.map { it.details })
+                                        },
+                                )
+                            }
+                        }
+                    }
+                audioManager.registerAudioDeviceCallback(callback, null)
+                addCloseable { audioManager.unregisterAudioDeviceCallback(callback) }
             }
         }
 
@@ -189,18 +280,143 @@ data class LogcatLine(
     val text: String,
 )
 
+data class DebugState(
+    val appInfo: List<String> = emptyList(),
+    val deviceInfo: List<String> = emptyList(),
+    val audioInfo: List<String> = emptyList(),
+)
+
+val AudioDeviceInfo.details: String
+    get() {
+        val typeName =
+            when (type) {
+                AudioDeviceInfo.TYPE_HDMI -> "HDMI"
+                AudioDeviceInfo.TYPE_HDMI_ARC -> "ARC"
+                AudioDeviceInfo.TYPE_HDMI_EARC -> "eARC"
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Speaker"
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER_SAFE -> "Speaker Safe"
+                else -> "N/A"
+            }
+        val addressStr =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                address
+            } else {
+                null
+            }
+        val encodings =
+            encodings.map { enc ->
+                when (enc) {
+                    AudioFormat.ENCODING_INVALID -> "INVALID"
+
+                    AudioFormat.ENCODING_PCM_16BIT -> "PCM_16BIT"
+
+                    AudioFormat.ENCODING_PCM_8BIT -> "PCM_8BIT"
+
+                    AudioFormat.ENCODING_PCM_FLOAT -> "PCM_FLOAT"
+
+                    AudioFormat.ENCODING_AC3 -> "AC3"
+
+                    AudioFormat.ENCODING_E_AC3 -> "E_AC3"
+
+                    AudioFormat.ENCODING_DTS -> "DTS"
+
+                    AudioFormat.ENCODING_DTS_HD -> "DTS_HD"
+
+                    AudioFormat.ENCODING_MP3 -> "MP3"
+
+                    AudioFormat.ENCODING_AAC_LC -> "AAC_LC"
+
+                    AudioFormat.ENCODING_AAC_HE_V1 -> "AAC_HE_V1"
+
+                    AudioFormat.ENCODING_AAC_HE_V2 -> "AAC_HE_V2"
+
+                    AudioFormat.ENCODING_IEC61937 -> "IEC61937"
+
+                    AudioFormat.ENCODING_DOLBY_TRUEHD -> "DOLBY_TRUEHD"
+
+                    AudioFormat.ENCODING_AAC_ELD -> "AAC_ELD"
+
+                    AudioFormat.ENCODING_AAC_XHE -> "AAC_XHE"
+
+                    AudioFormat.ENCODING_AC4 -> "AC4"
+
+                    // AudioFormat.ENCODING_AC4_L4->"AC4_L4"
+
+                    AudioFormat.ENCODING_E_AC3_JOC -> "E_AC3_JOC"
+
+                    AudioFormat.ENCODING_DOLBY_MAT -> "DOLBY_MAT"
+
+                    AudioFormat.ENCODING_OPUS -> "OPUS"
+
+                    AudioFormat.ENCODING_PCM_24BIT_PACKED -> "PCM_24BIT_PACKED"
+
+                    AudioFormat.ENCODING_PCM_32BIT -> "PCM_32BIT"
+
+                    AudioFormat.ENCODING_MPEGH_BL_L3 -> "MPEGH_BL_L3"
+
+                    AudioFormat.ENCODING_MPEGH_BL_L4 -> "MPEGH_BL_L4"
+
+                    AudioFormat.ENCODING_MPEGH_LC_L3 -> "MPEGH_LC_L3"
+
+                    AudioFormat.ENCODING_MPEGH_LC_L4 -> "MPEGH_LC_L4"
+
+                    AudioFormat.ENCODING_DTS_UHD_P1 -> "DTS_UHD_P1"
+
+                    AudioFormat.ENCODING_DRA -> "DRA"
+
+                    AudioFormat.ENCODING_DTS_HD_MA -> "DTS_HD_MA"
+
+                    AudioFormat.ENCODING_DTS_UHD_P2 -> "DTS_UHD_P2"
+
+                    AudioFormat.ENCODING_DSD -> "DSD"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_AAC -> "IAMF_BASE_ENHANCED_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_FLAC -> "IAMF_BASE_ENHANCED_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_OPUS -> "IAMF_BASE_ENHANCED_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_PCM -> "IAMF_BASE_ENHANCED_PROFILE_PCM"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_AAC -> "IAMF_BASE_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_FLAC -> "IAMF_BASE_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_OPUS -> "IAMF_BASE_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_PCM -> "IAMF_BASE_PROFILE_PCM"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_AAC -> "IAMF_SIMPLE_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_FLAC -> "IAMF_SIMPLE_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_OPUS -> "IAMF_SIMPLE_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_PCM -> "IAMF_SIMPLE_PROFILE_PCM"
+
+                    else -> "invalid encoding $enc"
+                }
+            }
+        return "AudioDeviceInfo(id=$id, type=$type ($typeName), " +
+            "channelCounts=${channelCounts.contentToString()}, " +
+            "encodings=$encodings, " +
+            "productName=$productName, address=$addressStr)"
+    }
+
 @Composable
 fun DebugPage(
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: DebugViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    val scrollAmount = 100f
     val columnState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val state by viewModel.state.collectAsState()
 
-    fun scroll(reverse: Boolean = false) {
+    fun scroll(
+        reverse: Boolean = false,
+        scrollAmount: Float = 100f,
+    ) {
         scope.launch(ExceptionHandler()) {
             columnState.scrollBy(if (reverse) -scrollAmount else scrollAmount)
         }
@@ -209,10 +425,12 @@ fun DebugPage(
     val itemPlaybacks by viewModel.itemPlaybacks.collectAsState()
     val logcat by viewModel.logcat.collectAsState()
 
+    val padding = remember { PaddingValues(bottom = 32.dp) }
+
     LazyColumn(
         state = columnState,
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(32.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier =
             modifier
                 .focusable()
@@ -230,52 +448,33 @@ fun DebugPage(
                         scroll(true)
                         return@onKeyEvent true
                     }
+                    if (it.key == Key.MediaFastForward || it.key == Key.PageDown) {
+                        scroll(false, 300f)
+                        return@onKeyEvent true
+                    }
+                    if (it.key == Key.MediaSkipBackward || it.key == Key.PageUp) {
+                        scroll(true, 300f)
+                        return@onKeyEvent true
+                    }
                     return@onKeyEvent false
                 },
     ) {
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
                 Text(
                     text = "App Information",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val buildTime = Date(BuildConfig.BUILD_TIME)
-                val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                val installInfo =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val installSource =
-                            context.packageManager.getInstallSourceInfo(context.packageName)
-                        buildList {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                add("Install source: ${installSource.packageSource}")
-                            }
-                            add("Installer: ${installSource.installingPackageName}")
-                            add("Initiator: ${installSource.initiatingPackageName}")
-                        }
-                    } else {
-                        listOf(context.packageManager.getInstallerPackageName(context.packageName))
-                    }
-                (
-                    listOf(
-                        "Version Name: ${pkgInfo.versionName}",
-                        "Version Code: ${pkgInfo.versionCodeLong}",
-                        "ClientInfo:  ${viewModel.clientInfo}",
-                        "Build type: ${BuildConfig.BUILD_TYPE}",
-                        "Build flavor: ${BuildConfig.FLAVOR}",
-                        "Build time: $buildTime",
-                        "FFMPEG included: ${viewModel.ffmpegIncluded}",
-                        "AV1 included: ${viewModel.av1Included}",
-                        "libmpv loaded: ${viewModel.libMpvLoaded}",
-                        "Debug enabled: ${BuildConfig.DEBUG}",
-                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
-                    ) + installInfo
-                ).forEach {
+                state.appInfo.forEach {
                     Text(
-                        text = it.toString(),
+                        text = it,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -285,7 +484,10 @@ fun DebugPage(
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
                 Text(
                     text = "Device Information",
@@ -293,16 +495,23 @@ fun DebugPage(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
-                listOf(
-                    "DeviceInfo:  ${viewModel.deviceInfo}",
-                    "Manufacturer: ${Build.MANUFACTURER}",
-                    "Model: ${Build.MODEL}",
-                    "API Level: ${Build.VERSION.SDK_INT}",
-                    "Display Modes:",
-                    *viewModel.supportedModes,
-                ).forEach {
+                state.deviceInfo.forEach {
                     Text(
-                        text = it.toString(),
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+
+                Text(
+                    text = "Audio Devices",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                state.audioInfo.forEach {
+                    Text(
+                        text = it,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -312,7 +521,10 @@ fun DebugPage(
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
                 Text(
                     text = "AppPreferences",
@@ -329,7 +541,10 @@ fun DebugPage(
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
                 Text(
                     text = "User Information",
@@ -356,7 +571,10 @@ fun DebugPage(
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
                 Text(
                     text = "Database",
@@ -387,23 +605,23 @@ fun DebugPage(
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                logcat.forEach { (level, line) ->
-                    val color =
-                        when (level) {
-                            Log.VERBOSE -> MaterialTheme.colorScheme.onSurface
-                            Log.DEBUG -> Color(0xff2bc4cf)
-                            Log.INFO -> Color(0xff2bcf8b)
-                            Log.WARN -> Color(0xffdde663)
-                            Log.ERROR -> Color(0xffe67063)
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    Text(
-                        text = line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = color,
-                    )
-                }
             }
+        }
+        items(logcat) { (level, line) ->
+            val color =
+                when (level) {
+                    Log.VERBOSE -> MaterialTheme.colorScheme.onSurface
+                    Log.DEBUG -> Color(0xff2bc4cf)
+                    Log.INFO -> Color(0xff2bcf8b)
+                    Log.WARN -> Color(0xffdde663)
+                    Log.ERROR -> Color(0xffe67063)
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall,
+                color = color,
+            )
         }
     }
 }
