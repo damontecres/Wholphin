@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.ui.components.ViewOptions
@@ -46,8 +47,9 @@ import java.util.UUID
         ItemTrackModification::class,
         SeerrServer::class,
         SeerrUser::class,
+        RememberedTab::class,
     ],
-    version = 33,
+    version = 34,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -64,6 +66,7 @@ import java.util.UUID
         AutoMigration(30, 31),
         AutoMigration(31, 32),
         AutoMigration(32, 33),
+        AutoMigration(33, 34),
     ],
 )
 @TypeConverters(Converters::class)
@@ -81,6 +84,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun seerrServerDao(): SeerrServerDao
 
     abstract fun playbackEffectDao(): PlaybackEffectDao
+
+    abstract fun rememberedTabDao(): RememberedTabDao
 }
 
 class Converters {
