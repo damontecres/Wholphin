@@ -66,6 +66,7 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.PersonKind
 import kotlin.time.Duration
 
@@ -97,6 +98,7 @@ fun SeriesOverviewContent(
     canDelete: (BaseItem) -> Boolean,
     onConfirmDelete: (BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
+    onChooseVersion: (BaseItem, MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -323,6 +325,7 @@ fun SeriesOverviewContent(
                         },
                         canDelete = canDelete.invoke(ep),
                         onConfirmDelete = { onConfirmDelete.invoke(ep) },
+                        onChooseVersion = { onChooseVersion.invoke(ep, it) },
                         modifier =
                             Modifier
                                 .padding(top = 4.dp)

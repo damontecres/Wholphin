@@ -274,6 +274,7 @@ fun ContextMenu(
                 onDismissRequest = { chooseVersion = null },
                 dismissOnClick = true,
                 waitToLoad = params.fromLongClick,
+                elevation = 3.dp,
             )
         }
     }
@@ -285,6 +286,7 @@ fun ContextMenu(
                 actions.onDeleteItem.invoke(item)
                 onDismissRequest.invoke()
             },
+            elevation = 3.dp,
         )
     }
     if (showPlayWithDialog) {

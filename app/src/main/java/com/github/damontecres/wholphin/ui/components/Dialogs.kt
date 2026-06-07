@@ -64,6 +64,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
@@ -630,7 +631,14 @@ fun chooseVersionParams(
                         SelectedLeadingContent(uuid != null && uuid == chosenSourceId)
                     },
                     supportingContent = {
-                        videoStream?.displayTitle?.let { Text(text = it) }
+                        val text =
+                            remember {
+                                buildList {
+                                    videoStream?.displayTitle?.let(::add)
+                                    source.bitrate?.let(::formatBitrate)?.let(::add)
+                                }.joinToString(", ")
+                            }
+                        Text(text)
                     },
                     onClick = { onClick.invoke(index) },
                 )

@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +57,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
@@ -63,6 +65,7 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -83,9 +86,11 @@ fun ExpandablePlayButtons(
     moreOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     onConfirmDelete: () -> Unit,
+    chooseVersionParams: ChooseVersionParams?,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val resources = LocalResources.current
     val firstFocus = remember { FocusRequester() }
     val restartInteractionSource = remember { MutableInteractionSource() }
     val restartButtonFocused by restartInteractionSource.collectIsFocusedAsState()
@@ -95,6 +100,9 @@ fun ExpandablePlayButtons(
             firstFocus.tryRequestFocus()
         }
     }
+
+    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(8.dp),
@@ -125,6 +133,30 @@ fun ExpandablePlayButtons(
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
                     interactionSource = restartInteractionSource,
+                )
+            }
+        }
+
+        if (chooseVersionParams != null && chooseVersionParams.mediaSources.size > 1) {
+            item {
+                ExpandableFaButton(
+                    title = R.string.version,
+                    iconStringRes = R.string.fa_file_video,
+                    onClick = {
+                        chooseVersion =
+                            chooseVersionParams(
+                                resources,
+                                chooseVersionParams.mediaSources.orEmpty(),
+                                chooseVersionParams.chosenStreams
+                                    ?.source
+                                    ?.id
+                                    ?.toUUIDOrNull(),
+                            ) { idx ->
+                                val source = chooseVersionParams.mediaSources[idx]
+                                chooseVersionParams.onChooseVersion.invoke(source)
+                            }
+                    },
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                 )
             }
         }
@@ -181,6 +213,16 @@ fun ExpandablePlayButtons(
                 modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
+    }
+    chooseVersion?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { chooseVersion = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
     }
 }
 
@@ -451,6 +493,7 @@ private fun ExpandablePlayButtonsPreview() {
             trailerOnClick = {},
             canDelete = true,
             onConfirmDelete = {},
+            chooseVersionParams = null,
             modifier = Modifier,
         )
     }
