@@ -157,9 +157,13 @@ class DebugViewModel
                         "Manufacturer: ${Build.MANUFACTURER}",
                         "Model: ${Build.MODEL}",
                         "API Level: ${Build.VERSION.SDK_INT}",
-                        "Display Modes:",
-                    ) + supportedModes.map { it.toString() }
-                state.update { it.copy(deviceInfo = deviceInfoList) }
+                    )
+                state.update {
+                    it.copy(
+                        deviceInfo = deviceInfoList,
+                        displayModes = supportedModes.map { it.toString() },
+                    )
+                }
             }
             viewModelScope.launchIO {
                 serverRepository.currentUser?.rowId?.let {
@@ -283,6 +287,7 @@ data class LogcatLine(
 data class DebugState(
     val appInfo: List<String> = emptyList(),
     val deviceInfo: List<String> = emptyList(),
+    val displayModes: List<String> = emptyList(),
     val audioInfo: List<String> = emptyList(),
 )
 
@@ -467,17 +472,9 @@ fun DebugPage(
                         .fillMaxWidth()
                         .padding(padding),
             ) {
-                Text(
-                    text = "App Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("App Information")
                 state.appInfo.forEach {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    BodyText(it)
                 }
             }
         }
@@ -489,32 +486,19 @@ fun DebugPage(
                         .fillMaxWidth()
                         .padding(padding),
             ) {
-                Text(
-                    text = "Device Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-
+                SectionTitle("Device Information")
                 state.deviceInfo.forEach {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    BodyText(it)
                 }
 
-                Text(
-                    text = "Audio Devices",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SubSectionTitle("Display Modes")
+                state.displayModes.forEach {
+                    BodyText(it)
+                }
 
+                SubSectionTitle("Audio Devices")
                 state.audioInfo.forEach {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    BodyText(it)
                 }
             }
         }
@@ -526,16 +510,8 @@ fun DebugPage(
                         .fillMaxWidth()
                         .padding(padding),
             ) {
-                Text(
-                    text = "AppPreferences",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = preferences.appPreferences.toString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("AppPreferences")
+                BodyText(preferences.appPreferences.toString())
             }
         }
         item {
@@ -546,26 +522,10 @@ fun DebugPage(
                         .fillMaxWidth()
                         .padding(padding),
             ) {
-                Text(
-                    text = "User Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Current server: ${viewModel.serverRepository.currentServer}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Current user: ${viewModel.serverRepository.currentUser}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "User server settings: ${viewModel.serverRepository.currentUserDto?.configuration}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("User Information")
+                BodyText("Current server: ${viewModel.serverRepository.currentServer}")
+                BodyText("Current user: ${viewModel.serverRepository.currentUser}")
+                BodyText("User server settings: ${viewModel.serverRepository.currentUserDto?.configuration}")
             }
         }
         item {
@@ -576,22 +536,11 @@ fun DebugPage(
                         .fillMaxWidth()
                         .padding(padding),
             ) {
-                Text(
-                    text = "Database",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "ItemPlayback",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("Database")
+
+                SubSectionTitle("ItemPlayback")
                 itemPlaybacks.forEach {
-                    Text(
-                        text = it.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    BodyText(it.toString())
                 }
             }
         }
@@ -600,11 +549,7 @@ fun DebugPage(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = "Logcat",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("Logcat")
             }
         }
         items(logcat) { (level, line) ->
@@ -624,6 +569,33 @@ fun DebugPage(
             )
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun SubSectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun BodyText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 }
 
 private val THIRD_PARTY_TAGS =
