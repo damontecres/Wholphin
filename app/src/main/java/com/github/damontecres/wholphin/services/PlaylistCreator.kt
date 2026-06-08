@@ -23,6 +23,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -216,14 +217,29 @@ class PlaylistCreator
                 }
 
                 BaseItemKind.SERIES -> {
-                    PlaylistCreationResult.Success(
-                        createFromEpisode(
-                            seriesId = item.id,
-                            seasonId = null,
-                            episodeId = null,
-                            shuffled = shuffled,
-                        ),
-                    )
+                    val result by api.tvShowsApi.getNextUp(seriesId = item.id)
+                    val nextUp =
+                        result.items.firstOrNull() ?: api.tvShowsApi
+                            .getEpisodes(
+                                item.id,
+                                limit = 1,
+                            ).content.items
+                            .firstOrNull()
+                    if (nextUp != null) {
+                        PlaylistCreationResult.Success(
+                            createFromEpisode(
+                                seriesId = item.id,
+                                seasonId = null,
+                                episodeId = nextUp.id,
+                                shuffled = shuffled,
+                            ),
+                        )
+                    } else {
+                        PlaylistCreationResult.Error(
+                            null,
+                            "Could not determine next up episode for series: " + item.id,
+                        )
+                    }
                 }
 
                 BaseItemKind.PLAYLIST -> {
