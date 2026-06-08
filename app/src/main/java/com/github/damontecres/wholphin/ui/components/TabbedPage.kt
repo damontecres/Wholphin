@@ -83,7 +83,7 @@ data class TabDetails(
 ) {
     constructor(
         @StringRes stringResId: Int,
-    ) : this(ResStringProvider(stringResId), FocusRequester(), FocusRequester())
+    ) : this(ResStringProvider(stringResId))
 }
 
 @Composable
