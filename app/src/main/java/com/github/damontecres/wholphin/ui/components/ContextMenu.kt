@@ -356,7 +356,6 @@ private fun buildContextMenuItems(
                     DialogItem(
                         resources.getString(R.string.resume),
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         actions.navigateTo(
@@ -386,7 +385,6 @@ private fun buildContextMenuItems(
                     DialogItem(
                         resources.getString(R.string.play),
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         actions.navigateTo(
@@ -751,7 +749,6 @@ fun buildContextForMusic(
             DialogItem(
                 resources.getString(R.string.play),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
@@ -761,7 +758,6 @@ fun buildContextForMusic(
             DialogItem(
                 resources.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)
@@ -884,7 +880,6 @@ fun buildContextForMusicQueue(
             DialogItem(
                 resources.getString(R.string.play),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
@@ -894,7 +889,6 @@ fun buildContextForMusicQueue(
             DialogItem(
                 resources.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)

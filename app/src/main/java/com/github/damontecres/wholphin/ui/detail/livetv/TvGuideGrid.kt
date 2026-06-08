@@ -259,7 +259,6 @@ fun TvGuideGrid(
                     DialogItem(
                         watchLiveStr,
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         viewModel.navigationManager.navigateTo(
