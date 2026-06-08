@@ -75,7 +75,7 @@ fun FavoritesPage(
 
 //    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     TabbedPage(
-        itemId = "favorites",
+        itemId = NavDrawerItem.Favorites.id,
         tabs = tabs,
         showTabs = showHeader,
         modifier = modifier,
