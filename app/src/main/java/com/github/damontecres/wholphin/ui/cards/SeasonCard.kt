@@ -133,7 +133,7 @@ fun SeasonCard(
     val spaceBetween =
         animateDpAsState(
             if (focused) spaceBetweenFocused else spaceBetweenUnfocused,
-            label = "spaceBelow",
+            label = "spaceBetween",
         )
 
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
