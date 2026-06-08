@@ -1,36 +1,30 @@
 package com.github.damontecres.wholphin.ui.detail
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
-import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.TabDetails
+import com.github.damontecres.wholphin.ui.components.TabbedPage
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
@@ -39,86 +33,55 @@ import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
-import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
-import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
-import com.github.damontecres.wholphin.ui.tryRequestFocus
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import javax.inject.Inject
+
+@HiltViewModel
+class FavoritesViewModel
+    @Inject
+    constructor(
+        val navigationManager: NavigationManager,
+    ) : ViewModel()
 
 @Composable
 fun FavoritesPage(
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
-    preferencesViewModel: PreferencesViewModel = hiltViewModel(),
+    viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
-    val uiPrefs = preferences.appPreferences.interfacePreferences
-    val rememberedTabIndex =
+    val tabs =
         remember {
-            preferencesViewModel.getRememberedTab(
-                preferences,
-                NavDrawerItem.Favorites.id,
-                0,
+            listOf(
+                TabDetails(R.string.movies),
+                TabDetails(R.string.tv_shows),
+                TabDetails(R.string.episodes),
+                TabDetails(R.string.videos),
+                TabDetails(R.string.playlists),
+                TabDetails(R.string.people),
+            )
+        }
+    val actions =
+        remember {
+            GridClickActions(
+                onClickItem = { _, item -> viewModel.navigationManager.navigateTo(item.destination()) },
             )
         }
 
-    val tabs =
-        listOf(
-            stringResource(R.string.movies),
-            stringResource(R.string.tv_shows),
-            stringResource(R.string.episodes),
-            stringResource(R.string.videos),
-            stringResource(R.string.playlists),
-            stringResource(R.string.people),
-        )
-    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(selectedTabIndex) {
-        logTab("favorites", selectedTabIndex)
-        preferencesViewModel.saveRememberedTab(
-            preferences,
-            NavDrawerItem.Favorites.id,
-            selectedTabIndex,
-        )
-        preferencesViewModel.backdropService.clearBackdrop()
-    }
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    val onClickItem = { item: BaseItem ->
-        preferencesViewModel.navigationManager.navigateTo(item.destination())
-    }
-
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-    Column(
+//    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    TabbedPage(
+        itemId = NavDrawerItem.Favorites.id,
+        tabs = tabs,
+        showTabs = showHeader,
         modifier = modifier,
-    ) {
-        AnimatedVisibility(
-            showHeader,
-            enter = expandVertically(),
-            exit = shrinkVertically(),
-        ) {
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                modifier =
-                    Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp),
-                tabs = tabs,
-                onClick = { selectedTabIndex = it },
-                focusRequesters = tabFocusRequesters,
-            )
-        }
-        val actions =
-            remember {
-                GridClickActions(
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
-                )
-            }
-
+    ) { tabIndex, tabDetails ->
         // TODO playEnabled = true for movies & episodes
-        when (selectedTabIndex) {
+        when (tabIndex) {
             // Movies
             0 -> {
                 CollectionFolderView(
@@ -141,13 +104,13 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
@@ -173,13 +136,13 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
@@ -206,13 +169,13 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
@@ -238,13 +201,13 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
@@ -270,13 +233,13 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
@@ -307,18 +270,18 @@ fun FavoritesPage(
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .focusRequester(tabDetails.contentFocusRequester),
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
                     playEnabled = false,
                     filterOptions = listOf(),
-                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                    focusRequesterOnEmpty = tabDetails.tabFocusRequester,
                 )
             }
 
             else -> {
-                ErrorMessage("Invalid tab index $selectedTabIndex", null)
+                ErrorMessage("Invalid tab index $tabIndex", null)
             }
         }
     }

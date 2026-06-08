@@ -359,6 +359,7 @@ fun DestinationContent(
         }
 
         Destination.Discover -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             DiscoverPage(
                 preferences = preferences,
                 modifier = modifier,

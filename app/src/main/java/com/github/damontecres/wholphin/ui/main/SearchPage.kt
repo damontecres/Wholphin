@@ -86,6 +86,7 @@ import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.TabDetails
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
@@ -518,6 +519,15 @@ fun SearchPage(
             }
         }
     }
+
+    val tabs =
+        remember {
+            listOf(
+                TabDetails(R.string.library),
+                TabDetails(R.string.discover),
+            )
+        }
+
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -610,12 +620,7 @@ fun SearchPage(
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                tabs =
-                    listOf(
-                        stringResource(R.string.library),
-                        stringResource(R.string.discover),
-                    ),
-                focusRequesters = tabFocusRequesters,
+                tabs = tabs,
                 onClick = {
                     selectedTab = it
                     val row =
