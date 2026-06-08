@@ -374,7 +374,7 @@ fun HomePageContent(
                     itemsIndexed(homeRows) { rowIndex, row ->
                         val rowModifier =
                             Modifier
-                                .animateItem()
+                                .animateItem(placementSpec = null)
                                 .padding(bottom = 8.dp)
                         CompositionLocalProvider(
                             LocalBringIntoViewSpec provides defaultBringIntoViewSpec,
