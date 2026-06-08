@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.data.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import java.util.UUID
 
 @Entity(
     foreignKeys = [
@@ -20,6 +19,6 @@ import java.util.UUID
 )
 data class RememberedTab(
     val userId: Int,
-    val itemId: UUID,
+    val itemId: String,
     val index: Int,
 )

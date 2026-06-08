@@ -104,7 +104,7 @@ fun TabRow(
                 rowActive = rowHasFocus,
                 interactionSource = interactionSource,
                 onClick = onTabClick,
-                modifier = Modifier.focusRequester(focusRequesters.getOrElse(index) { FocusRequester() }),
+                modifier = Modifier.focusRequester(focusRequesters.getOrElse(index) { remember { FocusRequester() } }),
             )
         }
     }
@@ -195,7 +195,7 @@ private fun TabRowPreview() {
     WholphinTheme {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
             TabRow(
-                selectedTabIndex = 1,
+                selectedTabIndex = -1,
                 tabs = listOf("Tab 1", "Tab 2", "Tab 3"),
                 focusRequesters = listOf(),
                 onClick = {},

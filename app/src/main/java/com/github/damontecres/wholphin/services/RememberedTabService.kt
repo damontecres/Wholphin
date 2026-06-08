@@ -5,7 +5,6 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.RememberedTab
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.model.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,7 +15,7 @@ class RememberedTabService
         private val serverRepository: ServerRepository,
         private val rememberedTabDao: RememberedTabDao,
     ) {
-        suspend fun getRememberedTab(itemId: UUID): Int? =
+        suspend fun getRememberedTab(itemId: String): Int? =
             withContext(Dispatchers.IO) {
                 serverRepository.currentUser?.rowId?.let { userId ->
                     rememberedTabDao.getRememberedTab(userId, itemId)?.index
@@ -24,7 +23,7 @@ class RememberedTabService
             }
 
         suspend fun saveRememberedTab(
-            itemId: UUID,
+            itemId: String,
             tabIndex: Int,
         ): Unit =
             withContext(Dispatchers.IO) {
