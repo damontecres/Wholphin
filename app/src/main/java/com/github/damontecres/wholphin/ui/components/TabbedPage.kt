@@ -43,15 +43,20 @@ class TabViewModel
             fun create(itemId: String): TabViewModel
         }
 
-        private val _state = MutableStateFlow<Int>(-1)
+        private val _state = MutableStateFlow<Int>(UNSET)
         val state: StateFlow<Int> = _state
 
         init {
             viewModelScope.launchIO {
                 val startingTab =
-                    if (rememberTabs()) {
+                    if (shouldRememberTabs()) {
                         Timber.v("Getting remembered tab for %s", itemId)
-                        rememberedTabService.getRememberedTab(itemId) ?: 0
+                        try {
+                            rememberedTabService.getRememberedTab(itemId)
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error getting tab for %s", itemId)
+                            null
+                        } ?: 0
                     } else {
                         0
                     }
@@ -59,16 +64,16 @@ class TabViewModel
             }
         }
 
-        private suspend fun rememberTabs(): Boolean =
+        private suspend fun shouldRememberTabs(): Boolean =
             userPreferencesService
                 .getCurrent()
                 .appPreferences.interfacePreferences.rememberSelectedTab
 
-        fun saveTabIndex(tabIndex: Int) {
+        fun updateSelectedTabIndex(tabIndex: Int) {
             _state.value = tabIndex
             viewModelScope.launchIO {
                 backdropService.clearBackdrop()
-                if (rememberTabs()) {
+                if (shouldRememberTabs()) {
                     Timber.v("Saving remembered tab for %s: %s", itemId, tabIndex)
                     rememberedTabService.saveRememberedTab(itemId, tabIndex)
                 }
@@ -86,6 +91,13 @@ data class TabDetails(
     ) : this(ResStringProvider(stringResId))
 }
 
+const val UNSET = -1234
+
+/**
+ * A page showing multiple tabs
+ *
+ * This handles remembering the selected tabs via [TabViewModel] if needed
+ */
 @Composable
 fun TabbedPage(
     itemId: String,
@@ -100,9 +112,6 @@ fun TabbedPage(
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
     val selectedTabIndex by viewModel.state.collectAsState()
-    val tabTitles = tabs.map { it.title.getString() }
-    val tabFocusRequesters = tabs.map { it.contentFocusRequester }
-
     Column(
         modifier = modifier,
     ) {
@@ -116,16 +125,15 @@ fun TabbedPage(
                 modifier =
                     Modifier
                         .padding(vertical = 16.dp),
-                tabs = tabTitles,
-                onClick = viewModel::saveTabIndex,
-                focusRequesters = tabFocusRequesters,
+                tabs = tabs,
+                onClick = viewModel::updateSelectedTabIndex,
             )
         }
         selectedTabIndex.let { tabIndex ->
             if (tabIndex >= 0) {
                 tabContent.invoke(tabIndex, tabs[tabIndex])
             } else {
-                // TODO
+                DelayedLoadingPage(focusEnabled = false)
             }
         }
     }
