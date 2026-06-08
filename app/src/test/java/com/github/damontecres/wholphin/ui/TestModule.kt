@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
+import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -254,6 +255,10 @@ object TestDatabaseModule {
         @Provides
         @Singleton
         fun playbackEffectDao(db: AppDatabase): PlaybackEffectDao = db.playbackEffectDao()
+
+        @Provides
+        @Singleton
+        fun rememberedTabDao(db: AppDatabase): RememberedTabDao = db.rememberedTabDao()
 
         @Provides
         @Singleton
