@@ -16,4 +16,7 @@ interface RememberedTabDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(item: RememberedTab): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveAll(items: List<RememberedTab>)
 }
