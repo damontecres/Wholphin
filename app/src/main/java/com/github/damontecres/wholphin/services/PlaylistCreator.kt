@@ -203,42 +203,71 @@ class PlaylistCreator
                 BaseItemKind.SEASON -> {
                     val seriesId = item.seriesId
                     if (seriesId != null) {
-                        PlaylistCreationResult.Success(
-                            createFromEpisode(
-                                seriesId = seriesId,
-                                seasonId = item.id,
-                                episodeId = null,
-                                shuffled = shuffled,
-                            ),
-                        )
+                        if (shuffled) {
+                            api.tvShowsApi
+                                .getEpisodes(
+                                    seriesId = seriesId,
+                                    seasonId = item.id,
+                                    limit = Playlist.MAX_SIZE,
+                                    sortBy = ItemSortBy.RANDOM,
+                                    fields = DefaultItemFields,
+                                ).content.items
+                                .convertAndAddParts()
+                                .let {
+                                    PlaylistCreationResult.Success(Playlist(it))
+                                }
+                        } else {
+                            PlaylistCreationResult.Success(
+                                createFromEpisode(
+                                    seriesId = seriesId,
+                                    seasonId = item.id,
+                                    episodeId = null,
+                                    shuffled = shuffled,
+                                ),
+                            )
+                        }
                     } else {
                         PlaylistCreationResult.Error(null, "Episode has no seriesId")
                     }
                 }
 
                 BaseItemKind.SERIES -> {
-                    val result by api.tvShowsApi.getNextUp(seriesId = item.id)
-                    val nextUp =
-                        result.items.firstOrNull() ?: api.tvShowsApi
+                    if (shuffled) {
+                        api.tvShowsApi
                             .getEpisodes(
-                                item.id,
-                                limit = 1,
-                            ).content.items
-                            .firstOrNull()
-                    if (nextUp != null) {
-                        PlaylistCreationResult.Success(
-                            createFromEpisode(
                                 seriesId = item.id,
-                                seasonId = null,
-                                episodeId = nextUp.id,
-                                shuffled = shuffled,
-                            ),
-                        )
+                                limit = Playlist.MAX_SIZE,
+                                sortBy = ItemSortBy.RANDOM,
+                                fields = DefaultItemFields,
+                            ).content.items
+                            .convertAndAddParts()
+                            .let {
+                                PlaylistCreationResult.Success(Playlist(it))
+                            }
                     } else {
-                        PlaylistCreationResult.Error(
-                            null,
-                            "Could not determine next up episode for series: " + item.id,
-                        )
+                        val result by api.tvShowsApi.getNextUp(seriesId = item.id)
+                        val nextUp =
+                            result.items.firstOrNull() ?: api.tvShowsApi
+                                .getEpisodes(
+                                    item.id,
+                                    limit = 1,
+                                ).content.items
+                                .firstOrNull()
+                        if (nextUp != null) {
+                            PlaylistCreationResult.Success(
+                                createFromEpisode(
+                                    seriesId = item.id,
+                                    seasonId = null,
+                                    episodeId = nextUp.id,
+                                    shuffled = shuffled,
+                                ),
+                            )
+                        } else {
+                            PlaylistCreationResult.Error(
+                                null,
+                                "Could not determine next up episode for series: " + item.id,
+                            )
+                        }
                     }
                 }
 
