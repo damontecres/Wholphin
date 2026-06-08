@@ -36,7 +36,6 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -56,10 +55,8 @@ class CollectionFolderMusicViewModel
         private val musicService: MusicService,
         private val navigationManager: NavigationManager,
         val backdropService: BackdropService,
-        private val rememberTabManager: RememberTabManager,
         @Assisted private val itemId: UUID,
-    ) : ViewModel(),
-        RememberTabManager by rememberTabManager {
+    ) : ViewModel() {
         @AssistedFactory
         interface Factory {
             fun create(itemId: UUID): CollectionFolderMusicViewModel
@@ -122,9 +119,6 @@ fun CollectionFolderMusic(
             creationCallback = { it.create(destination.itemId) },
         ),
 ) {
-    val rememberedTabIndex =
-        remember { viewModel.getRememberedTab(preferences, destination.itemId, 0) }
-
     val tabs =
         remember {
             listOf(

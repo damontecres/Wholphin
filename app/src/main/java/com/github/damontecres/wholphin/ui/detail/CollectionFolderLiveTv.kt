@@ -33,7 +33,6 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
-import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,10 +49,8 @@ class LiveTvCollectionViewModel
         val api: ApiClient,
         val serverRepository: ServerRepository,
         val navigationManager: NavigationManager,
-        val rememberTabManager: RememberTabManager,
         val backdropService: BackdropService,
-    ) : ViewModel(),
-        RememberTabManager by rememberTabManager {
+    ) : ViewModel() {
         val state = MutableStateFlow(LiveTvRecordingFolderState())
 
         init {

@@ -35,7 +35,6 @@ import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
-import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -165,17 +164,6 @@ object TestModule {
         every { api.update(any(), any(), any(), any()) } returns Unit
         return api
     }
-
-    /**
-     * Implementation of [RememberTabManager] which remembers by server, user, & item
-     */
-    @Provides
-    @Singleton
-    fun rememberTabManager(
-        serverRepository: ServerRepository,
-        appPreference: DataStore<AppPreferences>,
-        @IoCoroutineScope scope: CoroutineScope,
-    ): RememberTabManager = mockk()
 
     @Provides
     @Singleton
