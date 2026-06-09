@@ -1,8 +1,11 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import androidx.annotation.OptIn
 import androidx.compose.ui.text.intl.Locale
 import androidx.media3.common.Player
 import androidx.media3.common.text.Cue
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.extractor.text.CuesWithTiming
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
@@ -12,6 +15,7 @@ import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.util.LoadingState
 import io.github.peerless2012.ass.media.AssHandler
 import org.jellyfin.sdk.model.api.MediaSegmentDto
+import kotlin.time.Duration
 
 data class PlaybackState(
     val loading: LoadingState = LoadingState.Loading,
@@ -24,6 +28,7 @@ data class PlaybackState(
     val nextUp: BaseItem? = null,
     val playlistIndex: Int = 0,
     val playlist: Playlist = Playlist(emptyList()),
+    val externalCues: ExternalCues = ExternalCues(),
 ) {
     val hasNext: Boolean get() = (playlistIndex + 1) < playlist.items.size
     val hasPrevious: Boolean get() = playlistIndex > 0
@@ -36,6 +41,12 @@ data class PlaybackState(
 
     fun nextItem(): PlaylistItem? = playlist.items.getOrNull(playlistIndex + 1)
 }
+
+@OptIn(UnstableApi::class)
+data class ExternalCues(
+    val active: Boolean = false,
+    val cues: List<CuesWithTiming> = emptyList(),
+)
 
 data class PlayerInstance(
     val player: Player,
@@ -58,3 +69,22 @@ data class SubtitleSearchState(
     val status: SubtitleSearchStatus = SubtitleSearchStatus.Inactive,
     val language: String = Locale.current.language,
 )
+
+data class ExternalCue(
+    val cues: List<Cue>,
+    val originalStartUs: Long,
+    val originalEndUs: Long,
+    val startTimeUs: Long = originalStartUs,
+    val endTimeUs: Long = originalEndUs,
+) {
+    @OptIn(UnstableApi::class)
+    constructor(c: CuesWithTiming) : this(c.cues, c.startTimeUs, c.endTimeUs)
+
+    fun withDelay(delay: Duration): ExternalCue {
+        val us = delay.inWholeMicroseconds
+        return copy(
+            startTimeUs = originalStartUs + us,
+            endTimeUs = originalEndUs + us,
+        )
+    }
+}

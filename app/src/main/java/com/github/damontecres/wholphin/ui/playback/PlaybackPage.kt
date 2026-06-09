@@ -693,8 +693,8 @@ fun PlaybackPageContent(
                 playbackDialog = it
             },
             onPlaybackActionClick = onPlaybackActionClick,
-            onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
-            enableSubtitleDelay = player is MpvPlayer,
+            onChangeSubtitleDelay = viewModel::updateSubtitleDelay,
+            enableSubtitleDelay = player is MpvPlayer || state.externalCues.active,
             enableVideoScale = player !is MpvPlayer,
         )
     }

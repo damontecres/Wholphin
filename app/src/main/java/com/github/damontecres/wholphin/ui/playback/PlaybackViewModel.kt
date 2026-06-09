@@ -22,6 +22,9 @@ import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.extractor.text.CuesWithTiming
+import androidx.media3.extractor.text.SubtitleParser
+import androidx.media3.extractor.text.subrip.SubripParser
 import androidx.media3.session.MediaSession
 import coil3.imageLoader
 import coil3.request.ImageRequest
@@ -52,6 +55,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -94,6 +98,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
@@ -151,6 +156,7 @@ class PlaybackViewModel
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
         private val musicService: MusicService,
+        @param:StandardOkHttpClient private val httpClient: OkHttpClient,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -394,6 +400,26 @@ class PlaybackViewModel
                     }
                 }
             }
+
+            viewModelScope.launchDefault {
+                while (isActive) {
+                    delay(100)
+                    if (state.value.externalCues.active) {
+                        val positionUs =
+                            onMain { player.currentPosition } * 1_000 +
+                                (
+                                    state.value.currentPlayback?.subtitleDelay
+                                        ?: Duration.ZERO
+                                ).inWholeMicroseconds
+                        val cues =
+                            state.value.externalCues.cues
+                                .filter {
+                                    positionUs in it.startTimeUs..it.endTimeUs
+                                }.flatMap { it.cues }
+                        _state.update { it.copy(subtitleCues = cues) }
+                    }
+                }
+            }
         }
 
         private fun updateCurrentPlayback(block: (CurrentPlayback?) -> CurrentPlayback?) {
@@ -607,6 +633,7 @@ class PlaybackViewModel
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
         ) = withContext(Dispatchers.IO) {
+            _state.update { it.copy(externalCues = ExternalCues(active = false)) }
             val itemId = item.id
 
             val currentPlayback = state.value.currentPlayback
@@ -710,21 +737,53 @@ class PlaybackViewModel
 
                 val externalSubtitleCount = source.externalSubtitlesCount
 
-                val externalSubtitle =
-                    source.findExternalSubtitle(subtitleIndex)?.let {
-                        it.deliveryUrl?.let { deliveryUrl ->
-                            var flags = 0
-                            if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
-                            if (it.isDefault) flags = flags.or(C.SELECTION_FLAG_DEFAULT)
-                            MediaItem.SubtitleConfiguration
-                                .Builder(
-                                    api.createUrl(deliveryUrl).toUri(),
-                                ).setId("e:${it.index}")
-                                .setMimeType(subtitleMimeTypes[it.codec])
-                                .setLanguage(it.language)
-                                .setLabel(it.title)
-                                .setSelectionFlags(flags)
-                                .build()
+                val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
+                val isSubtitleHandledInternally =
+                    subtitleIndex != null &&
+                        player is ExoPlayer &&
+                        externalSubtitle?.deliveryUrl != null &&
+                        (externalSubtitle.codec == Codec.Subtitle.SRT || externalSubtitle.codec == Codec.Subtitle.SUBRIP)
+                val subtitleConfig =
+                    externalSubtitle?.let { stream ->
+                        stream.deliveryUrl?.let { deliveryUrl ->
+                            if (stream.codec == Codec.Subtitle.SRT || stream.codec == Codec.Subtitle.SUBRIP) {
+                                Timber.i("Using built-in srt parser")
+                                val request =
+                                    okhttp3.Request
+                                        .Builder()
+                                        .url(api.createUrl(deliveryUrl))
+                                        .build()
+                                val bytes =
+                                    httpClient.newCall(request).execute().use {
+                                        if (it.isSuccessful) {
+                                            it.body.bytes()
+                                        } else {
+                                            null
+                                        }
+                                    }
+                                val cues = mutableListOf<CuesWithTiming>()
+                                SubripParser().parse(
+                                    bytes!!,
+                                    SubtitleParser.OutputOptions.allCues(),
+                                    cues::add,
+                                )
+                                Timber.v("Parsed %s external cues", cues.size)
+                                _state.update { it.copy(externalCues = ExternalCues(true, cues)) }
+                                null
+                            } else {
+                                var flags = 0
+                                if (stream.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
+                                if (stream.isDefault) flags = flags.or(C.SELECTION_FLAG_DEFAULT)
+                                MediaItem.SubtitleConfiguration
+                                    .Builder(
+                                        api.createUrl(deliveryUrl).toUri(),
+                                    ).setId("e:${stream.index}")
+                                    .setMimeType(subtitleMimeTypes[stream.codec])
+                                    .setLanguage(stream.language)
+                                    .setLabel(stream.title)
+                                    .setSelectionFlags(flags)
+                                    .build()
+                            }
                         }
                     }
 
@@ -743,8 +802,8 @@ class PlaybackViewModel
                                 ),
                             ),
                         ).setUri(mediaUrl.toUri())
-                        .setSubtitleConfigurations(listOfNotNull(externalSubtitle))
                         .apply {
+                            subtitleConfig?.let { setSubtitleConfigurations(listOf(it)) }
                             when (source.container) {
                                 Codec.Container.HLS -> setMimeType(MimeTypes.APPLICATION_M3U8)
                                 Codec.Container.DASH -> setMimeType(MimeTypes.APPLICATION_MPD)
@@ -800,7 +859,7 @@ class PlaybackViewModel
                         mediaItem,
                         positionMs,
                     )
-                    if (audioIndex != null || subtitleIndex != null) {
+                    if (audioIndex != null || !isSubtitleHandledInternally) {
                         val onTracksChangedListener =
                             object : Player.Listener {
                                 override fun onTracksChanged(tracks: Tracks) {
@@ -1524,6 +1583,7 @@ class PlaybackViewModel
                     subtitleDelaySaveJob =
                         viewModelScope.launchIO {
                             // Debounce & save
+                            // TODO listen and debounce in flows instead
                             state.value.currentItemPlayback?.let { item ->
                                 delay(1500)
                                 itemPlaybackRepository.saveTrackModifications(
