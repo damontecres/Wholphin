@@ -33,6 +33,7 @@ class UserSwitchListener
         private val seerrServerRepository: SeerrServerRepository,
         private val seerrServerDao: SeerrServerDao,
         private val seerrApi: SeerrApi,
+        private val streamystatsSettingsRepository: StreamystatsSettingsRepository,
         private val homeSettingsService: HomeSettingsService,
     ) {
         init {
@@ -41,6 +42,7 @@ class UserSwitchListener
                 serverRepository.currentUserFlow.collect { user ->
                     Timber.d("New user")
                     seerrServerRepository.clear()
+                    streamystatsSettingsRepository.clear()
                     homeSettingsService.currentSettings.update { HomePageResolvedSettings.EMPTY }
                     if (user != null) {
                         switchUser(user)
@@ -62,6 +64,7 @@ class UserSwitchListener
 
                 // Check for home settings
                 launchIO {
+                    streamystatsSettingsRepository.loadForCurrentUser()
                     homeSettingsService.loadCurrentSettings(user.id)
                 }
                 if (BuildConfig.DISCOVER_ENABLED) {

@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
+import com.github.damontecres.wholphin.data.StreamystatsSettingsDao
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import dagger.Module
@@ -70,6 +71,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun seerrServerDao(db: AppDatabase): SeerrServerDao = db.seerrServerDao()
+
+    @Provides
+    @Singleton
+    fun streamystatsSettingsDao(db: AppDatabase): StreamystatsSettingsDao = db.streamystatsSettingsDao()
 
     @Provides
     @Singleton

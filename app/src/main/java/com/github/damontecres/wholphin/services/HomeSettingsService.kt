@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
+import com.github.damontecres.wholphin.data.model.StreamystatsRecommendationType
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -93,6 +94,8 @@ class HomeSettingsService
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
+        private val streamystatsSettingsRepository: StreamystatsSettingsRepository,
+        private val streamystatsService: StreamystatsService,
         private val displayPreferencesService: DisplayPreferencesService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
@@ -263,6 +266,45 @@ class HomeSettingsService
         }
 
         /**
+         * Removes Streamystats rows from locally and remotely saved custom home settings.
+         *
+         * Default home settings are generated from the active Streamystats connection, so there
+         * is nothing to persist for the default case once the integration is removed.
+         */
+        suspend fun removeStreamystatsRowsForCurrentUser() {
+            val userId = serverRepository.currentUser?.id ?: return
+            removeStreamystatsRowsFromLocal(userId)
+            removeStreamystatsRowsFromServer(userId)
+        }
+
+        private suspend fun removeStreamystatsRowsFromLocal(userId: UUID) {
+            try {
+                val settings = loadFromLocal(userId) ?: return
+                val updated = settings.withoutStreamystatsRows()
+                if (updated != settings) {
+                    saveToLocal(userId, updated)
+                }
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error removing Streamystats rows from local home settings")
+            }
+        }
+
+        private suspend fun removeStreamystatsRowsFromServer(userId: UUID) {
+            try {
+                val settings = loadFromServer(userId) ?: return
+                val updated = settings.withoutStreamystatsRows()
+                if (updated != settings) {
+                    saveToServer(userId, updated)
+                }
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error removing Streamystats rows from remote home settings")
+            }
+        }
+
+        private fun HomePageSettings.withoutStreamystatsRows(): HomePageSettings =
+            copy(rows = rows.filterNot { it is HomeRowConfig.StreamystatsRecommendations })
+
+        /**
          * Create a default [HomePageResolvedSettings] using the available libraries
          */
         suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
@@ -303,7 +345,24 @@ class HomeSettingsService
                         config = HomeRowConfig.ContinueWatchingCombined(),
                     ),
                 )
-            val rowConfig = continueWatchingRow + includedIds
+            val streamystatsRows =
+                if (streamystatsSettingsRepository.connection.value is StreamystatsConnectionStatus.Success) {
+                    listOf(
+                        HomeRowConfigDisplay(
+                            id = includedIds.size + 2,
+                            title = getStreamystatsRecommendationsTitle(StreamystatsRecommendationType.MOVIE),
+                            config = HomeRowConfig.StreamystatsRecommendations(StreamystatsRecommendationType.MOVIE),
+                        ),
+                        HomeRowConfigDisplay(
+                            id = includedIds.size + 3,
+                            title = getStreamystatsRecommendationsTitle(StreamystatsRecommendationType.SERIES),
+                            config = HomeRowConfig.StreamystatsRecommendations(StreamystatsRecommendationType.SERIES),
+                        ),
+                    )
+                } else {
+                    emptyList()
+                }
+            val rowConfig = continueWatchingRow + streamystatsRows + includedIds
             return HomePageResolvedSettings(rowConfig)
         }
 
@@ -536,6 +595,14 @@ class HomeSettingsService
                     )
                 }
 
+                is HomeRowConfig.StreamystatsRecommendations -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = getStreamystatsRecommendationsTitle(config.recommendationType),
+                        config = config,
+                    )
+                }
+
                 is HomeRowConfig.Suggestions -> {
                     val title = getItemName(R.string.suggestions_for, config.parentId)
                     HomeRowConfigDisplay(
@@ -544,6 +611,12 @@ class HomeSettingsService
                         config,
                     )
                 }
+            }
+
+        private fun getStreamystatsRecommendationsTitle(type: StreamystatsRecommendationType): StringProvider =
+            when (type) {
+                StreamystatsRecommendationType.MOVIE -> ResStringProvider(R.string.streamystats_recommended_movies)
+                StreamystatsRecommendationType.SERIES -> ResStringProvider(R.string.streamystats_recommended_series)
             }
 
         private suspend fun getItemName(
@@ -1112,6 +1185,48 @@ class HomeSettingsService
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
+                    }
+                }
+
+                is HomeRowConfig.StreamystatsRecommendations -> {
+                    val title = getStreamystatsRecommendationsTitle(row.recommendationType)
+                    try {
+                        val ids =
+                            streamystatsService.getRecommendationIds(row.recommendationType, limit)
+                        if (ids.isEmpty()) {
+                            Success(
+                                title = title,
+                                items = emptyList(),
+                                viewOptions = row.viewOptions,
+                                rowType = row,
+                            )
+                        } else {
+                            val order = ids.mapIndexed { index, id -> id to index }.toMap()
+                            val request =
+                                GetItemsRequest(
+                                    userId = userDto.id,
+                                    ids = ids,
+                                    fields = DefaultItemFields,
+                                    enableImages = true,
+                                )
+                            GetItemsRequestHandler
+                                .execute(api, request)
+                                .content.items
+                                .sortedBy { order[it.id] ?: Int.MAX_VALUE }
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                                .let {
+                                    Success(
+                                        title,
+                                        it,
+                                        row.viewOptions,
+                                        rowType = row,
+                                        showViewMore = ids.size >= limit,
+                                    )
+                                }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "Error loading Streamystats row")
+                        HomeRowLoadingState.Error(title = title, exception = ex)
                     }
                 }
 

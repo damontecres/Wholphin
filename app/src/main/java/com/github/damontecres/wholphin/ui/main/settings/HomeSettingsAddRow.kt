@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 fun HomeSettingsAddRow(
     libraries: List<Library>,
     showDiscover: Boolean,
+    showStreamystats: Boolean,
     onClick: (Library) -> Unit,
     onClickMeta: (MetaRowType) -> Unit,
     modifier: Modifier,
@@ -93,6 +94,21 @@ fun HomeSettingsAddRow(
                     )
                 }
             }
+            if (showStreamystats) {
+                itemsIndexed(
+                    listOf(
+                        MetaRowType.STREAMYSTATS_MOVIES,
+                        MetaRowType.STREAMYSTATS_SERIES,
+                    ),
+                ) { _, type ->
+                    HomeSettingsListItem(
+                        selected = false,
+                        headlineText = stringResource(type.stringId),
+                        onClick = { onClickMeta.invoke(type) },
+                        modifier = Modifier,
+                    )
+                }
+            }
         }
     }
 }
@@ -107,4 +123,6 @@ enum class MetaRowType(
     DISCOVER(R.string.discover),
     COLLECTION(R.string.collection),
     PLAYLIST(R.string.playlist),
+    STREAMYSTATS_MOVIES(R.string.streamystats_recommended_movies),
+    STREAMYSTATS_SERIES(R.string.streamystats_recommended_series),
 }

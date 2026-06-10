@@ -68,6 +68,7 @@ fun HomeSettingsPage(
     var position by rememberPosition(0, 0)
     // TODO discover rows
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
+    val streamystatsEnabled by viewModel.streamystatsEnabled.collectAsState(false)
 
     // Adds a row, waits until its done loading, then scrolls to the new row
     fun addRow(
@@ -144,6 +145,7 @@ fun HomeSettingsPage(
                                 HomeSettingsAddRow(
                                     libraries = state.libraries,
                                     showDiscover = discoverEnabled,
+                                    showStreamystats = streamystatsEnabled,
                                     onClick = { backStack.add(ChooseRowType(it)) },
                                     onClickMeta = {
                                         when (it) {
@@ -160,6 +162,12 @@ fun HomeSettingsPage(
 
                                             MetaRowType.DISCOVER -> {
                                                 backStack.add(HomeSettingsDestination.ChooseDiscover)
+                                            }
+
+                                            MetaRowType.STREAMYSTATS_MOVIES,
+                                            MetaRowType.STREAMYSTATS_SERIES,
+                                            -> {
+                                                addRow { viewModel.addRow(it) }
                                             }
 
                                             MetaRowType.COLLECTION -> {

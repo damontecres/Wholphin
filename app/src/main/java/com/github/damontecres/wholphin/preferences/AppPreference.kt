@@ -1009,6 +1009,13 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val StreamystatsIntegration =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.streamystats_integration,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
         val QuickConnect =
             AppClickablePreference<AppPreferences>(
                 title = R.string.quick_connect,
@@ -1125,6 +1132,7 @@ val basicPreferences =
                     if (BuildConfig.DISCOVER_ENABLED) {
                         add(AppPreference.SeerrIntegration)
                     }
+                    add(AppPreference.StreamystatsIntegration)
                     add(AppPreference.AdvancedSettings)
                 },
         ),

@@ -59,6 +59,7 @@ import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
+import com.github.damontecres.wholphin.services.StreamystatsConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -74,6 +75,8 @@ import com.github.damontecres.wholphin.ui.setup.ReleaseNotes
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
 import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
+import com.github.damontecres.wholphin.ui.setup.streamystats.StreamystatsSettingsDialog
+import com.github.damontecres.wholphin.ui.setup.streamystats.SwitchStreamystatsViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -91,6 +94,7 @@ fun PreferencesContent(
     viewModel: PreferencesViewModel = hiltViewModel(),
     updateVM: UpdateViewModel = hiltViewModel(),
     seerrVm: SwitchSeerrViewModel = hiltViewModel(),
+    streamystatsVm: SwitchStreamystatsViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
@@ -107,6 +111,10 @@ fun PreferencesContent(
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrConnection by viewModel.seerrConnection.collectAsState()
+    val streamystatsConnection by streamystatsVm.connection.collectAsState()
+    var streamystatsDialogMode by remember {
+        mutableStateOf<StreamystatsDialogMode>(StreamystatsDialogMode.None)
+    }
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
     var showLocaleChoiceDialog by remember { mutableStateOf(false) }
@@ -481,6 +489,33 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                AppPreference.StreamystatsIntegration -> {
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            streamystatsVm.resetStatus()
+                                            streamystatsDialogMode =
+                                                when (val conn = streamystatsConnection) {
+                                                    StreamystatsConnectionStatus.NotConfigured -> {
+                                                        StreamystatsDialogMode.Add
+                                                    }
+
+                                                    is StreamystatsConnectionStatus.Success -> {
+                                                        StreamystatsDialogMode.Remove(conn.settings.serverUrl)
+                                                    }
+                                                }
+                                        },
+                                        modifier = focusModifier,
+                                        summary =
+                                            when (val conn = streamystatsConnection) {
+                                                StreamystatsConnectionStatus.NotConfigured -> stringResource(R.string.add_server)
+                                                is StreamystatsConnectionStatus.Success -> conn.settings.serverUrl
+                                            },
+                                        onLongClick = {},
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+
                                 AppPreference.QuickConnect -> {
                                     ClickPreference(
                                         title = stringResource(pref.title),
@@ -680,6 +715,31 @@ fun PreferencesContent(
 
             SeerrDialogMode.None -> {}
         }
+        when (val mode = streamystatsDialogMode) {
+            StreamystatsDialogMode.Add -> {
+                val status by streamystatsVm.status.collectAsState(LoadingState.Pending)
+                StreamystatsSettingsDialog(
+                    currentUrl = null,
+                    status = status,
+                    onSubmit = streamystatsVm::submitServer,
+                    onDismissRequest = { streamystatsDialogMode = StreamystatsDialogMode.None },
+                )
+            }
+
+            is StreamystatsDialogMode.Remove -> {
+                ConfirmDialog(
+                    title = stringResource(R.string.remove_streamystats_server),
+                    body = mode.serverUrl,
+                    onCancel = { streamystatsDialogMode = StreamystatsDialogMode.None },
+                    onConfirm = {
+                        streamystatsVm.removeServer()
+                        streamystatsDialogMode = StreamystatsDialogMode.None
+                    },
+                )
+            }
+
+            StreamystatsDialogMode.None -> {}
+        }
     }
 
     if (showQuickConnectDialog) {
@@ -781,6 +841,16 @@ data class CacheUsage(
     val imageMemoryMax: Long,
     val imageDiskUsed: Long,
 )
+
+private sealed interface StreamystatsDialogMode {
+    data object None : StreamystatsDialogMode
+
+    data object Add : StreamystatsDialogMode
+
+    data class Remove(
+        val serverUrl: String,
+    ) : StreamystatsDialogMode
+}
 
 private sealed interface SeerrDialogMode {
     data object None : SeerrDialogMode

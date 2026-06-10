@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvChannels
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvPrograms
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
+import com.github.damontecres.wholphin.data.model.StreamystatsRecommendationType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
@@ -29,6 +30,7 @@ import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.StreamystatsSettingsRepository
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
@@ -79,6 +81,7 @@ class HomeSettingsViewModel
         private val navDrawerService: NavDrawerService,
         private val backdropService: BackdropService,
         private val seerrServerRepository: SeerrServerRepository,
+        private val streamystatsSettingsRepository: StreamystatsSettingsRepository,
         val preferencesDataStore: DataStore<AppPreferences>,
         @param:IoCoroutineScope private val ioScope: CoroutineScope,
     ) : ViewModel() {
@@ -88,6 +91,7 @@ class HomeSettingsViewModel
         private var idCounter by Delegates.notNull<Int>()
 
         val discoverEnabled = seerrServerRepository.active
+        val streamystatsEnabled = streamystatsSettingsRepository.active
 
         private var originalLocalSettings: HomePageSettings? = null
         private var originalRemoteSettings: HomePageSettings? = null
@@ -257,6 +261,22 @@ class HomeSettingsViewModel
 
                         MetaRowType.DISCOVER -> {
                             TODO()
+                        }
+
+                        MetaRowType.STREAMYSTATS_MOVIES -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = ResStringProvider(R.string.streamystats_recommended_movies),
+                                config = HomeRowConfig.StreamystatsRecommendations(StreamystatsRecommendationType.MOVIE),
+                            )
+                        }
+
+                        MetaRowType.STREAMYSTATS_SERIES -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = ResStringProvider(R.string.streamystats_recommended_series),
+                                config = HomeRowConfig.StreamystatsRecommendations(StreamystatsRecommendationType.SERIES),
+                            )
                         }
                     }
                 updateState {
@@ -732,6 +752,15 @@ class HomeSettingsViewModel
 
                                 is HomeRowConfig.GetItems -> {
                                     it.config
+                                }
+
+                                is HomeRowConfig.StreamystatsRecommendations -> {
+                                    val viewOptions =
+                                        when (it.config.recommendationType) {
+                                            StreamystatsRecommendationType.MOVIE -> preset.movieLibrary
+                                            StreamystatsRecommendationType.SERIES -> preset.tvLibrary
+                                        }
+                                    it.config.updateViewOptions(viewOptions)
                                 }
 
                                 is RecentlyAdded -> {

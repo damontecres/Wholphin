@@ -16,6 +16,17 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Serializable
+enum class StreamystatsRecommendationType(
+    val queryValue: String,
+) {
+    @SerialName("Movie")
+    MOVIE("Movie"),
+
+    @SerialName("Series")
+    SERIES("Series"),
+}
+
+@Serializable
 sealed interface HomeRowConfig {
     val viewOptions: HomeRowViewOptions
 
@@ -192,6 +203,15 @@ sealed interface HomeRowConfig {
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
+    }
+
+    @Serializable
+    @SerialName("StreamystatsRecommendations")
+    data class StreamystatsRecommendations(
+        val recommendationType: StreamystatsRecommendationType,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): StreamystatsRecommendations = this.copy(viewOptions = viewOptions)
     }
 }
 
