@@ -659,6 +659,9 @@ fun CollectionFolderView(
 
     val contextMenu = rememberContextMenu(preferences, viewModel)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
+    var filterDropdownShowing by remember { mutableStateOf(false) }
+    val headerRowFocusRequester = remember { FocusRequester() }
+    val filterButtonFocusRequester = remember { FocusRequester() }
 
     val gridActions =
         remember(actions) {
@@ -741,7 +744,6 @@ fun CollectionFolderView(
                         ?: item?.data?.collectionType?.name
                         ?: stringResource(R.string.collection)
                 Column(modifier = Modifier.fillMaxSize()) {
-                    val headerRowFocusRequester = remember { FocusRequester() }
                     LifecycleResumeEffect(itemId) {
                         viewModel.onResumePage()
 
@@ -780,6 +782,8 @@ fun CollectionFolderView(
                         onClickPlayAll = gridActions.onClickPlayAll!!,
                         onClickShowViewOptions = { showViewOptions = true },
                         modifier = Modifier.focusRequester(headerRowFocusRequester),
+                        onShowFilterDropdown = { filterDropdownShowing = it },
+                        filterButtonFocusRequester = filterButtonFocusRequester,
                     )
 
                     when (val pager = state.items) {
@@ -798,9 +802,14 @@ fun CollectionFolderView(
 
                         is DataLoadingState.Success<List<BaseItem?>> -> {
                             LaunchedEffect(Unit) {
-                                if (pager.data.isNotEmpty()) {
-                                    gridFocusRequester.tryRequestFocus()
-                                }
+                                val focusRequester =
+                                    when {
+                                        contextMenu.isShowing -> null
+                                        filterDropdownShowing -> filterButtonFocusRequester
+                                        pager.data.isNotEmpty() -> gridFocusRequester
+                                        else -> focusRequesterOnEmpty ?: headerRowFocusRequester
+                                    }
+                                focusRequester?.tryRequestFocus()
                             }
                             Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {

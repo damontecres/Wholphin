@@ -36,6 +36,8 @@ class ContextMenuUtils(
 ) {
     private var showContextMenu by mutableStateOf<Pair<Int, BaseItem>?>(null)
 
+    val isShowing: Boolean get() = showContextMenu != null
+
     /**
      * Show the context menu, typically from a long click
      */

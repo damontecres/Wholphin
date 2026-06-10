@@ -124,9 +124,9 @@ class FilterOptionCache
                         parentId = parentId,
                         userId = userId,
                     ).content.officialRatings
-                    ?.mapNotNull { r ->
-                        val value = ratings[r]
-                        value?.let { FilterValueOption(r, value) }
+                    ?.map { r ->
+                        val value = ratings[r] ?: 0
+                        FilterValueOption(r, value)
                     }?.sortedBy { it.value as Int }
                     .orEmpty()
             }
