@@ -1168,13 +1168,14 @@ class HomeSettingsService
                     .toHttpUrl()
                     .resolve(row.endpoint)
                     ?: throw IllegalStateException("Could not resolve endpoint ${row.endpoint} against $base")
-            val params = buildMap {
-                serverRepository.currentUser
-                    ?.id
-                    ?.toString()
-                    ?.let { put("userId", it) }
-                row.query?.forEach { put(it.key, it.value) }
-            }
+            val params =
+                buildMap {
+                    serverRepository.currentUser
+                        ?.id
+                        ?.toString()
+                        ?.let { put("userId", it) }
+                    row.query?.forEach { put(it.key, it.value) }
+                }
             val urlBuilder = resolved.newBuilder()
             params.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v) }
             val requestBuilder = Request.Builder().url(urlBuilder.build()).get()
