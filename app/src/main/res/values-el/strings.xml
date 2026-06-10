@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="movies">Ταινίες</string>
+    <string name="movies_title">Ταινίες</string>
     <string name="profile">Προφίλ</string>
     <string name="home">Αρχική</string>
     <string name="language">Γλώσσα</string>
@@ -32,7 +32,7 @@
     <string name="font_color">Χρώμα Κειμένου</string>
     <string name="bold_font">Φωτεινότητα κειμένου</string>
     <string name="library">Βιβλιοθήκης</string>
-    <string name="tv_shows">Σειρές</string>
+    <string name="tv_shows_title">Σειρές</string>
     <string name="genres">Είδη</string>
     <string name="collection">Συλλογή</string>
     <string name="collections">Συλλογές</string>
@@ -108,7 +108,7 @@
     <string name="no_update_available">Χωρίς διαθέσιμη ενημέρωση</string>
     <string name="play_from_here">Έναρξη από εδώ</string>
     <string name="play">Έναρξη</string>
-    <string name="people">Άτομα</string>
+    <string name="people_title">Άτομα</string>
     <string name="playback_speed">Ταχύτητα αναπαραγωγής</string>
     <string name="playback">Αναπαραγωγή</string>
     <string name="playlist">Λίστα αναπαραγωγής</string>
@@ -168,7 +168,7 @@
     <string name="success">Επιτυχής</string>
     <string name="official_rating">Γονεική αξιολόγηση</string>
     <string name="runtime_sort">Χρόνος εκτέλεσης</string>
-    <string name="extras">Επιπρόσθετα</string>
+    <string name="extras_title">Επιπρόσθετα</string>
     <plurals name="other_extras">
         <item quantity="one">Άλλο</item>
         <item quantity="other"/>

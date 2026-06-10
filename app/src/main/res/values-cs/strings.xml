@@ -149,7 +149,6 @@
     <string name="switch_servers">Přepnout servery</string>
     <string name="switch_user">Přepnout</string>
     <string name="top_unwatched">Nejlépe hodnocené Nezhlédnuté</string>
-    <string name="trailer">Upoutávka</string>
     <plurals name="trailers">
         <item quantity="one">Upoutávky</item>
         <item quantity="few"/>
@@ -188,7 +187,7 @@
     <string name="background">Pozadí</string>
     <string name="success">Úspěch</string>
     <string name="official_rating">Rodičovské hodnocení</string>
-    <string name="extras">Doplňky</string>
+    <string name="extras_title">Doplňky</string>
     <plurals name="other_extras">
         <item quantity="one">Jiný</item>
         <item quantity="few"/>
@@ -512,7 +511,7 @@
     <string name="display_presets">Zobrazit předvolby</string>
     <string name="display_presets_description">Vestavěné předvolby pro rychlou úpravu všech řádků</string>
     <string name="customize_home_summary">Vyberte řádky a obrázky na domovské stránce</string>
-    <string name="favorite_items">Oblíbené %s</string>
+    <string name="favorite_items_title">Oblíbené %s</string>
     <string name="content_scale_fit">Přizpůsobit</string>
     <string name="content_scale_crop">Oříznout</string>
     <string name="content_scale_fill">Vyplnit</string>

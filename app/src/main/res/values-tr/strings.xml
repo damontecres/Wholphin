@@ -149,7 +149,6 @@
     <string name="switch_servers">Sunucu değiştir</string>
     <string name="switch_user">Değiştir</string>
     <string name="top_unwatched">İzlenmemiş En İyiler</string>
-    <string name="trailer">Fragman</string>
     <plurals name="trailers">
         <item quantity="one">Fragman</item>
         <item quantity="other">Fragmanlar</item>
@@ -185,7 +184,7 @@
     <string name="success">Başarılı</string>
     <string name="official_rating">Yaş Derecelendirmesi</string>
     <string name="runtime_sort">Süre</string>
-    <string name="extras">Ekstralar</string>
+    <string name="extras_title">Ekstralar</string>
     <plurals name="other_extras">
         <item quantity="one">Diğer Ekstra</item>
         <item quantity="other">Diğer Ekstralar</item>
@@ -471,7 +470,7 @@
     <string name="settings_saved">Ayarlar kaydedildi</string>
     <string name="display_presets">Görüntü ön ayarları</string>
     <string name="display_presets_description">Tüm satırları hızlıca stilize etmek için hazır ayarlar</string>
-    <string name="favorite_items">Favori %s</string>
+    <string name="favorite_items_title">Favori %s</string>
     <string name="customize_home_summary">Ana sayfadaki satırları ve görselleri seçin</string>
     <string name="content_scale_fit">Sığdır</string>
     <string name="content_scale_crop">Kırp</string>

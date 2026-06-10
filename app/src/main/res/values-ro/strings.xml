@@ -358,13 +358,13 @@
     </plurals>
     <string name="official_rating">Evaluare parentală</string>
     <string name="runtime_sort">Timp de execuție</string>
-    <string name="extras">Extra</string>
+    <string name="extras_title">Extra</string>
     <plurals name="clips">
         <item quantity="one">Clipuri</item>
         <item quantity="few"></item>
         <item quantity="other"></item>
     </plurals>
-    <string name="favorite_items">%s favorit</string>
+    <string name="favorite_items_title">%s favorit</string>
     <string name="app_theme">Temă aplicație</string>
     <string name="auto_check_for_updates">Verifică automat dacă există actualizări</string>
     <string name="ac3_supported">Dispozitivul acceptă formatele AC3/Dolby Digital</string>

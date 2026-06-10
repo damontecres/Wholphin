@@ -80,7 +80,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     movies =
                         DiscoverRowData(
-                            ResStringProvider(R.string.movies),
+                            ResStringProvider(R.string.movies_title),
                             it,
                             DiscoverRequestType.DISCOVER_MOVIES,
                         ),
@@ -90,7 +90,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     tv =
                         DiscoverRowData(
-                            ResStringProvider(R.string.tv_shows),
+                            ResStringProvider(R.string.tv_shows_title),
                             it,
                             DiscoverRequestType.DISCOVER_TV,
                         ),

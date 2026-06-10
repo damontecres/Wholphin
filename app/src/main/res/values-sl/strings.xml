@@ -146,7 +146,6 @@
     <string name="switch_servers">Zamenjaj strežnik</string>
     <string name="switch_user">Preklopi</string>
     <string name="top_unwatched">Najbolje ocenjeno, neogledano</string>
-    <string name="trailer">Napovednik</string>
     <plurals name="trailers">
         <item quantity="one">Napovedniki</item>
     </plurals>
@@ -180,7 +179,7 @@
     <string name="success">Uspeh</string>
     <string name="official_rating">Starševska ocena</string>
     <string name="runtime_sort">Trajanje izvajanja</string>
-    <string name="extras">Dodatki</string>
+    <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Ostalo</item>
     </plurals>
@@ -214,7 +213,7 @@
     <plurals name="shorts">
         <item quantity="one">Kratki filmi</item>
     </plurals>
-    <string name="favorite_items">Dodaj %s med priljubljene</string>
+    <string name="favorite_items_title">Dodaj %s med priljubljene</string>
     <plurals name="downloads">
         <item quantity="one">%s prenos</item>
         <item quantity="two">%s prenosa</item>

@@ -149,7 +149,6 @@
     <string name="switch_servers">Trocar de servidores</string>
     <string name="switch_user">Trocar</string>
     <string name="top_unwatched">Não assistidos com melhor avaliação</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailer</item>
         <item quantity="many">Trailers</item>
@@ -187,7 +186,7 @@
     <string name="success">Sucesso</string>
     <string name="official_rating">Classificação Parental</string>
     <string name="runtime_sort">Duração</string>
-    <string name="extras">Extras</string>
+    <string name="extras_title">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Outro</item>
         <item quantity="many">Outros</item>
@@ -238,7 +237,7 @@
         <item quantity="many">Curtas</item>
         <item quantity="other">Curtas</item>
     </plurals>
-    <string name="favorite_items">Favoritar %s</string>
+    <string name="favorite_items_title">Favoritar %s</string>
     <plurals name="downloads">
         <item quantity="one">%s download</item>
         <item quantity="many">%s downloads</item>

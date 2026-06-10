@@ -92,18 +92,18 @@ sealed interface ExtrasItem {
 val ExtraType.stringRes: Int
     get() =
         when (this) {
-            ExtraType.UNKNOWN -> R.string.other_extras
-            ExtraType.CLIP -> R.string.clips
+            ExtraType.UNKNOWN -> R.string.other_extras_title
+            ExtraType.CLIP -> R.string.clips_title
             ExtraType.TRAILER -> R.string.trailers
-            ExtraType.BEHIND_THE_SCENES -> R.string.behind_the_scenes
-            ExtraType.DELETED_SCENE -> R.string.deleted_scenes
-            ExtraType.INTERVIEW -> R.string.interviews
-            ExtraType.SCENE -> R.string.scenes
-            ExtraType.SAMPLE -> R.string.samples
-            ExtraType.THEME_SONG -> R.string.theme_songs
-            ExtraType.THEME_VIDEO -> R.string.theme_videos
-            ExtraType.FEATURETTE -> R.string.featurettes
-            ExtraType.SHORT -> R.string.shorts
+            ExtraType.BEHIND_THE_SCENES -> R.string.behind_the_scenes_title
+            ExtraType.DELETED_SCENE -> R.string.deleted_scenes_title
+            ExtraType.INTERVIEW -> R.string.interviews_title
+            ExtraType.SCENE -> R.string.scenes_title
+            ExtraType.SAMPLE -> R.string.samples_title
+            ExtraType.THEME_SONG -> R.string.theme_songs_title
+            ExtraType.THEME_VIDEO -> R.string.theme_videos_title
+            ExtraType.FEATURETTE -> R.string.featurettes_title
+            ExtraType.SHORT -> R.string.shorts_title
         }
 
 /**

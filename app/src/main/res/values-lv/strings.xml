@@ -150,7 +150,6 @@
     <string name="switch_servers">Mainīt serverus</string>
     <string name="switch_user">Pārslēgt</string>
     <string name="top_unwatched">Augstāk novērtētie un neredzētie</string>
-    <string name="trailer">Treileris</string>
     <plurals name="trailers">
         <item quantity="zero">Treileri</item>
         <item quantity="one"/>
@@ -188,7 +187,7 @@
     <string name="success">Veiksmīgi</string>
     <string name="official_rating">Vecuma ierobežojums</string>
     <string name="runtime_sort">Ilgums</string>
-    <string name="extras">Ekstras</string>
+    <string name="extras_title">Ekstras</string>
     <plurals name="other_extras">
         <item quantity="zero">Cits</item>
         <item quantity="one"/>
@@ -244,7 +243,7 @@
         <item quantity="one"/>
         <item quantity="other"/>
     </plurals>
-    <string name="favorite_items">Izlase %s</string>
+    <string name="favorite_items_title">Izlase %s</string>
     <plurals name="downloads">
         <item quantity="zero">%s lejupielāžu</item>
         <item quantity="one">%s lejupielāde</item>

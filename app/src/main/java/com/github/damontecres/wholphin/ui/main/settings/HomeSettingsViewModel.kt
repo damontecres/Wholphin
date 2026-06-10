@@ -413,7 +413,7 @@ class HomeSettingsViewModel
                         id = id,
                         title =
                             ResProviderStringProvider(
-                                R.string.favorite_items,
+                                R.string.favorite_items_title,
                                 ResStringProvider(favoriteOptions[type]!!),
                             ),
                         config = HomeRowConfig.Favorite(type),

@@ -506,7 +506,7 @@ class HomeSettingsService
                 is HomeRowConfig.Favorite -> {
                     val name =
                         ResProviderStringProvider(
-                            R.string.favorite_items,
+                            R.string.favorite_items_title,
                             ResStringProvider(favoriteOptions[config.kind]!!),
                         )
                     HomeRowConfigDisplay(id, name, config)
@@ -952,7 +952,7 @@ class HomeSettingsService
                 is HomeRowConfig.Favorite -> {
                     val title =
                         ResProviderStringProvider(
-                            R.string.favorite_items,
+                            R.string.favorite_items_title,
                             ResStringProvider(favoriteOptions[row.kind]!!),
                         )
                     if (row.kind == BaseItemKind.PERSON) {
