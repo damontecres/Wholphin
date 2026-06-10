@@ -15,7 +15,9 @@ import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.util.LoadingState
 import io.github.peerless2012.ass.media.AssHandler
 import org.jellyfin.sdk.model.api.MediaSegmentDto
+import java.util.TreeSet
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.microseconds
 
 data class PlaybackState(
     val loading: LoadingState = LoadingState.Loading,
@@ -46,7 +48,31 @@ data class PlaybackState(
 data class ExternalCues(
     val active: Boolean = false,
     val cues: List<CuesWithTiming> = emptyList(),
-)
+) {
+    /**
+     * Cues organized by each minute they are in
+     */
+    private val cueMap =
+        buildMap {
+            val comparator: Comparator<CuesWithTiming> =
+                compareBy({ it.startTimeUs }, { it.endTimeUs })
+            cues.forEach { cue ->
+                val start = cue.startTimeUs.microseconds.inWholeMinutes
+                val end = cue.endTimeUs.microseconds.inWholeMinutes
+                (start..end).forEach {
+                    getOrPut(it) { TreeSet(comparator) }.add(cue)
+                }
+            }
+        }
+
+    fun getCuesAt(positionUs: Long): List<CuesWithTiming> {
+        val minute = positionUs.microseconds.inWholeMinutes
+        val cues = cueMap[minute].orEmpty()
+        return cues.filter {
+            positionUs in it.startTimeUs..it.endTimeUs
+        }
+    }
+}
 
 data class PlayerInstance(
     val player: Player,

@@ -403,19 +403,15 @@ class PlaybackViewModel
 
             viewModelScope.launchDefault {
                 while (isActive) {
-                    delay(100)
+                    delay(50)
                     if (state.value.externalCues.active) {
+                        val delay = state.value.currentPlayback?.subtitleDelay ?: Duration.ZERO
                         val positionUs =
-                            onMain { player.currentPosition } * 1_000 +
-                                (
-                                    state.value.currentPlayback?.subtitleDelay
-                                        ?: Duration.ZERO
-                                ).inWholeMicroseconds
+                            onMain { player.currentPosition } * 1_000 + delay.inWholeMicroseconds
                         val cues =
-                            state.value.externalCues.cues
-                                .filter {
-                                    positionUs in it.startTimeUs..it.endTimeUs
-                                }.flatMap { it.cues }
+                            state.value.externalCues
+                                .getCuesAt(positionUs)
+                                .flatMap { it.cues }
                         _state.update { it.copy(subtitleCues = cues) }
                     }
                 }
@@ -768,7 +764,8 @@ class PlaybackViewModel
                                     cues::add,
                                 )
                                 Timber.v("Parsed %s external cues", cues.size)
-                                _state.update { it.copy(externalCues = ExternalCues(true, cues)) }
+                                val externalCues = ExternalCues(true, cues)
+                                _state.update { it.copy(externalCues = externalCues) }
                                 null
                             } else {
                                 var flags = 0
