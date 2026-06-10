@@ -71,6 +71,7 @@ fun FilterByButton(
     onFilterChange: (GetItemsFilter) -> Unit,
     getPossibleValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     modifier: Modifier = Modifier,
+    onShow: ((Boolean) -> Unit)? = null,
 ) {
     var dropDown by remember { mutableStateOf(false) }
     var nestedDropDown by remember { mutableStateOf<ItemFilterBy<*>?>(null) }
@@ -79,7 +80,10 @@ fun FilterByButton(
     Box(modifier = modifier) {
         ExpandableFilterButton(
             filterCount = filterCount,
-            onClick = { dropDown = true },
+            onClick = {
+                onShow?.invoke(true)
+                dropDown = true
+            },
             modifier = Modifier,
         )
 
@@ -87,6 +91,7 @@ fun FilterByButton(
             expanded = dropDown,
             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
             onDismissRequest = {
+                onShow?.invoke(false)
                 dropDown = false
                 nestedDropDown = null
             },
