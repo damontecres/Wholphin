@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.supportedPlayableTypes
+import com.github.damontecres.wholphin.util.supportedShufflableTypes
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -355,7 +356,6 @@ private fun buildContextMenuItems(
                     DialogItem(
                         resources.getString(R.string.resume),
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         actions.navigateTo(
@@ -385,7 +385,6 @@ private fun buildContextMenuItems(
                     DialogItem(
                         resources.getString(R.string.play),
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         actions.navigateTo(
@@ -397,6 +396,22 @@ private fun buildContextMenuItems(
                     },
                 )
             }
+        }
+        if (item.type in supportedShufflableTypes) {
+            add(
+                DialogItem(
+                    resources.getString(R.string.shuffle),
+                    R.string.fa_shuffle,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(
+                        Destination.PlaybackList(
+                            itemId = item.id,
+                            shuffle = true,
+                        ),
+                    )
+                },
+            )
         }
         if (showStreamChoices) {
             item.data.mediaSources?.letNotEmpty { sources ->
@@ -734,7 +749,6 @@ fun buildContextForMusic(
             DialogItem(
                 resources.getString(R.string.play),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
@@ -744,7 +758,6 @@ fun buildContextForMusic(
             DialogItem(
                 resources.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)
@@ -867,7 +880,6 @@ fun buildContextForMusicQueue(
             DialogItem(
                 resources.getString(R.string.play),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlay(index, item)
@@ -877,7 +889,6 @@ fun buildContextForMusicQueue(
             DialogItem(
                 resources.getString(R.string.play_next),
                 Icons.Default.PlayArrow,
-                iconColor = Color.Green.copy(alpha = .8f),
                 dismissOnClick = true,
             ) {
                 actions.onClickPlayNext(index, item)

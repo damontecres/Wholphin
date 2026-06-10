@@ -315,16 +315,24 @@ class PlaybackViewModel
             val playlistItem =
                 if (queriedItem.type.playable) {
                     PlaylistItem.Media(BaseItem(queriedItem, false))
-                } else if (destination is Destination.PlaybackList) {
+                } else {
                     val playlistResult =
-                        playlistCreator.createFrom(
-                            item = queriedItem,
-                            startIndex = destination.startIndex ?: 0,
-                            sortAndDirection = destination.sortAndDirection,
-                            shuffled = destination.shuffle,
-                            recursive = destination.recursive,
-                            filter = destination.filter,
-                        )
+                        if (destination is Destination.PlaybackList) {
+                            playlistCreator.createFrom(
+                                item = queriedItem,
+                                startIndex = destination.startIndex ?: 0,
+                                sortAndDirection = destination.sortAndDirection,
+                                shuffled = destination.shuffle,
+                                recursive = destination.recursive,
+                                filter = destination.filter,
+                            )
+                        } else {
+                            // Try to create a playlist
+                            playlistCreator.createFrom(
+                                item = queriedItem,
+                                recursive = true,
+                            )
+                        }
                     when (val r = playlistResult) {
                         is PlaylistCreationResult.Error -> {
                             _state.update { it.copy(loading = LoadingState.Error(r.message, r.ex)) }
@@ -343,8 +351,6 @@ class PlaybackViewModel
                             r.playlist.items.first()
                         }
                     }
-                } else {
-                    throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                 }
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
