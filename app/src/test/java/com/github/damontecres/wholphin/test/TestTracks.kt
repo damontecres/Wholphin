@@ -130,19 +130,20 @@ class TestTracks private constructor(
                     val t =
                         tracks
                             .mapIndexed { index, track ->
-                                val idx = index + 1
                                 if (track.external) {
                                     externalSubCount++
                                     TestTrack(
-                                        "$externalSubCount:e:1",
+                                        "$externalSubCount:e:$index",
                                         index,
                                         track.type,
                                         track.external,
                                     )
                                 } else if (hasExternal) {
+                                    val idx = index + 1 - externalSubCount
                                     // If there's a sidecar file, the actual file
                                     TestTrack("0:$idx", index, track.type, track.external)
                                 } else {
+                                    val idx = index + 1
                                     TestTrack("$idx", index, track.type, track.external)
                                 }
                             }
@@ -155,6 +156,11 @@ class TestTracks private constructor(
          * Create the [TestTracks] as if being playing by MPV
          */
         fun buildForMpv(): TestTracks {
+            val embeddedCount = tracks.count { !it.external }
+            val embeddedSubtitleCount =
+                tracks.count { it.type == MediaStreamType.SUBTITLE && !it.external }
+            val externalSubCount =
+                tracks.count { it.type == MediaStreamType.SUBTITLE && it.external }
             var videoCount = 0
             var audioCount = 0
             var subtitleCount = 0
@@ -162,23 +168,28 @@ class TestTracks private constructor(
                 tracks.mapIndexed { index, track ->
                     val id =
                         if (track.external) {
+                            // MPV places external subtitles last
+                            val idx = embeddedCount + index
                             subtitleCount++
-                            "$index:e:$subtitleCount"
+                            val count = embeddedSubtitleCount + subtitleCount
+                            "$idx:e:$count"
                         } else {
+                            val idx = index - externalSubCount
                             when (track.type) {
                                 MediaStreamType.AUDIO -> {
                                     audioCount++
-                                    "$index:$audioCount"
+                                    "$idx:$audioCount"
                                 }
 
                                 MediaStreamType.VIDEO -> {
                                     videoCount++
-                                    "$index:$videoCount"
+                                    "$idx:$videoCount"
                                 }
 
                                 MediaStreamType.SUBTITLE -> {
                                     subtitleCount++
-                                    "$index:$subtitleCount"
+                                    val count = subtitleCount - externalSubCount
+                                    "$idx:$count"
                                 }
 
                                 else -> {
@@ -217,7 +228,7 @@ fun assertIdType(
 /**
  * Varies [TestTracks.Builder] examples
  *
- * They are named by the order of the tracks, V=video, A=audio, S=subtitle
+ * They are named by the order of the tracks, V=video, A=audio, S=subtitle, E=external subtitle
  */
 object TrackExamples {
     val builderVAASSS =
@@ -249,6 +260,14 @@ object TrackExamples {
             .addSubtitle(1)
             .addAudio(1)
             .addSubtitle(2)
+
+    val builderEVAASSS =
+        TestTracks
+            .Builder()
+            .addExternalSubtitle()
+            .addVideo()
+            .addAudio(2)
+            .addSubtitle(3)
 }
 
 class TestTracksTests {
@@ -257,23 +276,23 @@ class TestTracksTests {
         val testTracks =
             TestTracks
                 .Builder()
+                .addExternalSubtitle()
                 .addVideo()
                 .addAudio(4)
                 .addSubtitle(4)
-                .addExternalSubtitle()
                 .buildForMpv()
                 .tracks
         Assert.assertEquals(10, testTracks.size)
-        Assert.assertEquals("0:1", testTracks[0].id)
-        Assert.assertEquals("1:1", testTracks[1].id)
-        Assert.assertEquals("2:2", testTracks[2].id)
-        Assert.assertEquals("3:3", testTracks[3].id)
-        Assert.assertEquals("4:4", testTracks[4].id)
-        Assert.assertEquals("5:1", testTracks[5].id)
-        Assert.assertEquals("6:2", testTracks[6].id)
-        Assert.assertEquals("7:3", testTracks[7].id)
-        Assert.assertEquals("8:4", testTracks[8].id)
-        Assert.assertEquals("9:e:5", testTracks[9].id)
+        Assert.assertEquals("9:e:5", testTracks[0].id)
+        Assert.assertEquals("0:1", testTracks[1].id)
+        Assert.assertEquals("1:1", testTracks[2].id)
+        Assert.assertEquals("2:2", testTracks[3].id)
+        Assert.assertEquals("3:3", testTracks[4].id)
+        Assert.assertEquals("4:4", testTracks[5].id)
+        Assert.assertEquals("5:1", testTracks[6].id)
+        Assert.assertEquals("6:2", testTracks[7].id)
+        Assert.assertEquals("7:3", testTracks[8].id)
+        Assert.assertEquals("8:4", testTracks[9].id)
     }
 
     @Test
@@ -281,23 +300,23 @@ class TestTracksTests {
         val testTracks =
             TestTracks
                 .Builder()
+                .addExternalSubtitle()
                 .addVideo()
                 .addAudio(4)
                 .addSubtitle(4)
-                .addExternalSubtitle()
                 .buildForExoPlayer()
                 .tracks
         Assert.assertEquals(10, testTracks.size)
-        Assert.assertEquals("0:1", testTracks[0].id)
-        Assert.assertEquals("0:2", testTracks[1].id)
-        Assert.assertEquals("0:3", testTracks[2].id)
-        Assert.assertEquals("0:4", testTracks[3].id)
-        Assert.assertEquals("0:5", testTracks[4].id)
-        Assert.assertEquals("0:6", testTracks[5].id)
-        Assert.assertEquals("0:7", testTracks[6].id)
-        Assert.assertEquals("0:8", testTracks[7].id)
-        Assert.assertEquals("0:9", testTracks[8].id)
-        Assert.assertEquals("1:e:1", testTracks[9].id)
+        Assert.assertEquals("1:e:0", testTracks[0].id)
+        Assert.assertEquals("0:1", testTracks[1].id)
+        Assert.assertEquals("0:2", testTracks[2].id)
+        Assert.assertEquals("0:3", testTracks[3].id)
+        Assert.assertEquals("0:4", testTracks[4].id)
+        Assert.assertEquals("0:5", testTracks[5].id)
+        Assert.assertEquals("0:6", testTracks[6].id)
+        Assert.assertEquals("0:7", testTracks[7].id)
+        Assert.assertEquals("0:8", testTracks[8].id)
+        Assert.assertEquals("0:9", testTracks[9].id)
     }
 
     @Test
@@ -342,6 +361,33 @@ class TestTracksTests {
             Assert.assertEquals("3:1", mpv[3].id)
             Assert.assertEquals("4:2", mpv[4].id)
             Assert.assertEquals("5:3", mpv[5].id)
+        }
+    }
+
+    @Test
+    fun `test VAS with external`() {
+        TrackExamples.builderEVAASSS.buildForExoPlayer().tracks.let { exo ->
+            Assert.assertEquals(7, exo.size)
+            Assert.assertTrue(exo[0].external)
+            assertIdType("1:e:0", MediaStreamType.SUBTITLE, exo[0])
+            assertIdType("0:1", MediaStreamType.VIDEO, exo[1])
+            assertIdType("0:2", MediaStreamType.AUDIO, exo[2])
+            assertIdType("0:3", MediaStreamType.AUDIO, exo[3])
+            assertIdType("0:4", MediaStreamType.SUBTITLE, exo[4])
+            assertIdType("0:5", MediaStreamType.SUBTITLE, exo[5])
+            assertIdType("0:6", MediaStreamType.SUBTITLE, exo[6])
+        }
+
+        TrackExamples.builderEVAASSS.buildForMpv().tracks.let { mpv ->
+            Assert.assertEquals(7, mpv.size)
+            Assert.assertTrue(mpv[0].external)
+            Assert.assertEquals("6:e:4", mpv[0].id)
+            Assert.assertEquals("0:1", mpv[1].id)
+            Assert.assertEquals("1:1", mpv[2].id)
+            Assert.assertEquals("2:2", mpv[3].id)
+            Assert.assertEquals("3:1", mpv[4].id)
+            Assert.assertEquals("4:2", mpv[5].id)
+            Assert.assertEquals("5:3", mpv[6].id)
         }
     }
 
