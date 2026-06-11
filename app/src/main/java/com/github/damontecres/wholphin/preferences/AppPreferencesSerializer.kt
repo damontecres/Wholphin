@@ -156,6 +156,7 @@ class AppPreferencesSerializer
                             .apply {
                                 imageDiskCacheSizeBytes =
                                     AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                                enableAudioOffload = AppPreference.EnableAudioOffload.defaultValue
                             }.build()
 
                     photoPreferences =
