@@ -1033,14 +1033,26 @@ class PlaybackViewModel
                         }
 
                         is PlaylistItem.Media -> {
-                            if (currentItem is PlaylistItem.Intro) {
-                                Timber.v("Current item is intro, so playing next up immediately")
-                                playNextUp()
-                            } else if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
-                                Timber.v("Setting next up to ${nextItem.id}")
-                                _state.update { it.copy(nextUp = nextItem.item) }
-                            } else {
-                                controllerViewState.showControls()
+                            val prefs = preferences.appPreferences.playbackPreferences
+                            when {
+                                currentItem is PlaylistItem.Intro -> {
+                                    Timber.v("Current item is intro, so playing next up immediately")
+                                    playNextUp()
+                                }
+
+                                prefs.showNextUpWhen == ShowNextUpWhen.NEXT_UP_NEVER && !prefs.autoPlayNext -> {
+                                    Timber.v("Never show or auto play next up, returning")
+                                    navigationManager.goBack()
+                                }
+
+                                prefs.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER -> {
+                                    Timber.v("Setting next up to ${nextItem.id}")
+                                    _state.update { it.copy(nextUp = nextItem.item) }
+                                }
+
+                                else -> {
+                                    controllerViewState.showControls()
+                                }
                             }
                         }
 
