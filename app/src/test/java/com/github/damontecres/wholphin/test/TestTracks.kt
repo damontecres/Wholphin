@@ -4,6 +4,11 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.Tracks
+import org.jellyfin.sdk.model.api.MediaProtocol
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaSourceType
+import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.junit.Assert
 import org.junit.Test
@@ -11,7 +16,7 @@ import org.junit.Test
 /**
  * Represents a list of video, audio or, subtitle tracks in a file when direct playing
  *
- * @see TestTracks.Builder
+ * @see Builder
  */
 class TestTracks private constructor(
     val tracks: List<TestTrack> = emptyList(),
@@ -27,7 +32,7 @@ class TestTracks private constructor(
                         when (it.type) {
                             MediaStreamType.VIDEO -> "video/sample"
                             MediaStreamType.AUDIO -> "audio/default"
-                            MediaStreamType.SUBTITLE -> "audio/text"
+                            MediaStreamType.SUBTITLE -> "text/sample"
                             else -> throw UnsupportedOperationException("${it.type}")
                         }
                     Format
@@ -38,6 +43,47 @@ class TestTracks private constructor(
                 }.map { TrackGroup(it) }
                 .map { Tracks.Group(it, false, intArrayOf(C.FORMAT_HANDLED), booleanArrayOf(false)) }
         return Tracks(groups)
+    }
+
+    fun toMediaSourceInfo(): MediaSourceInfo {
+        val streams =
+            tracks.mapIndexed { index, track ->
+                MediaStream(
+                    index = index,
+                    type = track.type,
+                    isExternal = track.external,
+                    codec = null,
+                    language = null,
+                    isInterlaced = false,
+                    isDefault = false,
+                    isForced = false,
+                    isHearingImpaired = false,
+                    isTextSubtitleStream = false,
+                    supportsExternalStream = false,
+                )
+            }
+        val source =
+            MediaSourceInfo(
+                mediaStreams = streams,
+                protocol = MediaProtocol.HTTP,
+                type = MediaSourceType.DEFAULT,
+                isRemote = false,
+                readAtNativeFramerate = false,
+                ignoreDts = false,
+                ignoreIndex = false,
+                genPtsInput = false,
+                supportsTranscoding = true,
+                supportsDirectStream = true,
+                supportsDirectPlay = true,
+                isInfiniteStream = false,
+                requiresOpening = false,
+                requiresClosing = false,
+                requiresLooping = false,
+                supportsProbing = false,
+                transcodingSubProtocol = MediaStreamProtocol.HLS,
+                hasSegments = false,
+            )
+        return source
     }
 
     /**
@@ -174,21 +220,21 @@ fun assertIdType(
  * They are named by the order of the tracks, V=video, A=audio, S=subtitle
  */
 object TrackExamples {
-    val builderVAS =
+    val builderVAASSS =
         TestTracks
             .Builder()
             .addVideo()
             .addAudio(2)
             .addSubtitle(3)
 
-    val builderASV =
+    val builderAASSSV =
         TestTracks
             .Builder()
             .addAudio(2)
             .addSubtitle(3)
             .addVideo()
 
-    val builderAVS =
+    val builderAAVSSS =
         TestTracks
             .Builder()
             .addAudio(2)
@@ -278,7 +324,7 @@ class TestTracksTests {
 
     @Test
     fun `test original-VAS`() {
-        TrackExamples.builderVAS.buildForExoPlayer().tracks.let { exo ->
+        TrackExamples.builderVAASSS.buildForExoPlayer().tracks.let { exo ->
             Assert.assertEquals(6, exo.size)
             Assert.assertEquals("1", exo[0].id)
             Assert.assertEquals("2", exo[1].id)
@@ -288,7 +334,7 @@ class TestTracksTests {
             Assert.assertEquals("6", exo[5].id)
         }
 
-        TrackExamples.builderVAS.buildForMpv().tracks.let { mpv ->
+        TrackExamples.builderVAASSS.buildForMpv().tracks.let { mpv ->
             Assert.assertEquals(6, mpv.size)
             Assert.assertEquals("0:1", mpv[0].id)
             Assert.assertEquals("1:1", mpv[1].id)
@@ -301,7 +347,7 @@ class TestTracksTests {
 
     @Test
     fun `test ASV`() {
-        TrackExamples.builderASV.buildForExoPlayer().tracks.let { exo ->
+        TrackExamples.builderAASSSV.buildForExoPlayer().tracks.let { exo ->
             Assert.assertEquals(6, exo.size)
             assertIdType("1", MediaStreamType.AUDIO, exo[0])
             assertIdType("2", MediaStreamType.AUDIO, exo[1])
@@ -311,7 +357,7 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.VIDEO, exo[5])
         }
 
-        TrackExamples.builderASV.buildForMpv().tracks.let { mpv ->
+        TrackExamples.builderAASSSV.buildForMpv().tracks.let { mpv ->
             Assert.assertEquals(6, mpv.size)
             assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
             assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
@@ -324,7 +370,7 @@ class TestTracksTests {
 
     @Test
     fun `test AVS`() {
-        TrackExamples.builderAVS.buildForExoPlayer().tracks.let { exo ->
+        TrackExamples.builderAAVSSS.buildForExoPlayer().tracks.let { exo ->
             Assert.assertEquals(6, exo.size)
             assertIdType("1", MediaStreamType.AUDIO, exo[0])
             assertIdType("2", MediaStreamType.AUDIO, exo[1])
@@ -334,7 +380,7 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.SUBTITLE, exo[5])
         }
 
-        TrackExamples.builderAVS.buildForMpv().tracks.let { mpv ->
+        TrackExamples.builderAAVSSS.buildForMpv().tracks.let { mpv ->
             Assert.assertEquals(6, mpv.size)
             assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
             assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
