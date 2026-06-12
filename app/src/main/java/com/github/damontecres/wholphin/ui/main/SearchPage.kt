@@ -682,7 +682,7 @@ fun SearchPage(
                         modifier = Modifier.focusGroup(),
                     ) {
                         searchResultRow(
-                            title = R.string.movies,
+                            title = R.string.movies_title,
                             result = state.movies,
                             rowIndex = MOVIE_ROW,
                             position = position,
@@ -692,7 +692,7 @@ fun SearchPage(
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
-                            title = R.string.tv_shows,
+                            title = R.string.tv_shows_title,
                             result = state.series,
                             rowIndex = SERIES_ROW,
                             position = position,

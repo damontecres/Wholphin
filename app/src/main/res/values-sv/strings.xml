@@ -31,7 +31,7 @@
     <string name="no_results">Inga resultat</string>
     <string name="name">Namn</string>
     <string name="loading">Laddar…</string>
-    <string name="movies">Filmer</string>
+    <string name="movies_title">Filmer</string>
     <string name="play">Spela</string>
     <string name="playlist">Spellista</string>
     <string name="playlists">Spellistor</string>
@@ -73,7 +73,6 @@
     <string name="switch_servers">Byt server</string>
     <string name="switch_user">Byt</string>
     <string name="top_unwatched">Topprankade osedda</string>
-    <string name="trailer">Förhandsvisning</string>
     <plurals name="trailers">
         <item quantity="one">Förhandsvisningar</item>
         <item quantity="other"/>
@@ -82,7 +81,7 @@
     <string name="tv_guide">TV Guide</string>
     <string name="tv_season">Säsong</string>
     <string name="tv_seasons">Säsonger</string>
-    <string name="tv_shows">TV-serier</string>
+    <string name="tv_shows_title">TV-serier</string>
     <string name="ui_interface">Gränssnitt</string>
     <string name="unknown">Okänd</string>
     <string name="updates">Uppdateringar</string>
@@ -105,7 +104,7 @@
     <string name="success">Lyckades</string>
     <string name="official_rating">Åldersgräns</string>
     <string name="runtime_sort">Speltid</string>
-    <string name="extras">Extramaterial</string>
+    <string name="extras_title">Extramaterial</string>
     <plurals name="other_extras">
         <item quantity="one">Annat</item>
         <item quantity="other"/>
@@ -205,7 +204,7 @@
     <string name="none">Ingen</string>
     <string name="outro">Slutsekvens</string>
     <string name="path">Sökväg</string>
-    <string name="people">Medverkande</string>
+    <string name="people_title">Medverkande</string>
     <string name="play_count">Spelningar</string>
     <string name="play_from_here">Spela härifrån</string>
     <string name="playback_debug_info">Visa felsökningsinfo för uppspelning</string>
@@ -541,7 +540,7 @@
     <string name="play_as_type">Spela som?</string>
     <string name="favorite_channels_at_beginning">Visa favoritkanaler först</string>
     <string name="sort_channels_recently_watched">Sortera kanaler efter senaste visade</string>
-    <string name="favorite_items">Favoritmarkera %s</string>
+    <string name="favorite_items_title">Favoritmarkera %s</string>
     <string name="play_slideshow">Spela bildspel</string>
     <string name="songs">Sånger</string>
     <string name="prefer_logos">Föredra att visa logotyper för titlar</string>

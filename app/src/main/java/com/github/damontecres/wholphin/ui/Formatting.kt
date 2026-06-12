@@ -203,12 +203,12 @@ fun listToDotString(
 @StringRes
 fun formatTypeName(type: BaseItemKind): Int =
     when (type) {
-        BaseItemKind.MOVIE -> R.string.movies
-        BaseItemKind.SERIES -> R.string.tv_shows
+        BaseItemKind.MOVIE -> R.string.movies_title
+        BaseItemKind.SERIES -> R.string.tv_shows_title
         BaseItemKind.EPISODE -> R.string.episodes
         BaseItemKind.VIDEO -> R.string.videos
         BaseItemKind.PLAYLIST -> R.string.playlists
-        BaseItemKind.PERSON -> R.string.people
+        BaseItemKind.PERSON -> R.string.people_title
         BaseItemKind.BOX_SET -> R.string.collections
         BaseItemKind.AUDIO -> TODO()
         BaseItemKind.CHANNEL -> R.string.channels

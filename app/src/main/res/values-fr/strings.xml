@@ -48,7 +48,7 @@
     <string name="mark_unwatched">Marquer comme non vu</string>
     <string name="mark_watched">Marquer comme vu</string>
     <string name="max_bitrate">Débit maximal</string>
-    <string name="movies">Films</string>
+    <string name="movies_title">Films</string>
     <string name="name">Nom</string>
     <string name="next_up">À suivre</string>
     <string name="no_data">Aucune donnée</string>
@@ -58,7 +58,7 @@
     <string name="none">Aucun</string>
     <string name="outro">Générique de fin</string>
     <string name="path">Chemin</string>
-    <string name="people">Personnes</string>
+    <string name="people_title">Personnes</string>
     <string name="play_from_here">Lire à partir d’ici</string>
     <string name="play">Lire</string>
     <string name="playback_speed">Vitesse de lecture</string>
@@ -98,7 +98,6 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Changer de serveur</string>
     <string name="switch_user">Changer</string>
-    <string name="trailer">Bande-annonce</string>
     <plurals name="trailers">
         <item quantity="one">Bandes-annonces</item>
         <item quantity="many"/>
@@ -106,7 +105,7 @@
     </plurals>
     <string name="tv_season">Saison</string>
     <string name="tv_seasons">Saisons</string>
-    <string name="tv_shows">Séries TV</string>
+    <string name="tv_shows_title">Séries TV</string>
     <string name="unknown">Inconnu</string>
     <string name="updates">Mises à jour</string>
     <string name="version">Version</string>
@@ -182,7 +181,7 @@
     <string name="years_old">%1$d ans</string>
     <string name="italic_font">Mettre la police en italique</string>
     <string name="official_rating">Classification parentale</string>
-    <string name="extras">Bonus</string>
+    <string name="extras_title">Bonus</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Dans les coulisses</item>
         <item quantity="many"/>
@@ -479,7 +478,7 @@
     <string name="display_presets">Afficher les préréglages</string>
     <string name="display_presets_description">Préréglages intégrés pour styliser rapidement toutes les lignes</string>
     <string name="customize_home_summary">Choisissez des lignes et des images sur la page d\'accueil</string>
-    <string name="favorite_items">Favori %s</string>
+    <string name="favorite_items_title">Favori %s</string>
     <plurals name="minutes">
         <item quantity="one">%s minute</item>
         <item quantity="many">%s minutes</item>

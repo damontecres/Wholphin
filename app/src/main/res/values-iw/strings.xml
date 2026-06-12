@@ -51,7 +51,6 @@
     </plurals>
     <string name="tv_seasons">עונות</string>
     <string name="tv_season">עונה</string>
-    <string name="trailer">טריילר</string>
     <plurals name="trailers">
         <item quantity="one">טריילר</item>
         <item quantity="two">טריילרים</item>
@@ -231,7 +230,7 @@
     <string name="success">הצלחה</string>
     <string name="official_rating">דירוג הורים</string>
     <string name="runtime_sort">אורך</string>
-    <string name="extras">תכנים נוספים</string>
+    <string name="extras_title">תכנים נוספים</string>
     <plurals name="other_extras">
         <item quantity="one">אחר</item>
     </plurals>
@@ -265,7 +264,7 @@
     <plurals name="shorts">
         <item quantity="one">קטעים קצרים</item>
     </plurals>
-    <string name="favorite_items">מועדפים: %s</string>
+    <string name="favorite_items_title">מועדפים: %s</string>
     <string name="ac3_supported">המכשיר תומך ב־AC3/Dolby Digital</string>
     <string name="advanced_settings">הגדרות מתקדמות</string>
     <string name="advanced_ui">ממשק מתקדם</string>

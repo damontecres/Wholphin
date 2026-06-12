@@ -62,7 +62,7 @@
     <string name="max_bitrate">Bitrate maks</string>
     <string name="more_like_this">Tampilkan yang serupa</string>
     <string name="more">Lainnya</string>
-    <string name="movies">Film</string>
+    <string name="movies_title">Film</string>
     <string name="name">Nama</string>
     <string name="next_up">Selanjutnya</string>
     <string name="no_data">Tidak ada data</string>
@@ -72,7 +72,7 @@
     <string name="none">Tidak ada</string>
     <string name="outro">Outro</string>
     <string name="path">Berkas</string>
-    <string name="people">Orang</string>
+    <string name="people_title">Orang</string>
     <string name="play_count">Total Pemutaran</string>
     <string name="play_from_here">Putar dari sini</string>
     <string name="play">Putar</string>
@@ -121,7 +121,6 @@
     <string name="switch_servers">Ganti Server</string>
     <string name="switch_user">Ganti</string>
     <string name="top_unwatched">Terbaik Belum Ditonton</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="other">Trailer</item>
     </plurals>
@@ -129,7 +128,7 @@
     <string name="tv_guide">Panduan</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Season</string>
-    <string name="tv_shows">Acara TV</string>
+    <string name="tv_shows_title">Acara TV</string>
     <string name="ui_interface">Antarmuka</string>
     <string name="unknown">Tidak Diketahui</string>
     <string name="updates">Pembaruan</string>
@@ -152,7 +151,7 @@
     <string name="success">Berhasil</string>
     <string name="official_rating">Rating Orang Tua</string>
     <string name="runtime_sort">Durasi</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="other">Lainnya</item>
     </plurals>
@@ -446,7 +445,7 @@
     <string name="display_presets">Preset tampilan</string>
     <string name="display_presets_description">Preset bawaan untuk kustomisasi cepat semua baris</string>
     <string name="customize_home_summary">Pilih baris dan gambar di halaman beranda</string>
-    <string name="favorite_items">Favoritkan %s</string>
+    <string name="favorite_items_title">Favoritkan %s</string>
     <string name="artist">Artis</string>
     <plurals name="minutes">
         <item quantity="other">%s menit</item>

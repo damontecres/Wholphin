@@ -34,7 +34,7 @@ class TrailerService
                                 // TODO would be nice to clean up the trailer name
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
-                                ?: context.getString(R.string.trailer)
+                                ?: context.resources.getQuantityString(R.plurals.trailers, 1)
                         val subtitle =
                             when (url.toUri().host) {
                                 "youtube.com", "www.youtube.com" -> "YouTube"
