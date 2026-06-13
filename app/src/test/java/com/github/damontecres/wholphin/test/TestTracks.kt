@@ -202,6 +202,20 @@ class TestTracks private constructor(
             return TestTracks(testTracks)
         }
     }
+
+    companion object {
+        fun fromMediaSourceInfo(source: MediaSourceInfo): TestTracks.Builder =
+            TestTracks.Builder().apply {
+                source.mediaStreams.orEmpty().forEach {
+                    when (it.type) {
+                        MediaStreamType.AUDIO -> addAudio()
+                        MediaStreamType.VIDEO -> addVideo()
+                        MediaStreamType.SUBTITLE -> if (it.isExternal) addExternalSubtitle() else addSubtitle()
+                        else -> throw IllegalArgumentException("Unsupported type ${it.type}")
+                    }
+                }
+            }
+    }
 }
 
 data class TestTrack(
