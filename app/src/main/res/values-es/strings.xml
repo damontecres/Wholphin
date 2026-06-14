@@ -66,7 +66,6 @@
     <plurals name="trailers">
         <item quantity="one">Tráiler</item>
         <item quantity="many">Tráilers</item>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_shows_title">Series</string>
     <string name="ui_interface">Interfaz</string>
