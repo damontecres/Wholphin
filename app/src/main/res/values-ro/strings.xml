@@ -321,8 +321,6 @@
     <string name="top_unwatched">Cele mai bine cotate, nevizionate</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
-        <item quantity="few"/>
-        <item quantity="other"/>
     </plurals>
     <string name="play_with_transcoding">Redă cu transcodare</string>
     <string name="media_information">Informații media</string>
