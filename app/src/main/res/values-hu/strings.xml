@@ -158,7 +158,6 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Színfalak mögött</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Főcímdal</item>
