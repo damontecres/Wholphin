@@ -100,8 +100,6 @@
     <string name="switch_user">Changer</string>
     <plurals name="trailers">
         <item quantity="one">Bandes-annonces</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_season">Saison</string>
     <string name="tv_seasons">Saisons</string>
