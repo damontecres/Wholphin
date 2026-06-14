@@ -149,9 +149,6 @@
     <string name="top_unwatched">Топ непереглянутих</string>
     <plurals name="trailers">
         <item quantity="one">Трейлери</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Розклад DVR</string>
     <string name="tv_guide">Посібник</string>
