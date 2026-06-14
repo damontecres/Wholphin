@@ -170,8 +170,6 @@
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vídeos temáticos</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clip</item>
@@ -196,8 +194,6 @@
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Mini-documentales</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">CortoCortos</item>
