@@ -224,7 +224,7 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.RECORDING -> TODO()
         BaseItemKind.SEASON -> R.string.tv_seasons
         BaseItemKind.STUDIO -> R.string.studios
-        BaseItemKind.TRAILER -> R.string.trailers
+        BaseItemKind.TRAILER -> R.string.trailers_title
         BaseItemKind.TV_CHANNEL -> R.string.channels
         BaseItemKind.TV_PROGRAM -> TODO()
         BaseItemKind.USER_ROOT_FOLDER -> TODO()

@@ -94,7 +94,7 @@ val ExtraType.stringRes: Int
         when (this) {
             ExtraType.UNKNOWN -> R.string.other_extras_title
             ExtraType.CLIP -> R.string.clips_title
-            ExtraType.TRAILER -> R.string.trailers
+            ExtraType.TRAILER -> R.string.trailers_title
             ExtraType.BEHIND_THE_SCENES -> R.string.behind_the_scenes_title
             ExtraType.DELETED_SCENE -> R.string.deleted_scenes_title
             ExtraType.INTERVIEW -> R.string.interviews_title

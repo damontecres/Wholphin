@@ -530,7 +530,7 @@
     <string name="conductor">Dirigent</string>
     <string name="lyricist">Liedtexter</string>
     <string name="artist">Künstler</string>
-    <string name="favorite_items">Favorisierte %s</string>
+    <string name="favorite_items_title">Favorisierte %s</string>
     <string name="home_rows">Startseiten-Reihen</string>
     <string name="load_from_server">Vom Server-Benutzerprofil laden</string>
     <string name="save_to_server">Im Server-Benutzerprofil speichern</string>
