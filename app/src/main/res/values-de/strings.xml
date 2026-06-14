@@ -160,7 +160,6 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Hinter den Kulissen</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Gelöschte Szene</item>
