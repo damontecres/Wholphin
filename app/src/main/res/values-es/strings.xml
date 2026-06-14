@@ -86,6 +86,7 @@
     <plurals name="other_extras">
         <item quantity="one">Otro</item>
         <item quantity="many">Otros</item>
+        <item quantity="other">Otros</item>
     </plurals>
     <string name="advanced_settings">Configuración avanzada</string>
     <string name="advanced_ui">Interfaz avanzada</string>
@@ -162,14 +163,19 @@
     <string name="aired_episode_order">Orden de emisión</string>
     <string name="italic_font">Cursiva</string>
     <plurals name="behind_the_scenes">
-        <item quantity="one">Detrás de cámaras</item>
+        <item quantity="one">Detrás de las cámaras</item>
+        <item quantity="many">Detrás de las cámaras</item>
+        <item quantity="other">Detrás de las cámaras</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Canción principal</item>
-        <item quantity="many">Canciones principales</item>
+        <item quantity="one">Tema musical</item>
+        <item quantity="many">Temas musicales</item>
+        <item quantity="other">Temas musicales</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">Vídeos temáticos</item>
+        <item quantity="one">Vídeo temático</item>
+        <item quantity="many">Vídeos temáticos</item>
+        <item quantity="other">Vídeos temáticos</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clip</item>
@@ -179,24 +185,32 @@
     <plurals name="deleted_scenes">
         <item quantity="one">Escena eliminada</item>
         <item quantity="many">Escenas eliminadas</item>
+        <item quantity="other">Escenas eliminadas</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Entrevista</item>
         <item quantity="many">Entrevistas</item>
+        <item quantity="other">Entrevistas</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Escena</item>
         <item quantity="many">Escenas</item>
+        <item quantity="other">Escenas</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Muestra</item>
         <item quantity="many">Muestras</item>
+        <item quantity="other">Muestras</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Mini-documentales</item>
+        <item quantity="one">Reportaje</item>
+        <item quantity="many">Reportajes</item>
+        <item quantity="other">Reportajes</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">CortoCortos</item>
+        <item quantity="one">Corto</item>
+        <item quantity="many">Cortos</item>
+        <item quantity="other">Cortos</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s descarga</item>
@@ -626,4 +640,30 @@
     <string name="view_options_type_list_compact">Lista compacta</string>
     <string name="sort">Ordenar</string>
     <string name="split_into_separate_rows">Separar en filas independientes</string>
+    <string name="other_extras_title">Otro</string>
+    <string name="behind_the_scenes_title">Detrás de las cámaras</string>
+    <string name="theme_songs_title">Temas musicales</string>
+    <string name="theme_videos_title">Vídeos temáticos</string>
+    <string name="clips_title">Clips</string>
+    <string name="deleted_scenes_title">Escenas eliminadas</string>
+    <string name="interviews_title">Entrevistas</string>
+    <string name="scenes_title">Escenas</string>
+    <string name="samples_title">Muestras</string>
+    <string name="featurettes_title">Reportajes</string>
+    <string name="shorts_title">Cortos</string>
+    <plurals name="movies">
+        <item quantity="one">Película</item>
+        <item quantity="many">Películas</item>
+        <item quantity="other">Películas</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Serie</item>
+        <item quantity="many">Series</item>
+        <item quantity="other">Series</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Persona</item>
+        <item quantity="many">Personas</item>
+        <item quantity="other">Personas</item>
+    </plurals>
 </resources>
