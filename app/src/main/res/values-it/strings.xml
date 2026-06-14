@@ -92,13 +92,9 @@
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviste</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scene</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="watch_live">Guarda diretta</string>
     <string name="tv_guide">Guida TV</string>
@@ -213,18 +209,12 @@
     <string name="skip_segment_outro">Salta Outro</string>
     <plurals name="theme_videos">
         <item quantity="one">Temi Video</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Scene Eliminate</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Video brevi</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Impostazioni Avanzate</string>
     <string name="check_for_updates">Cerca aggiornamenti</string>
@@ -254,13 +244,9 @@
     <string name="remember_selected_tab">Ricorda schede selezionate</string>
     <plurals name="samples">
         <item quantity="one">Campioni</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Featurettes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare &amp; Prossimo Episodio]]></string>
     <string name="downmix_stereo">Converti sempre in stereo</string>
@@ -270,8 +256,6 @@
     <string name="runtime_sort">Durata</string>
     <plurals name="clips">
         <item quantity="one">Clip</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s scaricamento</item>
