@@ -107,47 +107,36 @@
     <string name="extras_title">Extramaterial</string>
     <plurals name="other_extras">
         <item quantity="one">Annat</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bakom kulisserna</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temalåtar</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideor</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Borttagna scener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuer</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Exempel</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Specialinslag</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmer</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s nedladdning</item>
