@@ -581,27 +581,15 @@
     <string name="runtime_sort">Czas trwania</string>
     <plurals name="clips">
         <item quantity="one">Klipy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Próbki</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Filmy krótkometrażowe</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Krótkie filmy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="aspect_ratio">Proporcje ekranu</string>
     <string name="guest_stars">Aktorzy gościnni</string>
