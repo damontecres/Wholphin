@@ -121,15 +121,9 @@
     <string name="one_click_pause_summary_on">Wciśnij środek by pauzować/wznowić</string>
     <plurals name="interviews">
         <item quantity="one">Wywiady</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Sceny</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Czołówka</item>
@@ -269,9 +263,6 @@
     <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Inne</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Usunięta scena</item>
