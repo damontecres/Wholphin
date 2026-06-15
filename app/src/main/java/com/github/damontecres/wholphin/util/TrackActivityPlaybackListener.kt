@@ -22,6 +22,7 @@ import timber.log.Timber
 import java.util.Timer
 import java.util.TimerTask
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -85,10 +86,13 @@ class TrackActivityPlaybackListener(
         launch("reportPlaybackStopped") {
             getState.invoke()?.let { state ->
                 Timber.v("reportPlaybackStopped for ${state.itemId} at $position")
+                if (position < Duration.ZERO) {
+                    Timber.w("Negative position when reporting playback stopped: %s", position)
+                }
                 api.playStateApi.reportPlaybackStopped(
                     PlaybackStopInfo(
                         itemId = state.itemId,
-                        positionTicks = position.inWholeTicks,
+                        positionTicks = position.inWholeTicks.takeIf { it >= 0 },
                         failed = false,
                         playSessionId = state.playSessionId,
                         liveStreamId = state.liveStreamId,
