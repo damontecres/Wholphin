@@ -37,9 +37,13 @@ import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import timber.log.Timber
+import androidx.datastore.core.DataStore
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import java.lang.reflect.Constructor
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,6 +57,7 @@ class PlayerFactory
     constructor(
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
+        private val appPreferences: DataStore<AppPreferences>,
     ) {
         @Volatile
         var currentPlayer: Player? = null
@@ -128,7 +133,8 @@ class PlayerFactory
                                     extractorsFactory,
                                 )
                             }
-                        val trackSelector = createTrackSelector()
+                        val enableAudioOffload = appPreferences.data.first().advancedPreferences.enableAudioOffload
+                        val trackSelector = createTrackSelector(enableAudioOffload)
 
                         ExoPlayer
                             .Builder(context)
@@ -176,7 +182,10 @@ class PlayerFactory
                     OkHttpDataSource.Factory(authOkHttpClient),
                     extractorsFactory,
                 )
-            val trackSelector = createTrackSelector()
+            val enableAudioOffload = runBlocking {
+                appPreferences.data.first().advancedPreferences.enableAudioOffload
+            }
+            val trackSelector = createTrackSelector(enableAudioOffload)
             return ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
@@ -199,14 +208,19 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector() =
+        private fun createTrackSelector(enableAudioOffload: Boolean) =
             DefaultTrackSelector(context).apply {
+                val offloadMode = if (enableAudioOffload) {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                } else {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                }
                 setParameters(
                     buildUponParameters()
                         .setAudioOffloadPreferences(
                             AudioOffloadPreferences
                                 .Builder()
-                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
+                                .setAudioOffloadMode(offloadMode)
                                 .build(),
                         ),
                 )

@@ -197,6 +197,7 @@ message InterfacePreferences {
 
 message AdvancedPreferences {
   int64 image_disk_cache_size_bytes = 1;
+  bool enable_audio_offload = 2;
 }
 
 message PhotoPreferences{

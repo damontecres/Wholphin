@@ -392,6 +392,8 @@
     <string name="will_remove_pin">Will remove PIN</string>
     <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
+    <string name="enable_audio_offload">Enable audio hardware offload</string>
+    <string name="enable_audio_offload_summary">Offload audio decoding to the hardware DSP. May cause playback hangs on some devices (e.g. TCL TVs).</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
     <string name="spacing">Spacing</string>

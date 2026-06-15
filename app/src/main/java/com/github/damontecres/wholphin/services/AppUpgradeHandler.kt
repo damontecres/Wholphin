@@ -409,5 +409,13 @@ class AppUpgradeHandler
                     Timber.e(ex, "Error saving migrated tabs")
                 }
             }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.1-3-g0"))) {
+                appPreferences.updateData {
+                    it.updateAdvancedPreferences {
+                        enableAudioOffload = true
+                    }
+                }
+            }
         }
     }
