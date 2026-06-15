@@ -243,6 +243,7 @@ data class DiscoverState(
 @Composable
 fun SeerrDiscoverPage(
     preferences: UserPreferences,
+    positionCallback: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SeerrDiscoverViewModel = hiltViewModel(),
 ) {
@@ -335,12 +336,16 @@ fun SeerrDiscoverPage(
                                 viewModel.navigationManager.navigateTo(item.destination)
                             },
                             onLongClickItem = { index, item -> },
-                            onCardFocus = { index -> position = RowColumn(rowIndex, index) },
+                            onCardFocus = { index ->
+                                position = RowColumn(rowIndex, index)
+                                positionCallback.invoke(position)
+                            },
                             focusRequester = focusRequesters[rowIndex],
                             enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
                             onClickViewMore = {
                                 (row.items as? DataLoadingState.Success<List<DiscoverItem>>)?.data?.size?.let {
                                     position = RowColumn(rowIndex, it)
+                                    positionCallback.invoke(position)
                                 }
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(row.type),
