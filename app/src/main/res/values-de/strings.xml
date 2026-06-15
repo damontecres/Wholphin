@@ -160,10 +160,11 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Hinter den Kulissen</item>
+        <item quantity="other">Hinter den Kulissen</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Gelöschte Szene</item>
-        <item quantity="other">Gelöschte Szenen</item>
+        <item quantity="one">Nicht verwendete Szene</item>
+        <item quantity="other">Nicht verwendete Szenen</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d Eintrag</item>
@@ -213,8 +214,8 @@
         <item quantity="other">Interviews</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Beispiel</item>
-        <item quantity="other">Beispiele</item>
+        <item quantity="one">Ausschnitt</item>
+        <item quantity="other">Ausschnitte</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Begleitfilm</item>
@@ -612,7 +613,7 @@
     <string name="show_voice_search_button">Zeige Sprachsuche-Button</string>
     <string name="user_interface_language">Sprache Benutzeroberfläche</string>
     <string name="profile_protection">Profilschutz</string>
-    <string name="continue_watching_click_behavior">Weiterschauen/Als nächstes Verhalten</string>
+    <string name="continue_watching_click_behavior">Klickverhalten bei Weiterschauen/Als nächstes</string>
     <string name="continue_watching_click_summary_on">Mit Klick abspielen</string>
     <string name="continue_watching_click_summary_off">Mit Klick Details zeigen</string>
     <string name="stars">Sterne</string>
@@ -633,4 +634,16 @@
     <string name="samples_title">Probe</string>
     <string name="featurettes_title">Featurettes</string>
     <string name="shorts_title">Shorts</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="other">Filme</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Serie</item>
+        <item quantity="other">Serien</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Darsteller</item>
+        <item quantity="other">Darsteller</item>
+    </plurals>
 </resources>
