@@ -156,7 +156,7 @@
     <string name="official_rating">Altersfreigabe</string>
     <plurals name="other_extras">
         <item quantity="one">Sonstiges</item>
-        <item quantity="other">Sonstiges</item>
+        <item quantity="other">Sonstige</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Hinter den Kulissen</item>
@@ -621,4 +621,16 @@
     <string name="display_toggles_summary">Anpassen, was angezeigt wird</string>
     <string name="sort">Sortieren</string>
     <string name="split_into_separate_rows">In unterschiedliche Reihen aufteilen</string>
+    <string name="trailers_title">Trailer</string>
+    <string name="other_extras_title">Andere</string>
+    <string name="behind_the_scenes_title">Behind the Scenes</string>
+    <string name="theme_songs_title">Titelsongs</string>
+    <string name="theme_videos_title">Titelvideos</string>
+    <string name="clips_title">Ausschnitte</string>
+    <string name="deleted_scenes_title">Gelöschte Szenen</string>
+    <string name="interviews_title">Interviews</string>
+    <string name="scenes_title">Szenen</string>
+    <string name="samples_title">Probe</string>
+    <string name="featurettes_title">Featurettes</string>
+    <string name="shorts_title">Shorts</string>
 </resources>
