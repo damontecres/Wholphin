@@ -637,4 +637,34 @@
     <string name="view_options_type_grid">Siatka</string>
     <string name="sort">Sortuj</string>
     <string name="split_into_separate_rows">Podziel na osobne rzędy</string>
+    <string name="trailers_title">Zwiastuny</string>
+    <string name="other_extras_title">Inne</string>
+    <string name="behind_the_scenes_title">Za kulisami</string>
+    <string name="theme_songs_title">Piosenki tematyczne</string>
+    <string name="theme_videos_title">Filmy tematyczne</string>
+    <string name="clips_title">Klipy</string>
+    <string name="deleted_scenes_title">Usunięte sceny</string>
+    <string name="interviews_title">Wywiady</string>
+    <string name="scenes_title">Sceny</string>
+    <string name="samples_title">Próbki</string>
+    <string name="featurettes_title">Materiały dodatkowe</string>
+    <string name="shorts_title">Szorty</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="few">Filmy</item>
+        <item quantity="many">Filmów</item>
+        <item quantity="other">Filmów</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Osoba</item>
+        <item quantity="few">Osoby</item>
+        <item quantity="many">Osób</item>
+        <item quantity="other">Osób</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Serial</item>
+        <item quantity="few">Seriale</item>
+        <item quantity="many">Serialów</item>
+        <item quantity="other">Serialów</item>
+    </plurals>
 </resources>
