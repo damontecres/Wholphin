@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
+import com.github.damontecres.wholphin.test.nonBlankString
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import io.mockk.Runs
@@ -20,6 +21,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +44,7 @@ import org.jellyfin.sdk.api.operations.UserApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.AuthenticationResult
 import org.jellyfin.sdk.model.api.PublicSystemInfo
 import org.jellyfin.sdk.model.api.UserDto
 import org.junit.After
@@ -135,11 +138,13 @@ class TestServerRepository {
             serverId = serverId,
             name = "test-user",
             accessToken = "token",
+            pin = "1234",
         )
     private val userDto =
         UserDto(
             id = userId,
             name = "test-user",
+            serverName = "test server",
             hasPassword = true,
             hasConfiguredPassword = true,
             hasConfiguredEasyPassword = false,
@@ -266,7 +271,7 @@ class TestServerRepository {
         }
 
     @Test
-    fun `Test remove user that's not current`() =
+    fun `Test remove different user than current`() =
         runTest {
             coEvery { mockJellyfinServerDao.deleteUser(any(), any()) } just Runs
 
@@ -298,7 +303,189 @@ class TestServerRepository {
             serverRepository.removeUser(user)
 
             Assert.assertNull(serverRepository.current.value)
-            verify { mockApiClient.update(accessToken = null, baseUrl = any(), clientInfo = any(), deviceInfo = any()) }
+            verify {
+                mockApiClient.update(
+                    accessToken = null,
+                    baseUrl = nonBlankString(),
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
             verify(exactly = 1) { mockJellyfinServerDao.deleteUser(serverId, userId) }
         }
+
+    @Test
+    fun `Test remove different server than current`() =
+        runTest {
+            coEvery { mockJellyfinServerDao.deleteServer(any()) } just Runs
+            val serverRepository = create()
+            setUpCurrentUser(serverRepository, currentUser = user)
+
+            val toRemove = JellyfinServer(UUID.randomUUID(), null, "http://jellyfin.local", null)
+            serverRepository.removeServer(toRemove)
+
+            Assert.assertEquals(server, serverRepository.currentServer)
+            verify(exactly = 0) {
+                mockApiClient.update(
+                    accessToken = any(),
+                    baseUrl = any(),
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
+            verify(exactly = 1) { mockJellyfinServerDao.deleteServer(toRemove.id) }
+        }
+
+    @Test
+    fun `Test remove current server`() =
+        runTest {
+            coEvery { mockJellyfinServerDao.deleteServer(any()) } just Runs
+            val serverRepository = create()
+            setUpCurrentUser(serverRepository, currentUser = user)
+
+            serverRepository.removeServer(server)
+
+            Assert.assertNull(serverRepository.current.value)
+            verify {
+                mockApiClient.update(
+                    accessToken = null,
+                    baseUrl = null,
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
+            verify(exactly = 1) { mockJellyfinServerDao.deleteServer(serverId) }
+        }
+
+    @Test
+    fun `Test changeUser via auth`() =
+        runTest {
+            every { mockJellyfinServerDao.addOrUpdateServer(any()) } just Runs
+            every { mockJellyfinServerDao.addOrUpdateUser(any()) } returns user
+
+            val authResult =
+                AuthenticationResult(
+                    user = userDto,
+                    serverId = serverId.toServerString(),
+                    accessToken = user.accessToken,
+                )
+            val serverRepository = create()
+            serverRepository.changeUser(server.url, authResult, null)
+
+            verify(exactly = 1) {
+                mockApiClient.update(
+                    baseUrl = server.url,
+                    accessToken = user.accessToken,
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
+            verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateServer(server) }
+            val savedUser = slot<JellyfinUser>()
+            verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateUser(capture(savedUser)) }
+            // Newly created user, so rowId should be 0
+            Assert.assertEquals(0, savedUser.captured.rowId)
+            Assert.assertEquals(user.id, savedUser.captured.id)
+
+            Assert.assertEquals(server, serverRepository.currentServer)
+            Assert.assertEquals(user, serverRepository.currentUser)
+            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+
+            val appPreferences = dataStore.data.first()
+            Assert.assertEquals(serverId.toServerString(), appPreferences.currentServerId)
+            Assert.assertEquals(userId.toServerString(), appPreferences.currentUserId)
+
+            verify(exactly = 1) { mockSharedPreferences.edit() }
+        }
+
+    @Test
+    fun `Test changeUser via auth for existing`() =
+        runTest {
+            every { mockJellyfinServerDao.addOrUpdateServer(any()) } just Runs
+            every { mockJellyfinServerDao.addOrUpdateUser(any()) } returns user
+
+            val authResult =
+                AuthenticationResult(
+                    user = userDto,
+                    serverId = serverId.toServerString(),
+                    accessToken = user.accessToken,
+                )
+            val serverRepository = create()
+            serverRepository.changeUser(server.url, authResult, user)
+
+            verify(exactly = 1) {
+                mockApiClient.update(
+                    baseUrl = server.url,
+                    accessToken = user.accessToken,
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
+            verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateServer(server) }
+            val savedUser = slot<JellyfinUser>()
+            verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateUser(capture(savedUser)) }
+            // Existing user, so rowId should not change
+            Assert.assertEquals(user.rowId, savedUser.captured.rowId)
+            Assert.assertEquals(user.id, savedUser.captured.id)
+            // PIN should be removed when re-authing existing user
+            Assert.assertNull(savedUser.captured.pin)
+
+            Assert.assertEquals(server, serverRepository.currentServer)
+            Assert.assertEquals(user, serverRepository.currentUser)
+            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+
+            val appPreferences = dataStore.data.first()
+            Assert.assertEquals(serverId.toServerString(), appPreferences.currentServerId)
+            Assert.assertEquals(userId.toServerString(), appPreferences.currentUserId)
+
+            verify(exactly = 1) { mockSharedPreferences.edit() }
+        }
+
+    @Test
+    fun `Test changeUser via invalid auth`() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            runTest {
+                val authResult =
+                    AuthenticationResult(
+                        user = userDto,
+                        serverId = serverId.toServerString(),
+                        accessToken = null,
+                    )
+                create().changeUser(server.url, authResult, user)
+            }
+        }
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            runTest {
+                val authResult =
+                    AuthenticationResult(
+                        user = userDto,
+                        serverId = null,
+                        accessToken = user.accessToken,
+                    )
+                create().changeUser(server.url, authResult, user)
+            }
+        }
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            runTest {
+                val authResult =
+                    AuthenticationResult(
+                        user = userDto,
+                        serverId = "invalid-uuid",
+                        accessToken = user.accessToken,
+                    )
+                create().changeUser(server.url, authResult, user)
+            }
+        }
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            runTest {
+                val authResult =
+                    AuthenticationResult(
+                        user = null,
+                        serverId = "invalid-uuid",
+                        accessToken = user.accessToken,
+                    )
+                create().changeUser(server.url, authResult, user)
+            }
+        }
+    }
 }
