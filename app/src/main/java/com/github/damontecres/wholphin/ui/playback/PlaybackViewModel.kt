@@ -72,6 +72,7 @@ import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
+import com.github.damontecres.wholphin.util.profile.withPostPlaybackInfoFixes
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.assisted.Assisted
@@ -104,6 +105,7 @@ import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -636,21 +638,24 @@ class PlaybackViewModel
             val maxBitrate =
                 preferences.appPreferences.playbackPreferences.maxBitrate
                     .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
-            val response by
+            val playerBackend = currentPlayer.value!!.backend
+            val deviceProfile =
+                if (playerBackend == PlayerBackend.EXO_PLAYER) {
+                    deviceProfileService.getOrCreateDeviceProfile(
+                        preferences.appPreferences.playbackPreferences,
+                        serverRepository.currentServer?.serverVersion,
+                    )
+                } else {
+                    mpvDeviceProfile
+                }
+
+            suspend fun getPlaybackInfo(deviceProfile: DeviceProfile) =
                 api.mediaInfoApi
                     .getPostedPlaybackInfo(
                         itemId,
                         PlaybackInfoDto(
                             startTimeTicks = null,
-                            deviceProfile =
-                                if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
-                                    deviceProfileService.getOrCreateDeviceProfile(
-                                        preferences.appPreferences.playbackPreferences,
-                                        serverRepository.currentServer?.serverVersion,
-                                    )
-                                } else {
-                                    mpvDeviceProfile
-                                },
+                            deviceProfile = deviceProfile,
                             maxAudioChannels = null,
                             audioStreamIndex = audioIndex,
                             subtitleStreamIndex = subtitleIndex,
@@ -664,12 +669,28 @@ class PlaybackViewModel
                             enableTranscoding = true,
                             autoOpenLiveStream = true,
                         ),
+                    ).content
+
+            var response = getPlaybackInfo(deviceProfile)
+            var source = response.mediaSources.firstOrNull()
+            if (source != null) {
+                // Check if returned playback info requires any known defect fixes
+                // and if so, modify profile and re-request
+                val fixedDeviceProfile =
+                    deviceProfile.withPostPlaybackInfoFixes(
+                        playerBackend = playerBackend,
+                        source = source,
+                        audioIndex = audioIndex,
                     )
+                if (fixedDeviceProfile !== deviceProfile) {
+                    response = getPlaybackInfo(fixedDeviceProfile)
+                    source = response.mediaSources.firstOrNull()
+                }
+            }
             if (response.errorCode != null) {
                 _state.update { it.copy(loading = LoadingState.Error(response.errorCode?.serialName)) }
                 return@withContext
             }
-            val source = response.mediaSources.firstOrNull()
             source?.let { source ->
                 val mediaUrl =
                     if (source.supportsDirectPlay) {
