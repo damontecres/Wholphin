@@ -14,7 +14,6 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.test.nonBlankString
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
@@ -22,7 +21,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -115,7 +113,6 @@ class TestServerRepository {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        unmockkObject(GetItemsRequestHandler)
     }
 
     private fun create() =
