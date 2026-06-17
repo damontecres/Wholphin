@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
@@ -211,6 +212,11 @@ class PlayerFactory
                         ),
                 )
             }
+
+        fun createMediaSession(player: Player) =
+            MediaSession
+                .Builder(context, player)
+                .build()
     }
 
 val Player.isReleased: Boolean

@@ -192,14 +192,18 @@ class PlaybackViewModel
 
         val currentUserDto = serverRepository.currentUserDtoFlow
 
+        // Exposed for testing
+        val initJob: Job
+
         init {
-            viewModelScope.launchIO {
-                addCloseable {
-                    screensaverService.keepScreenOn(false)
-                    disconnectPlayer()
+            initJob =
+                viewModelScope.launchIO {
+                    addCloseable {
+                        screensaverService.keepScreenOn(false)
+                        disconnectPlayer()
+                    }
+                    init()
                 }
-                init()
-            }
         }
 
         private fun disconnectPlayer() {
@@ -269,10 +273,7 @@ class PlaybackViewModel
                     player,
                     preferences.appPreferences.playbackPreferences,
                 )
-            mediaSession =
-                MediaSession
-                    .Builder(context, sessionPlayer)
-                    .build()
+            mediaSession = playerFactory.createMediaSession(sessionPlayer)
         }
 
         /**
