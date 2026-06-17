@@ -6,10 +6,13 @@ import androidx.media3.common.Player
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
@@ -19,6 +22,7 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerCreation
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
@@ -35,6 +39,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -114,6 +119,7 @@ class PlaybackViewModelTests {
             destination = destination,
             ioDispatcher = testDispatcher,
             mainDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher,
         )
 
     fun buildPrefs(block: PlaybackPreferences.Builder.() -> Unit): AppPreferences =
@@ -310,9 +316,137 @@ class PlaybackViewModelTests {
             val mediaItem = slot<MediaItem>()
             verify(exactly = 1) { mockPlayer.setMediaItem(capture(mediaItem), any<Long>()) }
             Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
-            val state = viewModel.state.value
-            Assert.assertEquals(LoadingState.Success, state.loading)
-            Assert.assertEquals(mediaSource.id, state.currentMediaInfo.sourceId)
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(LoadingState.Success, state.loading)
+                Assert.assertEquals(mediaSource.id, state.currentMediaInfo.sourceId)
+            }
+        }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test
+    fun `Play next up`() =
+        runTest(testDispatcher) {
+            val playlist = playlist()
+            val movie = BaseItem(movie())
+            val movie2 = BaseItem(movie())
+            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
+            withPreferences {
+            }
+            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
+                successResponse(playlist)
+            coEvery {
+                mockPlaylistCreator.createFrom(
+                    item = playlist,
+                    startIndex = any(),
+                    sortAndDirection = any(),
+                    shuffled = any(),
+                    recursive = any(),
+                    filter = any(),
+                )
+            } returns PlaylistCreationResult.Success(playlistItems)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+            }
+
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(1, state.playlistIndex)
+            }
+
+            val mediaItem = slot<MediaItem>()
+            val mediaItem2 = slot<MediaItem>()
+            verifyOrder {
+                mockPlayer.setMediaItem(capture(mediaItem), any<Long>())
+                mockPlayer.setMediaItem(capture(mediaItem2), any<Long>())
+            }
+            Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
+            Assert.assertEquals(movie2.id.toString(), mediaItem2.captured.mediaId)
+        }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test
+    fun `Show next up at end of playback`() =
+        runTest(testDispatcher) {
+            val playlist = playlist()
+            val movie = BaseItem(movie())
+            val movie2 = BaseItem(movie())
+            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
+            withPreferences {
+                showNextUpWhen = ShowNextUpWhen.END_OF_PLAYBACK
+            }
+            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
+                successResponse(playlist)
+            coEvery {
+                mockPlaylistCreator.createFrom(
+                    item = playlist,
+                    startIndex = any(),
+                    sortAndDirection = any(),
+                    shuffled = any(),
+                    recursive = any(),
+                    filter = any(),
+                )
+            } returns PlaylistCreationResult.Success(playlistItems)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(movie2, state.nextUp)
+            }
+        }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test
+    fun `Show next up never`() =
+        runTest(testDispatcher) {
+            val playlist = playlist()
+            val movie = BaseItem(movie())
+            val movie2 = BaseItem(movie())
+            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
+            withPreferences {
+                showNextUpWhen = ShowNextUpWhen.NEXT_UP_NEVER
+            }
+            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
+                successResponse(playlist)
+            coEvery {
+                mockPlaylistCreator.createFrom(
+                    item = playlist,
+                    startIndex = any(),
+                    sortAndDirection = any(),
+                    shuffled = any(),
+                    recursive = any(),
+                    filter = any(),
+                )
+            } returns PlaylistCreationResult.Success(playlistItems)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.nextUp)
+            }
         }
 }
 
@@ -324,6 +458,19 @@ private fun movie(
     BaseItemDto(
         id = id,
         type = BaseItemKind.MOVIE,
+        name = name,
+        seriesId = null,
+        genreItems = genres,
+    )
+
+private fun playlist(
+    id: UUID = UUID.randomUUID(),
+    name: String = "Test Playlist",
+    genres: List<NameGuidPair>? = null,
+): BaseItemDto =
+    BaseItemDto(
+        id = id,
+        type = BaseItemKind.PLAYLIST,
         name = name,
         seriesId = null,
         genreItems = genres,
