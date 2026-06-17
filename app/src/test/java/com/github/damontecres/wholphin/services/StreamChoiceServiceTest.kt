@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.test
+package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -8,7 +8,6 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.StreamChoiceService
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
@@ -22,7 +21,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class TestStreamChoiceServiceBasic(
+class StreamChoiceServiceTest(
     val input: TestInput,
 ) {
     @Test
