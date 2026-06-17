@@ -5,10 +5,12 @@ import android.content.res.Resources
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.successResponse
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -16,7 +18,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.model.UUID
@@ -66,6 +67,7 @@ class ExtrasServiceTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Dispatchers::class)
     }
 
     @Test
@@ -80,7 +82,7 @@ class ExtrasServiceTest {
                     )
                 }
             coEvery { mockUserLibraryApi.getSpecialFeatures(any(), any()) } returns
-                Response(extrasDtos, 200, emptyMap())
+                successResponse(extrasDtos)
 
             val extras = extrasService.getExtras(UUID.randomUUID())
             Assert.assertEquals(1, extras.size)
@@ -112,7 +114,7 @@ class ExtrasServiceTest {
                     }
 
             coEvery { mockUserLibraryApi.getSpecialFeatures(any(), any()) } returns
-                Response(extrasDtos, 200, emptyMap())
+                successResponse(extrasDtos)
 
             val extras = extrasService.getExtras(UUID.randomUUID())
             Assert.assertEquals(2, extras.size)
@@ -143,7 +145,7 @@ class ExtrasServiceTest {
                 )
 
             coEvery { mockUserLibraryApi.getSpecialFeatures(any(), any()) } returns
-                Response(extrasDtos, 200, emptyMap())
+                successResponse(extrasDtos)
 
             val extras = extrasService.getExtras(UUID.randomUUID())
             Assert.assertEquals(2, extras.size)
@@ -176,7 +178,7 @@ class ExtrasServiceTest {
                     }
 
             coEvery { mockUserLibraryApi.getSpecialFeatures(any(), any()) } returns
-                Response(extrasDtos, 200, emptyMap())
+                successResponse(extrasDtos)
 
             val extras = extrasService.getExtras(UUID.randomUUID())
             Assert.assertEquals(2, extras.size)

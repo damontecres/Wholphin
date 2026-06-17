@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.InterfacePreferences
+import com.github.damontecres.wholphin.ui.successResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -19,7 +20,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.operations.LibraryApi
@@ -163,7 +163,7 @@ class MediaManagementServiceTest {
     @Test
     fun `Test successful delete`() =
         runTest {
-            coEvery { mockLibraryApi.deleteItem(any()) } returns Response(Unit, 200, emptyMap())
+            coEvery { mockLibraryApi.deleteItem(any()) } returns successResponse(Unit)
 
             val deletedItems = mutableListOf<DeletedItem>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

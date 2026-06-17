@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.test.nonBlankString
+import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.ui.toServerString
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -21,6 +22,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +54,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-class TestServerRepository {
+class ServerRepositoryTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @get:Rule
@@ -92,7 +94,7 @@ class TestServerRepository {
         every { mockContext.getSharedPreferences(any(), any()) } returns mockSharedPreferences
         every { mockApiClient.userApi } returns mockUserApi
         every { mockApiClient.systemApi } returns mockSystemApi
-        coEvery { mockUserApi.getCurrentUser() } returns Response(userDto, 200, emptyMap())
+        coEvery { mockUserApi.getCurrentUser() } returns successResponse(userDto)
         coEvery { mockSystemApi.getPublicSystemInfo() } returns
             Response(
                 PublicSystemInfo(
@@ -113,6 +115,7 @@ class TestServerRepository {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Dispatchers::class)
     }
 
     private fun create() =
