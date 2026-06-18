@@ -4,11 +4,11 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.mayakapps.kache.InMemoryKache
 import com.mayakapps.kache.ObjectKache
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -43,7 +43,7 @@ class SuggestionsCache
 
         private val memoryCache =
             InMemoryKache<String, CachedSuggestions>(maxSize = 8) {
-                creationScope = CoroutineScope(Dispatchers.IO)
+                creationScope = CoroutineScope(WholphinDispatchers.IO)
             }
 
         private fun cacheKey(

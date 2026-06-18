@@ -67,7 +67,6 @@ import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
-import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -120,7 +119,6 @@ class NavDrawerViewModel
             index: Int,
             item: NavDrawerItem,
         ) {
-            if (item !is NavDrawerItem.More) setShowMore(false)
             when (item) {
                 NavDrawerItem.Favorites -> {
                     setIndex(index)
@@ -163,48 +161,40 @@ class NavDrawerViewModel
         fun updateSelectedIndex() {
             viewModelScope.launchDefault {
                 val asDestinations =
-                    (
-                        serviceState.value.items +
-                            listOf(
-                                NavDrawerItem.More,
-                                NavDrawerItem.Discover,
-                            ) + serviceState.value.moreItems
-                    ).map {
-                        if (it is ServerNavDrawerItem) {
-                            it.destination
-                        } else if (it is NavDrawerItem.Favorites) {
-                            Destination.Favorites
-                        } else if (it is NavDrawerItem.Discover) {
-                            Destination.Discover
-                        } else {
-                            null
+                    buildList {
+                        addAll(serviceState.value.items)
+                        addAll(serviceState.value.moreItems)
+                    }.map {
+                        when (it) {
+                            is ServerNavDrawerItem -> it.destination
+                            is NavDrawerItem.Favorites -> Destination.Favorites
+                            is NavDrawerItem.Discover -> Destination.Discover
+                            else -> null
                         }
                     }
 
                 val backstack = navigationManager.backStack.toList().reversed()
                 for (i in 0..<backstack.size) {
                     val key = backstack[i]
-                    if (key is Destination) {
-                        val index =
-                            if (key is Destination.Home) {
-                                HOME_INDEX
-                            } else if (key is Destination.Search) {
-                                SEARCH_INDEX
-                            } else if (key is Destination.NowPlaying) {
-                                NOW_PLAYING_INDEX
+                    val index =
+                        if (key is Destination.Home) {
+                            HOME_INDEX
+                        } else if (key is Destination.Search) {
+                            SEARCH_INDEX
+                        } else if (key is Destination.NowPlaying) {
+                            NOW_PLAYING_INDEX
+                        } else {
+                            val idx = asDestinations.indexOf(key)
+                            if (idx >= 0) {
+                                idx
                             } else {
-                                val idx = asDestinations.indexOf(key)
-                                if (idx >= 0) {
-                                    idx
-                                } else {
-                                    null
-                                }
+                                null
                             }
-                        Timber.v("Found $index => $key")
-                        if (index != null) {
-                            _state.update { it.copy(selectedIndex = index) }
-                            break
                         }
+                    Timber.v("Found $index => $key")
+                    if (index != null) {
+                        _state.update { it.copy(selectedIndex = index) }
+                        break
                     }
                 }
             }
@@ -455,25 +445,23 @@ fun NavDrawer(
                             )
                         }
                         itemsIndexed(serviceState.items) { index, it ->
-                            if (it !is NavDrawerItem.Discover || serviceState.discoverEnabled) {
-                                val interactionSource = remember { MutableInteractionSource() }
-                                NavItem(
-                                    library = it,
-                                    selected = selectedIndex == index,
-                                    moreExpanded = moreExpanded,
-                                    drawerOpen = isOpen,
-                                    interactionSource = interactionSource,
-                                    onClick = {
-                                        viewModel.onClickDrawerItem(index, it)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .ifElse(
-                                                selectedIndex == index,
-                                                Modifier.focusRequester(focusRequester),
-                                            ),
-                                )
-                            }
+                            val interactionSource = remember { MutableInteractionSource() }
+                            NavItem(
+                                library = it,
+                                selected = selectedIndex == index,
+                                moreExpanded = moreExpanded,
+                                drawerOpen = isOpen,
+                                interactionSource = interactionSource,
+                                onClick = {
+                                    viewModel.onClickDrawerItem(index, it)
+                                },
+                                modifier =
+                                    Modifier
+                                        .ifElse(
+                                            selectedIndex == index,
+                                            Modifier.focusRequester(focusRequester),
+                                        ),
+                            )
                         }
                         if (serviceState.moreItems.isNotEmpty()) {
                             item {
@@ -481,7 +469,7 @@ fun NavDrawer(
                                 val interactionSource = remember { MutableInteractionSource() }
                                 NavItem(
                                     library = NavDrawerItem.More,
-                                    selected = selectedIndex == index,
+                                    selected = false,
                                     moreExpanded = moreExpanded,
                                     drawerOpen = isOpen,
                                     interactionSource = interactionSource,
@@ -500,35 +488,33 @@ fun NavDrawer(
                         if (moreExpanded) {
                             itemsIndexed(serviceState.moreItems) { index, it ->
                                 val adjustedIndex =
-                                    remember(serviceState) { (index + serviceState.items.size + 1) }
-                                if (it !is NavDrawerItem.Discover || serviceState.discoverEnabled) {
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    NavItem(
-                                        library = it,
-                                        selected = selectedIndex == adjustedIndex,
-                                        moreExpanded = moreExpanded,
-                                        drawerOpen = isOpen,
-                                        onClick = {
-                                            viewModel.onClickDrawerItem(
-                                                adjustedIndex,
-                                                it,
-                                            )
+                                    remember(serviceState) { (index + serviceState.items.size) }
+                                val interactionSource = remember { MutableInteractionSource() }
+                                NavItem(
+                                    library = it,
+                                    selected = selectedIndex == adjustedIndex,
+                                    moreExpanded = moreExpanded,
+                                    drawerOpen = isOpen,
+                                    onClick = {
+                                        viewModel.onClickDrawerItem(
+                                            adjustedIndex,
+                                            it,
+                                        )
+                                    },
+                                    containerColor =
+                                        if (isOpen) {
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .5f)
+                                        } else {
+                                            Color.Unspecified
                                         },
-                                        containerColor =
-                                            if (isOpen) {
-                                                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                                            } else {
-                                                Color.Unspecified
-                                            },
-                                        interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    selectedIndex == adjustedIndex,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ),
-                                    )
-                                }
+                                    interactionSource = interactionSource,
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                selectedIndex == adjustedIndex,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                )
                             }
                         }
                         item {

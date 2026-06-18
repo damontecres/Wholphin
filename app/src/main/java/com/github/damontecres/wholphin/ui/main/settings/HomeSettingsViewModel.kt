@@ -45,9 +45,9 @@ import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -147,7 +147,7 @@ class HomeSettingsViewModel
                         .let { state ->
                             state.rows
                                 .map { row ->
-                                    viewModelScope.async(Dispatchers.IO) {
+                                    viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             try {
                                                 homeSettingsService.fetchDataForRow(
@@ -431,7 +431,7 @@ class HomeSettingsViewModel
                         id = id,
                         title =
                             ResProviderStringProvider(
-                                R.string.favorite_items,
+                                R.string.favorite_items_title,
                                 ResStringProvider(favoriteOptions[type]!!),
                             ),
                         config = HomeRowConfig.Favorite(type),

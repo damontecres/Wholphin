@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
@@ -68,6 +69,7 @@ import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -236,6 +238,7 @@ fun MovieDetails(
                 },
                 canDelete = state.canDelete,
                 onConfirmDelete = { state.movie?.let { viewModel.deleteItem(it) } },
+                onChooseVersion = { contextActions.onChooseVersion.invoke(movie, it) },
                 modifier = modifier,
             )
         }
@@ -304,6 +307,7 @@ fun MovieDetailsContent(
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
+    onChooseVersion: (MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -369,6 +373,14 @@ fun MovieDetailsContent(
                         },
                         canDelete = canDelete,
                         onConfirmDelete = onConfirmDelete,
+                        chooseVersionParams =
+                            remember(state.chosenStreams, movie, onChooseVersion) {
+                                ChooseVersionParams(
+                                    chosenStreams = state.chosenStreams,
+                                    mediaSources = movie.data.mediaSources.orEmpty(),
+                                    onChooseVersion = onChooseVersion,
+                                )
+                            },
                         modifier =
                             Modifier
                                 .fillMaxWidth()

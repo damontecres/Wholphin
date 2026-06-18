@@ -36,7 +36,7 @@
     <string name="no_results">Sin resultados</string>
     <string name="none">Ninguno</string>
     <string name="outro">Créditos finales</string>
-    <string name="people">Personas</string>
+    <string name="people_title">Personas</string>
     <string name="play">Reproducir</string>
     <string name="playback">Reproducción</string>
     <string name="playlist">Lista de reproducción</string>
@@ -63,13 +63,12 @@
     <string name="suggestions">Sugerencias</string>
     <string name="switch_servers">Cambiar servidor</string>
     <string name="switch_user">Cambiar</string>
-    <string name="trailer">Tráiler</string>
     <plurals name="trailers">
         <item quantity="one">Tráiler</item>
         <item quantity="many">Tráilers</item>
         <item quantity="other"/>
     </plurals>
-    <string name="tv_shows">Series</string>
+    <string name="tv_shows_title">Series</string>
     <string name="ui_interface">Interfaz</string>
     <string name="version">Versión</string>
     <string name="video">Vídeo</string>
@@ -83,7 +82,7 @@
     <string name="one_click_pause_summary_on">Pulsa el botón central de la cruceta para reproducir/pausar</string>
     <string name="success">Éxito</string>
     <string name="runtime_sort">Duración</string>
-    <string name="extras">Extras</string>
+    <string name="extras_title">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Otro</item>
         <item quantity="many">Otros</item>
@@ -134,7 +133,7 @@
     <string name="mark_unwatched">Marcar como no visto</string>
     <string name="mark_watched">Marcar como visto</string>
     <string name="more_like_this">Más como esto</string>
-    <string name="movies">Películas</string>
+    <string name="movies_title">Películas</string>
     <string name="next_up">Siguiente</string>
     <string name="no_data">Sin datos</string>
     <string name="no_scheduled_recordings">Sin grabaciones programadas</string>
@@ -480,7 +479,7 @@
     <string name="display_presets_description">Preajustes integrados para estilizar todas las filas</string>
     <string name="customize_home_summary">Elegir filas e imágenes en la página de inicio</string>
     <string name="recently_released_in">Lanzado recientemente en %1$s</string>
-    <string name="favorite_items">Favoritos%s</string>
+    <string name="favorite_items_title">Favoritos%s</string>
     <string name="content_scale_fit">Ajustar</string>
     <string name="content_scale_crop">Recortar</string>
     <string name="content_scale_fill">Rellenar</string>

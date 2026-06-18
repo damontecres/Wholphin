@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.util
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.ApiClientFactory
@@ -21,7 +20,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class CoroutineContextApiClient(
     private val client: ApiClient,
-    private val coroutineContext: CoroutineContext = Dispatchers.IO,
+    private val coroutineContext: CoroutineContext = WholphinDispatchers.IO,
 ) : ApiClient() {
     override val baseUrl: String?
         get() = client.baseUrl
@@ -65,7 +64,7 @@ class CoroutineContextApiClient(
 
 class CoroutineContextApiClientFactory(
     private val factory: OkHttpFactory,
-    private val coroutineContext: CoroutineContext = Dispatchers.IO,
+    private val coroutineContext: CoroutineContext = WholphinDispatchers.IO,
 ) : ApiClientFactory,
     SocketConnectionFactory {
     override fun create(

@@ -28,9 +28,9 @@ import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,7 +117,7 @@ class HomeViewModel
                         val deferred =
                             settings.rows
                                 .map { row ->
-                                    viewModelScope.async(Dispatchers.IO) {
+                                    viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             Timber.v("Fetching row: %s", row)
                                             try {
@@ -220,9 +220,9 @@ class HomeViewModel
         fun setWatched(
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 init()
             }
         }
@@ -230,9 +230,9 @@ class HomeViewModel
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 init()
             }
         }

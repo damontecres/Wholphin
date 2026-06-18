@@ -9,7 +9,7 @@
     <string name="loading">載入中…</string>
     <string name="more_like_this">類似作品</string>
     <string name="more">更多</string>
-    <string name="movies">電影</string>
+    <string name="movies_title">電影</string>
     <string name="name">名稱</string>
     <string name="next_up">接下來播放</string>
     <string name="no_data">無資料</string>
@@ -52,7 +52,6 @@
     <string name="suggestions">推薦</string>
     <string name="switch_servers">切換伺服器</string>
     <string name="switch_user">切換</string>
-    <string name="trailer">預告片</string>
     <plurals name="trailers">
         <item quantity="other">預告片</item>
     </plurals>
@@ -189,7 +188,7 @@
     <string name="mark_watched">標記為已觀看</string>
     <string name="max_bitrate">最大位元率</string>
     <string name="outro">片尾</string>
-    <string name="people">演職人員</string>
+    <string name="people_title">演職人員</string>
     <string name="play_from_here">從此處播放</string>
     <string name="playback_debug_info">顯示播放偵錯資訊</string>
     <string name="playback">播放</string>
@@ -202,7 +201,7 @@
     <string name="studios">製作公司</string>
     <string name="top_unwatched">高評分未觀看</string>
     <string name="tv_dvr_schedule">錄影排程</string>
-    <string name="tv_shows">電視劇</string>
+    <string name="tv_shows_title">電視劇</string>
     <string name="ui_interface">介面</string>
     <string name="years_old">%1$d 歲</string>
     <string name="play_with_transcoding">轉碼播放</string>
@@ -243,7 +242,7 @@
     <plurals name="scenes">
         <item quantity="other">精選片段</item>
     </plurals>
-    <string name="extras">特別收錄</string>
+    <string name="extras_title">特別收錄</string>
     <plurals name="samples">
         <item quantity="other">試看片段</item>
     </plurals>
@@ -480,7 +479,7 @@
     <string name="background_style_boxed">長方底框</string>
     <string name="prefer_mpv">優先使用 MPV</string>
     <string name="player_backend_options_subtitles_prefer_mpv">僅 HDR 使用 ExoPlayer 播放</string>
-    <string name="favorite_items">我的最愛的 %s</string>
+    <string name="favorite_items_title">我的最愛的 %s</string>
     <string name="display_preset_default">Wholphin 預設樣式</string>
     <string name="display_preset_compact">Wholphin 緊湊樣式</string>
     <string name="display_preset_series_thumb">劇集縮圖樣式</string>
@@ -603,4 +602,6 @@
     <string name="view_options_type_list">列表</string>
     <string name="view_options_type_list_compact">緊湊列表</string>
     <string name="user_interface_language">介面語言</string>
+    <string name="sort">排序</string>
+    <string name="split_into_separate_rows">分開為不同列</string>
 </resources>

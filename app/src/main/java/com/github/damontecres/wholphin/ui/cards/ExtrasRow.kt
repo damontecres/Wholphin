@@ -17,7 +17,7 @@ fun ExtrasRow(
     modifier: Modifier = Modifier,
 ) {
     ItemRow(
-        title = stringResource(R.string.extras),
+        title = stringResource(R.string.extras_title),
         items = extras,
         onClickItem = onClickItem,
         onLongClickItem = onLongClickItem,

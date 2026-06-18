@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 34,
-    "identityHash": "60c07e572d43473c85ec79208beb0298",
+    "identityHash": "278e485064fc9f184a2181599f0f8efb",
     "entities": [
       {
         "tableName": "servers",
@@ -45,7 +45,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, `uiLanguage` TEXT, `c_homeSettingsSource` TEXT NOT NULL DEFAULT 'UNSET', FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, `uiLanguage` TEXT, FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "rowId",
@@ -96,13 +96,6 @@
             "fieldPath": "uiLanguage",
             "columnName": "uiLanguage",
             "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "config.homeSettingsSource",
-            "columnName": "c_homeSettingsSource",
-            "affinity": "TEXT",
-            "notNull": true,
-            "defaultValue": "'UNSET'"
           }
         ],
         "primaryKey": {
@@ -661,11 +654,67 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "RememberedTab",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `itemId` TEXT NOT NULL, `index` INTEGER NOT NULL, PRIMARY KEY(`userId`, `itemId`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "itemId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "index",
+            "columnName": "index",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId",
+            "itemId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_RememberedTab_userId_itemId",
+            "unique": true,
+            "columnNames": [
+              "userId",
+              "itemId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_RememberedTab_userId_itemId` ON `${TABLE_NAME}` (`userId`, `itemId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "users",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId"
+            ],
+            "referencedColumns": [
+              "rowId"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '60c07e572d43473c85ec79208beb0298')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '278e485064fc9f184a2181599f0f8efb')"
     ]
   }
 }

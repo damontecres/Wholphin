@@ -59,7 +59,7 @@
     <string name="max_bitrate">Bitrate Máximo</string>
     <string name="more_like_this">Mais como isto</string>
     <string name="more">Mais</string>
-    <string name="movies">Filmes</string>
+    <string name="movies_title">Filmes</string>
     <string name="name">Nome</string>
     <string name="next_up">A Seguir</string>
     <string name="no_data">Sem dados</string>
@@ -68,7 +68,7 @@
     <string name="no_update_available">Nenhuma atualização disponível</string>
     <string name="none">Nenhum</string>
     <string name="outro">Créditos finais</string>
-    <string name="people">Pessoas</string>
+    <string name="people_title">Pessoas</string>
     <string name="play_count">Reproduções</string>
     <string name="play_from_here">Reproduzir a partir daqui</string>
     <string name="play">Reproduzir</string>
@@ -119,7 +119,6 @@
     <string name="switch_servers">Mudar Servidores</string>
     <string name="switch_user">Mudar</string>
     <string name="top_unwatched">Mais Votados Não Assistidos</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailer</item>
         <item quantity="many">Trailers</item>
@@ -129,7 +128,7 @@
     <string name="tv_guide">Guia</string>
     <string name="tv_season">Temporada</string>
     <string name="tv_seasons">Temporadas</string>
-    <string name="tv_shows">Séries TV</string>
+    <string name="tv_shows_title">Séries TV</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Desconhecido</string>
     <string name="updates">Atualizações</string>
@@ -152,7 +151,7 @@
     <string name="success">Êxito</string>
     <string name="official_rating">Classificação Parental</string>
     <string name="runtime_sort">Duração</string>
-    <string name="extras">Extras</string>
+    <string name="extras_title">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Outro</item>
         <item quantity="many">Outros</item>
@@ -480,7 +479,7 @@
     <string name="display_presets_description">Predefinições embarcadas para definir todas as linhas rapidamente</string>
     <string name="customize_home_summary">Escolha as linhas e imagens na página inicial</string>
     <string name="decrease_all_cards_size">Diminuir o tamanho de todos os cartões</string>
-    <string name="favorite_items">Favoritos %s</string>
+    <string name="favorite_items_title">Favoritos %s</string>
     <plurals name="minutes">
         <item quantity="one">%s minuto</item>
         <item quantity="many">%s minutos</item>
@@ -623,4 +622,22 @@
     <string name="combined_search_results_on">Mostrar todos os resultados numa única lista</string>
     <string name="combined_search_results_off">Mostrar resultados por categoria</string>
     <string name="results">Resultados</string>
+    <string name="require_login">Exigir início de sessão para o perfil</string>
+    <string name="show_voice_search_button">Mostrar botão de pesquisa por voz</string>
+    <string name="visible_ui">Visível</string>
+    <string name="hidden_ui">Escondido</string>
+    <string name="view_options_type_grid">Grelha</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_list_compact">Lista Compacta</string>
+    <string name="user_interface_language">Língua do interface</string>
+    <string name="display_toggles_title">Visualização de avaliações</string>
+    <string name="display_toggles_summary">Personalizar o que mostrar</string>
+    <string name="profile_protection">Protecção do perfil</string>
+    <string name="continue_watching_click_behavior">Comportamento ao clicar em «Continuar a ver»/«A Seguir»</string>
+    <string name="continue_watching_click_summary_on">Reproduzir ao clicar</string>
+    <string name="continue_watching_click_summary_off">Mostrar detalhes ao clicar</string>
+    <string name="stars">Estrelas</string>
+    <string name="tomatoes">Tomates</string>
+    <string name="sort">Ordenar</string>
+    <string name="split_into_separate_rows">Dividir em linhas separadas</string>
 </resources>

@@ -59,7 +59,7 @@
     <string name="max_bitrate">Maks bitrate</string>
     <string name="more_like_this">Mer som dette</string>
     <string name="more">Mer</string>
-    <string name="movies">Filmer</string>
+    <string name="movies_title">Filmer</string>
     <string name="name">Navn</string>
     <string name="next_up">Neste</string>
     <string name="no_data">Ingen data</string>
@@ -70,7 +70,7 @@
     <string name="none">Ingen</string>
     <string name="outro">Outro</string>
     <string name="path">Filbane</string>
-    <string name="people">Personer</string>
+    <string name="people_title">Personer</string>
     <string name="play_count">Antall avspillinger</string>
     <string name="play_from_here">Spill av herfra</string>
     <string name="play">Spill av</string>
@@ -119,7 +119,6 @@
     <string name="switch_servers">Bytt server</string>
     <string name="switch_user">Bytt bruker</string>
     <string name="top_unwatched">Best vurderte usette</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
         <item quantity="other"/>
@@ -128,7 +127,7 @@
     <string name="tv_guide">Programoversikt</string>
     <string name="tv_season">Sesong</string>
     <string name="tv_seasons">Sesonger</string>
-    <string name="tv_shows">TV-serier</string>
+    <string name="tv_shows_title">TV-serier</string>
     <string name="ui_interface">Grensesnitt</string>
     <string name="unknown">Ukjent</string>
     <string name="updates">Oppdateringer</string>
@@ -152,7 +151,7 @@
     <string name="success">Fullført</string>
     <string name="official_rating">Aldersgrense</string>
     <string name="runtime_sort">Spilletid</string>
-    <string name="extras">Ekstramateriale</string>
+    <string name="extras_title">Ekstramateriale</string>
     <plurals name="other_extras">
         <item quantity="one">Annet</item>
         <item quantity="other"/>

@@ -311,6 +311,7 @@ fun SeriesOverview(
                 },
                 canDelete = { viewModel.canDelete(it, preferences.appPreferences) },
                 onConfirmDelete = viewModel::deleteItem,
+                onChooseVersion = contextActions.onChooseVersion,
                 modifier = modifier,
             )
         }

@@ -38,13 +38,13 @@ import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -150,7 +150,7 @@ class ItemGridViewModel
             itemId: UUID,
             played: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setWatched(itemId, played)
                 (state.value.items as? DataLoadingState.Success)?.let {
                     (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
@@ -163,7 +163,7 @@ class ItemGridViewModel
             itemId: UUID,
             favorite: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setFavorite(itemId, favorite)
                 (state.value.items as? DataLoadingState.Success)?.let {
                     (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)

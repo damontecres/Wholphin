@@ -136,7 +136,7 @@ enum class LibraryRowType(
     GENRES(R.string.genres),
     STUDIOS(R.string.studios),
     TV_CHANNELS(R.string.channels),
-    TV_PROGRAMS(R.string.live_tv),
+    TV_PROGRAMS(R.string.watch_live),
     RECENTLY_RECORDED(R.string.recently_recorded),
     COLLECTION(R.string.collection),
     PLAYLIST(R.string.playlist),

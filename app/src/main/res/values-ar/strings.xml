@@ -164,7 +164,7 @@
     </plurals>
     <string name="official_rating">التصنيف العمري</string>
     <string name="runtime_sort">مدة العرض</string>
-    <string name="extras">إضافات</string>
+    <string name="extras_title">إضافات</string>
     <plurals name="other_extras">
         <item quantity="zero">أخرى</item>
     </plurals>

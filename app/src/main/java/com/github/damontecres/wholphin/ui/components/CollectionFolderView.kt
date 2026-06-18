@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
@@ -63,20 +64,19 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.ui.util.FilterUtils
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -117,6 +117,7 @@ class CollectionFolderViewModel
         private val musicService: MusicService,
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
+        private val filterOptionCache: FilterOptionCache,
         @Assisted val itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
         @Assisted("recursive") private val recursive: Boolean,
@@ -250,7 +251,7 @@ class CollectionFolderViewModel
 
         fun saveViewOptions(viewOptions: ViewOptions) {
             _state.update { it.copy(viewOptions = viewOptions) }
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
                 if (!viewOptions.showBackdrop) {
                     backdropService.clearBackdrop()
@@ -294,7 +295,7 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
-        ) = viewModelScope.launch(Dispatchers.IO) {
+        ) = viewModelScope.launch(WholphinDispatchers.IO) {
             _state.update {
                 it.copy(
                     items = DataLoadingState.Loading,
@@ -430,15 +431,13 @@ class CollectionFolderViewModel
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
-            FilterUtils.getFilterOptionValues(
-                api,
-                serverRepository.currentUser?.id,
+            filterOptionCache.getFilterOptionValues(
                 itemId.toUUID(),
                 filterOption,
             )
 
         suspend fun positionOfLetter(letter: Char): Int? =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val sort = state.value.sortAndDirection
                 val filter = state.value.filter
                 val request =
@@ -462,7 +461,7 @@ class CollectionFolderViewModel
             itemId: UUID,
             played: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setWatched(itemId, played)
                 (state.value.items as? DataLoadingState.Success)?.let {
                     (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
@@ -475,7 +474,7 @@ class CollectionFolderViewModel
             itemId: UUID,
             favorite: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setFavorite(itemId, favorite)
                 (state.value.items as? DataLoadingState.Success)?.let {
                     (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
@@ -660,6 +659,9 @@ fun CollectionFolderView(
 
     val contextMenu = rememberContextMenu(preferences, viewModel)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
+    var filterDropdownShowing by remember { mutableStateOf(false) }
+    val headerRowFocusRequester = remember { FocusRequester() }
+    val filterButtonFocusRequester = remember { FocusRequester() }
 
     val gridActions =
         remember(actions) {
@@ -742,7 +744,6 @@ fun CollectionFolderView(
                         ?: item?.data?.collectionType?.name
                         ?: stringResource(R.string.collection)
                 Column(modifier = Modifier.fillMaxSize()) {
-                    val headerRowFocusRequester = remember { FocusRequester() }
                     LifecycleResumeEffect(itemId) {
                         viewModel.onResumePage()
 
@@ -781,6 +782,8 @@ fun CollectionFolderView(
                         onClickPlayAll = gridActions.onClickPlayAll!!,
                         onClickShowViewOptions = { showViewOptions = true },
                         modifier = Modifier.focusRequester(headerRowFocusRequester),
+                        onShowFilterDropdown = { filterDropdownShowing = it },
+                        filterButtonFocusRequester = filterButtonFocusRequester,
                     )
 
                     when (val pager = state.items) {
@@ -799,9 +802,14 @@ fun CollectionFolderView(
 
                         is DataLoadingState.Success<List<BaseItem?>> -> {
                             LaunchedEffect(Unit) {
-                                if (pager.data.isNotEmpty()) {
-                                    gridFocusRequester.tryRequestFocus()
-                                }
+                                val focusRequester =
+                                    when {
+                                        contextMenu.isShowing -> null
+                                        filterDropdownShowing -> filterButtonFocusRequester
+                                        pager.data.isNotEmpty() -> gridFocusRequester
+                                        else -> focusRequesterOnEmpty ?: headerRowFocusRequester
+                                    }
+                                focusRequester?.tryRequestFocus()
                             }
                             Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {

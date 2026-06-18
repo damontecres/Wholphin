@@ -147,7 +147,6 @@
     <string name="switch_servers">สลับเซิร์ฟเวอร์</string>
     <string name="switch_user">สวิตช์</string>
     <string name="top_unwatched">รายการที่ได้คะแนนสูงที่ยังไม่ได้ดู</string>
-    <string name="trailer">ตัวอย่าง</string>
     <plurals name="trailers">
         <item quantity="other">ตัวอย่าง</item>
     </plurals>
@@ -173,7 +172,7 @@
     <string name="aired_episode_order">ลำดับตอนที่ออกอากาศ</string>
     <string name="create_playlist">สร้างเพลย์ลิสต์ใหม่</string>
     <string name="add_to_playlist">เพิ่มชื่อเพลย์ลิสต์</string>
-    <string name="one_click_pause">หยุดเกมด้วยการคลิกเพียงครั้งเดียว</string>
+    <string name="one_click_pause">หยุดเล่นด้วยการคลิกเพียงครั้งเดียว</string>
     <string name="one_click_pause_summary_on">กดปุ่ม D-Pad ตรงกลางเพื่อหยุด/เล่น</string>
     <string name="italic_font">ตัวเอียง</string>
     <string name="font">ฟอนต์</string>
@@ -181,7 +180,7 @@
     <string name="success">สำเร็จ</string>
     <string name="official_rating">การให้คะแนนโดยผู้ปกครอง</string>
     <string name="runtime_sort">รันไทม์</string>
-    <string name="extras">เพิ่มเติม</string>
+    <string name="extras_title">เพิ่มเติม</string>
     <plurals name="other_extras">
         <item quantity="other">อื่นๆ</item>
     </plurals>
@@ -215,7 +214,7 @@
     <plurals name="shorts">
         <item quantity="other">หนังสั้น</item>
     </plurals>
-    <string name="favorite_items">ชื่นชอบ %s</string>
+    <string name="favorite_items_title">ชื่นชอบ %s</string>
     <string name="ac3_supported">อุปกรณ์รองรับระบบเสียง AC3/Dolby Digital</string>
     <string name="advanced_settings">การตั้งค่าขั้นสูง</string>
     <string name="advanced_ui">UI ขั้นสูง</string>

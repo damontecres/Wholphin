@@ -24,10 +24,10 @@ import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.supportedAudioCodecs
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -177,9 +177,9 @@ class MusicService
             items: BlockingList<BaseItem?>,
             startIndex: Int,
             shuffled: Boolean,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(WholphinDispatchers.IO) {
             Timber.d("setQueue: %s items, startIndex=%s, shuffled=%s", items.size, startIndex, shuffled)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 player.setMediaItems(emptyList())
                 player.shuffleModeEnabled = shuffled
             }
@@ -199,7 +199,7 @@ class MusicService
                 items
                     .filter { it.type == BaseItemKind.AUDIO }
                     .map(::convert)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
                 updateQueueSize()
@@ -216,7 +216,7 @@ class MusicService
         ) {
             if (item.type == BaseItemKind.AUDIO) {
                 val mediaItem = convert(item)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     if (index != null) {
                         player.addMediaItem(index, mediaItem)
                     } else {
@@ -293,7 +293,7 @@ class MusicService
          */
         private suspend fun updateQueueSize() {
 //            val ids =
-//                withContext(Dispatchers.Default) {
+//                withContext(WholphinDispatchers.Default) {
 //                    (0..<player.mediaItemCount).map { player.getMediaItemAt(it).mediaId.toUUID() }
 //                }
             val timeline = onMain { player.currentTimeline }
@@ -304,7 +304,7 @@ class MusicService
                         timeline.getWindow(it, window)
                         window.mediaItem.mediaId.toUUID()
                     }.toSet()
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 _state.update {
                     it.copy(
                         queueVersion = it.queueVersion + 1,
@@ -321,7 +321,7 @@ class MusicService
         suspend fun moveQueue(
             index: Int,
             direction: MoveDirection,
-        ) = withContext(Dispatchers.Main) {
+        ) = withContext(WholphinDispatchers.Main) {
             player.moveMediaItem(index, if (direction == MoveDirection.UP) index - 1 else index + 1)
             updateQueueSize()
         }
@@ -332,7 +332,7 @@ class MusicService
         suspend fun moveQueue(
             index: Int,
             newIndex: Int,
-        ) = withContext(Dispatchers.Main) {
+        ) = withContext(WholphinDispatchers.Main) {
             player.moveMediaItem(index, newIndex)
             updateQueueSize()
         }
@@ -385,7 +385,7 @@ class MusicService
                 .subscribe<PlaystateMessage>()
                 .onEach { message ->
                     message.data?.let {
-                        withContext(Dispatchers.Main) {
+                        withContext(WholphinDispatchers.Main) {
                             when (it.command) {
                                 PlaystateCommand.STOP -> {
                                     stop()
