@@ -50,9 +50,6 @@ class MediaManagementServiceTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-//        mockkStatic(Dispatchers::class)
-//        every { Dispatchers.IO } returns testDispatcher
-//        every { Dispatchers.Default } returns testDispatcher
 
         every { mockApiClient.libraryApi } returns mockLibraryApi
     }
@@ -61,7 +58,6 @@ class MediaManagementServiceTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-//        unmockkStatic(Dispatchers::class)
     }
 
     private val movie =

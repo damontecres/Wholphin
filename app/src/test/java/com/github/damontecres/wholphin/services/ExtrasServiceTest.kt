@@ -6,17 +6,15 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.successResponse
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.operations.UserLibraryApi
@@ -45,10 +43,7 @@ class ExtrasServiceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        mockkStatic(Dispatchers::class)
-        every { Dispatchers.IO } returns testDispatcher
-        every { Dispatchers.Default } returns testDispatcher
+        WholphinDispatchers.configure(testDispatcher)
 
         every { mockApiClient.userLibraryApi } returns mockUserLibraryApi
         every { mockContext.resources } returns mockResources
@@ -66,8 +61,7 @@ class ExtrasServiceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
-        unmockkStatic(Dispatchers::class)
+        WholphinDispatchers.reset()
     }
 
     @Test

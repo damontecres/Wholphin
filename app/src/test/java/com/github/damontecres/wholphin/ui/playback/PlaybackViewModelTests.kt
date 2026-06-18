@@ -33,6 +33,9 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -40,14 +43,11 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -117,9 +117,6 @@ class PlaybackViewModelTests {
             screensaverService = mockScreensaverService,
             musicService = mockMusicService,
             destination = destination,
-            ioDispatcher = testDispatcher,
-            mainDispatcher = testDispatcher,
-            defaultDispatcher = testDispatcher,
         )
 
     fun buildPrefs(block: PlaybackPreferences.Builder.() -> Unit): AppPreferences =
@@ -168,7 +165,7 @@ class PlaybackViewModelTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        WholphinDispatchers.configure(testDispatcher)
 
         every { mockApi.userLibraryApi } returns mockUserLibraryApi
         every { mockApi.mediaInfoApi } returns mockMediaInfoApi
@@ -227,7 +224,7 @@ class PlaybackViewModelTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        WholphinDispatchers.reset()
     }
 
     /**

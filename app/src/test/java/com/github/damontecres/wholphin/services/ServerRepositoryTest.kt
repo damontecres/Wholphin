@@ -15,25 +15,23 @@ import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.test.nonBlankString
 import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
@@ -86,10 +84,7 @@ class ServerRepositoryTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        mockkStatic(Dispatchers::class)
-        every { Dispatchers.IO } returns testDispatcher
-        every { Dispatchers.Default } returns testDispatcher
+        WholphinDispatchers.configure(testDispatcher)
 
         every { mockContext.getSharedPreferences(any(), any()) } returns mockSharedPreferences
         every { mockApiClient.userApi } returns mockUserApi
@@ -114,8 +109,7 @@ class ServerRepositoryTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
-        unmockkStatic(Dispatchers::class)
+        WholphinDispatchers.reset()
     }
 
     private fun create() =
