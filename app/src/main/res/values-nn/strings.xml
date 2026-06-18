@@ -64,7 +64,7 @@
     <string name="max_bitrate">Maks bitrate</string>
     <string name="more_like_this">Meir som dette</string>
     <string name="more">Meir</string>
-    <string name="movies">Filmar</string>
+    <string name="movies_title">Filmar</string>
     <string name="name">Namn</string>
     <string name="next_up">Neste</string>
     <string name="no_data">Ingen data</string>
@@ -74,7 +74,7 @@
     <string name="no_update_available">Ingen oppdatering tilgjengeleg</string>
     <string name="outro">Outro</string>
     <string name="path">Filveg</string>
-    <string name="people">Folk</string>
+    <string name="people_title">Folk</string>
     <string name="play_count">Antall avspelingar</string>
     <string name="play_from_here">Spel av herfrå</string>
     <string name="play">Spel av</string>
@@ -122,7 +122,6 @@
     <string name="switch_servers">Byt servar</string>
     <string name="switch_user">Byt brukar</string>
     <string name="top_unwatched">Best vurderte usette</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailerar</item>
         <item quantity="other"/>
@@ -131,7 +130,7 @@
     <string name="tv_guide">Programoversikt</string>
     <string name="tv_season">Sesong</string>
     <string name="tv_seasons">Sesongar</string>
-    <string name="tv_shows">TV-seriar</string>
+    <string name="tv_shows_title">TV-seriar</string>
     <string name="ui_interface">Grensesnitt</string>
     <string name="unknown">Ukjend</string>
     <string name="updates">Oppdateringar</string>
@@ -155,7 +154,7 @@
     <string name="success">Fullført</string>
     <string name="official_rating">Aldersgrense</string>
     <string name="runtime_sort">Speltid</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Anna</item>
         <item quantity="other"/>
@@ -378,7 +377,7 @@
     <string name="voice_error_start_failed">Klarte ikkje starta talegjenkjenning</string>
     <string name="voice_error_timeout">Tidsavbrot for talegjenkjenning</string>
     <string name="retry">Prøv på nytt</string>
-    <string name="favorite_items">Favoritt %s</string>
+    <string name="favorite_items_title">Favoritt %s</string>
     <string name="resolution_switching">Oppløysingsbyte</string>
     <string name="local">Lokal</string>
     <string name="play_trailer">Spel trailer</string>

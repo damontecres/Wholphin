@@ -71,6 +71,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -83,7 +84,6 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -248,7 +248,7 @@ class PlaybackViewModel
             Timber.d("Selected backend: %s", playerBackend)
             if (currentPlayer.value?.backend != playerBackend) {
                 Timber.i("Switching player backend to %s", playerBackend)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     disconnectPlayer()
                 }
 
@@ -321,16 +321,24 @@ class PlaybackViewModel
             val playlistItem =
                 if (queriedItem.type.playable) {
                     PlaylistItem.Media(BaseItem(queriedItem, false))
-                } else if (destination is Destination.PlaybackList) {
+                } else {
                     val playlistResult =
-                        playlistCreator.createFrom(
-                            item = queriedItem,
-                            startIndex = destination.startIndex ?: 0,
-                            sortAndDirection = destination.sortAndDirection,
-                            shuffled = destination.shuffle,
-                            recursive = destination.recursive,
-                            filter = destination.filter,
-                        )
+                        if (destination is Destination.PlaybackList) {
+                            playlistCreator.createFrom(
+                                item = queriedItem,
+                                startIndex = destination.startIndex ?: 0,
+                                sortAndDirection = destination.sortAndDirection,
+                                shuffled = destination.shuffle,
+                                recursive = destination.recursive,
+                                filter = destination.filter,
+                            )
+                        } else {
+                            // Try to create a playlist
+                            playlistCreator.createFrom(
+                                item = queriedItem,
+                                recursive = true,
+                            )
+                        }
                     when (val r = playlistResult) {
                         is PlaylistCreationResult.Error -> {
                             _state.update { it.copy(loading = LoadingState.Error(r.message, r.ex)) }
@@ -349,8 +357,6 @@ class PlaybackViewModel
                             r.playlist.items.first()
                         }
                     }
-                } else {
-                    throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                 }
 
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
@@ -437,7 +443,7 @@ class PlaybackViewModel
             positionMs: Long,
             forceTranscoding: Boolean = this.forceTranscoding,
         ): Boolean =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val item =
                     when (playlistItem) {
                         is PlaylistItem.Intro -> playlistItem.item
@@ -597,7 +603,7 @@ class PlaybackViewModel
                         trickPlayInfo = trickPlayInfo,
                     )
                 }
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     changeStreams(
                         item,
                         itemPlaybackToUse,
@@ -628,7 +634,7 @@ class PlaybackViewModel
             userInitiated: Boolean,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(WholphinDispatchers.IO) {
             _state.update { it.copy(externalCues = ExternalCues(active = false)) }
             val itemId = item.id
 
@@ -829,7 +835,7 @@ class PlaybackViewModel
                             )
                         }
                 }
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     // TODO, don't need to release & recreate when switching streams
                     this@PlaybackViewModel.activityListener?.let {
                         it.release()
@@ -900,7 +906,7 @@ class PlaybackViewModel
             subtitleIndex: Int?,
             userInitiated: Boolean,
         ): Boolean =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 // TODO there's probably no reason why we can't add external subtitles?
                 Timber.v("changeStreams direct play")
 
@@ -909,7 +915,7 @@ class PlaybackViewModel
 
                 if (externalSubtitle == null) {
                     val result =
-                        withContext(Dispatchers.Main) {
+                        withContext(WholphinDispatchers.Main) {
                             TrackSelectionUtils.createTrackSelections(
                                 onMain { player.trackSelectionParameters },
                                 onMain { player.currentTracks },
@@ -1174,7 +1180,7 @@ class PlaybackViewModel
                                             MediaSegmentType.INTRO -> prefs.skipIntros
                                             MediaSegmentType.UNKNOWN -> SkipSegmentBehavior.IGNORE
                                         }
-                                    withContext(Dispatchers.Main) {
+                                    withContext(WholphinDispatchers.Main) {
                                         val newSegment =
                                             when (behavior) {
                                                 SkipSegmentBehavior.AUTO_SKIP -> {
@@ -1368,7 +1374,7 @@ class PlaybackViewModel
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e(error, "Playback error")
-            viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
+            viewModelScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
                 state.value.currentPlayback?.let {
                     when (it.playMethod) {
                         PlayMethod.TRANSCODE -> {
@@ -1396,7 +1402,7 @@ class PlaybackViewModel
                                 enableDirectPlay = false,
                                 enableDirectStream = false,
                             )
-                            withContext(Dispatchers.Main) {
+                            withContext(WholphinDispatchers.Main) {
                                 player.prepare()
                                 player.play()
                             }
@@ -1417,7 +1423,7 @@ class PlaybackViewModel
                 .subscribe<PlaystateMessage>()
                 .onEach { message ->
                     message.data?.let {
-                        withContext(Dispatchers.Main) {
+                        withContext(WholphinDispatchers.Main) {
                             when (it.command) {
                                 PlaystateCommand.STOP -> {
                                     release()
@@ -1472,7 +1478,7 @@ class PlaybackViewModel
          * Atomically update [currentMediaInfo]
          */
         internal suspend fun updateCurrentMedia(block: (CurrentMediaInfo) -> CurrentMediaInfo) =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 _state.update {
                     it.copy(currentMediaInfo = block.invoke(it.currentMediaInfo))
                 }

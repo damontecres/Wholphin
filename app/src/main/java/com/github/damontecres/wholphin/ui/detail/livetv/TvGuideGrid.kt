@@ -59,11 +59,11 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import eu.wewox.programguide.ProgramGuide
 import eu.wewox.programguide.ProgramGuideDimensions
 import eu.wewox.programguide.ProgramGuideItem
 import eu.wewox.programguide.rememberSaveableProgramGuideState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -259,7 +259,6 @@ fun TvGuideGrid(
                     DialogItem(
                         watchLiveStr,
                         Icons.Default.PlayArrow,
-                        iconColor = Color.Green.copy(alpha = .8f),
                         dismissOnClick = true,
                     ) {
                         viewModel.navigationManager.navigateTo(
@@ -320,7 +319,7 @@ fun TvGuideGridContent(
     var focusedProgramIndex by rememberInt(0)
 
     LaunchedEffect(onFocus, focusedProgramIndex) {
-        withContext(Dispatchers.Default) {
+        withContext(WholphinDispatchers.Default) {
             val program = programs.programs.getOrNull(focusedProgramIndex)
             if (program != null) {
                 val channelIndex = channels.indexOfFirst { it.id == program.channelId }

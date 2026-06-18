@@ -32,11 +32,11 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -113,7 +113,7 @@ class StudioViewModel
         }
 
         suspend fun positionOfLetter(letter: Char): Int =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val request =
                     GetStudiosRequest(
                         userId = serverRepository.currentUser?.id,

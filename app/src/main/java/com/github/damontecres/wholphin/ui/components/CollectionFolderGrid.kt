@@ -21,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -270,6 +272,8 @@ fun CollectionFolderHeader(
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
+    onShowFilterDropdown: ((Boolean) -> Unit)? = null,
+    filterButtonFocusRequester: FocusRequester = remember { FocusRequester() },
 ) {
     AnimatedVisibility(
         showHeader,
@@ -292,13 +296,14 @@ fun CollectionFolderHeader(
                 modifier =
                     Modifier
                         .padding(start = 16.dp, end = endPadding)
+                        .focusRestorer()
                         .fillMaxWidth(),
             ) {
                 if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier,
+                        modifier = Modifier.focusRestorer(),
                     ) {
                         if (sortOptions.isNotEmpty()) {
                             SortByButton(
@@ -314,7 +319,8 @@ fun CollectionFolderHeader(
                                 current = currentFilter,
                                 onFilterChange = onFilterChange,
                                 getPossibleValues = getPossibleFilterValues,
-                                modifier = Modifier,
+                                modifier = Modifier.focusRequester(filterButtonFocusRequester),
+                                onShow = onShowFilterDropdown,
                             )
                         }
                         ExpandableFaButton(
@@ -329,7 +335,7 @@ fun CollectionFolderHeader(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier,
+                        modifier = Modifier.focusRestorer(),
                     ) {
                         ExpandablePlayButton(
                             title = R.string.play,

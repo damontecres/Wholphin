@@ -10,7 +10,7 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.showToast
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -183,7 +183,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                         }
                     }
                     subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Inactive) }
-                    withContext(Dispatchers.Main) {
+                    withContext(WholphinDispatchers.Main) {
                         if (wasPlaying) {
                             player.play()
                         }

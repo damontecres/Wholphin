@@ -159,7 +159,6 @@ fun ProgramDialog(
                                         Icon(
                                             imageVector = Icons.Default.PlayArrow,
                                             contentDescription = stringResource(R.string.delete),
-                                            tint = Color.Green.copy(alpha = .75f),
                                         )
                                         Text(
                                             text = stringResource(R.string.watch_live),

@@ -390,7 +390,7 @@ fun TrailerRow(
         modifier = modifier,
     ) {
         Text(
-            text = stringResource(R.string.trailers),
+            text = stringResource(R.string.trailers_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )

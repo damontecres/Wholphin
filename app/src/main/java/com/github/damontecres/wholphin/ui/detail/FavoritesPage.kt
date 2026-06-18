@@ -56,12 +56,12 @@ fun FavoritesPage(
     val tabs =
         remember {
             listOf(
-                TabDetails(R.string.movies),
-                TabDetails(R.string.tv_shows),
+                TabDetails(R.string.movies_title),
+                TabDetails(R.string.tv_shows_title),
                 TabDetails(R.string.episodes),
                 TabDetails(R.string.videos),
                 TabDetails(R.string.playlists),
-                TabDetails(R.string.people),
+                TabDetails(R.string.people_title),
             )
         }
     val actions =

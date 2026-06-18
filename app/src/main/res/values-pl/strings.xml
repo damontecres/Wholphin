@@ -20,7 +20,7 @@
     <string name="max_bitrate">Maksymalny bitrate</string>
     <string name="more_like_this">Podobne</string>
     <string name="more">Więcej</string>
-    <string name="movies">Filmy</string>
+    <string name="movies_title">Filmy</string>
     <string name="next_up">Następnie</string>
     <string name="no_data">Brak danych</string>
     <string name="no_results">Brak wyników</string>
@@ -33,7 +33,7 @@
     <string name="skip">Pomiń</string>
     <string name="sort_by_date_added">Data dodania</string>
     <string name="sort_by_date_episode_added">Data dodania odcinka</string>
-    <string name="tv_shows">Seriale</string>
+    <string name="tv_shows_title">Seriale</string>
     <string name="tv_season">Sezon</string>
     <string name="tv_seasons">Sezony</string>
     <string name="subtitle">Napisy</string>
@@ -42,7 +42,6 @@
     <string name="switch_servers">Zmień serwer</string>
     <string name="switch_user">Zmień</string>
     <string name="top_unwatched">Najlepiej oceniane nieobejrzane</string>
-    <string name="trailer">Zwiastun</string>
     <plurals name="trailers">
         <item quantity="one">Zwiastun</item>
         <item quantity="few">Zwiastuny</item>
@@ -261,13 +260,13 @@
     <string name="video_scale">Skalowanie obrazu</string>
     <string name="font_opacity">Przezroczystość czcionki</string>
     <string name="update_url_summary">Adres URL do sprawdzenia aktualizacji</string>
-    <string name="people">Obsada</string>
+    <string name="people_title">Obsada</string>
     <string name="none">Brak</string>
     <string name="unknown">Nieznany</string>
     <string name="years_old">%1$d lat temu</string>
     <string name="success">Powodzenie</string>
     <string name="official_rating">Ocena rodzicielska</string>
-    <string name="extras">Dodatki</string>
+    <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Inne</item>
         <item quantity="few"/>
@@ -433,7 +432,7 @@
     <string name="seerr_login">Zaloguj się do Seerr</string>
     <string name="seerr_jellyfin_user">Użytkownik Jellyfin</string>
     <string name="seerr_local_user">Użytkownik lokalny</string>
-    <string name="favorite_items">Ulubione %s</string>
+    <string name="favorite_items_title">Ulubione %s</string>
     <plurals name="days">
         <item quantity="one">%s dzień</item>
         <item quantity="few">%s dni</item>

@@ -60,10 +60,10 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.serverRepository.currentUserFlow
             .onEach { user ->
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     if (user?.hasPin == true) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     } else {
@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity() {
         screensaverService.keepScreenOn
             .onEach { keepScreenOn ->
                 Timber.v("keepScreenOn: %s", keepScreenOn)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     if (keepScreenOn) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     } else {
@@ -383,7 +383,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     fun changeDisplayMode(modeId: Int) {
-        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
+        lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)

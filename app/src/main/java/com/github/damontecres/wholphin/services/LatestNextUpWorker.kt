@@ -16,12 +16,12 @@ import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -92,7 +92,7 @@ class LatestNextUpSchedulerService
                 )
 
         // Exposed for testing
-        internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
+        internal var dispatcher: CoroutineDispatcher = WholphinDispatchers.IO
 
         init {
             serverRepository.current.collectLatestIn(activity.lifecycleScope) { user ->

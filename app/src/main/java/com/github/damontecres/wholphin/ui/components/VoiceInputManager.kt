@@ -17,10 +17,10 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
@@ -175,7 +175,7 @@ class VoiceInputManager
 
         private fun provideMainDispatcher(): CoroutineDispatcher =
             try {
-                Dispatchers.Main.immediate
+                WholphinDispatchers.Main.immediate
             } catch (_: IllegalStateException) {
                 // Fallback for unit tests where Main dispatcher is not installed
                 handler.asCoroutineDispatcher()
