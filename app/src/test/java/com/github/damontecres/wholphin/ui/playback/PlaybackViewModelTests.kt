@@ -226,10 +226,12 @@ class PlaybackViewModelTests {
 
     // Test data
     val playlist = playlist()
-    val movie = movie()
-    val movie2 = movie()
-    val intro = movie()
-    val playlistItems = Playlist.fromMedia(listOf(BaseItem(movie), BaseItem(movie2)))
+    val movie = movie(name = "Test Movie 1")
+    val movie2 = movie(name = "Test Movie 2")
+    val movie3 = movie(name = "Test Movie 3")
+    val intro = movie(name = "Test Intro")
+    val playlistItems =
+        Playlist.fromMedia(listOf(BaseItem(movie), BaseItem(movie2), BaseItem(movie3)))
     // END test data
 
     /**
@@ -369,6 +371,46 @@ class PlaybackViewModelTests {
 
     @OptIn(InternalCoroutinesApi::class)
     @Test
+    fun `Play previous`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+            }
+
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(2, state.playlistIndex)
+            }
+
+            viewModel.playPrevious()
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(1, state.playlistIndex)
+            }
+
+            val mediaItems = mutableListOf<MediaItem>()
+            verify(exactly = 4) {
+                mockPlayer.setMediaItem(withArg { mediaItems.add(it) }, any<Long>())
+            }
+            Assert.assertEquals(4, mediaItems.size)
+            Assert.assertEquals(movie.id.toString(), mediaItems[0].mediaId)
+            Assert.assertEquals(movie2.id.toString(), mediaItems[1].mediaId)
+            Assert.assertEquals(movie3.id.toString(), mediaItems[2].mediaId)
+            Assert.assertEquals(movie2.id.toString(), mediaItems[3].mediaId)
+        }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test
     fun `Show next up at end of playback`() =
         runTest(testDispatcher) {
             setupForPlaylist()
@@ -415,5 +457,38 @@ class PlaybackViewModelTests {
             viewModel.state.value.also { state ->
                 Assert.assertNull(state.nextUp)
             }
+        }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test
+    fun playItemInPlaylist() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences {
+            }
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+
+            viewModel.playItemInPlaylist(BaseItem(movie3))
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(2, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+            val mediaItem = slot<MediaItem>()
+            val mediaItem2 = slot<MediaItem>()
+            verifyOrder {
+                mockPlayer.setMediaItem(capture(mediaItem), any<Long>())
+                mockPlayer.setMediaItem(capture(mediaItem2), any<Long>())
+            }
+            Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
+            Assert.assertEquals(movie3.id.toString(), mediaItem2.captured.mediaId)
         }
 }

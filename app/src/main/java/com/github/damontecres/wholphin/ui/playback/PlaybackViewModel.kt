@@ -1270,7 +1270,7 @@ class PlaybackViewModel
                                 }
                             }
                     } else {
-                        Timber.w("Attempting to play next, but there are no more items")
+                        Timber.w("Attempting to play previous, but there is none")
                         return@launchDefault
                     }
                 }
