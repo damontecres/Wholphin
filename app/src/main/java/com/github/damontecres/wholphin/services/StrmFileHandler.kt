@@ -11,6 +11,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Resolves .strm files to populate the tracks & metadata
@@ -28,9 +29,12 @@ class StrmFileHandler
          *
          * @return the resolved item or null if could not be resolved
          */
-        suspend fun resolveStrm(item: BaseItem): BaseItem? {
-            if (shouldResolveStrm(item)) {
-                Timber.d("Resolved strm %s", item.id)
+        suspend fun resolveStrm(
+            item: BaseItem,
+            sourceId: String? = null,
+        ): BaseItem? {
+            if (shouldResolveStrm(item, sourceId)) {
+                Timber.d("Resolving strm %s", item.id)
                 resolve(item.id, null)
                 var count = 5
                 while (count > 0) {
@@ -40,15 +44,15 @@ class StrmFileHandler
                             .getItem(item.id)
                             .content
                             .let { BaseItem(it) }
-                    if (!shouldResolveStrm(fetchedItem)) {
+                    if (!shouldResolveStrm(fetchedItem, sourceId)) {
                         Timber.d("Got updated streams for %s", item.id)
                         return fetchedItem
                     }
-                    delay(2000)
+                    delay(2.seconds)
                     count--
                 }
-                Timber.w("Resole timed out for %s", item.id)
-                throw TimeoutException("Resole timed out for " + item.id)
+                Timber.w("Resolve timed out for %s", item.id)
+                throw TimeoutException("Resolve timed out for " + item.id)
             }
             return null
         }
@@ -73,20 +77,19 @@ class StrmFileHandler
         }
 
         companion object {
-            fun isStrmFile(item: BaseItem): Boolean =
-                item.data.path?.endsWith(".strm") == true &&
-                    item.data.mediaSources
-                        ?.firstOrNull()
-                        ?.isRemote == true
+            fun isStrmFile(item: BaseItem): Boolean = item.data.path?.endsWith(".strm") == true
 
-            fun shouldResolveStrm(item: BaseItem): Boolean {
+            fun shouldResolveStrm(
+                item: BaseItem,
+                sourceId: String? = null,
+            ): Boolean {
                 if (!isStrmFile(item)) {
                     return false
                 }
-                val streams =
-                    item.data.mediaSources
-                        ?.firstOrNull()
-                        ?.mediaStreams
+                val source =
+                    sourceId?.let { item.data.mediaSources?.firstOrNull { it.id == sourceId } }
+                        ?: item.data.mediaSources?.firstOrNull()
+                val streams = source?.mediaStreams
                 return streams.isNullOrEmpty()
             }
         }
