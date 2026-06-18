@@ -65,7 +65,8 @@
     <string name="switch_user">Cambiar</string>
     <plurals name="trailers">
         <item quantity="one">Tráiler</item>
-        <item quantity="many">Tráilers</item>
+        <item quantity="many">Tráileres</item>
+        <item quantity="other">Tráileres</item>
     </plurals>
     <string name="tv_shows_title">Series</string>
     <string name="ui_interface">Interfaz</string>
@@ -665,4 +666,5 @@
         <item quantity="many">Personas</item>
         <item quantity="other">Personas</item>
     </plurals>
+    <string name="trailers_title">Tráileres</string>
 </resources>
