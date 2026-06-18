@@ -15,9 +15,9 @@ private val modelsWithDoViHdr10PlusBug =
     )
 
 /**
- * List of device models with known playback issues when 8-channel EAC3 is copied into HLS MPEG-TS.
+ * List of device models with known playback issues when 8-channel EAC3 is copied into MPEG-TS.
  */
-private val modelsWithEac3HlsPassthroughBug =
+private val modelsWithEac3TsPassthroughBug =
     listOf(
         "AFTKRT", // Amazon Fire TV 4K Max (2nd Gen)
     )
@@ -38,6 +38,6 @@ private val modelsWithHi10P52Support =
 
 object KnownDefects {
     val hevcDoviHdr10PlusBug = Build.MODEL in modelsWithDoViHdr10PlusBug
-    val eac3HlsPassthroughBug = Build.MODEL in modelsWithEac3HlsPassthroughBug
+    val eac3HlsPassthroughBug = Build.MODEL in modelsWithEac3TsPassthroughBug
     val supportsHi10P52 = Build.MODEL in modelsWithHi10P52Support
 }
