@@ -21,8 +21,8 @@ import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.Version
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -131,7 +131,7 @@ class UpdateChecker
         suspend fun getRelease(version: Version): Release? {
             val url =
                 "https://api.github.com/repos/damontecres/Wholphin/releases/tags/v${version.major}.${version.minor}.${version.patch}"
-            return withContext(Dispatchers.IO) {
+            return withContext(WholphinDispatchers.IO) {
                 val request =
                     Request
                         .Builder()
@@ -146,7 +146,7 @@ class UpdateChecker
          * Get the latest released version
          */
         suspend fun getLatestRelease(updateUrl: String): Release? =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val request =
                     Request
                         .Builder()
@@ -199,7 +199,7 @@ class UpdateChecker
             release: Release,
             callback: DownloadCallback,
         ) {
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 cleanup()
                 val request =
                     Request
@@ -210,7 +210,7 @@ class UpdateChecker
                 okHttpClient.newCall(request).execute().use {
                     if (it.isSuccessful && it.body != null) {
                         Timber.v("Request successful for ${release.downloadUrl}")
-                        withContext(Dispatchers.Main) {
+                        withContext(WholphinDispatchers.Main) {
                             callback.contentLength(it.body.contentLength())
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -396,7 +396,7 @@ suspend fun copyTo(
     while (bytes >= 0) {
         out.write(buffer, 0, bytes)
         bytesCopied += bytes
-        withContext(Dispatchers.Main) {
+        withContext(WholphinDispatchers.Main) {
             callback.bytesDownloaded(bytesCopied)
         }
         bytes = input.read(buffer)

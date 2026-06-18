@@ -7,7 +7,6 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -34,7 +33,7 @@ class TrackActivityPlaybackListener(
     private val player: Player,
     private val getState: () -> PlaybackItemState?,
 ) : Player.Listener {
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(WholphinDispatchers.Main)
     private val task: TimerTask =
         object : TimerTask() {
             override fun run() {
@@ -57,7 +56,7 @@ class TrackActivityPlaybackListener(
                     PlaybackStartInfo(
                         canSeek = true,
                         itemId = state.itemId,
-                        isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
+                        isPaused = withContext(WholphinDispatchers.Main) { !player.isPlaying },
                         playMethod = state.playMethod,
                         repeatMode = RepeatMode.REPEAT_NONE,
                         playbackOrder = PlaybackOrder.DEFAULT,
@@ -117,11 +116,11 @@ class TrackActivityPlaybackListener(
         launch("saveActivity") {
             getState.invoke()?.let { state ->
                 val calcPosition =
-                    withContext(Dispatchers.Main) {
+                    withContext(WholphinDispatchers.Main) {
                         (if (position >= 0) position else player.currentPosition)
                     }
                 if (calcPosition > 0) {
-                    val isPaused = withContext(Dispatchers.Main) { !player.isPlaying }
+                    val isPaused = withContext(WholphinDispatchers.Main) { !player.isPlaying }
                     Timber.v("saveActivity: itemId=${state.itemId}, pos=$calcPosition")
                     api.playStateApi.reportPlaybackProgress(
                         PlaybackProgressInfo(
