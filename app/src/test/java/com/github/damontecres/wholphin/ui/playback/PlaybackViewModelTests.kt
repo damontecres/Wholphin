@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
+import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
@@ -52,22 +53,31 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
+import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.operations.MediaInfoApi
+import org.jellyfin.sdk.api.operations.MediaSegmentsApi
 import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.api.operations.VideosApi
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.MediaSegmentDto
+import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
+import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoResponse
 import org.jellyfin.sdk.model.api.UserDto
+import org.jellyfin.sdk.model.extensions.inWholeTicks
+import org.jellyfin.sdk.model.extensions.ticks
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @RunWith(RobolectricTestRunner::class)
 class PlaybackViewModelTests {
@@ -94,6 +104,7 @@ class PlaybackViewModelTests {
     private val mockUserLibraryApi = mockk<UserLibraryApi>()
     private val mockMediaInfoApi = mockk<MediaInfoApi>()
     private val mockVideosApi = mockk<VideosApi>()
+    private val mockMediaSegmentsApi = mockk<MediaSegmentsApi>()
     private val mockPlayer = mockk<Player>(relaxed = true)
 
     fun create(destination: Destination): PlaybackViewModel =
@@ -167,6 +178,7 @@ class PlaybackViewModelTests {
         every { mockApi.userLibraryApi } returns mockUserLibraryApi
         every { mockApi.mediaInfoApi } returns mockMediaInfoApi
         every { mockApi.videosApi } returns mockVideosApi
+        every { mockApi.mediaSegmentsApi } returns mockMediaSegmentsApi
 
         coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
             successResponse(
@@ -232,6 +244,20 @@ class PlaybackViewModelTests {
     val intro = movie(name = "Test Intro")
     val playlistItems =
         Playlist.fromMedia(listOf(BaseItem(movie), BaseItem(movie2), BaseItem(movie3)))
+    val introSegmentMovie2 =
+        MediaSegmentDto(
+            id = UUID.randomUUID(),
+            itemId = movie2.id,
+            type = MediaSegmentType.INTRO,
+            startTicks = 5.seconds.inWholeTicks,
+            endTicks = 10.seconds.inWholeTicks,
+        )
+    val segments =
+        MediaSegmentDtoQueryResult(
+            items = listOf(introSegmentMovie2),
+            totalRecordCount = 1,
+            startIndex = 0,
+        )
     // END test data
 
     /**
@@ -251,7 +277,6 @@ class PlaybackViewModelTests {
         return viewModel
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Play intro first`() =
         runTest(testDispatcher) {
@@ -273,7 +298,6 @@ class PlaybackViewModelTests {
             Assert.assertEquals(mediaSource.id, state.currentMediaInfo.sourceId)
         }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Play two intros first`() =
         runTest(testDispatcher) {
@@ -302,7 +326,6 @@ class PlaybackViewModelTests {
             Assert.assertEquals(intro2.id, playlist[1].id)
         }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Don't play intro`() =
         runTest(testDispatcher) {
@@ -339,7 +362,6 @@ class PlaybackViewModelTests {
         } returns PlaylistCreationResult.Success(playlistItems)
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Play next up`() =
         runTest(testDispatcher) {
@@ -369,7 +391,6 @@ class PlaybackViewModelTests {
             Assert.assertEquals(movie2.id.toString(), mediaItem2.captured.mediaId)
         }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Play previous`() =
         runTest(testDispatcher) {
@@ -434,7 +455,6 @@ class PlaybackViewModelTests {
             }
         }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Show next up never`() =
         runTest(testDispatcher) {
@@ -459,7 +479,6 @@ class PlaybackViewModelTests {
             }
         }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun playItemInPlaylist() =
         runTest(testDispatcher) {
@@ -490,5 +509,248 @@ class PlaybackViewModelTests {
             }
             Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
             Assert.assertEquals(movie3.id.toString(), mediaItem2.captured.mediaId)
+        }
+
+    @Test
+    fun `Media segments auto skip`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.AUTO_SKIP
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 5.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1500.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertEquals(introSegmentMovie2, state.currentSegment?.segment)
+                    Assert.assertTrue(state.currentSegment?.interacted == true)
+                }
+                verify(exactly = 1) {
+                    // Verify only skipping a single time
+                    mockPlayer.seekTo(introSegmentMovie2.endTicks.ticks.inWholeMilliseconds + 1)
+                }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Media segment ask to skip`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.ASK_TO_SKIP
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 5.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1000.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertEquals(introSegmentMovie2, state.currentSegment?.segment)
+                    Assert.assertTrue(state.currentSegment?.interacted == false)
+                }
+                verify(exactly = 0) { mockPlayer.seekTo(any()) }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Media segment ask to skip and clicked`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.ASK_TO_SKIP
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 5.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1000.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertEquals(introSegmentMovie2, state.currentSegment?.segment)
+                    Assert.assertTrue(state.currentSegment?.interacted == false)
+                }
+                verify(exactly = 0) { mockPlayer.seekTo(any()) }
+
+                viewModel.updateSegment(introSegmentMovie2.id, false)
+                every { mockPlayer.currentPosition } returns introSegmentMovie2.endTicks.ticks.inWholeMilliseconds + 1
+                testScheduler.advanceTimeBy(10.milliseconds)
+                viewModel.state.value.also { state ->
+                    Assert.assertNull(state.currentSegment)
+                }
+                verify(exactly = 1) {
+                    // Verify only skipping a single time
+                    mockPlayer.seekTo(introSegmentMovie2.endTicks.ticks.inWholeMilliseconds + 1)
+                }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Media segment ask to skip and dismissed`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.ASK_TO_SKIP
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 5.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1000.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertEquals(introSegmentMovie2, state.currentSegment?.segment)
+                    Assert.assertTrue(state.currentSegment?.interacted == false)
+                }
+
+                viewModel.updateSegment(introSegmentMovie2.id, true)
+                testScheduler.advanceTimeBy(10.milliseconds)
+                viewModel.state.value.also { state ->
+                    Assert.assertEquals(introSegmentMovie2, state.currentSegment?.segment)
+                    Assert.assertTrue(state.currentSegment?.interacted == true)
+                }
+
+                // Never skipped
+                verify(exactly = 0) { mockPlayer.seekTo(any()) }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Media segment ignore`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.IGNORE
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 5.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1000.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertNull(state.currentSegment)
+                }
+                verify(exactly = 0) { mockPlayer.seekTo(any()) }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Media segment not at current position`() =
+        runTest(testDispatcher, timeout = 8.seconds) {
+            setupForPlaylist()
+            setupPreferences {
+                skipIntros = SkipSegmentBehavior.AUTO_SKIP
+            }
+
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie.id) } returns
+                successResponse(MediaSegmentDtoQueryResult(emptyList(), 0, 0))
+            coEvery { mockMediaSegmentsApi.getItemSegments(movie2.id) } returns
+                successResponse(segments)
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.currentSegment)
+            }
+
+            every { mockPlayer.currentPosition } returns 2.5.seconds.inWholeMilliseconds
+
+            try {
+                // TODO better testability
+                // This will start an infinite loop
+                viewModel.playNextUp()
+                testScheduler.advanceTimeBy(1000.milliseconds)
+
+                viewModel.state.value.also { state ->
+                    Assert.assertNull(state.currentSegment)
+                }
+                verify(exactly = 0) { mockPlayer.seekTo(any()) }
+            } finally {
+                viewModel.segmentJob?.cancel()
+            }
         }
 }

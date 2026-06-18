@@ -1055,7 +1055,8 @@ class PlaybackViewModel
         }
 
         // Variables for tracking segment state
-        private var segmentJob: Job? = null
+        // Exposed for testing
+        internal var segmentJob: Job? = null
         private val autoSkippedSegments = mutableSetOf<UUID>()
         private val outroShownSegments = mutableSetOf<UUID>()
 
