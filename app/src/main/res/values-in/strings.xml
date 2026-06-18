@@ -18,11 +18,11 @@
     <string name="collection">Koleksi</string>
     <string name="collections">Koleksi</string>
     <string name="commercial">Komersial</string>
-    <string name="community_rating">Peringkat Komunitas</string>
+    <string name="community_rating">Rating Komunitas</string>
     <string name="compose_error_message_title">Terjadi kesalahan! Tekan tombol untuk mengirim log ke server kamu.</string>
     <string name="confirm">Konfirmasi</string>
     <string name="continue_watching">Lanjutkan menonton</string>
-    <string name="critic_rating">Penilaian Kritis</string>
+    <string name="critic_rating">Rating Kritis</string>
     <string name="decimal_seconds">%.2f detik</string>
     <string name="default_track">Bawaan</string>
     <string name="delete">Hapus</string>
@@ -35,7 +35,7 @@
     <string name="episodes">Episode</string>
     <string name="error_loading_collection">Gagal memuat koleksi %1$s</string>
     <string name="discovered_servers">Server Ditemukan</string>
-    <string name="download_and_update"><![CDATA[Download & Update]]></string>
+    <string name="download_and_update"><![CDATA[Unduh &amp; Perbarui]]></string>
     <string name="external_track">Eksternal</string>
     <string name="favorites">Favorit</string>
     <string name="disabled">Nonaktif</string>
@@ -62,7 +62,7 @@
     <string name="max_bitrate">Bitrate maks</string>
     <string name="more_like_this">Tampilkan yang serupa</string>
     <string name="more">Lainnya</string>
-    <string name="movies">Film</string>
+    <string name="movies_title">Film</string>
     <string name="name">Nama</string>
     <string name="next_up">Selanjutnya</string>
     <string name="no_data">Tidak ada data</string>
@@ -72,7 +72,7 @@
     <string name="none">Tidak ada</string>
     <string name="outro">Outro</string>
     <string name="path">Berkas</string>
-    <string name="people">Orang</string>
+    <string name="people_title">Orang</string>
     <string name="play_count">Total Pemutaran</string>
     <string name="play_from_here">Putar dari sini</string>
     <string name="play">Putar</string>
@@ -96,7 +96,7 @@
     <string name="restart">Mulai ulang</string>
     <string name="resume">Lanjutkan</string>
     <string name="save">Simpan</string>
-    <string name="search_and_download"><![CDATA[Search & Download]]></string>
+    <string name="search_and_download"><![CDATA[Pencarian &amp; Unduhan]]></string>
     <string name="search">Pencarian</string>
     <string name="searching">Mencari…</string>
     <string name="select_server">Pilih Server</string>
@@ -121,7 +121,6 @@
     <string name="switch_servers">Ganti Server</string>
     <string name="switch_user">Ganti</string>
     <string name="top_unwatched">Terbaik Belum Ditonton</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="other">Trailer</item>
     </plurals>
@@ -129,7 +128,7 @@
     <string name="tv_guide">Panduan</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Season</string>
-    <string name="tv_shows">Acara TV</string>
+    <string name="tv_shows_title">Acara TV</string>
     <string name="ui_interface">Antarmuka</string>
     <string name="unknown">Tidak Diketahui</string>
     <string name="updates">Pembaruan</string>
@@ -150,9 +149,9 @@
     <string name="font">Font</string>
     <string name="background">Latar Belakang</string>
     <string name="success">Berhasil</string>
-    <string name="official_rating">Peringkat Orang Tua</string>
+    <string name="official_rating">Rating Orang Tua</string>
     <string name="runtime_sort">Durasi</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="other">Lainnya</item>
     </plurals>
@@ -204,8 +203,8 @@
     <string name="auto_play_next">Putar otomatis selanjutnya</string>
     <string name="check_for_updates">Periksa Pembaruan</string>
     <string name="combine_continue_next_summary">Hanya berlaku untuk Seri TV</string>
-    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
-    <string name="direct_play_ass">Putar langsung subtitel ASS</string>
+    <string name="combine_continue_next"><![CDATA[Gabungkan Lanjut Menonton &amp; Berikutnya]]></string>
+    <string name="direct_play_ass">Gunakan libass untuk subtitel ASS</string>
     <string name="direct_play_pgs">Putar langsung subtitel PGS</string>
     <string name="downmix_stereo">Selalu downmix ke stereo</string>
     <string name="ffmpeg_extension_pref">Gunakan dekoder FFmpeg</string>
@@ -287,7 +286,7 @@
     <string name="aspect_ratio">Rasio Aspek</string>
     <string name="show_details">Tampilkan detail</string>
     <string name="image_type">Jenis gambar</string>
-    <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
+    <string name="cast_and_crew"><![CDATA[Pemeran &amp; Kru]]></string>
     <string name="guest_stars">Pemeran Tamu</string>
     <string name="anamorphic">Anamorfik</string>
     <string name="interlaced">Interlace</string>
@@ -446,7 +445,7 @@
     <string name="display_presets">Preset tampilan</string>
     <string name="display_presets_description">Preset bawaan untuk kustomisasi cepat semua baris</string>
     <string name="customize_home_summary">Pilih baris dan gambar di halaman beranda</string>
-    <string name="favorite_items">Favoritkan %s</string>
+    <string name="favorite_items_title">Favoritkan %s</string>
     <string name="artist">Artis</string>
     <plurals name="minutes">
         <item quantity="other">%s menit</item>
@@ -502,12 +501,12 @@
     <string name="image_type_thumb">Thumbnail</string>
     <string name="backdrop_style_dynamic">Gambar dengan warna dinamis</string>
     <string name="backdrop_style_image">Hanya gambar</string>
-    <string name="enter_url_api_key"><![CDATA[Enter URL & API Key]]></string>
+    <string name="enter_url_api_key"><![CDATA[Masukkan URL &amp; Kunci API]]></string>
     <string name="api_key">API Key</string>
     <string name="seerr_login">Masuk ke server Seerr</string>
     <string name="seerr_jellyfin_user">Pengguna Jellyfin</string>
     <string name="seerr_local_user">Pengguna lokal</string>
-    <string name="search_and_download_subtitles"><![CDATA[Search & download subtitles]]></string>
+    <string name="search_and_download_subtitles"><![CDATA[Cari &amp; unduh subtitel]]></string>
     <string name="no_subtitles_found">Subtitel remote tidak ditemukan</string>
     <string name="series_continueing">Tayang</string>
     <string name="in_app_screensaver">Gunakan screensaver dalam aplikasi</string>
@@ -568,4 +567,39 @@
     <string name="discover_tv">Jelajahi acara TV</string>
     <string name="discover_movies">Jelajahi film</string>
     <string name="studios_in">Studio dari %1$s</string>
+    <string name="next_up_never">Tidak pernah</string>
+    <string name="external_player">Pemutar eksternal</string>
+    <string name="last_played">Terakhir diputar</string>
+    <string name="system_default">Default sistem</string>
+    <string name="ass_subtitle_mode_libass">Putar langsung dengan libass</string>
+    <string name="ass_subtitle_mode_exoplayer">Putar langsung dengan bawaan ExoPlayer</string>
+    <string name="ass_subtitle_mode_transcode">Burn-in/transkode di server</string>
+    <string name="ass_subtitle_playback">Pemutaran subtitle SSA/ASS</string>
+    <string name="cinema_mode">Mode bioskop</string>
+    <string name="show_more">Tampilkan %1$s lagi</string>
+    <string name="transcoding">Transkode</string>
+    <string name="play_with">Putar dengan</string>
+    <string name="skip_behavior_summary">Untuk intro, kredit, dll</string>
+    <string name="skip_behavior">Perilaku lewati</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Hasil pencarian gabungan</string>
+    <string name="combined_search_results_on">Tampilkan semua hasil dalam satu daftar</string>
+    <string name="combined_search_results_off">Tampilkan hasil berdasarkan kategori</string>
+    <string name="results">Hasil</string>
+    <string name="view_options_type_list_compact">Daftar Ringkas</string>
+    <string name="require_login">Wajibkan login untuk profil</string>
+    <string name="show_voice_search_button">Tampilkan tombol pencarian suara</string>
+    <string name="visible_ui">Terlihat</string>
+    <string name="hidden_ui">Tersembunyi</string>
+    <string name="view_options_type_grid">Grid</string>
+    <string name="view_options_type_list">List</string>
+    <string name="user_interface_language">Bahasa antarmuka pengguna</string>
+    <string name="display_toggles_title">Tampilan rating</string>
+    <string name="display_toggles_summary">Sesuaikan item yang akan ditampilkan</string>
+    <string name="profile_protection">Perlindungan profil</string>
+    <string name="continue_watching_click_behavior">Perilaku klik Lanjut menonton/Berikutnya</string>
+    <string name="continue_watching_click_summary_on">Putar saat diklik</string>
+    <string name="continue_watching_click_summary_off">Tampilkan detail saat diklik</string>
+    <string name="stars">Bintang</string>
+    <string name="tomatoes">Tomatoes</string>
 </resources>

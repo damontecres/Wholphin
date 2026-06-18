@@ -13,13 +13,13 @@ import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -119,7 +119,7 @@ class SwitchUserViewModel
         }
 
         fun trySwitchUser(user: JellyfinUser): Deferred<String?> =
-            viewModelScope.async(Dispatchers.IO) {
+            viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val current = serverRepository.changeUser(server, user)
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
@@ -138,6 +138,7 @@ class SwitchUserViewModel
 
         fun login(
             server: JellyfinServer,
+            existingUser: JellyfinUser?,
             username: String,
             password: String,
         ) {
@@ -149,7 +150,8 @@ class SwitchUserViewModel
                         username = username,
                         password = password,
                     )
-                    val current = serverRepository.changeUser(server.url, authenticationResult)
+                    val current =
+                        serverRepository.changeUser(server.url, authenticationResult, existingUser)
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
@@ -162,7 +164,10 @@ class SwitchUserViewModel
             }
         }
 
-        fun initiateQuickConnect(server: JellyfinServer) {
+        fun initiateQuickConnect(
+            server: JellyfinServer,
+            existingUser: JellyfinUser?,
+        ) {
             quickConnectJob?.cancel()
             quickConnectJob =
                 viewModelScope.launchIO {
@@ -187,7 +192,12 @@ class SwitchUserViewModel
                         val authenticationResult by api.userApi.authenticateWithQuickConnect(
                             QuickConnectDto(secret = quickConnectStatus.secret),
                         )
-                        val current = serverRepository.changeUser(server.url, authenticationResult)
+                        val current =
+                            serverRepository.changeUser(
+                                server.url,
+                                authenticationResult,
+                                existingUser,
+                            )
                         setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                     } catch (_: CancellationException) {
                         // no-op, user may have canceled
@@ -224,7 +234,7 @@ class SwitchUserViewModel
         }
 
         private suspend fun getUsers(): List<JellyfinUserAndImage> =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val api = jellyfin.createApi(server.url)
                 val knownUsers =
                     serverDao

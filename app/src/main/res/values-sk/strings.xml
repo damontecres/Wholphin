@@ -61,7 +61,7 @@
     <string name="max_bitrate">Maximálny bitrate</string>
     <string name="more_like_this">Navrhované</string>
     <string name="more">Viac</string>
-    <string name="movies">Filmy</string>
+    <string name="movies_title">Filmy</string>
     <string name="name">Meno</string>
     <string name="next_up">Nasleduje</string>
     <string name="no_data">Žiadne dáta</string>
@@ -71,7 +71,7 @@
     <string name="none">Žiadne</string>
     <string name="outro">Outro</string>
     <string name="path">Cesta</string>
-    <string name="people">Ľudia</string>
+    <string name="people_title">Ľudia</string>
     <string name="play_count">Počet prehrávaní</string>
     <string name="play_from_here">Prehrať odtiaľto</string>
     <string name="play">Prehrať</string>
@@ -143,7 +143,6 @@
     <string name="switch_servers">Zmeniť servery</string>
     <string name="switch_user">Zmeniť</string>
     <string name="top_unwatched">Najlepšie hodnotené Nepozreté</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailery</item>
         <item quantity="few"/>
@@ -183,7 +182,7 @@
     <string name="success">Úspech</string>
     <string name="official_rating">Rodičovské hodnotenie</string>
     <string name="runtime_sort">Dĺžka</string>
-    <string name="extras">Bonusový materiál</string>
+    <string name="extras_title">Bonusový materiál</string>
     <plurals name="other_extras">
         <item quantity="one">Ostatné</item>
         <item quantity="few"/>
@@ -250,7 +249,7 @@
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
-    <string name="favorite_items">Obľúbené %s</string>
+    <string name="favorite_items_title">Obľúbené %s</string>
     <plurals name="downloads">
         <item quantity="one">%s stiahnutý</item>
         <item quantity="few">%s stiahnuté</item>
@@ -288,7 +287,7 @@
     <string name="auto_check_for_updates">Automaticky kontrolovať aktualizácie</string>
     <string name="check_for_updates">Skontrolovať aktualizácie</string>
     <string name="combine_continue_next_summary">Platí len pre seriály</string>
-    <string name="direct_play_ass">Priame prehrávanie ASS titulkov</string>
+    <string name="direct_play_ass">Použiť libass pre ASS titulky</string>
     <string name="direct_play_pgs">Priame prehrávanie PGS titulkov</string>
     <string name="downmix_stereo">Vždy downmixovať do stereo formátu</string>
     <string name="ffmpeg_extension_pref">Použiť modul FFmpeg dekodéra</string>
@@ -594,4 +593,19 @@
     <string name="send_media_info_log_to_server">Odoslať log informácií o médiách na server</string>
     <string name="max_days_next_up">Max. počet dní v sekcií Nasleduje</string>
     <string name="albums">Albumy</string>
+    <string name="artists">Umelci</string>
+    <string name="songs">Skladby</string>
+    <string name="go_to_artist">Zobraziť umelca</string>
+    <string name="now_playing">Práve prehrávané</string>
+    <string name="instant_mix">Okamžitý mix</string>
+    <string name="go_to_album">Zobraziť album</string>
+    <string name="add_to_queue">Pridať do fronty</string>
+    <string name="next_up_never">Nikdy</string>
+    <string name="external_player">Externý prehrávač</string>
+    <string name="album_artist">Umelec albumu</string>
+    <string name="album">Album</string>
+    <string name="popular_songs">Populárne skladby</string>
+    <string name="play_next">Prehrať nasledujúce</string>
+    <string name="music_videos">Hudobné videá</string>
+    <string name="lyrics">Texty piesní</string>
 </resources>

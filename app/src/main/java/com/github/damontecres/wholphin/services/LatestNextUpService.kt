@@ -8,8 +8,8 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.util.LocalDateTimeSerializer
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.supportItemKinds
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Semaphore
@@ -70,13 +70,14 @@ class LatestNextUpService
                                     remove(BaseItemKind.EPISODE)
                                 }
                         },
+                    enableTotalRecordCount = false,
                 )
             val items =
                 api.itemsApi
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    .map { BaseItem(it, useSeriesForPrimary) }
             return items
         }
 
@@ -105,13 +106,14 @@ class LatestNextUpService
                     enableUserData = true,
                     enableRewatching = enableRewatching,
                     nextUpDateCutoff = nextUpDateCutoff,
+                    enableTotalRecordCount = false,
                 )
             val nextUp =
                 api.tvShowsApi
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    .map { BaseItem(it, useSeriesForPrimary) }
                     .filter {
                         val seriesId = it.data.seriesId
                         if (seriesId != null && seriesId in removedSeries) {
@@ -141,14 +143,14 @@ class LatestNextUpService
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
         ): List<BaseItem> =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val start = System.currentTimeMillis()
                 val semaphore = Semaphore(3)
                 val deferred =
                     nextUp
                         .filter { it.data.seriesId != null }
                         .map { item ->
-                            async(Dispatchers.IO) {
+                            async(WholphinDispatchers.IO) {
                                 try {
                                     semaphore.withPermit {
                                         datePlayedService.getLastPlayed(item)

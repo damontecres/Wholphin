@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +58,6 @@ import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import coil3.size.Size
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -93,9 +91,9 @@ fun SlideshowPage(
         ),
 ) {
     val context = LocalContext.current
-    val loading by viewModel.loading.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    when (val st = loading) {
+    when (val st = state.loading) {
         is LoadingState.Error -> {
             ErrorMessage(st, modifier)
         }
@@ -107,10 +105,10 @@ fun SlideshowPage(
         }
 
         LoadingState.Success -> {
-            val loadingState by viewModel.loadingState.observeAsState(ImageLoadingState.Loading)
-            val imageFilter by viewModel.imageFilter.observeAsState(VideoFilter())
-            val position by viewModel.position.observeAsState(0)
-            val pager by viewModel.pager.observeAsState()
+            val loadingState = state.imageLoading
+            val imageFilter by viewModel.imageFilter.collectAsState()
+            val position = state.position
+            val pager = state.items
 //            val imageState by viewModel.image.observeAsState()
 
             var zoomFactor by rememberSaveable { mutableFloatStateOf(1f) }
@@ -150,7 +148,7 @@ fun SlideshowPage(
                 label = "image_panY",
             )
 
-            val slideshowState by viewModel.slideshow.collectAsState()
+            val slideshowState by viewModel.state.collectAsState()
             val slideshowActive by viewModel.slideshowActive.collectAsState(false)
 
             val focusRequester = remember { FocusRequester() }

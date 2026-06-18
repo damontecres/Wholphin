@@ -15,6 +15,7 @@ import kotlin.time.Duration
  * Handles [KeyEvent]s during playback on [PlaybackPage]
  */
 class PlaybackKeyHandler(
+    private val isLtr: Boolean,
     private val player: Player,
     private val controlsEnabled: Boolean,
     private val skipWithLeftRight: Boolean,
@@ -47,11 +48,21 @@ class PlaybackKeyHandler(
         if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
-                    updateSkipIndicator(-seekBack.inWholeMilliseconds)
-                    player.seekBack(seekBack)
+                    if (isLtr) {
+                        updateSkipIndicator(-seekBack.inWholeMilliseconds)
+                        player.seekBack(seekBack)
+                    } else {
+                        updateSkipIndicator(seekForward.inWholeMilliseconds)
+                        player.seekForward(seekForward)
+                    }
                 } else if (skipWithLeftRight && isSkipForward(it)) {
-                    player.seekForward(seekForward)
-                    updateSkipIndicator(seekForward.inWholeMilliseconds)
+                    if (isLtr) {
+                        player.seekForward(seekForward)
+                        updateSkipIndicator(seekForward.inWholeMilliseconds)
+                    } else {
+                        player.seekBack(seekBack)
+                        updateSkipIndicator(seekBack.inWholeMilliseconds)
+                    }
                 } else if (oneClickPause && isEnterKey(it)) {
                     val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
@@ -127,7 +138,7 @@ class PlaybackKeyHandler(
             return false
         }
 
-        val isBack = isSkipBack(event)
+        val isBack = if (isLtr) isSkipBack(event) else isSkipForward(event)
         return when (event.type) {
             KeyEventType.KeyDown -> {
                 val repeatCount = event.nativeKeyEvent.repeatCount

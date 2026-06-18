@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
@@ -23,6 +24,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
+import com.github.damontecres.wholphin.ui.detail.HomeRowGrid
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.collection.CollectionDetails
@@ -285,6 +287,16 @@ fun DestinationContent(
                         BaseItemKind.STUDIO -> DefaultForStudiosFilterOptions
                         else -> throw IllegalArgumentException("Unsupported parentType ${destination.parentType}")
                     },
+                sortOptions = rememberSortOptions(destination.collectionType),
+                modifier = modifier,
+            )
+        }
+
+        is Destination.MoreHomeRow -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            HomeRowGrid(
+                preferences = preferences,
+                destination = destination,
                 modifier = modifier,
             )
         }
@@ -299,9 +311,10 @@ fun DestinationContent(
             )
         }
 
-        is Destination.ItemGrid -> {
+        is Destination.ItemGrid<*> -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
+                preferences,
                 destination,
                 modifier,
             )
@@ -346,6 +359,7 @@ fun DestinationContent(
         }
 
         Destination.Discover -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             DiscoverPage(
                 preferences = preferences,
                 modifier = modifier,

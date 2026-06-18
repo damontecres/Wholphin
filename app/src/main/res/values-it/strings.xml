@@ -34,7 +34,7 @@
     <string name="loading">Caricamento…</string>
     <string name="library">Libreria</string>
     <string name="live_tv">Diretta TV</string>
-    <string name="movies">Film</string>
+    <string name="movies_title">Film</string>
     <string name="no_results">Nessun risultato</string>
     <string name="max_bitrate">Bitrate massimo</string>
     <string name="mark_unwatched">Segna come non visto</string>
@@ -69,7 +69,7 @@
     <string name="sort_by_random">Casuale</string>
     <string name="tv_season">Stagione</string>
     <string name="tv_seasons">Stagioni</string>
-    <string name="tv_shows">Serie TV</string>
+    <string name="tv_shows_title">Serie TV</string>
     <string name="ui_interface">Interfaccia</string>
     <string name="unknown">Sconosciuto</string>
     <string name="updates">Aggiornamenti</string>
@@ -122,7 +122,7 @@
     <string name="hide_debug_info">Nascondi informazioni debug</string>
     <string name="font_color">Colore testo</string>
     <string name="font_opacity">Opacità testo</string>
-    <string name="extras">Extra</string>
+    <string name="extras_title">Extra</string>
     <plurals name="other_extras">
         <item quantity="one">Altro</item>
         <item quantity="many">Altri</item>
@@ -164,7 +164,7 @@
     <string name="name">Nome</string>
     <string name="next_up">Prossimo Episodio</string>
     <string name="no_scheduled_recordings">Nessuna registrazione programmata</string>
-    <string name="people">Persone</string>
+    <string name="people_title">Persone</string>
     <string name="show_debug_info">Mostra informazioni debug</string>
     <string name="sort_by_date_added">Data di Aggiunta</string>
     <string name="sort_by_date_played">Data di riproduzione</string>
@@ -174,7 +174,6 @@
     <string name="suggestions">Suggerimenti</string>
     <string name="switch_servers">Cambia server</string>
     <string name="switch_user">Cambia</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">I trailer</item>
         <item quantity="many"/>
@@ -480,7 +479,7 @@
     <string name="load_from_web_client">Carica dal client web</string>
     <string name="use_series">Usa immagine delle serie</string>
     <string name="customize_home_summary">Scegli righe e immagini nella home page</string>
-    <string name="favorite_items">Preferito %s</string>
+    <string name="favorite_items_title">Preferito %s</string>
     <string name="content_scale_fit">Adatta</string>
     <string name="content_scale_crop">Ritaglia</string>
     <string name="content_scale_fill">Riempi</string>
@@ -616,4 +615,29 @@
     <string name="show_more">Mostra %1$s altri</string>
     <string name="skip_behavior">Comportamento di salto</string>
     <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
+    <string name="play_with">Riproduci con</string>
+    <string name="transcoding">Trascodifica</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="results">Risultati</string>
+    <string name="require_login">Richiedi login per il profilo</string>
+    <string name="combined_search_results">Risultati di ricerca combinati</string>
+    <string name="combined_search_results_on">Mostra tutti i risultati in una lista singola</string>
+    <string name="combined_search_results_off">Mostra risultati per categoria</string>
+    <string name="profile_protection">Protezione profilo</string>
+    <string name="continue_watching_click_summary_on">Riproduci al click</string>
+    <string name="continue_watching_click_summary_off">Mostra dettagli al click</string>
+    <string name="stars">Stelle</string>
+    <string name="tomatoes">Pomodori</string>
+    <string name="show_voice_search_button">Mostra pulsante di ricerca vocale</string>
+    <string name="visible_ui">Visibile</string>
+    <string name="hidden_ui">Nascosto</string>
+    <string name="view_options_type_grid">Griglia</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="split_into_separate_rows">Dividi in righe separate</string>
+    <string name="view_options_type_list_compact">Lista compatta</string>
+    <string name="user_interface_language">Lingua dell\'interfaccia</string>
+    <string name="display_toggles_title">Visualizzazione valutazioni</string>
+    <string name="display_toggles_summary">Personalizza quali mostrare</string>
+    <string name="continue_watching_click_behavior">Comportamento click su Continua a guardare / Prossimo</string>
+    <string name="sort">Ordina</string>
 </resources>

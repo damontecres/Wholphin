@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -45,7 +46,10 @@ import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
+import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.google.common.cache.CacheBuilder
@@ -76,7 +80,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     movies =
                         DiscoverRowData(
-                            context.getString(R.string.movies),
+                            ResStringProvider(R.string.movies_title),
                             it,
                             DiscoverRequestType.DISCOVER_MOVIES,
                         ),
@@ -86,7 +90,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     tv =
                         DiscoverRowData(
-                            context.getString(R.string.tv_shows),
+                            ResStringProvider(R.string.tv_shows_title),
                             it,
                             DiscoverRequestType.DISCOVER_TV,
                         ),
@@ -96,7 +100,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     trending =
                         DiscoverRowData(
-                            context.getString(R.string.trending),
+                            ResStringProvider(R.string.trending),
                             it,
                             DiscoverRequestType.TRENDING,
                         ),
@@ -106,7 +110,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     upcomingMovies =
                         DiscoverRowData(
-                            context.getString(R.string.upcoming_movies),
+                            ResStringProvider(R.string.upcoming_movies),
                             it,
                             DiscoverRequestType.UPCOMING_MOVIES,
                         ),
@@ -116,7 +120,7 @@ class SeerrDiscoverViewModel
                 this.copy(
                     upcomingTv =
                         DiscoverRowData(
-                            context.getString(R.string.upcoming_tv),
+                            ResStringProvider(R.string.upcoming_tv),
                             it,
                             DiscoverRequestType.UPCOMING_TV,
                         ),
@@ -213,12 +217,17 @@ class SeerrDiscoverViewModel
     }
 
 data class DiscoverRowData(
-    val title: String,
+    val title: StringProvider,
     val items: DataLoadingState<List<DiscoverItem>>,
     val type: DiscoverRequestType,
 ) {
     companion object {
-        val EMPTY = DiscoverRowData("", DataLoadingState.Pending, DiscoverRequestType.UNKNOWN)
+        val EMPTY =
+            DiscoverRowData(
+                EmptyStringProvider,
+                DataLoadingState.Pending,
+                DiscoverRequestType.UNKNOWN,
+            )
     }
 }
 
@@ -275,11 +284,13 @@ fun SeerrDiscoverPage(
                         ?.let(::add)
                 }.let {
                     val rating = focusedItem?.id?.let { ratingMap[it] }
-                    listToDotString(
-                        it,
-                        rating?.audienceRating,
-                        rating?.criticRating?.toFloat(),
-                    )
+                    val str =
+                        listToDotString(
+                            it,
+                            rating?.audienceRating,
+                            rating?.criticRating?.toFloat(),
+                        )
+                    QuickDetailsData(str)
                 }
             }
         HomePageHeader(
@@ -289,6 +300,7 @@ fun SeerrDiscoverPage(
             overviewTwoLines = true,
             quickDetails = details,
             timeRemaining = null,
+            endsAt = null,
             showLogo = preferences.appPreferences.interfacePreferences.showLogos,
             logoImageUrl = null, // TODO
             modifier =

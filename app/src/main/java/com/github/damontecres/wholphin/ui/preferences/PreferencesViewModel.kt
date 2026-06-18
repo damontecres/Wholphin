@@ -28,11 +28,12 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.ClientInfo
@@ -50,15 +51,19 @@ class PreferencesViewModel
         val navigationManager: NavigationManager,
         val backdropService: BackdropService,
         val screensaverService: ScreensaverService,
-        private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
         private val seerrServerRepository: SeerrServerRepository,
         private val deviceInfo: DeviceInfo,
         private val clientInfo: ClientInfo,
         private val updateChecker: UpdateChecker,
-    ) : ViewModel(),
-        RememberTabManager by rememberTabManager {
-        val currentUser get() = serverRepository.currentUser
+    ) : ViewModel() {
+        val currentUser
+            get() =
+                serverRepository.currentUserFlow.stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    null,
+                )
 
         val seerrConnection = seerrServerRepository.connection
 
@@ -101,7 +106,19 @@ class PreferencesViewModel
             pin: String?,
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                serverRepository.setUserPin(user, pin)
+                serverRepository.updateUserAuth(user, pin, false)
+            }
+        }
+
+        fun setRequireLogin(user: JellyfinUser) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.updateUserAuth(user, null, true)
+            }
+        }
+
+        fun removeLoginAndPin(user: JellyfinUser) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.updateUserAuth(user, null, false)
             }
         }
 

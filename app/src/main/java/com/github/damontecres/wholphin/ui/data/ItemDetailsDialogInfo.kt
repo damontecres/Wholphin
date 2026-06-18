@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.data
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +13,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -66,7 +66,7 @@ fun ItemDetailsDialog(
     showFilePath: Boolean,
     onDismissRequest: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     // Extract stringResource calls outside of ScrollableDialog's non-composable lambda
     val pathLabel = stringResource(R.string.path)
     val fileSizeLabel = stringResource(R.string.file_size)
@@ -164,8 +164,8 @@ fun ItemDetailsDialog(
                 itemsIndexed(videoStreams) { index, stream ->
                     MediaInfoSection(
                         title = titleIndex(videoLabel, index, videoStreams.size),
-                        items = remember { buildVideoStreamInfo(context, stream) },
-                        additional = remember { buildVideoStreamInfoAdditional(context, stream) },
+                        items = remember { buildVideoStreamInfo(resources, stream) },
+                        additional = remember { buildVideoStreamInfoAdditional(resources, stream) },
                     )
                 }
 
@@ -184,7 +184,7 @@ fun ItemDetailsDialog(
                                         groupIndex * 3 + index,
                                         audioStreams.size,
                                     ),
-                                items = buildAudioStreamInfo(context, stream),
+                                items = buildAudioStreamInfo(resources, stream),
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -210,7 +210,7 @@ fun ItemDetailsDialog(
                                         groupIndex * 3 + index,
                                         subtitleStreams.size,
                                     ),
-                                items = buildSubtitleStreamInfo(context, stream, showFilePath),
+                                items = buildSubtitleStreamInfo(resources, stream, showFilePath),
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -301,25 +301,25 @@ fun titleIndex(
 }
 
 private fun buildVideoStreamInfo(
-    context: Context,
+    resources: Resources,
     stream: MediaStream,
 ): List<Pair<String, String>> =
     buildList {
-        val yesStr = context.getString(R.string.yes)
-        val noStr = context.getString(R.string.no)
+        val yesStr = resources.getString(R.string.yes)
+        val noStr = resources.getString(R.string.no)
 
-        val titleLabel = context.getString(R.string.title)
-        val codecLabel = context.getString(R.string.codec)
-        val resolutionLabel = context.getString(R.string.resolution)
-        val aspectRatioLabel = context.getString(R.string.aspect_ratio)
-        val framerateLabel = context.getString(R.string.framerate)
-        val bitrateLabel = context.getString(R.string.bitrate)
-        val profileLabel = context.getString(R.string.profile)
-        val levelLabel = context.getString(R.string.level)
-        val interlacedLabel = context.getString(R.string.interlaced)
-        val videoRangeLabel = context.getString(R.string.video_range)
-        val sdrStr = context.getString(R.string.sdr)
-        val hdrStr = context.getString(R.string.hdr)
+        val titleLabel = resources.getString(R.string.title)
+        val codecLabel = resources.getString(R.string.codec)
+        val resolutionLabel = resources.getString(R.string.resolution)
+        val aspectRatioLabel = resources.getString(R.string.aspect_ratio)
+        val framerateLabel = resources.getString(R.string.framerate)
+        val bitrateLabel = resources.getString(R.string.bitrate)
+        val profileLabel = resources.getString(R.string.profile)
+        val levelLabel = resources.getString(R.string.level)
+        val interlacedLabel = resources.getString(R.string.interlaced)
+        val videoRangeLabel = resources.getString(R.string.video_range)
+        val sdrStr = resources.getString(R.string.sdr)
+        val hdrStr = resources.getString(R.string.hdr)
 
         stream.title?.let { add(titleLabel to it) }
         stream.codec?.let { add(codecLabel to it.uppercase()) }
@@ -350,31 +350,31 @@ private fun buildVideoStreamInfo(
     }
 
 private fun buildVideoStreamInfoAdditional(
-    context: Context,
+    resources: Resources,
     stream: MediaStream,
 ): List<Pair<String, String>> =
     buildList {
-        val yesStr = context.getString(R.string.yes)
-        val noStr = context.getString(R.string.no)
+        val yesStr = resources.getString(R.string.yes)
+        val noStr = resources.getString(R.string.no)
 
-        val avcLabel = context.getString(R.string.avc)
-        val anamorphicLabel = context.getString(R.string.anamorphic)
-        val bitDepthLabel = context.getString(R.string.bit_depth)
+        val avcLabel = resources.getString(R.string.avc)
+        val anamorphicLabel = resources.getString(R.string.anamorphic)
+        val bitDepthLabel = resources.getString(R.string.bit_depth)
 
-        val videoRangeTypeLabel = context.getString(R.string.video_range_type)
-        val colorSpaceLabel = context.getString(R.string.color_space)
-        val colorTransferLabel = context.getString(R.string.color_transfer)
-        val colorPrimariesLabel = context.getString(R.string.color_primaries)
-        val pixelFormatLabel = context.getString(R.string.pixel_format)
-        val refFramesLabel = context.getString(R.string.ref_frames)
-        val nalLabel = context.getString(R.string.nal)
-        val dolbyVisionLabel = context.getString(R.string.dolby_vision)
+        val videoRangeTypeLabel = resources.getString(R.string.video_range_type)
+        val colorSpaceLabel = resources.getString(R.string.color_space)
+        val colorTransferLabel = resources.getString(R.string.color_transfer)
+        val colorPrimariesLabel = resources.getString(R.string.color_primaries)
+        val pixelFormatLabel = resources.getString(R.string.pixel_format)
+        val refFramesLabel = resources.getString(R.string.ref_frames)
+        val nalLabel = resources.getString(R.string.nal)
+        val dolbyVisionLabel = resources.getString(R.string.dolby_vision)
 
-        val sdrStr = context.getString(R.string.sdr)
-        val hdr10Str = context.getString(R.string.hdr10)
-        val hdr10PlusStr = context.getString(R.string.hdr10_plus)
-        val hlgStr = context.getString(R.string.hlg)
-        val bitUnit = context.getString(R.string.bit_unit)
+        val sdrStr = resources.getString(R.string.sdr)
+        val hdr10Str = resources.getString(R.string.hdr10)
+        val hdr10PlusStr = resources.getString(R.string.hdr10_plus)
+        val hlgStr = resources.getString(R.string.hlg)
+        val bitUnit = resources.getString(R.string.bit_unit)
 
         stream.isAvc?.let { add(avcLabel to if (it) yesStr else noStr) }
         stream.isAnamorphic?.let { add(anamorphicLabel to if (it) yesStr else noStr) }
@@ -394,7 +394,7 @@ private fun buildVideoStreamInfoAdditional(
                     VideoRangeType.DOVI_WITH_HDR10,
                     VideoRangeType.DOVI_WITH_HLG,
                     VideoRangeType.DOVI_WITH_SDR,
-                    -> context.getString(R.string.dolby_vision)
+                    -> resources.getString(R.string.dolby_vision)
 
                     VideoRangeType.UNKNOWN -> null
 
@@ -412,27 +412,27 @@ private fun buildVideoStreamInfoAdditional(
     }
 
 private fun buildAudioStreamInfo(
-    context: Context,
+    resources: android.content.res.Resources,
     stream: MediaStream,
 ): List<Pair<String, String>> =
     buildList {
-        val titleLabel = context.getString(R.string.title)
-        val languageLabel = context.getString(R.string.language)
-        val codecLabel = context.getString(R.string.codec)
-        val layoutLabel = context.getString(R.string.layout)
-        val channelsLabel = context.getString(R.string.channels)
-        val bitrateLabel = context.getString(R.string.bitrate)
-        val sampleRateLabel = context.getString(R.string.sample_rate)
-        val defaultLabel = context.getString(R.string.default_track)
-        val profileLabel = context.getString(R.string.profile)
-        val yesStr = context.getString(R.string.yes)
-        val noStr = context.getString(R.string.no)
-        val sampleRateUnit = context.getString(R.string.sample_rate_unit)
+        val titleLabel = resources.getString(R.string.title)
+        val languageLabel = resources.getString(R.string.language)
+        val codecLabel = resources.getString(R.string.codec)
+        val layoutLabel = resources.getString(R.string.layout)
+        val channelsLabel = resources.getString(R.string.channels)
+        val bitrateLabel = resources.getString(R.string.bitrate)
+        val sampleRateLabel = resources.getString(R.string.sample_rate)
+        val defaultLabel = resources.getString(R.string.default_track)
+        val profileLabel = resources.getString(R.string.profile)
+        val yesStr = resources.getString(R.string.yes)
+        val noStr = resources.getString(R.string.no)
+        val sampleRateUnit = resources.getString(R.string.sample_rate_unit)
 
         stream.title?.let { add(titleLabel to it) }
         stream.language?.let { add(languageLabel to languageName(it)) }
         stream.codec?.let {
-            val formattedCodec = formatAudioCodec(context, it, stream.profile) + " ($it)"
+            val formattedCodec = formatAudioCodec(resources, it, stream.profile) + " ($it)"
             add(codecLabel to formattedCodec)
         }
         stream.channelLayout?.let { add(layoutLabel to it) }
@@ -444,20 +444,20 @@ private fun buildAudioStreamInfo(
     }
 
 private fun buildSubtitleStreamInfo(
-    context: Context,
+    resources: Resources,
     stream: MediaStream,
     showPath: Boolean,
 ): List<Pair<String, String>> =
     buildList {
-        val titleLabel = context.getString(R.string.title)
-        val languageLabel = context.getString(R.string.language)
-        val codecLabel = context.getString(R.string.codec)
-        val defaultLabel = context.getString(R.string.default_track)
-        val forcedLabel = context.getString(R.string.forced_track)
-        val externalLabel = context.getString(R.string.external_track)
-        val yesStr = context.getString(R.string.yes)
-        val noStr = context.getString(R.string.no)
-        val pathLabel = context.getString(R.string.path)
+        val titleLabel = resources.getString(R.string.title)
+        val languageLabel = resources.getString(R.string.language)
+        val codecLabel = resources.getString(R.string.codec)
+        val defaultLabel = resources.getString(R.string.default_track)
+        val forcedLabel = resources.getString(R.string.forced_track)
+        val externalLabel = resources.getString(R.string.external_track)
+        val yesStr = resources.getString(R.string.yes)
+        val noStr = resources.getString(R.string.no)
+        val pathLabel = resources.getString(R.string.path)
 
         stream.title?.let { add(titleLabel to it) }
         stream.language?.let { add(languageLabel to languageName(it)) }

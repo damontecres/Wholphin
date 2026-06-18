@@ -74,7 +74,7 @@ fun NowPlayingButtons(
             modifier = Modifier.align(Alignment.CenterStart),
         ) {
             PlaybackButton(
-                iconRes = R.drawable.baseline_more_vert_96,
+                iconRes = R.drawable.vector_settings,
                 onClick = {
                     onControllerInteraction.invoke()
                     onClickMore.invoke()

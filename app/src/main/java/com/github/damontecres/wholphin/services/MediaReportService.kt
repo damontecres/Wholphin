@@ -62,7 +62,7 @@ class MediaReportService
                     .content.mediaSources
             val sourcesJson = json.encodeToString(sources)
             val playbackPrefs = userPreferencesService.getCurrent().appPreferences.playbackPreferences
-            val serverVersion = serverRepository.currentServer.value?.serverVersion
+            val serverVersion = serverRepository.currentServer?.serverVersion
             val deviceProfile =
                 deviceProfileService.getOrCreateDeviceProfile(playbackPrefs, serverVersion)
             val deviceProfileJson = json.encodeToString(deviceProfile)

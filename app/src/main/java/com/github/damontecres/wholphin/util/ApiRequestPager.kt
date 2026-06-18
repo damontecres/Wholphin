@@ -21,9 +21,11 @@ import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
+import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
@@ -327,4 +329,44 @@ val GetStudiosRequestHandler =
             api: ApiClient,
             request: GetStudiosRequest,
         ): Response<BaseItemDtoQueryResult> = api.studiosApi.getStudios(request)
+    }
+
+val GetRecordingsRequestHandler =
+    object : RequestHandler<GetRecordingsRequest> {
+        override fun prepare(
+            request: GetRecordingsRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetRecordingsRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetRecordingsRequest,
+        ): Response<BaseItemDtoQueryResult> = api.liveTvApi.getRecordings(request)
+    }
+
+val GetLiveTvChannelsRequestHandler =
+    object : RequestHandler<GetLiveTvChannelsRequest> {
+        override fun prepare(
+            request: GetLiveTvChannelsRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetLiveTvChannelsRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+//                enableTotalRecordCount = enableTotalRecordCount,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetLiveTvChannelsRequest,
+        ): Response<BaseItemDtoQueryResult> = api.liveTvApi.getLiveTvChannels(request)
     }

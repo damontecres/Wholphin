@@ -3,7 +3,9 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -67,9 +69,9 @@ fun VideoStreamDetails(
     numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         val video =
@@ -88,7 +90,13 @@ fun VideoStreamDetails(
                             } else {
                                 null
                             }
-                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
+                        val range =
+                            formatVideoRange(
+                                resources,
+                                it.videoRange,
+                                it.videoRangeType,
+                                it.videoDoViTitle,
+                            )
                         resName.concatWithSpace(range)
                     }
             }
@@ -106,11 +114,11 @@ fun VideoStreamDetails(
         val audio =
             remember(audioCount, audioStream) {
                 if (audioCount == 0 || audioStream == null) {
-                    context.getString(R.string.none)
+                    resources.getString(R.string.none)
                 } else {
                     listOfNotNull(
                         languageName(audioStream.language),
-                        formatAudioCodec(context, audioStream.codec, audioStream.profile),
+                        formatAudioCodec(resources, audioStream.codec, audioStream.profile),
                         audioStream.channelLayout,
                     ).joinToString(" ")
                 }
@@ -131,7 +139,7 @@ fun VideoStreamDetails(
             remember(subtitleCount, subtitleStream) {
                 if (subtitleCount > 0 && subtitleStream == null) {
                     disabled = true
-                    context.getString(R.string.disabled)
+                    resources.getString(R.string.none)
                 } else if (subtitleCount == 0 || subtitleStream == null) {
                     null
                 } else {
@@ -188,20 +196,21 @@ fun StreamLabel(
                     modifier = Modifier,
                 )
             }
+            val string =
+                remember(text, disabled, count) {
+                    val countToUse = if (disabled) count else count - 1
+                    if (countToUse > 0) {
+                        "$text (+$countToUse)"
+                    } else {
+                        text
+                    }
+                }
             Text(
-                text = text,
+                text = string,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier,
             )
-            val countToUse = if (disabled) count else count - 1
-            if (countToUse > 0) {
-                Text(
-                    text = "(+$countToUse)",
-                    maxLines = 1,
-                    modifier = Modifier,
-                )
-            }
         }
     }
 }
@@ -210,21 +219,38 @@ fun StreamLabel(
 @Composable
 private fun StreamLabelPreview() {
     WholphinTheme(appThemeColors = AppThemeColors.PURPLE) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(8.dp),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            StreamLabel("1080p")
-            StreamLabel("HDR")
-            StreamLabel("H264")
-            StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(8.dp),
+            ) {
+                StreamLabel("1080p")
+                StreamLabel("HDR")
+                StreamLabel("H264")
+                StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
 
-            StreamLabel("PGS", count = 1)
-            StreamLabel("PGS", count = 1, disabled = true)
-            StreamLabel("PGS", count = 2)
+                StreamLabel("PGS", count = 1)
+                StreamLabel("PGS", count = 1, disabled = true)
+                StreamLabel("PGS", count = 2)
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(8.dp)
+                        .fillMaxWidth(.7f),
+            ) {
+                StreamLabel("1080p")
+                StreamLabel("HDR")
+                StreamLabel("English Dolby Atmos 5.1", icon = R.string.fa_volume_high, count = 2)
+                StreamLabel("English SDH SRT", icon = R.string.fa_closed_captioning, count = 35)
+            }
         }
     }
 }

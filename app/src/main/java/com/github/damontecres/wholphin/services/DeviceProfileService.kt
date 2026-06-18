@@ -3,10 +3,10 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -37,7 +37,7 @@ class DeviceProfileService
             prefs: PlaybackPreferences,
             serverVersion: ServerVersion?,
         ): DeviceProfile =
-            withContext(Dispatchers.Default) {
+            withContext(WholphinDispatchers.Default) {
                 mutex.withLock {
                     val newConfig =
                         DeviceProfileConfiguration(

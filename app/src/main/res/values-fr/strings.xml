@@ -48,7 +48,7 @@
     <string name="mark_unwatched">Marquer comme non vu</string>
     <string name="mark_watched">Marquer comme vu</string>
     <string name="max_bitrate">Débit maximal</string>
-    <string name="movies">Films</string>
+    <string name="movies_title">Films</string>
     <string name="name">Nom</string>
     <string name="next_up">À suivre</string>
     <string name="no_data">Aucune donnée</string>
@@ -58,7 +58,7 @@
     <string name="none">Aucun</string>
     <string name="outro">Générique de fin</string>
     <string name="path">Chemin</string>
-    <string name="people">Personnes</string>
+    <string name="people_title">Personnes</string>
     <string name="play_from_here">Lire à partir d’ici</string>
     <string name="play">Lire</string>
     <string name="playback_speed">Vitesse de lecture</string>
@@ -98,7 +98,6 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Changer de serveur</string>
     <string name="switch_user">Changer</string>
-    <string name="trailer">Bande-annonce</string>
     <plurals name="trailers">
         <item quantity="one">Bandes-annonces</item>
         <item quantity="many"/>
@@ -106,7 +105,7 @@
     </plurals>
     <string name="tv_season">Saison</string>
     <string name="tv_seasons">Saisons</string>
-    <string name="tv_shows">Séries TV</string>
+    <string name="tv_shows_title">Séries TV</string>
     <string name="unknown">Inconnu</string>
     <string name="updates">Mises à jour</string>
     <string name="version">Version</string>
@@ -182,7 +181,7 @@
     <string name="years_old">%1$d ans</string>
     <string name="italic_font">Mettre la police en italique</string>
     <string name="official_rating">Classification parentale</string>
-    <string name="extras">Bonus</string>
+    <string name="extras_title">Bonus</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Dans les coulisses</item>
         <item quantity="many"/>
@@ -297,6 +296,7 @@
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
         <item quantity="one">Bonus</item>
+        <item quantity="many">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
@@ -478,7 +478,7 @@
     <string name="display_presets">Afficher les préréglages</string>
     <string name="display_presets_description">Préréglages intégrés pour styliser rapidement toutes les lignes</string>
     <string name="customize_home_summary">Choisissez des lignes et des images sur la page d\'accueil</string>
-    <string name="favorite_items">Favori %s</string>
+    <string name="favorite_items_title">Favori %s</string>
     <plurals name="minutes">
         <item quantity="one">%s minute</item>
         <item quantity="many">%s minutes</item>
@@ -610,4 +610,33 @@
     <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
     <string name="external_player">Lecteur externe</string>
     <string name="system_default">Paramètres système par défaut</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Résultats de recherche combinés</string>
+    <string name="combined_search_results_on">Afficher tous les résultats dans une seule liste</string>
+    <string name="combined_search_results_off">Afficher les résultats par catégorie</string>
+    <string name="results">Résultats</string>
+    <string name="cinema_mode">Mode cinéma</string>
+    <string name="show_more">Afficher %1$s de plus</string>
+    <string name="skip_behavior">Comportement de saut</string>
+    <string name="skip_behavior_summary">Pour les génériques d\'ouverture, les génériques de fin, etc</string>
+    <string name="play_with">Jouer avec</string>
+    <string name="transcoding">Transcodage</string>
+    <string name="require_login">Connexion requise pour le profil</string>
+    <string name="show_voice_search_button">Afficher le bouton de recherche vocale</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Caché</string>
+    <string name="view_options_type_grid">Grille</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Liste compacte</string>
+    <string name="user_interface_language">Langue de l\'interface utilisateur</string>
+    <string name="display_toggles_title">Affichage des notes</string>
+    <string name="display_toggles_summary">Personnaliser les éléments à afficher</string>
+    <string name="profile_protection">Protection du profil</string>
+    <string name="continue_watching_click_behavior">Comportement de clic sur « Continuer à regarder »/« Suivant »</string>
+    <string name="continue_watching_click_summary_on">Jouez au clic</string>
+    <string name="continue_watching_click_summary_off">Afficher les détails en cliquant</string>
+    <string name="stars">Étoiles</string>
+    <string name="tomatoes">Tomates</string>
+    <string name="sort">Trier</string>
+    <string name="split_into_separate_rows">Diviser en lignes distinctes</string>
 </resources>

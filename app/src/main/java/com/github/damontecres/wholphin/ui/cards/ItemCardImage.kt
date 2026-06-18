@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
@@ -227,13 +228,7 @@ fun ItemCardImageOverlay(
                 }
             }
             if (favorite) {
-                Text(
-                    color = colorResource(android.R.color.holo_red_light),
-                    text = stringResource(R.string.fa_heart),
-                    fontSize = 20.sp,
-                    fontFamily = FontAwesome,
-                    modifier = Modifier,
-                )
+                FavoriteIndicator()
             }
         }
         Row(
@@ -281,3 +276,15 @@ fun ItemCardImageOverlay(
         }
     }
 }
+
+@Composable
+fun FavoriteIndicator(
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 20.sp,
+) = Text(
+    color = colorResource(android.R.color.holo_red_light),
+    text = stringResource(R.string.fa_heart),
+    fontSize = fontSize,
+    fontFamily = FontAwesome,
+    modifier = modifier,
+)

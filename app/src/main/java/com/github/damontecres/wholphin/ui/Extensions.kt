@@ -27,16 +27,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -360,34 +359,34 @@ suspend fun showToast(
     context: Context,
     text: CharSequence,
     duration: Int,
-) = withContext(Dispatchers.Main) {
+) = withContext(WholphinDispatchers.Main) {
     Toast.makeText(context, text, duration).show()
 }
 
 suspend fun showToast(
     context: Context,
     text: CharSequence,
-) = withContext(Dispatchers.Main) {
+) = withContext(WholphinDispatchers.Main) {
     Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 }
 
 /**
- * Launches a coroutine with [Dispatchers.IO] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
+ * Launches a coroutine with [WholphinDispatchers.IO] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
  */
 fun CoroutineScope.launchIO(
     context: CoroutineContext = ExceptionHandler(),
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit,
-): Job = launch(context = Dispatchers.IO + context, start = start, block = block)
+): Job = launch(context = WholphinDispatchers.IO + context, start = start, block = block)
 
 /**
- * Launches a coroutine with [Dispatchers.Default] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
+ * Launches a coroutine with [WholphinDispatchers.Default] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
  */
 fun CoroutineScope.launchDefault(
     context: CoroutineContext = ExceptionHandler(),
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit,
-): Job = launch(context = Dispatchers.Default + context, start = start, block = block)
+): Job = launch(context = WholphinDispatchers.Default + context, start = start, block = block)
 
 /**
  * Converts a UUID to the format used server-side (ie without hyphens).
@@ -396,11 +395,6 @@ fun CoroutineScope.launchDefault(
  *
  */
 fun UUID.toServerString() = this.toString().replace("-", "")
-
-suspend fun <T> MutableLiveData<T>.setValueOnMain(value: T) =
-    withContext(Dispatchers.Main) {
-        this@setValueOnMain.value = value
-    }
 
 fun equalsNotNull(
     a: Any?,
@@ -416,7 +410,7 @@ fun logTab(
     ACRA.errorReporter.putCustomData("tabInfo", info)
 }
 
-suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
+suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(WholphinDispatchers.Main, block)
 
 fun Modifier.dimAndBlur(enabled: Boolean) =
     this.ifElse(

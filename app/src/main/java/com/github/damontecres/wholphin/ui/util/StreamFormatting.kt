@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.util
 
-import android.content.Context
+import android.content.res.Resources
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.util.languageName
@@ -44,7 +44,7 @@ object StreamFormatting {
         }
 
     fun formatVideoRange(
-        context: Context,
+        resources: Resources,
         videoRange: VideoRange?,
         type: VideoRangeType?,
         doviTitle: String?,
@@ -58,7 +58,7 @@ object StreamFormatting {
 
             VideoRange.HDR -> {
                 if (doviTitle.isNotNullOrBlank()) {
-                    context.getString(R.string.dolby_vision)
+                    resources.getString(R.string.dolby_vision)
                 } else {
                     when (type) {
                         VideoRangeType.UNKNOWN,
@@ -76,40 +76,40 @@ object StreamFormatting {
                         VideoRangeType.DOVI_WITH_HDR10,
                         VideoRangeType.DOVI_WITH_HLG,
                         VideoRangeType.DOVI_WITH_SDR,
-                        -> context.getString(R.string.dolby_vision)
+                        -> resources.getString(R.string.dolby_vision)
                     }
                 }
             }
         }
 
     fun formatAudioCodec(
-        context: Context,
+        resources: Resources,
         codec: String?,
         profile: String?,
     ): String? =
         when {
             profile?.contains("Dolby Atmos", true) == true -> {
-                context.getString(R.string.dolby_atmos)
+                resources.getString(R.string.dolby_atmos)
             }
 
             profile?.contains("DTS", true) == true -> {
                 when {
-                    profile.contains("X", true) -> context.getString(R.string.dts_x)
-                    profile.contains("MA", true) -> context.getString(R.string.dts_hd_ma)
-                    profile.contains("HD", true) -> context.getString(R.string.dts_hd)
-                    else -> context.getString(R.string.dts)
+                    profile.contains("X", true) -> resources.getString(R.string.dts_x)
+                    profile.contains("MA", true) -> resources.getString(R.string.dts_hd_ma)
+                    profile.contains("HD", true) -> resources.getString(R.string.dts_hd)
+                    else -> resources.getString(R.string.dts)
                 }
             }
 
             else -> {
                 when (codec?.lowercase()) {
-                    Codec.Audio.TRUEHD -> context.getString(R.string.truehd)
+                    Codec.Audio.TRUEHD -> resources.getString(R.string.truehd)
 
-                    Codec.Audio.AC3 -> context.getString(R.string.dolby_digital)
+                    Codec.Audio.AC3 -> resources.getString(R.string.dolby_digital)
 
-                    Codec.Audio.EAC3 -> context.getString(R.string.dolby_digital_plus)
+                    Codec.Audio.EAC3 -> resources.getString(R.string.dolby_digital_plus)
 
-                    Codec.Audio.DCA -> context.getString(R.string.dts)
+                    Codec.Audio.DCA -> resources.getString(R.string.dts)
 
                     Codec.Audio.OGG,
                     Codec.Audio.OPUS,
@@ -141,7 +141,7 @@ object StreamFormatting {
         }
 
     fun mediaStreamDisplayTitle(
-        context: Context,
+        resources: Resources,
         stream: MediaStream,
         includeFlags: Boolean,
     ): String {
@@ -149,7 +149,7 @@ object StreamFormatting {
             buildList {
                 add(languageName(stream.language))
                 if (stream.type == MediaStreamType.AUDIO) {
-                    add(formatAudioCodec(context, stream.codec, stream.profile))
+                    add(formatAudioCodec(resources, stream.codec, stream.profile))
                     add(stream.channelLayout)
                 } else if (stream.type == MediaStreamType.SUBTITLE) {
                     "SDH".takeIf { stream.isHearingImpaired }?.let(::add)

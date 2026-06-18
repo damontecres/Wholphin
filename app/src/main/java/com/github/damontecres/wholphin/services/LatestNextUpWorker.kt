@@ -14,13 +14,14 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -91,13 +92,13 @@ class LatestNextUpSchedulerService
                 )
 
         // Exposed for testing
-        internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
+        internal var dispatcher: CoroutineDispatcher = WholphinDispatchers.IO
 
         init {
-            serverRepository.current.observe(activity) { user ->
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) { user ->
                 Timber.v("New user %s", user?.user?.id)
                 if (user == null) {
-                    workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)
+                    workManager.cancelUniqueWork(LatestNextUpWorker.WORK_NAME)
                 } else {
                     activity.lifecycleScope.launch(dispatcher + ExceptionHandler()) {
                         scheduleWork(user.user.id, user.server.id)

@@ -23,7 +23,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -40,8 +39,9 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
@@ -57,6 +58,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.StudioCard
+import com.github.damontecres.wholphin.ui.cards.ViewMoreCard
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
@@ -74,7 +76,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -87,6 +88,7 @@ import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
@@ -125,15 +127,22 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
-            val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            val playlistState by playlistViewModel.playlistState.collectAsState()
             var position by rememberPosition()
 
             val onFocusPosition = remember { { it: RowColumn -> position = it } }
+            val currentHomePrefs by rememberUpdatedState(preferences.appPreferences.homePagePreferences)
             val onClickItem =
                 remember {
                     { clickedPosition: RowColumn, item: BaseItem ->
                         position = clickedPosition
-                        viewModel.navigationManager.navigateTo(item.destination())
+                        if (currentHomePrefs.clickToPlay &&
+                            homeRows.getOrNull(clickedPosition.row)?.isContinueWatchingNextUp == true
+                        ) {
+                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        } else {
+                            viewModel.navigationManager.navigateTo(item.destination())
+                        }
                     }
                 }
             val onLongClickItem =
@@ -194,6 +203,14 @@ fun HomePage(
                         viewModel.navigationManager.navigateTo(Destination.Playback(item))
                     }
                 }
+            val onClickViewMore =
+                remember {
+                    { _: RowColumn, row: HomeRowLoadingState.Success ->
+                        viewModel.navigationManager.navigateTo(
+                            Destination.MoreHomeRow(row.title, row.rowType!!, row.items.size),
+                        )
+                    }
+                }
 
             HomePageContent(
                 homeRows = homeRows,
@@ -206,6 +223,8 @@ fun HomePage(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showViewMore = true,
+                onClickViewMore = onClickViewMore,
                 modifier = modifier,
             )
             overviewDialog?.let { info ->
@@ -244,6 +263,14 @@ fun HomePage(
     }
 }
 
+val HomeRowLoadingState?.isContinueWatchingNextUp: Boolean
+    get() =
+        (this as? HomeRowLoadingState.Success).let { row ->
+            row?.rowType is HomeRowConfig.ContinueWatching ||
+                row?.rowType is HomeRowConfig.NextUp ||
+                row?.rowType is HomeRowConfig.ContinueWatchingCombined
+        }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomePageContent(
@@ -256,6 +283,7 @@ fun HomePageContent(
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     showLogo: Boolean,
+    showViewMore: Boolean,
     modifier: Modifier = Modifier,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
@@ -268,6 +296,7 @@ fun HomePageContent(
             modifier = HeaderUtils.modifier,
         )
     },
+    onClickViewMore: (RowColumn, HomeRowLoadingState.Success) -> Unit = { _, _ -> },
 ) {
     val focusedItem =
         remember(homeRows, position) {
@@ -333,7 +362,7 @@ fun HomePageContent(
             ) {
                 LazyColumn(
                     state = listState,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                     contentPadding =
                         PaddingValues(
                             bottom = Cards.height2x3,
@@ -343,6 +372,10 @@ fun HomePageContent(
                             .focusRestorer(),
                 ) {
                     itemsIndexed(homeRows) { rowIndex, row ->
+                        val rowModifier =
+                            Modifier
+                                .animateItem(placementSpec = null)
+                                .padding(bottom = 8.dp)
                         CompositionLocalProvider(
                             LocalBringIntoViewSpec provides defaultBringIntoViewSpec,
                         ) {
@@ -351,18 +384,18 @@ fun HomePageContent(
                                 is HomeRowLoadingState.Pending,
                                 -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = stringResource(R.string.loading),
-                                        modifier = Modifier.animateItem(),
+                                        modifier = rowModifier,
                                     )
                                 }
 
                                 is HomeRowLoadingState.Error -> {
                                     FocusableItemRow(
-                                        title = r.title,
+                                        title = r.title.getString(),
                                         subtitle = r.localizedMessage,
                                         isError = true,
-                                        modifier = Modifier.animateItem(),
+                                        modifier = rowModifier,
                                     )
                                 }
 
@@ -370,7 +403,7 @@ fun HomePageContent(
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
                                         ItemRow(
-                                            title = row.title,
+                                            title = row.title.getString(),
                                             items = row.items,
                                             onClickItem =
                                                 remember(rowIndex, onClickItem) {
@@ -394,11 +427,10 @@ fun HomePageContent(
                                                     }
                                                 },
                                             modifier =
-                                                Modifier
+                                                rowModifier
                                                     .fillMaxWidth()
                                                     .focusGroup()
-                                                    .focusRequester(rowFocusRequesters[rowIndex])
-                                                    .animateItem(),
+                                                    .focusRequester(rowFocusRequesters[rowIndex]),
                                             horizontalPadding = viewOptions.spacing.dp,
                                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                                 val onFocus =
@@ -441,12 +473,40 @@ fun HomePageContent(
                                                             .onKeyEvent { onKey(it) },
                                                 )
                                             },
+                                            showViewMore = showViewMore && row.showViewMore,
+                                            viewMoreCardContent = { mod ->
+                                                HomePageViewMoreCard(
+                                                    isEpisode = row.items.last()?.type == BaseItemKind.EPISODE,
+                                                    onClick = {
+                                                        onClickViewMore.invoke(
+                                                            RowColumn(
+                                                                rowIndex,
+                                                                r.items.size,
+                                                            ),
+                                                            r,
+                                                        )
+                                                    },
+                                                    onLongClick = {},
+                                                    viewOptions = viewOptions,
+                                                    modifier =
+                                                        mod.onFocusChanged {
+                                                            if (it.isFocused) {
+                                                                currentOnFocusPosition.invoke(
+                                                                    RowColumn(
+                                                                        rowIndex,
+                                                                        r.items.size,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                )
+                                            },
                                         )
                                     } else if (showEmptyRows) {
                                         FocusableItemRow(
-                                            title = r.title,
+                                            title = r.title.getString(),
                                             subtitle = stringResource(R.string.no_results),
-                                            modifier = Modifier.animateItem(),
+                                            modifier = rowModifier,
                                         )
                                     }
                                 }
@@ -489,8 +549,9 @@ fun HomePageHeader(
         subtitle = if (isEpisode) dto?.name else null,
         overview = dto?.overview,
         overviewTwoLines = isEpisode,
-        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
+        endsAt = item?.data?.endDate,
         showLogo = showLogo,
         logoImageUrl = rememberLogoUrl(item),
         modifier = modifier,
@@ -503,8 +564,9 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString?,
+    quickDetails: QuickDetailsData?,
     timeRemaining: Duration?,
+    endsAt: DateTime?,
     showLogo: Boolean,
     logoImageUrl: String?,
     modifier: Modifier = Modifier,
@@ -528,7 +590,7 @@ fun HomePageHeader(
             if (subtitle != null) {
                 EpisodeName(subtitle)
             }
-            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
+            QuickDetails(quickDetails, timeRemaining, endsAt = endsAt)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
@@ -650,4 +712,30 @@ fun HomePageCardContent(
             }
         }
     }
+}
+
+@Composable
+fun HomePageViewMoreCard(
+    isEpisode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewOptions: HomeRowViewOptions,
+    modifier: Modifier,
+) {
+    val aspectRatio =
+        remember(isEpisode, viewOptions) {
+            if (isEpisode) {
+                viewOptions.episodeAspectRatio
+            } else {
+                viewOptions.aspectRatio
+            }
+        }
+    ViewMoreCard(
+        onClick = onClick,
+        onLongClick = onLongClick,
+        modifier = modifier,
+        aspectRatio = aspectRatio,
+        size = DpSize(height = viewOptions.heightDp.dp, width = Dp.Unspecified),
+        showTitle = viewOptions.showTitles,
+    )
 }

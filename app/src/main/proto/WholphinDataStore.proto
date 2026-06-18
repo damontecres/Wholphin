@@ -93,8 +93,9 @@ message PlaybackPreferences {
 message HomePagePreferences{
   int32 max_items_per_row = 1;
   bool enable_rewatching_next_up = 2;
-  bool combine_continue_next = 3;
+  bool combine_continue_next = 3 [deprecated = true];
   int32 max_days_next_up = 4;
+  bool click_to_play = 5;
 }
 
 enum ThemeSongVolume {
@@ -166,10 +167,21 @@ message ScreensaverPreferences{
   bool show_clock = 7;
 }
 
+message SearchPreferences {
+  bool combined_search_results = 1;
+  bool show_voice_search_button = 2;
+}
+
+enum DisplayToggle{
+  OFFICIAL_RATING = 0;
+  CRITIC_RATING = 1;
+  COMMUNITY_RATING = 2;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
-  map<string, int32> remembered_tabs = 3;
+  map<string, int32> remembered_tabs = 3 [deprecated = true];
   AppThemeColors app_theme_colors = 4;
   bool nav_drawer_switch_on_focus = 5;
   bool show_clock = 6;
@@ -180,6 +192,8 @@ message InterfacePreferences {
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
   bool show_logos = 13;
+  SearchPreferences search_preferences = 14;
+  repeated DisplayToggle display_toggles = 15;
 }
 
 message AdvancedPreferences {

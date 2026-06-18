@@ -148,7 +148,6 @@
     <string name="switch_servers">Skift servere</string>
     <string name="switch_user">Skift</string>
     <string name="top_unwatched">Bedst bedømte usete</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
         <item quantity="other"/>
@@ -184,7 +183,7 @@
     <string name="success">Succes</string>
     <string name="official_rating">Aldersgrænse</string>
     <string name="runtime_sort">Spilletid</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Andet</item>
         <item quantity="other"/>

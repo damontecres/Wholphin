@@ -16,12 +16,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -31,16 +32,13 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.BuildConfig
-import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
@@ -51,11 +49,9 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
@@ -77,13 +73,12 @@ class DebugViewModel
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
     ) : ViewModel() {
-        val itemPlaybacks = MutableLiveData<List<ItemPlayback>>(listOf())
-        val logcat = MutableLiveData<List<LogcatLine>>(listOf())
-        val audioInfo = MutableStateFlow<AudioInfo>(AudioInfo())
+        val state = MutableStateFlow(DebugState())
+        val itemPlaybacks = MutableStateFlow<List<ItemPlayback>>(emptyList())
+        val logcat = MutableStateFlow<List<LogcatLine>>(emptyList())
 
         val supportedModes by lazy {
-            val displayManager =
-                MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
             display.supportedModes.orEmpty()
         }
@@ -117,40 +112,95 @@ class DebugViewModel
         }
 
         init {
-            viewModelScope.launchIO {
-                serverRepository.currentUser.value?.rowId?.let {
-                    val results = itemPlaybackDao.getItems(it)
-                    withContext(Dispatchers.Main) {
-                        itemPlaybacks.value = results
+            viewModelScope.launchDefault {
+                val buildTime = Date(BuildConfig.BUILD_TIME)
+                val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val installInfo =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val installSource =
+                            context.packageManager.getInstallSourceInfo(context.packageName)
+                        buildList {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                add("Install source: ${installSource.packageSource}")
+                            }
+                            add("Installer: ${installSource.installingPackageName}")
+                            add("Initiator: ${installSource.initiatingPackageName}")
+                        }
+                    } else {
+                        listOf(
+                            context.packageManager
+                                .getInstallerPackageName(context.packageName)
+                                .toString(),
+                        )
                     }
+
+                val appInfo =
+                    listOf(
+                        "Version Name: ${pkgInfo.versionName}",
+                        "Version Code: ${pkgInfo.versionCodeLong}",
+                        "ClientInfo:  $clientInfo",
+                        "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Build flavor: ${BuildConfig.FLAVOR}",
+                        "Build time: $buildTime",
+                        "FFMPEG included: $ffmpegIncluded",
+                        "AV1 included: $av1Included",
+                        "libmpv loaded: $libMpvLoaded",
+                        "Debug enabled: ${BuildConfig.DEBUG}",
+                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    ) + installInfo
+                state.update { it.copy(appInfo = appInfo) }
+            }
+            viewModelScope.launchDefault {
+                val deviceInfoList =
+                    listOf(
+                        "DeviceInfo:  $deviceInfo",
+                        "Manufacturer: ${Build.MANUFACTURER}",
+                        "Model: ${Build.MODEL}",
+                        "API Level: ${Build.VERSION.SDK_INT}",
+                    )
+                state.update {
+                    it.copy(
+                        deviceInfo = deviceInfoList,
+                        displayModes = supportedModes.map { it.toString() },
+                    )
                 }
+            }
+            viewModelScope.launchIO {
+                serverRepository.currentUser?.rowId?.let {
+                    val results = itemPlaybackDao.getItems(it)
+                    itemPlaybacks.value = results
+                }
+            }
+            viewModelScope.launchIO {
                 val logcat = getLogCatLines()
-                withContext(Dispatchers.Main) {
-                    this@DebugViewModel.logcat.value = logcat
-                }
+                this@DebugViewModel.logcat.value = logcat
             }
             viewModelScope.launchDefault {
                 val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
                 val callback =
                     object : AudioDeviceCallback() {
                         override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
-                            audioInfo.update {
+                            state.update {
                                 it.copy(
-                                    devices =
-                                        it.devices
-                                            .toMutableList()
-                                            .apply { addAll(addedDevices.filter { it.isSink }) },
+                                    audioInfo =
+                                        it.audioInfo.toMutableList().apply {
+                                            addAll(
+                                                addedDevices
+                                                    .filter { it.isSink }
+                                                    .map { it.details },
+                                            )
+                                        },
                                 )
                             }
                         }
 
                         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
-                            audioInfo.update {
+                            state.update {
                                 it.copy(
-                                    devices =
-                                        it.devices
-                                            .toMutableList()
-                                            .apply { removeAll(removedDevices) },
+                                    audioInfo =
+                                        it.audioInfo.toMutableList().apply {
+                                            removeAll(removedDevices.map { it.details })
+                                        },
                                 )
                             }
                         }
@@ -234,8 +284,11 @@ data class LogcatLine(
     val text: String,
 )
 
-data class AudioInfo(
-    val devices: List<AudioDeviceInfo> = emptyList(),
+data class DebugState(
+    val appInfo: List<String> = emptyList(),
+    val deviceInfo: List<String> = emptyList(),
+    val displayModes: List<String> = emptyList(),
+    val audioInfo: List<String> = emptyList(),
 )
 
 val AudioDeviceInfo.details: String
@@ -361,24 +414,28 @@ fun DebugPage(
     modifier: Modifier = Modifier,
     viewModel: DebugViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    val scrollAmount = 100f
     val columnState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val state by viewModel.state.collectAsState()
 
-    fun scroll(reverse: Boolean = false) {
+    fun scroll(
+        reverse: Boolean = false,
+        scrollAmount: Float = 100f,
+    ) {
         scope.launch(ExceptionHandler()) {
             columnState.scrollBy(if (reverse) -scrollAmount else scrollAmount)
         }
     }
 
-    val itemPlaybacks by viewModel.itemPlaybacks.observeAsState(listOf())
-    val logcat by viewModel.logcat.observeAsState(listOf())
+    val itemPlaybacks by viewModel.itemPlaybacks.collectAsState()
+    val logcat by viewModel.logcat.collectAsState()
+
+    val padding = remember { PaddingValues(bottom = 32.dp) }
 
     LazyColumn(
         state = columnState,
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(32.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier =
             modifier
                 .focusable()
@@ -396,156 +453,94 @@ fun DebugPage(
                         scroll(true)
                         return@onKeyEvent true
                     }
+                    if (it.key == Key.MediaFastForward || it.key == Key.PageDown) {
+                        scroll(false, 300f)
+                        return@onKeyEvent true
+                    }
+                    if (it.key == Key.MediaSkipBackward || it.key == Key.PageUp) {
+                        scroll(true, 300f)
+                        return@onKeyEvent true
+                    }
                     return@onKeyEvent false
                 },
     ) {
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
-                Text(
-                    text = "App Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                val buildTime = Date(BuildConfig.BUILD_TIME)
-                val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                val installInfo =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val installSource =
-                            context.packageManager.getInstallSourceInfo(context.packageName)
-                        buildList {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                add("Install source: ${installSource.packageSource}")
-                            }
-                            add("Installer: ${installSource.installingPackageName}")
-                            add("Initiator: ${installSource.initiatingPackageName}")
-                        }
-                    } else {
-                        listOf(context.packageManager.getInstallerPackageName(context.packageName))
-                    }
-                (
-                    listOf(
-                        "Version Name: ${pkgInfo.versionName}",
-                        "Version Code: ${pkgInfo.versionCodeLong}",
-                        "ClientInfo:  ${viewModel.clientInfo}",
-                        "Build type: ${BuildConfig.BUILD_TYPE}",
-                        "Build flavor: ${BuildConfig.FLAVOR}",
-                        "Build time: $buildTime",
-                        "FFMPEG included: ${viewModel.ffmpegIncluded}",
-                        "AV1 included: ${viewModel.av1Included}",
-                        "libmpv loaded: ${viewModel.libMpvLoaded}",
-                        "Debug enabled: ${BuildConfig.DEBUG}",
-                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
-                    ) + installInfo
-                ).forEach {
-                    Text(
-                        text = it.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                SectionTitle("App Information")
+                state.appInfo.forEach {
+                    BodyText(it)
                 }
             }
         }
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
-                Text(
-                    text = "Device Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                val details =
-                    listOf(
-                        "DeviceInfo:  ${viewModel.deviceInfo}",
-                        "Manufacturer: ${Build.MANUFACTURER}",
-                        "Model: ${Build.MODEL}",
-                        "API Level: ${Build.VERSION.SDK_INT}",
-                        "",
-                        "Display Modes:",
-                        *viewModel.supportedModes,
-                        "",
-                        "Audio Devices:",
-                    )
-                val audioInfo by viewModel.audioInfo.collectAsState()
-                val audio = remember(audioInfo) { audioInfo.devices.map { it.details } }
-                (details + audio).forEach {
-                    Text(
-                        text = it.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                SectionTitle("Device Information")
+                state.deviceInfo.forEach {
+                    BodyText(it)
+                }
+
+                SubSectionTitle("Display Modes")
+                state.displayModes.forEach {
+                    BodyText(it)
+                }
+
+                SubSectionTitle("Audio Devices")
+                state.audioInfo.forEach {
+                    BodyText(it)
                 }
             }
         }
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
-                Text(
-                    text = "AppPreferences",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = preferences.appPreferences.toString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("AppPreferences")
+                BodyText(preferences.appPreferences.toString())
             }
         }
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
-                Text(
-                    text = "User Information",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Current server: ${viewModel.serverRepository.currentServer.value}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Current user: ${viewModel.serverRepository.currentUser.value}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "User server settings: ${viewModel.serverRepository.currentUserDto.value?.configuration}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("User Information")
+                BodyText("Current server: ${viewModel.serverRepository.currentServer}")
+                BodyText("Current user: ${viewModel.serverRepository.currentUser}")
+                BodyText("User server settings: ${viewModel.serverRepository.currentUserDto?.configuration}")
             }
         }
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
             ) {
-                Text(
-                    text = "Database",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "ItemPlayback",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionTitle("Database")
+
+                SubSectionTitle("ItemPlayback")
                 itemPlaybacks.forEach {
-                    Text(
-                        text = it.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    BodyText(it.toString())
                 }
             }
         }
@@ -554,30 +549,53 @@ fun DebugPage(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = "Logcat",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                logcat.forEach { (level, line) ->
-                    val color =
-                        when (level) {
-                            Log.VERBOSE -> MaterialTheme.colorScheme.onSurface
-                            Log.DEBUG -> Color(0xff2bc4cf)
-                            Log.INFO -> Color(0xff2bcf8b)
-                            Log.WARN -> Color(0xffdde663)
-                            Log.ERROR -> Color(0xffe67063)
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    Text(
-                        text = line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = color,
-                    )
-                }
+                SectionTitle("Logcat")
             }
+        }
+        items(logcat) { (level, line) ->
+            val color =
+                when (level) {
+                    Log.VERBOSE -> MaterialTheme.colorScheme.onSurface
+                    Log.DEBUG -> Color(0xff2bc4cf)
+                    Log.INFO -> Color(0xff2bcf8b)
+                    Log.WARN -> Color(0xffdde663)
+                    Log.ERROR -> Color(0xffe67063)
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall,
+                color = color,
+            )
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun SubSectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun BodyText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 }
 
 private val THIRD_PARTY_TAGS =

@@ -27,8 +27,8 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
-import com.github.damontecres.wholphin.ui.cards.DiscoverViewMoreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
+import com.github.damontecres.wholphin.ui.cards.ViewMoreCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -59,7 +59,7 @@ fun DiscoverRow(
                 modifier = modifier,
             ) {
                 Text(
-                    text = row.title,
+                    text = row.title.getString(),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -73,7 +73,7 @@ fun DiscoverRow(
 
         is DataLoadingState.Success<List<DiscoverItem>> -> {
             DiscoverItemRow(
-                title = row.title,
+                title = row.title.getString(),
                 items = state.data,
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
@@ -169,7 +169,7 @@ fun DiscoverItemRow(
             }
             if (enableViewMore) {
                 item {
-                    DiscoverViewMoreCard(
+                    ViewMoreCard(
                         onClick =
                             remember {
                                 {
