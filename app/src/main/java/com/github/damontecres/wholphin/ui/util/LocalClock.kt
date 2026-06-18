@@ -8,7 +8,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.github.damontecres.wholphin.ui.getTimeFormatter
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -34,7 +34,7 @@ data class Clock(
 fun ProvideLocalClock(content: @Composable () -> Unit) {
     val clock = remember { Clock() }
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.Default) {
+        withContext(WholphinDispatchers.Default) {
             while (isActive) {
                 val now = LocalDateTime.now()
                 val time = getTimeFormatter().format(now)

@@ -44,7 +44,6 @@ import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButton
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackButtons
-import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackFaButton
 import com.github.damontecres.wholphin.ui.playback.overlay.buttonSpacing
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme

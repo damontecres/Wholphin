@@ -5,15 +5,15 @@
 
 package com.github.damontecres.wholphin.services
 
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
@@ -56,14 +56,14 @@ class LatestNextUpServiceTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        WholphinDispatchers.configure(testDispatcher)
         every { mockApi.tvShowsApi } returns mockTvShowsApi
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        WholphinDispatchers.reset()
     }
 
     @Test

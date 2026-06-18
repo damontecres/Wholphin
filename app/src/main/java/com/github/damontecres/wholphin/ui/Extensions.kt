@@ -36,7 +36,6 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -360,14 +359,14 @@ suspend fun showToast(
     context: Context,
     text: CharSequence,
     duration: Int,
-) = withContext(Dispatchers.Main) {
+) = withContext(WholphinDispatchers.Main) {
     Toast.makeText(context, text, duration).show()
 }
 
 suspend fun showToast(
     context: Context,
     text: CharSequence,
-) = withContext(Dispatchers.Main) {
+) = withContext(WholphinDispatchers.Main) {
     Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 }
 
@@ -411,7 +410,7 @@ fun logTab(
     ACRA.errorReporter.putCustomData("tabInfo", info)
 }
 
-suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
+suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(WholphinDispatchers.Main, block)
 
 fun Modifier.dimAndBlur(enabled: Boolean) =
     this.ifElse(

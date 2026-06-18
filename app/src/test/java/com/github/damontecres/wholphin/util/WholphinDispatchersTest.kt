@@ -16,6 +16,6 @@ fun WholphinDispatchers.configure(testDispatcher: TestDispatcher) {
 @OptIn(ExperimentalCoroutinesApi::class)
 fun WholphinDispatchers.reset() {
     Dispatchers.resetMain()
-    IO = kotlinx.coroutines.Dispatchers.IO
-    Default = kotlinx.coroutines.Dispatchers.Default
+    IO = Dispatchers.IO
+    Default = Dispatchers.Default
 }

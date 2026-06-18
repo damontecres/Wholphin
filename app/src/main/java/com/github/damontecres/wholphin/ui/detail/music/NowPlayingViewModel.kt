@@ -27,13 +27,13 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,7 +95,7 @@ class NowPlayingViewModel
 
         private val lyricCache =
             InMemoryKache<UUID, LyricDto>(20) {
-                creationScope = CoroutineScope(Dispatchers.IO)
+                creationScope = CoroutineScope(WholphinDispatchers.IO)
             }
 
         init {

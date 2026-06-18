@@ -12,9 +12,9 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
@@ -56,7 +56,7 @@ class UserSwitchListener
                     user.uiLanguage?.let { LocaleListCompat.forLanguageTags(it) }
                         ?: LocaleListCompat.getEmptyLocaleList()
                 Timber.i("Switching locale to %s", localeList)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     AppCompatDelegate.setApplicationLocales(localeList)
                 }
 
