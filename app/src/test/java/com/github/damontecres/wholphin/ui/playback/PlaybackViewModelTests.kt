@@ -29,6 +29,8 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
+import com.github.damontecres.wholphin.test.movie
+import com.github.damontecres.wholphin.test.playlist
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.ui.successResponse
@@ -57,10 +59,7 @@ import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.api.operations.VideosApi
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
-import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaStreamType
-import org.jellyfin.sdk.model.api.NameGuidPair
 import org.jellyfin.sdk.model.api.PlaybackInfoResponse
 import org.jellyfin.sdk.model.api.UserDto
 import org.junit.After
@@ -119,11 +118,9 @@ class PlaybackViewModelTests {
             destination = destination,
         )
 
-    fun buildPrefs(block: PlaybackPreferences.Builder.() -> Unit): AppPreferences =
-        AppPreferences.getDefaultInstance().updatePlaybackPreferences(block)
-
-    private fun withPreferences(block: PlaybackPreferences.Builder.() -> Unit) {
-        val prefs = UserPreferences(buildPrefs(block))
+    private fun setupPreferences(block: PlaybackPreferences.Builder.() -> Unit) {
+        val appPrefs = AppPreferences.getDefaultInstance().updatePlaybackPreferences(block)
+        val prefs = UserPreferences(appPrefs)
         coEvery { mockUserPreferencesService.getCurrent() } returns prefs
     }
 
@@ -227,6 +224,14 @@ class PlaybackViewModelTests {
         WholphinDispatchers.reset()
     }
 
+    // Test data
+    val playlist = playlist()
+    val movie = movie()
+    val movie2 = movie()
+    val intro = movie()
+    val playlistItems = Playlist.fromMedia(listOf(BaseItem(movie), BaseItem(movie2)))
+    // END test data
+
     /**
      * Create the [PlaybackViewModel] and wait for its init job to complete
      *
@@ -248,9 +253,7 @@ class PlaybackViewModelTests {
     @Test
     fun `Play intro first`() =
         runTest(testDispatcher) {
-            val movie = movie()
-            val intro = movie()
-            withPreferences {
+            setupPreferences {
                 cinemaMode = true
             }
             coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
@@ -275,7 +278,7 @@ class PlaybackViewModelTests {
             val movie = movie()
             val intro = movie()
             val intro2 = movie()
-            withPreferences {
+            setupPreferences {
                 cinemaMode = true
             }
             coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
@@ -302,7 +305,7 @@ class PlaybackViewModelTests {
     fun `Don't play intro`() =
         runTest(testDispatcher) {
             val movie = movie()
-            withPreferences {
+            setupPreferences {
                 cinemaMode = false
             }
             coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
@@ -319,28 +322,26 @@ class PlaybackViewModelTests {
             }
         }
 
+    private fun setupForPlaylist() {
+        coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
+            successResponse(playlist)
+        coEvery {
+            mockPlaylistCreator.createFrom(
+                item = playlist,
+                startIndex = any(),
+                sortAndDirection = any(),
+                shuffled = any(),
+                recursive = any(),
+                filter = any(),
+            )
+        } returns PlaylistCreationResult.Success(playlistItems)
+    }
+
     @OptIn(InternalCoroutinesApi::class)
     @Test
     fun `Play next up`() =
         runTest(testDispatcher) {
-            val playlist = playlist()
-            val movie = BaseItem(movie())
-            val movie2 = BaseItem(movie())
-            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
-            withPreferences {
-            }
-            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
-                successResponse(playlist)
-            coEvery {
-                mockPlaylistCreator.createFrom(
-                    item = playlist,
-                    startIndex = any(),
-                    sortAndDirection = any(),
-                    shuffled = any(),
-                    recursive = any(),
-                    filter = any(),
-                )
-            } returns PlaylistCreationResult.Success(playlistItems)
+            setupForPlaylist()
 
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
 
@@ -370,25 +371,10 @@ class PlaybackViewModelTests {
     @Test
     fun `Show next up at end of playback`() =
         runTest(testDispatcher) {
-            val playlist = playlist()
-            val movie = BaseItem(movie())
-            val movie2 = BaseItem(movie())
-            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
-            withPreferences {
+            setupForPlaylist()
+            setupPreferences {
                 showNextUpWhen = ShowNextUpWhen.END_OF_PLAYBACK
             }
-            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
-                successResponse(playlist)
-            coEvery {
-                mockPlaylistCreator.createFrom(
-                    item = playlist,
-                    startIndex = any(),
-                    sortAndDirection = any(),
-                    shuffled = any(),
-                    recursive = any(),
-                    filter = any(),
-                )
-            } returns PlaylistCreationResult.Success(playlistItems)
 
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
 
@@ -402,7 +388,7 @@ class PlaybackViewModelTests {
             testScheduler.advanceUntilIdle()
 
             viewModel.state.value.also { state ->
-                Assert.assertEquals(movie2, state.nextUp)
+                Assert.assertEquals(movie2, state.nextUp?.data)
             }
         }
 
@@ -410,25 +396,10 @@ class PlaybackViewModelTests {
     @Test
     fun `Show next up never`() =
         runTest(testDispatcher) {
-            val playlist = playlist()
-            val movie = BaseItem(movie())
-            val movie2 = BaseItem(movie())
-            val playlistItems = Playlist.fromMedia(listOf(movie, movie2))
-            withPreferences {
+            setupForPlaylist()
+            setupPreferences {
                 showNextUpWhen = ShowNextUpWhen.NEXT_UP_NEVER
             }
-            coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
-                successResponse(playlist)
-            coEvery {
-                mockPlaylistCreator.createFrom(
-                    item = playlist,
-                    startIndex = any(),
-                    sortAndDirection = any(),
-                    shuffled = any(),
-                    recursive = any(),
-                    filter = any(),
-                )
-            } returns PlaylistCreationResult.Success(playlistItems)
 
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
 
@@ -446,29 +417,3 @@ class PlaybackViewModelTests {
             }
         }
 }
-
-private fun movie(
-    id: UUID = UUID.randomUUID(),
-    name: String = "Test Movie",
-    genres: List<NameGuidPair>? = null,
-): BaseItemDto =
-    BaseItemDto(
-        id = id,
-        type = BaseItemKind.MOVIE,
-        name = name,
-        seriesId = null,
-        genreItems = genres,
-    )
-
-private fun playlist(
-    id: UUID = UUID.randomUUID(),
-    name: String = "Test Playlist",
-    genres: List<NameGuidPair>? = null,
-): BaseItemDto =
-    BaseItemDto(
-        id = id,
-        type = BaseItemKind.PLAYLIST,
-        name = name,
-        seriesId = null,
-        genreItems = genres,
-    )
