@@ -192,14 +192,18 @@ class PlaybackViewModel
 
         val currentUserDto = serverRepository.currentUserDtoFlow
 
+        // Exposed for testing
+        val initJob: Job
+
         init {
-            viewModelScope.launchIO {
-                addCloseable {
-                    screensaverService.keepScreenOn(false)
-                    disconnectPlayer()
+            initJob =
+                viewModelScope.launchIO {
+                    addCloseable {
+                        screensaverService.keepScreenOn(false)
+                        disconnectPlayer()
+                    }
+                    init()
                 }
-                init()
-            }
         }
 
         private fun disconnectPlayer() {
@@ -269,10 +273,7 @@ class PlaybackViewModel
                     player,
                     preferences.appPreferences.playbackPreferences,
                 )
-            mediaSession =
-                MediaSession
-                    .Builder(context, sessionPlayer)
-                    .build()
+            mediaSession = playerFactory.createMediaSession(sessionPlayer)
         }
 
         /**
@@ -1054,7 +1055,8 @@ class PlaybackViewModel
         }
 
         // Variables for tracking segment state
-        private var segmentJob: Job? = null
+        // Exposed for testing
+        internal var segmentJob: Job? = null
         private val autoSkippedSegments = mutableSetOf<UUID>()
         private val outroShownSegments = mutableSetOf<UUID>()
 
@@ -1269,7 +1271,7 @@ class PlaybackViewModel
                                 }
                             }
                     } else {
-                        Timber.w("Attempting to play next, but there are no more items")
+                        Timber.w("Attempting to play previous, but there is none")
                         return@launchDefault
                     }
                 }

@@ -235,24 +235,6 @@ class TestTrackSelection {
         return Tracks(groups)
     }
 
-    private fun TrackSelectionParameters.getAudioOverride(): Format? {
-        this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
-            if (trackGroup.type == C.TRACK_TYPE_AUDIO) {
-                return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
-            }
-        }
-        return null
-    }
-
-    private fun TrackSelectionParameters.getSubtitleOverride(): Format? {
-        this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
-            if (trackGroup.type == C.TRACK_TYPE_TEXT) {
-                return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
-            }
-        }
-        return null
-    }
-
     @Test
     fun `test MPV embedded`() {
         val resource = javaClass.classLoader?.getResource("embedded_subs.json")
@@ -588,4 +570,22 @@ class TestTrackSelection {
                 }
         }
     }
+}
+
+internal fun TrackSelectionParameters.getAudioOverride(): Format? {
+    this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
+        if (trackGroup.type == C.TRACK_TYPE_AUDIO) {
+            return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+        }
+    }
+    return null
+}
+
+internal fun TrackSelectionParameters.getSubtitleOverride(): Format? {
+    this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
+        if (trackGroup.type == C.TRACK_TYPE_TEXT) {
+            return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+        }
+    }
+    return null
 }
