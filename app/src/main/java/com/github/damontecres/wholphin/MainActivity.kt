@@ -151,10 +151,22 @@ class MainActivity : AppCompatActivity() {
         lifecycle.addObserver(playbackLifecycleObserver)
 
         val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
-        if (backStackStr != null) {
+        val restoredBackStack =
+            if (backStackStr != null) {
+                try {
+                    json.decodeFromString<List<Destination>>(backStackStr)
+                } catch (ex: Exception) {
+                    // Best-effort: a previously persisted back stack we can no longer decode
+                    // must not crash startup; fall back to a fresh start destination.
+                    Timber.w(ex, "Could not restore back stack; starting fresh")
+                    null
+                }
+            } else {
+                null
+            }
+        if (restoredBackStack != null) {
             Timber.d("Restoring back stack")
-            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
-
+            var backStack = restoredBackStack
             if (!playExternalViewModel.launched.value) {
                 val lastDest = backStack.lastOrNull()
                 if (lastDest.isPlayback) {
@@ -320,8 +332,14 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Timber.d("onSaveInstanceState")
-        val str = json.encodeToString(navigationManager.backStack.toList())
-        outState.putString(KEY_BACK_STACK, str)
+        try {
+            val str = json.encodeToString(navigationManager.backStack.toList())
+            outState.putString(KEY_BACK_STACK, str)
+        } catch (ex: Exception) {
+            // Best-effort: some destinations carry types we can't serialize; skip persisting
+            // the back stack rather than crashing in onSaveInstanceState.
+            Timber.w(ex, "Could not persist back stack; skipping")
+        }
         val playerBackend =
             runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
         outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
