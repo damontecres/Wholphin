@@ -168,17 +168,28 @@ class DiscoverMovieViewModel
 
         fun request(request: MovieRequest) {
             viewModelScope.launchIO {
+                if (request.movieId == null) {
+                    Timber.w("Null movie ID")
+                    return@launchIO
+                }
                 try {
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
                             is4k = request.is4k,
-                            mediaId = request.movieId!!,
+                            mediaId = request.movieId,
                             mediaType = RequestPostRequest.MediaType.MOVIE,
-                            profileid = request.profileId,
+                            serverId =
+                                when {
+                                    request.profileId == null && request.folder == null -> null
+                                    request.is4k -> request.data.server4kId
+                                    else -> request.data.serverId
+                                },
+                            profileId = request.profileId,
                             rootFolder = request.folder,
+                            tags = emptyList(),
                         ),
                     )
-                } catch (ex: kotlinx.coroutines.CancellationException) {
+                } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error requesting %s", request.movieId)

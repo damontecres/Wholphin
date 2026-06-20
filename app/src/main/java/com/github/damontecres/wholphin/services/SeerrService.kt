@@ -202,7 +202,7 @@ class SeerrService
         suspend fun getProfilesAndFolders(type: SeerrItemType): SeerrRequestData {
             var result = SeerrRequestData()
             val current = seerrServerRepository.current.firstOrNull()
-            if (current != null && current.config.hasPermission(SeerrPermission.ADMIN)) {
+            if (current != null && current.config.hasPermission(SeerrPermission.REQUEST_ADVANCED)) {
                 if (type == SeerrItemType.MOVIE) {
                     val radarrs = api.serviceApi.serviceRadarrGet()
                     val radarr =
@@ -223,6 +223,7 @@ class SeerrService
                         ) { profiles, rootFolders ->
                             result =
                                 result.copy(
+                                    serverId = radarr.id,
                                     profiles = profiles,
                                     rootFolders = rootFolders,
                                 )
@@ -238,6 +239,7 @@ class SeerrService
                         ) { profiles, rootFolders ->
                             result =
                                 result.copy(
+                                    server4kId = radarr4k.id,
                                     profiles4k = profiles,
                                     rootFolders4k = rootFolders,
                                 )

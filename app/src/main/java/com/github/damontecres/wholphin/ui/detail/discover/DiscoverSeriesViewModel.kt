@@ -250,10 +250,16 @@ class DiscoverSeriesViewModel
                                 RequestPostRequest(
                                     is4k = request.is4k,
                                     mediaId = request.tvId,
-                                    mediaType = RequestPostRequest.MediaType.TV,
-                                    seasons = request.seasons,
-                                    profileid = request.profileId,
+                                    mediaType = RequestPostRequest.MediaType.MOVIE,
+                                    serverId =
+                                        when {
+                                            request.profileId == null && request.folder == null -> null
+                                            request.is4k -> request.data.server4kId
+                                            else -> request.data.serverId
+                                        },
+                                    profileId = request.profileId,
                                     rootFolder = request.folder,
+                                    tags = emptyList(),
                                 ),
                             )
                         }

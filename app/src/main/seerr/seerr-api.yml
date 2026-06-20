@@ -6164,9 +6164,9 @@ paths:
                 is4k:
                   type: boolean
                   example: false
-                serverid:
+                serverId:
                   type: integer
-                profileid:
+                profileId:
                   type: integer
                 rootFolder:
                   type: string
@@ -6176,6 +6176,10 @@ paths:
                 userid:
                   type: integer
                   nullable: true
+                tags:
+                  type: array
+                  items:
+                    type: integer
               required:
                 - mediaType
                 - mediaId

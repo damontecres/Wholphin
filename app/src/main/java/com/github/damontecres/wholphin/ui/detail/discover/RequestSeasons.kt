@@ -59,7 +59,7 @@ fun RequestSeasons(
     id: Int,
     title: String,
     seasons: List<RequestSeason>,
-    state: SeerrRequestData,
+    data: SeerrRequestData,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
     modifier: Modifier = Modifier,
@@ -83,27 +83,28 @@ fun RequestSeasons(
     var profile by remember(is4k) {
         mutableStateOf(
             if (is4k) {
-                state.profiles4k.firstOrNull { it.default } ?: state.profiles4k.firstOrNull()
+                data.profiles4k.firstOrNull { it.default } ?: data.profiles4k.firstOrNull()
             } else {
-                state.profiles.firstOrNull { it.default } ?: state.profiles.firstOrNull()
+                data.profiles.firstOrNull { it.default } ?: data.profiles.firstOrNull()
             },
         )
     }
     var folder by remember(is4k) {
         mutableStateOf(
             if (is4k) {
-                state.rootFolders4k.firstOrNull { it.default } ?: state.rootFolders4k.firstOrNull()
+                data.rootFolders4k.firstOrNull { it.default } ?: data.rootFolders4k.firstOrNull()
             } else {
-                state.rootFolders.firstOrNull { it.default } ?: state.rootFolders.firstOrNull()
+                data.rootFolders.firstOrNull { it.default } ?: data.rootFolders.firstOrNull()
             },
         )
     }
-    val profiles = remember(is4k, state) { if (is4k) state.profiles4k else state.profiles }
-    val folders = remember(is4k, state) { if (is4k) state.rootFolders4k else state.rootFolders }
+    val profiles = remember(is4k, data) { if (is4k) data.profiles4k else data.profiles }
+    val folders = remember(is4k, data) { if (is4k) data.rootFolders4k else data.rootFolders }
 
     fun submit() {
         onSubmit.invoke(
             TvRequest(
+                data = data,
                 tvId = id,
                 seasons = selected.toList(),
                 is4k = is4k,
@@ -370,7 +371,7 @@ fun RequestSeasonsDialog(
     id: Int,
     title: String,
     loading: LoadingState,
-    state: SeerrRequestData,
+    data: SeerrRequestData,
     seasons: List<RequestSeason>,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
@@ -396,7 +397,7 @@ fun RequestSeasonsDialog(
                 RequestSeasons(
                     id = id,
                     title = title,
-                    state = state,
+                    data = data,
                     seasons = seasons,
                     request4kEnabled = request4kEnabled,
                     onSubmit = onSubmit,
@@ -440,7 +441,7 @@ fun RequestSeasonsPreview() {
             id = 1,
             title = "Series title",
             seasons = seasons,
-            state =
+            data =
                 SeerrRequestData(
                     profiles4k =
                         listOf(

@@ -159,7 +159,7 @@ fun DiscoverMovieDetails(
             if (showRequestDialog) {
                 RequestMovieDialog(
                     loading = state.profileLoading,
-                    state = state.requestData,
+                    data = state.requestData,
                     request4kEnabled = request4kEnabled,
                     movie = movie,
                     onSubmit = viewModel::request,

@@ -194,7 +194,7 @@ fun DiscoverSeriesDetails(
             request4kEnabled = request4kEnabled,
             onSubmit = viewModel::request,
             loading = state.profileLoading,
-            state = state.requestData,
+            data = state.requestData,
             onDismissRequest = { showRequestSeasonDialog = false },
         )
     }
