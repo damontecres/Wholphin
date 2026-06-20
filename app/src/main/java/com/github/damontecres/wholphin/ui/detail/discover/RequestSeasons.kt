@@ -237,7 +237,7 @@ private fun ClickSurface(
 }
 
 @Composable
-private fun ClickSwitch(
+fun ClickSwitch(
     label: String,
     checked: Boolean,
     onClick: () -> Unit,

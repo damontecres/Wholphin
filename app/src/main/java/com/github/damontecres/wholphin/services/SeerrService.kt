@@ -191,6 +191,12 @@ class SeerrService
             return "${base}${prefix}$path"
         }
 
+        suspend fun getProfilesAndFolders(
+            type: SeerrItemType,
+            is4k: Boolean,
+        ) {
+        }
+
         suspend fun createDiscoverItem(item: Any): DiscoverItem =
             when (item) {
                 is MovieResult -> createDiscoverItem(item)
