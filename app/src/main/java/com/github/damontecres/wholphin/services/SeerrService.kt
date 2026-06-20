@@ -6,13 +6,21 @@ import com.github.damontecres.wholphin.api.seerr.model.CreditCrew
 import com.github.damontecres.wholphin.api.seerr.model.MediaInfo
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
+import com.github.damontecres.wholphin.api.seerr.model.RootFolder
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
+import com.github.damontecres.wholphin.api.seerr.model.ServiceProfile
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.data.model.SeerrPermission
+import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.ui.detail.discover.SeerrProfile
+import com.github.damontecres.wholphin.ui.detail.discover.SeerrRequestData
+import com.github.damontecres.wholphin.ui.detail.discover.SeerrRootFolder
+import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.toLocalDate
 import kotlinx.coroutines.flow.first
@@ -191,10 +199,82 @@ class SeerrService
             return "${base}${prefix}$path"
         }
 
-        suspend fun getProfilesAndFolders(
-            type: SeerrItemType,
-            is4k: Boolean,
+        suspend fun getProfilesAndFolders(type: SeerrItemType): SeerrRequestData {
+            var result = SeerrRequestData()
+            val current = seerrServerRepository.current.firstOrNull()
+            if (current != null && current.config.hasPermission(SeerrPermission.ADMIN)) {
+                if (type == SeerrItemType.MOVIE) {
+                    val radarrs = api.serviceApi.serviceRadarrGet()
+                    val radarr =
+                        radarrs.firstOrNull { it.isDefault && !it.is4k }
+                            ?: radarrs.firstOrNull { !it.is4k }
+                    val radarr4k =
+                        radarrs.firstOrNull { it.isDefault && it.is4k }
+                            ?: radarrs.firstOrNull { it.is4k }
+
+                    if (radarr != null && radarr.id != null) {
+                        val settings = api.serviceApi.serviceRadarrRadarrIdGet(radarr.id)
+
+                        setProfilesAndFolder(
+                            settings.profiles,
+                            settings.rootFolders,
+                            settings.server?.activeProfileId,
+                            settings.server?.activeDirectory,
+                        ) { profiles, rootFolders ->
+                            result =
+                                result.copy(
+                                    profiles = profiles,
+                                    rootFolders = rootFolders,
+                                )
+                        }
+                    }
+                    if (radarr4k != null && radarr4k.id != null) {
+                        val settings = api.serviceApi.serviceRadarrRadarrIdGet(radarr4k.id)
+                        setProfilesAndFolder(
+                            settings.profiles,
+                            settings.rootFolders,
+                            settings.server?.activeProfileId,
+                            settings.server?.activeDirectory,
+                        ) { profiles, rootFolders ->
+                            result =
+                                result.copy(
+                                    profiles4k = profiles,
+                                    rootFolders4k = rootFolders,
+                                )
+                        }
+                    }
+                } else {
+                    TODO()
+                }
+            }
+            return result
+        }
+
+        private fun setProfilesAndFolder(
+            profiles: List<ServiceProfile>?,
+            rootFolders: List<RootFolder>?,
+            activeProfileId: Int?,
+            activeDirectory: String?,
+            setter: (List<SeerrProfile>, List<SeerrRootFolder>) -> Unit,
         ) {
+            val profiles =
+                profiles.orEmpty().mapNotNull {
+                    if (it.id != null && it.name != null) {
+                        SeerrProfile(it.id, it.name, activeProfileId == it.id)
+                    } else {
+                        null
+                    }
+                }
+            val rootFolders =
+                rootFolders.orEmpty().mapNotNull {
+                    if (it.id != null && it.path != null) {
+                        val freeSpace = it.freeSpace?.let { formatBytes(it) } ?: ""
+                        SeerrRootFolder(it.id, it.path, freeSpace, activeDirectory == it.path)
+                    } else {
+                        null
+                    }
+                }
+            setter.invoke(profiles, rootFolders)
         }
 
         suspend fun createDiscoverItem(item: Any): DiscoverItem =

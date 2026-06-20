@@ -603,15 +603,14 @@ components:
           example: false
       required:
         - name
-        - hostname
-        - port
-        - apiKey
-        - useSsl
+        # - hostname
+        # - port
+        # - useSsl
         - activeProfileId
-        - activeProfileName
+        # - activeProfileName
         - activeDirectory
         - is4k
-        - minimumAvailability
+        # - minimumAvailability
         - isDefault
     SonarrSettings:
       type: object

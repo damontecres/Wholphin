@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,12 +15,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -26,12 +33,14 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.DialogPopupContent
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.main.settings.TitleText
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
 fun RequestMovieDialog(
-    state: SeerrRequestState,
+    loading: LoadingState,
+    state: SeerrRequestData,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
@@ -41,26 +50,28 @@ fun RequestMovieDialog(
         onDismissRequest = onDismissRequest,
     ) {
         RequestMovie(
+            loading = loading,
             state = state,
             request4kEnabled = request4kEnabled,
             movie = movie,
             onSubmit = onSubmit,
-            modifier = Modifier,
+            modifier = Modifier.padding(16.dp),
         )
     }
 }
 
 @Composable
 fun RequestMovie(
-    state: SeerrRequestState,
+    loading: LoadingState,
+    state: SeerrRequestData,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (state.loading) {
+    when (loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state.loading, modifier)
+            ErrorMessage(loading, modifier)
         }
 
         LoadingState.Loading,
@@ -70,9 +81,13 @@ fun RequestMovie(
         }
 
         LoadingState.Success -> {
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
             val requestStr = stringResource(R.string.request)
             val request4kStr = stringResource(R.string.request_4k)
-            if (state.profiles.isEmpty() && state.rootFolders.isEmpty()) {
+            if (state.profiles.isEmpty() && state.rootFolders.isEmpty() &&
+                state.profiles4k.isEmpty() && state.rootFolders4k.isEmpty()
+            ) {
                 if (request4kEnabled) {
                     val items =
                         remember {
@@ -97,6 +112,7 @@ fun RequestMovie(
                         waiting = false,
                         onDismissRequest = {},
                         dismissOnClick = false,
+                        modifier = modifier.focusRequester(focusRequester),
                     )
                 } else {
                     LaunchedEffect(Unit) {
@@ -109,7 +125,7 @@ fun RequestMovie(
                     request4kEnabled = request4kEnabled,
                     movie = movie,
                     onSubmit = onSubmit,
-                    modifier = Modifier,
+                    modifier = modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -118,7 +134,7 @@ fun RequestMovie(
 
 @Composable
 private fun RequestMovieWithOptions(
-    state: SeerrRequestState,
+    state: SeerrRequestData,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
@@ -146,9 +162,14 @@ private fun RequestMovieWithOptions(
     val profiles = remember(is4k, state) { if (is4k) state.profiles4k else state.profiles }
     val folders = remember(is4k, state) { if (is4k) state.rootFolders4k else state.rootFolders }
     Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        TitleText(movie.title + " (${movie.releaseDate ?: ""})")
+        Text(
+            text = movie.title + " (${movie.releaseDate ?: ""})",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         LazyColumn(
             modifier = Modifier,
         ) {
@@ -166,7 +187,7 @@ private fun RequestMovieWithOptions(
                         )
                         Button(
                             onClick = {
-                                onSubmit.invoke(MovieRequest(movie.id, is4k, profile.id, folder.id))
+                                onSubmit.invoke(MovieRequest(movie.id, is4k, profile.id, folder.path))
                             },
                         ) {
                             Text(
@@ -177,7 +198,7 @@ private fun RequestMovieWithOptions(
                 } else {
                     Button(
                         onClick = {
-                            onSubmit.invoke(MovieRequest(movie.id, is4k, profile.id, folder.id))
+                            onSubmit.invoke(MovieRequest(movie.id, is4k, profile.id, folder.path))
                         },
                     ) {
                         Text(
@@ -222,7 +243,7 @@ fun ChooseProfile(
     ListItem(
         selected = false,
         headlineContent = {
-            Text("Profile")
+            Text("Quality profile")
         },
         supportingContent = {
             val text =
@@ -262,6 +283,7 @@ fun ChooseProfile(
             params = params,
             onDismissRequest = { showProfileDialog = false },
             dismissOnClick = true,
+            elevation = 3.dp,
         )
     }
 }
@@ -277,7 +299,7 @@ fun ChooseFolder(
     ListItem(
         selected = false,
         headlineContent = {
-            Text("Directory")
+            Text("Root folder")
         },
         supportingContent = {
             val text =
@@ -285,6 +307,9 @@ fun ChooseFolder(
                     if (selectedFolder.default) "${selectedFolder.path} (Default)" else selectedFolder.path
                 }
             Text(text)
+        },
+        trailingContent = {
+            Text(selectedFolder.freeSpace)
         },
         onClick = { showFolderDialog = true },
         modifier = modifier,
@@ -320,6 +345,36 @@ fun ChooseFolder(
             params = params,
             onDismissRequest = { showFolderDialog = false },
             dismissOnClick = true,
+            elevation = 3.dp,
+        )
+    }
+}
+
+@PreviewTvSpec
+@Composable
+fun MovieRequestPreview() {
+    WholphinTheme {
+        RequestMovie(
+            loading = LoadingState.Success,
+            state =
+                SeerrRequestData(
+                    profiles4k =
+                        listOf(
+                            SeerrProfile(1, "HD", true),
+                            SeerrProfile(2, "Ultra HD", false),
+                        ),
+                    rootFolders4k =
+                        listOf(
+                            SeerrRootFolder(1, "/movies", "400GB", true),
+                        ),
+                ),
+            request4kEnabled = true,
+            movie = MovieDetails(id = 1, title = "Movie Name", releaseDate = "2026"),
+            onSubmit = {},
+            modifier =
+                Modifier
+                    .width(320.dp)
+                    .padding(16.dp),
         )
     }
 }
