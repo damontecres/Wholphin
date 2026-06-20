@@ -434,7 +434,7 @@ fun RequestSeasonsPreview() {
                         ),
                     rootFolders4k =
                         listOf(
-                            SeerrRootFolder(1, "/movies", "400GB", true),
+                            SeerrRootFolder(1, "/tv", "400GB", true),
                         ),
                 ),
             request4kEnabled = true,

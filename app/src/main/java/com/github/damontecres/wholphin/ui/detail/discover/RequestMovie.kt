@@ -239,16 +239,18 @@ fun ChooseProfile(
     onClickProfile: (SeerrProfile) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val defaultStr = stringResource(R.string.is_default)
+    val qualityProfileStr = stringResource(R.string.quality_profile)
     var showProfileDialog by remember { mutableStateOf(false) }
     ListItem(
         selected = false,
         headlineContent = {
-            Text("Quality profile")
+            Text(qualityProfileStr)
         },
         supportingContent = {
             val text =
                 remember(selectedProfile) {
-                    if (selectedProfile.default) "${selectedProfile.name} (Default)" else selectedProfile.name
+                    if (selectedProfile.default) "${selectedProfile.name} ($defaultStr)" else selectedProfile.name
                 }
             Text(text)
         },
@@ -266,7 +268,7 @@ fun ChooseProfile(
                             },
                             supportingContent = {
                                 if (it.default) {
-                                    Text("Default")
+                                    Text(defaultStr)
                                 }
                             },
                             leadingContent = {
@@ -277,7 +279,7 @@ fun ChooseProfile(
                     }
                 DialogParams(
                     fromLongClick = false,
-                    title = "Profiles",
+                    title = qualityProfileStr,
                     items = items,
                 )
             }
@@ -297,16 +299,18 @@ fun ChooseFolder(
     onClickFolder: (SeerrRootFolder) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val defaultStr = stringResource(R.string.is_default)
+    val rootFolderStr = stringResource(R.string.root_folder)
     var showFolderDialog by remember { mutableStateOf(false) }
     ListItem(
         selected = false,
         headlineContent = {
-            Text("Root folder")
+            Text(rootFolderStr)
         },
         supportingContent = {
             val text =
                 remember(selectedFolder) {
-                    if (selectedFolder.default) "${selectedFolder.path} (Default)" else selectedFolder.path
+                    if (selectedFolder.default) "${selectedFolder.path} ($defaultStr)" else selectedFolder.path
                 }
             Text(text)
         },
@@ -327,7 +331,7 @@ fun ChooseFolder(
                             },
                             supportingContent = {
                                 if (it.default) {
-                                    Text("Default")
+                                    Text(defaultStr)
                                 }
                             },
                             trailingContent = {
@@ -341,7 +345,7 @@ fun ChooseFolder(
                     }
                 DialogParams(
                     fromLongClick = false,
-                    title = "Directories",
+                    title = rootFolderStr,
                     items = items,
                 )
             }
