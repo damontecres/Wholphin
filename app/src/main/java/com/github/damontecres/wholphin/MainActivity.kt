@@ -61,6 +61,7 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.requestSerializersModule
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -141,6 +142,7 @@ class MainActivity : AppCompatActivity() {
     private val json =
         Json {
             classDiscriminator = "_type"
+            serializersModule = requestSerializersModule
         }
 
     @OptIn(ExperimentalTvMaterial3Api::class)
