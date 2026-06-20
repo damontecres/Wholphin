@@ -246,7 +246,47 @@ class SeerrService
                         }
                     }
                 } else {
-                    TODO()
+                    val sonarrs = api.serviceApi.serviceSonarrGet()
+                    val sonarr =
+                        sonarrs.firstOrNull { it.isDefault && !it.is4k }
+                            ?: sonarrs.firstOrNull { !it.is4k }
+                    val sonarr4k =
+                        sonarrs.firstOrNull { it.isDefault && it.is4k }
+                            ?: sonarrs.firstOrNull { it.is4k }
+
+                    if (sonarr != null && sonarr.id != null) {
+                        val settings = api.serviceApi.serviceSonarrSonarrIdGet(sonarr.id)
+
+                        setProfilesAndFolder(
+                            settings.profiles,
+                            settings.rootFolders,
+                            settings.server?.activeProfileId,
+                            settings.server?.activeDirectory,
+                        ) { profiles, rootFolders ->
+                            result =
+                                result.copy(
+                                    serverId = sonarr.id,
+                                    profiles = profiles,
+                                    rootFolders = rootFolders,
+                                )
+                        }
+                    }
+                    if (sonarr4k != null && sonarr4k.id != null) {
+                        val settings = api.serviceApi.serviceSonarrSonarrIdGet(sonarr4k.id)
+                        setProfilesAndFolder(
+                            settings.profiles,
+                            settings.rootFolders,
+                            settings.server?.activeProfileId,
+                            settings.server?.activeDirectory,
+                        ) { profiles, rootFolders ->
+                            result =
+                                result.copy(
+                                    server4kId = sonarr4k.id,
+                                    profiles4k = profiles,
+                                    rootFolders4k = rootFolders,
+                                )
+                        }
+                    }
                 }
             }
             return result

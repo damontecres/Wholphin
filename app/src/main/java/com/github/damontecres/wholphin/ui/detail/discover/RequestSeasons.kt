@@ -65,7 +65,7 @@ fun RequestSeasons(
     modifier: Modifier = Modifier,
 ) {
     val allSeasonNumbers = remember(seasons) { seasons.mapNotNull { it.season.seasonNumber }.toSet() }
-    val selected =
+    val selectedSeasons =
         remember {
             mutableStateSetOf<Int>(
                 *seasons
@@ -106,7 +106,7 @@ fun RequestSeasons(
             TvRequest(
                 data = data,
                 tvId = id,
-                seasons = selected.toList(),
+                seasons = selectedSeasons.toList(),
                 is4k = is4k,
                 profileId = profile?.id,
                 folder = folder?.path,
@@ -128,32 +128,24 @@ fun RequestSeasons(
             modifier = Modifier,
         ) {
             item {
-                if (request4kEnabled) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                    ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                ) {
+                    if (request4kEnabled) {
                         ClickSwitch(
                             label = stringResource(R.string.request_4k),
                             checked = is4k,
                             onClick = { is4k = !is4k },
                         )
-                        Button(
-                            onClick = ::submit,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.submit),
-                            )
-                        }
                     }
-                } else {
                     Button(
                         onClick = ::submit,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        enabled = selectedSeasons.isNotEmpty(),
                     ) {
                         Text(
                             text = stringResource(R.string.submit),
@@ -194,39 +186,30 @@ fun RequestSeasons(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val isSelected = selected.containsAll(allSeasonNumbers)
+                val isSelected = selectedSeasons.containsAll(allSeasonNumbers)
                 ClickSwitch(
                     label = stringResource(R.string.select_all),
                     checked = isSelected,
                     onClick = {
                         if (isSelected) {
-                            selected.removeAll(allSeasonNumbers)
+                            selectedSeasons.removeAll(allSeasonNumbers)
                         } else {
-                            selected.addAll(allSeasonNumbers)
+                            selectedSeasons.addAll(allSeasonNumbers)
                         }
                     },
                 )
             }
-            if (request4kEnabled) {
-                item {
-                    ClickSwitch(
-                        label = stringResource(R.string.request_4k),
-                        checked = is4k,
-                        onClick = { is4k = !is4k },
-                    )
-                }
-            }
             itemsIndexed(seasons) { index, season ->
                 val seasonNumber = season.season.seasonNumber
-                val isSelected = seasonNumber in selected
+                val isSelected = seasonNumber in selectedSeasons
                 SeasonListItem(
                     season = season,
                     selected = isSelected,
                     onClick = {
                         if (isSelected) {
-                            selected.remove(seasonNumber)
+                            selectedSeasons.remove(seasonNumber)
                         } else {
-                            seasonNumber?.let { selected.add(it) }
+                            seasonNumber?.let { selectedSeasons.add(it) }
                         }
                     },
                     modifier = Modifier,
@@ -243,6 +226,7 @@ fun RequestSeasons(
                     ) {
                         Button(
                             onClick = ::submit,
+                            enabled = selectedSeasons.isNotEmpty(),
                         ) {
                             Text(
                                 text = stringResource(R.string.submit),

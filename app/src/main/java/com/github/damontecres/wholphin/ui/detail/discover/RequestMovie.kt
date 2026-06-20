@@ -180,7 +180,10 @@ private fun RequestMovieWithOptions(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
                 ) {
                     if (request4kEnabled) {
                         ClickSwitch(

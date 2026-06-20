@@ -681,15 +681,15 @@ components:
           example: false
       required:
         - name
-        - hostname
-        - port
-        - apiKey
-        - useSsl
+        # - hostname
+        # - port
+        # - apiKey
+        # - useSsl
         - activeProfileId
-        - activeProfileName
+        # - activeProfileName
         - activeDirectory
         - is4k
-        - enableSeasonFolders
+        # - enableSeasonFolders
         - isDefault
     ServarrTag:
       type: object
@@ -6275,9 +6275,9 @@ paths:
                 is4k:
                   type: boolean
                   example: false
-                serverid:
+                serverId:
                   type: integer
-                profileid:
+                profileId:
                   type: integer
                 rootFolder:
                   type: string

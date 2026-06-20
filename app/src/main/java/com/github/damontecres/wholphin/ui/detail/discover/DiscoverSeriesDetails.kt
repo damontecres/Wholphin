@@ -192,7 +192,10 @@ fun DiscoverSeriesDetails(
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
             request4kEnabled = request4kEnabled,
-            onSubmit = viewModel::request,
+            onSubmit = {
+                showRequestSeasonDialog = false
+                viewModel.request(it)
+            },
             loading = state.profileLoading,
             data = state.requestData,
             onDismissRequest = { showRequestSeasonDialog = false },

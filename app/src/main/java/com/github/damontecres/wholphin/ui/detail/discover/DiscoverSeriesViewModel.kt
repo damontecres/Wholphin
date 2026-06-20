@@ -203,7 +203,7 @@ class DiscoverSeriesViewModel
         fun requestOnClick() {
             viewModelScope.launchIO {
                 try {
-                    val data = seerrService.getProfilesAndFolders(SeerrItemType.MOVIE)
+                    val data = seerrService.getProfilesAndFolders(SeerrItemType.TV)
                     _state.update {
                         it.copy(
                             profileLoading = LoadingState.Success,
@@ -240,7 +240,13 @@ class DiscoverSeriesViewModel
                                         is4k = request.is4k,
                                         mediaType = RequestRequestIdPutRequest.MediaType.TV,
                                         seasons = request.seasons,
-                                        profileid = request.profileId,
+                                        serverId =
+                                            when {
+                                                request.profileId == null && request.folder == null -> null
+                                                request.is4k -> request.data.server4kId
+                                                else -> request.data.serverId
+                                            },
+                                        profileId = request.profileId,
                                         rootFolder = request.folder,
                                     ),
                             )
@@ -250,7 +256,8 @@ class DiscoverSeriesViewModel
                                 RequestPostRequest(
                                     is4k = request.is4k,
                                     mediaId = request.tvId,
-                                    mediaType = RequestPostRequest.MediaType.MOVIE,
+                                    mediaType = RequestPostRequest.MediaType.TV,
+                                    seasons = request.seasons,
                                     serverId =
                                         when {
                                             request.profileId == null && request.folder == null -> null

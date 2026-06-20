@@ -162,7 +162,10 @@ fun DiscoverMovieDetails(
                     data = state.requestData,
                     request4kEnabled = request4kEnabled,
                     movie = movie,
-                    onSubmit = viewModel::request,
+                    onSubmit = {
+                        viewModel.request(it)
+                        showRequestDialog = false
+                    },
                     onDismissRequest = { showRequestDialog = false },
                 )
             }
