@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -22,6 +23,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
@@ -198,11 +200,29 @@ class DiscoverSeriesViewModel
             _state.update { it.copy(canCancelRequest = canCancel) }
         }
 
-        fun request(
-            id: Int,
-            seasons: Set<Int>,
-            is4k: Boolean,
-        ) {
+        fun requestOnClick() {
+            viewModelScope.launchIO {
+                try {
+                    val data = seerrService.getProfilesAndFolders(SeerrItemType.MOVIE)
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                            requestData = data,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting profiles & folders")
+                    showToast(context, "Error getting profiles & folders: ${ex.localizedMessage}")
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun request(request: TvRequest) {
             viewModelScope.launchIO {
                 state.value.tvSeries.successValue?.let { tv ->
                     val currentRequest =
@@ -217,26 +237,30 @@ class DiscoverSeriesViewModel
                                 requestId = currentRequest.id.toString(),
                                 requestRequestIdPutRequest =
                                     RequestRequestIdPutRequest(
-                                        is4k = is4k,
+                                        is4k = request.is4k,
                                         mediaType = RequestRequestIdPutRequest.MediaType.TV,
-                                        seasons = seasons.toList(),
+                                        seasons = request.seasons,
+                                        profileid = request.profileId,
+                                        rootFolder = request.folder,
                                     ),
                             )
                         } else {
-                            Timber.v("New request for %s seasons", seasons.size)
+                            Timber.v("New request for %s seasons", request.seasons.size)
                             seerrService.api.requestApi.requestPost(
                                 RequestPostRequest(
-                                    is4k = is4k,
-                                    mediaId = id,
+                                    is4k = request.is4k,
+                                    mediaId = request.tvId,
                                     mediaType = RequestPostRequest.MediaType.TV,
-                                    seasons = seasons.toList(),
+                                    seasons = request.seasons,
+                                    profileid = request.profileId,
+                                    rootFolder = request.folder,
                                 ),
                             )
                         }
                     } catch (ex: CancellationException) {
                         throw ex
                     } catch (ex: Exception) {
-                        Timber.e(ex, "Error requesting %s", id)
+                        Timber.e(ex, "Error requesting %s", request.tvId)
                         showToast(context, "An error occurred")
                     }
 
@@ -279,4 +303,6 @@ data class DiscoverSeriesState(
     val similar: List<DiscoverItem> = emptyList(),
     val recommended: List<DiscoverItem> = emptyList(),
     val canCancelRequest: Boolean = false,
+    val profileLoading: LoadingState = LoadingState.Pending,
+    val requestData: SeerrRequestData = SeerrRequestData(),
 )

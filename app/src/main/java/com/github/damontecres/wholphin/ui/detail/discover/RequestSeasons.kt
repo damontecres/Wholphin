@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
@@ -20,9 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -40,7 +43,11 @@ import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PartiallyAvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PendingIndicator
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.LoadingState
 
 data class RequestSeason(
     val season: Season,
@@ -49,11 +56,13 @@ data class RequestSeason(
 
 @Composable
 fun RequestSeasons(
+    id: Int,
     title: String,
     seasons: List<RequestSeason>,
-    onSubmit: (Set<Int>, Boolean) -> Unit,
+    state: SeerrRequestData,
     request4kEnabled: Boolean,
-    modifier: Modifier,
+    onSubmit: (TvRequest) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val allSeasonNumbers = remember(seasons) { seasons.mapNotNull { it.season.seasonNumber }.toSet() }
     val selected =
@@ -69,45 +78,133 @@ fun RequestSeasons(
                     }.toTypedArray(),
             )
         }
-    var is4k by remember { mutableStateOf(false) }
+    var is4k by remember { mutableStateOf(request4kEnabled) }
+
+    var profile by remember(is4k) {
+        mutableStateOf(
+            if (is4k) {
+                state.profiles4k.firstOrNull { it.default } ?: state.profiles4k.firstOrNull()
+            } else {
+                state.profiles.firstOrNull { it.default } ?: state.profiles.firstOrNull()
+            },
+        )
+    }
+    var folder by remember(is4k) {
+        mutableStateOf(
+            if (is4k) {
+                state.rootFolders4k.firstOrNull { it.default } ?: state.rootFolders4k.firstOrNull()
+            } else {
+                state.rootFolders.firstOrNull { it.default } ?: state.rootFolders.firstOrNull()
+            },
+        )
+    }
+    val profiles = remember(is4k, state) { if (is4k) state.profiles4k else state.profiles }
+    val folders = remember(is4k, state) { if (is4k) state.rootFolders4k else state.rootFolders }
+
+    fun submit() {
+        onSubmit.invoke(
+            TvRequest(
+                tvId = id,
+                seasons = selected.toList(),
+                is4k = is4k,
+                profileId = profile?.id,
+                folder = folder?.path,
+            ),
+        )
+    }
+
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier,
         )
-        LazyColumn {
+        LazyColumn(
+            modifier = Modifier,
+        ) {
             item {
-                val isSelected = selected.containsAll(allSeasonNumbers)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    ClickSwitch(
-                        label = stringResource(R.string.select_all),
-                        checked = isSelected,
-                        onClick = {
-                            if (isSelected) {
-                                selected.removeAll(allSeasonNumbers)
-                            } else {
-                                selected.addAll(allSeasonNumbers)
-                            }
-                        },
-                    )
+                if (request4kEnabled) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                    ) {
+                        ClickSwitch(
+                            label = stringResource(R.string.request_4k),
+                            checked = is4k,
+                            onClick = { is4k = !is4k },
+                        )
+                        Button(
+                            onClick = ::submit,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.submit),
+                            )
+                        }
+                    }
+                } else {
                     Button(
-                        onClick = { onSubmit.invoke(selected, is4k) },
+                        onClick = ::submit,
+                        modifier = Modifier.padding(vertical = 8.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.submit),
                         )
                     }
                 }
+            }
+            if (profiles.isNotEmpty()) {
+                profile?.let {
+                    item {
+                        ChooseProfile(
+                            selectedProfile = it,
+                            profiles = profiles,
+                            onClickProfile = { profile = it },
+                            modifier = Modifier,
+                        )
+                    }
+                }
+            }
+            if (folders.isNotEmpty()) {
+                folder?.let {
+                    item {
+                        ChooseFolder(
+                            selectedFolder = it,
+                            folders = folders,
+                            onClickFolder = { folder = it },
+                            modifier = Modifier,
+                        )
+                    }
+                }
+            }
+            item {
+                HorizontalDivider()
+            }
+            item {
+                Text(
+                    text = stringResource(R.string.tv_seasons),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                val isSelected = selected.containsAll(allSeasonNumbers)
+                ClickSwitch(
+                    label = stringResource(R.string.select_all),
+                    checked = isSelected,
+                    onClick = {
+                        if (isSelected) {
+                            selected.removeAll(allSeasonNumbers)
+                        } else {
+                            selected.addAll(allSeasonNumbers)
+                        }
+                    },
+                )
             }
             if (request4kEnabled) {
                 item {
@@ -134,14 +231,17 @@ fun RequestSeasons(
                     modifier = Modifier,
                 )
             }
-            if (seasons.size > 7) {
+            if (seasons.size > 3) {
                 item {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                     ) {
                         Button(
-                            onClick = { onSubmit.invoke(selected, is4k) },
+                            onClick = ::submit,
                         ) {
                             Text(
                                 text = stringResource(R.string.submit),
@@ -267,22 +367,46 @@ fun ClickSwitch(
 
 @Composable
 fun RequestSeasonsDialog(
+    id: Int,
     title: String,
+    loading: LoadingState,
+    state: SeerrRequestData,
     seasons: List<RequestSeason>,
     request4kEnabled: Boolean,
-    onSubmit: (Set<Int>, Boolean) -> Unit,
+    onSubmit: (TvRequest) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     BasicDialog(
         onDismissRequest = onDismissRequest,
     ) {
-        RequestSeasons(
-            title = title,
-            seasons = seasons,
-            request4kEnabled = request4kEnabled,
-            onSubmit = onSubmit,
-            modifier = Modifier.padding(16.dp),
-        )
+        when (loading) {
+            is LoadingState.Error -> {
+                ErrorMessage(loading, Modifier)
+            }
+
+            LoadingState.Loading,
+            LoadingState.Pending,
+            -> {
+                LoadingPage(Modifier)
+            }
+
+            LoadingState.Success -> {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                RequestSeasons(
+                    id = id,
+                    title = title,
+                    state = state,
+                    seasons = seasons,
+                    request4kEnabled = request4kEnabled,
+                    onSubmit = onSubmit,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .focusRequester(focusRequester),
+                )
+            }
+        }
     }
 }
 
@@ -313,10 +437,23 @@ fun RequestSeasonsPreview() {
 
     WholphinTheme {
         RequestSeasons(
+            id = 1,
             title = "Series title",
             seasons = seasons,
+            state =
+                SeerrRequestData(
+                    profiles4k =
+                        listOf(
+                            SeerrProfile(1, "HD", true),
+                            SeerrProfile(2, "Ultra HD", false),
+                        ),
+                    rootFolders4k =
+                        listOf(
+                            SeerrRootFolder(1, "/movies", "400GB", true),
+                        ),
+                ),
             request4kEnabled = true,
-            onSubmit = { _, _ -> },
+            onSubmit = { },
             modifier = Modifier.width(400.dp),
         )
     }

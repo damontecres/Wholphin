@@ -32,5 +32,5 @@ data class TvRequest(
     val seasons: List<Int>,
     val is4k: Boolean,
     val profileId: Int?,
-    val folderId: Int?,
+    val folder: String?,
 )
