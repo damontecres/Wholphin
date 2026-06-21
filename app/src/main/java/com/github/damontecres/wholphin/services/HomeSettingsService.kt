@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
+import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -54,13 +55,19 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.GetProgramsDto
@@ -99,6 +106,7 @@ class HomeSettingsService
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
         private val displayPreferencesService: DisplayPreferencesService,
+        @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -586,6 +594,14 @@ class HomeSettingsService
                     HomeRowConfigDisplay(
                         id = id,
                         title = title,
+                        config,
+                    )
+                }
+
+                is HomeRowConfig.CustomEndpoint -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = StringStringProvider(config.title),
                         config,
                     )
                 }
@@ -1205,7 +1221,56 @@ class HomeSettingsService
                         )
                     }
                 }
+
+                is HomeRowConfig.CustomEndpoint -> {
+                    val title = StringStringProvider(row.title)
+                    try {
+                        val items =
+                            fetchCustomEndpointItems(row)
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        Success(title, items, row.viewOptions, rowType = row)
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "Custom endpoint %s failed", row.endpoint)
+                        HomeRowLoadingState.Error(title, exception = ex)
+                    }
+                }
             }
+
+        private suspend fun fetchCustomEndpointItems(row: HomeRowConfig.CustomEndpoint): List<BaseItemDto> {
+            val base =
+                api.baseUrl
+                    ?: throw IllegalStateException("Jellyfin baseUrl not set")
+            if (!row.endpoint.startsWith("/") || row.endpoint.startsWith("//")) {
+                throw IllegalArgumentException("Custom endpoint must be an absolute path relative to Jellyfin baseUrl: ${row.endpoint}")
+            }
+            val resolved =
+                base
+                    .toHttpUrl()
+                    .resolve(row.endpoint)
+                    ?: throw IllegalStateException("Could not resolve endpoint ${row.endpoint} against $base")
+            val params =
+                buildMap {
+                    serverRepository.currentUser
+                        ?.id
+                        ?.toString()
+                        ?.let { put("userId", it) }
+                    row.query?.forEach { put(it.key, it.value) }
+                }
+            val urlBuilder = resolved.newBuilder()
+            params.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v) }
+            val requestBuilder = Request.Builder().url(urlBuilder.build()).get()
+            row.headers?.forEach { requestBuilder.header(it.key, it.value) }
+            val response =
+                authOkHttpClient
+                    .newCall(requestBuilder.build())
+                    .execute()
+            return response.use {
+                if (!it.isSuccessful) {
+                    throw InvalidStatusException(it.code, null)
+                }
+                jsonParser.decodeFromString<BaseItemDtoQueryResult>(it.body.string()).items
+            }
+        }
 
         companion object {
             const val CUSTOM_PREF_ID = "home_settings"
