@@ -77,7 +77,7 @@ class DiscoverRequestViewModel
                                     DiscoverRequestType.DISCOVER_TV -> {
                                         DiscoverRequestPager(
                                             api,
-                                            DiscoverTvRequestHandler,
+                                            DiscoverTvRequestHandler(),
                                             seerrService::createDiscoverItem,
                                             viewModelScope,
                                         )
@@ -136,8 +136,17 @@ class DiscoverRequestViewModel
                                         )
                                     }
 
+                                    SeerrItemType.TV -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            DiscoverTvRequestHandler(genre = type.genreId),
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
                                     else -> {
-                                        TODO()
+                                        throw UnsupportedOperationException("Type not supported: ${type.type}")
                                     }
                                 }
                             }

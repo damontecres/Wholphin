@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -40,9 +39,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
-import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.cards.GenreCard
-import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.Genre
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
@@ -52,13 +48,13 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
+import com.github.damontecres.wholphin.ui.util.ResProviderStringProvider
 import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.DiscoverRequestType
-import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -170,6 +166,45 @@ class SeerrDiscoverViewModel
                 state.update {
                     it.copy(
                         movieGenres = movieGenres,
+                    )
+                }
+            }
+
+            viewModelScope.launchIO {
+                val tvGenres =
+                    try {
+                        val result = seerrService.api.searchApi.discoverGenresliderTvGet()
+                        val genres =
+                            result
+                                .filter { it.id != null && it.name != null }
+                                .map {
+                                    val id = it.id!!.toUUID()
+                                    val imageUrl =
+                                        it.backdrops?.randomOrNull()?.let { path ->
+                                            seerrService.createImageUrl(
+                                                imageType = ImageType.BACKDROP,
+                                                path = path,
+                                                mediaInfo = null,
+                                                // Don't need high resolution
+                                                backdropWidth = 1280,
+                                                backdropHeight = 720,
+                                            )
+                                        }
+                                    Genre(
+                                        id = id,
+                                        name = it.name!!,
+                                        imageUrl = imageUrl,
+                                    )
+                                }
+                        Timber.v("Got %s tv genres", genres.size)
+                        DataLoadingState.Success(genres)
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error getting tv genres")
+                        DataLoadingState.Error(ex)
+                    }
+                state.update {
+                    it.copy(
+                        tvGenres = tvGenres,
                     )
                 }
             }
@@ -289,14 +324,18 @@ data class DiscoverState(
     val upcomingMovies: DiscoverRowData = DiscoverRowData.EMPTY,
     val upcomingTv: DiscoverRowData = DiscoverRowData.EMPTY,
     val movieGenres: DataLoadingState<List<Genre>> = DataLoadingState.Pending,
+    val tvGenres: DataLoadingState<List<Genre>> = DataLoadingState.Pending,
 )
 
 private const val ROW_TRENDING = 0
 private const val ROW_MOVIES = ROW_TRENDING + 1
-private const val ROW_TV = ROW_MOVIES + 1
-private const val ROW_UPCOMING_MOVIES = ROW_TV + 1
-private const val ROW_UPCOMING_TV = ROW_UPCOMING_MOVIES + 1
-private const val ROW_GENRES_MOVIE = ROW_UPCOMING_TV + 1
+private const val ROW_GENRES_MOVIE = ROW_MOVIES + 1
+private const val ROW_UPCOMING_MOVIES = ROW_GENRES_MOVIE + 1
+private const val ROW_TV = ROW_UPCOMING_MOVIES + 1
+private const val ROW_GENRES_TV = ROW_TV + 1
+private const val ROW_UPCOMING_TV = ROW_GENRES_TV + 1
+
+private const val LAST_ROW = ROW_UPCOMING_TV
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -310,7 +349,7 @@ fun SeerrDiscoverPage(
         listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
     val ratingMap by viewModel.rating.collectAsState()
 
-    val focusRequesters = remember(rows) { List(ROW_GENRES_MOVIE + 1) { FocusRequester() } }
+    val focusRequesters = remember(rows) { List(LAST_ROW + 1) { FocusRequester() } }
     var position by rememberPosition(0, -1)
     val focusedItem =
         remember(position) {
@@ -418,15 +457,20 @@ fun SeerrDiscoverPage(
                         .fillMaxSize(),
             ) {
                 item { discoverItemRow(ROW_TRENDING, state.trending) }
+
+                // Movies
                 item { discoverItemRow(ROW_MOVIES, state.movies) }
-                item { discoverItemRow(ROW_TV, state.tv) }
-                item { discoverItemRow(ROW_UPCOMING_MOVIES, state.upcomingMovies) }
-                item { discoverItemRow(ROW_UPCOMING_TV, state.upcomingTv) }
                 item {
                     CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
-                        ItemRow(
-                            title = "Genres",
-                            items = state.movieGenres.successValue.orEmpty(),
+                        DiscoverGenreRow(
+                            title =
+                                remember {
+                                    ResProviderStringProvider(
+                                        R.string.genres_in,
+                                        ResStringProvider(R.string.movies_title),
+                                    )
+                                },
+                            items = state.movieGenres,
                             onClickItem = { index, genre ->
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(
@@ -440,22 +484,43 @@ fun SeerrDiscoverPage(
                                     ),
                                 )
                             },
-                            onLongClickItem = { index, genre -> },
-                            cardContent = { index, item, mod, onClick, onLongClick ->
-                                GenreCard(
-                                    genre = item,
-                                    onClick = onClick,
-                                    onLongClick = onLongClick,
-                                    modifier = mod.height(Cards.heightEpisode),
-                                )
-                            },
                             modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
-                            horizontalPadding = 16.dp,
-                            showViewMore = false,
-                            viewMoreCardContent = {},
                         )
                     }
                 }
+                item { discoverItemRow(ROW_UPCOMING_MOVIES, state.upcomingMovies) }
+
+                // TV
+                item { discoverItemRow(ROW_TV, state.tv) }
+                item {
+                    CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
+                        DiscoverGenreRow(
+                            title =
+                                remember {
+                                    ResProviderStringProvider(
+                                        R.string.genres_in,
+                                        ResStringProvider(R.string.tv_shows_title),
+                                    )
+                                },
+                            items = state.tvGenres,
+                            onClickItem = { index, genre ->
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.DiscoverMoreResult(
+                                        type =
+                                            DiscoverPagerType.Genre(
+                                                genreId = genre.id.toInt(),
+                                                name = genre.name,
+                                                type = SeerrItemType.TV,
+                                            ),
+                                        startIndex = 0,
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
+                        )
+                    }
+                }
+                item { discoverItemRow(ROW_UPCOMING_TV, state.upcomingTv) }
             }
         }
     }
