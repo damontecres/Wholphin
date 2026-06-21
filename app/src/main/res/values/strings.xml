@@ -821,4 +821,6 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="genre_movies">%1$s Movies</string>
+    <string name="genre_tv_shows">%1$s TV Shows</string>
 </resources>

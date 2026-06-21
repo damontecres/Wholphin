@@ -9,12 +9,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrService
@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverMovieRequestHandler
+import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.DiscoverRequestPager
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.DiscoverTvRequestHandler
@@ -52,13 +53,13 @@ class DiscoverRequestViewModel
         private val seerrService: SeerrService,
         val navigationManager: NavigationManager,
         private val api: SeerrApi,
-        @Assisted val type: DiscoverRequestType,
+        @Assisted val type: DiscoverPagerType,
         @Assisted startIndex: Int,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
             fun create(
-                type: DiscoverRequestType,
+                type: DiscoverPagerType,
                 startIndex: Int,
             ): DiscoverRequestViewModel
         }
@@ -71,53 +72,74 @@ class DiscoverRequestViewModel
                 try {
                     val pager =
                         when (type) {
-                            DiscoverRequestType.DISCOVER_TV -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    DiscoverTvRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
+                            is DiscoverPagerType.RequestType -> {
+                                when (type.type) {
+                                    DiscoverRequestType.DISCOVER_TV -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            DiscoverTvRequestHandler,
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
+                                    DiscoverRequestType.DISCOVER_MOVIES -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            DiscoverMovieRequestHandler(),
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
+                                    DiscoverRequestType.TRENDING -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            TrendingRequestHandler,
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
+                                    DiscoverRequestType.UPCOMING_TV -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            UpcomingTvRequestHandler,
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
+                                    DiscoverRequestType.UPCOMING_MOVIES -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            UpcomingMovieRequestHandler,
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
+
+                                    DiscoverRequestType.UNKNOWN -> {
+                                        throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
+                                    }
+                                }
                             }
 
-                            DiscoverRequestType.DISCOVER_MOVIES -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    DiscoverMovieRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
+                            is DiscoverPagerType.Genre -> {
+                                when (type.type) {
+                                    SeerrItemType.MOVIE -> {
+                                        DiscoverRequestPager(
+                                            api,
+                                            DiscoverMovieRequestHandler(genre = type.genreId),
+                                            seerrService::createDiscoverItem,
+                                            viewModelScope,
+                                        )
+                                    }
 
-                            DiscoverRequestType.TRENDING -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    TrendingRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UPCOMING_TV -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    UpcomingTvRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UPCOMING_MOVIES -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    UpcomingMovieRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UNKNOWN -> {
-                                throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
+                                    else -> {
+                                        TODO()
+                                    }
+                                }
                             }
                         }.init(startIndex)
                     _state.update {
@@ -168,7 +190,7 @@ fun DiscoverRequestGrid(
             Column(
                 modifier = modifier,
             ) {
-                GridTitle(stringResource(destination.type.stringRes))
+                GridTitle(destination.type.title.getString())
 
                 CardGrid(
                     initialPosition = destination.startIndex,

@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,10 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.cards.GenreCard
+import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.components.Genre
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.listToDotString
@@ -51,12 +56,16 @@ import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -125,6 +134,44 @@ class SeerrDiscoverViewModel
                             DiscoverRequestType.UPCOMING_TV,
                         ),
                 )
+            }
+            viewModelScope.launchIO {
+                val movieGenres =
+                    try {
+                        val result = seerrService.api.searchApi.discoverGenresliderMovieGet()
+                        val genres =
+                            result
+                                .filter { it.id != null && it.name != null }
+                                .map {
+                                    val id = it.id!!.toUUID()
+                                    val imageUrl =
+                                        it.backdrops?.randomOrNull()?.let { path ->
+                                            seerrService.createImageUrl(
+                                                imageType = ImageType.BACKDROP,
+                                                path = path,
+                                                mediaInfo = null,
+                                                // Don't need high resolution
+                                                backdropWidth = 1280,
+                                                backdropHeight = 720,
+                                            )
+                                        }
+                                    Genre(
+                                        id = id,
+                                        name = it.name!!,
+                                        imageUrl = imageUrl,
+                                    )
+                                }
+                        Timber.v("Got %s movie genres", genres.size)
+                        DataLoadingState.Success(genres)
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error getting movie genres")
+                        DataLoadingState.Error(ex)
+                    }
+                state.update {
+                    it.copy(
+                        movieGenres = movieGenres,
+                    )
+                }
             }
         }
 
@@ -216,6 +263,10 @@ class SeerrDiscoverViewModel
         }
     }
 
+fun Int.toUUID() = UUID(0L, toLong())
+
+fun UUID.toInt() = leastSignificantBits.toInt()
+
 data class DiscoverRowData(
     val title: StringProvider,
     val items: DataLoadingState<List<DiscoverItem>>,
@@ -237,7 +288,15 @@ data class DiscoverState(
     val trending: DiscoverRowData = DiscoverRowData.EMPTY,
     val upcomingMovies: DiscoverRowData = DiscoverRowData.EMPTY,
     val upcomingTv: DiscoverRowData = DiscoverRowData.EMPTY,
+    val movieGenres: DataLoadingState<List<Genre>> = DataLoadingState.Pending,
 )
+
+private const val ROW_TRENDING = 0
+private const val ROW_MOVIES = ROW_TRENDING + 1
+private const val ROW_TV = ROW_MOVIES + 1
+private const val ROW_UPCOMING_MOVIES = ROW_TV + 1
+private const val ROW_UPCOMING_TV = ROW_UPCOMING_MOVIES + 1
+private const val ROW_GENRES_MOVIE = ROW_UPCOMING_TV + 1
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -251,7 +310,7 @@ fun SeerrDiscoverPage(
         listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
     val ratingMap by viewModel.rating.collectAsState()
 
-    val focusRequesters = remember(rows) { List(rows.size) { FocusRequester() } }
+    val focusRequesters = remember(rows) { List(ROW_GENRES_MOVIE + 1) { FocusRequester() } }
     var position by rememberPosition(0, -1)
     val focusedItem =
         remember(position) {
@@ -308,6 +367,7 @@ fun SeerrDiscoverPage(
                     .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
                     .fillMaxHeight(.25f),
         )
+
         val density = LocalDensity.current
         val spaceAbovePx =
             with(density) {
@@ -315,6 +375,37 @@ fun SeerrDiscoverPage(
                 50.dp.toPx()
             }
         val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+
+        @Composable
+        fun discoverItemRow(
+            rowIndex: Int,
+            row: DiscoverRowData,
+        ) {
+            CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
+                DiscoverRow(
+                    row = row,
+                    onClickItem = { index, item ->
+                        position = RowColumn(rowIndex, index)
+                        viewModel.navigationManager.navigateTo(item.destination)
+                    },
+                    onLongClickItem = { index, item -> },
+                    onCardFocus = { index -> position = RowColumn(rowIndex, index) },
+                    focusRequester = focusRequesters[rowIndex],
+                    enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
+                    onClickViewMore = {
+                        (row.items as? DataLoadingState.Success<List<DiscoverItem>>)?.data?.size?.let {
+                            position = RowColumn(rowIndex, it)
+                        }
+                        viewModel.navigationManager.navigateTo(
+                            Destination.DiscoverMoreResult(DiscoverPagerType.RequestType(row.type)),
+                        )
+                    },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(),
+                )
+            }
+        }
         CompositionLocalProvider(
             LocalBringIntoViewSpec provides ScrollToTopBringIntoViewSpec(spaceAbovePx),
         ) {
@@ -326,29 +417,42 @@ fun SeerrDiscoverPage(
                         .focusRestorer()
                         .fillMaxSize(),
             ) {
-                itemsIndexed(rows) { rowIndex, row ->
+                item { discoverItemRow(ROW_TRENDING, state.trending) }
+                item { discoverItemRow(ROW_MOVIES, state.movies) }
+                item { discoverItemRow(ROW_TV, state.tv) }
+                item { discoverItemRow(ROW_UPCOMING_MOVIES, state.upcomingMovies) }
+                item { discoverItemRow(ROW_UPCOMING_TV, state.upcomingTv) }
+                item {
                     CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
-                        DiscoverRow(
-                            row = row,
-                            onClickItem = { index, item ->
-                                position = RowColumn(rowIndex, index)
-                                viewModel.navigationManager.navigateTo(item.destination)
-                            },
-                            onLongClickItem = { index, item -> },
-                            onCardFocus = { index -> position = RowColumn(rowIndex, index) },
-                            focusRequester = focusRequesters[rowIndex],
-                            enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
-                            onClickViewMore = {
-                                (row.items as? DataLoadingState.Success<List<DiscoverItem>>)?.data?.size?.let {
-                                    position = RowColumn(rowIndex, it)
-                                }
+                        ItemRow(
+                            title = "Genres",
+                            items = state.movieGenres.successValue.orEmpty(),
+                            onClickItem = { index, genre ->
                                 viewModel.navigationManager.navigateTo(
-                                    Destination.DiscoverMoreResult(row.type),
+                                    Destination.DiscoverMoreResult(
+                                        type =
+                                            DiscoverPagerType.Genre(
+                                                genreId = genre.id.toInt(),
+                                                name = genre.name,
+                                                type = SeerrItemType.MOVIE,
+                                            ),
+                                        startIndex = 0,
+                                    ),
                                 )
                             },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(),
+                            onLongClickItem = { index, genre -> },
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                GenreCard(
+                                    genre = item,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    modifier = mod.height(Cards.heightEpisode),
+                                )
+                            },
+                            modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
+                            horizontalPadding = 16.dp,
+                            showViewMore = false,
+                            viewMoreCardContent = {},
                         )
                     }
                 }

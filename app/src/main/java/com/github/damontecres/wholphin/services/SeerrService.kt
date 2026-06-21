@@ -153,10 +153,12 @@ class SeerrService
                 null
             }
 
-        private suspend fun createImageUrl(
+        suspend fun createImageUrl(
             imageType: ImageType,
             path: String?,
             mediaInfo: MediaInfo?,
+            backdropHeight: Int = 1080,
+            backdropWidth: Int = 1920,
         ): String? {
             if (mediaInfo != null) {
                 val itemId =
@@ -185,7 +187,7 @@ class SeerrService
             val prefix =
                 when (imageType) {
                     ImageType.PRIMARY -> "/t/p/w500"
-                    ImageType.BACKDROP -> "/t/p/w1920_and_h1080_multi_faces"
+                    ImageType.BACKDROP -> "/t/p/w${backdropWidth}_and_h${backdropHeight}_multi_faces"
                     else -> throw IllegalArgumentException("Image type not supported: $imageType")
                 }
             return "${base}${prefix}$path"
