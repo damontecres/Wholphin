@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity() {
                 CoilConfig(
                     prefs = appPreferences,
                     okHttpClient = okHttpClient,
-                    debugLogging = false,
+                    debugLogging = true,
                     enableCache = true,
                 )
                 LaunchedEffect(appPreferences.debugLogging) {
