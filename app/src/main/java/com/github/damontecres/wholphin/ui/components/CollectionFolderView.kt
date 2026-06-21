@@ -49,6 +49,7 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PlaybackResultCache
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -77,6 +78,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -118,6 +120,7 @@ class CollectionFolderViewModel
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
         private val filterOptionCache: FilterOptionCache,
+        private val playbackResultCache: PlaybackResultCache,
         @Assisted val itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
         @Assisted("recursive") private val recursive: Boolean,
@@ -499,6 +502,26 @@ class CollectionFolderViewModel
 
         fun onResumePage() {
             viewModelScope.launchIO {
+                // After returning (e.g. from playback) refresh the focused item's watched
+                // state immediately instead of waiting for a reload. Prefer the locally known
+                // playback result (race-free); fall back to a server refresh otherwise.
+                try {
+                    ((state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                        ?.let { pager ->
+                            (pager.getOrNull(position) as? BaseItem)?.let { item ->
+                                val result = playbackResultCache.take(item.id)
+                                if (result != null) {
+                                    pager.updateUserData(position, item.id, result.positionTicks, result.played)
+                                } else {
+                                    pager.refreshItem(position, item.id)
+                                }
+                            }
+                        }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error refreshing focused item on resume")
+                }
                 state.value.item.successValue?.let {
                     Timber.v("onResumePage: %s", state.value.items::class)
                     if (it.type == BaseItemKind.BOX_SET && state.value.items !is DataLoadingState.Error) {
