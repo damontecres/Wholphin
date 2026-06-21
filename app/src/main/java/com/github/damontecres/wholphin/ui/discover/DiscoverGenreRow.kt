@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -23,6 +24,7 @@ fun DiscoverGenreRow(
     title: StringProvider,
     items: DataLoadingState<List<Genre>>,
     onClickItem: (Int, Genre) -> Unit,
+    onCardFocus: (Int) -> Unit,
     modifier: Modifier = Modifier,
     onLongClickItem: (Int, Genre) -> Unit = { _, _ -> },
 ) {
@@ -62,10 +64,15 @@ fun DiscoverGenreRow(
                         genre = item,
                         onClick = onClick,
                         onLongClick = onLongClick,
-                        modifier = mod.height(Cards.heightEpisode),
+                        modifier =
+                            mod
+                                .height(Cards.heightEpisode)
+                                .onFocusChanged {
+                                    if (it.isFocused) onCardFocus.invoke(index)
+                                },
                     )
                 },
-                modifier = Modifier,
+                modifier = modifier,
                 horizontalPadding = 16.dp,
                 showViewMore = false,
                 viewMoreCardContent = {},

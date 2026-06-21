@@ -345,19 +345,31 @@ fun SeerrDiscoverPage(
     viewModel: SeerrDiscoverViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val rows =
-        listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
     val ratingMap by viewModel.rating.collectAsState()
 
-    val focusRequesters = remember(rows) { List(LAST_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(LAST_ROW + 1) { FocusRequester() } }
     var position by rememberPosition(0, -1)
     val focusedItem =
         remember(position) {
             position.let {
-                (rows.getOrNull(it.row)?.items as? DataLoadingState.Success)?.data?.getOrNull(it.column)
+                val discoverRow =
+                    when (position.row) {
+                        ROW_TRENDING -> state.trending
+                        ROW_MOVIES -> state.movies
+                        ROW_UPCOMING_MOVIES -> state.upcomingMovies
+                        ROW_TV -> state.tv
+                        ROW_UPCOMING_TV -> state.upcomingTv
+                        else -> null
+                    }
+                if (discoverRow != null) {
+                    (discoverRow.items as? DataLoadingState.Success)?.data?.getOrNull(it.column)
+                } else {
+                    null
+                }
             }
         }
     LaunchedEffect(focusedItem) {
+        Timber.v("updateBackdrop %s", focusedItem?.id)
         viewModel.updateBackdrop(focusedItem)
     }
     var firstFocused by rememberSaveable { mutableStateOf(false) }
@@ -472,6 +484,7 @@ fun SeerrDiscoverPage(
                                 },
                             items = state.movieGenres,
                             onClickItem = { index, genre ->
+                                position = RowColumn(ROW_GENRES_MOVIE, index)
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(
                                         type =
@@ -483,6 +496,9 @@ fun SeerrDiscoverPage(
                                         startIndex = 0,
                                     ),
                                 )
+                            },
+                            onCardFocus = { index ->
+                                position = RowColumn(ROW_GENRES_MOVIE, index)
                             },
                             modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
                         )
@@ -504,6 +520,7 @@ fun SeerrDiscoverPage(
                                 },
                             items = state.tvGenres,
                             onClickItem = { index, genre ->
+                                position = RowColumn(ROW_GENRES_TV, index)
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(
                                         type =
@@ -516,7 +533,8 @@ fun SeerrDiscoverPage(
                                     ),
                                 )
                             },
-                            modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
+                            onCardFocus = { index -> position = RowColumn(ROW_GENRES_TV, index) },
+                            modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_TV]),
                         )
                     }
                 }
