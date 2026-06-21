@@ -33,13 +33,13 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +51,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -141,7 +142,7 @@ class GenreViewModel
         }
 
         suspend fun positionOfLetter(letter: Char): Int =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val request =
                     GetGenresRequest(
                         parentId = itemId,
@@ -196,7 +197,7 @@ suspend fun getGenreImageMap(
     val semaphore = Semaphore(4)
     genres
         .map { genreId ->
-            scope.async(Dispatchers.IO) {
+            scope.async(WholphinDispatchers.IO) {
                 semaphore.withPermit {
                     val item =
                         GetItemsRequestHandler
@@ -255,6 +256,7 @@ data class Genre(
 fun GenreCardGrid(
     itemId: UUID,
     includeItemTypes: List<BaseItemKind>?,
+    collectionType: CollectionType,
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     viewModel: GenreViewModel =
@@ -308,6 +310,7 @@ fun GenreCardGrid(
                                 parentId = itemId,
                                 parentName = item.title,
                                 includeItemTypes = includeItemTypes,
+                                collectionType = collectionType,
                             ),
                         )
                     },

@@ -62,7 +62,7 @@
     <string name="max_bitrate">Maximális bitráta</string>
     <string name="more_like_this">Hasonlóak</string>
     <string name="more">Továbbiak</string>
-    <string name="movies">Filmek</string>
+    <string name="movies_title">Filmek</string>
     <string name="name">Név</string>
     <string name="next_up">Következő</string>
     <string name="no_data">Nincs adat</string>
@@ -72,7 +72,7 @@
     <string name="none">Nincs</string>
     <string name="outro">Stáblista</string>
     <string name="path">Elérési út</string>
-    <string name="people">Stábtagok</string>
+    <string name="people_title">Stábtagok</string>
     <string name="play_count">Lejátszások száma</string>
     <string name="play_from_here">Lejátszás innen</string>
     <string name="play">Lejátszás</string>
@@ -120,7 +120,6 @@
     <string name="switch_servers">Váltás másik szerverre</string>
     <string name="switch_user">Váltás</string>
     <string name="top_unwatched">Legjobbra értékelt, nem megnézett</string>
-    <string name="trailer">Előzetes</string>
     <plurals name="trailers">
         <item quantity="one">Előzetesek</item>
         <item quantity="other"/>
@@ -129,7 +128,7 @@
     <string name="tv_guide">Műsorújság</string>
     <string name="tv_season">Évad</string>
     <string name="tv_seasons">Évadok</string>
-    <string name="tv_shows">Sorozatok</string>
+    <string name="tv_shows_title">Sorozatok</string>
     <string name="ui_interface">Kezelőfelület</string>
     <string name="unknown">Ismeretlen</string>
     <string name="updates">Frissítések</string>
@@ -152,7 +151,7 @@
     <string name="success">Sikeres</string>
     <string name="official_rating">Korhatár-besorolás</string>
     <string name="runtime_sort">Hossz</string>
-    <string name="extras">Extrák</string>
+    <string name="extras_title">Extrák</string>
     <plurals name="other_extras">
         <item quantity="one">Egyéb</item>
         <item quantity="other">Egyebek</item>

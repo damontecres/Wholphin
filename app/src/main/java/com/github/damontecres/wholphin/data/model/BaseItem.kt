@@ -24,6 +24,7 @@ import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
 import java.util.UUID
@@ -91,7 +92,12 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration?
+        get() =
+            when (type) {
+                BaseItemKind.PROGRAM -> null
+                else -> data.timeRemaining ?: data.runTimeTicks?.ticks
+            }
 
     /**
      * Contains pre computed UI elements that would be expensive to create on the main thread
@@ -136,6 +142,17 @@ data class BaseItem(
                                     } else if (type == BaseItemKind.BOX_SET) {
                                         data.productionYear?.let { add(it.toString()) }
                                         data.childCount?.let { add("$it items") }
+                                    } else if (type == BaseItemKind.PROGRAM) {
+                                        data.channelName?.let(::add)
+                                        if (data.isSeries == true) {
+                                            // TV episode
+                                            data.seasonEpisode?.let(::add)
+                                            data.premiereDate?.let {
+                                                add(getDateFormatter().format(it))
+                                            }
+                                        } else {
+                                            data.productionYear?.let { add(it.toString()) }
+                                        }
                                     } else {
                                         data.productionYear?.let { add(it.toString()) }
                                     }
@@ -197,6 +214,10 @@ data class BaseItem(
      */
     fun destination(index: Int? = null): Destination {
         if (destinationOverride != null) return destinationOverride
+        if (data.extraType != null || type == BaseItemKind.TRAILER) {
+            // Extras including trailers should always play directly
+            return Destination.Playback(id, 0)
+        }
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -283,6 +304,7 @@ fun createGenreDestination(
     parentId: UUID,
     parentName: String?,
     includeItemTypes: List<BaseItemKind>?,
+    collectionType: CollectionType,
 ) = Destination.FilteredCollection(
     itemId = parentId,
     parentType = BaseItemKind.GENRE,
@@ -301,6 +323,7 @@ fun createGenreDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = collectionType,
 )
 
 fun createStudioDestination(
@@ -327,6 +350,7 @@ fun createStudioDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = CollectionType.UNKNOWN,
 )
 
 val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()

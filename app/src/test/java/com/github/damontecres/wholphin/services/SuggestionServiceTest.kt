@@ -8,19 +8,19 @@ import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -48,12 +48,12 @@ class SuggestionServiceTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        WholphinDispatchers.configure(testDispatcher)
     }
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        WholphinDispatchers.reset()
         io.mockk.unmockkObject(GetItemsRequestHandler)
     }
 

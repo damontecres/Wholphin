@@ -95,12 +95,15 @@ fun ViewMoreCard(
                     containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                 ),
         ) {
-            Box {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 Icon(
                     imageVector = Icons.Default.ArrowForward,
                     tint = MaterialTheme.colorScheme.onSurface,
                     contentDescription = "View more",
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(.66f),
                 )
             }
         }

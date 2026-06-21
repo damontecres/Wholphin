@@ -1,8 +1,12 @@
 package com.github.damontecres.wholphin.ui.data
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.github.damontecres.wholphin.R
 import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
@@ -46,6 +50,7 @@ val SeriesSortOptions =
         ItemSortBy.DATE_LAST_CONTENT_ADDED,
         ItemSortBy.DATE_PLAYED,
         ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
         ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RANDOM,
     )
@@ -53,19 +58,27 @@ val SeriesSortOptions =
 val EpisodeSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_PLAYED,
         ItemSortBy.AIRED_EPISODE_ORDER,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
         ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RUNTIME,
+        ItemSortBy.PLAY_COUNT,
         ItemSortBy.RANDOM,
     )
 
 val VideoSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RUNTIME,
         ItemSortBy.PLAY_COUNT,
         ItemSortBy.RANDOM,
@@ -80,6 +93,7 @@ val PlaylistSortOptions =
         ItemSortBy.DATE_PLAYED,
         ItemSortBy.COMMUNITY_RATING,
         ItemSortBy.CRITIC_RATING,
+        ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RUNTIME,
         ItemSortBy.PLAY_COUNT,
         ItemSortBy.RANDOM,
@@ -179,4 +193,32 @@ fun getStringRes(sort: ItemSortBy): Int =
         ItemSortBy.ARTIST -> R.string.artist
 
         else -> throw IllegalArgumentException("Unsupported sort option: $sort")
+    }
+
+@Composable
+fun rememberSortOptions(collectionType: CollectionType): List<ItemSortBy> =
+    remember(collectionType) {
+        when (collectionType) {
+            CollectionType.MOVIES -> MovieSortOptions
+            CollectionType.TVSHOWS -> SeriesSortOptions
+            CollectionType.MUSIC -> AlbumSortOptions
+            CollectionType.BOXSETS -> BoxSetSortOptions
+            else -> VideoSortOptions
+        }
+    }
+
+@Composable
+fun rememberSortOptions(type: BaseItemKind): List<ItemSortBy> =
+    remember(type) {
+        when (type) {
+            BaseItemKind.MOVIE -> MovieSortOptions
+            BaseItemKind.SERIES -> SeriesSortOptions
+            BaseItemKind.SEASON -> SeriesSortOptions
+            BaseItemKind.EPISODE -> EpisodeSortOptions
+            BaseItemKind.AUDIO -> SongSortOptions
+            BaseItemKind.MUSIC_ALBUM -> AlbumSortOptions
+            BaseItemKind.MUSIC_ARTIST -> ArtistSortOptions
+            BaseItemKind.BOX_SET -> BoxSetSortOptions
+            else -> VideoSortOptions
+        }
     }

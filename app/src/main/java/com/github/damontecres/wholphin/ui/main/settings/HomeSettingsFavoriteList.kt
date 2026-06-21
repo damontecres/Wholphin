@@ -53,12 +53,12 @@ fun HomeSettingsFavoriteList(
 
 val favoriteOptions by lazy {
     mapOf(
-        BaseItemKind.MOVIE to R.string.movies,
-        BaseItemKind.SERIES to R.string.tv_shows,
+        BaseItemKind.MOVIE to R.string.movies_title,
+        BaseItemKind.SERIES to R.string.tv_shows_title,
         BaseItemKind.EPISODE to R.string.episodes,
         BaseItemKind.VIDEO to R.string.videos,
         BaseItemKind.PLAYLIST to R.string.playlists,
-        BaseItemKind.PERSON to R.string.people,
+        BaseItemKind.PERSON to R.string.people_title,
         BaseItemKind.MUSIC_ARTIST to R.string.artists,
         BaseItemKind.MUSIC_ALBUM to R.string.albums,
     )

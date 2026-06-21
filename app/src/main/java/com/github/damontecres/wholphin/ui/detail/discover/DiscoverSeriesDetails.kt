@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -518,7 +517,6 @@ fun buildDialogForSeason(
                 DialogItem(
                     resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
                 ) {
                     onClickPlay.invoke(false)
                 },

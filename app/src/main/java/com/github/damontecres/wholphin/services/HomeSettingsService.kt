@@ -3,10 +3,12 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
@@ -14,6 +16,7 @@ import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.main.settings.Library
@@ -31,12 +34,14 @@ import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetLiveTvChannelsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
+import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -59,11 +64,13 @@ import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -73,7 +80,6 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
-import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import timber.log.Timber
@@ -93,6 +99,7 @@ class HomeSettingsService
         private val api: ApiClient,
         private val serverPluginApi: ServerPluginApi,
         private val serverRepository: ServerRepository,
+        private val serverDao: JellyfinServerDao,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
         private val latestNextUpService: LatestNextUpService,
@@ -221,51 +228,91 @@ class HomeSettingsService
                 null
             }
 
-        /**
-         * Loads [HomePageSettings] into [currentSettings]
-         *
-         * First checks locally, then on the server, and finally creates a default if needed
-         *
-         * Does not persist either the server nor default
-         */
-        suspend fun loadCurrentSettings(userId: UUID) {
-            Timber.v("Getting setting for %s", userId)
-            // User local then server/remote otherwise create a default
-            // TODO figure out priority order
+        suspend fun fetchSettingsFor(
+            userId: UUID,
+            source: HomePageSettingsSource,
+        ): HomePageResolvedSettings? {
             val settings =
-                tryLoad {
-                    serverPluginApi.fetchHomePageSettings()
-                } ?: tryLoad {
-                    loadFromLocal(userId)
-                } ?: tryLoad {
-                    loadFromServer(userId)
+                when (source) {
+                    HomePageSettingsSource.UNSET -> loadInOrder(userId)
+                    HomePageSettingsSource.LOCAL -> loadFromLocal(userId)
+                    HomePageSettingsSource.SERVER_PROFILE -> loadFromServer(userId)
+                    HomePageSettingsSource.PLUGIN -> serverPluginApi.fetchHomePageSettings()
                 }
-            val resolvedSettings =
-                if (settings != null) {
-                    Timber.v("Found settings")
-                    // Resolve
-                    val resolvedRows =
-                        settings.rows.mapIndexed { index, config ->
-                            resolve(index, config)
-                        }
-                    HomePageResolvedSettings(resolvedRows)
-                } else {
-                    createDefault(userId)
+            return settings?.let {
+                val resolvedRows =
+                    settings.rows.mapIndexed { index, config ->
+                        resolve(index, config)
+                    }
+                HomePageResolvedSettings(resolvedRows)
+            }
+        }
+
+        /**
+         * Loads [HomePageSettings] into [currentSettings] based on the user's config
+         */
+        suspend fun loadCurrentSettings(user: JellyfinUser) {
+            currentSettings.update { HomePageResolvedSettings.EMPTY }
+
+            Timber.v("Getting setting for %s", user.id)
+            val settings =
+                try {
+                    fetchSettingsFor(user.id, user.config.homeSettingsSource)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error loading settings for %s", user.config.homeSettingsSource)
+                    null
+                }
+            if (settings != null) {
+                Timber.v("Found settings")
+            }
+
+            val resolvedSettings = settings ?: createDefault(user.id)
+            currentSettings.update { resolvedSettings }
+        }
+
+        /**
+         * Tries to load settings from local->server->plugin
+         */
+        private suspend fun loadInOrder(userId: UUID): HomePageSettings? {
+            var settings =
+                tryLoad {
+                    loadFromLocal(userId)
                 }
 
-            currentSettings.update { resolvedSettings }
+            if (settings == null) {
+                settings =
+                    tryLoad {
+                        loadFromServer(userId)
+                    }
+            }
+
+            if (settings == null) {
+                settings =
+                    tryLoad {
+                        serverPluginApi.fetchHomePageSettings()
+                    }
+            }
+            return settings
         }
 
         /**
          * Resolve the settings and set them to be the current settings
          */
-        suspend fun updateCurrent(settings: HomePageSettings) {
+        suspend fun updateCurrent(
+            source: HomePageSettingsSource,
+            settings: HomePageSettings,
+        ) {
             val resolvedRows =
                 settings.rows.mapIndexed { index, config ->
                     resolve(index, config)
                 }
-            val resolvedSettings = HomePageResolvedSettings(resolvedRows)
-            currentSettings.update { resolvedSettings }
+            currentSettings.update { it.copy(rows = resolvedRows) }
+            serverRepository.currentUser?.let { user ->
+                val toSave = user.updateConfig { it.copy(homeSettingsSource = source) }
+                serverDao.updateUser(toSave)
+            }
         }
 
         /**
@@ -290,7 +337,7 @@ class HomeSettingsService
                         if (it.collectionType == CollectionType.LIVETV) {
                             HomeRowConfigDisplay(
                                 id = index,
-                                title = ResStringProvider(R.string.live_tv),
+                                title = ResStringProvider(R.string.watch_live),
                                 config = HomeRowConfig.TvPrograms(),
                             )
                         } else {
@@ -376,7 +423,7 @@ class HomeSettingsService
                                         if (userDto.tvAccess) {
                                             HomeRowConfigDisplay(
                                                 id = id++,
-                                                title = ResStringProvider(R.string.live_tv),
+                                                title = ResStringProvider(R.string.watch_live),
                                                 config = HomeRowConfig.TvPrograms(),
                                             )
                                         } else {
@@ -512,7 +559,7 @@ class HomeSettingsService
                 is HomeRowConfig.Favorite -> {
                     val name =
                         ResProviderStringProvider(
-                            R.string.favorite_items,
+                            R.string.favorite_items_title,
                             ResStringProvider(favoriteOptions[config.kind]!!),
                         )
                     HomeRowConfigDisplay(id, name, config)
@@ -529,7 +576,7 @@ class HomeSettingsService
                 is HomeRowConfig.TvPrograms -> {
                     HomeRowConfigDisplay(
                         id = id,
-                        title = ResStringProvider(R.string.live_tv),
+                        title = ResStringProvider(R.string.watch_live),
                         config,
                     )
                 }
@@ -567,8 +614,10 @@ class HomeSettingsService
         ): StringProvider =
             try {
                 api.userLibraryApi
-                    .getItem(itemId = itemId)
-                    .content.name
+                    .getItem(
+                        userId = serverRepository.currentUser?.id,
+                        itemId = itemId,
+                    ).content.name
                     ?.let {
                         if (stringRes == null) {
                             StringStringProvider(it)
@@ -609,6 +658,7 @@ class HomeSettingsService
                         items = resume,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = resume.size >= limit,
                     )
                 }
 
@@ -628,6 +678,7 @@ class HomeSettingsService
                         items = nextUp,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = nextUp.size >= limit,
                     )
                 }
 
@@ -648,17 +699,14 @@ class HomeSettingsService
                             prefs.maxDaysNextUp,
                             row.viewOptions.useSeries,
                         )
+                    val combined = latestNextUpService.buildCombined(resume, nextUp)
 
                     Success(
                         title = ResStringProvider(R.string.continue_watching),
-                        items =
-                            latestNextUpService
-                                .buildCombined(
-                                    resume,
-                                    nextUp,
-                                ).take(limit),
+                        items = combined.take(limit),
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = combined.size >= limit,
                     )
                 }
 
@@ -710,6 +758,9 @@ class HomeSettingsService
                                                 listOf(it)
                                             }
                                         },
+                                    collectionType =
+                                        library?.collectionType
+                                            ?: CollectionType.UNKNOWN,
                                 ),
                             )
                         }
@@ -719,6 +770,7 @@ class HomeSettingsService
                         genres,
                         viewOptions = row.viewOptions,
                         rowType = row,
+                        showViewMore = genres.size >= limit,
                     )
                 }
 
@@ -770,6 +822,7 @@ class HomeSettingsService
                         title,
                         studios,
                         viewOptions = row.viewOptions,
+                        showViewMore = studios.size >= limit,
                     )
                 }
 
@@ -798,6 +851,7 @@ class HomeSettingsService
                                     it,
                                     row.viewOptions,
                                     rowType = row,
+                                    showViewMore = it.size >= limit,
                                 )
                             }
                     latest
@@ -845,13 +899,14 @@ class HomeSettingsService
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem.from(it, api, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
                     }.let {
                         Success(
                             title,
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -884,8 +939,15 @@ class HomeSettingsService
                             fields = DefaultItemFields,
                         )
 
+                    // Not using getItemName because we want to throw the 404
                     val title =
-                        getItemName(null, row.parentId, ResStringProvider(R.string.collection))
+                        api.userLibraryApi
+                            .getItem(
+                                userId = serverRepository.currentUser?.id,
+                                itemId = row.parentId,
+                            ).content.name
+                            ?.let { StringStringProvider(it) }
+                            ?: ResStringProvider(R.string.collection)
                     if (usePaging) {
                         ApiRequestPager(
                             api,
@@ -905,6 +967,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -942,6 +1005,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -949,7 +1013,7 @@ class HomeSettingsService
                 is HomeRowConfig.Favorite -> {
                     val title =
                         ResProviderStringProvider(
-                            R.string.favorite_items,
+                            R.string.favorite_items_title,
                             ResStringProvider(favoriteOptions[row.kind]!!),
                         )
                     if (row.kind == BaseItemKind.PERSON) {
@@ -971,6 +1035,7 @@ class HomeSettingsService
                                     title,
                                     it,
                                     row.viewOptions,
+                                    showViewMore = it.size >= limit,
                                 )
                             }
                     } else {
@@ -1002,6 +1067,7 @@ class HomeSettingsService
                                 it,
                                 row.viewOptions,
                                 rowType = row,
+                                showViewMore = it.size >= limit,
                             )
                         }
                     }
@@ -1037,34 +1103,46 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
 
                 is HomeRowConfig.TvPrograms -> {
                     val request =
-                        GetRecommendedProgramsRequest(
+                        GetProgramsDto(
                             userId = userDto.id,
-                            fields = DefaultItemFields,
+                            fields = ProgramItemFields,
                             limit = limit,
                             enableUserData = true,
                             enableImages = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.LOGO),
                             imageTypeLimit = 1,
+                            isAiring = true,
+                            minEndDate = DateTime.now().plusMinutes(1),
                         )
-                    // paging not supported
-                    api.liveTvApi
-                        .getRecommendedPrograms(request)
-                        .content.items
-                        .map { BaseItem(it, row.viewOptions.useSeries) }
-                        .let {
-                            Success(
-                                ResStringProvider(R.string.live_tv),
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                            )
-                        }
+                    if (usePaging) {
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetProgramsDtoHandler,
+                            scope,
+                            useSeriesForPrimary = row.viewOptions.useSeries,
+                        ).init()
+                    } else {
+                        api.liveTvApi
+                            .getPrograms(request)
+                            .content.items
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                    }.let {
+                        Success(
+                            ResStringProvider(R.string.watch_live),
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                            showViewMore = it.size >= limit,
+                        )
+                    }
                 }
 
                 is HomeRowConfig.TvChannels -> {
@@ -1093,6 +1171,7 @@ class HomeSettingsService
                             it,
                             row.viewOptions,
                             rowType = row,
+                            showViewMore = it.size >= limit,
                         )
                     }
                 }
@@ -1125,6 +1204,7 @@ class HomeSettingsService
                                     suggestions.items,
                                     row.viewOptions,
                                     rowType = row,
+                                    showViewMore = suggestions.items.size >= limit,
                                 )
                             }
 
@@ -1214,9 +1294,20 @@ data class HomeRowConfigDisplay(
 data class HomePageResolvedSettings(
     val rows: List<HomeRowConfigDisplay>,
 ) {
+    fun asHomePageSettings(): HomePageSettings = HomePageSettings(rows.map { it.config }, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
+
     companion object {
-        val EMPTY = HomePageResolvedSettings(listOf())
+        val EMPTY = HomePageResolvedSettings(emptyList())
     }
+}
+
+enum class HomePageSettingsSource(
+    @param:StringRes val stringResId: Int,
+) {
+    UNSET(R.string.home_settings_source_unset),
+    LOCAL(R.string.home_settings_source_local),
+    SERVER_PROFILE(R.string.home_settings_source_server_profile),
+    PLUGIN(R.string.home_settings_source_plugin),
 }
 
 // https://github.com/jellyfin/jellyfin/blob/v10.11.6/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/HomeSectionType.cs

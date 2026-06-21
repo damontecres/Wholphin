@@ -28,9 +28,9 @@ import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +42,7 @@ import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
@@ -116,7 +117,7 @@ class HomeViewModel
                         val deferred =
                             settings.rows
                                 .map { row ->
-                                    viewModelScope.async(Dispatchers.IO) {
+                                    viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             Timber.v("Fetching row: %s", row)
                                             try {
@@ -129,6 +130,25 @@ class HomeViewModel
                                                     limit = prefs.maxItemsPerRow,
                                                     isRefresh = refresh,
                                                 )
+                                            } catch (ex: InvalidStatusException) {
+                                                if (ex.status == 404) {
+                                                    Timber.w(ex, "404 on row %s", row)
+                                                    HomeRowLoadingState.Success(
+                                                        row.title,
+                                                        emptyList(),
+                                                    )
+                                                } else {
+                                                    Timber.e(
+                                                        ex,
+                                                        "Error %s on row %s",
+                                                        ex.status,
+                                                        row,
+                                                    )
+                                                    HomeRowLoadingState.Error(
+                                                        row.title,
+                                                        exception = ex,
+                                                    )
+                                                }
                                             } catch (ex: Exception) {
                                                 Timber.e(ex, "Error on row %s", row)
                                                 HomeRowLoadingState.Error(
@@ -200,9 +220,9 @@ class HomeViewModel
         fun setWatched(
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 init()
             }
         }
@@ -210,9 +230,9 @@ class HomeViewModel
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 init()
             }
         }

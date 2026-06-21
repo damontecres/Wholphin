@@ -62,7 +62,7 @@
     <string name="max_bitrate">Max. bitsnelheid</string>
     <string name="more_like_this">Soortgelijk</string>
     <string name="more">Meer</string>
-    <string name="movies">Films</string>
+    <string name="movies_title">Films</string>
     <string name="name">Naam</string>
     <string name="next_up">Volgende</string>
     <string name="no_data">Geen informatie</string>
@@ -72,7 +72,7 @@
     <string name="none">Geen</string>
     <string name="outro">Aftiteling</string>
     <string name="path">Locatie</string>
-    <string name="people">Personen</string>
+    <string name="people_title">Personen</string>
     <string name="play_count">Aantal keer bekeken</string>
     <string name="play_from_here">Vanaf hier afspelen</string>
     <string name="play">Afspelen</string>
@@ -121,7 +121,6 @@
     <string name="switch_servers">Andere server kiezen</string>
     <string name="switch_user">Kiezen</string>
     <string name="top_unwatched">Best beoordeeld niet-bekeken</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailer</item>
         <item quantity="other">Trailers</item>
@@ -130,7 +129,7 @@
     <string name="tv_guide">Gids</string>
     <string name="tv_season">Seizoen</string>
     <string name="tv_seasons">Seizoenen</string>
-    <string name="tv_shows">Series</string>
+    <string name="tv_shows_title">Series</string>
     <string name="ui_interface">Vormgeving</string>
     <string name="unknown">Onbekend</string>
     <string name="updates">Updates</string>
@@ -153,7 +152,7 @@
     <string name="success">Voltooid</string>
     <string name="official_rating">Kijkwijzer</string>
     <string name="runtime_sort">Duur</string>
-    <string name="extras">Extra\'s</string>
+    <string name="extras_title">Extra\'s</string>
     <plurals name="other_extras">
         <item quantity="one">Overig</item>
         <item quantity="other"/>
@@ -362,7 +361,7 @@
     <string name="zoom_out">Zoom uit</string>
     <string name="skip_ignore">Negeren</string>
     <string name="skip_ask">Vraag om overslaan</string>
-    <string name="favorite_items">Favoriete %s</string>
+    <string name="favorite_items_title">Favoriete %s</string>
     <string name="duration">Duur</string>
     <string name="add_row">Rij toevoegen</string>
     <string name="for_all_ages">Alle leeftijden</string>

@@ -742,7 +742,6 @@ fun buildDialogForSeason(
                 DialogItem(
                     resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
                 ) {
                     onClickPlay.invoke(false)
                 },

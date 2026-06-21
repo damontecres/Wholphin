@@ -106,6 +106,7 @@ sealed class Destination(
         val parentType: BaseItemKind,
         val filter: CollectionFolderFilter,
         val recursive: Boolean,
+        val collectionType: CollectionType,
     ) : Destination(false)
 
     @Serializable

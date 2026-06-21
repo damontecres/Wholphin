@@ -13,6 +13,8 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
@@ -27,6 +29,7 @@ fun FocusedEpisodeFooter(
     favoriteOnClick: () -> Unit,
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
+    onChooseVersion: (MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
     buttonOnFocusChanged: (FocusState) -> Unit = {},
 ) {
@@ -52,6 +55,14 @@ fun FocusedEpisodeFooter(
             trailerOnClick = {},
             canDelete = canDelete,
             onConfirmDelete = onConfirmDelete,
+            chooseVersionParams =
+                remember(chosenStreams, ep, onChooseVersion) {
+                    ChooseVersionParams(
+                        chosenStreams = chosenStreams,
+                        mediaSources = ep.data.mediaSources.orEmpty(),
+                        onChooseVersion = onChooseVersion,
+                    )
+                },
             modifier = Modifier.fillMaxWidth(),
         )
     }

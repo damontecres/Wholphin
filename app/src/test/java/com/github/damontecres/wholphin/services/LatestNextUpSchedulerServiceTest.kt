@@ -8,17 +8,17 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -36,14 +36,14 @@ class LatestNextUpSchedulerServiceTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        WholphinDispatchers.configure(testDispatcher)
         every { mockActivity.lifecycle } returns lifecycleRegistry
         every { mockServerRepository.current } returns currentUser
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() = WholphinDispatchers.reset()
 
     private fun createService() =
         LatestNextUpSchedulerService(
@@ -56,7 +56,7 @@ class LatestNextUpSchedulerServiceTest {
 
     @Test
     fun cancels_latestNextUp_work_when_user_null() =
-        runTest {
+        runTest(testDispatcher) {
             createService()
 
             currentUser.value = null

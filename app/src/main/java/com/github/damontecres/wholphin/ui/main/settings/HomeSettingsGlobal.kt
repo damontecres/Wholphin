@@ -34,12 +34,6 @@ fun HomeSettingsGlobal(
     preferences: AppPreferences,
     onPreferenceChange: (AppPreferences) -> Unit,
     onClickResize: (Int) -> Unit,
-    onClickSave: () -> Unit,
-    onClickLoad: () -> Unit,
-    onClickLoadWeb: () -> Unit,
-    serverPluginActive: Boolean,
-    onClickLoadPlugin: () -> Unit,
-    onClickReset: () -> Unit,
     onClickViewNextUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -149,78 +143,6 @@ fun HomeSettingsGlobal(
                         )
                     },
                     onClick = onClickViewNextUp,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.save_to_server),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_cloud_arrow_up),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickSave,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.load_from_server),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_cloud_arrow_down),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickLoad,
-                    modifier = Modifier,
-                )
-            }
-            if (serverPluginActive) {
-                item {
-                    HomeSettingsListItem(
-                        selected = false,
-                        headlineText = stringResource(R.string.load_from_server_plugin),
-                        leadingContent = {
-                            Text(
-                                text = stringResource(R.string.fa_download),
-                                fontFamily = FontAwesome,
-                            )
-                        },
-                        onClick = onClickLoadPlugin,
-                        modifier = Modifier,
-                    )
-                }
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.load_from_web_client),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_download),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickLoadWeb,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineText = stringResource(R.string.reset),
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_arrows_rotate),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickReset,
                     modifier = Modifier,
                 )
             }

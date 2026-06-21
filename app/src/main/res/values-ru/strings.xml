@@ -52,14 +52,14 @@
     <string name="mark_watched">Отметить как просмотренное</string>
     <string name="max_bitrate">Максимальный битрейт</string>
     <string name="more_like_this">Похожее</string>
-    <string name="movies">Фильмы</string>
+    <string name="movies_title">Фильмы</string>
     <string name="name">Имя</string>
     <string name="next_up">Далее</string>
     <string name="no_data">Нет информации</string>
     <string name="no_results">Нет результатов</string>
     <string name="no_update_available">Нет доступных обновлений</string>
     <string name="path">Путь</string>
-    <string name="people">Люди</string>
+    <string name="people_title">Люди</string>
     <string name="playback_debug_info">Показать отладочную инфомацию воспроизведения</string>
     <string name="playback_speed">Скорость воспроизведения</string>
     <string name="playback">Воспроизведение</string>
@@ -95,7 +95,6 @@
     <string name="switch_servers">Сменить сервер</string>
     <string name="switch_user">Сменить</string>
     <string name="top_unwatched">Лучшее непросмотренное</string>
-    <string name="trailer">Трейлер</string>
     <plurals name="trailers">
         <item quantity="one">Трейлер</item>
         <item quantity="few">Трейлера</item>
@@ -105,7 +104,7 @@
     <string name="tv_guide">Телегид</string>
     <string name="tv_season">Сезон</string>
     <string name="tv_seasons">Сезоны</string>
-    <string name="tv_shows">Телешоу</string>
+    <string name="tv_shows_title">Телешоу</string>
     <string name="unknown">Неизвестно</string>
     <string name="updates">Обновления</string>
     <string name="version">Версия</string>
@@ -124,7 +123,7 @@
     <string name="success">Успех</string>
     <string name="official_rating">Возрастной рейтинг</string>
     <string name="runtime_sort">Продолжительность</string>
-    <string name="extras">Дополнительно</string>
+    <string name="extras_title">Дополнительно</string>
     <plurals name="other_extras">
         <item quantity="one">Другое</item>
         <item quantity="few">Других</item>

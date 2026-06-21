@@ -48,13 +48,13 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -120,10 +120,12 @@ class RecommendedViewModel
                         viewModelScope.launchIO {
                             val result =
                                 try {
+                                    val items = execute(row, limit)
                                     HomeRowLoadingState.Success(
                                         title,
-                                        execute(row, limit),
+                                        items,
                                         viewOptions,
+                                        showViewMore = items.size >= limit,
                                     )
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Exception fetching %s", title)
@@ -171,7 +173,11 @@ class RecommendedViewModel
             }
 
         private fun fetchSuggestions() {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(WholphinDispatchers.IO) {
+                val limit =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.homePagePreferences.maxItemsPerRow
                 val title = ResStringProvider(R.string.suggestions)
                 try {
                     suggestionService
@@ -188,6 +194,7 @@ class RecommendedViewModel
                                             title,
                                             resource.items,
                                             viewOptions,
+                                            showViewMore = resource.items.size >= limit,
                                         )
                                     }
 
@@ -196,6 +203,7 @@ class RecommendedViewModel
                                             title,
                                             emptyList(),
                                             viewOptions,
+                                            showViewMore = false,
                                         )
                                     }
                                 }

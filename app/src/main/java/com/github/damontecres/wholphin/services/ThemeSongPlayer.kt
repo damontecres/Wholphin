@@ -14,10 +14,10 @@ import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,7 +102,7 @@ class ThemeSongPlayer
                                                 Codec.Audio.FLAC,
                                             ),
                                     )
-                                withContext(Dispatchers.Main) {
+                                withContext(WholphinDispatchers.Main) {
                                     player.apply {
                                         stop()
                                         volume = volumeLevel
@@ -127,7 +127,7 @@ class ThemeSongPlayer
             scope.launch {
                 mutex.withLock {
                     state.value.job?.cancelAndJoin()
-                    withContext(Dispatchers.Main) {
+                    withContext(WholphinDispatchers.Main) {
                         Timber.v("Stopping theme song")
                         player.stop()
                     }

@@ -287,7 +287,7 @@ fun PlaybackPageContent(
 
             PlaybackAction.Previous -> {
                 val pos = player.currentPosition
-                if (pos < player.maxSeekToPreviousPosition && state.playlist.hasPrevious()) {
+                if (pos < player.maxSeekToPreviousPosition && state.hasPrevious) {
                     viewModel.playPrevious()
                 } else {
                     player.seekToPrevious()
@@ -401,7 +401,7 @@ fun PlaybackPageContent(
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,
                 previousEnabled = true,
-                nextEnabled = state.playlist.hasNext(),
+                nextEnabled = state.hasNext,
                 seekEnabled = true,
                 seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                 seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -414,10 +414,8 @@ fun PlaybackPageContent(
                 chapters = state.currentMediaInfo.chapters,
                 trickplayInfo = state.currentMediaInfo.trickPlayInfo,
                 trickplayUrlFor = viewModel::getTrickplayUrl,
-                playlist = state.playlist,
-                onClickPlaylist = {
-                    viewModel.playItemInPlaylist(it)
-                },
+                queue = remember(state.playlistIndex, state.playlist) { state.upcomingItems },
+                onClickPlaylist = viewModel::playItemInPlaylist,
                 currentSegment = state.currentSegment?.segment,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 analyticsState = state.analyticsState,

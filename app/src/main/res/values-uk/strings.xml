@@ -153,7 +153,6 @@
     <string name="switch_servers">Перемикнути сервер</string>
     <string name="switch_user">Перемкнути</string>
     <string name="top_unwatched">Топ непереглянутих</string>
-    <string name="trailer">Трейлер</string>
     <plurals name="trailers">
         <item quantity="one">Трейлери</item>
         <item quantity="few"/>
@@ -193,7 +192,7 @@
     <string name="success">Успіх</string>
     <string name="official_rating">Вікова оцінка</string>
     <string name="runtime_sort">Час виконання</string>
-    <string name="extras">Додатково</string>
+    <string name="extras_title">Додатково</string>
     <plurals name="other_extras">
         <item quantity="one">Інше</item>
         <item quantity="few"/>
@@ -475,7 +474,7 @@
     <string name="zoom_out">Зменшити</string>
     <string name="slideshow_duration">Тривалість слайд-шоу</string>
     <string name="play_videos_during_slideshow">Відтворення відео під час слайд-шоу</string>
-    <string name="favorite_items">Улюблені %s</string>
+    <string name="favorite_items_title">Улюблені %s</string>
     <plurals name="days">
         <item quantity="one">день</item>
         <item quantity="few">дні</item>
