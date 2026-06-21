@@ -8,7 +8,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrSearchResult
-import com.github.damontecres.wholphin.ui.util.ResArgStringProvider
+import com.github.damontecres.wholphin.ui.discover.discoverGenreTitle
 import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import kotlinx.coroutines.CoroutineScope
@@ -67,12 +67,7 @@ sealed interface DiscoverPagerType {
         val name: String,
         val type: SeerrItemType,
     ) : DiscoverPagerType {
-        override val title: StringProvider =
-            when (type) {
-                SeerrItemType.MOVIE -> ResArgStringProvider(R.string.genre_movies, name)
-                SeerrItemType.TV -> ResArgStringProvider(R.string.genre_tv_shows, name)
-                else -> throw UnsupportedOperationException("$type not supported")
-            }
+        override val title: StringProvider = discoverGenreTitle(name, type)
     }
 }
 

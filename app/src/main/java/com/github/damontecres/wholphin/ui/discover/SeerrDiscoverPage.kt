@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -231,11 +232,13 @@ class SeerrDiscoverViewModel
             }
         }
 
-        fun updateBackdrop(item: DiscoverItem?) {
+        fun updateBackdrop(item: DiscoverFocusedItem?) {
             viewModelScope.launchIO {
                 if (item != null) {
                     backdropService.submit("discover_${item.id}", item.backDropUrl)
-                    fetchRating(item)
+                    if (item is DiscoverFocusedItem.Item) {
+                        fetchRating(item.id, item.item.type)
+                    }
                 } else {
                     backdropService.clearBackdrop()
                 }
@@ -249,25 +252,28 @@ class SeerrDiscoverViewModel
                 .build<Int, DiscoverRating>()
 
         // TODO this is not very efficient
-        fun fetchRating(item: DiscoverItem) {
+        fun fetchRating(
+            id: Int,
+            type: SeerrItemType,
+        ) {
             viewModelScope.launchIO {
-                val cachedResult = ratingCache.getIfPresent(item.id)
+                val cachedResult = ratingCache.getIfPresent(id)
                 if (cachedResult != null) {
                     return@launchIO
                 }
                 val result =
                     try {
-                        when (item.type) {
+                        when (type) {
                             SeerrItemType.MOVIE -> {
                                 DiscoverRating(
                                     seerrService.api.moviesApi.movieMovieIdRatingsGet(
-                                        movieId = item.id,
+                                        movieId = id,
                                     ),
                                 )
                             }
 
                             SeerrItemType.TV -> {
-                                DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
+                                DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = id))
                             }
 
                             SeerrItemType.PERSON -> {
@@ -280,17 +286,17 @@ class SeerrDiscoverViewModel
                         }
                     } catch (ex: ClientException) {
                         if (ex.statusCode == 404) {
-                            Timber.w("No rating found for %s", item.id)
+                            Timber.w("No rating found for %s", id)
                             DiscoverRating(null, null)
                         } else {
-                            Timber.e(ex, "Error getting rating for %s", item.id)
+                            Timber.e(ex, "Error getting rating for %s", id)
                             return@launchIO
                         }
                     } catch (ex: Exception) {
-                        Timber.e(ex, "Error getting rating for %s", item.id)
+                        Timber.e(ex, "Error getting rating for %s", id)
                         return@launchIO
                     }
-                ratingCache.put(item.id, result)
+                ratingCache.put(id, result)
                 rating.update {
                     ratingCache.asMap().toMap()
                 }
@@ -349,7 +355,7 @@ fun SeerrDiscoverPage(
 
     val focusRequesters = remember { List(LAST_ROW + 1) { FocusRequester() } }
     var position by rememberPosition(0, -1)
-    val focusedItem =
+    val focusedItem: DiscoverFocusedItem? =
         remember(position) {
             position.let {
                 val discoverRow =
@@ -362,9 +368,44 @@ fun SeerrDiscoverPage(
                         else -> null
                     }
                 if (discoverRow != null) {
-                    (discoverRow.items as? DataLoadingState.Success)?.data?.getOrNull(it.column)
+                    (discoverRow.items as? DataLoadingState.Success)
+                        ?.data
+                        ?.getOrNull(it.column)
+                        ?.let {
+                            DiscoverFocusedItem.Item(it)
+                        }
                 } else {
-                    null
+                    when (position.row) {
+                        ROW_GENRES_MOVIE -> {
+                            state.movieGenres.successValue
+                                ?.getOrNull(position.column)
+                                ?.let {
+                                    DiscoverFocusedItem.Genre(
+                                        id = it.id.toInt(),
+                                        name = it.name,
+                                        type = SeerrItemType.MOVIE,
+                                        backDropUrl = it.imageUrl,
+                                    )
+                                }
+                        }
+
+                        ROW_GENRES_TV -> {
+                            state.movieGenres.successValue
+                                ?.getOrNull(position.column)
+                                ?.let {
+                                    DiscoverFocusedItem.Genre(
+                                        id = it.id.toInt(),
+                                        name = it.name,
+                                        type = SeerrItemType.TV,
+                                        backDropUrl = it.imageUrl,
+                                    )
+                                }
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
                 }
             }
         }
@@ -386,25 +427,27 @@ fun SeerrDiscoverPage(
     ) {
         val details =
             remember(focusedItem, ratingMap) {
-                buildList {
-                    focusedItem
-                        ?.releaseDate
-                        ?.year
-                        ?.toString()
-                        ?.let(::add)
-                }.let {
-                    val rating = focusedItem?.id?.let { ratingMap[it] }
-                    val str =
-                        listToDotString(
-                            it,
-                            rating?.audienceRating,
-                            rating?.criticRating?.toFloat(),
-                        )
-                    QuickDetailsData(str)
+                (focusedItem as? DiscoverFocusedItem.Item)?.let { focusedItem ->
+                    buildList {
+                        focusedItem.item
+                            .releaseDate
+                            ?.year
+                            ?.toString()
+                            ?.let(::add)
+                    }.let {
+                        val rating = focusedItem.id.let { ratingMap[it] }
+                        val str =
+                            listToDotString(
+                                it,
+                                rating?.audienceRating,
+                                rating?.criticRating?.toFloat(),
+                            )
+                        QuickDetailsData(str)
+                    }
                 }
             }
         HomePageHeader(
-            title = focusedItem?.title,
+            title = focusedItem?.title?.getString(),
             subtitle = focusedItem?.subtitle,
             overview = focusedItem?.overview,
             overviewTwoLines = true,
