@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PlaybackResultCache
 import com.github.damontecres.wholphin.services.PlayerCreation
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -127,6 +128,7 @@ class PlaybackViewModelTests {
             imageUrlService = mockImageUrlService,
             screensaverService = mockScreensaverService,
             musicService = mockMusicService,
+            playbackResultCache = PlaybackResultCache(),
             destination = destination,
         )
 

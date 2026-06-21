@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -103,8 +104,12 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
+    // Refresh on every resume (not just first composition) so returning from playback reflects
+    // the new watched/resume state, mirroring the grid's LifecycleResumeEffect. init() refreshes
+    // in place when rows are already loaded.
+    LifecycleResumeEffect(Unit) {
         viewModel.init()
+        onPauseOrDispose { }
     }
     val state by viewModel.state.collectAsState()
     val loading = state.loadingState

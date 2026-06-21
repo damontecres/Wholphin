@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.util
 
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.withLocalPlayback
 import com.github.damontecres.wholphin.ui.DEFAULT_PAGE_SIZE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.withLock
@@ -86,6 +87,32 @@ class ApiRequestPager<T>(
                 page[index] = item
                 cachedPages.put(pageNumber, page)
                 items = ItemList(size, pageSize, cachedPages.asMap())
+            }
+        }
+    }
+
+    /**
+     * Update a single cached item's user data locally (played / resume position) without
+     * re-querying the server, used when the client already knows the outcome of playback.
+     * Avoids the write(report)-then-read(refresh) race against the server.
+     */
+    suspend fun updateUserData(
+        position: Int,
+        itemId: UUID,
+        positionTicks: Long,
+        played: Boolean,
+    ) {
+        mutex.withLock {
+            val pageNumber = position / pageSize
+            val index = position - pageNumber * pageSize
+            val page = cachedPages.getIfPresent(pageNumber)
+            if (page != null && index in page.indices) {
+                val existing = page[index]
+                if (existing.id == itemId && existing.data.userData != null) {
+                    page[index] = existing.withLocalPlayback(positionTicks, played)
+                    cachedPages.put(pageNumber, page)
+                    items = ItemList(size, pageSize, cachedPages.asMap())
+                }
             }
         }
     }
