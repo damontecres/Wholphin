@@ -450,10 +450,10 @@
     <string name="content_scale_fill">拉伸填滿</string>
     <string name="content_scale_fill_width">填滿寬度</string>
     <string name="content_scale_fill_height">填滿高度</string>
-    <string name="volume_lowest">最低音量</string>
-    <string name="volume_low">低音量</string>
+    <string name="volume_lowest">最小音量</string>
+    <string name="volume_low">小音量</string>
     <string name="volume_medium">中等音量</string>
-    <string name="volume_high">高音量</string>
+    <string name="volume_high">大音量</string>
     <string name="volume_full">最大音量</string>
     <string name="purple">紫色</string>
     <string name="orange">橘色</string>
@@ -604,4 +604,25 @@
     <string name="user_interface_language">介面語言</string>
     <string name="sort">排序</string>
     <string name="split_into_separate_rows">分開為不同列</string>
+    <string name="trailers_title">預告片</string>
+    <string name="other_extras_title">其他</string>
+    <string name="behind_the_scenes_title">幕後花絮</string>
+    <string name="theme_songs_title">主題曲</string>
+    <string name="theme_videos_title">主題影片</string>
+    <string name="clips_title">片段</string>
+    <string name="deleted_scenes_title">刪剪片段</string>
+    <string name="interviews_title">訪談</string>
+    <string name="scenes_title">精選片段</string>
+    <string name="samples_title">試看片段</string>
+    <string name="featurettes_title">幕後特輯</string>
+    <string name="shorts_title">短片</string>
+    <plurals name="movies">
+        <item quantity="other">電影</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">電視劇</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="other">演職人員</item>
+    </plurals>
 </resources>

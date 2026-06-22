@@ -163,49 +163,49 @@
         <item quantity="other">Nos Bastidores</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Músicas temáticas</item>
-        <item quantity="many">Músicas temáticas</item>
-        <item quantity="other">Músicas temáticas</item>
+        <item quantity="one">Tema de abertura</item>
+        <item quantity="many">Temas de abertura</item>
+        <item quantity="other">Temas de abertura</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">Vídeos Temáticos</item>
-        <item quantity="many">Vídeos Temáticos</item>
-        <item quantity="other">Vídeos Temáticos</item>
+        <item quantity="one">Genérico</item>
+        <item quantity="many">Genéricos</item>
+        <item quantity="other">Genéricos</item>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">Clipes</item>
+        <item quantity="one">Clipe</item>
         <item quantity="many">Clipes</item>
         <item quantity="other">Clipes</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Cenas Excluídas</item>
-        <item quantity="many">Cenas Excluídas</item>
-        <item quantity="other">Cenas Excluídas</item>
+        <item quantity="one">Cena cortada</item>
+        <item quantity="many">Cenas cortadas</item>
+        <item quantity="other">Cenas cortadas</item>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">Entrevistas</item>
+        <item quantity="one">Entrevista</item>
         <item quantity="many">Entrevistas</item>
         <item quantity="other">Entrevistas</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Cenas</item>
+        <item quantity="one">Cena</item>
         <item quantity="many">Cenas</item>
         <item quantity="other">Cenas</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Amostras</item>
+        <item quantity="one">Amostra</item>
         <item quantity="many">Amostras</item>
         <item quantity="other">Amostras</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Curta-metragens</item>
-        <item quantity="many">Curta-metragens</item>
-        <item quantity="other">Curta-metragens</item>
+        <item quantity="one">Video promocional</item>
+        <item quantity="many">Videos promocionais</item>
+        <item quantity="other">Videos promocionais</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Curtos</item>
-        <item quantity="many">Curtos</item>
-        <item quantity="other">Curtos</item>
+        <item quantity="one">Curta</item>
+        <item quantity="many">Curtas</item>
+        <item quantity="other">Curtas</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s transferido</item>
@@ -252,7 +252,7 @@
     <string name="nav_drawer_switch_on_focus_summary_off">Clique para mudar de página</string>
     <string name="nav_drawer_switch_on_focus">Alternar páginas da barra de navegação ao focar</string>
     <string name="pass_out_protection">Protecção Contra Inatividade</string>
-    <string name="play_theme_music">Reproduzir música temática</string>
+    <string name="play_theme_music">Reproduzir tema de abertura</string>
     <string name="playback_overrides">Substituições de reprodução</string>
     <string name="remember_selected_tab">Lembrar separadores selecionados</string>
     <string name="rewatch_next_up">Activar a revisão em \'A seguir\'</string>
@@ -640,4 +640,31 @@
     <string name="tomatoes">Tomates</string>
     <string name="sort">Ordenar</string>
     <string name="split_into_separate_rows">Dividir em linhas separadas</string>
+    <string name="trailers_title">Trailers</string>
+    <string name="other_extras_title">Outro</string>
+    <string name="behind_the_scenes_title">Nos bastidores</string>
+    <string name="clips_title">Clipes</string>
+    <string name="deleted_scenes_title">Cenas cortadas</string>
+    <string name="interviews_title">Entrevistas</string>
+    <string name="scenes_title">Cenas</string>
+    <string name="samples_title">Amostras</string>
+    <string name="shorts_title">Curtas</string>
+    <string name="theme_videos_title">Genéricos</string>
+    <string name="theme_songs_title">Temas de abertura</string>
+    <plurals name="movies">
+        <item quantity="one">Filme</item>
+        <item quantity="many">Filmes</item>
+        <item quantity="other">Filmes</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Série de TV</item>
+        <item quantity="many">Séries de TV</item>
+        <item quantity="other">Séries de TV</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Pessoa</item>
+        <item quantity="many">Pessoas</item>
+        <item quantity="other">Pessoas</item>
+    </plurals>
+    <string name="featurettes_title">Videos promocionais</string>
 </resources>
