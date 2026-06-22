@@ -50,6 +50,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -111,11 +113,14 @@ class DiscoverRequestViewModel
             }
         }
 
+        private var fetchJob: Job? = null
+
         private suspend fun fetchData(
             sortAndDirection: DiscoverSortAndDirection,
             filter: DiscoverFilter,
             startIndex: Int = 0,
         ) {
+            fetchJob?.cancel()
             try {
                 _state.update {
                     it.copy(
@@ -125,62 +130,67 @@ class DiscoverRequestViewModel
                     )
                 }
                 val filter = filter.copy(sortBy = sortAndDirection)
-                val pager =
-                    when (type) {
-                        DiscoverRequestType.DISCOVER_TV -> {
-                            DiscoverRequestPager(
-                                api,
-                                DiscoverTvRequestHandler(filter),
-                                seerrService::createDiscoverItem,
-                                viewModelScope,
+                fetchJob =
+                    viewModelScope.launchDefault {
+                        val pager =
+                            when (type) {
+                                DiscoverRequestType.DISCOVER_TV -> {
+                                    DiscoverRequestPager(
+                                        api,
+                                        DiscoverTvRequestHandler(filter),
+                                        seerrService::createDiscoverItem,
+                                        viewModelScope,
+                                    )
+                                }
+
+                                DiscoverRequestType.DISCOVER_MOVIES -> {
+                                    DiscoverRequestPager(
+                                        api,
+                                        DiscoverMovieRequestHandler(filter),
+                                        seerrService::createDiscoverItem,
+                                        viewModelScope,
+                                    )
+                                }
+
+                                DiscoverRequestType.TRENDING -> {
+                                    DiscoverRequestPager(
+                                        api,
+                                        TrendingRequestHandler,
+                                        seerrService::createDiscoverItem,
+                                        viewModelScope,
+                                    )
+                                }
+
+                                DiscoverRequestType.UPCOMING_TV -> {
+                                    DiscoverRequestPager(
+                                        api,
+                                        UpcomingTvRequestHandler,
+                                        seerrService::createDiscoverItem,
+                                        viewModelScope,
+                                    )
+                                }
+
+                                DiscoverRequestType.UPCOMING_MOVIES -> {
+                                    DiscoverRequestPager(
+                                        api,
+                                        UpcomingMovieRequestHandler,
+                                        seerrService::createDiscoverItem,
+                                        viewModelScope,
+                                    )
+                                }
+
+                                DiscoverRequestType.UNKNOWN -> {
+                                    throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
+                                }
+                            }.init(startIndex)
+                        _state.update {
+                            it.copy(
+                                loading = DataLoadingState.Success(pager),
                             )
                         }
-
-                        DiscoverRequestType.DISCOVER_MOVIES -> {
-                            DiscoverRequestPager(
-                                api,
-                                DiscoverMovieRequestHandler(filter),
-                                seerrService::createDiscoverItem,
-                                viewModelScope,
-                            )
-                        }
-
-                        DiscoverRequestType.TRENDING -> {
-                            DiscoverRequestPager(
-                                api,
-                                TrendingRequestHandler,
-                                seerrService::createDiscoverItem,
-                                viewModelScope,
-                            )
-                        }
-
-                        DiscoverRequestType.UPCOMING_TV -> {
-                            DiscoverRequestPager(
-                                api,
-                                UpcomingTvRequestHandler,
-                                seerrService::createDiscoverItem,
-                                viewModelScope,
-                            )
-                        }
-
-                        DiscoverRequestType.UPCOMING_MOVIES -> {
-                            DiscoverRequestPager(
-                                api,
-                                UpcomingMovieRequestHandler,
-                                seerrService::createDiscoverItem,
-                                viewModelScope,
-                            )
-                        }
-
-                        DiscoverRequestType.UNKNOWN -> {
-                            throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
-                        }
-                    }.init(startIndex)
-                _state.update {
-                    it.copy(
-                        loading = DataLoadingState.Success(pager),
-                    )
-                }
+                    }
+            } catch (ex: CancellationException) {
+                throw ex
             } catch (ex: Exception) {
                 Timber.e(ex, "Error initializing %s", type)
                 _state.update {
@@ -222,8 +232,10 @@ data class DiscoverRequestState(
 fun DiscoverRequestGrid(
     destination: Destination.DiscoverMoreResult,
     modifier: Modifier = Modifier,
+    viewModelKey: String? = null,
     viewModel: DiscoverRequestViewModel =
         hiltViewModel<DiscoverRequestViewModel, DiscoverRequestViewModel.Factory>(
+            key = viewModelKey,
             creationCallback = { it.create(destination.type, destination.startIndex) },
         ),
 ) {

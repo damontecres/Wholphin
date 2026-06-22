@@ -42,8 +42,11 @@ import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieContentRatingFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieGenreFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieStudiosFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverRatingFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvContentRatingFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
@@ -599,6 +602,18 @@ fun DiscoverFilterByButton(
                                             .orEmpty()
                                             .contains(value.value)
                                     }
+
+                                    DiscoverMovieContentRatingFilter,
+                                    DiscoverTvContentRatingFilter,
+                                    -> {
+                                        (currentValue as? List<String>)
+                                            .orEmpty()
+                                            .contains(value.value)
+                                    }
+
+                                    DiscoverRatingFilter -> {
+                                        (currentValue as? Int) == value.value
+                                    }
                                 }
                             }
                         val interactionSource = remember { MutableInteractionSource() }
@@ -615,7 +630,7 @@ fun DiscoverFilterByButton(
                                 }
                             },
                             text = {
-                                if (filterOption == CommunityRatingFilter) {
+                                if (filterOption == DiscoverRatingFilter) {
                                     SimpleStarRating(
                                         "${value.name}+",
                                         starColor = if (focused) EmptyStarColor else FilledStarColor,
@@ -662,6 +677,30 @@ fun DiscoverFilterByButton(
                                                         }
                                                     }.takeIf { it.isNotEmpty() }
                                             filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverMovieContentRatingFilter,
+                                        DiscoverTvContentRatingFilter,
+                                        -> {
+                                            val list = (currentValue as? List<String>).orEmpty()
+                                            val newValue =
+                                                list
+                                                    .toMutableList()
+                                                    .apply {
+                                                        if (isSelected) {
+                                                            remove(value.value!!)
+                                                        } else {
+                                                            add(value.value!! as String)
+                                                        }
+                                                    }.takeIf { it.isNotEmpty() }
+                                            filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverRatingFilter -> {
+                                            filterOption.set(
+                                                value.value as? Int,
+                                                current,
+                                            )
                                         }
                                     }
 

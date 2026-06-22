@@ -6,8 +6,11 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieContentRatingFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieGenreFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieStudiosFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverRatingFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvContentRatingFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
@@ -238,6 +241,22 @@ class FilterOptionCache
                 DiscoverTvStatusFilter -> {
                     TvDetails.Status.entries.map {
                         FilterValueOption(it.value, it)
+                    }
+                }
+
+                DiscoverMovieContentRatingFilter -> {
+                    listOf("NR", "G", "PG", "PG-13", "R", "NC-17")
+                        .map { FilterValueOption(it, it) }
+                }
+
+                DiscoverTvContentRatingFilter -> {
+                    listOf("NR", "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA")
+                        .map { FilterValueOption(it, it) }
+                }
+
+                DiscoverRatingFilter -> {
+                    (1..10).map {
+                        FilterValueOption("$it", it)
                     }
                 }
             }

@@ -63,10 +63,10 @@ data class DiscoverFilter(
     // val watchProviders: String? = null,
     val status: List<TvDetails.Status>? = null,
     val certification: List<String>? = null,
-    val certificationGte: String? = null,
-    val certificationLte: String? = null,
-    val certificationCountry: String? = null, // US
-    val certificationMatchExact: Boolean? = null,
+//    val certificationGte: String? = null,
+//    val certificationLte: String? = null,
+//    val certificationCountry: String? = null, // US
+//    val certificationMatchExact: Boolean? = null,
 ) {
     /**
      * Returns how many of filters are actually being used in this
@@ -116,13 +116,10 @@ data class DiscoverFilter(
             watchProviders = networkIds?.joinToString(",") { it.toString() },
             status = status?.joinToString("|") { it.ordinal.toString() },
             certification = certification?.joinToString("|"),
-            certificationGte = certificationGte,
-            certificationLte = certificationLte,
-            certificationCountry = certificationCountry,
-            certificationMode =
-                certificationMatchExact?.let {
-                    if (certificationMatchExact) CertificationModeDiscoverTvGet.EXACT else CertificationModeDiscoverTvGet.RANGE
-                },
+//            certificationGte = certificationGte,
+//            certificationLte = certificationLte,
+            certificationCountry = certification?.let { "US" },
+            certificationMode = certification?.let { CertificationModeDiscoverTvGet.EXACT },
         )
 
     suspend fun discoverMovies(
@@ -151,17 +148,10 @@ data class DiscoverFilter(
             watchProviders = networkIds?.joinToString(",") { it.toString() },
 //            status = status,
             certification = certification?.joinToString("|"),
-            certificationGte = certificationGte,
-            certificationLte = certificationLte,
-            certificationCountry = certificationCountry,
-            certificationMode =
-                certificationMatchExact?.let {
-                    if (certificationMatchExact) {
-                        SearchApi.CertificationModeDiscoverMoviesGet.EXACT
-                    } else {
-                        SearchApi.CertificationModeDiscoverMoviesGet.RANGE
-                    }
-                },
+//            certificationGte = certificationGte,
+//            certificationLte = certificationLte,
+            certificationCountry = certification?.let { "US" },
+            certificationMode = certification?.let { SearchApi.CertificationModeDiscoverMoviesGet.EXACT },
         )
 }
 
@@ -169,6 +159,8 @@ val discoverMovieFilters =
     listOf(
         DiscoverMovieGenreFilter,
         DiscoverMovieStudiosFilter,
+        DiscoverMovieContentRatingFilter,
+        DiscoverRatingFilter,
     )
 
 val discoverTvFilters =
@@ -176,6 +168,8 @@ val discoverTvFilters =
         DiscoverTvGenreFilter,
         DiscoverTvStudiosFilter,
         DiscoverTvStatusFilter,
+        DiscoverTvContentRatingFilter,
+        DiscoverRatingFilter,
     )
 
 /**
@@ -238,7 +232,7 @@ data object DiscoverTvStudiosFilter : DiscoverFilterBy<List<Int>> {
 }
 
 data object DiscoverTvStatusFilter : DiscoverFilterBy<List<TvDetails.Status>> {
-    override val stringRes: Int = R.string.studios
+    override val stringRes: Int = R.string.production_status
 
     override val supportMultiple: Boolean = true
 
@@ -248,4 +242,43 @@ data object DiscoverTvStatusFilter : DiscoverFilterBy<List<TvDetails.Status>> {
         value: List<TvDetails.Status>?,
         filter: DiscoverFilter,
     ): DiscoverFilter = filter.copy(status = value)
+}
+
+data object DiscoverMovieContentRatingFilter : DiscoverFilterBy<List<String>> {
+    override val stringRes: Int = R.string.official_rating
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<String>? = filter.certification
+
+    override fun set(
+        value: List<String>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(certification = value)
+}
+
+data object DiscoverTvContentRatingFilter : DiscoverFilterBy<List<String>> {
+    override val stringRes: Int = R.string.official_rating
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<String>? = filter.certification
+
+    override fun set(
+        value: List<String>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(certification = value)
+}
+
+data object DiscoverRatingFilter : DiscoverFilterBy<Int> {
+    override val stringRes: Int = R.string.community_rating
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): Int? = filter.voteAverageGte
+
+    override fun set(
+        value: Int?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(voteAverageGte = value)
 }

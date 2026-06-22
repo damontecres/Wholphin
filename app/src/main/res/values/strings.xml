@@ -822,4 +822,5 @@
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
     <string name="popularity">Popularity</string>
+    <string name="production_status">Production status</string>
 </resources>
