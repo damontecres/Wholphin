@@ -821,4 +821,7 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
 </resources>
