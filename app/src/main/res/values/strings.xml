@@ -821,4 +821,10 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="load_from_server_plugin">Load default from server</string>
+    <string name="save_to_local">Save only locally</string>
+    <string name="home_settings_source_unset">Default</string>
+    <string name="home_settings_source_local">Local</string>
+    <string name="home_settings_source_server_profile">Server user profile</string>
+    <string name="home_settings_source_plugin">Server</string>
 </resources>
