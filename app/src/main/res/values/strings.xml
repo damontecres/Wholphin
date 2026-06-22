@@ -823,4 +823,7 @@
     <string name="split_into_separate_rows">Split into separate rows</string>
     <string name="genre_movies">%1$s Movies</string>
     <string name="genre_tv_shows">%1$s TV Shows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
 </resources>
