@@ -1,0 +1,116 @@
+package com.github.damontecres.wholphin.data.filter
+
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.api.seerr.SearchApi
+import com.github.damontecres.wholphin.api.seerr.SearchApi.CertificationModeDiscoverTvGet
+import com.github.damontecres.wholphin.api.seerr.model.DiscoverTvGet200Response
+import org.jellyfin.sdk.model.api.SortOrder
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import kotlin.time.Duration
+
+private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-M-d")
+
+enum class DiscoverSort(
+    val key: String,
+) {
+    POPULARITY("popularity"),
+    RELEASE_DATE("release_date"),
+    TMDB_VOTE("vote_average"),
+    ALPHABETICAL("original_title"),
+}
+
+private val SortOrder.key get() =
+    when (this) {
+        SortOrder.ASCENDING -> "asc"
+        SortOrder.DESCENDING -> "desc"
+    }
+
+data class DiscoverSortBy(
+    val sort: DiscoverSort,
+    val direction: SortOrder,
+) {
+    val key = "${sort.key}.${direction.key}"
+}
+
+data class DiscoverFilter(
+    // /api/v1/languages
+    val language: String? = null,
+    val genreIds: List<Int>? = null,
+    val networkIds: List<Int>? = null,
+    // /api/v1/search/keyword
+    val keywordIds: List<Int>? = null,
+    val excludeKeywordIds: List<Int>? = null,
+    val sortBy: DiscoverSortBy? = null,
+    val firstAirDateGte: LocalDate? = null,
+    val firstAirDateLte: LocalDate? = null,
+    val withRuntimeGte: Duration? = null,
+    val withRuntimeLte: Duration? = null,
+    val voteAverageGte: Int? = null,
+    val voteAverageLte: Int? = null,
+    val voteCountGte: Int? = null,
+    val voteCountLte: Int? = null,
+    // /api/v1/watchproviders/regions
+    val watchRegion: String? = null, // US
+    // networkIds?
+    // val watchProviders: String? = null,
+    val status: String? = null,
+    val certification: List<String>? = null,
+    val certificationGte: String? = null,
+    val certificationLte: String? = null,
+    val certificationCountry: String? = null, // US
+    val certificationMatchExact: Boolean? = null,
+) {
+    suspend fun discoverTv(
+        searchApi: SearchApi,
+        page: Int,
+    ): DiscoverTvGet200Response =
+        searchApi.discoverTvGet(
+            page = page,
+            language = language,
+            genre = genreIds?.joinToString(",") { it.toString() },
+            network = null,
+            keywords = keywordIds?.joinToString(",") { it.toString() },
+            excludeKeywords = excludeKeywordIds?.joinToString(",") { it.toString() },
+            sortBy = sortBy?.key,
+            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
+            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
+            withRuntimeGte = withRuntimeGte?.inWholeMinutes?.toInt(),
+            withRuntimeLte = withRuntimeLte?.inWholeMinutes?.toInt(),
+            voteAverageGte = voteAverageGte,
+            voteAverageLte = voteAverageLte,
+            voteCountGte = voteCountGte,
+            voteCountLte = voteCountLte,
+            watchRegion = watchRegion,
+            watchProviders = networkIds?.joinToString(",") { it.toString() },
+            status = status,
+            certification = certification?.joinToString("|"),
+            certificationGte = certificationGte,
+            certificationLte = certificationLte,
+            certificationCountry = certificationCountry,
+            certificationMode =
+                certificationMatchExact?.let {
+                    if (certificationMatchExact) CertificationModeDiscoverTvGet.EXACT else CertificationModeDiscoverTvGet.RANGE
+                },
+        )
+}
+
+/**
+ * A way to filter discover
+ *
+ * Gets and sets values within a [DiscoverFilter]
+ */
+sealed interface DiscoverFilterBy<T> : FilterBy<DiscoverFilter, T>
+
+data object DiscoverGenreFilter : DiscoverFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.genres
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<Int>? = filter.genreIds
+
+    override fun set(
+        value: List<Int>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(genreIds = value)
+}
