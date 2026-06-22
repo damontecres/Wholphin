@@ -8,8 +8,8 @@ import com.github.damontecres.wholphin.api.seerr.model.DiscoverMoviesGet200Respo
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverTvGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.ui.data.flip
+import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.SortOrder
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration
 
@@ -31,6 +31,7 @@ private val SortOrder.key get() =
         SortOrder.DESCENDING -> "desc"
     }
 
+@Serializable
 data class DiscoverSortAndDirection(
     val sort: DiscoverSort = DiscoverSort.POPULARITY,
     val direction: SortOrder = SortOrder.DESCENDING,
@@ -40,6 +41,7 @@ data class DiscoverSortAndDirection(
     fun flip() = copy(direction = direction.flip())
 }
 
+@Serializable
 data class DiscoverFilter(
     // /api/v1/languages
     val language: String? = null,
@@ -49,8 +51,8 @@ data class DiscoverFilter(
     val keywordIds: List<Int>? = null,
     val excludeKeywordIds: List<Int>? = null,
     val sortBy: DiscoverSortAndDirection? = null,
-    val firstAirDateGte: LocalDate? = null,
-    val firstAirDateLte: LocalDate? = null,
+//    val firstAirDateGte: LocalDate? = null,
+//    val firstAirDateLte: LocalDate? = null,
     val withRuntimeGte: Duration? = null,
     val withRuntimeLte: Duration? = null,
     val voteAverageGte: Int? = null,
@@ -102,8 +104,8 @@ data class DiscoverFilter(
             keywords = keywordIds?.joinToString(",") { it.toString() },
             excludeKeywords = excludeKeywordIds?.joinToString(",") { it.toString() },
             sortBy = sortBy?.key,
-            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
-            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
+//            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
+//            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
             withRuntimeGte = withRuntimeGte?.inWholeMinutes?.toInt(),
             withRuntimeLte = withRuntimeLte?.inWholeMinutes?.toInt(),
             voteAverageGte = voteAverageGte,

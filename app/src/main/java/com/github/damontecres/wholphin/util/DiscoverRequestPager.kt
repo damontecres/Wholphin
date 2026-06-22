@@ -6,9 +6,14 @@ import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrSearchResult
+import com.github.damontecres.wholphin.ui.discover.discoverGenreTitle
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
+import com.github.damontecres.wholphin.ui.util.StringProvider
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.serialization.Serializable
 
 /**
  * A [RequestPager] for Seerr server queries
@@ -44,6 +49,27 @@ enum class DiscoverRequestType(
     UPCOMING_TV(R.string.upcoming_tv),
     UPCOMING_MOVIES(R.string.upcoming_movies),
     UNKNOWN(R.string.unknown),
+}
+
+@Serializable
+sealed interface DiscoverPagerType {
+    val title: StringProvider
+
+    @Serializable
+    data class RequestType(
+        val type: DiscoverRequestType,
+    ) : DiscoverPagerType {
+        override val title: StringProvider = ResStringProvider(type.stringRes)
+    }
+
+    @Serializable
+    data class Genre(
+        val genreId: Int,
+        val name: String,
+        val type: SeerrItemType,
+    ) : DiscoverPagerType {
+        override val title: StringProvider = discoverGenreTitle(name, type)
+    }
 }
 
 /**

@@ -46,6 +46,7 @@ fun DiscoverPage(
             0 -> {
                 SeerrDiscoverPage(
                     preferences = preferences,
+                    positionCallback = { showHeader = it.row < 1 },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -57,6 +58,7 @@ fun DiscoverPage(
             1 -> {
                 SeerrRequestsPage(
                     focusRequesterOnEmpty = tabDetails.tabFocusRequester,
+                    positionCallback = { columns, index -> showHeader = index < columns },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -68,6 +70,7 @@ fun DiscoverPage(
             2 -> {
                 DiscoverSearchPage(
                     preferences = preferences,
+                    positionCallback = { columns, index -> showHeader = index < columns },
                     modifier =
                         Modifier
                             .fillMaxSize()

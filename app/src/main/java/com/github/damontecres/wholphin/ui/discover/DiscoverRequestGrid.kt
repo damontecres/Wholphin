@@ -70,12 +70,14 @@ class DiscoverRequestViewModel
         private val filterOptionCache: FilterOptionCache,
         @Assisted val type: DiscoverRequestType,
         @Assisted startIndex: Int,
+        @Assisted initialFilter: DiscoverFilter,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
             fun create(
                 type: DiscoverRequestType,
                 startIndex: Int,
+                initialFilter: DiscoverFilter,
             ): DiscoverRequestViewModel
         }
 
@@ -84,8 +86,7 @@ class DiscoverRequestViewModel
 
         init {
             viewModelScope.launchDefault {
-                // TODO
-                val (sortOptions, filterOptions) =
+                val (sortOptions, potentialFilterOptions) =
                     when (type) {
                         DiscoverRequestType.DISCOVER_TV -> DiscoverSort.entries.toList() to discoverTvFilters
                         DiscoverRequestType.DISCOVER_MOVIES -> DiscoverSort.entries.toList() to discoverMovieFilters
@@ -103,6 +104,13 @@ class DiscoverRequestViewModel
                         DiscoverRequestType.UPCOMING_MOVIES -> DiscoverSortAndDirection()
                         DiscoverRequestType.UNKNOWN -> DiscoverSortAndDirection()
                     }
+                val filterOptions =
+                    if (potentialFilterOptions.isNotEmpty()) {
+                        // If the initial filter includes filtering (eg genres), then don't allow for changing it
+                        potentialFilterOptions.filter { it.get(initialFilter) == null }
+                    } else {
+                        potentialFilterOptions
+                    }
                 _state.update {
                     it.copy(
                         startIndex = startIndex,
@@ -111,7 +119,7 @@ class DiscoverRequestViewModel
                         sortAndDirection = sortAndDirection,
                     )
                 }
-                fetchData(sortAndDirection, DiscoverFilter(), startIndex)
+                fetchData(sortAndDirection, initialFilter, startIndex)
             }
         }
 
@@ -239,7 +247,13 @@ fun DiscoverRequestGrid(
     viewModel: DiscoverRequestViewModel =
         hiltViewModel<DiscoverRequestViewModel, DiscoverRequestViewModel.Factory>(
             key = viewModelKey,
-            creationCallback = { it.create(destination.type, destination.startIndex) },
+            creationCallback = {
+                it.create(
+                    destination.type,
+                    destination.startIndex,
+                    destination.initialFilter,
+                )
+            },
         ),
 ) {
     val state by viewModel.state.collectAsState()
@@ -277,7 +291,6 @@ fun DiscoverRequestGrid(
             is DataLoadingState.Success<List<DiscoverItem?>> -> {
                 val gridFocusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-
                 CardGrid(
                     initialPosition = state.startIndex,
                     pager = s.data,

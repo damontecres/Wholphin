@@ -603,15 +603,14 @@ components:
           example: false
       required:
         - name
-        - hostname
-        - port
-        - apiKey
-        - useSsl
+        # - hostname
+        # - port
+        # - useSsl
         - activeProfileId
-        - activeProfileName
+        # - activeProfileName
         - activeDirectory
         - is4k
-        - minimumAvailability
+        # - minimumAvailability
         - isDefault
     SonarrSettings:
       type: object
@@ -682,15 +681,15 @@ components:
           example: false
       required:
         - name
-        - hostname
-        - port
-        - apiKey
-        - useSsl
+        # - hostname
+        # - port
+        # - apiKey
+        # - useSsl
         - activeProfileId
-        - activeProfileName
+        # - activeProfileName
         - activeDirectory
         - is4k
-        - enableSeasonFolders
+        # - enableSeasonFolders
         - isDefault
     ServarrTag:
       type: object
@@ -1397,6 +1396,17 @@ components:
         name:
           type: string
           example: 720p/1080p
+    RootFolder:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        freeSpace:
+          type: long
+        path:
+          type: string
+          example: /movies
     PageInfo:
       type: object
       properties:
@@ -6155,9 +6165,9 @@ paths:
                 is4k:
                   type: boolean
                   example: false
-                serverid:
+                serverId:
                   type: integer
-                profileid:
+                profileId:
                   type: integer
                 rootFolder:
                   type: string
@@ -6167,6 +6177,10 @@ paths:
                 userid:
                   type: integer
                   nullable: true
+                tags:
+                  type: array
+                  items:
+                    type: integer
               required:
                 - mediaType
                 - mediaId
@@ -6262,9 +6276,9 @@ paths:
                 is4k:
                   type: boolean
                   example: false
-                serverid:
+                serverId:
                   type: integer
-                profileid:
+                profileId:
                   type: integer
                 rootFolder:
                   type: string
@@ -7062,7 +7076,13 @@ paths:
                   server:
                     $ref: '#/components/schemas/RadarrSettings'
                   profiles:
-                    $ref: '#/components/schemas/ServiceProfile'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceProfile'
+                  rootFolders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RootFolder'
   /service/sonarr:
     get:
       summary: Get non-sensitive Sonarr server list
@@ -7102,7 +7122,13 @@ paths:
                   server:
                     $ref: '#/components/schemas/SonarrSettings'
                   profiles:
-                    $ref: '#/components/schemas/ServiceProfile'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceProfile'
+                  rootFolders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RootFolder'
   /service/sonarr/lookup/{tmdbId}:
     get:
       summary: Get series from Sonarr
