@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.ui.discover
 
 import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +24,7 @@ import com.github.damontecres.wholphin.data.filter.DiscoverSort
 import com.github.damontecres.wholphin.data.filter.DiscoverSortAndDirection
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.discoverMovieFilters
+import com.github.damontecres.wholphin.data.filter.discoverTvFilters
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -76,11 +80,10 @@ class DiscoverRequestViewModel
 
         init {
             viewModelScope.launchDefault {
-
                 // TODO
                 val (sortOptions, filterOptions) =
                     when (type) {
-                        DiscoverRequestType.DISCOVER_TV -> emptyList<DiscoverSort>() to emptyList()
+                        DiscoverRequestType.DISCOVER_TV -> emptyList<DiscoverSort>() to discoverTvFilters
                         DiscoverRequestType.DISCOVER_MOVIES -> DiscoverSort.entries.toList() to discoverMovieFilters
                         DiscoverRequestType.TRENDING -> emptyList<DiscoverSort>() to emptyList()
                         DiscoverRequestType.UPCOMING_TV -> emptyList<DiscoverSort>() to emptyList()
@@ -98,6 +101,7 @@ class DiscoverRequestViewModel
                     }
                 _state.update {
                     it.copy(
+                        startIndex = startIndex,
                         sortOptions = sortOptions,
                         filterOptions = filterOptions,
                         sortAndDirection = sortAndDirection,
@@ -113,6 +117,13 @@ class DiscoverRequestViewModel
             startIndex: Int = 0,
         ) {
             try {
+                _state.update {
+                    it.copy(
+                        filter = filter,
+                        sortAndDirection = sortAndDirection,
+                        loading = DataLoadingState.Loading,
+                    )
+                }
                 val filter = filter.copy(sortBy = sortAndDirection)
                 val pager =
                     when (type) {
@@ -182,12 +193,14 @@ class DiscoverRequestViewModel
 
         fun onSortChange(newSort: DiscoverSortAndDirection) {
             viewModelScope.launchDefault {
+                _state.update { it.copy(startIndex = 0) }
                 fetchData(newSort, state.value.filter)
             }
         }
 
         fun onFilterChange(newFilter: DiscoverFilter) {
             viewModelScope.launchDefault {
+                _state.update { it.copy(startIndex = 0) }
                 fetchData(state.value.sortAndDirection, newFilter)
             }
         }
@@ -198,6 +211,7 @@ class DiscoverRequestViewModel
 
 data class DiscoverRequestState(
     val loading: DataLoadingState<List<DiscoverItem?>> = DataLoadingState.Pending,
+    val startIndex: Int = 0,
     val sortOptions: List<DiscoverSort> = emptyList(),
     val filterOptions: List<DiscoverFilterBy<*>> = emptyList(),
     val filter: DiscoverFilter = DiscoverFilter(),
@@ -214,40 +228,41 @@ fun DiscoverRequestGrid(
         ),
 ) {
     val state by viewModel.state.collectAsState()
-    when (val s = state.loading) {
-        DataLoadingState.Pending,
-        DataLoadingState.Loading,
-        -> {
-            LoadingPage(modifier)
-        }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
+    ) {
+        DiscoverGridHeader(
+            showHeader = true,
+            showTitle = true,
+            title = stringResource(destination.type.stringRes),
+            sortAndDirection = state.sortAndDirection,
+            onSortChange = viewModel::onSortChange,
+            sortOptions = state.sortOptions,
+            getPossibleFilterValues = viewModel::getPossibleFilterValues,
+            onClickShowViewOptions = {},
+            currentFilter = state.filter,
+            filterOptions = state.filterOptions,
+            onFilterChange = viewModel::onFilterChange,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        when (val s = state.loading) {
+            DataLoadingState.Pending,
+            DataLoadingState.Loading,
+            -> {
+                LoadingPage(Modifier)
+            }
 
-        is DataLoadingState.Error -> {
-            ErrorMessage(s, modifier)
-        }
+            is DataLoadingState.Error -> {
+                ErrorMessage(s, Modifier)
+            }
 
-        is DataLoadingState.Success<List<DiscoverItem?>> -> {
-            val gridFocusRequester = remember { FocusRequester() }
-            LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-            Column(
-                modifier = modifier,
-            ) {
-                DiscoverGridHeader(
-                    showHeader = true,
-                    showTitle = true,
-                    title = stringResource(destination.type.stringRes),
-                    sortAndDirection = state.sortAndDirection,
-                    onSortChange = viewModel::onSortChange,
-                    sortOptions = state.sortOptions,
-                    getPossibleFilterValues = viewModel::getPossibleFilterValues,
-                    onClickShowViewOptions = {},
-                    currentFilter = state.filter,
-                    filterOptions = state.filterOptions,
-                    onFilterChange = viewModel::onFilterChange,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            is DataLoadingState.Success<List<DiscoverItem?>> -> {
+                val gridFocusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
 
                 CardGrid(
-                    initialPosition = destination.startIndex,
+                    initialPosition = state.startIndex,
                     pager = s.data,
                     onClickItem = { index, item ->
                         viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
@@ -267,6 +282,7 @@ fun DiscoverRequestGrid(
                             width = Dp.Unspecified,
                         )
                     },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }

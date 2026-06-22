@@ -167,7 +167,7 @@ fun DiscoverSortByButton(
                         },
                         text = {
                             Text(
-                                text = stringResource(current.getStringRes()),
+                                text = stringResource(sortOption.stringRes),
                             )
                         },
                         onClick = {
@@ -206,5 +206,5 @@ fun DiscoverSortAndDirection.toAnnotatedString() =
             )
         }
         append(" ")
-        append(stringResource(getStringRes()))
+        append(stringResource(sort.stringRes))
     }

@@ -16,11 +16,12 @@ private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-M-d")
 
 enum class DiscoverSort(
     val key: String,
+    @StringRes val stringRes: Int,
 ) {
-    POPULARITY("popularity"),
-    RELEASE_DATE("release_date"),
-    TMDB_VOTE("vote_average"),
-    ALPHABETICAL("original_title"),
+    POPULARITY("popularity", R.string.popularity),
+    RELEASE_DATE("release_date", R.string.sort_by_date_released),
+    TMDB_VOTE("vote_average", R.string.community_rating),
+    ALPHABETICAL("original_title", R.string.sort_by_name),
 }
 
 private val SortOrder.key get() =
@@ -36,15 +37,6 @@ data class DiscoverSortAndDirection(
     val key = "${sort.key}.${direction.key}"
 
     fun flip() = copy(direction = direction.flip())
-
-    @StringRes
-    fun getStringRes(): Int =
-        when (sort) {
-            DiscoverSort.POPULARITY -> R.string.popularity
-            DiscoverSort.RELEASE_DATE -> R.string.sort_by_date_released
-            DiscoverSort.TMDB_VOTE -> R.string.community_rating
-            DiscoverSort.ALPHABETICAL -> R.string.sort_by_name
-        }
 }
 
 data class DiscoverFilter(
@@ -171,6 +163,10 @@ data class DiscoverFilter(
 val discoverMovieFilters =
     listOf(
         DiscoverMovieGenreFilter,
+    )
+
+val discoverTvFilters =
+    listOf(
         DiscoverTvGenreFilter,
     )
 
