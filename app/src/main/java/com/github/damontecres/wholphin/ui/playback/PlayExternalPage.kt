@@ -338,12 +338,15 @@ class PlayExternalViewModel
                             }
                         }
                         Timber.v("Result position: %s", position?.milliseconds)
+                        if (position != null && position < 0L) {
+                            Timber.w("Unknown stop position for external playback")
+                        }
                         if (position != null || result.data?.action != null) {
                             api.playStateApi.reportPlaybackStopped(
                                 PlaybackStopInfo(
                                     itemId = itemId,
                                     mediaSourceId = mediaSourceId,
-                                    positionTicks = position?.milliseconds?.inWholeTicks,
+                                    positionTicks = position?.milliseconds?.inWholeTicks?.takeIf { it >= 0 },
                                     failed = false,
                                 ),
                             )

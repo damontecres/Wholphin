@@ -74,6 +74,8 @@ inline fun <T> List<T>.indexOfFirstOrNull(predicate: (T) -> Boolean): Int? {
     return if (index >= 0) index else null
 }
 
+fun Iterable<CharSequence?>.joinNotBlank(sep: String): String? = filter { it.isNotNullOrBlank() }.letNotEmpty { it.joinToString(sep) }
+
 /**
  * Try to call [FocusRequester.requestFocus], but catch & log the exception if something is not configured properly
  */
