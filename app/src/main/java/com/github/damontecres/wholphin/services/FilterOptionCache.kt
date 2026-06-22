@@ -1,12 +1,16 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieStudiosFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterBy
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
@@ -205,6 +209,36 @@ class FilterOptionCache
                         .map {
                             FilterValueOption(it.name!!, it.id!!)
                         }
+                }
+
+                DiscoverMovieStudiosFilter -> {
+                    // TODO region
+                    seerrService.api.otherApi
+                        .watchprovidersMoviesGet("US")
+                        .filter { it.name != null && it.id != null }
+                        // TODO not what this is for
+//                        .sortedBy { it.displayPriority }
+                        .map {
+                            // TODO logo?
+                            FilterValueOption(it.name!!, it.id!!)
+                        }
+                }
+
+                DiscoverTvStudiosFilter -> {
+                    // TODO region
+                    seerrService.api.otherApi
+                        .watchprovidersTvGet("US")
+                        .filter { it.name != null && it.id != null }
+//                        .sortedBy { it.displayPriority }
+                        .map {
+                            FilterValueOption(it.name!!, it.id!!)
+                        }
+                }
+
+                DiscoverTvStatusFilter -> {
+                    TvDetails.Status.entries.map {
+                        FilterValueOption(it.value, it)
+                    }
                 }
             }
         }

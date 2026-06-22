@@ -83,7 +83,7 @@ class DiscoverRequestViewModel
                 // TODO
                 val (sortOptions, filterOptions) =
                     when (type) {
-                        DiscoverRequestType.DISCOVER_TV -> emptyList<DiscoverSort>() to discoverTvFilters
+                        DiscoverRequestType.DISCOVER_TV -> DiscoverSort.entries.toList() to discoverTvFilters
                         DiscoverRequestType.DISCOVER_MOVIES -> DiscoverSort.entries.toList() to discoverMovieFilters
                         DiscoverRequestType.TRENDING -> emptyList<DiscoverSort>() to emptyList()
                         DiscoverRequestType.UPCOMING_TV -> emptyList<DiscoverSort>() to emptyList()
@@ -130,7 +130,7 @@ class DiscoverRequestViewModel
                         DiscoverRequestType.DISCOVER_TV -> {
                             DiscoverRequestPager(
                                 api,
-                                DiscoverTvRequestHandler,
+                                DiscoverTvRequestHandler(filter),
                                 seerrService::createDiscoverItem,
                                 viewModelScope,
                             )

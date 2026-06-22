@@ -37,12 +37,16 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
 import com.github.damontecres.wholphin.data.filter.DiscoverMovieGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieStudiosFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.FilterVideoType
@@ -582,8 +586,16 @@ fun DiscoverFilterByButton(
                                 when (filterOption) {
                                     DiscoverMovieGenreFilter,
                                     DiscoverTvGenreFilter,
+                                    DiscoverMovieStudiosFilter,
+                                    DiscoverTvStudiosFilter,
                                     -> {
                                         (currentValue as? List<Int>)
+                                            .orEmpty()
+                                            .contains(value.value)
+                                    }
+
+                                    DiscoverTvStatusFilter -> {
+                                        (currentValue as? List<TvDetails.Status>)
                                             .orEmpty()
                                             .contains(value.value)
                                     }
@@ -619,6 +631,8 @@ fun DiscoverFilterByButton(
                                     when (filterOption) {
                                         DiscoverMovieGenreFilter,
                                         DiscoverTvGenreFilter,
+                                        DiscoverMovieStudiosFilter,
+                                        DiscoverTvStudiosFilter,
                                         -> {
                                             val list = (currentValue as? List<Int>).orEmpty()
                                             val newValue =
@@ -629,6 +643,22 @@ fun DiscoverFilterByButton(
                                                             remove(value.value!!)
                                                         } else {
                                                             add(value.value!! as Int)
+                                                        }
+                                                    }.takeIf { it.isNotEmpty() }
+                                            filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverTvStatusFilter -> {
+                                            val list =
+                                                (currentValue as? List<TvDetails.Status>).orEmpty()
+                                            val newValue =
+                                                list
+                                                    .toMutableList()
+                                                    .apply {
+                                                        if (isSelected) {
+                                                            remove(value.value!!)
+                                                        } else {
+                                                            add(value.value!! as TvDetails.Status)
                                                         }
                                                     }.takeIf { it.isNotEmpty() }
                                             filterOption.set(newValue, current)

@@ -56,16 +56,17 @@ interface DiscoverRequestHandler<T> {
     ): QueryResult<T>
 }
 
-val DiscoverTvRequestHandler =
-    object : DiscoverRequestHandler<TvResult> {
-        override suspend fun execute(
-            api: SeerrApi,
-            pageNumber: Int,
-        ): QueryResult<TvResult> =
-            api.api.searchApi.discoverTvGet(page = pageNumber).let {
-                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
-            }
-    }
+class DiscoverTvRequestHandler(
+    val filter: DiscoverFilter = DiscoverFilter(),
+) : DiscoverRequestHandler<TvResult> {
+    override suspend fun execute(
+        api: SeerrApi,
+        pageNumber: Int,
+    ): QueryResult<TvResult> =
+        filter.discoverTv(api.api.searchApi, pageNumber).let {
+            QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+        }
+}
 
 class DiscoverMovieRequestHandler(
     val filter: DiscoverFilter = DiscoverFilter(),

@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.api.seerr.SearchApi
 import com.github.damontecres.wholphin.api.seerr.SearchApi.CertificationModeDiscoverTvGet
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverMoviesGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverTvGet200Response
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.ui.data.flip
 import org.jellyfin.sdk.model.api.SortOrder
 import java.time.LocalDate
@@ -60,7 +61,7 @@ data class DiscoverFilter(
     val watchRegion: String? = null, // US
     // networkIds?
     // val watchProviders: String? = null,
-    val status: String? = null,
+    val status: List<TvDetails.Status>? = null,
     val certification: List<String>? = null,
     val certificationGte: String? = null,
     val certificationLte: String? = null,
@@ -109,9 +110,11 @@ data class DiscoverFilter(
             voteAverageLte = voteAverageLte,
             voteCountGte = voteCountGte,
             voteCountLte = voteCountLte,
-            watchRegion = watchRegion,
+            // TODO
+//            watchRegion = watchRegion,
+            watchRegion = networkIds?.let { "US" },
             watchProviders = networkIds?.joinToString(",") { it.toString() },
-            status = status,
+            status = status?.joinToString("|") { it.ordinal.toString() },
             certification = certification?.joinToString("|"),
             certificationGte = certificationGte,
             certificationLte = certificationLte,
@@ -142,7 +145,9 @@ data class DiscoverFilter(
             voteAverageLte = voteAverageLte,
             voteCountGte = voteCountGte,
             voteCountLte = voteCountLte,
-            watchRegion = watchRegion,
+            // TODO
+//            watchRegion = watchRegion,
+            watchRegion = networkIds?.let { "US" },
             watchProviders = networkIds?.joinToString(",") { it.toString() },
 //            status = status,
             certification = certification?.joinToString("|"),
@@ -163,11 +168,14 @@ data class DiscoverFilter(
 val discoverMovieFilters =
     listOf(
         DiscoverMovieGenreFilter,
+        DiscoverMovieStudiosFilter,
     )
 
 val discoverTvFilters =
     listOf(
         DiscoverTvGenreFilter,
+        DiscoverTvStudiosFilter,
+        DiscoverTvStatusFilter,
     )
 
 /**
@@ -201,4 +209,43 @@ data object DiscoverTvGenreFilter : DiscoverFilterBy<List<Int>> {
         value: List<Int>?,
         filter: DiscoverFilter,
     ): DiscoverFilter = filter.copy(genreIds = value)
+}
+
+data object DiscoverMovieStudiosFilter : DiscoverFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.studios
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<Int>? = filter.networkIds
+
+    override fun set(
+        value: List<Int>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(networkIds = value)
+}
+
+data object DiscoverTvStudiosFilter : DiscoverFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.studios
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<Int>? = filter.networkIds
+
+    override fun set(
+        value: List<Int>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(networkIds = value)
+}
+
+data object DiscoverTvStatusFilter : DiscoverFilterBy<List<TvDetails.Status>> {
+    override val stringRes: Int = R.string.studios
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<TvDetails.Status>? = filter.status
+
+    override fun set(
+        value: List<TvDetails.Status>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(status = value)
 }
