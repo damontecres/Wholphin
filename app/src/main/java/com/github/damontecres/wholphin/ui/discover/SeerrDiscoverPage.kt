@@ -347,6 +347,7 @@ private const val LAST_ROW = ROW_UPCOMING_TV
 @Composable
 fun SeerrDiscoverPage(
     preferences: UserPreferences,
+    positionCallback: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SeerrDiscoverViewModel = hiltViewModel(),
 ) {
@@ -482,12 +483,16 @@ fun SeerrDiscoverPage(
                         viewModel.navigationManager.navigateTo(item.destination)
                     },
                     onLongClickItem = { index, item -> },
-                    onCardFocus = { index -> position = RowColumn(rowIndex, index) },
+                    onCardFocus = { index ->
+                        position = RowColumn(rowIndex, index)
+                        positionCallback.invoke(position)
+                    },
                     focusRequester = focusRequesters[rowIndex],
                     enableViewMore = row.type != DiscoverRequestType.UNKNOWN,
                     onClickViewMore = {
                         (row.items as? DataLoadingState.Success<List<DiscoverItem>>)?.data?.size?.let {
                             position = RowColumn(rowIndex, it)
+                            positionCallback.invoke(position)
                         }
                         viewModel.navigationManager.navigateTo(
                             Destination.DiscoverMoreResult(DiscoverPagerType.RequestType(row.type)),
@@ -541,6 +546,7 @@ fun SeerrDiscoverPage(
                             },
                             onCardFocus = { index ->
                                 position = RowColumn(ROW_GENRES_MOVIE, index)
+                                positionCallback.invoke(position)
                             },
                             modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_MOVIE]),
                         )
@@ -575,7 +581,10 @@ fun SeerrDiscoverPage(
                                     ),
                                 )
                             },
-                            onCardFocus = { index -> position = RowColumn(ROW_GENRES_TV, index) },
+                            onCardFocus = { index ->
+                                position = RowColumn(ROW_GENRES_TV, index)
+                                positionCallback.invoke(position)
+                            },
                             modifier = Modifier.focusRequester(focusRequesters[ROW_GENRES_TV]),
                         )
                     }
