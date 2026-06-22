@@ -410,7 +410,6 @@ fun SeerrDiscoverPage(
             }
         }
     LaunchedEffect(focusedItem) {
-        Timber.v("updateBackdrop %s", focusedItem?.id)
         viewModel.updateBackdrop(focusedItem)
     }
     var firstFocused by rememberSaveable { mutableStateOf(false) }
