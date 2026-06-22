@@ -14,7 +14,7 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.util.StringProvider
-import com.github.damontecres.wholphin.util.DiscoverRequestType
+import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.RequestHandler
 import com.github.damontecres.wholphin.util.SEERR_PAGE_SIZE
 import kotlinx.serialization.Contextual
@@ -146,8 +146,9 @@ sealed class Destination(
         val item: DiscoverItem,
     ) : Destination(false)
 
+    @Serializable
     data class DiscoverMoreResult(
-        val type: DiscoverRequestType,
+        val type: DiscoverPagerType,
         val startIndex: Int = SEERR_PAGE_SIZE,
     ) : Destination(false)
 

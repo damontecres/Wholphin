@@ -92,13 +92,7 @@ data class DiscoverItem(
 
     val destination: Destination
         get() {
-            val jfType =
-                when (type) {
-                    SeerrItemType.MOVIE -> BaseItemKind.MOVIE
-                    SeerrItemType.TV -> BaseItemKind.SERIES
-                    SeerrItemType.PERSON -> BaseItemKind.PERSON
-                    SeerrItemType.UNKNOWN -> null
-                }
+            val jfType = type.baseItemKind
             return if (jellyfinItemId != null && jfType != null) {
                 Destination.MediaItem(
                     itemId = jellyfinItemId,
