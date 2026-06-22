@@ -16,7 +16,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.unit.dp
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
 import com.github.damontecres.wholphin.data.filter.DiscoverSort
@@ -24,7 +23,6 @@ import com.github.damontecres.wholphin.data.filter.DiscoverSortAndDirection
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.ui.components.DiscoverFilterByButton
 import com.github.damontecres.wholphin.ui.components.DiscoverSortByButton
-import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.GridTitle
 
 @Composable
@@ -92,12 +90,12 @@ fun DiscoverGridHeader(
                                 onShow = onShowFilterDropdown,
                             )
                         }
-                        ExpandableFaButton(
-                            title = R.string.view_options,
-                            iconStringRes = R.string.fa_sliders,
-                            onClick = onClickShowViewOptions,
-                            modifier = Modifier,
-                        )
+//                        ExpandableFaButton(
+//                            title = R.string.view_options,
+//                            iconStringRes = R.string.fa_sliders,
+//                            onClick = onClickShowViewOptions,
+//                            modifier = Modifier,
+//                        )
                     }
                 }
             }

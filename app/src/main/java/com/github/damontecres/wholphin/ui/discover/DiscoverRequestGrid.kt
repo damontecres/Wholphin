@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
@@ -231,6 +233,7 @@ data class DiscoverRequestState(
 @Composable
 fun DiscoverRequestGrid(
     destination: Destination.DiscoverMoreResult,
+    showTitle: Boolean,
     modifier: Modifier = Modifier,
     viewModelKey: String? = null,
     viewModel: DiscoverRequestViewModel =
@@ -240,13 +243,15 @@ fun DiscoverRequestGrid(
         ),
 ) {
     val state by viewModel.state.collectAsState()
+
+    var showHeader by remember { mutableStateOf(state.startIndex < 6) }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         DiscoverGridHeader(
-            showHeader = true,
-            showTitle = true,
+            showHeader = showHeader,
+            showTitle = showTitle,
             title = stringResource(destination.type.stringRes),
             sortAndDirection = state.sortAndDirection,
             onSortChange = viewModel::onSortChange,
@@ -294,6 +299,8 @@ fun DiscoverRequestGrid(
                             width = Dp.Unspecified,
                         )
                     },
+                    columns = 6,
+                    positionCallback = { columns, index -> showHeader = index < columns },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

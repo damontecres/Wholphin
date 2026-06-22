@@ -79,6 +79,7 @@ fun DiscoverPage(
             3 -> {
                 DiscoverRequestGrid(
                     viewModelKey = "movies",
+                    showTitle = false,
                     destination =
                         Destination.DiscoverMoreResult(
                             DiscoverRequestType.DISCOVER_MOVIES,
@@ -95,6 +96,7 @@ fun DiscoverPage(
             4 -> {
                 DiscoverRequestGrid(
                     viewModelKey = "tv",
+                    showTitle = false,
                     destination =
                         Destination.DiscoverMoreResult(
                             DiscoverRequestType.DISCOVER_TV,
