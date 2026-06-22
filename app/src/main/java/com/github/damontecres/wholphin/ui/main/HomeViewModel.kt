@@ -18,7 +18,8 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PlaybackResultCache
+import com.github.damontecres.wholphin.services.PlaybackResult
+import com.github.damontecres.wholphin.services.PlaybackResultService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
@@ -37,7 +38,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -48,6 +52,7 @@ import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 @HiltViewModel
@@ -66,14 +71,27 @@ class HomeViewModel
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
         private val latestNextUpService: LatestNextUpService,
-        private val playbackResultCache: PlaybackResultCache,
+        private val playbackResultService: PlaybackResultService,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeState.EMPTY)
         val state: StateFlow<HomeState> = _state
 
+        // Locally-known playback outcomes (race-free) used to patch "continue watching" rows. Held
+        // as this view model's own derived overrides: refreshed live as results arrive and re-applied
+        // on every row (re)load, so a freshly fetched but still-stale server row reflects them.
+        private val knownResults = ConcurrentHashMap<UUID, PlaybackResult>()
+
         init {
             datePlayedService.invalidateAll()
-//            init()
+            playbackResultService.playbackResultFlow
+                .onEach { result ->
+                    knownResults[result.itemId] = result
+                    _state.update { state ->
+                        state.copy(homeRows = state.homeRows.map { patchWatchingRow(it, knownResults::get) })
+                    }
+                }.catch { ex ->
+                    Timber.e(ex, "Error applying playback result to home rows")
+                }.launchIn(viewModelScope)
         }
 
         fun init() {
@@ -179,7 +197,7 @@ class HomeViewModel
                                 remaining.removeIf { it.index == rowIndex }
                                 // Patch outside _state.update: the cache take() has a side effect
                                 // and update {} may re-run its block on concurrent updates.
-                                val patchedRow = patchWatchingRow(rowData, playbackResultCache::take)
+                                val patchedRow = patchWatchingRow(rowData, knownResults::get)
                                 _state.update { state ->
                                     val newRows =
                                         state.homeRows.toMutableList().apply {
@@ -197,7 +215,7 @@ class HomeViewModel
                                 )
                             }
                         } else {
-                            val rows = deferred.awaitAll().map { patchWatchingRow(it, playbackResultCache::take) }
+                            val rows = deferred.awaitAll().map { patchWatchingRow(it, knownResults::get) }
                             Timber.v("Got all rows")
                             _state.update {
                                 it.copy(
@@ -325,11 +343,13 @@ private fun isWatchingRow(row: HomeRowConfig) =
  * partially-watched items get their resume position/percentage refreshed. Non-watching rows, null
  * items, and items without a known result are returned unchanged.
  *
- * [takeResult] returns (and consumes) the locally-known result for an item id, or null if none.
+ * [lookup] returns the locally-known result for an item id, or null if none. It is non-consuming,
+ * so the same result may be re-applied on later reloads. This is idempotent: an absolute resume
+ * position / played state is set, and finished items are dropped.
  */
 internal fun patchWatchingRow(
     row: HomeRowLoadingState,
-    takeResult: (UUID) -> PlaybackResultCache.Result?,
+    lookup: (UUID) -> PlaybackResult?,
 ): HomeRowLoadingState {
     if (row !is HomeRowLoadingState.Success) return row
     val rowType = row.rowType ?: return row
@@ -337,7 +357,7 @@ internal fun patchWatchingRow(
     val newItems =
         row.items.flatMap { item ->
             if (item == null) return@flatMap listOf<BaseItem?>(null)
-            val result = takeResult(item.id) ?: return@flatMap listOf<BaseItem?>(item)
+            val result = lookup(item.id) ?: return@flatMap listOf<BaseItem?>(item)
             if (result.played) {
                 emptyList()
             } else {

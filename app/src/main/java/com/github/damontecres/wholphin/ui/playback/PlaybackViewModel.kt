@@ -45,7 +45,7 @@ import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PlaybackResultCache
+import com.github.damontecres.wholphin.services.PlaybackResultService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
@@ -152,7 +152,7 @@ class PlaybackViewModel
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
         private val musicService: MusicService,
-        private val playbackResultCache: PlaybackResultCache,
+        private val playbackResultService: PlaybackResultService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -221,7 +221,7 @@ class PlaybackViewModel
                     if (dur > 0 && pos > 0) {
                         val played = pos >= dur * 0.9
                         val resumeTicks = if (played) 0L else pos * 10_000L
-                        playbackResultCache.record(itemId, resumeTicks, played)
+                        playbackResultService.record(itemId, resumeTicks, played)
                     }
                 }
 

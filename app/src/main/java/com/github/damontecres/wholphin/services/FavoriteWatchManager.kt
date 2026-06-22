@@ -18,7 +18,7 @@ class FavoriteWatchManager
     constructor(
         private val api: ApiClient,
         private val datePlayedService: DatePlayedService,
-        private val playbackResultCache: PlaybackResultCache,
+        private val playbackResultService: PlaybackResultService,
     ) {
         suspend fun setWatched(
             itemId: UUID,
@@ -33,7 +33,7 @@ class FavoriteWatchManager
                 }
             // Remember the authoritative outcome locally so a returning grid/row reflects it
             // immediately instead of racing the server write we just issued.
-            playbackResultCache.record(itemId, content.playbackPositionTicks, content.played)
+            playbackResultService.record(itemId, content.playbackPositionTicks, content.played)
             return content
         }
 

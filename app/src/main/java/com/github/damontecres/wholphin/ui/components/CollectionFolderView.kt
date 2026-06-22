@@ -49,7 +49,8 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PlaybackResultCache
+import com.github.damontecres.wholphin.services.PlaybackResult
+import com.github.damontecres.wholphin.services.PlaybackResultService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -120,7 +121,7 @@ class CollectionFolderViewModel
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
         private val filterOptionCache: FilterOptionCache,
-        private val playbackResultCache: PlaybackResultCache,
+        private val playbackResultService: PlaybackResultService,
         @Assisted val itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
         @Assisted("recursive") private val recursive: Boolean,
@@ -204,6 +205,21 @@ class CollectionFolderViewModel
                 }.catch { ex ->
                     Timber.e(ex, "Error refreshing after deleted item")
                 }.launchIn(viewModelScope)
+            playbackResultService.playbackResultFlow
+                .onEach { applyPlaybackResult(it) }
+                .catch { ex ->
+                    Timber.e(ex, "Error applying playback result")
+                }.launchIn(viewModelScope)
+        }
+
+        /**
+         * Apply a locally-known playback outcome to the matching item in the loaded pages, race-free,
+         * instead of re-querying the server. No-op if the item is not currently loaded.
+         */
+        private suspend fun applyPlaybackResult(result: PlaybackResult) {
+            val pager =
+                (state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*> ?: return
+            pager.updateUserDataById(result.itemId, result.positionTicks, result.played)
         }
 
         private suspend fun refreshAfterDelete(
@@ -502,26 +518,9 @@ class CollectionFolderViewModel
 
         fun onResumePage() {
             viewModelScope.launchIO {
-                // After returning (e.g. from playback) refresh the focused item's watched
-                // state immediately instead of waiting for a reload. Prefer the locally known
-                // playback result (race-free); fall back to a server refresh otherwise.
-                try {
-                    ((state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
-                        ?.let { pager ->
-                            (pager.getOrNull(position) as? BaseItem)?.let { item ->
-                                val result = playbackResultCache.take(item.id)
-                                if (result != null) {
-                                    pager.updateUserData(position, item.id, result.positionTicks, result.played)
-                                } else {
-                                    pager.refreshItem(position, item.id)
-                                }
-                            }
-                        }
-                } catch (ex: CancellationException) {
-                    throw ex
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Error refreshing focused item on resume")
-                }
+                // The focused/played item's watched state is already kept in sync in the background
+                // by the playbackResultFlow collector, so on resume we only restart the box-set
+                // theme song.
                 state.value.item.successValue?.let {
                     Timber.v("onResumePage: %s", state.value.items::class)
                     if (it.type == BaseItemKind.BOX_SET && state.value.items !is DataLoadingState.Error) {

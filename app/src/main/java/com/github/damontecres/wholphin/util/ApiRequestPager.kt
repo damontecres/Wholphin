@@ -92,26 +92,24 @@ class ApiRequestPager<T>(
     }
 
     /**
-     * Update a single cached item's user data locally (played / resume position) without
-     * re-querying the server, used when the client already knows the outcome of playback.
-     * Avoids the write(report)-then-read(refresh) race against the server.
+     * Update a single cached item's user data locally (played / resume position) by item id, without
+     * re-querying the server, used when the client already knows the outcome of playback. Scans the
+     * currently loaded pages and patches the first match; a no-op if the item is not cached. Avoids
+     * the write(report)-then-read(refresh) race against the server.
      */
-    suspend fun updateUserData(
-        position: Int,
+    suspend fun updateUserDataById(
         itemId: UUID,
         positionTicks: Long,
         played: Boolean,
     ) {
         mutex.withLock {
-            val pageNumber = position / pageSize
-            val index = position - pageNumber * pageSize
-            val page = cachedPages.getIfPresent(pageNumber)
-            if (page != null && index in page.indices) {
-                val existing = page[index]
-                if (existing.id == itemId && existing.data.userData != null) {
-                    page[index] = existing.withLocalPlayback(positionTicks, played)
+            for ((pageNumber, page) in cachedPages.asMap().toList()) {
+                val index = page.indexOfFirst { it.id == itemId && it.data.userData != null }
+                if (index >= 0) {
+                    page[index] = page[index].withLocalPlayback(positionTicks, played)
                     cachedPages.put(pageNumber, page)
                     items = ItemList(size, pageSize, cachedPages.asMap())
+                    return@withLock
                 }
             }
         }

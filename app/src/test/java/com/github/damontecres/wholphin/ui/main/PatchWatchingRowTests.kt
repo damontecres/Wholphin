@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.ui.main
 
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.services.PlaybackResultCache
+import com.github.damontecres.wholphin.services.PlaybackResult
 import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import org.jellyfin.sdk.model.UUID
@@ -20,16 +20,17 @@ import org.junit.Test
  * "continue watching" row so it does not race the asynchronous server playback-stopped report.
  *
  * Scope: these are pure unit tests covering the decision logic only. The end-to-end wiring — the
- * lifecycle resume trigger that calls the refresh, recording the outcome on playback/toggle, and the
- * card actually rendering the result — is not covered here and can only be verified by an
- * instrumented/integration test (emulator + a fake data layer).
+ * flow collector that feeds outcomes in, recording the outcome on playback/toggle, and the card
+ * actually rendering the result — is not covered here and can only be verified by an
+ * instrumented/integration test (emulator + a fake data layer). The lookup is non-consuming, so the
+ * same result may be applied repeatedly; that idempotence is what these cases exercise.
  */
 class PatchWatchingRowTests {
     @Test
     fun `non-watching row is returned unchanged`() {
         val row = successRow(rowType = HomeRowConfig.RecentlyAdded(UUID.randomUUID()), items = listOf(item()))
 
-        val result = patchWatchingRow(row) { error("takeResult must not be called for a non-watching row") }
+        val result = patchWatchingRow(row) { error("lookup must not be called for a non-watching row") }
 
         assertSame(row, result)
     }
@@ -59,7 +60,7 @@ class PatchWatchingRowTests {
     fun `finished item is dropped from the row`() {
         val finished = item(runTimeTicks = 10_000L)
         val row = watchingRow(listOf(finished))
-        val results = mapOf(finished.id to PlaybackResultCache.Result(0L, played = true))
+        val results = mapOf(finished.id to PlaybackResult(finished.id, 0L, played = true))
 
         val result = patchWatchingRow(row) { results[it] } as HomeRowLoadingState.Success
 
@@ -74,8 +75,8 @@ class PatchWatchingRowTests {
         val row = watchingRow(listOf(partial, finished, untouched))
         val results =
             mapOf(
-                partial.id to PlaybackResultCache.Result(5_000L, played = false),
-                finished.id to PlaybackResultCache.Result(0L, played = true),
+                partial.id to PlaybackResult(partial.id, 5_000L, played = false),
+                finished.id to PlaybackResult(finished.id, 0L, played = true),
             )
 
         val result = patchWatchingRow(row) { results[it] } as HomeRowLoadingState.Success
@@ -90,27 +91,6 @@ class PatchWatchingRowTests {
             0.0001,
         )
         assertSame(untouched, result.items[1])
-    }
-
-    @Test
-    fun `each item result is consumed exactly once and in order`() {
-        // Production relies on take() being one-shot: every item is queried exactly once.
-        val partial = item(runTimeTicks = 10_000L)
-        val finished = item(runTimeTicks = 10_000L)
-        val row = watchingRow(listOf(partial, finished))
-        val queried = mutableListOf<UUID>()
-        val results =
-            mapOf(
-                partial.id to PlaybackResultCache.Result(2_500L, played = false),
-                finished.id to PlaybackResultCache.Result(0L, played = true),
-            )
-
-        patchWatchingRow(row) { id ->
-            queried.add(id)
-            results[id]
-        }
-
-        assertEquals(listOf(partial.id, finished.id), queried)
     }
 
     private fun watchingRow(items: List<BaseItem?>) = successRow(rowType = HomeRowConfig.ContinueWatching(), items = items)
