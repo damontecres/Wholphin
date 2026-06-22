@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.discover
 
 import android.content.Context
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,13 +15,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.filter.DiscoverFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
+import com.github.damontecres.wholphin.data.filter.DiscoverSort
+import com.github.damontecres.wholphin.data.filter.DiscoverSortAndDirection
+import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.discoverMovieFilters
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.components.GridTitle
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -52,6 +59,7 @@ class DiscoverRequestViewModel
         private val seerrService: SeerrService,
         val navigationManager: NavigationManager,
         private val api: SeerrApi,
+        private val filterOptionCache: FilterOptionCache,
         @Assisted val type: DiscoverRequestType,
         @Assisted startIndex: Int,
     ) : ViewModel() {
@@ -68,77 +76,132 @@ class DiscoverRequestViewModel
 
         init {
             viewModelScope.launchDefault {
-                try {
-                    val pager =
-                        when (type) {
-                            DiscoverRequestType.DISCOVER_TV -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    DiscoverTvRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
 
-                            DiscoverRequestType.DISCOVER_MOVIES -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    DiscoverMovieRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.TRENDING -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    TrendingRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UPCOMING_TV -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    UpcomingTvRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UPCOMING_MOVIES -> {
-                                DiscoverRequestPager(
-                                    api,
-                                    UpcomingMovieRequestHandler,
-                                    seerrService::createDiscoverItem,
-                                    viewModelScope,
-                                )
-                            }
-
-                            DiscoverRequestType.UNKNOWN -> {
-                                throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
-                            }
-                        }.init(startIndex)
-                    _state.update {
-                        it.copy(
-                            loading = DataLoadingState.Success(pager),
-                        )
+                // TODO
+                val (sortOptions, filterOptions) =
+                    when (type) {
+                        DiscoverRequestType.DISCOVER_TV -> emptyList<DiscoverSort>() to emptyList()
+                        DiscoverRequestType.DISCOVER_MOVIES -> DiscoverSort.entries.toList() to discoverMovieFilters
+                        DiscoverRequestType.TRENDING -> emptyList<DiscoverSort>() to emptyList()
+                        DiscoverRequestType.UPCOMING_TV -> emptyList<DiscoverSort>() to emptyList()
+                        DiscoverRequestType.UPCOMING_MOVIES -> emptyList<DiscoverSort>() to emptyList()
+                        DiscoverRequestType.UNKNOWN -> emptyList<DiscoverSort>() to emptyList()
                     }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Error initializing %s", type)
-                    _state.update {
-                        it.copy(
-                            loading = DataLoadingState.Error(ex),
-                        )
+                val sortAndDirection =
+                    when (type) {
+                        DiscoverRequestType.DISCOVER_TV -> DiscoverSortAndDirection()
+                        DiscoverRequestType.DISCOVER_MOVIES -> DiscoverSortAndDirection()
+                        DiscoverRequestType.TRENDING -> DiscoverSortAndDirection()
+                        DiscoverRequestType.UPCOMING_TV -> DiscoverSortAndDirection()
+                        DiscoverRequestType.UPCOMING_MOVIES -> DiscoverSortAndDirection()
+                        DiscoverRequestType.UNKNOWN -> DiscoverSortAndDirection()
                     }
+                _state.update {
+                    it.copy(
+                        sortOptions = sortOptions,
+                        filterOptions = filterOptions,
+                        sortAndDirection = sortAndDirection,
+                    )
+                }
+                fetchData(sortAndDirection, DiscoverFilter(), startIndex)
+            }
+        }
+
+        private suspend fun fetchData(
+            sortAndDirection: DiscoverSortAndDirection,
+            filter: DiscoverFilter,
+            startIndex: Int = 0,
+        ) {
+            try {
+                val filter = filter.copy(sortBy = sortAndDirection)
+                val pager =
+                    when (type) {
+                        DiscoverRequestType.DISCOVER_TV -> {
+                            DiscoverRequestPager(
+                                api,
+                                DiscoverTvRequestHandler,
+                                seerrService::createDiscoverItem,
+                                viewModelScope,
+                            )
+                        }
+
+                        DiscoverRequestType.DISCOVER_MOVIES -> {
+                            DiscoverRequestPager(
+                                api,
+                                DiscoverMovieRequestHandler(filter),
+                                seerrService::createDiscoverItem,
+                                viewModelScope,
+                            )
+                        }
+
+                        DiscoverRequestType.TRENDING -> {
+                            DiscoverRequestPager(
+                                api,
+                                TrendingRequestHandler,
+                                seerrService::createDiscoverItem,
+                                viewModelScope,
+                            )
+                        }
+
+                        DiscoverRequestType.UPCOMING_TV -> {
+                            DiscoverRequestPager(
+                                api,
+                                UpcomingTvRequestHandler,
+                                seerrService::createDiscoverItem,
+                                viewModelScope,
+                            )
+                        }
+
+                        DiscoverRequestType.UPCOMING_MOVIES -> {
+                            DiscoverRequestPager(
+                                api,
+                                UpcomingMovieRequestHandler,
+                                seerrService::createDiscoverItem,
+                                viewModelScope,
+                            )
+                        }
+
+                        DiscoverRequestType.UNKNOWN -> {
+                            throw IllegalArgumentException("Cannot display grid for DiscoverRequestType.UNKNOWN")
+                        }
+                    }.init(startIndex)
+                _state.update {
+                    it.copy(
+                        loading = DataLoadingState.Success(pager),
+                    )
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error initializing %s", type)
+                _state.update {
+                    it.copy(
+                        loading = DataLoadingState.Error(ex),
+                    )
                 }
             }
         }
+
+        fun onSortChange(newSort: DiscoverSortAndDirection) {
+            viewModelScope.launchDefault {
+                fetchData(newSort, state.value.filter)
+            }
+        }
+
+        fun onFilterChange(newFilter: DiscoverFilter) {
+            viewModelScope.launchDefault {
+                fetchData(state.value.sortAndDirection, newFilter)
+            }
+        }
+
+        suspend fun getPossibleFilterValues(filter: DiscoverFilterBy<*>): List<FilterValueOption> =
+            filterOptionCache.getFilterOptionValues(null, filter)
     }
 
 data class DiscoverRequestState(
     val loading: DataLoadingState<List<DiscoverItem?>> = DataLoadingState.Pending,
+    val sortOptions: List<DiscoverSort> = emptyList(),
+    val filterOptions: List<DiscoverFilterBy<*>> = emptyList(),
+    val filter: DiscoverFilter = DiscoverFilter(),
+    val sortAndDirection: DiscoverSortAndDirection = DiscoverSortAndDirection(),
 )
 
 @Composable
@@ -168,7 +231,20 @@ fun DiscoverRequestGrid(
             Column(
                 modifier = modifier,
             ) {
-                GridTitle(stringResource(destination.type.stringRes))
+                DiscoverGridHeader(
+                    showHeader = true,
+                    showTitle = true,
+                    title = stringResource(destination.type.stringRes),
+                    sortAndDirection = state.sortAndDirection,
+                    onSortChange = viewModel::onSortChange,
+                    sortOptions = state.sortOptions,
+                    getPossibleFilterValues = viewModel::getPossibleFilterValues,
+                    onClickShowViewOptions = {},
+                    currentFilter = state.filter,
+                    filterOptions = state.filterOptions,
+                    onFilterChange = viewModel::onFilterChange,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
                 CardGrid(
                     initialPosition = destination.startIndex,

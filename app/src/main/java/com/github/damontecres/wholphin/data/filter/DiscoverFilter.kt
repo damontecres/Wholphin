@@ -1,9 +1,12 @@
 package com.github.damontecres.wholphin.data.filter
 
+import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.SearchApi
 import com.github.damontecres.wholphin.api.seerr.SearchApi.CertificationModeDiscoverTvGet
+import com.github.damontecres.wholphin.api.seerr.model.DiscoverMoviesGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverTvGet200Response
+import com.github.damontecres.wholphin.ui.data.flip
 import org.jellyfin.sdk.model.api.SortOrder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -26,11 +29,22 @@ private val SortOrder.key get() =
         SortOrder.DESCENDING -> "desc"
     }
 
-data class DiscoverSortBy(
-    val sort: DiscoverSort,
-    val direction: SortOrder,
+data class DiscoverSortAndDirection(
+    val sort: DiscoverSort = DiscoverSort.POPULARITY,
+    val direction: SortOrder = SortOrder.DESCENDING,
 ) {
     val key = "${sort.key}.${direction.key}"
+
+    fun flip() = copy(direction = direction.flip())
+
+    @StringRes
+    fun getStringRes(): Int =
+        when (sort) {
+            DiscoverSort.POPULARITY -> R.string.popularity
+            DiscoverSort.RELEASE_DATE -> R.string.sort_by_date_released
+            DiscoverSort.TMDB_VOTE -> R.string.community_rating
+            DiscoverSort.ALPHABETICAL -> R.string.sort_by_name
+        }
 }
 
 data class DiscoverFilter(
@@ -41,7 +55,7 @@ data class DiscoverFilter(
     // /api/v1/search/keyword
     val keywordIds: List<Int>? = null,
     val excludeKeywordIds: List<Int>? = null,
-    val sortBy: DiscoverSortBy? = null,
+    val sortBy: DiscoverSortAndDirection? = null,
     val firstAirDateGte: LocalDate? = null,
     val firstAirDateLte: LocalDate? = null,
     val withRuntimeGte: Duration? = null,
@@ -61,6 +75,28 @@ data class DiscoverFilter(
     val certificationCountry: String? = null, // US
     val certificationMatchExact: Boolean? = null,
 ) {
+    /**
+     * Returns how many of filters are actually being used in this
+     */
+    fun countFilters(filterOptions: List<DiscoverFilterBy<*>>): Int {
+        var count = 0
+        filterOptions.forEach {
+            if (it.get(this) != null) count++
+        }
+        return count
+    }
+
+    /**
+     * Clear all the values for the given filters
+     */
+    fun delete(filterOptions: List<DiscoverFilterBy<*>>): DiscoverFilter {
+        var newFilter = this
+        filterOptions.forEach {
+            newFilter = it.set(null, newFilter)
+        }
+        return newFilter
+    }
+
     suspend fun discoverTv(
         searchApi: SearchApi,
         page: Int,
@@ -93,7 +129,50 @@ data class DiscoverFilter(
                     if (certificationMatchExact) CertificationModeDiscoverTvGet.EXACT else CertificationModeDiscoverTvGet.RANGE
                 },
         )
+
+    suspend fun discoverMovies(
+        searchApi: SearchApi,
+        page: Int,
+    ): DiscoverMoviesGet200Response =
+        searchApi.discoverMoviesGet(
+            page = page,
+            language = language,
+            genre = genreIds?.joinToString(",") { it.toString() },
+//            network = null,
+            keywords = keywordIds?.joinToString(",") { it.toString() },
+            excludeKeywords = excludeKeywordIds?.joinToString(",") { it.toString() },
+            sortBy = sortBy?.key,
+//            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
+//            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
+            withRuntimeGte = withRuntimeGte?.inWholeMinutes?.toInt(),
+            withRuntimeLte = withRuntimeLte?.inWholeMinutes?.toInt(),
+            voteAverageGte = voteAverageGte,
+            voteAverageLte = voteAverageLte,
+            voteCountGte = voteCountGte,
+            voteCountLte = voteCountLte,
+            watchRegion = watchRegion,
+            watchProviders = networkIds?.joinToString(",") { it.toString() },
+//            status = status,
+            certification = certification?.joinToString("|"),
+            certificationGte = certificationGte,
+            certificationLte = certificationLte,
+            certificationCountry = certificationCountry,
+            certificationMode =
+                certificationMatchExact?.let {
+                    if (certificationMatchExact) {
+                        SearchApi.CertificationModeDiscoverMoviesGet.EXACT
+                    } else {
+                        SearchApi.CertificationModeDiscoverMoviesGet.RANGE
+                    }
+                },
+        )
 }
+
+val discoverMovieFilters =
+    listOf(
+        DiscoverMovieGenreFilter,
+        DiscoverTvGenreFilter,
+    )
 
 /**
  * A way to filter discover
@@ -102,7 +181,20 @@ data class DiscoverFilter(
  */
 sealed interface DiscoverFilterBy<T> : FilterBy<DiscoverFilter, T>
 
-data object DiscoverGenreFilter : DiscoverFilterBy<List<Int>> {
+data object DiscoverMovieGenreFilter : DiscoverFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.genres
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: DiscoverFilter): List<Int>? = filter.genreIds
+
+    override fun set(
+        value: List<Int>?,
+        filter: DiscoverFilter,
+    ): DiscoverFilter = filter.copy(genreIds = value)
+}
+
+data object DiscoverTvGenreFilter : DiscoverFilterBy<List<Int>> {
     override val stringRes: Int = R.string.genres
 
     override val supportMultiple: Boolean = true
