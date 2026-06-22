@@ -7,7 +7,7 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.StreamChoiceService
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
@@ -108,7 +108,7 @@ class ItemPlaybackRepository
             itemId: UUID,
             sourceId: UUID,
         ): ItemPlayback? =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 serverRepository.currentUser?.let { user ->
                     val itemPlayback =
                         ItemPlayback(

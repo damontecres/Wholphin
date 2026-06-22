@@ -566,8 +566,6 @@
     <string name="mixer">Mixagem</string>
     <plurals name="featurettes">
         <item quantity="one">Bastidores</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="minutes">
         <item quantity="one">%s minuto</item>

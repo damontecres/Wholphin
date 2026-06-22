@@ -35,8 +35,8 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,7 +77,7 @@ class SeerrRequestsViewModel
                         val requests =
                             mediaRequests.mapNotNull { request ->
                                 if (request.media?.tmdbId != null) {
-                                    viewModelScope.async(Dispatchers.IO) {
+                                    viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             val type = SeerrItemType.fromString(request.type)
                                             when (type) {

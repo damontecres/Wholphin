@@ -3,7 +3,7 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.RememberedTab
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,7 +16,7 @@ class RememberedTabService
         private val rememberedTabDao: RememberedTabDao,
     ) {
         suspend fun getRememberedTab(itemId: String): Int? =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 serverRepository.currentUser?.rowId?.let { userId ->
                     rememberedTabDao.getRememberedTab(userId, itemId)?.index
                 }
@@ -26,7 +26,7 @@ class RememberedTabService
             itemId: String,
             tabIndex: Int,
         ): Unit =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 serverRepository.currentUser?.rowId?.let { userId ->
                     rememberedTabDao.save(RememberedTab(userId, itemId, tabIndex))
                 }

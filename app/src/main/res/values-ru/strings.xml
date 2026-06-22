@@ -132,9 +132,6 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">За кадром</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Клип</item>
@@ -298,15 +295,9 @@
     </plurals>
     <plurals name="samples">
         <item quantity="one">Отрывки</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Дополнительные материалы</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="player_backend">Выбор плеера</string>
     <string name="edge_size">Толщина обводки</string>
@@ -315,15 +306,9 @@
     <string name="forced_track">Форсированные</string>
     <plurals name="theme_songs">
         <item quantity="one">Саундтреки</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Видеоролики</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="nav_drawer_pins">Настроить элементы боковой панели</string>
     <string name="nav_drawer_pins_summary">Выберите элементы для показа на панели, остальные элементы будут скрыты</string>
@@ -338,9 +323,6 @@
     <string name="pass_out_protection">Остановка воспроизведения при бездействии</string>
     <plurals name="shorts">
         <item quantity="one">Короткометражки</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="ends_at">Конец в %1$s</string>
     <string name="enter_server_address">Введите адрес сервера</string>

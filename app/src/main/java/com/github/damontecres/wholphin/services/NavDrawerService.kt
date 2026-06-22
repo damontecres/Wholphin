@@ -13,11 +13,11 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -209,7 +209,7 @@ class NavDrawerService
             val allItems = builtins + libraries
 
             val navDrawerPins =
-                withContext(Dispatchers.IO) {
+                withContext(WholphinDispatchers.IO) {
                     serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
                 }
 

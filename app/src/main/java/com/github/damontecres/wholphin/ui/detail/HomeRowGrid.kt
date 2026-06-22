@@ -53,12 +53,12 @@ import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -166,7 +166,7 @@ class HomeRowGridViewModel
             itemId: UUID,
             played: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setWatched(itemId, played)
                 (state.value.loading as? HomeRowLoadingState.Success)?.let {
                     (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)
@@ -179,7 +179,7 @@ class HomeRowGridViewModel
             itemId: UUID,
             favorite: Boolean,
         ) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setFavorite(itemId, favorite)
                 (state.value.loading as? HomeRowLoadingState.Success)?.let {
                     (it.items as? ApiRequestPager<*>)?.refreshItem(position, itemId)

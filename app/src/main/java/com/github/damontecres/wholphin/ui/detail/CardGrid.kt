@@ -73,7 +73,7 @@ import com.github.damontecres.wholphin.ui.playback.isForwardButton
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -217,7 +217,7 @@ fun <T : CardGridItem> CardGrid(
             { letter: Char ->
                 scope.launch(ExceptionHandler()) {
                     val jumpPosition =
-                        withContext(Dispatchers.IO) {
+                        withContext(WholphinDispatchers.IO) {
                             letterPosition.invoke(letter)
                         }
                     Timber.d("Alphabet jump to $jumpPosition")
