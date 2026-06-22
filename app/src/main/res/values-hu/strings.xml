@@ -122,7 +122,6 @@
     <string name="top_unwatched">Legjobbra értékelt, nem megnézett</string>
     <plurals name="trailers">
         <item quantity="one">Előzetesek</item>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR Időzítés</string>
     <string name="tv_guide">Műsorújság</string>
@@ -158,7 +157,6 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Színfalak mögött</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Főcímdal</item>

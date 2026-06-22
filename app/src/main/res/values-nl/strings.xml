@@ -155,47 +155,36 @@
     <string name="extras_title">Extra\'s</string>
     <plurals name="other_extras">
         <item quantity="one">Overig</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Achter de schermen</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Titelmuziek</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Titelvideo\'s</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clips</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Verwijderde scènes</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviews</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scènes</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Voorvertoningen</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Featurettes</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Shorts</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s download</item>
