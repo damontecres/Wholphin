@@ -406,6 +406,7 @@ fun DestinationContent(
             DiscoverRequestGrid(
                 destination = destination,
                 showTitle = true,
+                positionCallback = { _, _ -> },
                 modifier = modifier,
             )
         }

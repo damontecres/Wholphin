@@ -242,6 +242,7 @@ data class DiscoverRequestState(
 fun DiscoverRequestGrid(
     destination: Destination.DiscoverMoreResult,
     showTitle: Boolean,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModelKey: String? = null,
     viewModel: DiscoverRequestViewModel =
@@ -266,7 +267,9 @@ fun DiscoverRequestGrid(
         DiscoverGridHeader(
             showHeader = showHeader,
             showTitle = showTitle,
-            title = stringResource(destination.type.stringRes),
+            title =
+                destination.titleOverride?.getString()
+                    ?: stringResource(destination.type.stringRes),
             sortAndDirection = state.sortAndDirection,
             onSortChange = viewModel::onSortChange,
             sortOptions = state.sortOptions,
@@ -313,7 +316,10 @@ fun DiscoverRequestGrid(
                         )
                     },
                     columns = 6,
-                    positionCallback = { columns, index -> showHeader = index < columns },
+                    positionCallback = { columns, index ->
+                        showHeader = index < columns
+                        positionCallback.invoke(columns, index)
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

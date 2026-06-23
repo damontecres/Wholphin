@@ -88,6 +88,7 @@ fun DiscoverPage(
                             DiscoverRequestType.DISCOVER_MOVIES,
                             0,
                         ),
+                    positionCallback = { columns, index -> showHeader = index < columns },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -105,6 +106,7 @@ fun DiscoverPage(
                             DiscoverRequestType.DISCOVER_TV,
                             0,
                         ),
+                    positionCallback = { columns, index -> showHeader = index < columns },
                     modifier =
                         Modifier
                             .fillMaxSize()
