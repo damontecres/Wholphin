@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.setup.seerr
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
@@ -33,6 +34,20 @@ class SwitchSeerrViewModel
         val currentSeerrServer = seerrServerRepository.currentServer
 
         val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
+
+        val prefilledServerUrl = MutableStateFlow<String?>(null)
+
+        fun refreshPrefilledServerUrl() {
+            if (!BuildConfig.DISCOVER_ENABLED) {
+                prefilledServerUrl.update { null }
+                return
+            }
+            viewModelScope.launchIO {
+                prefilledServerUrl.update {
+                    seerrServerRepository.findPrefillServerUrlForCurrentJellyfinUser()
+                }
+            }
+        }
 
         fun submitServer(
             url: String,

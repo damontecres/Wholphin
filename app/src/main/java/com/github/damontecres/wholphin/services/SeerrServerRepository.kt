@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.api.seerr.model.PublicSettings
 import com.github.damontecres.wholphin.api.seerr.model.User
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.SeerrServer
@@ -50,6 +51,26 @@ class SeerrServerRepository
         val currentUser: Flow<SeerrUser?> =
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
         val currentUserId: Flow<Int?> = current.map { it?.config?.id }
+        private val pluginPrefilledServerUrl = MutableStateFlow<String?>(null)
+
+        private data class SetupTarget(
+            val server: SeerrServer,
+            val jellyfinUser: JellyfinUser,
+        ) {
+            fun seerrUser(
+                authMethod: SeerrAuthMethod,
+                username: String? = null,
+                password: String? = null,
+                credential: String? = null,
+            ) = SeerrUser(
+                jellyfinUserRowId = jellyfinUser.rowId,
+                serverId = server.id,
+                authMethod = authMethod,
+                username = username,
+                password = password,
+                credential = credential,
+            )
+        }
 
         /**
          * Whether Seerr integration is currently active of not
@@ -59,6 +80,7 @@ class SeerrServerRepository
 
         fun clear() {
             _connection.update { SeerrConnectionStatus.NotConfigured }
+            pluginPrefilledServerUrl.update { null }
             seerrApi.update("", null)
         }
 
@@ -88,31 +110,52 @@ class SeerrServerRepository
             url: String,
             apiKey: String,
         ) {
-            var server = seerrServerDao.getServer(url)
-            if (server == null) {
-                seerrServerDao.addServer(SeerrServer(url = url))
-                server = seerrServerDao.getServer(url)
-            }
-            server?.server?.let { server ->
-                serverRepository.currentUser?.let { jellyfinUser ->
-                    // TODO test api key
-                    val user =
-                        SeerrUser(
-                            jellyfinUserRowId = jellyfinUser.rowId,
-                            serverId = server.id,
-                            authMethod = SeerrAuthMethod.API_KEY,
-                            username = null,
-                            password = null,
-                            credential = apiKey,
-                        )
-                    seerrServerDao.addUser(user)
-
-                    seerrApi.update(server.url, apiKey)
-                    val userConfig = seerrApi.api.usersApi.authMeGet()
-                    set(server, user, userConfig)
-                }
-            }
+            val target = ensureServerAndCurrentUser(url) ?: return
+            seerrApi.update(target.server.url, apiKey)
+            val userConfig = seerrApi.api.usersApi.authMeGet()
+            val user = target.seerrUser(SeerrAuthMethod.API_KEY, credential = apiKey)
+            seerrServerDao.addUser(user)
+            set(target.server, user, userConfig)
+            pluginPrefilledServerUrl.update { null }
         }
+
+        private suspend fun ensureServer(url: String): SeerrServer? =
+            seerrServerDao.getServer(url)?.server
+                ?: run {
+                    seerrServerDao.addServer(SeerrServer(url = url))
+                    seerrServerDao.getServer(url)?.server
+                }
+
+        private suspend fun ensureServerAndCurrentUser(url: String): SetupTarget? {
+            val server =
+                ensureServer(url)
+                    ?: return null
+            val jellyfinUser = serverRepository.currentUser ?: return null
+            return SetupTarget(server, jellyfinUser)
+        }
+
+        suspend fun findExistingForCurrentJellyfinUser(): SeerrServer? {
+            val jellyfinUser = serverRepository.currentUser ?: return null
+            val seerrUser =
+                seerrServerDao
+                    .getUsersByJellyfinUser(jellyfinUser.rowId)
+                    .lastOrNull() ?: return null
+            return seerrServerDao.getServer(seerrUser.serverId)?.server
+        }
+
+        suspend fun prefillFromPlugin(url: String) {
+            val server = ensureServer(url) ?: return
+            pluginPrefilledServerUrl.update { server.url }
+        }
+
+        suspend fun findPrefillServerUrlForCurrentJellyfinUser(): String? =
+            findExistingForCurrentJellyfinUser()?.url
+                ?: pluginPrefilledServerUrl.value
+                ?: seerrServerDao
+                    .getServers()
+                    .lastOrNull()
+                    ?.server
+                    ?.url
 
         suspend fun addAndChangeServer(
             url: String,
@@ -120,30 +163,15 @@ class SeerrServerRepository
             username: String,
             password: String,
         ) {
-            var server = seerrServerDao.getServer(url)
-            if (server == null) {
-                seerrServerDao.addServer(SeerrServer(url = url))
-                server = seerrServerDao.getServer(url)
-            }
-            server?.server?.let { server ->
-                serverRepository.currentUser?.let { jellyfinUser ->
-                    // TODO Need to update server early so that cookies are saved
-                    seerrApi.update(server.url, null)
-                    val userConfig = seerrLogin(seerrApi.api, authMethod, username, password)
+            val target = ensureServerAndCurrentUser(url) ?: return
 
-                    val user =
-                        SeerrUser(
-                            jellyfinUserRowId = jellyfinUser.rowId,
-                            serverId = server.id,
-                            authMethod = authMethod,
-                            username = username,
-                            password = password,
-                            credential = null,
-                        )
-                    seerrServerDao.addUser(user)
-                    set(server, user, userConfig)
-                }
-            }
+            // TODO Need to update server early so that cookies are saved
+            seerrApi.update(target.server.url, null)
+            val userConfig = seerrLogin(seerrApi.api, authMethod, username, password)
+            val user = target.seerrUser(authMethod, username, password)
+            seerrServerDao.addUser(user)
+            set(target.server, user, userConfig)
+            pluginPrefilledServerUrl.update { null }
         }
 
         suspend fun testConnection(
