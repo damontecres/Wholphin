@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -456,11 +457,12 @@ class PlaybackViewModelTests {
         }
 
     @Test
-    fun `Show next up never`() =
+    fun `Show next up never with automatic play`() =
         runTest(testDispatcher) {
             setupForPlaylist()
             setupPreferences {
                 showNextUpWhen = ShowNextUpWhen.NEXT_UP_NEVER
+                autoPlayNext = true
             }
 
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
@@ -476,7 +478,108 @@ class PlaybackViewModelTests {
 
             viewModel.state.value.also { state ->
                 Assert.assertNull(state.nextUp)
+                Assert.assertTrue(state.hasNext)
             }
+            verify(exactly = 0) { mockNavigationManager.goBack() }
+        }
+
+    @Test
+    fun `Show next up never without automatic play`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences {
+                showNextUpWhen = ShowNextUpWhen.NEXT_UP_NEVER
+                autoPlayNext = false
+            }
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.nextUp)
+                Assert.assertTrue(state.hasNext)
+            }
+            verify(exactly = 1) { mockNavigationManager.goBack() }
+        }
+
+    @Test
+    fun `Playback ends with no next up`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences {
+                showNextUpWhen = ShowNextUpWhen.END_OF_PLAYBACK
+                autoPlayNext = false
+            }
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(playlistItems.items, state.playlist.items)
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+            viewModel.playNextUp()
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertNull(state.nextUp)
+                Assert.assertFalse(state.hasNext)
+            }
+            verify(exactly = 1) { mockNavigationManager.goBack() }
+        }
+
+    @Test
+    fun `Intro playback ends always play next`() =
+        runTest(testDispatcher) {
+            setupPreferences {
+                cinemaMode = true
+                showNextUpWhen = ShowNextUpWhen.NEXT_UP_NEVER
+                autoPlayNext = false
+            }
+            setupForPlaylist()
+            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockUserLibraryApi.getIntros(movie.id, any()) } returns
+                successQueryResult(listOf(intro))
+
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(
+                    listOf(PlaylistItem.Intro(BaseItem(intro))) + playlistItems.items,
+                    state.playlist.items,
+                )
+                Assert.assertEquals(0, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.state.value.also { state ->
+                Assert.assertEquals(1, state.playlistIndex)
+                Assert.assertNull(state.nextUp)
+            }
+            verify(exactly = 0) { mockNavigationManager.goBack() }
+
+            val mediaItems = mutableListOf<MediaItem>()
+            verify(exactly = 2) {
+                mockPlayer.setMediaItem(withArg { mediaItems.add(it) }, any<Long>())
+            }
+            Assert.assertEquals(2, mediaItems.size)
+            Assert.assertEquals(intro.id.toString(), mediaItems[0].mediaId)
+            Assert.assertEquals(movie.id.toString(), mediaItems[1].mediaId)
         }
 
     @Test
