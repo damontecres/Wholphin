@@ -640,6 +640,7 @@ fun PreferencesContent(
             SeerrDialogMode.Add -> {
                 val currentUser by seerrVm.currentUser.collectAsState(null)
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                val prefilledUrl by seerrVm.prefilledServerUrl.collectAsState()
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
                 LaunchedEffect(status) {
                     if (status == LoadingState.Success) {
@@ -649,6 +650,7 @@ fun PreferencesContent(
                 }
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
+                    currentUrl = prefilledUrl,
                     status = status,
                     onSubmit = seerrVm::submitServer,
                     onResetStatus = seerrVm::resetStatus,

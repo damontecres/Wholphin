@@ -2,12 +2,14 @@ package com.github.damontecres.wholphin.ui.setup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -49,6 +51,7 @@ class SwitchUserViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val imageUrlService: ImageUrlService,
+        val seerrServerRepository: SeerrServerRepository,
         @Assisted val server: JellyfinServer,
     ) : ViewModel() {
         @AssistedFactory
@@ -150,6 +153,9 @@ class SwitchUserViewModel
                         username = username,
                         password = password,
                     )
+                    if (BuildConfig.DISCOVER_ENABLED) {
+                        seerrServerRepository.stashJellyfinPasswordForAutoSetup(password)
+                    }
                     val current =
                         serverRepository.changeUser(server.url, authenticationResult, existingUser)
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
@@ -192,6 +198,9 @@ class SwitchUserViewModel
                         val authenticationResult by api.userApi.authenticateWithQuickConnect(
                             QuickConnectDto(secret = quickConnectStatus.secret),
                         )
+                        if (BuildConfig.DISCOVER_ENABLED) {
+                            seerrServerRepository.requestClearJellyfinPasswordOnNextSwitch()
+                        }
                         val current =
                             serverRepository.changeUser(
                                 server.url,
