@@ -113,6 +113,16 @@ class StreamChoiceServiceTest(
                         ),
                 ),
                 TestInput(
+                    1,
+                    SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true, forced = true),
+                            subtitle(1, "eng", default = false, forced = false),
+                        ),
+                ),
+                TestInput(
                     0,
                     SubtitlePlaybackMode.SMART,
                     userSubtitleLang = "eng",
@@ -317,7 +327,7 @@ class TestStreamChoiceServiceSmart(
                 TestInput(
                     0,
                     SubtitlePlaybackMode.SMART,
-                    userSubtitleLang = "end",
+                    userSubtitleLang = "eng",
                     subtitles =
                         listOf(
                             subtitle(0, "eng", false),

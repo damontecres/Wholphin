@@ -283,7 +283,7 @@ class StreamChoiceService
                                 it.language.equalsLangOrUnknown(subtitleLanguage)
                             }
                         } else {
-                            candidates.firstOrNull()
+                            candidates.firstOrNull { !it.isForced } ?: candidates.firstOrNull()
                         }
                     }
 
