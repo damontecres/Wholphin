@@ -13,7 +13,7 @@
     <string name="cancel_series_recording">Dizi kaydını iptal et</string>
     <string name="cancel">İptal</string>
     <string name="chapters">Bölümler</string>
-    <string name="choose_stream">%1$s seç</string>
+    <string name="choose_stream">Seç: %1$s</string>
     <string name="clear_image_cache">Resim önbelleğini temizle</string>
     <string name="collection">Koleksiyon</string>
     <string name="collections">Koleksiyonlar</string>
@@ -184,10 +184,10 @@
     <string name="success">Başarılı</string>
     <string name="official_rating">Yaş Derecelendirmesi</string>
     <string name="runtime_sort">Süre</string>
-    <string name="extras_title">Ekstralar</string>
+    <string name="extras_title">Özel Özellikler</string>
     <plurals name="other_extras">
-        <item quantity="one">Diğer Ekstra</item>
-        <item quantity="other">Diğer Ekstralar</item>
+        <item quantity="one">Diğer</item>
+        <item quantity="other">Diğer</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Sahne Arkası</item>
@@ -645,5 +645,10 @@
     <string name="samples_title">Örnekler</string>
     <string name="featurettes_title">Özel Seçenekler</string>
     <string name="shorts_title">Kısa Videolar</string>
-    <string name="people_title">Kişiler</string>
+    <string name="people_title">Oyuncular</string>
+    <string name="genre_movies">%1$s Filmleri</string>
+    <string name="genre_tv_shows">%1$s Dizileri</string>
+    <string name="quality_profile">Kalite Profili</string>
+    <string name="is_default">Varsayılan</string>
+    <string name="root_folder">Kök Klasör</string>
 </resources>
