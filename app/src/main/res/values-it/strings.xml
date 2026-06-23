@@ -110,7 +110,7 @@
     <string name="critic_rating">Valutazione della critica</string>
     <string name="default_track">Predefinita</string>
     <string name="discovered_servers">Server Scoperti</string>
-    <string name="download_and_update"><![CDATA[Scarica &amp; Aggiorna]]></string>
+    <string name="download_and_update"><![CDATA[Scarica e Aggiorna]]></string>
     <string name="downloading">Scaricando…</string>
     <string name="forced_track">Forzata</string>
     <string name="go_to">Vai a</string>
