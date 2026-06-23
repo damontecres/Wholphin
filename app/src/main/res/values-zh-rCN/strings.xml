@@ -625,4 +625,9 @@
     <plurals name="people">
         <item quantity="other">演职人员</item>
     </plurals>
+    <string name="genre_movies">%1$s 电影</string>
+    <string name="genre_tv_shows">%1$s 电视节目</string>
+    <string name="quality_profile">质量配置</string>
+    <string name="is_default">默认</string>
+    <string name="root_folder">根文件夹</string>
 </resources>
