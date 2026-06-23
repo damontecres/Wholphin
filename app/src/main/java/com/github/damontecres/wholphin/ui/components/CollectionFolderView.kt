@@ -101,6 +101,7 @@ import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @HiltViewModel(assistedFactory = CollectionFolderViewModel.Factory::class)
 class CollectionFolderViewModel
@@ -144,6 +145,12 @@ class CollectionFolderViewModel
 
         private val _state = MutableStateFlow(CollectionFolderState(viewOptions = defaultViewOptions))
         val state: StateFlow<CollectionFolderState> = _state
+
+        // Locally-known playback outcomes from THIS device (player end / manual toggle), applied live
+        // by the flow collector. Consumed in onResumePage so the focused item is not re-read from the
+        // possibly-stale server right after local playback. Items changed out-of-band (e.g. another
+        // device) are absent here and so get a server refresh on resume.
+        private val knownResults = ConcurrentHashMap<UUID, PlaybackResult>()
 
         var position: Int
             get() = savedStateHandle.get<Int>("position") ?: 0
@@ -206,8 +213,10 @@ class CollectionFolderViewModel
                     Timber.e(ex, "Error refreshing after deleted item")
                 }.launchIn(viewModelScope)
             playbackResultService.playbackResultFlow
-                .onEach { applyPlaybackResult(it) }
-                .catch { ex ->
+                .onEach { result ->
+                    knownResults[result.itemId] = result
+                    applyPlaybackResult(result)
+                }.catch { ex ->
                     Timber.e(ex, "Error applying playback result")
                 }.launchIn(viewModelScope)
         }
@@ -518,9 +527,24 @@ class CollectionFolderViewModel
 
         fun onResumePage() {
             viewModelScope.launchIO {
-                // The focused/played item's watched state is already kept in sync in the background
-                // by the playbackResultFlow collector, so on resume we only restart the box-set
-                // theme song.
+                // The flow collector already applied any local playback result live; consume its
+                // marker so we don't clobber it with a possibly-stale server read. Otherwise refresh
+                // the focused item from the server to pick up out-of-band changes (e.g. progress made
+                // on another device), which the in-process flow does not see.
+                try {
+                    ((state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                        ?.let { pager ->
+                            (pager.getOrNull(position) as? BaseItem)?.let { item ->
+                                if (knownResults.remove(item.id) == null) {
+                                    pager.refreshItem(position, item.id)
+                                }
+                            }
+                        }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error refreshing focused item on resume")
+                }
                 state.value.item.successValue?.let {
                     Timber.v("onResumePage: %s", state.value.items::class)
                     if (it.type == BaseItemKind.BOX_SET && state.value.items !is DataLoadingState.Error) {
