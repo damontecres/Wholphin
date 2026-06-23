@@ -66,7 +66,7 @@
     <string name="max_bitrate">Max bitrate</string>
     <string name="more_like_this">More like this</string>
     <string name="more">More</string>
-    <string name="movies">Movies</string>
+    <string name="movies_title">Movies</string>
     <string name="name">Name</string>
     <string name="next_up">Next Up</string>
     <string name="no_data">No data</string>
@@ -78,7 +78,7 @@
     <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
-    <string name="people">People</string>
+    <string name="people_title">People</string>
     <string name="play_count">Play Count</string>
     <string name="play_from_here">Play from here</string>
     <string name="play">Play</string>
@@ -145,13 +145,12 @@
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
-    <string name="trailer">Trailer</string>
-    <string name="trailers">Trailers</string>
+    <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
-    <string name="tv_shows">TV Shows</string>
+    <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
     <string name="updates">Updates</string>
@@ -176,19 +175,19 @@
     <string name="official_rating">Parental Rating</string>
     <string name="runtime_sort">Runtime</string>
 
-    <string name="extras">Extras</string>
-    <string name="other_extras">Other</string>
-    <string name="behind_the_scenes">Behind the Scenes</string>
-    <string name="theme_songs">Theme Songs</string>
-    <string name="theme_videos">Theme Videos</string>
-    <string name="clips">Clips</string>
-    <string name="deleted_scenes">Deleted Scenes</string>
-    <string name="interviews">Interviews</string>
-    <string name="scenes">Scenes</string>
-    <string name="samples">Samples</string>
-    <string name="featurettes">Featurettes</string>
-    <string name="shorts">Shorts</string>
-    <string name="favorite_items">Favorite %s</string>
+    <string name="extras_title">Extras</string>
+    <string name="other_extras_title">Other</string>
+    <string name="behind_the_scenes_title">Behind the Scenes</string>
+    <string name="theme_songs_title">Theme Songs</string>
+    <string name="theme_videos_title">Theme Videos</string>
+    <string name="clips_title">Clips</string>
+    <string name="deleted_scenes_title">Deleted Scenes</string>
+    <string name="interviews_title">Interviews</string>
+    <string name="scenes_title">Scenes</string>
+    <string name="samples_title">Samples</string>
+    <string name="featurettes_title">Featurettes</string>
+    <string name="shorts_title">Shorts</string>
+    <string name="favorite_items_title">Favorite %s</string>
 
     <plurals name="trailers">
         <item quantity="zero">Trailers</item>
@@ -732,8 +731,8 @@
     </string-array>
 
     <string-array name="screensaver_item_types">
-        <item>@string/movies</item>
-        <item>@string/tv_shows</item>
+        <item>@string/movies_title</item>
+        <item>@string/tv_shows_title</item>
         <item>@string/photos</item>
     </string-array>
 
@@ -822,4 +821,9 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="genre_movies">%1$s Movies</string>
+    <string name="genre_tv_shows">%1$s TV Shows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
 </resources>

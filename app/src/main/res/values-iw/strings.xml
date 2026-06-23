@@ -11,7 +11,7 @@
     <string name="cancel_recording">בטל הקלטה</string>
     <string name="cancel_series_recording">בטל הקלטת סדרה</string>
     <string name="cancel">בטל</string>
-    <string name="chapters">פרקי משנה</string>
+    <string name="chapters">סצינות</string>
     <string name="clear_image_cache">נקה זיכרון מטמון</string>
     <string name="collection">אוסף</string>
     <string name="collections">אוספים</string>
@@ -51,11 +51,10 @@
     </plurals>
     <string name="tv_seasons">עונות</string>
     <string name="tv_season">עונה</string>
-    <string name="trailer">טריילר</string>
     <plurals name="trailers">
-        <item quantity="one">טריילר</item>
-        <item quantity="two">טריילרים</item>
-        <item quantity="other">טריילרים</item>
+        <item quantity="one">קדימון</item>
+        <item quantity="two">קדימונים</item>
+        <item quantity="other">קדימונים</item>
     </plurals>
     <string name="subtitle">כתובית</string>
     <string name="subtitles">כתוביות</string>
@@ -105,8 +104,8 @@
     <string name="play">נגן</string>
     <string name="playback_speed">מהירות ניגון</string>
     <string name="playback">ניגון</string>
-    <string name="playlist">פלייליסט</string>
-    <string name="playlists">פלייליסטים</string>
+    <string name="playlist">רשימת־השמעה</string>
+    <string name="playlists">רשימות־השמעה</string>
     <plurals name="downloads">
         <item quantity="one">הורדה %s</item>
         <item quantity="two">%s הורדות</item>
@@ -221,8 +220,8 @@
     <string name="media_information">פרטי המדיה</string>
     <string name="show_clock">הצג שעון</string>
     <string name="aired_episode_order">סדר שידור הפרקים</string>
-    <string name="create_playlist">צור פלייליסט חדש</string>
-    <string name="add_to_playlist">הוסף לפלייליסט</string>
+    <string name="create_playlist">צור רשימת־השמעה חדשה</string>
+    <string name="add_to_playlist">הוסף לרשימת־השמעה</string>
     <string name="one_click_pause">השהה בלחיצה אחת</string>
     <string name="one_click_pause_summary_on">לחץ על מרכז כפתור הניווט להשהייה/ניגון</string>
     <string name="italic_font">גופן נטוי</string>
@@ -231,41 +230,63 @@
     <string name="success">הצלחה</string>
     <string name="official_rating">דירוג הורים</string>
     <string name="runtime_sort">אורך</string>
-    <string name="extras">תכנים נוספים</string>
+    <string name="extras_title">תכנים נוספים</string>
     <plurals name="other_extras">
         <item quantity="one">אחר</item>
+        <item quantity="two">אחרים</item>
+        <item quantity="other">אחרים</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">מאחורי הקלעים</item>
+        <item quantity="two">מאחורי הקלעים</item>
+        <item quantity="other">מאחורי הקלעים</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">שירי נושא</item>
+        <item quantity="one">שיר־נושא</item>
+        <item quantity="two">שירי־נושא</item>
+        <item quantity="other">שירי־נושא</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">סרטוני נושא</item>
+        <item quantity="one">סרטון־נושא</item>
+        <item quantity="two">סרטוני־נושא</item>
+        <item quantity="other">סרטוני־נושא</item>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">קליפים</item>
+        <item quantity="one">קליפ</item>
+        <item quantity="two">קליפים</item>
+        <item quantity="other">קליפים</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">סצינות שנמחקו</item>
+        <item quantity="one">סצינה גנוזה</item>
+        <item quantity="two">סצינות גנוזות</item>
+        <item quantity="other">סצינות גנוזות</item>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">ראיונות</item>
+        <item quantity="one">ראיון</item>
+        <item quantity="two">ראיונות</item>
+        <item quantity="other">ראיונות</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">סצינות</item>
+        <item quantity="one">סצינה</item>
+        <item quantity="two">סצינות</item>
+        <item quantity="other">סצינות</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">דגימות</item>
+        <item quantity="one">דגימה</item>
+        <item quantity="two">דגימות</item>
+        <item quantity="other">דגימות</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">סרטונים מיוחדים</item>
+        <item quantity="one">קטע־בונוס</item>
+        <item quantity="two">קטעי־בונוס</item>
+        <item quantity="other">קטעי־בונוס</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">קטעים קצרים</item>
+        <item quantity="one">קטע קצר</item>
+        <item quantity="two">קטעים קצרים</item>
+        <item quantity="other">קטעים קצרים</item>
     </plurals>
-    <string name="favorite_items">מועדפים: %s</string>
+    <string name="favorite_items_title">מועדפים: %s</string>
     <string name="ac3_supported">המכשיר תומך ב־AC3/Dolby Digital</string>
     <string name="advanced_settings">הגדרות מתקדמות</string>
     <string name="advanced_ui">ממשק מתקדם</string>
@@ -398,8 +419,8 @@
     <string name="backdrop_display">סגנון תמונת־רקע</string>
     <string name="resolution_switching">החלפת רזולוציית־תצוגה</string>
     <string name="local">מקומי</string>
-    <string name="play_trailer">נגן טריילר</string>
-    <string name="no_trailers">אין טריילרים</string>
+    <string name="play_trailer">נגן קדימון</string>
+    <string name="no_trailers">אין קדימונים</string>
     <string name="clear_track_choices">ניקוי בחירת רצועות</string>
     <string name="force_dovi_profile_7">ניגון ישיר של Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">התעלם מבדיקות תאימות של המכשיר</string>
@@ -631,4 +652,19 @@
     <string name="tomatoes">עגבניות</string>
     <string name="sort">מיון</string>
     <string name="split_into_separate_rows">פצל לשורות נפרדות</string>
+    <string name="movies_title">סרטים</string>
+    <string name="people_title">אנשים</string>
+    <string name="trailers_title">קדימונים</string>
+    <string name="tv_shows_title">סדרות</string>
+    <string name="other_extras_title">אחר</string>
+    <string name="behind_the_scenes_title">מאחורי הקלעים</string>
+    <string name="theme_songs_title">שירי־נושא</string>
+    <string name="theme_videos_title">סרטוני־נושא</string>
+    <string name="clips_title">קליפים</string>
+    <string name="deleted_scenes_title">סצינות גנוזות</string>
+    <string name="interviews_title">ראיונות</string>
+    <string name="scenes_title">סצינות</string>
+    <string name="samples_title">דגימות</string>
+    <string name="featurettes_title">קטעי בונוס</string>
+    <string name="shorts_title">קטעים קצרים</string>
 </resources>

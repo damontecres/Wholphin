@@ -102,6 +102,7 @@ class DiscoverSearchViewModel
 @Composable
 fun DiscoverSearchPage(
     preferences: UserPreferences,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DiscoverSearchViewModel = hiltViewModel(),
 ) {
@@ -241,7 +242,10 @@ fun DiscoverSearchPage(
             onPlayItem = { _, _ -> },
             onClickPosition = { position = it.column },
             onClickDiscover = onClickDiscover,
-            positionCallback = { columns, index -> position = index },
+            positionCallback = { columns, index ->
+                position = index
+                positionCallback.invoke(columns, index)
+            },
             modifier = Modifier.fillMaxSize(),
         )
     }

@@ -65,7 +65,6 @@
     <string name="more">Mere</string>
     <plurals name="movies">
         <item quantity="one">Film</item>
-        <item quantity="other"/>
     </plurals>
     <string name="name">Navn</string>
     <string name="next_up">Næste</string>
@@ -80,7 +79,6 @@
     <string name="path">Filsti</string>
     <plurals name="people">
         <item quantity="one">Personer</item>
-        <item quantity="other"/>
     </plurals>
     <string name="play_count">Antal afspilninger</string>
     <string name="play_from_here">Afspil herfra</string>
@@ -148,10 +146,8 @@
     <string name="switch_servers">Skift servere</string>
     <string name="switch_user">Skift</string>
     <string name="top_unwatched">Bedst bedømte usete</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">TV-guide</string>
@@ -159,7 +155,6 @@
     <string name="tv_seasons">Sæsoner</string>
     <plurals name="tv_shows">
         <item quantity="one">TV-serier</item>
-        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Grænseflade</string>
     <string name="unknown">Ukendt</string>
@@ -184,50 +179,39 @@
     <string name="success">Succes</string>
     <string name="official_rating">Aldersgrænse</string>
     <string name="runtime_sort">Spilletid</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Andet</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bag kulisserne</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasange</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoer</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klip</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Slettede scener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interview</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Prøver</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Specialindslag</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilm</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s download</item>

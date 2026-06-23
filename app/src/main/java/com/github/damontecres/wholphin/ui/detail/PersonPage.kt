@@ -363,7 +363,7 @@ fun PersonPageContent(
         }
         item {
             LoadingRow(
-                title = rowTitle(stringResource(R.string.movies), movies),
+                title = rowTitle(stringResource(R.string.movies_title), movies),
                 state = movies,
                 rowIndex = MOVIE_ROW,
                 position = position,
@@ -376,7 +376,7 @@ fun PersonPageContent(
         }
         item {
             LoadingRow(
-                title = rowTitle(stringResource(R.string.tv_shows), series),
+                title = rowTitle(stringResource(R.string.tv_shows_title), series),
                 state = series,
                 rowIndex = SERIES_ROW,
                 position = position,

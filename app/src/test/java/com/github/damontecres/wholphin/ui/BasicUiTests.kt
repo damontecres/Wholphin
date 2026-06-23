@@ -27,18 +27,17 @@ import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchServerViewModel
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.quickConnectApi
@@ -105,11 +104,7 @@ class BasicUiTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
-        Dispatchers.setMain(TestModule.testDispatcher)
-        mockkStatic(Dispatchers::class)
-
-        every { Dispatchers.IO } returns TestModule.testDispatcher
-        every { Dispatchers.Default } returns TestModule.testDispatcher
+        WholphinDispatchers.configure(TestModule.testDispatcher)
 
         hiltRule.inject()
         screensaverService = mockk(relaxed = true)
@@ -130,7 +125,7 @@ class BasicUiTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        WholphinDispatchers.reset()
     }
 
     /**

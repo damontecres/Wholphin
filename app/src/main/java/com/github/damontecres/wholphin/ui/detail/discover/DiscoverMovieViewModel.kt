@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.hasPermission
@@ -24,6 +25,8 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -31,7 +34,6 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,7 +75,7 @@ class DiscoverMovieViewModel
         }
 
         private fun fetchAndSetItem(): Deferred<MovieDetails?> =
-            viewModelScope.async(Dispatchers.IO) {
+            viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
                     _state.update { it.copy(movie = DataLoadingState.Success(movie)) }
@@ -164,23 +166,33 @@ class DiscoverMovieViewModel
             navigationManager.navigateTo(destination)
         }
 
-        fun request(
-            id: Int,
-            is4k: Boolean,
-        ) {
+        fun request(request: MovieRequest) {
             viewModelScope.launchIO {
+                if (request.movieId == null) {
+                    Timber.w("Null movie ID")
+                    return@launchIO
+                }
                 try {
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
-                            is4k = is4k,
-                            mediaId = id,
+                            is4k = request.is4k,
+                            mediaId = request.movieId,
                             mediaType = RequestPostRequest.MediaType.MOVIE,
+                            serverId =
+                                when {
+                                    request.profileId == null && request.folder == null -> null
+                                    request.is4k -> request.data.server4kId
+                                    else -> request.data.serverId
+                                },
+                            profileId = request.profileId,
+                            rootFolder = request.folder,
+                            tags = emptyList(),
                         ),
                     )
-                } catch (ex: kotlinx.coroutines.CancellationException) {
+                } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
-                    Timber.e(ex, "Error requesting %s", id)
+                    Timber.e(ex, "Error requesting %s", request.movieId)
                     showToast(context, "An error occurred")
                 }
                 fetchAndSetItem().await()
@@ -205,6 +217,28 @@ class DiscoverMovieViewModel
                 }
             }
         }
+
+        fun requestOnClick() {
+            viewModelScope.launchIO {
+                try {
+                    val data = seerrService.getProfilesAndFolders(SeerrItemType.MOVIE)
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                            requestData = data,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting profiles & folders")
+                    showToast(context, "Error getting profiles & folders: ${ex.localizedMessage}")
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                        )
+                    }
+                }
+            }
+        }
     }
 
 fun canUserCancelRequest(
@@ -226,4 +260,6 @@ data class DiscoverMovieState(
     val similar: List<DiscoverItem> = emptyList(),
     val recommended: List<DiscoverItem> = emptyList(),
     val canCancelRequest: Boolean = false,
+    val profileLoading: LoadingState = LoadingState.Pending,
+    val requestData: SeerrRequestData = SeerrRequestData(),
 )

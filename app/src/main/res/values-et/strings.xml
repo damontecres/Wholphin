@@ -62,7 +62,7 @@
     <string name="max_bitrate">Suurim bitikiirus</string>
     <string name="more_like_this">Veel sarnaseid</string>
     <string name="more">Veel</string>
-    <string name="movies">Filmid</string>
+    <string name="movies_title">Filmid</string>
     <string name="name">Nimi</string>
     <string name="next_up">Järgmisena esitamisel</string>
     <string name="no_data">Andmed puuduvad</string>
@@ -72,7 +72,7 @@
     <string name="none">Määramata</string>
     <string name="outro">Väljajuhatus</string>
     <string name="path">Rada</string>
-    <string name="people">Inimesed</string>
+    <string name="people_title">Inimesed</string>
     <string name="play_count">Esitusi</string>
     <string name="play_from_here">Esita siit kohast</string>
     <string name="play">Esita</string>
@@ -123,7 +123,7 @@
     <string name="success">Valmis</string>
     <string name="official_rating">Vanemlik hinnang</string>
     <string name="runtime_sort">Kestus</string>
-    <string name="extras">Lisad</string>
+    <string name="extras_title">Lisad</string>
     <plurals name="other_extras">
         <item quantity="one">Muu</item>
         <item quantity="other">Muud</item>
@@ -157,8 +157,8 @@
         <item quantity="other">Stseenid</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Näide</item>
-        <item quantity="other">Näited</item>
+        <item quantity="one">Näidislõik</item>
+        <item quantity="other">Näidislõigud</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Keskmise pikkusega film</item>
@@ -220,14 +220,13 @@
     <string name="record_program">Salvesta programm</string>
     <string name="record_series">Salvesta telesari</string>
     <string name="top_unwatched">Parima hinnanguga vaatamata sisu</string>
-    <string name="trailer">Treiler</string>
     <plurals name="trailers">
-        <item quantity="one">Treilerid</item>
-        <item quantity="other"/>
+        <item quantity="one">Treiler</item>
+        <item quantity="other">Treilerid</item>
     </plurals>
     <string name="tv_dvr_schedule">DVR-i kava</string>
     <string name="tv_guide">Telekava</string>
-    <string name="tv_shows">Telesaated</string>
+    <string name="tv_shows_title">Telesaated</string>
     <string name="video_scale">Video skaleerimine</string>
     <string name="video">Video</string>
     <string name="videos">Videod</string>
@@ -463,7 +462,7 @@
     <string name="display_presets">Kuvamise eelseadistused</string>
     <string name="display_presets_description">Rakenduses kaasasolevad eelseadistused kõikide ridade kiireks muutmiseks</string>
     <string name="customize_home_summary">Vali kodulehe/avalehe read ja pildid</string>
-    <string name="favorite_items">Märgi %s lemmikuks</string>
+    <string name="favorite_items_title">Märgi %s lemmikuks</string>
     <plurals name="minutes">
         <item quantity="one">%s minut</item>
         <item quantity="other">%s minutit</item>
@@ -623,4 +622,28 @@
     <string name="view_options_type_list_compact">Kompaktne loend</string>
     <string name="sort">Järjesta</string>
     <string name="split_into_separate_rows">Eralda ridadena</string>
+    <string name="trailers_title">Treilerid</string>
+    <string name="other_extras_title">Muud</string>
+    <string name="behind_the_scenes_title">Kaadri tagaKaadri taga</string>
+    <string name="theme_songs_title">Tunnuslood</string>
+    <string name="theme_videos_title">Tunnusvideod</string>
+    <string name="clips_title">Klipid</string>
+    <string name="deleted_scenes_title">Väljajäetud lõigud</string>
+    <string name="interviews_title">Intervjuud</string>
+    <string name="scenes_title">Stseenid</string>
+    <string name="samples_title">Näidislõigud</string>
+    <string name="featurettes_title">Keskmise pikkusega filmid</string>
+    <string name="shorts_title">Lühifilmid</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="other">Filmid</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Telesaade</item>
+        <item quantity="other">Telesaated</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Isik</item>
+        <item quantity="other">Inimesed</item>
+    </plurals>
 </resources>
