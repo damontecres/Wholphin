@@ -646,4 +646,9 @@
         <item quantity="one">Isik</item>
         <item quantity="other">Inimesed</item>
     </plurals>
+    <string name="genre_movies">%1$s filmi</string>
+    <string name="genre_tv_shows">%1$s telesaadet</string>
+    <string name="quality_profile">Kvaliteedi profiil</string>
+    <string name="is_default">Vaikimisi</string>
+    <string name="root_folder">Juurkaust</string>
 </resources>
