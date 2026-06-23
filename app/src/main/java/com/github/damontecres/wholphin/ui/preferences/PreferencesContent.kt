@@ -642,6 +642,9 @@ fun PreferencesContent(
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
                 val prefilledUrl by seerrVm.prefilledServerUrl.collectAsState()
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
+                LaunchedEffect(Unit) {
+                    seerrVm.refreshPrefilledServerUrl()
+                }
                 LaunchedEffect(status) {
                     if (status == LoadingState.Success) {
                         Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()

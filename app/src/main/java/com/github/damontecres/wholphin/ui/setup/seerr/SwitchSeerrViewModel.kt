@@ -37,12 +37,14 @@ class SwitchSeerrViewModel
 
         val prefilledServerUrl = MutableStateFlow<String?>(null)
 
-        init {
-            if (BuildConfig.DISCOVER_ENABLED) {
-                viewModelScope.launchIO {
-                    prefilledServerUrl.update {
-                        seerrServerRepository.findExistingForCurrentJellyfinUser()?.url
-                    }
+        fun refreshPrefilledServerUrl() {
+            if (!BuildConfig.DISCOVER_ENABLED) {
+                prefilledServerUrl.update { null }
+                return
+            }
+            viewModelScope.launchIO {
+                prefilledServerUrl.update {
+                    seerrServerRepository.findPrefillServerUrlForCurrentJellyfinUser()
                 }
             }
         }

@@ -14,7 +14,6 @@ import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.Flow
@@ -25,9 +24,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.ImageType
-import timber.log.Timber
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -48,39 +44,6 @@ class SeerrServerRepository
             MutableStateFlow<SeerrConnectionStatus>(SeerrConnectionStatus.NotConfigured)
         val connection: StateFlow<SeerrConnectionStatus> = _connection
 
-        // Buffer for the Jellyfin password from the most recent password-based login —
-        // consumed once by the auto-setup flow if the plugin asks for useCurrentUser.
-        // Memory-only; we never want to persist a Jellyfin cleartext password.
-        private val pendingJellyfinPassword = AtomicReference<String?>(null)
-
-        // Signal set by the QuickConnect login flow before changeUser, so the upcoming
-        // switchUser knows to wipe stale Jellyfin passwords from any SeerrUser rows.
-        private val clearJellyfinPasswordRequested = AtomicBoolean(false)
-
-        fun stashJellyfinPasswordForAutoSetup(password: String?) {
-            pendingJellyfinPassword.set(password)
-        }
-
-        fun consumeJellyfinPassword(): String? = pendingJellyfinPassword.getAndSet(null)
-
-        fun requestClearJellyfinPasswordOnNextSwitch() {
-            clearJellyfinPasswordRequested.set(true)
-        }
-
-        suspend fun consumeAndClearPasswordsIfRequested(jellyfinUserRowId: Int) {
-            if (!clearJellyfinPasswordRequested.getAndSet(false)) return
-            seerrServerDao
-                .getUsersByJellyfinUser(jellyfinUserRowId)
-                .filter { it.authMethod == SeerrAuthMethod.JELLYFIN && it.password.isNotNullOrBlank() }
-                .forEach { user ->
-                    Timber.i(
-                        "Clearing stored Jellyfin password for SeerrUser %s after QuickConnect login",
-                        user.username,
-                    )
-                    seerrServerDao.addUser(user.copy(password = null))
-                }
-        }
-
         val current: Flow<CurrentSeerr?> =
             _connection.map { (it as? SeerrConnectionStatus.Success)?.current }
         val currentServer: Flow<SeerrServer?> =
@@ -88,6 +51,7 @@ class SeerrServerRepository
         val currentUser: Flow<SeerrUser?> =
             connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
         val currentUserId: Flow<Int?> = current.map { it?.config?.id }
+        private val pluginPrefilledServerUrl = MutableStateFlow<String?>(null)
 
         private data class SetupTarget(
             val server: SeerrServer,
@@ -116,6 +80,7 @@ class SeerrServerRepository
 
         fun clear() {
             _connection.update { SeerrConnectionStatus.NotConfigured }
+            pluginPrefilledServerUrl.update { null }
             seerrApi.update("", null)
         }
 
@@ -151,43 +116,22 @@ class SeerrServerRepository
             val user = target.seerrUser(SeerrAuthMethod.API_KEY, credential = apiKey)
             seerrServerDao.addUser(user)
             set(target.server, user, userConfig)
+            pluginPrefilledServerUrl.update { null }
         }
+
+        private suspend fun ensureServer(url: String): SeerrServer? =
+            seerrServerDao.getServer(url)?.server
+                ?: run {
+                    seerrServerDao.addServer(SeerrServer(url = url))
+                    seerrServerDao.getServer(url)?.server
+                }
 
         private suspend fun ensureServerAndCurrentUser(url: String): SetupTarget? {
             val server =
-                seerrServerDao.getServer(url)?.server
-                    ?: run {
-                        seerrServerDao.addServer(SeerrServer(url = url))
-                        seerrServerDao.getServer(url)?.server
-                    }
+                ensureServer(url)
                     ?: return null
             val jellyfinUser = serverRepository.currentUser ?: return null
             return SetupTarget(server, jellyfinUser)
-        }
-
-        // Persists credentials *before* the login attempt — if Seerr is down, the existing-user
-        // branch in [UserSwitchListener] retries on the next app start.
-        suspend fun persistAndTryLogin(
-            url: String,
-            authMethod: SeerrAuthMethod,
-            username: String,
-            password: String,
-        ) {
-            val target = ensureServerAndCurrentUser(url) ?: return
-            val seerrUser = target.seerrUser(authMethod, username, password)
-            seerrServerDao.addUser(seerrUser)
-            try {
-                seerrApi.update(target.server.url, null)
-                val userConfig = seerrLogin(seerrApi.api, authMethod, username, password)
-                set(target.server, seerrUser, userConfig)
-            } catch (ex: Exception) {
-                Timber.w(
-                    ex,
-                    "Seerr login to %s failed — credentials stored, will retry on next start",
-                    target.server.url,
-                )
-                error(target.server, seerrUser, ex)
-            }
         }
 
         suspend fun findExistingForCurrentJellyfinUser(): SeerrServer? {
@@ -199,17 +143,19 @@ class SeerrServerRepository
             return seerrServerDao.getServer(seerrUser.serverId)?.server
         }
 
-        // Insert SeerrServer + SeerrUser with no password so URL + username appear pre-filled in
-        // the Add Seerr Server dialog; the user enters the password manually.
-        suspend fun prefillFromPlugin(
-            url: String,
-            authMethod: SeerrAuthMethod,
-            username: String,
-        ) {
-            val target = ensureServerAndCurrentUser(url) ?: return
-            if (seerrServerDao.getUser(target.server.id, target.jellyfinUser.rowId) != null) return
-            seerrServerDao.addUser(target.seerrUser(authMethod, username))
+        suspend fun prefillFromPlugin(url: String) {
+            val server = ensureServer(url) ?: return
+            pluginPrefilledServerUrl.update { server.url }
         }
+
+        suspend fun findPrefillServerUrlForCurrentJellyfinUser(): String? =
+            findExistingForCurrentJellyfinUser()?.url
+                ?: pluginPrefilledServerUrl.value
+                ?: seerrServerDao
+                    .getServers()
+                    .lastOrNull()
+                    ?.server
+                    ?.url
 
         suspend fun addAndChangeServer(
             url: String,
@@ -225,6 +171,7 @@ class SeerrServerRepository
             val user = target.seerrUser(authMethod, username, password)
             seerrServerDao.addUser(user)
             set(target.server, user, userConfig)
+            pluginPrefilledServerUrl.update { null }
         }
 
         suspend fun testConnection(

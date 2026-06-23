@@ -6,13 +6,12 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.BuildConfig
+import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPluginLoginType
-import com.github.damontecres.wholphin.data.model.SeerrServer
-import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -81,7 +80,6 @@ class UserSwitchListener
                     homeSettingsService.loadCurrentSettings(user)
                 }
                 if (BuildConfig.DISCOVER_ENABLED) {
-                    seerrServerRepository.consumeAndClearPasswordsIfRequested(user.rowId)
                     launchIO { restoreOrAutoSetupSeerr(user) }
                 }
             }
@@ -91,47 +89,29 @@ class UserSwitchListener
                 seerrServerDao
                     .getUsersByJellyfinUser(user.rowId)
                     .lastOrNull()
-                    ?: return tryAutoSetupFromPlugin(user)
+                    ?: return tryAutoSetupFromPlugin()
             val server = seerrServerDao.getServer(existing.serverId)?.server ?: return
-            val effective = mergeStashedPassword(existing, server)
-            if (effective.authMethod != SeerrAuthMethod.API_KEY && effective.password.isNullOrBlank()) {
-                Timber.i("Seerr entry for %s has no password yet; skipping auto-login", server.url)
-                return
-            }
             try {
-                seerrApi.update(server.url, effective.credential)
+                seerrApi.update(server.url, existing.credential)
                 val userConfig =
-                    if (effective.authMethod == SeerrAuthMethod.API_KEY) {
+                    if (existing.authMethod == SeerrAuthMethod.API_KEY) {
                         seerrApi.api.usersApi.authMeGet()
                     } else {
                         seerrLogin(
                             seerrApi.api,
-                            effective.authMethod,
-                            effective.username,
-                            effective.password,
+                            existing.authMethod,
+                            existing.username,
+                            existing.password,
                         )
                     }
-                seerrServerRepository.set(server, effective, userConfig)
+                seerrServerRepository.set(server, existing, userConfig)
             } catch (ex: Exception) {
                 Timber.w(ex, "Seerr login to %s failed - credentials kept, will retry on next start", server.url)
-                seerrServerRepository.error(server, effective, ex)
+                seerrServerRepository.error(server, existing, ex)
             }
         }
 
-        private suspend fun mergeStashedPassword(
-            existing: SeerrUser,
-            server: SeerrServer,
-        ): SeerrUser {
-            if (existing.authMethod != SeerrAuthMethod.JELLYFIN) return existing
-            val stashed = seerrServerRepository.consumeJellyfinPassword()
-            if (stashed.isNullOrBlank() || stashed == existing.password) return existing
-            val updated = existing.copy(password = stashed)
-            seerrServerDao.addUser(updated)
-            Timber.i("Updated Seerr password for %s from fresh login", server.url)
-            return updated
-        }
-
-        private suspend fun tryAutoSetupFromPlugin(user: JellyfinUser) {
+        private suspend fun tryAutoSetupFromPlugin() {
             val settings =
                 try {
                     serverPluginApi.fetchSeerrSettings()
@@ -141,7 +121,12 @@ class UserSwitchListener
                 } ?: return
             val url = settings.serverUrl
             if (!url.isNotNullOrBlank()) return
-            val login = settings.login ?: return
+            val login = settings.login
+            if (login == null) {
+                Timber.i("Pre-filling Seerr URL from plugin")
+                seerrServerRepository.prefillFromPlugin(url)
+                return
+            }
             try {
                 when (login.type) {
                     SeerrPluginLoginType.API_KEY -> {
@@ -159,33 +144,21 @@ class UserSwitchListener
                         seerrServerRepository.addAndChangeServer(url, SeerrAuthMethod.LOCAL, username, password)
                     }
 
-                    SeerrPluginLoginType.JELLYFIN -> {
-                        val jf = login.jellyfin ?: return
-                        if (jf.useCurrentUser) {
-                            val username = user.name
-                            if (!username.isNotNullOrBlank()) return
-                            val password = seerrServerRepository.consumeJellyfinPassword()
-                            if (password.isNullOrBlank()) {
-                                Timber.i("Pre-filling Seerr URL + username for %s (password required from user)", username)
-                                seerrServerRepository.prefillFromPlugin(url, SeerrAuthMethod.JELLYFIN, username)
-                            } else {
-                                Timber.i("Auto-setup Seerr via Jellyfin (useCurrentUser=%s)", username)
-                                seerrServerRepository.persistAndTryLogin(url, SeerrAuthMethod.JELLYFIN, username, password)
-                            }
-                            return
-                        }
-                        val username = jf.username
-                        val password = jf.password
-                        if (!username.isNotNullOrBlank() || !password.isNotNullOrBlank()) return
-                        Timber.i("Auto-setup Seerr via Jellyfin (explicit creds) from plugin")
-                        seerrServerRepository.addAndChangeServer(url, SeerrAuthMethod.JELLYFIN, username, password)
-                    }
-
                     SeerrPluginLoginType.NONE -> {
-                        Timber.d("Seerr plugin settings present but login type is None")
+                        Timber.i("Pre-filling Seerr URL from plugin")
+                        seerrServerRepository.prefillFromPlugin(url)
                     }
                 }
+            } catch (ex: ClientException) {
+                seerrServerRepository.prefillFromPlugin(url)
+                Timber.w(
+                    ex,
+                    "Seerr auto-setup from plugin failed for %s with HTTP %s. Check plugin Seerr credentials and auth type.",
+                    url,
+                    ex.statusCode,
+                )
             } catch (ex: Exception) {
+                seerrServerRepository.prefillFromPlugin(url)
                 Timber.w(ex, "Seerr auto-setup from plugin failed for %s", url)
             }
         }
