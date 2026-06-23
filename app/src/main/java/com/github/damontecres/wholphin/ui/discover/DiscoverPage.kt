@@ -14,7 +14,9 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabDetails
 import com.github.damontecres.wholphin.ui.components.TabbedPage
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
+import com.github.damontecres.wholphin.util.DiscoverRequestType
 
 @Composable
 fun DiscoverPage(
@@ -27,6 +29,8 @@ fun DiscoverPage(
                 TabDetails(R.string.discover),
                 TabDetails(R.string.request),
                 TabDetails(R.string.search),
+                TabDetails(R.string.movies_title),
+                TabDetails(R.string.tv_shows_title),
             )
         }
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -66,6 +70,42 @@ fun DiscoverPage(
             2 -> {
                 DiscoverSearchPage(
                     preferences = preferences,
+                    positionCallback = { columns, index -> showHeader = index < columns },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(tabDetails.contentFocusRequester),
+                )
+            }
+
+            // Movies
+            3 -> {
+                DiscoverRequestGrid(
+                    viewModelKey = "movies",
+                    showTitle = false,
+                    destination =
+                        Destination.DiscoverMoreResult(
+                            DiscoverRequestType.DISCOVER_MOVIES,
+                            0,
+                        ),
+                    positionCallback = { columns, index -> showHeader = index < columns },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(tabDetails.contentFocusRequester),
+                )
+            }
+
+            // TV
+            4 -> {
+                DiscoverRequestGrid(
+                    viewModelKey = "tv",
+                    showTitle = false,
+                    destination =
+                        Destination.DiscoverMoreResult(
+                            DiscoverRequestType.DISCOVER_TV,
+                            0,
+                        ),
                     positionCallback = { columns, index -> showHeader = index < columns },
                     modifier =
                         Modifier

@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
+import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
@@ -53,7 +54,6 @@ import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
-import com.github.damontecres.wholphin.util.DiscoverPagerType
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
@@ -495,7 +495,9 @@ fun SeerrDiscoverPage(
                             positionCallback.invoke(position)
                         }
                         viewModel.navigationManager.navigateTo(
-                            Destination.DiscoverMoreResult(DiscoverPagerType.RequestType(row.type)),
+                            Destination.DiscoverMoreResult(
+                                type = row.type,
+                            ),
                         )
                     },
                     modifier =
@@ -534,11 +536,15 @@ fun SeerrDiscoverPage(
                                 position = RowColumn(ROW_GENRES_MOVIE, index)
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(
-                                        type =
-                                            DiscoverPagerType.Genre(
-                                                genreId = genre.id.toInt(),
-                                                name = genre.name,
-                                                type = SeerrItemType.MOVIE,
+                                        type = DiscoverRequestType.DISCOVER_MOVIES,
+                                        initialFilter =
+                                            DiscoverFilter(
+                                                genreIds = listOf(genre.id.toInt()),
+                                            ),
+                                        titleOverride =
+                                            discoverGenreTitle(
+                                                genre.name,
+                                                SeerrItemType.MOVIE,
                                             ),
                                         startIndex = 0,
                                     ),
@@ -571,11 +577,15 @@ fun SeerrDiscoverPage(
                                 position = RowColumn(ROW_GENRES_TV, index)
                                 viewModel.navigationManager.navigateTo(
                                     Destination.DiscoverMoreResult(
-                                        type =
-                                            DiscoverPagerType.Genre(
-                                                genreId = genre.id.toInt(),
-                                                name = genre.name,
-                                                type = SeerrItemType.TV,
+                                        type = DiscoverRequestType.DISCOVER_TV,
+                                        initialFilter =
+                                            DiscoverFilter(
+                                                genreIds = listOf(genre.id.toInt()),
+                                            ),
+                                        titleOverride =
+                                            discoverGenreTitle(
+                                                genre.name,
+                                                SeerrItemType.TV,
                                             ),
                                         startIndex = 0,
                                     ),

@@ -1199,6 +1199,7 @@ components:
             $ref: '#/components/schemas/Season'
         status:
           type: string
+          enum: ["Returning Series", "Planned", "In Production", "Ended", "Cancelled", "Pilot"]
         tagline:
           type: string
         type:

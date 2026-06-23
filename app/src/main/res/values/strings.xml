@@ -826,4 +826,6 @@
     <string name="quality_profile">Quality profile</string>
     <string name="is_default">Default</string>
     <string name="root_folder">Root folder</string>
+    <string name="popularity">Popularity</string>
+    <string name="production_status">Production status</string>
 </resources>
