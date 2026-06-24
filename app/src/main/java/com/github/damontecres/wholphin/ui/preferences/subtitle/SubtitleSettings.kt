@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Build
 import android.view.Display
+import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -12,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
+import androidx.media3.ui.SubtitleView
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
@@ -20,9 +22,12 @@ import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
 import com.github.damontecres.wholphin.preferences.EdgeStyle
+import com.github.damontecres.wholphin.preferences.InterfacePreferences
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.util.mpv.MPVLib
 import com.github.damontecres.wholphin.util.mpv.setPropertyColor
@@ -245,6 +250,16 @@ object SubtitleSettings {
             setter = { prefs, _ -> prefs },
         )
 
+    val SeparateHdr =
+        AppSwitchPreference<SubtitlePreferences>(
+            title = R.string.different_for_hdr,
+            defaultValue = false,
+            getter = { it.useSeparateHdr },
+            setter = { prefs, value ->
+                prefs.update { useSeparateHdr = value }
+            },
+        )
+
     val HdrSettings =
         AppDestinationPreference<SubtitlePreferences>(
             title = R.string.hdr_subtitle_style,
@@ -299,7 +314,14 @@ object SubtitleSettings {
                 title = R.string.hdr,
                 preferences =
                     listOf(
-                        HdrSettings,
+                        SeparateHdr,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.useSeparateHdr },
+                            preferences = listOf(HdrSettings),
+                        ),
                     ),
             ),
         )
@@ -331,6 +353,13 @@ object SubtitleSettings {
                 else -> Typeface.DEFAULT
             },
         )
+    }
+
+    @OptIn(UnstableApi::class)
+    fun SubtitlePreferences.applyTo(view: SubtitleView) {
+        view.setStyle(toSubtitleStyle())
+        view.setFixedTextSize(Dimension.SP, fontSize.toFloat())
+        view.setBottomPaddingFraction(margin.toFloat() / 100f)
     }
 
     fun SubtitlePreferences.calculateEdgeSize(density: Density): Float = with(density) { (edgeThickness / 2f).dp.toPx() }
@@ -400,3 +429,21 @@ object SubtitleSettings {
 }
 
 inline fun SubtitlePreferences.update(block: SubtitlePreferences.Builder.() -> Unit): SubtitlePreferences = toBuilder().apply(block).build()
+
+fun InterfacePreferences.shouldEnableSeparateHdrToggle(): Boolean {
+    // If already separate, leave it
+    if (subtitlesPreferences.useSeparateHdr) return true
+    val defaultStyle =
+        SubtitlePreferences
+            .newBuilder()
+            .apply {
+                resetSubtitles()
+            }.build()
+    // If SDR and HDR are the same, don't separate
+    return if (subtitlesPreferences == hdrSubtitlesPreferences) {
+        false
+    } else {
+        // If different, but HDR has not been changed from original settings, don't separate
+        hdrSubtitlesPreferences != defaultStyle
+    }
+}
