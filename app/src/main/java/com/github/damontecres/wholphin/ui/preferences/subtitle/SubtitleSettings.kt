@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.preferences.EdgeStyle
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.util.mpv.MPVLib
 import com.github.damontecres.wholphin.util.mpv.setPropertyColor
@@ -245,6 +246,16 @@ object SubtitleSettings {
             setter = { prefs, _ -> prefs },
         )
 
+    val SeparateHdr =
+        AppSwitchPreference<SubtitlePreferences>(
+            title = R.string.different_for_hdr,
+            defaultValue = false,
+            getter = { it.useSeparateHdr },
+            setter = { prefs, value ->
+                prefs.update { useSeparateHdr = value }
+            },
+        )
+
     val HdrSettings =
         AppDestinationPreference<SubtitlePreferences>(
             title = R.string.hdr_subtitle_style,
@@ -299,7 +310,14 @@ object SubtitleSettings {
                 title = R.string.hdr,
                 preferences =
                     listOf(
-                        HdrSettings,
+                        SeparateHdr,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.useSeparateHdr },
+                            preferences = listOf(HdrSettings),
+                        ),
                     ),
             ),
         )

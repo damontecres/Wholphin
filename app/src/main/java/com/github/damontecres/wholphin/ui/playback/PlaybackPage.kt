@@ -424,7 +424,9 @@ fun PlaybackPageContent(
             val subtitleSettings =
                 remember(state.currentMediaInfo) {
                     Timber.v("subtitle choice: ${state.currentMediaInfo.videoStream?.hdr}")
-                    if (state.currentMediaInfo.videoStream?.hdr == true) {
+                    val useSeparate =
+                        preferences.appPreferences.interfacePreferences.subtitlesPreferences.useSeparateHdr
+                    if (useSeparate && state.currentMediaInfo.videoStream?.hdr == true) {
                         preferences.appPreferences.interfacePreferences.hdrSubtitlesPreferences
                     } else {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences

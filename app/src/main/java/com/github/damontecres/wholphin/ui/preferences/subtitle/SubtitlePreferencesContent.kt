@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -121,11 +123,17 @@ fun SubtitlePreferencesContent(
                     pref as AppPreference<SubtitlePreferences, Any>
                     item {
                         val interactionSource = remember { MutableInteractionSource() }
+                        val bringIntoViewRequester = remember { BringIntoViewRequester() }
                         val focused = interactionSource.collectIsFocusedAsState().value
                         LaunchedEffect(focused) {
                             if (focused) {
                                 focusedIndex = Pair(groupIndex, prefIndex)
                                 onFocus.invoke(groupIndex, prefIndex)
+                            }
+                        }
+                        if (preferences.useSeparateHdr && pref == SubtitleSettings.SeparateHdr) {
+                            LaunchedEffect(Unit) {
+                                bringIntoViewRequester.bringIntoView()
                             }
                         }
                         when (pref) {
@@ -183,7 +191,7 @@ fun SubtitlePreferencesContent(
                                             .ifElse(
                                                 groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
                                                 Modifier.focusRequester(focusRequester),
-                                            ),
+                                            ).bringIntoViewRequester(bringIntoViewRequester),
                                 )
                             }
                         }
