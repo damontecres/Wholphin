@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Build
 import android.view.Display
+import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -12,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
+import androidx.media3.ui.SubtitleView
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
@@ -349,6 +351,13 @@ object SubtitleSettings {
                 else -> Typeface.DEFAULT
             },
         )
+    }
+
+    @OptIn(UnstableApi::class)
+    fun SubtitlePreferences.applyTo(view: SubtitleView) {
+        view.setStyle(toSubtitleStyle())
+        view.setFixedTextSize(Dimension.SP, fontSize.toFloat())
+        view.setBottomPaddingFraction(margin.toFloat() / 100f)
     }
 
     fun SubtitlePreferences.calculateEdgeSize(density: Density): Float = with(density) { (edgeThickness / 2f).dp.toPx() }
