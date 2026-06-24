@@ -651,4 +651,6 @@
     <string name="quality_profile">Kvaliteedi profiil</string>
     <string name="is_default">Vaikimisi</string>
     <string name="root_folder">Juurkaust</string>
+    <string name="popularity">Populaarsus</string>
+    <string name="production_status">Tootmise olek</string>
 </resources>
