@@ -651,4 +651,6 @@
     <string name="quality_profile">Kalite Profili</string>
     <string name="is_default">Varsayılan</string>
     <string name="root_folder">Kök Klasör</string>
+    <string name="popularity">Popülerlik</string>
+    <string name="production_status">Yapım Durumu</string>
 </resources>
