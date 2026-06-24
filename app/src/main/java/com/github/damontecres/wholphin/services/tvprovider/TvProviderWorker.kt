@@ -264,6 +264,7 @@ class TvProviderWorker
                     .getLatestMedia(
                         GetLatestMediaRequest(
                             fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.EPISODE),
                             imageTypeLimit = 1,
                             parentId = null,
                             groupItems = true,
