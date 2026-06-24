@@ -1266,7 +1266,15 @@ val advancedPreferences =
                         AppPreference.DebugLogging,
                         AppPreference.ImageDiskCacheSize,
                         AppPreference.ClearImageCache,
+                        ExperimentalPreference.Enable,
                         AppPreference.OssLicenseInfo,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.experimentalPreferences.enabled },
+                            preferences = listOf(ExperimentalPreference.ExperimentalSettings),
+                        ),
                     ),
             ),
         )
