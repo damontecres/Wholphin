@@ -22,7 +22,9 @@ import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
 import com.github.damontecres.wholphin.preferences.EdgeStyle
+import com.github.damontecres.wholphin.preferences.InterfacePreferences
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
@@ -427,3 +429,21 @@ object SubtitleSettings {
 }
 
 inline fun SubtitlePreferences.update(block: SubtitlePreferences.Builder.() -> Unit): SubtitlePreferences = toBuilder().apply(block).build()
+
+fun InterfacePreferences.shouldEnableSeparateHdrToggle(): Boolean {
+    // If already separate, leave it
+    if (subtitlesPreferences.useSeparateHdr) return true
+    val defaultStyle =
+        SubtitlePreferences
+            .newBuilder()
+            .apply {
+                resetSubtitles()
+            }.build()
+    // If SDR and HDR are the same, don't separate
+    return if (subtitlesPreferences == hdrSubtitlesPreferences) {
+        false
+    } else {
+        // If different, but HDR has not been changed from original settings, don't separate
+        hdrSubtitlesPreferences != defaultStyle
+    }
+}
