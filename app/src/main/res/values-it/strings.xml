@@ -672,4 +672,6 @@
     <string name="quality_profile">Profilo di qualità</string>
     <string name="is_default">Predefinito</string>
     <string name="root_folder">Cartella principale</string>
+    <string name="popularity">Popolarità</string>
+    <string name="production_status">Stato di produzione</string>
 </resources>
