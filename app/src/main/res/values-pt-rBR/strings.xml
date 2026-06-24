@@ -149,8 +149,6 @@
     <string name="switch_servers">Trocar de servidores</string>
     <string name="switch_user">Trocar</string>
     <string name="top_unwatched">Não assistidos com melhor avaliação</string>
-    <plurals name="trailers">
-    </plurals>
     <string name="tv_dvr_schedule">Agenda do DVR</string>
     <string name="tv_guide">Guia</string>
     <string name="tv_season">Temporada</string>
