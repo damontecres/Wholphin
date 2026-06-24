@@ -23,6 +23,18 @@ object ExperimentalPreference {
             title = R.string.experimental_settings,
             destination = Destination.Settings(PreferenceScreenOption.EXPERIMENTAL),
         )
+
+    val VideoTunneling =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.video_tunneling,
+            defaultValue = false,
+            getter = { it.experimentalPreferences.videoTunnelingEnabled },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences { videoTunnelingEnabled = value }
+            },
+            summaryOn = R.string.enabled,
+            summaryOff = R.string.disabled,
+        )
 }
 
 val experimentalPreferences =
@@ -32,15 +44,15 @@ val experimentalPreferences =
                 title = R.string.experimental_settings,
                 preferences =
                     listOf(
-                        // TODO
-                        AppPreference.ShowClock,
+                        ExperimentalPreference.VideoTunneling,
                     ),
             ),
         )
     }
 
+/**
+ * Get a value from [ExperimentalPreference] or null if not enabled
+ */
 fun <T> ExperimentalPreferences.get(block: ExperimentalPreferences.() -> T): T? = if (enabled) block.invoke(this) else null
 
-fun test() {
-    ExperimentalPreferences.newBuilder().build().get { }
-}
+fun ExperimentalPreferences.enabled(block: ExperimentalPreferences.() -> Boolean): Boolean = enabled && block.invoke(this)

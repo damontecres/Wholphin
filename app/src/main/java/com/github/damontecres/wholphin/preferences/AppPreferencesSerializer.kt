@@ -180,6 +180,7 @@ class AppPreferencesSerializer
                             .newBuilder()
                             .apply {
                                 enabled = false
+                                videoTunnelingEnabled = false
                             }.build()
                 }.build()
 

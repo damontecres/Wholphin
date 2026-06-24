@@ -831,4 +831,5 @@
     <string name="experimental_settings">Experimental settings</string>
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
+    <string name="video_tunneling">Video tunneling</string>
 </resources>

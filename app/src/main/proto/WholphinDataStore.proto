@@ -213,6 +213,7 @@ message MusicPreferences {
 
 message ExperimentalPreferences {
   bool enabled = 1;
+  bool video_tunneling_enabled = 2;
 }
 
 message AppPreferences {
