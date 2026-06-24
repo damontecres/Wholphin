@@ -339,7 +339,8 @@ private fun buildContextMenuItems(
     onClickPlayWith: () -> Unit,
 ): List<DialogItem> =
     buildList {
-        if (showGoTo) {
+        // Songs should not show Go to
+        if (showGoTo && item.type != BaseItemKind.AUDIO) {
             add(
                 DialogItem(
                     resources.getString(R.string.go_to),
@@ -466,7 +467,7 @@ private fun buildContextMenuItems(
                 }
             }
         }
-        if (item.type == BaseItemKind.MUSIC_ALBUM) {
+        if (item.type == BaseItemKind.MUSIC_ALBUM || item.type == BaseItemKind.AUDIO) {
             add(
                 DialogItem(
                     resources.getString(R.string.add_to_queue),

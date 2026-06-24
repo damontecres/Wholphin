@@ -228,6 +228,8 @@ class MusicService
                         start()
                     }
                 }
+            } else {
+                Timber.w("Tried to add non-audio type %s: %s", item.type, item.id)
             }
         }
 
