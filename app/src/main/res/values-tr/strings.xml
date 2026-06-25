@@ -653,4 +653,5 @@
     <string name="root_folder">Kök Klasör</string>
     <string name="popularity">Popülerlik</string>
     <string name="production_status">Yapım Durumu</string>
+    <string name="different_for_hdr">HDR için farklı stil kullan</string>
 </resources>
