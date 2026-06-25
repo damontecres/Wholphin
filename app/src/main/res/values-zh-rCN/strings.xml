@@ -62,7 +62,7 @@
     <string name="max_bitrate">最大比特率</string>
     <string name="more_like_this">类似推荐</string>
     <string name="more">更多</string>
-    <string name="movies">电影</string>
+    <string name="movies_title">电影</string>
     <string name="name">名称</string>
     <string name="next_up">即将播放</string>
     <string name="no_data">无数据</string>
@@ -72,7 +72,7 @@
     <string name="none">无</string>
     <string name="outro">片尾</string>
     <string name="path">路径</string>
-    <string name="people">演职人员</string>
+    <string name="people_title">演职人员</string>
     <string name="play_count">播放次数</string>
     <string name="play_from_here">从此处播放</string>
     <string name="play">播放</string>
@@ -121,7 +121,6 @@
     <string name="switch_servers">切换服务器</string>
     <string name="switch_user">切换</string>
     <string name="top_unwatched">高分未看</string>
-    <string name="trailer">预告片</string>
     <plurals name="trailers">
         <item quantity="other">预告片</item>
     </plurals>
@@ -129,7 +128,7 @@
     <string name="tv_guide">指南</string>
     <string name="tv_season">季</string>
     <string name="tv_seasons">季</string>
-    <string name="tv_shows">电视节目</string>
+    <string name="tv_shows_title">电视节目</string>
     <string name="ui_interface">界面</string>
     <string name="unknown">未知</string>
     <string name="updates">更新</string>
@@ -152,7 +151,7 @@
     <string name="success">成功</string>
     <string name="official_rating">内容分级</string>
     <string name="runtime_sort">播放时长</string>
-    <string name="extras">附加内容</string>
+    <string name="extras_title">附加内容</string>
     <plurals name="other_extras">
         <item quantity="other">其他</item>
     </plurals>
@@ -446,7 +445,7 @@
     <string name="display_presets">显示预设</string>
     <string name="display_presets_description">可快速设置所有行样式的内置预设</string>
     <string name="customize_home_summary">选择首页上的行和图片</string>
-    <string name="favorite_items">收藏的 %s</string>
+    <string name="favorite_items_title">收藏的 %s</string>
     <string name="content_scale_fit">适应</string>
     <string name="content_scale_crop">裁剪</string>
     <string name="content_scale_fill">填充</string>
@@ -558,7 +557,7 @@
     <string name="play_as_type">播放方式？</string>
     <string name="visualizer_rationale">可视化当前播放的音频需要录音权限。</string>
     <string name="continue_string">继续</string>
-    <string name="separate_types">分开类型</string>
+    <string name="separate_types">分离类型</string>
     <string name="prefer_logos">优先显示标题图标</string>
     <string name="updated_toast">Wholphin 已更新至 %s</string>
     <string name="view_more">查看更多</string>
@@ -579,4 +578,51 @@
     <string name="show_more">显示更多 %1$s 条</string>
     <string name="skip_behavior">跳过行为</string>
     <string name="skip_behavior_summary">适用于片头、片尾等</string>
+    <string name="cinema_mode">影院模式</string>
+    <string name="play_with">播放方式</string>
+    <string name="transcoding">转码</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">综合搜索结果</string>
+    <string name="combined_search_results_on">在单个列表中显示所有结果</string>
+    <string name="combined_search_results_off">按类别显示结果</string>
+    <string name="results">结果</string>
+    <string name="continue_watching_click_behavior">点击继续观看/即将播放时的行为</string>
+    <string name="continue_watching_click_summary_on">点击时播放</string>
+    <string name="continue_watching_click_summary_off">点击时显示详情</string>
+    <string name="require_login">配置需要登录</string>
+    <string name="display_toggles_title">评分显示</string>
+    <string name="display_toggles_summary">自定义显示内容</string>
+    <string name="profile_protection">配置保护</string>
+    <string name="stars">星级评分</string>
+    <string name="tomatoes">番茄评分</string>
+    <string name="show_voice_search_button">显示语音搜索按钮</string>
+    <string name="visible_ui">可见</string>
+    <string name="hidden_ui">隐藏</string>
+    <string name="view_options_type_grid">网格</string>
+    <string name="view_options_type_list">列表</string>
+    <string name="view_options_type_list_compact">紧凑列表</string>
+    <string name="user_interface_language">用户界面语言</string>
+    <string name="sort">排序</string>
+    <string name="split_into_separate_rows">拆分为单独的行</string>
+    <string name="trailers_title">预告片</string>
+    <string name="other_extras_title">其他</string>
+    <string name="behind_the_scenes_title">幕后花絮</string>
+    <string name="theme_songs_title">主题曲</string>
+    <string name="theme_videos_title">主题视频</string>
+    <string name="clips_title">片段</string>
+    <string name="deleted_scenes_title">删减片段</string>
+    <string name="interviews_title">访谈</string>
+    <string name="scenes_title">场景</string>
+    <string name="samples_title">样片</string>
+    <string name="featurettes_title">特辑</string>
+    <string name="shorts_title">短片</string>
+    <plurals name="movies">
+        <item quantity="other">电影</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">电视节目</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="other">演职人员</item>
+    </plurals>
 </resources>

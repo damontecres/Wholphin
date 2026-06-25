@@ -24,19 +24,20 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import timber.log.Timber
@@ -62,7 +63,7 @@ class PlayerFactory
             backend: PlayerBackend,
             prefs: PlaybackPreferences,
         ): PlayerCreation {
-            withContext(Dispatchers.Main) {
+            withContext(WholphinDispatchers.Main) {
                 if (currentPlayer?.isReleased == false) {
                     Timber.w("Player was not released before trying to create a new one!")
                     currentPlayer?.release()
@@ -106,7 +107,13 @@ class PlayerFactory
                                 .setExtensionRendererMode(rendererMode)
                         val mediaSourceFactory =
                             if (useLibAss) {
-                                assHandler = AssHandler(AssRenderType.OVERLAY_OPEN_GL)
+                                val renderType =
+                                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                                        AssRenderType.OVERLAY_CANVAS
+                                    } else {
+                                        AssRenderType.OVERLAY_OPEN_GL
+                                    }
+                                assHandler = AssHandler(renderType)
                                 val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)
                                 DefaultMediaSourceFactory(
@@ -132,7 +139,7 @@ class PlayerFactory
                             .build()
                             .apply {
                                 assHandler?.init(this)
-                                withContext(Dispatchers.Main) {
+                                withContext(WholphinDispatchers.Main) {
                                     setAudioAttributes(
                                         AudioAttributes
                                             .Builder()
@@ -205,6 +212,11 @@ class PlayerFactory
                         ),
                 )
             }
+
+        fun createMediaSession(player: Player) =
+            MediaSession
+                .Builder(context, player)
+                .build()
     }
 
 val Player.isReleased: Boolean

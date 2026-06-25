@@ -53,4 +53,16 @@ val supportedPlayableTypes =
         BaseItemKind.TV_CHANNEL,
         BaseItemKind.TV_PROGRAM,
         BaseItemKind.RECORDING,
+        BaseItemKind.SEASON,
+        BaseItemKind.SERIES,
+        BaseItemKind.BOX_SET,
+        BaseItemKind.PLAYLIST,
+    )
+
+val supportedShufflableTypes =
+    setOf(
+        BaseItemKind.SEASON,
+        BaseItemKind.SERIES,
+        BaseItemKind.BOX_SET,
+        BaseItemKind.PLAYLIST,
     )

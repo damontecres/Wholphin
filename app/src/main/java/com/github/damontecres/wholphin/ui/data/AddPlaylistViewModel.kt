@@ -2,18 +2,17 @@ package com.github.damontecres.wholphin.ui.data
 
 import android.content.Context
 import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
@@ -30,16 +29,17 @@ class AddPlaylistViewModel
         @param:ApplicationContext private val context: Context,
         private val playlistCreator: PlaylistCreator,
     ) : ViewModel() {
-        val playlistState = MutableLiveData<PlaylistLoadingState>(PlaylistLoadingState.Pending)
+        val playlistState = MutableStateFlow<PlaylistLoadingState>(PlaylistLoadingState.Pending)
 
         fun loadPlaylists(mediaType: MediaType?) {
             viewModelScope.launchIO {
-                this@AddPlaylistViewModel.playlistState.setValueOnMain(PlaylistLoadingState.Loading)
+                this@AddPlaylistViewModel.playlistState.value = PlaylistLoadingState.Loading
                 try {
                     val playlists = playlistCreator.getServerPlaylists(mediaType, viewModelScope)
-                    this@AddPlaylistViewModel.playlistState.setValueOnMain(PlaylistLoadingState.Success(playlists))
+                    this@AddPlaylistViewModel.playlistState.value =
+                        PlaylistLoadingState.Success(playlists)
                 } catch (ex: Exception) {
-                    playlistState.setValueOnMain(PlaylistLoadingState.Error(ex))
+                    playlistState.value = PlaylistLoadingState.Error(ex)
                 }
             }
         }

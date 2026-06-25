@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,18 +27,17 @@ import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchServerViewModel
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.quickConnectApi
@@ -104,11 +104,7 @@ class BasicUiTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
-        Dispatchers.setMain(TestModule.testDispatcher)
-        mockkStatic(Dispatchers::class)
-
-        every { Dispatchers.IO } returns TestModule.testDispatcher
-        every { Dispatchers.Default } returns TestModule.testDispatcher
+        WholphinDispatchers.configure(TestModule.testDispatcher)
 
         hiltRule.inject()
         screensaverService = mockk(relaxed = true)
@@ -129,7 +125,7 @@ class BasicUiTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        WholphinDispatchers.reset()
     }
 
     /**
@@ -184,11 +180,15 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        switchServerViewModel.addServerState.value.let {
+        switchServerViewModel.state.value.addServerState.let {
             if (it is LoadingState.Error) throw it.exception ?: Exception(it.message)
         }
 
@@ -249,11 +249,15 @@ class BasicUiTests {
         composeTestRule.onNodeWithText("Enter Server IP or URL").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("server_url_text").performTextInput("localhost")
-        composeTestRule.onNodeWithText("Submit").requestFocus().performClickEnter()
+        composeTestRule
+            .onNodeWithText("Submit")
+            .assertIsEnabled()
+            .requestFocus()
+            .performClickEnter()
 
         TestModule.testDispatcher.scheduler.advanceUntilIdle()
 
-        Assert.assertTrue(switchServerViewModel.addServerState.value is LoadingState.Error)
+        Assert.assertTrue(switchServerViewModel.state.value.addServerState is LoadingState.Error)
 
         composeTestRule.onNodeWithText("Server returned invalid response").assertIsDisplayed()
     }

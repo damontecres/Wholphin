@@ -21,7 +21,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
@@ -36,8 +36,8 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleDefaultRelease bundleAppstoreRelease bundleFiretvRelease --no-daemon
-
+          ./gradlew clean bundleAppstoreRelease bundleFiretvRelease
+          ./gradlew assembleDefaultRelease
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"
@@ -58,12 +58,19 @@ jobs:
           echo "SHA256 checksums:"
           find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | xargs -0 sha256sum
       - name: Upload AAB
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: AAB
           path: |
             app/build/outputs/bundle/**/*.aab
           compression-level: 0
+      - name: Upload mapping files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mapping
+          path: |
+            app/build/outputs/**/mapping.txt
+          compression-level: 6
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

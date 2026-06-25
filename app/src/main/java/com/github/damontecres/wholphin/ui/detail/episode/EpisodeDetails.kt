@@ -13,7 +13,6 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,15 +39,16 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -66,27 +66,20 @@ fun EpisodeDetails(
         ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     LifecycleResumeEffect(Unit) {
         viewModel.init()
         onPauseOrDispose { }
     }
-    val item by viewModel.item.observeAsState()
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val chosenStreams by viewModel.chosenStreams.observeAsState(null)
+    val state by viewModel.state.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     val canDelete by viewModel.canDelete.collectAsState()
 
-    val preferredSubtitleLanguage =
-        viewModel.serverRepository.currentUserDto
-            .observeAsState()
-            .value
-            ?.configuration
-            ?.subtitleLanguagePreference
+    val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)
+    val preferredSubtitleLanguage = userDto?.configuration?.subtitleLanguagePreference
 
     val contextActions =
         remember {
@@ -119,76 +112,75 @@ fun EpisodeDetails(
             )
         }
 
-    when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+    when (val st = state.episode) {
+        is DataLoadingState.Error -> {
+            ErrorMessage(st, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
-            item?.let { ep ->
-                LifecycleResumeEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
-                    onPauseOrDispose {
-                        viewModel.release()
-                    }
+        is DataLoadingState.Success<BaseItem> -> {
+            val ep = st.data
+            LifecycleResumeEffect(ep) {
+                ep.data.seriesId?.let { seriesId ->
+                    viewModel.maybePlayThemeSong(seriesId)
                 }
-                EpisodeDetailsContent(
-                    preferences = preferences,
-                    ep = ep,
-                    chosenStreams = chosenStreams,
-                    playOnClick = {
-                        viewModel.navigateTo(
-                            Destination.Playback(
-                                ep.id,
-                                it.inWholeMilliseconds,
-                            ),
-                        )
-                    },
-                    overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(ep)
-                    },
-                    moreOnClick = {
-                        showContextMenu =
-                            ContextMenu.ForBaseItem(
-                                fromLongClick = false,
-                                item = ep,
-                                chosenStreams = chosenStreams,
-                                showGoTo = false,
-                                showStreamChoices = true,
-                                canDelete = canDelete,
-                                canRemoveContinueWatching = false,
-                                canRemoveNextUp = false,
-                                actions = contextActions,
-                            )
-                    },
-                    watchOnClick = {
-                        viewModel.setWatched(ep.id, !ep.played)
-                    },
-                    favoriteOnClick = {
-                        viewModel.setFavorite(ep.id, !ep.favorite)
-                    },
-                    canDelete = canDelete,
-                    onConfirmDelete = { viewModel.deleteItem(ep) },
-                    modifier = modifier,
-                )
+                onPauseOrDispose {
+                    viewModel.release()
+                }
             }
+            EpisodeDetailsContent(
+                preferences = preferences,
+                ep = ep,
+                chosenStreams = state.chosenStreams,
+                playOnClick = {
+                    viewModel.navigateTo(
+                        Destination.Playback(
+                            ep.id,
+                            it.inWholeMilliseconds,
+                        ),
+                    )
+                },
+                overviewOnClick = {
+                    overviewDialog =
+                        ItemDetailsDialogInfo(ep)
+                },
+                moreOnClick = {
+                    showContextMenu =
+                        ContextMenu.ForBaseItem(
+                            fromLongClick = false,
+                            item = ep,
+                            chosenStreams = state.chosenStreams,
+                            showGoTo = false,
+                            showStreamChoices = true,
+                            canDelete = canDelete,
+                            canRemoveContinueWatching = false,
+                            canRemoveNextUp = false,
+                            actions = contextActions,
+                        )
+                },
+                watchOnClick = {
+                    viewModel.setWatched(ep.id, !ep.played)
+                },
+                favoriteOnClick = {
+                    viewModel.setFavorite(ep.id, !ep.favorite)
+                },
+                canDelete = canDelete,
+                onConfirmDelete = { viewModel.deleteItem(ep) },
+                onChooseVersion = { contextActions.onChooseVersion.invoke(ep, it) },
+                modifier = modifier,
+            )
         }
     }
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                userDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
@@ -235,6 +227,7 @@ fun EpisodeDetailsContent(
     moreOnClick: () -> Unit,
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
+    onChooseVersion: (MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -295,6 +288,14 @@ fun EpisodeDetailsContent(
                         trailerOnClick = {},
                         canDelete = canDelete,
                         onConfirmDelete = onConfirmDelete,
+                        chooseVersionParams =
+                            remember(chosenStreams, ep, onChooseVersion) {
+                                ChooseVersionParams(
+                                    chosenStreams = chosenStreams,
+                                    mediaSources = ep.data.mediaSources.orEmpty(),
+                                    onChooseVersion = onChooseVersion,
+                                )
+                            },
                         modifier =
                             Modifier
                                 .fillMaxWidth()

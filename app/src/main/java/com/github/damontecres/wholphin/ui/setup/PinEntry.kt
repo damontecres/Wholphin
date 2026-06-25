@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
@@ -33,7 +34,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
-import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -72,6 +72,16 @@ fun PinEntry(
                                     Key.DirectionRight -> "R"
                                     Key.DirectionDown -> "D"
                                     Key.DirectionLeft -> "L"
+                                    Key.Zero, Key.NumPad0 -> "0"
+                                    Key.One, Key.NumPad1 -> "1"
+                                    Key.Two, Key.NumPad2 -> "2"
+                                    Key.Three, Key.NumPad3 -> "3"
+                                    Key.Four, Key.NumPad4 -> "4"
+                                    Key.Five, Key.NumPad5 -> "5"
+                                    Key.Six, Key.NumPad6 -> "6"
+                                    Key.Seven, Key.NumPad7 -> "7"
+                                    Key.Eight, Key.NumPad8 -> "8"
+                                    Key.Nine, Key.NumPad9 -> "9"
                                     else -> return@onKeyEvent false
                                 }
                             onTextChange.invoke(str)
@@ -122,6 +132,16 @@ fun PinEntryCreate(
                                 Key.DirectionRight -> "R"
                                 Key.DirectionDown -> "D"
                                 Key.DirectionLeft -> "L"
+                                Key.Zero, Key.NumPad0 -> "0"
+                                Key.One, Key.NumPad1 -> "1"
+                                Key.Two, Key.NumPad2 -> "2"
+                                Key.Three, Key.NumPad3 -> "3"
+                                Key.Four, Key.NumPad4 -> "4"
+                                Key.Five, Key.NumPad5 -> "5"
+                                Key.Six, Key.NumPad6 -> "6"
+                                Key.Seven, Key.NumPad7 -> "7"
+                                Key.Eight, Key.NumPad8 -> "8"
+                                Key.Nine, Key.NumPad9 -> "9"
                                 else -> return@onKeyEvent false
                             }
                         onTextChange.invoke(str)
@@ -154,6 +174,7 @@ fun PinEntryCreate(
 @Composable
 fun PinArrowRow(modifier: Modifier = Modifier) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
@@ -167,6 +188,12 @@ fun PinArrowRow(modifier: Modifier = Modifier) {
                 fontFamily = FontAwesome,
             )
         }
+        Text(
+            text = stringResource(R.string.pin_digits_hint),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 

@@ -142,7 +142,7 @@ class PlayExternalViewModel
                             throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                         }
                     val playbackConfig =
-                        serverRepository.currentUser.value?.let { user ->
+                        serverRepository.currentUser?.let { user ->
                             itemPlaybackDao.getItem(user, playlistItem.id)?.let {
                                 Timber.v("Fetched itemPlayback from DB: %s", it)
                                 if (it.sourceId != null) {
@@ -338,12 +338,15 @@ class PlayExternalViewModel
                             }
                         }
                         Timber.v("Result position: %s", position?.milliseconds)
+                        if (position != null && position < 0L) {
+                            Timber.w("Unknown stop position for external playback")
+                        }
                         if (position != null || result.data?.action != null) {
                             api.playStateApi.reportPlaybackStopped(
                                 PlaybackStopInfo(
                                     itemId = itemId,
                                     mediaSourceId = mediaSourceId,
-                                    positionTicks = position?.milliseconds?.inWholeTicks,
+                                    positionTicks = position?.milliseconds?.inWholeTicks?.takeIf { it >= 0 },
                                     failed = false,
                                 ),
                             )

@@ -1,8 +1,5 @@
 package com.github.damontecres.wholphin.data.model
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
@@ -11,38 +8,13 @@ import java.util.UUID
  *
  * This is not the same thing as a Jellyfin server playlist
  */
-class Playlist(
-    items: List<PlaylistItem>,
-    startIndex: Int = 0,
+data class Playlist(
+    val items: List<PlaylistItem>,
 ) {
-    val items = items.subList(startIndex, items.size)
-
-    var index by mutableIntStateOf(0)
-
-    fun hasPrevious(): Boolean = index > 0
-
-    fun hasNext(): Boolean = (index + 1) < items.size
-
-    fun getPreviousAndReverse(): PlaylistItem = items[--index]
-
-    fun getAndAdvance(): PlaylistItem = items[++index]
-
-    fun peek(): PlaylistItem? = items.getOrNull(index + 1)
-
-    fun upcomingItems(): List<PlaylistItem> = items.subList(index + 1, items.size)
-
-    fun advanceTo(id: UUID): PlaylistItem? {
-        while (hasNext()) {
-            val potential = getAndAdvance()
-            if (potential.id == id) {
-                return potential
-            }
-        }
-        return null
-    }
-
     companion object {
         const val MAX_SIZE = 100
+
+        fun fromMedia(list: List<BaseItem>) = Playlist(list.map { PlaylistItem.Media(it) })
     }
 }
 

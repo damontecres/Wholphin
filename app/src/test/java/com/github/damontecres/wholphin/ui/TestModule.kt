@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
+import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -35,7 +36,7 @@ import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
-import com.github.damontecres.wholphin.util.RememberTabManager
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -46,7 +47,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -108,7 +108,7 @@ object TestModule {
         .addInterceptor {
             val request = it.request()
             val newRequest =
-                serverRepository.currentUser.value?.accessToken?.let { token ->
+                serverRepository.currentUser?.accessToken?.let { token ->
                     request
                         .newBuilder()
                         .addHeader(
@@ -165,17 +165,6 @@ object TestModule {
         every { api.update(any(), any(), any(), any()) } returns Unit
         return api
     }
-
-    /**
-     * Implementation of [RememberTabManager] which remembers by server, user, & item
-     */
-    @Provides
-    @Singleton
-    fun rememberTabManager(
-        serverRepository: ServerRepository,
-        appPreference: DataStore<AppPreferences>,
-        @IoCoroutineScope scope: CoroutineScope,
-    ): RememberTabManager = mockk()
 
     @Provides
     @Singleton
@@ -236,7 +225,7 @@ object TestDatabaseModule {
                 .allowMainThreadQueries()
                 .setQueryCallback({ sqlQuery, args ->
                     Timber.v("sqlQuery=$sqlQuery, args=$args")
-                }, Dispatchers.IO.asExecutor())
+                }, WholphinDispatchers.IO.asExecutor())
                 .build()
 
         @Provides
@@ -266,6 +255,10 @@ object TestDatabaseModule {
         @Provides
         @Singleton
         fun playbackEffectDao(db: AppDatabase): PlaybackEffectDao = db.playbackEffectDao()
+
+        @Provides
+        @Singleton
+        fun rememberedTabDao(db: AppDatabase): RememberedTabDao = db.rememberedTabDao()
 
         @Provides
         @Singleton

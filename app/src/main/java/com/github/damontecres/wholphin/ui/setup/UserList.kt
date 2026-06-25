@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import java.util.UUID
 
@@ -75,7 +76,7 @@ fun UserList(
     onSwitchServer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showDeleteDialog by remember { mutableStateOf<JellyfinUser?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<JellyfinUserAndImage?>(null) }
 
     Column(
         modifier = modifier,
@@ -106,7 +107,7 @@ fun UserList(
                         user = user,
                         isCurrentUser = user.user.id == currentUser?.id,
                         onClick = { onSwitchUser.invoke(user.user) },
-                        onLongClick = { showDeleteDialog = user.user },
+                        onLongClick = { showDeleteDialog = user },
                         modifier = if (index == 0) Modifier.focusRequester(firstFocusRequester) else Modifier,
                     )
                 }
@@ -152,28 +153,33 @@ fun UserList(
     showDeleteDialog?.let { user ->
         DialogPopup(
             showDialog = true,
-            title = user.name ?: user.id.toString(),
+            title = user.user.name ?: user.user.id.toServerString(),
             dialogItems =
-                listOf(
-                    DialogItem(
-                        stringResource(R.string.switch_user),
-                        R.string.fa_arrow_left_arrow_right,
-                    ) {
-                        onSwitchUser.invoke(user)
-                    },
-                    DialogItem(
-                        stringResource(R.string.delete),
-                        Icons.Default.Delete,
-                        Color.Red.copy(alpha = .8f),
-                    ) {
-                        onRemoveUser.invoke(user)
-                    },
-                ),
+                buildList {
+                    add(
+                        DialogItem(
+                            stringResource(R.string.switch_user),
+                            R.string.fa_arrow_left_arrow_right,
+                        ) {
+                            onSwitchUser.invoke(user.user)
+                        },
+                    )
+                    if (user.known) {
+                        add(
+                            DialogItem(
+                                stringResource(R.string.delete),
+                                Icons.Default.Delete,
+                                Color.Red.copy(alpha = .8f),
+                            ) {
+                                onRemoveUser.invoke(user.user)
+                            },
+                        )
+                    }
+                },
             onDismissRequest = { showDeleteDialog = null },
             dismissOnClick = true,
             waitToLoad = true,
             properties = DialogProperties(),
-            elevation = 5.dp,
         )
     }
 }

@@ -10,10 +10,10 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -224,7 +224,7 @@ class ScreensaverService
                         if (index > pager.lastIndex) index = 0
                     }
                 }
-            }.flowOn(Dispatchers.Default).cancellable()
+            }.flowOn(WholphinDispatchers.Default).cancellable()
 
         private suspend fun createPager(): ApiRequestPager<GetItemsRequest> {
             val prefs =

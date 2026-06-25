@@ -60,10 +60,11 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.requestSerializersModule
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -141,6 +142,7 @@ class MainActivity : AppCompatActivity() {
     private val json =
         Json {
             classDiscriminator = "_type"
+            serializersModule = requestSerializersModule
         }
 
     @OptIn(ExperimentalTvMaterial3Api::class)
@@ -151,10 +153,22 @@ class MainActivity : AppCompatActivity() {
         lifecycle.addObserver(playbackLifecycleObserver)
 
         val backStackStr = savedInstanceState?.getString(KEY_BACK_STACK)
-        if (backStackStr != null) {
+        val restoredBackStack =
+            if (backStackStr != null) {
+                try {
+                    json.decodeFromString<List<Destination>>(backStackStr)
+                } catch (ex: Exception) {
+                    // Best-effort: a previously persisted back stack we can no longer decode
+                    // must not crash startup; fall back to a fresh start destination.
+                    Timber.w(ex, "Could not restore back stack; starting fresh")
+                    null
+                }
+            } else {
+                null
+            }
+        if (restoredBackStack != null) {
             Timber.d("Restoring back stack")
-            var backStack = json.decodeFromString<List<Destination>>(backStackStr)
-
+            var backStack = restoredBackStack
             if (!playExternalViewModel.launched.value) {
                 val lastDest = backStack.lastOrNull()
                 if (lastDest.isPlayback) {
@@ -168,20 +182,23 @@ class MainActivity : AppCompatActivity() {
             navigationManager.backStack = NavBackStack(startDestination)
         }
 
-        viewModel.serverRepository.currentUser.observe(this) { user ->
-            if (user?.hasPin == true) {
-                window?.setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                )
-            } else {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            }
-        }
+        viewModel.serverRepository.currentUserFlow
+            .onEach { user ->
+                withContext(WholphinDispatchers.Main) {
+                    if (user?.hasPin == true) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
+            }.catch { ex ->
+                Timber.e(ex, "Error with settings flag secure")
+            }.launchIn(lifecycleScope)
+
         screensaverService.keepScreenOn
             .onEach { keepScreenOn ->
                 Timber.v("keepScreenOn: %s", keepScreenOn)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     if (keepScreenOn) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     } else {
@@ -317,8 +334,14 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Timber.d("onSaveInstanceState")
-        val str = json.encodeToString(navigationManager.backStack.toList())
-        outState.putString(KEY_BACK_STACK, str)
+        try {
+            val str = json.encodeToString(navigationManager.backStack.toList())
+            outState.putString(KEY_BACK_STACK, str)
+        } catch (ex: Exception) {
+            // Best-effort: some destinations carry types we can't serialize; skip persisting
+            // the back stack rather than crashing in onSaveInstanceState.
+            Timber.w(ex, "Could not persist back stack; skipping")
+        }
         val playerBackend =
             runBlocking { userPreferencesDataStore.data.firstOrNull() }?.playbackPreferences?.playerBackend
         outState.putBoolean(KEY_EXTERNAL_PLAYER, playerBackend == PlayerBackend.EXTERNAL_PLAYER)
@@ -380,7 +403,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     fun changeDisplayMode(modeId: Int) {
-        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
+        lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)
@@ -434,15 +457,18 @@ class MainActivityViewModel
                     appUpgradeHandler.copySubfont(false)
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
-                    if (prefs.signInAutomatically && !userHasPin) {
+                    val profileProtected =
+                        serverRepository.current.value?.user?.let {
+                            it.hasPin || it.requireLogin
+                        } == true
+                    if (prefs.signInAutomatically && !profileProtected) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            if (current.user.hasPin) {
+                            if (current.user.hasPin || current.user.requireLogin) {
                                 navigationManager.navigateTo(SetupDestination.UserList(current.server))
                             } else {
                                 // Restored

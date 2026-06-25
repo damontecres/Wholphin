@@ -33,7 +33,7 @@ fun PersonRow(
     people: List<Person>,
     onClick: (Person) -> Unit,
     modifier: Modifier = Modifier,
-    @StringRes title: Int = R.string.people,
+    @StringRes title: Int = R.string.people_title,
     onLongClick: ((Int, Person) -> Unit)? = null,
 ) {
     val firstFocus = remember { FocusRequester() }
@@ -84,7 +84,7 @@ fun DiscoverPersonRow(
     people: List<DiscoverItem>,
     onClick: (DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
-    @StringRes title: Int = R.string.people,
+    @StringRes title: Int = R.string.people_title,
     onLongClick: ((Int, DiscoverItem) -> Unit)? = null,
 ) {
     val firstFocus = remember { FocusRequester() }

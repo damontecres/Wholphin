@@ -13,7 +13,6 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,20 +54,22 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.PersonContextActions
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.DiscoverRequestType
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -96,14 +97,10 @@ fun MovieDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
 
-    val preferredSubtitleLanguage =
-        viewModel.serverRepository.currentUserDto
-            .observeAsState()
-            .value
-            ?.configuration
-            ?.subtitleLanguagePreference
+    val userDto by viewModel.serverRepository.currentUserDtoFlow.collectAsState(null)
+    val preferredSubtitleLanguage = userDto?.configuration?.subtitleLanguagePreference
 
     val contextActions =
         remember {
@@ -152,10 +149,7 @@ fun MovieDetails(
             val movie by rememberUpdatedState(s.data)
             val chosenStreams by rememberUpdatedState(state.chosenStreams)
             LifecycleResumeEffect(destination.itemId) {
-                viewModel.maybePlayThemeSong(
-                    destination.itemId,
-                    preferences.appPreferences.interfacePreferences.playThemeSongs,
-                )
+                viewModel.maybePlayThemeSong(destination.itemId)
                 onPauseOrDispose {
                     viewModel.release()
                 }
@@ -244,6 +238,7 @@ fun MovieDetails(
                 },
                 canDelete = state.canDelete,
                 onConfirmDelete = { state.movie?.let { viewModel.deleteItem(it) } },
+                onChooseVersion = { contextActions.onChooseVersion.invoke(movie, it) },
                 modifier = modifier,
             )
         }
@@ -260,7 +255,7 @@ fun MovieDetails(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto.value
+                userDto
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
@@ -312,6 +307,7 @@ fun MovieDetailsContent(
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
+    onChooseVersion: (MediaSourceInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -377,6 +373,14 @@ fun MovieDetailsContent(
                         },
                         canDelete = canDelete,
                         onConfirmDelete = onConfirmDelete,
+                        chooseVersionParams =
+                            remember(state.chosenStreams, movie, onChooseVersion) {
+                                ChooseVersionParams(
+                                    chosenStreams = state.chosenStreams,
+                                    mediaSources = movie.data.mediaSources.orEmpty(),
+                                    onChooseVersion = onChooseVersion,
+                                )
+                            },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -481,7 +485,7 @@ fun MovieDetailsContent(
                     DiscoverRow(
                         row =
                             DiscoverRowData(
-                                stringResource(R.string.discover),
+                                ResStringProvider(R.string.discover),
                                 DataLoadingState.Success(discovered),
                                 type = DiscoverRequestType.UNKNOWN,
                             ),

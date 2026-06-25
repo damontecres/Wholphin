@@ -8,9 +8,9 @@ import android.os.Looper
 import android.view.Display
 import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -38,7 +38,7 @@ class RefreshRateService
             stream: MediaStream,
             switchRefreshRate: Boolean,
             switchResolution: Boolean,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(WholphinDispatchers.IO) {
             if (!switchRefreshRate && !switchResolution) {
                 Timber.v("Not switching either refresh rate nor resolution")
                 return@withContext

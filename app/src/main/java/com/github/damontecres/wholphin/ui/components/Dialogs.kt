@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
-import android.content.Context
+import android.content.res.Resources
 import android.view.KeyEvent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -64,11 +64,13 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
 import com.github.damontecres.wholphin.ui.playback.isDown
 import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -76,6 +78,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
@@ -608,14 +611,14 @@ fun ConfirmDeleteDialog(
 }
 
 fun chooseVersionParams(
-    context: Context,
+    resources: Resources,
     sources: List<MediaSourceInfo>,
     chosenSourceId: UUID?,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = context.getString(R.string.choose_stream, context.getString(R.string.version)),
+        title = resources.getString(R.string.choose_stream, resources.getString(R.string.version)),
         items =
             sources.filter { it.id.isNotNullOrBlank() }.mapIndexed { index, source ->
                 val uuid = source.id?.toUUIDOrNull()
@@ -630,7 +633,24 @@ fun chooseVersionParams(
                         SelectedLeadingContent(uuid != null && uuid == chosenSourceId)
                     },
                     supportingContent = {
-                        videoStream?.displayTitle?.let { Text(text = it) }
+                        val text =
+                            remember {
+                                buildList {
+                                    videoStream?.displayTitle?.let(::add)
+                                    source.bitrate?.let(::formatBitrate)?.let(::add)
+                                }.joinToString(", ")
+                            }
+                        Text(text)
+                    },
+                    trailingContent = {
+                        val runtime =
+                            remember {
+                                source.runTimeTicks
+                                    ?.ticks
+                                    ?.roundMinutes
+                                    .toString()
+                            }
+                        Text(runtime)
                     },
                     onClick = { onClick.invoke(index) },
                 )
@@ -649,7 +669,7 @@ fun resourceFor(type: MediaStreamType): Int =
     }
 
 fun chooseStream(
-    context: Context,
+    resources: Resources,
     streams: List<MediaStream>,
     currentIndex: Int?,
     type: MediaStreamType,
@@ -658,7 +678,7 @@ fun chooseStream(
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = context.getString(R.string.choose_stream, context.getString(resourceFor(type))),
+        title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
         items =
             buildList {
                 if (type == MediaStreamType.SUBTITLE) {
@@ -700,7 +720,7 @@ fun chooseStream(
                                 it
                             }
                         }.mapIndexed { index, stream ->
-                            val simpleStream = SimpleMediaStream.from(context, stream, true)
+                            val simpleStream = SimpleMediaStream.from(resources, stream, true)
                             DialogItem(
                                 selected = currentIndex == stream.index,
                                 leadingContent = {

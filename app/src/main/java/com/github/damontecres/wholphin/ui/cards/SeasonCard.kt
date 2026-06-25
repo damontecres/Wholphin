@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -104,6 +102,9 @@ fun SeasonCard(
     )
 }
 
+private val spaceBetweenFocused = 4.dp
+private val spaceBetweenUnfocused = 12.dp
+
 /**
  * A Card for a TV Show Season, but can generically show most items
  */
@@ -129,8 +130,11 @@ fun SeasonCard(
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     // Do not use `by` here, this way we are Defer reads and recompositions to only when modifier calculates
-    val spaceBetween = animateDpAsState(if (focused) 12.dp else 4.dp, label = "spaceBetween")
-    val spaceBelow = animateDpAsState(if (focused) 4.dp else 12.dp, label = "spaceBelow")
+    val spaceBetween =
+        animateDpAsState(
+            if (focused) spaceBetweenFocused else spaceBetweenUnfocused,
+            label = "spaceBetween",
+        )
 
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
     val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
@@ -179,14 +183,12 @@ fun SeasonCard(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier =
                 Modifier
-                    // Optimization: move animation reads to layout/draw phase
-                    .offset {
-                        IntOffset(0, (spaceBetween.value - 4.dp).roundToPx())
-                    }.layout { measurable, constraints ->
-                        val paddingPx = spaceBelow.value.roundToPx()
+                    .layout { measurable, constraints ->
+                        val topPaddingPx = (spaceBetweenUnfocused - spaceBetween.value).roundToPx()
+                        val bottomPaddingPx = spaceBetween.value.roundToPx()
                         val placeable = measurable.measure(constraints)
-                        layout(placeable.width, placeable.height + paddingPx) {
-                            placeable.placeRelative(0, 0)
+                        layout(placeable.width, placeable.height + bottomPaddingPx + topPaddingPx) {
+                            placeable.placeRelative(0, topPaddingPx)
                         }
                     }.fillMaxWidth(),
         ) {

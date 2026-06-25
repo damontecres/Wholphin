@@ -29,7 +29,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -42,26 +41,26 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import timber.log.Timber
 
 @Composable
 fun TabRow(
     selectedTabIndex: Int,
-    tabs: List<String>,
-    focusRequesters: List<FocusRequester>,
+    tabs: List<TabDetails>,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state = rememberLazyListState()
     LaunchedEffect(selectedTabIndex) {
-        if (selectedTabIndex >= 0) {
+        if (selectedTabIndex in tabs.indices) {
             state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
         }
     }
     var rowHasFocus by remember { mutableStateOf(false) }
 
     val currentSelectedTabIndex by rememberUpdatedState(selectedTabIndex)
-    val currentFocusRequesters by rememberUpdatedState(focusRequesters)
+//    val currentFocusRequesters by rememberUpdatedState(focusRequesters)
     val currentOnClick by rememberUpdatedState(onClick)
 
     LazyRow(
@@ -76,21 +75,21 @@ fun TabRow(
                         // If entering from left or right, use last or first tab
                         // Otherwise use the selected tab
                         val index = currentSelectedTabIndex
-                        val requesters = currentFocusRequesters
+//                        val requesters = currentFocusRequesters
                         Timber.v("onEnter requestedFocusDirection=$requestedFocusDirection, selectedTabIndex=$index")
-                        val focusRequester =
+                        val tab =
                             if (requestedFocusDirection == FocusDirection.Left) {
-                                requesters.lastOrNull()
+                                tabs.lastOrNull()
                             } else if (requestedFocusDirection == FocusDirection.Right) {
-                                requesters.firstOrNull()
+                                tabs.firstOrNull()
                             } else {
-                                requesters.getOrNull(index)
+                                tabs.getOrNull(index)
                             }
-                        (focusRequester ?: FocusRequester.Default).tryRequestFocus()
+                        (tab?.tabFocusRequester ?: FocusRequester.Default).tryRequestFocus()
                     }
                 },
     ) {
-        itemsIndexed(tabs) { index, tabTitle ->
+        itemsIndexed(tabs) { index, tab ->
             val interactionSource = remember { MutableInteractionSource() }
             val onTabClick =
                 remember(index) {
@@ -99,12 +98,12 @@ fun TabRow(
                     }
                 }
             Tab(
-                title = tabTitle,
+                title = tab.title.getString(),
                 selected = index == selectedTabIndex,
                 rowActive = rowHasFocus,
                 interactionSource = interactionSource,
                 onClick = onTabClick,
-                modifier = Modifier.focusRequester(focusRequesters.getOrElse(index) { FocusRequester() }),
+                modifier = Modifier.focusRequester(tab.tabFocusRequester),
             )
         }
     }
@@ -195,9 +194,11 @@ private fun TabRowPreview() {
     WholphinTheme {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
             TabRow(
-                selectedTabIndex = 1,
-                tabs = listOf("Tab 1", "Tab 2", "Tab 3"),
-                focusRequesters = listOf(),
+                selectedTabIndex = -1,
+                tabs =
+                    remember {
+                        listOf("Tab 1", "Tab 2", "Tab 3").map { TabDetails(StringStringProvider(it)) }
+                    },
                 onClick = {},
             )
             Tab(

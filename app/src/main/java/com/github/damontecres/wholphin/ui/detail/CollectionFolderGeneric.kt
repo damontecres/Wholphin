@@ -11,7 +11,7 @@ import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
@@ -41,7 +41,7 @@ fun CollectionFolderGeneric(
                 ViewOptionsWide
             }
         }
-    CollectionFolderGrid(
+    CollectionFolderView(
         preferences = preferences,
         onClickItem = { index, item ->
             preferencesViewModel.navigationManager.navigateTo(item.destination(index))

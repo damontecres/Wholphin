@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.discover
 
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,8 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -56,7 +55,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -65,8 +64,9 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.successValue
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -83,94 +83,81 @@ fun DiscoverSeriesDetails(
         ),
 ) {
     val context = LocalContext.current
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-
-    val item by viewModel.tvSeries.observeAsState()
-    val seasons by viewModel.seasons.observeAsState(listOf())
-    val people by viewModel.people.observeAsState(listOf())
-    val trailers by viewModel.trailers.observeAsState(listOf())
-    val similar by viewModel.similar.observeAsState(listOf())
-    val recommended by viewModel.recommended.observeAsState(listOf())
-    val userConfig by viewModel.userConfig.collectAsState(null)
+    val resources = LocalResources.current
+    val state by viewModel.state.collectAsState()
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
-    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showRequestSeasonDialog by remember { mutableStateOf(false) }
 
-    val requestStr = stringResource(R.string.request)
-    val request4kStr = stringResource(R.string.request_4k)
-
-    when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state, modifier)
+    when (val st = state.tvSeries) {
+        is DataLoadingState.Error -> {
+            ErrorMessage(st, modifier)
         }
 
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage(modifier)
         }
 
-        LoadingState.Success -> {
-            item?.let { item ->
-                val rating by viewModel.rating.observeAsState(null)
-                DiscoverSeriesDetailsContent(
-                    preferences = preferences,
-                    series = item,
-                    userConfig = userConfig,
-                    rating = rating,
-                    canCancel = canCancel,
-                    seasons = seasons,
-                    people = people,
-                    similar = similar,
-                    recommended = recommended,
-                    modifier = modifier,
-                    onClickItem = { index, item ->
-                        viewModel.navigateTo(Destination.DiscoveredItem(item))
-                    },
-                    onClickPerson = {
-                        viewModel.navigateTo(Destination.DiscoveredItem(it))
-                    },
-                    goToOnClick = {
-                        item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
-                            viewModel.navigateTo(
-                                Destination.MediaItem(
-                                    itemId = it,
-                                    type = BaseItemKind.MOVIE,
-                                ),
-                            )
-                        }
-                    },
-                    overviewOnClick = {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = item.name ?: context.getString(R.string.unknown),
-                                overview = item.overview,
-                                genres = item.genres?.mapNotNull { it.name }.orEmpty(),
-                                files = listOf(),
-                            )
-                    },
-                    trailerOnClick = {
-                        TrailerService.onClick(context, it, viewModel::navigateTo)
-                    },
-                    trailers = trailers,
-                    requestOnClick = {
-                        item.id?.let { id ->
-                            showRequestSeasonDialog = true
-                        }
-                    },
-                    cancelOnClick = {
-                        item.id?.let { viewModel.cancelRequest(it) }
-                    },
-                    moreOnClick = {
-                    },
-                    onLongClickPerson = { _, _ -> },
-                    onLongClickSimilar = { _, _ -> },
-                )
-            }
+        is DataLoadingState.Success<TvDetails> -> {
+            val item = st.data
+            val userConfig by viewModel.userConfig.collectAsState(null)
+            DiscoverSeriesDetailsContent(
+                preferences = preferences,
+                series = item,
+                userConfig = userConfig,
+                rating = state.rating,
+                canCancel = state.canCancelRequest,
+                seasons = state.seasons,
+                people = state.people,
+                similar = state.similar,
+                recommended = state.recommended,
+                modifier = modifier,
+                onClickItem = { index, item ->
+                    viewModel.navigateTo(Destination.DiscoveredItem(item))
+                },
+                onClickPerson = {
+                    viewModel.navigateTo(Destination.DiscoveredItem(it))
+                },
+                goToOnClick = {
+                    item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                itemId = it,
+                                type = BaseItemKind.MOVIE,
+                            ),
+                        )
+                    }
+                },
+                overviewOnClick = {
+                    overviewDialog =
+                        ItemDetailsDialogInfo(
+                            title = item.name ?: resources.getString(R.string.unknown),
+                            overview = item.overview,
+                            genres = item.genres?.mapNotNull { it.name }.orEmpty(),
+                            files = listOf(),
+                        )
+                },
+                trailerOnClick = {
+                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                },
+                trailers = state.trailers,
+                requestOnClick = {
+                    viewModel.requestOnClick()
+                    showRequestSeasonDialog = true
+                },
+                cancelOnClick = {
+                    item.id?.let { viewModel.cancelRequest(it) }
+                },
+                moreOnClick = {
+                },
+                onLongClickPerson = { _, _ -> },
+                onLongClickSimilar = { _, _ -> },
+            )
         }
     }
     overviewDialog?.let { info ->
@@ -201,13 +188,16 @@ fun DiscoverSeriesDetails(
     }
     if (showRequestSeasonDialog) {
         RequestSeasonsDialog(
-            title = item?.name ?: "",
-            seasons = seasons,
+            id = state.tvSeries.successValue?.id ?: -1,
+            title = state.tvSeries.successValue?.name ?: "",
+            seasons = state.seasons,
             request4kEnabled = request4kEnabled,
-            onSubmit = { seasons, is4k ->
-                item?.id?.let { viewModel.request(it, seasons, is4k) }
+            onSubmit = {
                 showRequestSeasonDialog = false
+                viewModel.request(it)
             },
+            loading = state.profileLoading,
+            data = state.requestData,
             onDismissRequest = { showRequestSeasonDialog = false },
         )
     }
@@ -477,7 +467,7 @@ fun DiscoverSeriesDetailsHeader(
                     }
                 }
 
-            QuickDetails(details, null)
+            QuickDetailsText(details)
             series.genres?.mapNotNull { it.name }?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
             }
@@ -494,7 +484,7 @@ fun DiscoverSeriesDetailsHeader(
 }
 
 fun buildDialogForSeason(
-    context: Context,
+    resources: Resources,
     s: BaseItem,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
@@ -503,35 +493,34 @@ fun buildDialogForSeason(
     val items =
         buildList {
             add(
-                DialogItem(context.getString(R.string.go_to), Icons.Default.PlayArrow) {
+                DialogItem(resources.getString(R.string.go_to), Icons.Default.PlayArrow) {
                     onClickItem.invoke(s)
                 },
             )
             if (s.data.userData?.played == true) {
                 add(
-                    DialogItem(context.getString(R.string.mark_unwatched), R.string.fa_eye) {
+                    DialogItem(resources.getString(R.string.mark_unwatched), R.string.fa_eye) {
                         markPlayed.invoke(false)
                     },
                 )
             } else {
                 add(
-                    DialogItem(context.getString(R.string.mark_watched), R.string.fa_eye_slash) {
+                    DialogItem(resources.getString(R.string.mark_watched), R.string.fa_eye_slash) {
                         markPlayed.invoke(true)
                     },
                 )
             }
             add(
                 DialogItem(
-                    context.getString(R.string.play),
+                    resources.getString(R.string.play),
                     Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
                 ) {
                     onClickPlay.invoke(false)
                 },
             )
             add(
                 DialogItem(
-                    context.getString(R.string.shuffle),
+                    resources.getString(R.string.shuffle),
                     R.string.fa_shuffle,
                 ) {
                     onClickPlay.invoke(true)
@@ -539,7 +528,7 @@ fun buildDialogForSeason(
             )
         }
     return DialogParams(
-        title = s.name ?: context.getString(R.string.tv_season),
+        title = s.name ?: resources.getString(R.string.tv_season),
         fromLongClick = true,
         items = items,
     )

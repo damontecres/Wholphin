@@ -1,18 +1,13 @@
 package com.github.damontecres.wholphin.services.hilt
 
 import android.content.Context
-import androidx.datastore.core.DataStore
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
-import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.RememberTabManager
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,9 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.android.androidDevice
@@ -49,21 +42,21 @@ annotation class AuthOkHttpClient
 annotation class StandardOkHttpClient
 
 /**
- * A [CoroutineScope] with [Dispatchers.IO]
+ * A [CoroutineScope] with [WholphinDispatchers.IO]
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
 /**
- * A [CoroutineScope] with [Dispatchers.Default]
+ * A [CoroutineScope] with [WholphinDispatchers.Default]
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCoroutineScope
 
 /**
- * [Dispatchers.IO]
+ * [WholphinDispatchers.IO]
  *
  * @see IoCoroutineScope
  */
@@ -72,7 +65,7 @@ annotation class DefaultCoroutineScope
 annotation class IoDispatcher
 
 /**
- * [Dispatchers.Default]
+ * [WholphinDispatchers.Default]
  *
  * @see DefaultCoroutineScope
  */
@@ -116,7 +109,7 @@ object AppModule {
         .addInterceptor {
             val request = it.request()
             val newRequest =
-                serverRepository.currentUser.value?.accessToken?.let { token ->
+                serverRepository.current.value?.user?.accessToken?.let { token ->
                     request
                         .newBuilder()
                         .addHeader(
@@ -160,52 +153,10 @@ object AppModule {
     @Singleton
     fun apiClient(jellyfin: Jellyfin) = jellyfin.createApi()
 
-    /**
-     * Implementation of [RememberTabManager] which remembers by server, user, & item
-     */
-    @Provides
-    @Singleton
-    fun rememberTabManager(
-        serverRepository: ServerRepository,
-        appPreference: DataStore<AppPreferences>,
-        @IoCoroutineScope scope: CoroutineScope,
-    ) = object : RememberTabManager {
-        fun key(itemId: String) = "${serverRepository.currentServer.value?.id}_${serverRepository.currentUser.value?.id}_$itemId"
-
-        override fun getRememberedTab(
-            preferences: UserPreferences,
-            itemId: String,
-            defaultTab: Int,
-        ): Int {
-            if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {
-                return preferences.appPreferences.interfacePreferences
-                    .getRememberedTabsOrDefault(key(itemId), defaultTab)
-            } else {
-                return defaultTab
-            }
-        }
-
-        override fun saveRememberedTab(
-            preferences: UserPreferences,
-            itemId: String,
-            tabIndex: Int,
-        ) {
-            if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {
-                scope.launch(ExceptionHandler()) {
-                    appPreference.updateData {
-                        it.updateInterfacePreferences {
-                            putRememberedTabs(key(itemId), tabIndex)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     @Provides
     @Singleton
     @IoDispatcher
-    fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
+    fun ioDispatcher(): CoroutineDispatcher = WholphinDispatchers.IO
 
     @Provides
     @Singleton
@@ -217,7 +168,7 @@ object AppModule {
     @Provides
     @Singleton
     @DefaultDispatcher
-    fun defaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+    fun defaultDispatcher(): CoroutineDispatcher = WholphinDispatchers.Default
 
     @Provides
     @Singleton

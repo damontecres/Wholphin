@@ -73,7 +73,7 @@ import com.github.damontecres.wholphin.ui.playback.isForwardButton
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -123,7 +123,7 @@ fun <T : CardGridItem> CardGrid(
             initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
         }
 
-    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
+    var focusedIndex by rememberSaveable { mutableIntStateOf(startPosition) }
     val currentFocusedIndex by rememberUpdatedState(focusedIndex)
     val gridState =
         rememberLazyGridState(
@@ -141,7 +141,7 @@ fun <T : CardGridItem> CardGrid(
             { index: Int ->
                 if (DEBUG) Timber.v("focusOn: focusedIndex=$currentFocusedIndex, index=$index")
                 if (index != currentFocusedIndex) {
-                    previouslyFocusedIndex = focusedIndex
+                    previouslyFocusedIndex = currentFocusedIndex
                 }
                 focusedIndex = index
             }
@@ -217,7 +217,7 @@ fun <T : CardGridItem> CardGrid(
             { letter: Char ->
                 scope.launch(ExceptionHandler()) {
                     val jumpPosition =
-                        withContext(Dispatchers.IO) {
+                        withContext(WholphinDispatchers.IO) {
                             letterPosition.invoke(letter)
                         }
                     Timber.d("Alphabet jump to $jumpPosition")
@@ -257,10 +257,11 @@ fun <T : CardGridItem> CardGrid(
                             val newPosition = previouslyFocusedIndex
                             if (DEBUG) Timber.d("Back long pressed: newPosition=$newPosition")
                             if (newPosition > 0) {
-                                focusOn(newPosition)
                                 scope.launch(ExceptionHandler()) {
-                                    gridState.scrollToItem(newPosition, -columns)
-                                    firstFocus.tryRequestFocus()
+                                    pager.getOrNull(newPosition)
+                                    gridState.scrollToItem(newPosition)
+                                    focusOn(newPosition)
+                                    alphabetFocus = true
                                 }
                             }
                             return@onKeyEvent true
@@ -338,7 +339,7 @@ fun <T : CardGridItem> CardGrid(
                                     val cardWidth =
                                         ceil((width - (spacingPx * (columns - 1))) / columns)
                                     cardWidthPx = cardWidth.toInt()
-                                    Timber.v("cardWidthPx=%s", cardWidthPx)
+//                                    Timber.v("cardWidthPx=%s", cardWidthPx)
                                 },
                     ) {
                         items(pager.size) { index ->

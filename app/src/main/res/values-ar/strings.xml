@@ -66,11 +66,6 @@
     <string name="more">المزيد</string>
     <plurals name="movies">
         <item quantity="zero">الأفلام</item>
-        <item quantity="one"/>
-        <item quantity="two"/>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="name">الاسم</string>
     <string name="next_up">التالي</string>
@@ -85,11 +80,6 @@
     <string name="path">المسار</string>
     <plurals name="people">
         <item quantity="zero">الأشخاص</item>
-        <item quantity="one"/>
-        <item quantity="two"/>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="play_count">عدد مرات التشغيل</string>
     <string name="play_from_here">تشغيل من هنا</string>
@@ -150,4 +140,43 @@
     <string name="sort_by_random">عشوائي</string>
     <string name="studios">استوديوهات</string>
     <string name="submit">إرسال</string>
+    <string name="suggestions">اقتراحات</string>
+    <string name="switch_servers">بدّل الخوادم</string>
+    <string name="version">إصدار</string>
+    <string name="tv_seasons">مواسم</string>
+    <string name="tv_season">موسم</string>
+    <string name="tv_guide">دليل</string>
+    <string name="watch_live">مشاهدة مباشرة</string>
+    <string name="background">الخلفية</string>
+    <string name="show_clock">إظهار الساعة</string>
+    <plurals name="behind_the_scenes">
+        <item quantity="zero">الكواليس</item>
+    </plurals>
+    <string name="official_rating">التصنيف العمري</string>
+    <string name="runtime_sort">مدة العرض</string>
+    <string name="extras_title">إضافات</string>
+    <plurals name="other_extras">
+        <item quantity="zero">أخرى</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="zero">الأغاني الرئيسية</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="zero">مقاطع</item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="zero">مشاهد محذوفة</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="zero">مقابلات</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="zero">مشاهد</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="zero">مقاطع خاصة</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="zero">مقاطع قصيرة</item>
+    </plurals>
 </resources>

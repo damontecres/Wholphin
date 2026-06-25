@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.getDateFormatter
+import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -24,6 +25,7 @@ import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
 import java.util.UUID
@@ -56,14 +58,14 @@ data class BaseItem(
 
     val title get() = if (type == BaseItemKind.EPISODE) data.seriesName else name
 
-    val subtitle
-        get() =
-            when (type) {
-                BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
-                BaseItemKind.SERIES -> data.seriesProductionYears
-                BaseItemKind.AUDIO -> listOfNotNull(data.album, artistsString).joinToString(" - ")
-                else -> data.productionYear?.toString()
-            }
+    val subtitle: String? by lazy {
+        when (type) {
+            BaseItemKind.EPISODE -> listOf(data.seasonEpisode, name).joinNotBlank(" - ")
+            BaseItemKind.SERIES -> data.seriesProductionYears
+            BaseItemKind.AUDIO -> listOf(data.album, artistsString).joinNotBlank(" - ")
+            else -> data.productionYear?.toString()
+        }
+    }
 
     val subtitleLong: String? by lazy {
         if (type == BaseItemKind.EPISODE) {
@@ -71,7 +73,7 @@ data class BaseItem(
                 add(data.seasonEpisodePadded)
                 add(data.name)
                 add(data.premiereDate?.let { formatDateTime(it) })
-            }.filterNotNull().joinToString(" - ")
+            }.joinNotBlank(" - ")
         } else {
             data.productionYear?.toString()
         }
@@ -91,7 +93,12 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
-    val timeRemainingOrRuntime: Duration? get() = data.timeRemaining ?: data.runTimeTicks?.ticks
+    val timeRemainingOrRuntime: Duration?
+        get() =
+            when (type) {
+                BaseItemKind.PROGRAM -> null
+                else -> data.timeRemaining ?: data.runTimeTicks?.ticks
+            }
 
     /**
      * Contains pre computed UI elements that would be expensive to create on the main thread
@@ -117,61 +124,82 @@ data class BaseItem(
                     null
                 },
             quickDetails =
-                buildAnnotatedString {
-                    val details =
-                        buildList {
-                            if (type == BaseItemKind.EPISODE) {
-                                data.seasonEpisode?.let(::add)
-                                data.premiereDate?.let { add(getDateFormatter().format(it)) }
-                            } else if (type == BaseItemKind.SERIES) {
-                                data.seriesProductionYears?.let(::add)
-                            } else if (type == BaseItemKind.PHOTO) {
-                                if (data.productionYear != null) {
-                                    add(data.productionYear!!.toString())
-                                } else if (data.premiereDate != null) {
-                                    add(data.premiereDate!!.toLocalDate().toString())
+                QuickDetailsData(
+                    basic =
+                        buildAnnotatedString {
+                            val details =
+                                buildList {
+                                    if (type == BaseItemKind.EPISODE) {
+                                        data.seasonEpisode?.let(::add)
+                                        data.premiereDate?.let { add(getDateFormatter().format(it)) }
+                                    } else if (type == BaseItemKind.SERIES) {
+                                        data.seriesProductionYears?.let(::add)
+                                    } else if (type == BaseItemKind.PHOTO) {
+                                        if (data.productionYear != null) {
+                                            add(data.productionYear!!.toString())
+                                        } else if (data.premiereDate != null) {
+                                            add(data.premiereDate!!.toLocalDate().toString())
+                                        }
+                                    } else if (type == BaseItemKind.BOX_SET) {
+                                        data.productionYear?.let { add(it.toString()) }
+                                        data.childCount?.let { add("$it items") }
+                                    } else if (type == BaseItemKind.PROGRAM) {
+                                        data.channelName?.let(::add)
+                                        if (data.isSeries == true) {
+                                            // TV episode
+                                            data.seasonEpisode?.let(::add)
+                                            data.premiereDate?.let {
+                                                add(getDateFormatter().format(it))
+                                            }
+                                        } else {
+                                            data.productionYear?.let { add(it.toString()) }
+                                        }
+                                    } else {
+                                        data.productionYear?.let { add(it.toString()) }
+                                    }
+                                    data.runTimeTicks
+                                        ?.ticks
+                                        ?.roundMinutes
+                                        ?.let { add(it.toString()) }
+                                    data.timeRemaining
+                                        ?.roundMinutes
+                                        ?.let { add("$it left") }
                                 }
-                            } else if (type == BaseItemKind.BOX_SET) {
-                                data.productionYear?.let { add(it.toString()) }
-                                data.childCount?.let { add("$it items") }
-                            } else {
-                                data.productionYear?.let { add(it.toString()) }
+                            details.forEachIndexed { index, string ->
+                                append(string)
+                                if (index != details.lastIndex) {
+                                    dot()
+                                }
                             }
-                            data.runTimeTicks
-                                ?.ticks
-                                ?.roundMinutes
-                                ?.let { add(it.toString()) }
-                            data.timeRemaining
-                                ?.roundMinutes
-                                ?.let { add("$it left") }
-                        }
-                    details.forEachIndexed { index, string ->
-                        append(string)
-                        if (index != details.lastIndex) {
-                            dot()
-                        }
-                    }
-                    // TODO time remaining
-
-                    data.officialRating?.let {
-                        dot()
-                        append(it)
-                    }
-                    data.communityRating?.let {
-                        dot()
-                        append(String.format(Locale.getDefault(), "%.1f", it))
-                        appendInlineContent(id = "star")
-                    }
-                    data.criticRating?.let {
-                        dot()
-                        append("${it.toInt()}%")
-                        if (it >= 60f) {
-                            appendInlineContent(id = "fresh")
-                        } else {
-                            appendInlineContent(id = "rotten")
-                        }
-                    }
-                },
+                        },
+                    officialRating =
+                        data.officialRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append(it)
+                            }
+                        },
+                    communityRating =
+                        data.communityRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append(String.format(Locale.getDefault(), "%.1f", it))
+                                appendInlineContent(id = "star")
+                            }
+                        },
+                    criticRating =
+                        data.criticRating?.let {
+                            buildAnnotatedString {
+                                dot()
+                                append("${it.toInt()}%")
+                                if (it >= 60f) {
+                                    appendInlineContent(id = "fresh")
+                                } else {
+                                    appendInlineContent(id = "rotten")
+                                }
+                            }
+                        },
+                ),
         )
 
     private fun dateAsIndex(): Int? =
@@ -187,6 +215,10 @@ data class BaseItem(
      */
     fun destination(index: Int? = null): Destination {
         if (destinationOverride != null) return destinationOverride
+        if (data.extraType != null || type == BaseItemKind.TRAILER) {
+            // Extras including trailers should always play directly
+            return Destination.Playback(id, 0)
+        }
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -254,7 +286,14 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 data class BaseItemUi(
     val episodeCornerText: String?,
     val episodeUnplayedCornerText: String?,
-    val quickDetails: AnnotatedString,
+    val quickDetails: QuickDetailsData,
+)
+
+data class QuickDetailsData(
+    val basic: AnnotatedString,
+    val officialRating: AnnotatedString? = null,
+    val criticRating: AnnotatedString? = null,
+    val communityRating: AnnotatedString? = null,
 )
 
 /**
@@ -266,6 +305,7 @@ fun createGenreDestination(
     parentId: UUID,
     parentName: String?,
     includeItemTypes: List<BaseItemKind>?,
+    collectionType: CollectionType,
 ) = Destination.FilteredCollection(
     itemId = parentId,
     parentType = BaseItemKind.GENRE,
@@ -284,6 +324,7 @@ fun createGenreDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = collectionType,
 )
 
 fun createStudioDestination(
@@ -310,6 +351,7 @@ fun createStudioDestination(
             useSavedLibraryDisplayInfo = false,
         ),
     recursive = true,
+    collectionType = CollectionType.UNKNOWN,
 )
 
 val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()

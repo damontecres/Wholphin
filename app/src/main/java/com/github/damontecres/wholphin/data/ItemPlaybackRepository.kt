@@ -7,7 +7,7 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.StreamChoiceService
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
@@ -19,6 +19,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration
 
+/**
+ * Wrapper for [ItemPlaybackDao] to save [ItemPlayback] objects and also convert them into [ChosenStreams]
+ */
 @Singleton
 class ItemPlaybackRepository
     @Inject
@@ -28,18 +31,30 @@ class ItemPlaybackRepository
         private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
         private val streamChoiceService: StreamChoiceService,
     ) {
+        /**
+         * Get the chosen source & stream for the given item
+         *
+         * This will be either the explicit choice from the user ([ItemPlayback]) or the default choices
+         *
+         * @see getChosenItemFromPlayback
+         */
         suspend fun getSelectedTracks(
             itemId: UUID,
             item: BaseItem,
             prefs: UserPreferences,
         ): ChosenStreams? =
-            serverRepository.currentUser.value?.let { user ->
+            serverRepository.currentUser?.let { user ->
                 val itemPlayback = itemPlaybackDao.getItem(user = user, itemId = itemId)
                 val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 Timber.v("For ${item.id}:  itemPlayback=${itemPlayback != null}, plc=${plc != null}")
                 return getChosenItemFromPlayback(item, itemPlayback, plc, prefs)
             }
 
+        /**
+         * Get the chosen source & stream for the given item
+         *
+         * This will be either the explicit choice from the provided [ItemPlayback] & [PlaybackLanguageChoice] or the default choices if they are null
+         */
         fun getChosenItemFromPlayback(
             item: BaseItem,
             itemPlayback: ItemPlayback?,
@@ -86,12 +101,15 @@ class ItemPlaybackRepository
             }
         }
 
+        /**
+         * Save the choice for a specific media source for an item
+         */
         suspend fun savePlayVersion(
             itemId: UUID,
             sourceId: UUID,
         ): ItemPlayback? =
-            withContext(Dispatchers.IO) {
-                serverRepository.currentUser.value?.let { user ->
+            withContext(WholphinDispatchers.IO) {
+                serverRepository.currentUser?.let { user ->
                     val itemPlayback =
                         ItemPlayback(
                             userId = user.rowId,
@@ -103,6 +121,11 @@ class ItemPlaybackRepository
                 }
             }
 
+        /**
+         * Save the chosen track (index & type) for an item
+         *
+         * Additionally, if the item is part of a TV Series, store the language as the preferred one for this series
+         */
         suspend fun saveTrackSelection(
             item: BaseItem,
             itemPlayback: ItemPlayback?,
@@ -168,7 +191,7 @@ class ItemPlaybackRepository
             val toSave =
                 if (itemPlayback.userId < 0) {
                     val userRowId =
-                        serverRepository.currentUser.value
+                        serverRepository.currentUser
                             ?.rowId
                             ?.takeIf { it >= 0 }
                             ?: throw IllegalStateException("Trying to save an ItemPlayback without a user, but there is no current user")
@@ -180,20 +203,26 @@ class ItemPlaybackRepository
             return toSave.copy(rowId = id)
         }
 
+        /**
+         * Wrapper for [ItemPlaybackDao.getTrackModifications] to get the [ItemTrackModification] for an item, if any
+         */
         suspend fun getTrackModifications(
             itemId: UUID,
             trackIndex: Int,
         ): ItemTrackModification? =
-            serverRepository.currentUser.value?.rowId?.let { userId ->
+            serverRepository.currentUser?.rowId?.let { userId ->
                 itemPlaybackDao.getTrackModifications(userId, itemId, trackIndex)
             }
 
+        /**
+         * Create and save a [ItemTrackModification] via [ItemPlaybackDao.saveItem]
+         */
         suspend fun saveTrackModifications(
             itemId: UUID,
             trackIndex: Int,
             delay: Duration,
         ) {
-            serverRepository.currentUser.value?.rowId?.let { userId ->
+            serverRepository.currentUser?.rowId?.let { userId ->
                 Timber.v("Saving track mod item=%s, track=%s, delay=%s", itemId, trackIndex, delay)
                 itemPlaybackDao.saveItem(
                     ItemTrackModification(
@@ -206,6 +235,9 @@ class ItemPlaybackRepository
             }
         }
 
+        /**
+         * Clear the user's source/stream choices for an item
+         */
         suspend fun deleteChosenStreams(chosenStreams: ChosenStreams?) {
             Timber.d("deleteChosenStreams: %s", chosenStreams)
             chosenStreams?.plc?.let {
@@ -219,6 +251,9 @@ class ItemPlaybackRepository
         }
     }
 
+/**
+ * Info about which media source and streams the user/app has chosen for playback
+ */
 data class ChosenStreams(
     val itemPlayback: ItemPlayback?,
     val plc: PlaybackLanguageChoice?,

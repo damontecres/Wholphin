@@ -209,7 +209,7 @@ fun HomeRowConfigContent(
         ) {
             HomeSettingsListItem(
                 selected = false,
-                headlineText = config.title,
+                headlineText = config.title.getString(),
                 onClick = onClick,
                 modifier = Modifier.weight(1f),
             )

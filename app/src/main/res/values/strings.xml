@@ -66,7 +66,7 @@
     <string name="max_bitrate">Max bitrate</string>
     <string name="more_like_this">More like this</string>
     <string name="more">More</string>
-    <string name="movies">Movies</string>
+    <string name="movies_title">Movies</string>
     <string name="name">Name</string>
     <string name="next_up">Next Up</string>
     <string name="no_data">No data</string>
@@ -78,7 +78,7 @@
     <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
-    <string name="people">People</string>
+    <string name="people_title">People</string>
     <string name="play_count">Play Count</string>
     <string name="play_from_here">Play from here</string>
     <string name="play">Play</string>
@@ -145,13 +145,12 @@
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
-    <string name="trailer">Trailer</string>
-    <string name="trailers">Trailers</string>
+    <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
-    <string name="tv_shows">TV Shows</string>
+    <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
     <string name="updates">Updates</string>
@@ -176,19 +175,19 @@
     <string name="official_rating">Parental Rating</string>
     <string name="runtime_sort">Runtime</string>
 
-    <string name="extras">Extras</string>
-    <string name="other_extras">Other</string>
-    <string name="behind_the_scenes">Behind the Scenes</string>
-    <string name="theme_songs">Theme Songs</string>
-    <string name="theme_videos">Theme Videos</string>
-    <string name="clips">Clips</string>
-    <string name="deleted_scenes">Deleted Scenes</string>
-    <string name="interviews">Interviews</string>
-    <string name="scenes">Scenes</string>
-    <string name="samples">Samples</string>
-    <string name="featurettes">Featurettes</string>
-    <string name="shorts">Shorts</string>
-    <string name="favorite_items">Favorite %s</string>
+    <string name="extras_title">Extras</string>
+    <string name="other_extras_title">Other</string>
+    <string name="behind_the_scenes_title">Behind the Scenes</string>
+    <string name="theme_songs_title">Theme Songs</string>
+    <string name="theme_videos_title">Theme Videos</string>
+    <string name="clips_title">Clips</string>
+    <string name="deleted_scenes_title">Deleted Scenes</string>
+    <string name="interviews_title">Interviews</string>
+    <string name="scenes_title">Scenes</string>
+    <string name="samples_title">Samples</string>
+    <string name="featurettes_title">Featurettes</string>
+    <string name="shorts_title">Shorts</string>
+    <string name="favorite_items_title">Favorite %s</string>
 
     <plurals name="trailers">
         <item quantity="zero">Trailers</item>
@@ -386,10 +385,12 @@
     <string name="use_server_credentials">Login via server</string>
     <string name="press_enter_to_confirm">Press center to confirm</string>
     <string name="require_pin_code">Require PIN for profile</string>
+    <string name="require_login">Require login for profile</string>
     <string name="confirm_pin">Confirm PIN</string>
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
+    <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -444,6 +445,13 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
+    <string name="combined_search_results">Combined search results</string>
+    <string name="combined_search_results_on">Show all results in a single list</string>
+    <string name="combined_search_results_off">Show results by category</string>
+    <string name="show_voice_search_button">Show voice search button</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Hidden</string>
+    <string name="results">Results</string>
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
@@ -694,6 +702,14 @@
         <item>@string/image_type_thumb</item>
         <!--        <item>Banner</item>-->
     </string-array>
+    <string name="view_options_type_grid">Grid</string>
+    <string name="view_options_type_list">List</string>
+    <string name="view_options_type_list_compact">Compact List</string>
+    <string-array name="view_options_types">
+        <item>@string/view_options_type_grid</item>
+        <item>@string/view_options_type_list</item>
+        <item>@string/view_options_type_list_compact</item>
+    </string-array>
 
     <string name="backdrop_style_dynamic">Image with dynamic color</string>
     <string name="backdrop_style_image">Image only</string>
@@ -715,9 +731,20 @@
     </string-array>
 
     <string-array name="screensaver_item_types">
-        <item>@string/movies</item>
-        <item>@string/tv_shows</item>
+        <item>@string/movies_title</item>
+        <item>@string/tv_shows_title</item>
         <item>@string/photos</item>
+    </string-array>
+
+    <string-array name="display_toggle_types">
+        <item>@string/official_rating</item>
+        <item>@string/critic_rating</item>
+        <item>@string/community_rating</item>
+    </string-array>
+    <string-array name="display_toggle_types_subtitles">
+        <item></item><!-- Intentionally blank -->
+        <item>@string/tomatoes</item>
+        <item>@string/stars</item>
     </string-array>
 
     <string name="search_for">Search %s</string>
@@ -773,6 +800,13 @@
     <string name="skip_behavior_summary">For intros, credits, etc</string>
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
+    <string name="user_interface_language">User interface language</string>
+    <string name="display_toggles_title">Ratings display</string>
+    <string name="display_toggles_summary">Customize which to display</string>
+    <string name="profile_protection">Profile protection</string>
+    <string name="continue_watching_click_behavior">Continue watching/Next up click behavior</string>
+    <string name="continue_watching_click_summary_on">Play on click</string>
+    <string name="continue_watching_click_summary_off">Show details on click</string>
     <array name="ass_subtitle_modes">
         <item>@string/ass_subtitle_mode_libass</item>
         <item>@string/ass_subtitle_mode_exoplayer</item>
@@ -783,4 +817,16 @@
         <item></item><!-- Intentionally blank -->
         <item></item><!-- Intentionally blank -->
     </array>
+    <string name="stars">Stars</string>
+    <string name="tomatoes">Tomatoes</string>
+    <string name="sort">Sort</string>
+    <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="genre_movies">%1$s Movies</string>
+    <string name="genre_tv_shows">%1$s TV Shows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
+    <string name="popularity">Popularity</string>
+    <string name="production_status">Production status</string>
+    <string name="different_for_hdr">Use different style for HDR</string>
 </resources>

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +37,8 @@ import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
+import com.github.damontecres.wholphin.ui.util.InterfaceCustomization
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 
 @Composable
 fun MainContent(
@@ -55,64 +58,22 @@ fun MainContent(
     ) {
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
-        NavDisplay(
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
-            entryDecorators =
-                listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                ),
-            entryProvider = { key ->
-                key as SetupDestination
-                NavEntry(key) {
-                    when (key) {
-                        SetupDestination.Loading -> {
-                            Box(
-                                modifier = Modifier.size(200.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator(
-                                    color = MaterialTheme.colorScheme.border,
-                                    modifier = Modifier.align(Alignment.Center),
-                                )
-                            }
-                        }
-
-                        SetupDestination.ServerList -> {
-                            SwitchServerContent(Modifier.fillMaxSize())
-                        }
-
-                        is SetupDestination.UserList -> {
-                            SwitchUserContent(
-                                currentServer = key.server,
-                                Modifier.fillMaxSize(),
-                            )
-                        }
-
-                        is SetupDestination.AppContent -> {
-                            LaunchedEffect(Unit) {
-                                backdropService.clearBackdrop()
-                            }
-                            val current = key.current
-                            var showContent by remember {
-                                mutableStateOf(true)
-                            }
-                            LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                                if (!appPreferences.signInAutomatically) {
-                                    showContent = false
-                                }
-                            }
-
-                            if (showContent) {
-                                ApplicationContent(
-                                    user = current.user,
-                                    server = current.server,
-                                    navigationManager = navigationManager,
-                                    preferences = preferences,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            } else {
+        val interfaceCustomization =
+            remember(appPreferences) { InterfaceCustomization(appPreferences) }
+        CompositionLocalProvider(LocalInterfaceCustomization provides interfaceCustomization) {
+            NavDisplay(
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryDecorators =
+                    listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    ),
+                entryProvider = { key ->
+                    key as SetupDestination
+                    NavEntry(key) {
+                        when (key) {
+                            SetupDestination.Loading -> {
                                 Box(
                                     modifier = Modifier.size(200.dp),
                                     contentAlignment = Alignment.Center,
@@ -123,18 +84,64 @@ fun MainContent(
                                     )
                                 }
                             }
+
+                            SetupDestination.ServerList -> {
+                                SwitchServerContent(Modifier.fillMaxSize())
+                            }
+
+                            is SetupDestination.UserList -> {
+                                SwitchUserContent(
+                                    server = key.server,
+                                    Modifier.fillMaxSize(),
+                                )
+                            }
+
+                            is SetupDestination.AppContent -> {
+                                LaunchedEffect(Unit) {
+                                    backdropService.clearBackdrop()
+                                }
+                                val current = key.current
+                                var showContent by remember {
+                                    mutableStateOf(true)
+                                }
+                                LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                                    if (!appPreferences.signInAutomatically) {
+                                        showContent = false
+                                    }
+                                }
+
+                                if (showContent) {
+                                    ApplicationContent(
+                                        user = current.user,
+                                        server = current.server,
+                                        navigationManager = navigationManager,
+                                        preferences = preferences,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier.size(200.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = MaterialTheme.colorScheme.border,
+                                            modifier = Modifier.align(Alignment.Center),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
+                },
+            )
+            val screenSaverState by screensaverService.state.collectAsState()
+            if (screenSaverState.enabled || screenSaverState.enabledTemp) {
+                AnimatedVisibility(
+                    screenSaverState.show,
+                    Modifier.fillMaxSize(),
+                ) {
+                    AppScreensaver(appPreferences, Modifier.fillMaxSize())
                 }
-            },
-        )
-        val screenSaverState by screensaverService.state.collectAsState()
-        if (screenSaverState.enabled || screenSaverState.enabledTemp) {
-            AnimatedVisibility(
-                screenSaverState.show,
-                Modifier.fillMaxSize(),
-            ) {
-                AppScreensaver(appPreferences, Modifier.fillMaxSize())
             }
         }
     }

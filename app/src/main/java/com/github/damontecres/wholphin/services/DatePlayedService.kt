@@ -2,17 +2,19 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -54,7 +56,7 @@ class DatePlayedService
                     adjacentTo = item.id,
                     limit = 1,
                 )
-            return scope.async(Dispatchers.IO) {
+            return scope.async(WholphinDispatchers.IO) {
                 val premiereDate = item.data.premiereDate
                 try {
                     val result =
@@ -90,7 +92,7 @@ class DatePlayedService
          * the previous episode's last played timestamp, and the episode's premiere date
          */
         suspend fun getLastPlayed(item: BaseItem): LocalDateTime? =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val seriesId = item.data.seriesId
                 return@withContext if (seriesId != null) {
                     datePlayedCache
@@ -152,7 +154,7 @@ class DatePlayedInvalidationService
         private val activity = (context as AppCompatActivity)
 
         init {
-            serverRepository.current.observe(activity) {
+            serverRepository.current.collectLatestIn(activity.lifecycleScope) {
                 datePlayedService.invalidateAll()
             }
         }

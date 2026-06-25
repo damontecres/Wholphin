@@ -6,7 +6,11 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
+import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
@@ -21,15 +25,20 @@ import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
+import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.preferences.subtitle.shouldEnableSeparateHdrToggle
 import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.io.File
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,6 +52,8 @@ class AppUpgradeHandler
         @param:ApplicationContext private val context: Context,
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrServerDao: SeerrServerDao,
+        private val serverDao: JellyfinServerDao,
+        private val rememberedTabDao: RememberedTabDao,
     ) {
         val pkgInfo: PackageInfo get() = context.packageManager.getPackageInfo(context.packageName, 0)
         val currentVersion: Version get() = Version.fromString(pkgInfo.versionName!!)
@@ -332,6 +343,79 @@ class AppUpgradeHandler
             if (previous.isEqualOrBefore(Version.fromString("0.6.2-18-g0"))) {
                 appPreferences.updateData {
                     it.updatePlaybackPreferences { cinemaMode = AppPreference.CinemaMode.defaultValue }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.4-8-g0"))) {
+                appPreferences.updateData {
+                    it.updateSearchPreferences { showVoiceSearchButton = true }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("0.6.4-26-g0"))) {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        clearDisplayToggles()
+                        addAllDisplayToggles(AppPreference.DisplayTogglesPref.defaultValue)
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.1-2-g0"))) {
+                Timber.i("Starting tab migration")
+                val users = mutableMapOf<UUID, JellyfinUser?>()
+                val tabs =
+                    appPreferences.data.first().interfacePreferences.rememberedTabsMap.mapNotNull { (key, tabIndex) ->
+                        // "serverId_userId_itemId", itemId can have underscores
+                        try {
+                            val firstUnderScore = key.indexOf("_").takeIf { it >= 1 }
+                            if (firstUnderScore != null) {
+                                val secondUnderscore =
+                                    key
+                                        .indexOf("_", startIndex = firstUnderScore + 1)
+                                        .takeIf { it >= 1 }
+                                if (secondUnderscore != null) {
+                                    val serverId = key.substring(0, firstUnderScore).toUUIDOrNull()
+                                    val userId =
+                                        key
+                                            .substring(firstUnderScore + 1, secondUnderscore)
+                                            .toUUIDOrNull()
+                                    val itemId = key.substring(secondUnderscore + 1, key.length)
+                                    if (userId != null && serverId != null) {
+                                        return@mapNotNull users
+                                            .getOrPut(userId) {
+                                                serverDao.getUser(serverId, userId)
+                                            }?.let {
+                                                RememberedTab(it.rowId, itemId, tabIndex)
+                                            }
+                                    }
+                                }
+                            }
+                        } catch (ex: Exception) {
+                            Timber.w(ex, "Error parsing '%s'", key)
+                        }
+                        null
+                    }
+                Timber.v("Migrating %s tabs", tabs.size)
+                try {
+                    if (tabs.isNotEmpty()) {
+                        rememberedTabDao.saveAll(tabs)
+                    }
+                    appPreferences.updateData {
+                        it.updateInterfacePreferences {
+                            clearRememberedTabs()
+                        }
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error saving migrated tabs")
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.2-8-g0"))) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        useSeparateHdr = it.interfacePreferences.shouldEnableSeparateHdrToggle()
+                    }
                 }
             }
         }

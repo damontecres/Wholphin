@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,7 +70,6 @@ import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
-import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -83,12 +81,12 @@ import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -210,7 +208,7 @@ class ArtistViewModel
                                 api.libraryApi
                                     .getSimilarItems(
                                         GetSimilarItemsRequest(
-                                            userId = serverRepository.currentUser.value?.id,
+                                            userId = serverRepository.currentUser?.id,
                                             itemId = itemId,
                                             excludeArtistIds = listOf(itemId),
                                             fields = SlimItemFields,
@@ -224,7 +222,7 @@ class ArtistViewModel
                     viewModelScope.launchIO {
                         val request =
                             GetItemsRequest(
-                                userId = serverRepository.currentUser.value?.id,
+                                userId = serverRepository.currentUser?.id,
                                 artistIds = listOf(itemId),
                                 parentId = null,
                                 fields = DefaultItemFields,
@@ -256,7 +254,7 @@ class ArtistViewModel
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             val artist =
                 api.userLibraryApi
@@ -319,7 +317,7 @@ fun ArtistDetailsPage(
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
 
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    val playlistState by playlistViewModel.playlistState.collectAsState()
     var showContextMenu by remember { mutableStateOf<ContextMenu?>(null) }
     val moreDialogActions =
         remember {

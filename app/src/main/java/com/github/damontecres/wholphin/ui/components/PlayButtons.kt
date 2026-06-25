@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -55,12 +57,15 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -81,10 +86,23 @@ fun ExpandablePlayButtons(
     moreOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     onConfirmDelete: () -> Unit,
+    chooseVersionParams: ChooseVersionParams?,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val resources = LocalResources.current
     val firstFocus = remember { FocusRequester() }
+    val restartInteractionSource = remember { MutableInteractionSource() }
+    val restartButtonFocused by restartInteractionSource.collectIsFocusedAsState()
+    LaunchedEffect(resumePosition) {
+        // Reset focus if the restart button was focuses and it is going to disappear
+        if (restartButtonFocused && resumePosition == Duration.ZERO) {
+            firstFocus.tryRequestFocus()
+        }
+    }
+
+    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(8.dp),
@@ -93,19 +111,19 @@ fun ExpandablePlayButtons(
                 .focusGroup()
                 .focusRestorer(firstFocus),
     ) {
+        item("play") {
+            ExpandablePlayButton(
+                title = if (resumePosition > Duration.ZERO) R.string.resume else R.string.play,
+                resume = resumePosition,
+                icon = Icons.Default.PlayArrow,
+                onClick = playOnClick,
+                modifier =
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .focusRequester(firstFocus),
+            )
+        }
         if (resumePosition > Duration.ZERO) {
-            item("play") {
-                ExpandablePlayButton(
-                    title = R.string.resume,
-                    resume = resumePosition,
-                    icon = Icons.Default.PlayArrow,
-                    onClick = playOnClick,
-                    modifier =
-                        Modifier
-                            .onFocusChanged(buttonOnFocusChanged)
-                            .focusRequester(firstFocus),
-                )
-            }
             item("restart") {
                 ExpandablePlayButton(
                     title = R.string.restart,
@@ -114,19 +132,31 @@ fun ExpandablePlayButtons(
                     onClick = playOnClick,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
+                    interactionSource = restartInteractionSource,
                 )
             }
-        } else {
-            item("play") {
-                ExpandablePlayButton(
-                    title = R.string.play,
-                    resume = Duration.ZERO,
-                    icon = Icons.Default.PlayArrow,
-                    onClick = playOnClick,
-                    modifier =
-                        Modifier
-                            .onFocusChanged(buttonOnFocusChanged)
-                            .focusRequester(firstFocus),
+        }
+
+        if (chooseVersionParams != null && chooseVersionParams.mediaSources.size > 1) {
+            item {
+                ExpandableFaButton(
+                    title = R.string.version,
+                    iconStringRes = R.string.fa_file_video,
+                    onClick = {
+                        chooseVersion =
+                            chooseVersionParams(
+                                resources,
+                                chooseVersionParams.mediaSources.orEmpty(),
+                                chooseVersionParams.chosenStreams
+                                    ?.source
+                                    ?.id
+                                    ?.toUUIDOrNull(),
+                            ) { idx ->
+                                val source = chooseVersionParams.mediaSources[idx]
+                                chooseVersionParams.onChooseVersion.invoke(source)
+                            }
+                    },
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                 )
             }
         }
@@ -183,6 +213,16 @@ fun ExpandablePlayButtons(
                 modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
+    }
+    chooseVersion?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { chooseVersion = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
     }
 }
 
@@ -359,7 +399,7 @@ fun TrailerButton(
             } else if (trailers.size == 1) {
                 R.string.play_trailer
             } else {
-                R.string.trailers
+                R.string.trailers_title
             },
         iconStringRes = R.string.fa_film,
         enabled = trailers.isNotEmpty(),
@@ -453,6 +493,7 @@ private fun ExpandablePlayButtonsPreview() {
             trailerOnClick = {},
             canDelete = true,
             onConfirmDelete = {},
+            chooseVersionParams = null,
             modifier = Modifier,
         )
     }

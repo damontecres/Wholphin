@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -43,7 +45,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
-    MORE,
+    DEBUG,
     CAPTIONS,
     SETTINGS,
     AUDIO,
@@ -85,29 +87,13 @@ fun PlaybackDialog(
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onChangeSubtitleDelay: (Duration) -> Unit,
 ) {
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    // TODO, shouldn't this work out of the box?
+    val leftGravity = remember(isLtr) { if (isLtr) Gravity.START else Gravity.END }
+    val rightGravity = remember(isLtr) { if (isLtr) Gravity.END else Gravity.START }
     when (type) {
-        PlaybackDialogType.MORE -> {
-            val options =
-                buildList {
-                    add(
-                        BottomDialogItem(
-                            data = 0,
-                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
-                            supporting = null,
-                        ),
-                    )
-                }
-            BottomDialog(
-                choices = options,
-                onDismissRequest = {
-                    onDismissRequest.invoke()
-//                    focusRequester.tryRequestFocus()
-                },
-                onSelectChoice = { index, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
-                },
-                gravity = Gravity.START,
-            )
+        PlaybackDialogType.DEBUG -> {
+            throw IllegalStateException("Should not open a dialog with " + PlaybackDialogType.DEBUG)
         }
 
         PlaybackDialogType.CAPTIONS -> {
@@ -133,22 +119,13 @@ fun PlaybackDialog(
                     onDismissRequest.invoke()
                     onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                 },
-                gravity = Gravity.END,
+                gravity = rightGravity,
             )
         }
 
         PlaybackDialogType.SETTINGS -> {
-            val currentAudio =
-                remember(settings) { settings.audioStreams.firstOrNull { it.index == settings.audioIndex } }
             val options =
                 buildList {
-                    add(
-                        BottomDialogItem(
-                            data = PlaybackDialogType.AUDIO,
-                            headline = stringResource(R.string.audio),
-                            supporting = currentAudio?.displayTitle,
-                        ),
-                    )
                     add(
                         BottomDialogItem(
                             data = PlaybackDialogType.PLAYBACK_SPEED,
@@ -177,15 +154,26 @@ fun PlaybackDialog(
                             ),
                         )
                     }
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.DEBUG,
+                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
+                            supporting = null,
+                        ),
+                    )
                 }
             BottomDialog(
                 choices = options,
                 currentChoice = null,
                 onDismissRequest = onDismissRequest,
                 onSelectChoice = { _, choice ->
-                    onClickPlaybackDialogType(choice.data)
+                    if (choice.data == PlaybackDialogType.DEBUG) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
+                    } else {
+                        onClickPlaybackDialogType(choice.data)
+                    }
                 },
-                gravity = Gravity.END,
+                gravity = leftGravity,
             )
         }
 
@@ -196,15 +184,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                    scope.launch {
-//                        delay(250L)
-//                        settingsFocusRequester.tryRequestFocus()
-//                    }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
                 },
-                gravity = Gravity.END,
+                gravity = rightGravity,
             )
         }
 
@@ -223,15 +207,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, value ->
                     onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.data))
                 },
-                gravity = Gravity.END,
+                gravity = leftGravity,
             )
         }
 
@@ -250,15 +230,11 @@ fun PlaybackDialog(
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                scope.launch {
-//                    delay(250L)
-//                    settingsFocusRequester.tryRequestFocus()
-//                }
                 },
                 onSelectChoice = { _, choice ->
                     onPlaybackActionClick.invoke(PlaybackAction.Scale(choice.data))
                 },
-                gravity = Gravity.END,
+                gravity = leftGravity,
             )
         }
 

@@ -48,7 +48,7 @@
     <string name="mark_unwatched">Marquer comme non vu</string>
     <string name="mark_watched">Marquer comme vu</string>
     <string name="max_bitrate">Débit maximal</string>
-    <string name="movies">Films</string>
+    <string name="movies_title">Films</string>
     <string name="name">Nom</string>
     <string name="next_up">À suivre</string>
     <string name="no_data">Aucune donnée</string>
@@ -58,7 +58,7 @@
     <string name="none">Aucun</string>
     <string name="outro">Générique de fin</string>
     <string name="path">Chemin</string>
-    <string name="people">Personnes</string>
+    <string name="people_title">Personnes</string>
     <string name="play_from_here">Lire à partir d’ici</string>
     <string name="play">Lire</string>
     <string name="playback_speed">Vitesse de lecture</string>
@@ -98,15 +98,14 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Changer de serveur</string>
     <string name="switch_user">Changer</string>
-    <string name="trailer">Bande-annonce</string>
     <plurals name="trailers">
-        <item quantity="one">Bandes-annonces</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Bandes-annonce</item>
+        <item quantity="many">Bandes-annonces</item>
+        <item quantity="other">Bandes-annonces</item>
     </plurals>
     <string name="tv_season">Saison</string>
     <string name="tv_seasons">Saisons</string>
-    <string name="tv_shows">Séries TV</string>
+    <string name="tv_shows_title">Séries TV</string>
     <string name="unknown">Inconnu</string>
     <string name="updates">Mises à jour</string>
     <string name="version">Version</string>
@@ -126,34 +125,34 @@
     <string name="success">Succès</string>
     <string name="runtime_sort">Durée</string>
     <plurals name="other_extras">
-        <item quantity="one">Autres</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Autre</item>
+        <item quantity="many">Autres</item>
+        <item quantity="other">Autres</item>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">Extraits</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Extrait</item>
+        <item quantity="many">Extraits</item>
+        <item quantity="other">Extraits</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Scènes supprimées</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Scène supprimé</item>
+        <item quantity="other">Scènes supprimées</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviews</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Interview</item>
+        <item quantity="other">Interviews</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Scènes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Scène</item>
+        <item quantity="many">Scènes</item>
+        <item quantity="other">Scènes</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Échantillons</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Échantillon</item>
+        <item quantity="many">Échantillons</item>
+        <item quantity="other">Échantillons</item>
     </plurals>
     <string name="ac3_supported">Appareil compatible AC3/Dolby Digital</string>
     <string name="advanced_settings">Paramètres avancés</string>
@@ -182,11 +181,11 @@
     <string name="years_old">%1$d ans</string>
     <string name="italic_font">Mettre la police en italique</string>
     <string name="official_rating">Classification parentale</string>
-    <string name="extras">Bonus</string>
+    <string name="extras_title">Bonus</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Dans les coulisses</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Dans les coulisses</item>
+        <item quantity="other">Dans les coulisses</item>
     </plurals>
     <string name="auto_play_next_delay">Délai avant de lire \"À suivre\"</string>
     <string name="auto_play_next">Lecture automatique de \"À suivre\"</string>
@@ -248,9 +247,9 @@
     <string name="subtitle_download_too_long">Le téléchargement prend du temps, vous devrez peut-être redémarrer la lecture</string>
     <string name="top_unwatched">Les mieux notés non vus</string>
     <plurals name="shorts">
-        <item quantity="one">Courts-métrages</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Court-métrages</item>
+        <item quantity="many">Courts-métrages</item>
+        <item quantity="other">Courts-métrages</item>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d heure</item>
@@ -281,13 +280,13 @@
     <string name="skip_recap_behavior">Comportement de saut du récapitulatif</string>
     <plurals name="theme_songs">
         <item quantity="one">Chanson à thème</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Chansons à thème</item>
+        <item quantity="other">Chanson à thème</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vidéos à thème</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Vidéos à thème</item>
+        <item quantity="other">Vidéos à thème</item>
     </plurals>
     <string name="combine_continue_next"><![CDATA[Combiner Continuer à regarder &amp; À suivre]]></string>
     <string name="download_and_update"><![CDATA[Télécharger &amp; Mettre à jour]]></string>
@@ -297,6 +296,8 @@
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
         <item quantity="one">Bonus</item>
+        <item quantity="many">Bonus</item>
+        <item quantity="other">Bonus</item>
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
@@ -478,7 +479,7 @@
     <string name="display_presets">Afficher les préréglages</string>
     <string name="display_presets_description">Préréglages intégrés pour styliser rapidement toutes les lignes</string>
     <string name="customize_home_summary">Choisissez des lignes et des images sur la page d\'accueil</string>
-    <string name="favorite_items">Favori %s</string>
+    <string name="favorite_items_title">Favori %s</string>
     <plurals name="minutes">
         <item quantity="one">%s minute</item>
         <item quantity="many">%s minutes</item>
@@ -610,4 +611,60 @@
     <string name="ass_subtitle_playback">Lecture des sous-titres SSA/ASS</string>
     <string name="external_player">Lecteur externe</string>
     <string name="system_default">Paramètres système par défaut</string>
+    <string name="pin_digits_hint">[0-9]</string>
+    <string name="combined_search_results">Résultats de recherche combinés</string>
+    <string name="combined_search_results_on">Afficher tous les résultats dans une seule liste</string>
+    <string name="combined_search_results_off">Afficher les résultats par catégorie</string>
+    <string name="results">Résultats</string>
+    <string name="cinema_mode">Mode cinéma</string>
+    <string name="show_more">Afficher %1$s de plus</string>
+    <string name="skip_behavior">Comportement de saut</string>
+    <string name="skip_behavior_summary">Pour les génériques d\'ouverture, les génériques de fin, etc</string>
+    <string name="play_with">Jouer avec</string>
+    <string name="transcoding">Transcodage</string>
+    <string name="require_login">Connexion requise pour le profil</string>
+    <string name="show_voice_search_button">Afficher le bouton de recherche vocale</string>
+    <string name="visible_ui">Visible</string>
+    <string name="hidden_ui">Caché</string>
+    <string name="view_options_type_grid">Grille</string>
+    <string name="view_options_type_list">Liste</string>
+    <string name="view_options_type_list_compact">Liste compacte</string>
+    <string name="user_interface_language">Langue de l\'interface utilisateur</string>
+    <string name="display_toggles_title">Affichage des notes</string>
+    <string name="display_toggles_summary">Personnaliser les éléments à afficher</string>
+    <string name="profile_protection">Protection du profil</string>
+    <string name="continue_watching_click_behavior">Comportement de clic sur « Continuer à regarder »/« Suivant »</string>
+    <string name="continue_watching_click_summary_on">Jouez au clic</string>
+    <string name="continue_watching_click_summary_off">Afficher les détails en cliquant</string>
+    <string name="stars">Étoiles</string>
+    <string name="tomatoes">Tomates</string>
+    <string name="sort">Trier</string>
+    <string name="split_into_separate_rows">Diviser en lignes distinctes</string>
+    <string name="trailers_title">Bandes-annonces</string>
+    <string name="other_extras_title">Autre</string>
+    <string name="behind_the_scenes_title">Coulisses</string>
+    <string name="theme_songs_title">Musiques de générique</string>
+    <string name="theme_videos_title">Vidéos thématiques</string>
+    <string name="clips_title">Clips</string>
+    <string name="deleted_scenes_title">Scènes coupées</string>
+    <string name="interviews_title">Interviews</string>
+    <string name="scenes_title">Scènes</string>
+    <string name="samples_title">Extraits</string>
+    <string name="featurettes_title">Featurettes</string>
+    <string name="shorts_title">Courts-métrages</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="many">Films</item>
+        <item quantity="other">Film</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Série télévisée</item>
+        <item quantity="many">Séries télévisées</item>
+        <item quantity="other">Série télévisée</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Acteur</item>
+        <item quantity="many">Acteurs</item>
+        <item quantity="other">Acteur</item>
+    </plurals>
 </resources>

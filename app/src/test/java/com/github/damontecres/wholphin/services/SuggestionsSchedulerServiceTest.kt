@@ -5,25 +5,25 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.MutableLiveData
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.reset
 import com.google.common.util.concurrent.ListenableFuture
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -35,7 +35,7 @@ import java.util.UUID
 class SuggestionsSchedulerServiceTest {
     @get:Rule val instantTaskExecutorRule = InstantTaskExecutorRule()
     private val testDispatcher = StandardTestDispatcher()
-    private val currentLiveData = MutableLiveData<CurrentUser?>()
+    private val currentUser = MutableStateFlow<CurrentUser?>(null)
     private val mockActivity = mockk<AppCompatActivity>(relaxed = true)
     private val mockServerRepository = mockk<ServerRepository>(relaxed = true)
     private val mockWorkManager = mockk<WorkManager>(relaxed = true)
@@ -43,22 +43,22 @@ class SuggestionsSchedulerServiceTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        WholphinDispatchers.configure(testDispatcher)
         every { mockActivity.lifecycle } returns lifecycleRegistry
-        every { mockServerRepository.current } returns currentLiveData
+        every { mockServerRepository.current } returns currentUser
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() = WholphinDispatchers.reset()
 
     private fun createService() =
         SuggestionsSchedulerService(
             context = mockActivity,
             serverRepository = mockServerRepository,
             workManager = mockWorkManager,
+            dispatcher = testDispatcher,
         ).also {
-            it.dispatcher = testDispatcher
             it.initialDelaySecondsProvider = { 60L }
         }
 
@@ -74,7 +74,7 @@ class SuggestionsSchedulerServiceTest {
         runTest {
             mockWorkInfos(emptyList())
             createService()
-            currentLiveData.value =
+            currentUser.value =
                 CurrentUser(
                     user = JellyfinUser(id = UUID.randomUUID(), name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
                     server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),
@@ -88,13 +88,13 @@ class SuggestionsSchedulerServiceTest {
         runTest {
             mockWorkInfos(emptyList())
             createService()
-            currentLiveData.value =
+            currentUser.value =
                 CurrentUser(
                     user = JellyfinUser(id = UUID.randomUUID(), name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
                     server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),
                 )
             advanceUntilIdle()
-            currentLiveData.value = null
+            currentUser.value = null
             advanceUntilIdle()
             verify { mockWorkManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME) }
         }
@@ -113,7 +113,7 @@ class SuggestionsSchedulerServiceTest {
             } returns mockk()
 
             createService()
-            currentLiveData.value =
+            currentUser.value =
                 CurrentUser(
                     user = JellyfinUser(id = UUID.randomUUID(), name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
                     server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),
@@ -138,7 +138,7 @@ class SuggestionsSchedulerServiceTest {
             } returns mockk()
 
             createService()
-            currentLiveData.value =
+            currentUser.value =
                 CurrentUser(
                     user = JellyfinUser(id = UUID.randomUUID(), name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
                     server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),
@@ -159,7 +159,7 @@ class SuggestionsSchedulerServiceTest {
             mockWorkInfos(listOf(workInfo))
 
             createService()
-            currentLiveData.value =
+            currentUser.value =
                 CurrentUser(
                     user = JellyfinUser(id = userId, name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
                     server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),

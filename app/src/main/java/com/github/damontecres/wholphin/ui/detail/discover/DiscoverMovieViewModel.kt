@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.discover
 
 import android.content.Context
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.model.MediaRequest
@@ -12,6 +11,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.hasPermission
@@ -23,26 +23,27 @@ import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.setValueOnMain
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
+import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import timber.log.Timber
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel(assistedFactory = DiscoverMovieViewModel.Factory::class)
 class DiscoverMovieViewModel
@@ -62,15 +63,8 @@ class DiscoverMovieViewModel
             fun create(item: DiscoverItem): DiscoverMovieViewModel
         }
 
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val movie = MutableLiveData<MovieDetails?>(null)
-        val rating = MutableLiveData<DiscoverRating?>(null)
-
-        val trailers = MutableLiveData<List<Trailer>>(listOf())
-        val people = MutableLiveData<List<DiscoverItem>>(listOf())
-        val similar = MutableLiveData<List<DiscoverItem>>()
-        val recommended = MutableLiveData<List<DiscoverItem>>()
-        val canCancelRequest = MutableStateFlow(false)
+        private val _state = MutableStateFlow(DiscoverMovieState())
+        val state: StateFlow<DiscoverMovieState> = _state
 
         val userConfig = seerrServerRepository.current.map { it?.config }
         val request4kEnabled =
@@ -80,104 +74,127 @@ class DiscoverMovieViewModel
             init()
         }
 
-        private fun fetchAndSetItem(): Deferred<MovieDetails> =
-            viewModelScope.async(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
-                val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
-                this@DiscoverMovieViewModel.movie.setValueOnMain(movie)
-                movie
+        private fun fetchAndSetItem(): Deferred<MovieDetails?> =
+            viewModelScope.async(WholphinDispatchers.IO) {
+                try {
+                    val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
+                    _state.update { it.copy(movie = DataLoadingState.Success(movie)) }
+                    movie
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error updating movie details")
+                    null
+                }
             }
 
         fun init(): Job =
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error fetching movie",
-                    ),
-            ) {
+            viewModelScope.launchIO {
                 Timber.v("Init for movie %s", item.id)
-                val movie = fetchAndSetItem().await()
-                val discoveredItem = seerrService.createDiscoverItem(movie)
-                backdropService.submit(discoveredItem)
+                try {
+                    val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
+                    _state.update { it.copy(movie = DataLoadingState.Success(movie)) }
+                    val discoveredItem = seerrService.createDiscoverItem(movie)
+                    backdropService.submit(discoveredItem)
 
-                updateCanCancel()
+                    updateCanCancel()
 
-                withContext(Dispatchers.Main) {
-                    loading.value = LoadingState.Success
-                }
-                viewModelScope.launchIO {
-                    val result = seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = item.id)
-                    rating.setValueOnMain(DiscoverRating(result))
-                }
-                if (!similar.isInitialized) {
                     viewModelScope.launchIO {
                         val result =
-                            seerrService.api.moviesApi
-                                .movieMovieIdSimilarGet(movieId = item.id, page = 1)
-                                .results
-                                ?.map { seerrService.createDiscoverItem(it) }
-                                .orEmpty()
-                        similar.setValueOnMain(result)
+                            seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = item.id)
+                        _state.update { it.copy(rating = DiscoverRating(result)) }
                     }
-                    viewModelScope.launchIO {
-                        val result =
-                            seerrService.api.moviesApi
-                                .movieMovieIdRecommendationsGet(movieId = item.id, page = 1)
-                                .results
-                                ?.map { seerrService.createDiscoverItem(it) }
-                                .orEmpty()
-                        recommended.setValueOnMain(result)
+                    if (state.value.similar.isEmpty()) {
+                        viewModelScope.launchIO {
+                            val result =
+                                seerrService.api.moviesApi
+                                    .movieMovieIdSimilarGet(movieId = item.id, page = 1)
+                                    .results
+                                    ?.map { seerrService.createDiscoverItem(it) }
+                                    .orEmpty()
+                            _state.update { it.copy(similar = result) }
+                        }
+                        viewModelScope.launchIO {
+                            val result =
+                                seerrService.api.moviesApi
+                                    .movieMovieIdRecommendationsGet(movieId = item.id, page = 1)
+                                    .results
+                                    ?.map { seerrService.createDiscoverItem(it) }
+                                    .orEmpty()
+                            _state.update { it.copy(recommended = result) }
+                        }
                     }
-                }
-                val people =
-                    movie.credits
-                        ?.cast
-                        ?.map { seerrService.createDiscoverItem(it) }
-                        .orEmpty() +
+                    val people =
                         movie.credits
-                            ?.crew
+                            ?.cast
                             ?.map { seerrService.createDiscoverItem(it) }
-                            .orEmpty()
-                this@DiscoverMovieViewModel.people.setValueOnMain(people)
-                val trailers =
-                    movie.relatedVideos
-                        ?.filter { it.type == RelatedVideo.Type.TRAILER }
-                        ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
-                        ?.map {
-                            RemoteTrailer(it.name!!, it.url!!, it.site)
-                        }.orEmpty()
-                this@DiscoverMovieViewModel.trailers.setValueOnMain(trailers)
+                            .orEmpty() +
+                            movie.credits
+                                ?.crew
+                                ?.map { seerrService.createDiscoverItem(it) }
+                                .orEmpty()
+                    _state.update { it.copy(people = people) }
+                    val trailers =
+                        movie.relatedVideos
+                            ?.filter { it.type == RelatedVideo.Type.TRAILER }
+                            ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
+                            ?.map {
+                                RemoteTrailer(it.name!!, it.url!!, it.site)
+                            }.orEmpty()
+                    _state.update { it.copy(trailers = trailers) }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error updating movie details")
+                    _state.update { it.copy(movie = DataLoadingState.Error(ex)) }
+                }
             }
 
         private suspend fun updateCanCancel() {
             val user = userConfig.firstOrNull()
-            val canCancel = canUserCancelRequest(user, movie.value?.mediaInfo?.requests)
-            canCancelRequest.update { canCancel }
+            val canCancel =
+                canUserCancelRequest(
+                    user,
+                    state.value.movie.successValue
+                        ?.mediaInfo
+                        ?.requests,
+                )
+            _state.update { it.copy(canCancelRequest = canCancel) }
         }
 
         fun navigateTo(destination: Destination) {
             navigationManager.navigateTo(destination)
         }
 
-        fun request(
-            id: Int,
-            is4k: Boolean,
-        ) {
+        fun request(request: MovieRequest) {
             viewModelScope.launchIO {
-                val request =
+                if (request.movieId == null) {
+                    Timber.w("Null movie ID")
+                    return@launchIO
+                }
+                try {
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
-                            is4k = is4k,
-                            mediaId = id,
+                            is4k = request.is4k,
+                            mediaId = request.movieId,
                             mediaType = RequestPostRequest.MediaType.MOVIE,
+                            serverId =
+                                when {
+                                    request.profileId == null && request.folder == null -> null
+                                    request.is4k -> request.data.server4kId
+                                    else -> request.data.serverId
+                                },
+                            profileId = request.profileId,
+                            rootFolder = request.folder,
+                            tags = emptyList(),
                         ),
                     )
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error requesting %s", request.movieId)
+                    showToast(context, "An error occurred")
+                }
                 fetchAndSetItem().await()
                 updateCanCancel()
             }
@@ -185,11 +202,40 @@ class DiscoverMovieViewModel
 
         fun cancelRequest(id: Int) {
             viewModelScope.launchIO {
-                movie.value?.mediaInfo?.requests?.firstOrNull()?.let {
+                state.value.movie.successValue?.mediaInfo?.requests?.firstOrNull()?.let {
                     // TODO handle multiple requests? Or just delete self's request?
-                    seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    try {
+                        seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    } catch (ex: kotlinx.coroutines.CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error requesting %s", id)
+                        showToast(context, "An error occurred")
+                    }
                     fetchAndSetItem().await()
                     updateCanCancel()
+                }
+            }
+        }
+
+        fun requestOnClick() {
+            viewModelScope.launchIO {
+                try {
+                    val data = seerrService.getProfilesAndFolders(SeerrItemType.MOVIE)
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                            requestData = data,
+                        )
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting profiles & folders")
+                    showToast(context, "Error getting profiles & folders: ${ex.localizedMessage}")
+                    _state.update {
+                        it.copy(
+                            profileLoading = LoadingState.Success,
+                        )
+                    }
                 }
             }
         }
@@ -204,3 +250,16 @@ fun canUserCancelRequest(
         user.hasPermission(SeerrPermission.REQUEST) &&
             requests?.any { it.requestedBy?.id == user?.id } == true
     )
+
+data class DiscoverMovieState(
+    val movie: DataLoadingState<MovieDetails> = DataLoadingState.Pending,
+    val rating: DiscoverRating? = null,
+    val seasons: List<RequestSeason> = emptyList(),
+    val trailers: List<Trailer> = emptyList(),
+    val people: List<DiscoverItem> = emptyList(),
+    val similar: List<DiscoverItem> = emptyList(),
+    val recommended: List<DiscoverItem> = emptyList(),
+    val canCancelRequest: Boolean = false,
+    val profileLoading: LoadingState = LoadingState.Pending,
+    val requestData: SeerrRequestData = SeerrRequestData(),
+)
