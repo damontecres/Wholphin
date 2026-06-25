@@ -156,19 +156,19 @@
         <item quantity="other">Lainnya</item>
     </plurals>
     <plurals name="behind_the_scenes">
-        <item quantity="other">Di Balik Layar</item>
+        <item quantity="other">Di balik layar</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="other">Lagu Tema</item>
+        <item quantity="other">Lagu tema</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="other">Video Tema</item>
+        <item quantity="other">Video tema</item>
     </plurals>
     <plurals name="clips">
         <item quantity="other">Klip</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="other">Adegan Dihapus</item>
+        <item quantity="other">Adegan dihapus</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="other">Wawancara</item>
@@ -183,7 +183,7 @@
         <item quantity="other">Featurette</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="other">Klip Pendek</item>
+        <item quantity="other">Klip pendek</item>
     </plurals>
     <plurals name="hours">
         <item quantity="other">%d jam</item>
@@ -602,4 +602,25 @@
     <string name="continue_watching_click_summary_off">Tampilkan detail saat diklik</string>
     <string name="stars">Bintang</string>
     <string name="tomatoes">Tomatoes</string>
+    <string name="trailers_title">Trailer</string>
+    <string name="other_extras_title">Lainnya</string>
+    <string name="behind_the_scenes_title">Di Balik Layar</string>
+    <string name="theme_songs_title">Lagu Tema</string>
+    <string name="theme_videos_title">Video Tema</string>
+    <string name="clips_title">Klip</string>
+    <string name="deleted_scenes_title">Adegan Dihapus</string>
+    <plurals name="movies">
+        <item quantity="other">Film</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">Acara TV</item>
+    </plurals>
+    <string name="interviews_title">Wawancara</string>
+    <string name="scenes_title">Adegan</string>
+    <string name="samples_title">Sampel</string>
+    <string name="featurettes_title">Featurette</string>
+    <string name="shorts_title">Shorts</string>
+    <string name="sort">Urutkan</string>
+    <string name="split_into_separate_rows">Pisahkan menjadi baris terpisah</string>
+    <string name="genre_movies">%1$s Film</string>
 </resources>
