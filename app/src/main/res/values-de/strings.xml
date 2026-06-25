@@ -646,4 +646,12 @@
         <item quantity="one">Darsteller</item>
         <item quantity="other">Darsteller</item>
     </plurals>
+    <string name="genre_movies">%1$s Filme</string>
+    <string name="genre_tv_shows">%1$s Serien</string>
+    <string name="quality_profile">Qualitätsprofil</string>
+    <string name="is_default">Standard</string>
+    <string name="root_folder">Wurzelordner</string>
+    <string name="popularity">Beliebtheit</string>
+    <string name="production_status">Produktionsstatus</string>
+    <string name="different_for_hdr">Für HDR anderen Stiel verwenden</string>
 </resources>
