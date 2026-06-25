@@ -653,4 +653,5 @@
     <string name="root_folder">Juurkaust</string>
     <string name="popularity">Populaarsus</string>
     <string name="production_status">Tootmise olek</string>
+    <string name="different_for_hdr">Kasuta HDR-i puhul muud stiili</string>
 </resources>
