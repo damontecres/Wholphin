@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -71,6 +72,7 @@ class MovieViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val mediaManagementService: MediaManagementService,
+        private val strmFileHandler: StrmFileHandler,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -82,7 +84,7 @@ class MovieViewModel
         val state: StateFlow<MovieState> = _state
 
         init {
-            init()
+//            init()
             viewModelScope.launchDefault {
                 mediaManagementService.collectCanDelete(state.map { it.movie }) { canDelete ->
                     _state.update {
@@ -175,6 +177,29 @@ class MovieViewModel
                             .map { BaseItem(it) }
 
                     _state.update { it.copy(similar = similar) }
+                }
+
+                viewModelScope.launchIO {
+                    try {
+                        val result = strmFileHandler.resolveStrm(movie)
+                        if (result != null) {
+                            Timber.d("Got updated item")
+                            val chosenStreams =
+                                itemPlaybackRepository.getSelectedTracks(
+                                    itemId,
+                                    result,
+                                    userPreferencesService.getCurrent(),
+                                )
+                            _state.update {
+                                it.copy(
+                                    loading = DataLoadingState.Success(result),
+                                    chosenStreams = chosenStreams,
+                                )
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error checking strm file for %s", movie.id)
+                    }
                 }
             }
 

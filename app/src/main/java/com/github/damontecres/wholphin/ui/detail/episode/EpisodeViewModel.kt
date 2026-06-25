@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
@@ -58,6 +59,7 @@ class EpisodeViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val mediaManagementService: MediaManagementService,
+        private val strmFileHandler: StrmFileHandler,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -71,7 +73,7 @@ class EpisodeViewModel
         val canDelete = MutableStateFlow(false)
 
         init {
-            init()
+//            init()
             viewModelScope.launchDefault {
                 mediaManagementService.collectCanDelete(
                     state.map { (it.episode as? DataLoadingState.Success<BaseItem?>)?.data },
@@ -115,6 +117,28 @@ class EpisodeViewModel
                         )
                     }
                     backdropService.submit(item)
+                    viewModelScope.launchIO {
+                        try {
+                            val result = strmFileHandler.resolveStrm(item)
+                            if (result != null) {
+                                Timber.d("Got updated item")
+                                val chosenStreams =
+                                    itemPlaybackRepository.getSelectedTracks(
+                                        itemId,
+                                        result,
+                                        userPreferencesService.getCurrent(),
+                                    )
+                                _state.update {
+                                    it.copy(
+                                        episode = DataLoadingState.Success(result),
+                                        chosenStreams = chosenStreams,
+                                    )
+                                }
+                            }
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error checking strm file for %s", item.id)
+                        }
+                    }
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
