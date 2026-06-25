@@ -16,7 +16,7 @@ class MpvPlayer(
     private val enableHardwareDecoding: Boolean,
     private val useGpuNext: Boolean,
 ) : SimpleBasePlayer(Looper.getMainLooper()) {
-    override fun getState(): State = throw UnsupportedOperationException("This implementation is non-functional")
+    override fun getState(): State = throw MpvStubException()
 
-    var subtitleDelay: Duration = Duration.ZERO
+    var subtitleDelay: Duration = throw MpvStubException()
 }

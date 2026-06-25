@@ -42,6 +42,8 @@ If you want to include these in a local build, see the [instructions here](https
 
 You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
 
+Finally, if no `wholphin-mpv` implementation is found, `wholphin-mpv-stub` will be used. This allows the app to compile, but any runtime usage of MPV will throw an exception.
+
 ## Code organization
 
 Code is split into several packages:
