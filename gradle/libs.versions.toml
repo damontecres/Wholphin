@@ -1,5 +1,5 @@
 [versions]
-aboutLibraries = "14.2.1"
+aboutLibraries = "15.0.0"
 acra = "5.13.1"
 agp = "9.2.1"
 auto-service = "1.1.1"
