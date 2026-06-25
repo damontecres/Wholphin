@@ -20,7 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import com.github.damontecres.wholphin.ui.formatDuration
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.DenseListItem
 import androidx.tv.material3.Icon
@@ -115,7 +117,7 @@ fun SongListItem(
         }
         val trailingContent = @Composable {
             Text(
-                text = runtime.toString(),
+                text = runtime?.let { LocalResources.current.formatDuration(it) } ?: "",
             )
         }
 

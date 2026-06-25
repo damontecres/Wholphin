@@ -45,7 +45,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import com.github.damontecres.wholphin.ui.formatDuration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -275,8 +277,9 @@ fun SeekBar(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             val remaining = ((player.duration - position) / 1000).seconds
+            val resources = LocalResources.current
             Text(
-                text = (position / 1000).seconds.toString(),
+                text = resources.formatDuration((position / 1000).seconds),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 modifier =
@@ -284,7 +287,7 @@ fun SeekBar(
                         .padding(8.dp),
             )
             Text(
-                text = "-$remaining",
+                text = "-${resources.formatDuration(remaining)}",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 modifier =

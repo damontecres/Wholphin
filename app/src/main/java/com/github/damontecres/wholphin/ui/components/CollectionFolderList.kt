@@ -38,6 +38,8 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import com.github.damontecres.wholphin.ui.formatDuration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItemDefaults
@@ -357,7 +359,7 @@ fun ListItemGeneric(
                         ?.runTimeTicks
                         ?.ticks
                         ?.roundMinutes
-                        ?.toString() ?: "",
+                        ?.let { LocalResources.current.formatDuration(it) } ?: "",
             )
         },
         scale = scale,
@@ -419,7 +421,7 @@ fun ListItemMovie(
                             ?.runTimeTicks
                             ?.ticks
                             ?.roundMinutes
-                            ?.toString() ?: "",
+                            ?.let { LocalResources.current.formatDuration(it) } ?: "",
                 )
                 if (item?.played == true) {
                     WatchedIcon(padding = 0.dp)
@@ -546,7 +548,7 @@ fun ListItemAlbum(
                                 .runTimeTicks
                                 ?.ticks
                                 ?.roundMinutes
-                                ?.toString() ?: "",
+                                ?.let { LocalResources.current.formatDuration(it) } ?: "",
                     )
                 }
             } else {

@@ -8,6 +8,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import android.content.res.Resources
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentType
@@ -21,6 +22,7 @@ import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration
 
 /**
  * Format the time-of-day of [time] honouring the device's 12/24-hour setting and the current
@@ -258,4 +260,19 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
         BaseItemKind.LIVE_TV_PROGRAM -> TODO()
         BaseItemKind.PLAYLISTS_FOLDER -> TODO()
+    }
+
+/**
+ * Format a [Duration] into a localized "Xh Xm" / "Xm Xs" / "Xs" string using string resources.
+ */
+fun Resources.formatDuration(duration: Duration): String =
+    duration.toComponents { hours, minutes, seconds, _ ->
+        when {
+            hours > 0 && minutes > 0 && seconds > 0 -> getString(R.string.duration_hours_minutes_seconds, hours.toInt(), minutes, seconds)
+            hours > 0 && minutes > 0 -> getString(R.string.duration_hours_minutes, hours.toInt(), minutes)
+            hours > 0 -> getString(R.string.duration_hours, hours.toInt())
+            minutes > 0 && seconds > 0 -> getString(R.string.duration_minutes_seconds, minutes, seconds)
+            minutes > 0 -> getString(R.string.duration_minutes, minutes)
+            else -> getString(R.string.duration_seconds, seconds)
+        }
     }
