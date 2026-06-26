@@ -630,4 +630,7 @@
     <string name="quality_profile">品質設定</string>
     <string name="is_default">預設</string>
     <string name="root_folder">根目錄</string>
+    <string name="popularity">熱門程度</string>
+    <string name="production_status">製作狀態</string>
+    <string name="different_for_hdr">HDR 使用不同的樣式</string>
 </resources>
