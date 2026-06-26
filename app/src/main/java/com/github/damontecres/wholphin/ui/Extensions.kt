@@ -244,7 +244,7 @@ val BaseItemDto.timeRemaining: Duration?
     get() =
         userData?.playbackPositionTicks?.let {
             if (it > 0) {
-                runTimeTicks?.minus(it)?.ticks
+                runTimeTicks?.minus(it)?.ticks?.takeIf { it > Duration.ZERO }
             } else {
                 null
             }

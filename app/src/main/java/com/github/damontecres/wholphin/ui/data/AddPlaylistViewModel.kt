@@ -5,14 +5,19 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.detail.music.addToQueue
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
@@ -27,7 +32,9 @@ class AddPlaylistViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
         private val playlistCreator: PlaylistCreator,
+        private val musicService: MusicService,
     ) : ViewModel() {
         val playlistState = MutableStateFlow<PlaylistLoadingState>(PlaylistLoadingState.Pending)
 
@@ -70,6 +77,12 @@ class AddPlaylistViewModel
                 } else {
                     showToast(context, context.getString(R.string.success), Toast.LENGTH_SHORT)
                 }
+            }
+        }
+
+        fun addToQueue(item: BaseItem) {
+            viewModelScope.launchDefault {
+                addToQueue(api, musicService, item, -1)
             }
         }
     }

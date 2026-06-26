@@ -141,6 +141,7 @@ message SubtitlePreferences{
   int32 margin = 11;
   int32 edge_thickness = 12;
   int32 image_subtitle_opacity = 13;
+  bool use_separate_hdr = 14;
 }
 
 message LiveTvPreferences {
