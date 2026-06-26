@@ -630,4 +630,7 @@
     <string name="quality_profile">质量配置</string>
     <string name="is_default">默认</string>
     <string name="root_folder">根文件夹</string>
+    <string name="popularity">热度</string>
+    <string name="production_status">制作状态</string>
+    <string name="different_for_hdr">为 HDR 使用不同的样式</string>
 </resources>
