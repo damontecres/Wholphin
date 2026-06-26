@@ -97,3 +97,9 @@ Some of the models, such as `GetItemsFilter` or `ViewOptions`, are stored as JSO
 These settings are similar to Room ones and are usually stored per user. These can be accessed via `KeyValueService`. The values are `@Serializable` objects saved as JSON.
 
 This should be used sparingly.
+
+#### Experimental
+
+Some settings are considered "experimental". These may cause instabilities or may need further testing. They may be changed or removed any time.
+
+These are stored in the `ExperimentalPreferences` object in `AppPreferences`. Accessing them should always be gated with `ExperimentalPreferences.enabled`. There are a few helper functions for this purpose.

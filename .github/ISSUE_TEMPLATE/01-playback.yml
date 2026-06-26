@@ -1,6 +1,6 @@
 name: "Playback Problem"
 description: Report an issue with playback
-title: "<title>"
+title: ""
 labels: [
   "bug", "playback"
 ]
@@ -12,12 +12,14 @@ body:
       description: Please enter a description of the playback issue
     validations:
       required: true
-  - type: textarea
-    id: mediainfo
+  - type: dropdown
+    id: experimental
     attributes:
-      label: "Media info"
-      description: Please enter details about what media you are trying to play (video or audio codecs, container, etc)
-      placeholder: Use mediainfo or "Send media info to server" in the app to gather this
+      label: Experimental settings
+      description: Do you have experiment settings turn on?
+      options:
+        - "Yes"
+        - "No"
     validations:
       required: true
   - type: dropdown
@@ -30,6 +32,14 @@ body:
         - ExoPlayer (default)
         - MPV
         - External App (please specify)
+    validations:
+      required: true
+  - type: textarea
+    id: mediainfo
+    attributes:
+      label: "Media info"
+      description: Please enter details about what media you are trying to play (video or audio codecs, container, etc)
+      placeholder: Use mediainfo or "Send media info to server" in the app to gather this
     validations:
       required: true
   - type: input
