@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -41,7 +42,15 @@ sealed interface SubtitleSearchStatus {
 /**
  * Trigger a search for subtitles in the given language for the currently playing media
  */
-fun PlaybackViewModel.searchForSubtitles(language: String = Locale.current.language) {
+fun PlaybackViewModel.searchForSubtitles(
+    language: String =
+        serverRepository
+            .currentUserDto
+            ?.configuration
+            ?.subtitleLanguagePreference
+            ?.takeIf { it.isNotNullOrBlank() }
+            ?: Locale.current.language,
+) {
     subtitleSearchState.update {
         it.copy(
             status = SubtitleSearchStatus.Searching,

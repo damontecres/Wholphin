@@ -160,6 +160,7 @@ data class BaseItem(
                                     data.runTimeTicks
                                         ?.ticks
                                         ?.roundMinutes
+                                        ?.takeIf { it > Duration.ZERO }
                                         ?.let { add(it.toString()) }
                                     data.timeRemaining
                                         ?.roundMinutes
