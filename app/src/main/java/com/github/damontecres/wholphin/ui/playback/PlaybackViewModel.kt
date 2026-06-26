@@ -1508,7 +1508,7 @@ class PlaybackViewModel
             initializedTimestampMs: Long,
             initializationDurationMs: Long,
         ) {
-            Timber.d("decoder: onAudioDecoderInitialized: decoder=$decoderName")
+            Timber.d("decoder: onAudioDecoderInitialized: decoder=${decoderName}")
             updateDecoder(decoderName, MediaType.AUDIO)
         }
 
@@ -1523,6 +1523,20 @@ class PlaybackViewModel
                     updateDecoder(decoder.decoderName, MediaType.AUDIO)
                 }
             }
+        }
+
+        override fun onAudioSinkError(
+            eventTime: AnalyticsListener.EventTime,
+            error: Exception,
+        ) {
+            Timber.tag("AC3Transcode").e(error, "AudioSink error")
+        }
+
+        override fun onAudioCodecError(
+            eventTime: AnalyticsListener.EventTime,
+            error: Exception,
+        ) {
+            Timber.tag("AC3Transcode").e(error, "Audio codec error")
         }
 
         override fun onAudioDisabled(

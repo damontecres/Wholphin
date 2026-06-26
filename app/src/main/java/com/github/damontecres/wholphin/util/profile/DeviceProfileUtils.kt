@@ -66,6 +66,7 @@ fun createDeviceProfile(
     maxBitrate: Int,
     isAC3Enabled: Boolean,
     downMixAudio: Boolean,
+    forceAc3Transcoding: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
@@ -74,6 +75,11 @@ fun createDeviceProfile(
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
+            forceAc3Transcoding -> {
+                // Allow all codecs when AC3 transcoding is active; FFmpeg will handle conversion
+                supportedAudioCodecs
+            }
+
             downMixAudio -> {
                 downmixSupportedAudioCodecs
             }
@@ -535,7 +541,7 @@ fun createDeviceProfile(
         type = CodecType.VIDEO_AUDIO
 
         conditions {
-            ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals if (downMixAudio) 2 else 8
+            ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals if (downMixAudio && !forceAc3Transcoding) 2 else 8
         }
     }
 

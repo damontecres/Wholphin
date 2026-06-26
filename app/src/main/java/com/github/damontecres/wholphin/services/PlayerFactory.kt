@@ -8,6 +8,7 @@ import android.os.Handler
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.ExperimentalApi
@@ -18,6 +19,11 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.RenderersFactory
+import androidx.media3.exoplayer.audio.AudioCapabilities
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -94,17 +100,23 @@ class PlayerFactory
                             extensions,
                             prefs.overrides.assPlaybackMode,
                         )
-                        val rendererMode =
+                        val forceAc3Transcoding = prefs.overrides.forceAc3Transcoding
+                        var rendererMode =
                             when (extensions) {
                                 MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                                 MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
                                 MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
                                 else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                             }
+                        if (forceAc3Transcoding &&
+                            rendererMode != DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+                        ) {
+                            rendererMode = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                        }
                         val dataSourceFactory = DefaultDataSource.Factory(context)
                         val extractorsFactory = createExtractorsFactory()
                         var renderersFactory: RenderersFactory =
-                            WholphinRenderersFactory(context, decodeAv1)
+                            WholphinRenderersFactory(context, decodeAv1, forceAc3Transcoding)
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
@@ -134,7 +146,7 @@ class PlayerFactory
                             }
                         val tunneling =
                             appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
-                        val trackSelector = createTrackSelector(tunneling)
+                        val trackSelector = createTrackSelector(tunneling, forceAc3Transcoding)
 
                         ExoPlayer
                             .Builder(context)
@@ -164,17 +176,25 @@ class PlayerFactory
             return PlayerCreation(newPlayer, assHandler)
         }
 
-        fun createAudioPlayer(extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK): ExoPlayer {
-            val rendererMode =
+        fun createAudioPlayer(
+            extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK,
+            forceAc3Transcoding: Boolean = false,
+        ): ExoPlayer {
+            var rendererMode =
                 when (extensions) {
                     MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                     MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
                     MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
                     else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                 }
+            if (forceAc3Transcoding &&
+                rendererMode != DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+            ) {
+                rendererMode = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+            }
             val extractorsFactory = createExtractorsFactory()
             val renderersFactory: RenderersFactory =
-                WholphinRenderersFactory(context, false)
+                WholphinRenderersFactory(context, false, forceAc3Transcoding)
                     .setEnableDecoderFallback(true)
                     .setExtensionRendererMode(rendererMode)
             val mediaSourceFactory =
@@ -182,7 +202,7 @@ class PlayerFactory
                     OkHttpDataSource.Factory(authOkHttpClient),
                     extractorsFactory,
                 )
-            val trackSelector = createTrackSelector()
+            val trackSelector = createTrackSelector(forceAc3Transcoding)
             return ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
@@ -205,8 +225,17 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector(tunneling: Boolean? = null) =
-            DefaultTrackSelector(context).apply {
+        private fun createTrackSelector(
+            tunneling: Boolean? = null,
+            forceAc3Transcoding: Boolean = false,
+        ): DefaultTrackSelector {
+            val offloadMode =
+                if (forceAc3Transcoding) {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                } else {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                }
+            return DefaultTrackSelector(context).apply {
                 setParameters(
                     buildUponParameters()
                         .apply {
@@ -214,11 +243,12 @@ class PlayerFactory
                         }.setAudioOffloadPreferences(
                             AudioOffloadPreferences
                                 .Builder()
-                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
+                                .setAudioOffloadMode(offloadMode)
                                 .build(),
                         ),
                 )
             }
+        }
 
         fun createMediaSession(player: Player) =
             MediaSession
@@ -244,6 +274,7 @@ data class PlayerCreation(
 class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
+    private val forceAc3Transcoding: Boolean = false,
 ) : DefaultRenderersFactory(context) {
     @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
@@ -308,5 +339,156 @@ class WholphinRenderersFactory(
                 throw java.lang.IllegalStateException("Error instantiating AV1 extension", e)
             }
         }
+    }
+
+    @OptIn(ExperimentalApi::class)
+    override fun buildAudioRenderers(
+        context: Context,
+        extensionRendererMode: Int,
+        mediaCodecSelector: MediaCodecSelector,
+        enableDecoderFallback: Boolean,
+        audioSink: AudioSink,
+        eventHandler: Handler,
+        eventListener: AudioRendererEventListener,
+        out: ArrayList<Renderer>,
+    ) {
+        // Forced AC3 mode needs explicit routing: AC3 can use MediaCodec passthrough, while
+        // patched FFmpeg handles all other audio and only AC3-transcodes multichannel inputs.
+
+        val effectiveSink: AudioSink = if (forceAc3Transcoding) {
+            buildAc3TranscodingAudioSink(context, audioSink)
+        } else {
+            audioSink
+        }
+
+        if (forceAc3Transcoding) {
+            val ac3PassthroughSelector =
+                MediaCodecSelector { mimeType: String, requiresSecureDecoder: Boolean, requiresTunnelingDecoder: Boolean ->
+                    if (mimeType == MimeTypes.AUDIO_AC3
+                        // Only AC3 gets direct passthrough; E-AC-3 (DD+) goes through FFmpeg transcoding
+                    ) {
+                        MediaCodecSelector.DEFAULT.getDecoderInfos(
+                            mimeType,
+                            requiresSecureDecoder,
+                            requiresTunnelingDecoder,
+                        )
+                    } else {
+                        emptyList()
+                    }
+                }
+
+            val mediaCodecRenderer = MediaCodecAudioRenderer(
+                context,
+                ac3PassthroughSelector,
+                enableDecoderFallback,
+                eventHandler,
+                eventListener,
+                effectiveSink,
+            )
+            out.add(mediaCodecRenderer)
+
+            try {
+                val clazz = Class.forName("androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer")
+                val constructor = clazz.getConstructor(
+                    Handler::class.java,
+                    AudioRendererEventListener::class.java,
+                    AudioSink::class.java,
+                )
+                val ffmpegRenderer =
+                    constructor.newInstance(eventHandler, eventListener, effectiveSink) as Renderer
+                try {
+                    val method =
+                        clazz.getMethod("setForceOpticalPassthrough", Boolean::class.javaPrimitiveType)
+                    method.invoke(ffmpegRenderer, true)
+                } catch (e: NoSuchMethodException) {
+                    Timber.tag("AC3Transcode").e("setForceOpticalPassthrough method NOT found - AAR may not be the transcoding version!")
+                } catch (e: Exception) {
+                    Timber.tag("AC3Transcode").e(e, "setForceOpticalPassthrough invocation failed")
+                }
+                out.add(ffmpegRenderer)
+            } catch (e: ClassNotFoundException) {
+                Timber.tag("AC3Transcode").e("FFmpeg extension not found")
+            } catch (e: NoSuchMethodException) {
+                Timber.tag("AC3Transcode").e("FFmpeg extension constructor mismatch - check AAR version")
+            } catch (e: Exception) {
+                Timber.tag("AC3Transcode").e(e, "Failed to instantiate FfmpegAudioRenderer")
+            }
+        } else {
+            val mediaCodecRenderer = MediaCodecAudioRenderer(
+                context,
+                mediaCodecSelector,
+                enableDecoderFallback,
+                eventHandler,
+                eventListener,
+                audioSink,
+            )
+            out.add(mediaCodecRenderer)
+
+            if (extensionRendererMode != EXTENSION_RENDERER_MODE_OFF) {
+                try {
+                    val clazz = Class.forName("androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer")
+                    val constructor = clazz.getConstructor(
+                        Handler::class.java,
+                        AudioRendererEventListener::class.java,
+                        AudioSink::class.java,
+                    )
+                    val ffmpegRenderer =
+                        constructor.newInstance(eventHandler, eventListener, audioSink) as Renderer
+                    out.add(ffmpegRenderer)
+                } catch (e: ClassNotFoundException) {
+                    Timber.tag("AC3Transcode").d("FFmpeg extension not available for audio")
+                } catch (e: Exception) {
+                    Timber.tag("AC3Transcode").e(e, "Failed to instantiate FfmpegAudioRenderer")
+                }
+            }
+        }
+    }
+
+    private fun buildAc3TranscodingAudioSink(context: Context, baseSink: AudioSink? = null): AudioSink {
+        // Preserve the default sink capabilities when possible, then overlay the encodings
+        // required by the patched FFmpeg renderer's support checks.
+        val maxChannelCount = 8
+        val mergedEncodings = mutableSetOf<Int>()
+        try {
+            val sinkClass = Class.forName("androidx.media3.exoplayer.audio.DefaultAudioSink")
+            val mergeCapabilities = { sink: Any ->
+                try {
+                    val field = sinkClass.getDeclaredField("audioCapabilities")
+                    field.isAccessible = true
+                    val fieldValue = field.get(sink)
+                    val supportedEncodingsField = fieldValue.javaClass.getDeclaredField("supportedEncodings")
+                    supportedEncodingsField.isAccessible = true
+                    val existingEncodings = supportedEncodingsField.get(fieldValue) as IntArray
+                    existingEncodings.forEach { mergedEncodings.add(it) }
+                } catch (_: NoSuchFieldException) {
+                }
+            }
+            if (baseSink != null) mergeCapabilities(baseSink)
+        } catch (_: Exception) {
+        }
+
+        val standardEncodings = intArrayOf(
+            C.ENCODING_PCM_16BIT,
+            C.ENCODING_PCM_FLOAT,
+            C.ENCODING_PCM_24BIT,
+            C.ENCODING_PCM_32BIT,
+        )
+        standardEncodings.forEach { mergedEncodings.add(it) }
+
+        val forcedEncodings = intArrayOf(
+            C.ENCODING_AC3,
+            C.ENCODING_E_AC3,
+            C.ENCODING_E_AC3_JOC,
+            C.ENCODING_DTS,
+            C.ENCODING_DTS_HD,
+        )
+        forcedEncodings.forEach { mergedEncodings.add(it) }
+
+        val combinedEncodings = mergedEncodings.toIntArray()
+        val audioCapabilities = AudioCapabilities(combinedEncodings, maxChannelCount)
+
+        return DefaultAudioSink.Builder(context)
+            .setAudioCapabilities(audioCapabilities)
+            .build()
     }
 }

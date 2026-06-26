@@ -5,12 +5,15 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.datastore.core.DataStore
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import kotlinx.coroutines.flow.firstOrNull
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
@@ -72,6 +75,7 @@ class MusicService
         private val playerFactory: PlayerFactory,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
+        private val appPreferences: DataStore<AppPreferences>,
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
@@ -79,8 +83,13 @@ class MusicService
         private val audioFormats by lazy { listOf(*supportedAudioCodecs) }
 
         val player: Player by lazy {
+            val prefs =
+                kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                    appPreferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                }
+            val forceAc3Transcoding = prefs.playbackPreferences.overrides.forceAc3Transcoding
             playerFactory
-                .createAudioPlayer()
+                .createAudioPlayer(forceAc3Transcoding = forceAc3Transcoding)
                 .also {
                     it.addListener(MusicPlayerListener(it, _state))
                 }
