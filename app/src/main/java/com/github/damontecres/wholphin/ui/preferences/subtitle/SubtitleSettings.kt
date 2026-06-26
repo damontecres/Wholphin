@@ -15,6 +15,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.mpv.MPVLib
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppDestinationPreference
@@ -29,7 +30,6 @@ import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
-import com.github.damontecres.wholphin.util.mpv.MPVLib
 import com.github.damontecres.wholphin.util.mpv.setPropertyColor
 import timber.log.Timber
 
