@@ -18,17 +18,23 @@ class FavoriteWatchManager
     constructor(
         private val api: ApiClient,
         private val datePlayedService: DatePlayedService,
+        private val playbackResultService: PlaybackResultService,
     ) {
         suspend fun setWatched(
             itemId: UUID,
             played: Boolean,
         ): UserItemDataDto {
             datePlayedService.invalidate(itemId)
-            return if (played) {
-                api.playStateApi.markPlayedItem(itemId).content
-            } else {
-                api.playStateApi.markUnplayedItem(itemId).content
-            }
+            val content =
+                if (played) {
+                    api.playStateApi.markPlayedItem(itemId).content
+                } else {
+                    api.playStateApi.markUnplayedItem(itemId).content
+                }
+            // Remember the authoritative outcome locally so a returning grid/row reflects it
+            // immediately instead of racing the server write we just issued.
+            playbackResultService.record(itemId, content.playbackPositionTicks, content.played)
+            return content
         }
 
         suspend fun setFavorite(

@@ -49,6 +49,8 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PlaybackResult
+import com.github.damontecres.wholphin.services.PlaybackResultService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -77,6 +79,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -98,6 +101,7 @@ import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @HiltViewModel(assistedFactory = CollectionFolderViewModel.Factory::class)
 class CollectionFolderViewModel
@@ -118,6 +122,7 @@ class CollectionFolderViewModel
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
         private val filterOptionCache: FilterOptionCache,
+        private val playbackResultService: PlaybackResultService,
         @Assisted val itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
         @Assisted("recursive") private val recursive: Boolean,
@@ -140,6 +145,12 @@ class CollectionFolderViewModel
 
         private val _state = MutableStateFlow(CollectionFolderState(viewOptions = defaultViewOptions))
         val state: StateFlow<CollectionFolderState> = _state
+
+        // Locally-known playback outcomes from THIS device (player end / manual toggle), applied live
+        // by the flow collector. Consumed in onResumePage so the focused item is not re-read from the
+        // possibly-stale server right after local playback. Items changed out-of-band (e.g. another
+        // device) are absent here and so get a server refresh on resume.
+        private val knownResults = ConcurrentHashMap<UUID, PlaybackResult>()
 
         var position: Int
             get() = savedStateHandle.get<Int>("position") ?: 0
@@ -201,6 +212,23 @@ class CollectionFolderViewModel
                 }.catch { ex ->
                     Timber.e(ex, "Error refreshing after deleted item")
                 }.launchIn(viewModelScope)
+            playbackResultService.playbackResultFlow
+                .onEach { result ->
+                    knownResults[result.itemId] = result
+                    applyPlaybackResult(result)
+                }.catch { ex ->
+                    Timber.e(ex, "Error applying playback result")
+                }.launchIn(viewModelScope)
+        }
+
+        /**
+         * Apply a locally-known playback outcome to the matching item in the loaded pages, race-free,
+         * instead of re-querying the server. No-op if the item is not currently loaded.
+         */
+        private suspend fun applyPlaybackResult(result: PlaybackResult) {
+            val pager =
+                (state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*> ?: return
+            pager.updateUserDataById(result.itemId, result.positionTicks, result.played)
         }
 
         private suspend fun refreshAfterDelete(
@@ -499,6 +527,24 @@ class CollectionFolderViewModel
 
         fun onResumePage() {
             viewModelScope.launchIO {
+                // The flow collector already applied any local playback result live; consume its
+                // marker so we don't clobber it with a possibly-stale server read. Otherwise refresh
+                // the focused item from the server to pick up out-of-band changes (e.g. progress made
+                // on another device), which the in-process flow does not see.
+                try {
+                    ((state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                        ?.let { pager ->
+                            (pager.getOrNull(position) as? BaseItem)?.let { item ->
+                                if (knownResults.remove(item.id) == null) {
+                                    pager.refreshItem(position, item.id)
+                                }
+                            }
+                        }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error refreshing focused item on resume")
+                }
                 state.value.item.successValue?.let {
                     Timber.v("onResumePage: %s", state.value.items::class)
                     if (it.type == BaseItemKind.BOX_SET && state.value.items !is DataLoadingState.Error) {

@@ -103,6 +103,8 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    // Load once. Returning from playback no longer needs a refresh here: HomeViewModel collects
+    // playback results and patches the "continue watching" rows live in the background.
     LaunchedEffect(Unit) {
         viewModel.init()
     }

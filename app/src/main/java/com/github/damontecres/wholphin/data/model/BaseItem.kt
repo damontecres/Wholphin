@@ -283,6 +283,45 @@ data class BaseItem(
 
 val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }
 
+/**
+ * Returns a copy of this item with its user data updated to reflect a just-finished local
+ * playback (final resume position / played). A freshly-played item has no server-side
+ * playedPercentage yet, so it is derived from position/runtime (the same formula the server
+ * uses) to keep the resume bar rendering. Returns the item unchanged if it carries no user data.
+ */
+fun BaseItem.withLocalPlayback(
+    positionTicks: Long,
+    played: Boolean,
+): BaseItem {
+    val userData = data.userData ?: return this
+    val runTimeTicks = data.runTimeTicks
+    val newPercentage =
+        when {
+            played -> {
+                null
+            }
+
+            runTimeTicks != null && runTimeTicks > 0 && positionTicks > 0 -> {
+                positionTicks.toDouble() / runTimeTicks.toDouble() * 100.0
+            }
+
+            else -> {
+                userData.playedPercentage
+            }
+        }
+    return copy(
+        data =
+            data.copy(
+                userData =
+                    userData.copy(
+                        played = played,
+                        playbackPositionTicks = positionTicks,
+                        playedPercentage = newPercentage,
+                    ),
+            ),
+    )
+}
+
 @Immutable
 data class BaseItemUi(
     val episodeCornerText: String?,
