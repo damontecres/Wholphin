@@ -48,13 +48,16 @@ import coil3.imageLoader
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
+import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
+import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.Release
@@ -148,6 +151,7 @@ fun PreferencesContent(
             PreferenceScreenOption.MPV -> MpvPreferences
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
             PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
+            PreferenceScreenOption.EXPERIMENTAL -> experimentalPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -157,6 +161,7 @@ fun PreferencesContent(
             PreferenceScreenOption.MPV -> R.string.mpv_options
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
             PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
+            PreferenceScreenOption.EXPERIMENTAL -> R.string.experimental_settings
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -569,6 +574,46 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                ExperimentalPreference.Enable -> {
+                                    var showConfirm by remember { mutableStateOf(false) }
+                                    pref as AppSwitchPreference<AppPreferences>
+                                    val value = pref.getter.invoke(preferences)
+                                    SwitchPreference(
+                                        title = stringResource(pref.title),
+                                        value = value,
+                                        onClick = {
+                                            if (value) {
+                                                scope.launch(ExceptionHandler()) {
+                                                    preferences =
+                                                        viewModel.preferenceDataStore.updateData { prefs ->
+                                                            pref.setter.invoke(prefs, false)
+                                                        }
+                                                }
+                                            } else {
+                                                showConfirm = true
+                                            }
+                                        },
+                                        summaryOn = pref.summaryOn?.let { stringResource(pref.summaryOn) },
+                                        summaryOff = pref.summaryOff?.let { stringResource(pref.summaryOff) },
+                                    )
+                                    if (showConfirm) {
+                                        ConfirmDialog(
+                                            title = stringResource(R.string.confirm_enable_experimental_title),
+                                            body = stringResource(R.string.confirm_enable_experimental_body),
+                                            onCancel = { showConfirm = false },
+                                            onConfirm = {
+                                                showConfirm = false
+                                                scope.launch(ExceptionHandler()) {
+                                                    preferences =
+                                                        viewModel.preferenceDataStore.updateData { prefs ->
+                                                            pref.setter.invoke(prefs, true)
+                                                        }
+                                                }
+                                            },
+                                        )
+                                    }
+                                }
+
                                 else -> {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
@@ -762,6 +807,7 @@ fun PreferencesPage(
             PreferenceScreenOption.MPV,
             PreferenceScreenOption.SCREENSAVER,
             PreferenceScreenOption.SKIP_SEGMENTS,
+            PreferenceScreenOption.EXPERIMENTAL,
             -> {
                 PreferencesContent(
                     initialPreferences,

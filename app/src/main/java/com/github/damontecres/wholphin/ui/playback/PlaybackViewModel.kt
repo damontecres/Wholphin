@@ -253,7 +253,7 @@ class PlaybackViewModel
                 val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
-                        preferences.appPreferences.playbackPreferences,
+                        preferences.appPreferences,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
