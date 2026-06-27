@@ -688,4 +688,12 @@
         <item quantity="many">Serialów</item>
         <item quantity="other">Serialów</item>
     </plurals>
+    <string name="genre_movies">Filmy z gatunku: %1$s</string>
+    <string name="genre_tv_shows">Seriale z gatunku: %1$s</string>
+    <string name="quality_profile">Profil jakości</string>
+    <string name="is_default">Domyślny</string>
+    <string name="root_folder">Folder główny</string>
+    <string name="popularity">Popularność</string>
+    <string name="production_status">Status produkcji</string>
+    <string name="different_for_hdr">Użyj innych styli dla HDR</string>
 </resources>
