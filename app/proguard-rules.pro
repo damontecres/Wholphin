@@ -1,6 +1,6 @@
 -keepattributes SourceFile,LineNumberTable
 
--keep class com.github.damontecres.wholphin.util.mpv.* { *; }
+-keep class com.github.damontecres.wholphin.mpv.MPVLib { *; }
 
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 -keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
