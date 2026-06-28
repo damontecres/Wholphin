@@ -11,7 +11,14 @@
     },
     {
       "groupName": "Github Actions",
-      "matchManagers": ["github-actions"]
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "groupName": "Android TV Dependencies",
+      "matchPackageNames": [
+        "androidx.tv:**"
+      ]
     },
     {
       "groupName": "Androidx Media3",

@@ -823,4 +823,16 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="genre_movies">%1$s Movies</string>
+    <string name="genre_tv_shows">%1$s TV Shows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
+    <string name="popularity">Popularity</string>
+    <string name="production_status">Production status</string>
+    <string name="different_for_hdr">Use different style for HDR</string>
+    <string name="experimental_settings">Experimental settings</string>
+    <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
+    <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
+    <string name="video_tunneling">Video tunneling</string>
 </resources>

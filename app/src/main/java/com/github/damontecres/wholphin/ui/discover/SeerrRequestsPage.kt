@@ -148,10 +148,12 @@ data class RequestGridItem(
 @Composable
 fun SeerrRequestsPage(
     focusRequesterOnEmpty: FocusRequester?,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SeerrRequestsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState(SeerrRequestsState.EMPTY)
+    val columns = 6
 
     when (val state = state.requests) {
         is DataLoadingState.Error -> {
@@ -213,7 +215,8 @@ fun SeerrRequestsPage(
                                 modifier = mod,
                             )
                         },
-                        columns = 6,
+                        columns = columns,
+                        positionCallback = positionCallback,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }

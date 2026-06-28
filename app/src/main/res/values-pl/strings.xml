@@ -121,15 +121,9 @@
     <string name="one_click_pause_summary_on">Wciśnij środek by pauzować/wznowić</string>
     <plurals name="interviews">
         <item quantity="one">Wywiady</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Sceny</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Czołówka</item>
@@ -269,9 +263,6 @@
     <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Inne</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Usunięta scena</item>
@@ -590,27 +581,15 @@
     <string name="runtime_sort">Czas trwania</string>
     <plurals name="clips">
         <item quantity="one">Klipy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Próbki</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Filmy krótkometrażowe</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Krótkie filmy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <string name="aspect_ratio">Proporcje ekranu</string>
     <string name="guest_stars">Aktorzy gościnni</string>
@@ -658,4 +637,34 @@
     <string name="view_options_type_grid">Siatka</string>
     <string name="sort">Sortuj</string>
     <string name="split_into_separate_rows">Podziel na osobne rzędy</string>
+    <string name="trailers_title">Zwiastuny</string>
+    <string name="other_extras_title">Inne</string>
+    <string name="behind_the_scenes_title">Za kulisami</string>
+    <string name="theme_songs_title">Piosenki tematyczne</string>
+    <string name="theme_videos_title">Filmy tematyczne</string>
+    <string name="clips_title">Klipy</string>
+    <string name="deleted_scenes_title">Usunięte sceny</string>
+    <string name="interviews_title">Wywiady</string>
+    <string name="scenes_title">Sceny</string>
+    <string name="samples_title">Próbki</string>
+    <string name="featurettes_title">Materiały dodatkowe</string>
+    <string name="shorts_title">Szorty</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="few">Filmy</item>
+        <item quantity="many">Filmów</item>
+        <item quantity="other">Filmów</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Osoba</item>
+        <item quantity="few">Osoby</item>
+        <item quantity="many">Osób</item>
+        <item quantity="other">Osób</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Serial</item>
+        <item quantity="few">Seriale</item>
+        <item quantity="many">Serialów</item>
+        <item quantity="other">Serialów</item>
+    </plurals>
 </resources>

@@ -604,4 +604,25 @@
     <string name="user_interface_language">用户界面语言</string>
     <string name="sort">排序</string>
     <string name="split_into_separate_rows">拆分为单独的行</string>
+    <string name="trailers_title">预告片</string>
+    <string name="other_extras_title">其他</string>
+    <string name="behind_the_scenes_title">幕后花絮</string>
+    <string name="theme_songs_title">主题曲</string>
+    <string name="theme_videos_title">主题视频</string>
+    <string name="clips_title">片段</string>
+    <string name="deleted_scenes_title">删减片段</string>
+    <string name="interviews_title">访谈</string>
+    <string name="scenes_title">场景</string>
+    <string name="samples_title">样片</string>
+    <string name="featurettes_title">特辑</string>
+    <string name="shorts_title">短片</string>
+    <plurals name="movies">
+        <item quantity="other">电影</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">电视节目</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="other">演职人员</item>
+    </plurals>
 </resources>

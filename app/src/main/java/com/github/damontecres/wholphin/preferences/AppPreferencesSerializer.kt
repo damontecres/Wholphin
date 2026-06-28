@@ -174,6 +174,14 @@ class AppPreferencesSerializer
                                 showLyrics = true
                                 showAlbumArt = true
                             }.build()
+
+                    experimentalPreferences =
+                        ExperimentalPreferences
+                            .newBuilder()
+                            .apply {
+                                enabled = false
+                                videoTunnelingEnabled = false
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -250,6 +258,11 @@ inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPrefere
 inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder.() -> Unit): AppPreferences =
     update {
         musicPreferences = musicPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateExperimentalPreferences(block: ExperimentalPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        experimentalPreferences = experimentalPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

@@ -1,6 +1,5 @@
 name: "Bug Report"
 description: Report a bug
-title: "<title>"
 labels: [
   "bug"
 ]
@@ -23,6 +22,16 @@ body:
         3. See error
     validations:
       required: false
+  - type: dropdown
+    id: experimental
+    attributes:
+      label: Experimental settings
+      description: Do you have experiment settings turn on?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
   - type: input
     id: app-version
     attributes:

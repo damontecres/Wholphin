@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -70,7 +71,6 @@ import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
-import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
@@ -140,7 +140,7 @@ class PlaybackViewModel
         val navigationManager: NavigationManager,
         private val playlistCreator: PlaylistCreator,
         private val itemPlaybackDao: ItemPlaybackDao,
-        private val serverRepository: ServerRepository,
+        internal val serverRepository: ServerRepository,
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
@@ -193,14 +193,18 @@ class PlaybackViewModel
 
         val currentUserDto = serverRepository.currentUserDtoFlow
 
+        // Exposed for testing
+        val initJob: Job
+
         init {
-            viewModelScope.launchIO {
-                addCloseable {
-                    screensaverService.keepScreenOn(false)
-                    disconnectPlayer()
+            initJob =
+                viewModelScope.launchIO {
+                    addCloseable {
+                        screensaverService.keepScreenOn(false)
+                        disconnectPlayer()
+                    }
+                    init()
                 }
-                init()
-            }
         }
 
         private fun disconnectPlayer() {
@@ -250,7 +254,7 @@ class PlaybackViewModel
                 val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
-                        preferences.appPreferences.playbackPreferences,
+                        preferences.appPreferences,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
@@ -270,10 +274,7 @@ class PlaybackViewModel
                     player,
                     preferences.appPreferences.playbackPreferences,
                 )
-            mediaSession =
-                MediaSession
-                    .Builder(context, sessionPlayer)
-                    .build()
+            mediaSession = playerFactory.createMediaSession(sessionPlayer)
         }
 
         /**
@@ -1049,14 +1050,26 @@ class PlaybackViewModel
                         }
 
                         is PlaylistItem.Media -> {
-                            if (currentItem is PlaylistItem.Intro) {
-                                Timber.v("Current item is intro, so playing next up immediately")
-                                playNextUp()
-                            } else if (preferences.appPreferences.playbackPreferences.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER) {
-                                Timber.v("Setting next up to ${nextItem.id}")
-                                _state.update { it.copy(nextUp = nextItem.item) }
-                            } else {
-                                controllerViewState.showControls()
+                            val prefs = preferences.appPreferences.playbackPreferences
+                            when {
+                                currentItem is PlaylistItem.Intro -> {
+                                    Timber.v("Current item is intro, so playing next up immediately")
+                                    playNextUp()
+                                }
+
+                                prefs.showNextUpWhen == ShowNextUpWhen.NEXT_UP_NEVER && !prefs.autoPlayNext -> {
+                                    Timber.v("Never show or auto play next up, returning")
+                                    navigationManager.goBack()
+                                }
+
+                                prefs.showNextUpWhen != ShowNextUpWhen.NEXT_UP_NEVER -> {
+                                    Timber.v("Setting next up to ${nextItem.id}")
+                                    _state.update { it.copy(nextUp = nextItem.item) }
+                                }
+
+                                else -> {
+                                    controllerViewState.showControls()
+                                }
                             }
                         }
 
@@ -1070,7 +1083,8 @@ class PlaybackViewModel
         }
 
         // Variables for tracking segment state
-        private var segmentJob: Job? = null
+        // Exposed for testing
+        internal var segmentJob: Job? = null
         private val autoSkippedSegments = mutableSetOf<UUID>()
         private val outroShownSegments = mutableSetOf<UUID>()
 
@@ -1285,7 +1299,7 @@ class PlaybackViewModel
                                 }
                             }
                     } else {
-                        Timber.w("Attempting to play next, but there are no more items")
+                        Timber.w("Attempting to play previous, but there is none")
                         return@launchDefault
                     }
                 }

@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui
 
+import android.content.Context
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
@@ -12,19 +14,35 @@ import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
+import java.util.Date
 import java.util.Locale
 
-private var timeFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+/**
+ * Format the time-of-day of [time] honouring the device's 12/24-hour setting and the current
+ * locale. [context] should be an Activity/composition context (e.g. `LocalContext.current`) so an
+ * in-app language switch (`AppCompatDelegate.setApplicationLocales`) is reflected; the application
+ * context may carry a stale locale.
+ */
+fun formatTime(
+    context: Context,
+    time: LocalDateTime,
+): String = formatTime(context, time.toLocalTime())
 
-fun getTimeFormatter(): DateTimeFormatter {
-    if (timeFormatter.locale != Locale.getDefault()) {
-        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
-    }
-    return timeFormatter
+fun formatTime(
+    context: Context,
+    time: LocalTime,
+): String {
+    val instant =
+        time
+            .atDate(LocalDate.now())
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+    return DateFormat.getTimeFormat(context).format(Date.from(instant))
 }
 
 private var dateFormatter: DateTimeFormatter =

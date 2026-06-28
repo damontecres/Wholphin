@@ -4,7 +4,6 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
-import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -68,6 +67,7 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -84,14 +84,13 @@ import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipIndicator
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipSegmentButton
 import com.github.damontecres.wholphin.ui.playback.overlay.rememberSeekBarState
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyTo
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
-import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
-import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -421,10 +420,13 @@ fun PlaybackPageContent(
                 analyticsState = state.analyticsState,
             )
 
+            var subtitleStyleAppliedForHdr by remember { mutableStateOf(state.currentMediaInfo.videoStream?.hdr == true) }
             val subtitleSettings =
                 remember(state.currentMediaInfo) {
                     Timber.v("subtitle choice: ${state.currentMediaInfo.videoStream?.hdr}")
-                    if (state.currentMediaInfo.videoStream?.hdr == true) {
+                    val useSeparate =
+                        preferences.appPreferences.interfacePreferences.subtitlesPreferences.useSeparateHdr
+                    if (useSeparate && state.currentMediaInfo.videoStream?.hdr == true) {
                         preferences.appPreferences.interfacePreferences.hdrSubtitlesPreferences
                     } else {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences
@@ -447,11 +449,7 @@ fun PlaybackPageContent(
             AndroidView(
                 factory = { context ->
                     SubtitleView(context).apply {
-                        subtitleSettings.let {
-                            setStyle(it.toSubtitleStyle())
-                            setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
-                            setBottomPaddingFraction(it.margin.toFloat() / 100f)
-                        }
+                        subtitleSettings.applyTo(this)
                         playerInstance.assHandler?.let { assHandler ->
                             if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
                                 Timber.v("Adding AssSubtitleView")
@@ -470,6 +468,11 @@ fun PlaybackPageContent(
                     }
                 },
                 update = { subtitleView ->
+                    if (subtitleStyleAppliedForHdr != state.currentMediaInfo.videoStream?.hdr) {
+                        // If the media has switched between SDR & HDR, reapply subtitle settings
+                        Timber.v("Switching SDR/HDR, reapplying subtitle style")
+                        subtitleSettings.applyTo(subtitleView)
+                    }
                     subtitleView.setCues(state.subtitleCues)
                     if (state.subtitleCues.size > cueCount) {
                         // The output creates a painter for each cue, so need to apply the changes when the number of cues increases

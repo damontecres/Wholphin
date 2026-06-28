@@ -92,9 +92,6 @@ fun DiscoverSeriesDetails(
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showRequestSeasonDialog by remember { mutableStateOf(false) }
 
-    val requestStr = stringResource(R.string.request)
-    val request4kStr = stringResource(R.string.request_4k)
-
     when (val st = state.tvSeries) {
         is DataLoadingState.Error -> {
             ErrorMessage(st, modifier)
@@ -150,9 +147,8 @@ fun DiscoverSeriesDetails(
                 },
                 trailers = state.trailers,
                 requestOnClick = {
-                    item.id?.let { id ->
-                        showRequestSeasonDialog = true
-                    }
+                    viewModel.requestOnClick()
+                    showRequestSeasonDialog = true
                 },
                 cancelOnClick = {
                     item.id?.let { viewModel.cancelRequest(it) }
@@ -192,15 +188,16 @@ fun DiscoverSeriesDetails(
     }
     if (showRequestSeasonDialog) {
         RequestSeasonsDialog(
+            id = state.tvSeries.successValue?.id ?: -1,
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
             request4kEnabled = request4kEnabled,
-            onSubmit = { seasons, is4k ->
-                state.tvSeries.successValue
-                    ?.id
-                    ?.let { viewModel.request(it, seasons, is4k) }
+            onSubmit = {
                 showRequestSeasonDialog = false
+                viewModel.request(it)
             },
+            loading = state.profileLoading,
+            data = state.requestData,
             onDismissRequest = { showRequestSeasonDialog = false },
         )
     }
