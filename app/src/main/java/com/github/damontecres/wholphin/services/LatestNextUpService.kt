@@ -8,8 +8,8 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.util.LocalDateTimeSerializer
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.supportItemKinds
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Semaphore
@@ -143,14 +143,14 @@ class LatestNextUpService
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
         ): List<BaseItem> =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val start = System.currentTimeMillis()
                 val semaphore = Semaphore(3)
                 val deferred =
                     nextUp
                         .filter { it.data.seriesId != null }
                         .map { item ->
-                            async(Dispatchers.IO) {
+                            async(WholphinDispatchers.IO) {
                                 try {
                                     semaphore.withPermit {
                                         datePlayedService.getLastPlayed(item)

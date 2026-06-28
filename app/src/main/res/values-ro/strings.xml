@@ -42,8 +42,6 @@
     <string name="no_update_available">Nu este disponibilă nicio actualizare</string>
     <plurals name="movies">
         <item quantity="one">Filme</item>
-        <item quantity="few"/>
-        <item quantity="other"/>
     </plurals>
     <string name="library">Librărie</string>
     <string name="go_to">Mergi la</string>
@@ -55,8 +53,6 @@
     <string name="mark_watched">Marchează ca vizionat</string>
     <plurals name="people">
         <item quantity="one">Persoane</item>
-        <item quantity="few"/>
-        <item quantity="other"/>
     </plurals>
     <string name="play_count">Număr de redări</string>
     <string name="more">Mai mult</string>
@@ -215,8 +211,6 @@
     <string name="tv_seasons">Sezoane</string>
     <plurals name="tv_shows">
         <item quantity="one">Seriale TV</item>
-        <item quantity="few"/>
-        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Interfață</string>
     <string name="unknown">Necunoscut</string>
@@ -228,8 +222,6 @@
     <string name="one_click_pause">Pauză cu un click</string>
     <plurals name="interviews">
         <item quantity="one">Interviuri</item>
-        <item quantity="few"/>
-        <item quantity="other"/>
     </plurals>
     <string name="background">Fundal</string>
     <plurals name="downloads">
@@ -329,8 +321,6 @@
     <string name="top_unwatched">Cele mai bine cotate, nevizionate</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <string name="play_with_transcoding">Redă cu transcodare</string>
     <string name="media_information">Informații media</string>
@@ -338,31 +328,21 @@
     <string name="add_to_playlist">Adaugă în lista de redare</string>
     <plurals name="other_extras">
         <item quantity="one">Altele</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">În spatele scenelor</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Melodii tematice</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Scene șterse</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <string name="official_rating">Evaluare parentală</string>
     <string name="runtime_sort">Timp de execuție</string>
     <string name="extras_title">Extra</string>
     <plurals name="clips">
         <item quantity="one">Clipuri</item>
-        <item quantity="few"></item>
-        <item quantity="other"></item>
     </plurals>
     <string name="favorite_items_title">%s favorit</string>
     <string name="app_theme">Temă aplicație</string>

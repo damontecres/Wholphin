@@ -141,6 +141,7 @@ message SubtitlePreferences{
   int32 margin = 11;
   int32 edge_thickness = 12;
   int32 image_subtitle_opacity = 13;
+  bool use_separate_hdr = 14;
 }
 
 message LiveTvPreferences {
@@ -211,6 +212,11 @@ message MusicPreferences {
   bool show_backdrop = 4;
 }
 
+message ExperimentalPreferences {
+  bool enabled = 1;
+  bool video_tunneling_enabled = 2;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
@@ -228,4 +234,5 @@ message AppPreferences {
   bool sign_in_automatically = 11;
   PhotoPreferences photo_preferences = 12;
   MusicPreferences music_preferences = 13;
+  ExperimentalPreferences experimental_preferences = 14;
 }

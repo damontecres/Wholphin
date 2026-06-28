@@ -57,9 +57,9 @@ import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -317,7 +317,7 @@ class NavDrawerPreferencesViewModel
                     return@launchDefault
                 }
                 val navDrawerPins =
-                    withContext(Dispatchers.IO) {
+                    withContext(WholphinDispatchers.IO) {
                         serverPreferencesDao
                             .getNavDrawerPinnedItems(user)
                             .associateBy { it.itemId }

@@ -37,10 +37,14 @@ class TabViewModel
         private val rememberedTabService: RememberedTabService,
         private val backdropService: BackdropService,
         @param:Assisted private val itemId: String,
+        @param:Assisted private val tabCount: Int,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
-            fun create(itemId: String): TabViewModel
+            fun create(
+                itemId: String,
+                tabCount: Int,
+            ): TabViewModel
         }
 
         private val _state = MutableStateFlow<Int>(UNSET)
@@ -52,7 +56,9 @@ class TabViewModel
                     if (shouldRememberTabs()) {
                         Timber.v("Getting remembered tab for %s", itemId)
                         try {
-                            rememberedTabService.getRememberedTab(itemId)
+                            rememberedTabService
+                                .getRememberedTab(itemId)
+                                ?.coerceIn(0..<tabCount)
                         } catch (ex: Exception) {
                             Timber.e(ex, "Error getting tab for %s", itemId)
                             null
@@ -106,12 +112,13 @@ fun TabbedPage(
     showTabs: Boolean = true,
     viewModel: TabViewModel =
         hiltViewModel<TabViewModel, TabViewModel.Factory>(
-            key = itemId,
-            creationCallback = { it.create(itemId) },
+            key = "$itemId-${tabs.size}",
+            creationCallback = { it.create(itemId, tabs.size) },
         ),
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
     val selectedTabIndex by viewModel.state.collectAsState()
+
     Column(
         modifier = modifier,
     ) {

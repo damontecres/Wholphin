@@ -14,6 +14,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.DiscoverSort
+import com.github.damontecres.wholphin.data.filter.DiscoverSortAndDirection
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.flip
@@ -114,4 +116,95 @@ fun SortAndDirection.toAnnotatedString() =
         }
         append(" ")
         append(stringResource(getStringRes(sort)))
+    }
+
+// TODO code duplicated from SortByButton
+@Composable
+fun DiscoverSortByButton(
+    sortOptions: List<DiscoverSort>,
+    current: DiscoverSortAndDirection,
+    onSortChange: (DiscoverSortAndDirection) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val currentSort = current.sort
+    val currentDirection = current.direction
+    var sortByDropDown by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        TextButton(
+            onClick = { sortByDropDown = true },
+            onLongClick = {
+                onSortChange.invoke(current.flip())
+            },
+        ) {
+            Text(
+                text = current.toAnnotatedString(),
+            )
+        }
+
+        DropdownMenu(
+            expanded = sortByDropDown,
+            onDismissRequest = { sortByDropDown = false },
+        ) {
+            sortOptions
+//                .sortedBy { it.name }
+                .forEach { sortOption ->
+                    TvDropdownMenuItem(
+                        leadingIcon = {
+                            if (sortOption == currentSort) {
+                                if (currentDirection == SortOrder.ASCENDING) {
+                                    Text(
+                                        text = stringResource(R.string.fa_caret_up),
+                                        fontFamily = FontAwesome,
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.fa_caret_down),
+                                        fontFamily = FontAwesome,
+                                    )
+                                }
+                            }
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(sortOption.stringRes),
+                            )
+                        },
+                        onClick = {
+                            sortByDropDown = false
+                            val newDirection =
+                                if (currentSort == sortOption) {
+                                    currentDirection.flip()
+                                } else {
+                                    currentDirection
+                                }
+                            onSortChange.invoke(
+                                DiscoverSortAndDirection(
+                                    sortOption,
+                                    newDirection,
+                                ),
+                            )
+                        },
+                    )
+                }
+        }
+    }
+}
+
+@Composable
+fun DiscoverSortAndDirection.toAnnotatedString() =
+    buildAnnotatedString {
+        withStyle(SpanStyle(fontFamily = FontAwesome)) {
+            append(
+                stringResource(
+                    if (direction == SortOrder.ASCENDING) {
+                        R.string.fa_caret_up
+                    } else {
+                        R.string.fa_caret_down
+                    },
+                ),
+            )
+        }
+        append(" ")
+        append(stringResource(sort.stringRes))
     }

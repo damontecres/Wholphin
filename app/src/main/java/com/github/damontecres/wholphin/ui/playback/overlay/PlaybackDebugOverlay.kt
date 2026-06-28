@@ -36,7 +36,7 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.TrackSupportReason
 import com.github.damontecres.wholphin.util.TrackType
-import kotlinx.coroutines.Dispatchers
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -90,7 +90,7 @@ fun PlaybackDebugOverlay(
         )
 
     val memoryUsed by produceState("") {
-        withContext(Dispatchers.Default) {
+        withContext(WholphinDispatchers.Default) {
             while (isActive) {
                 val runtime = Runtime.getRuntime()
                 val total = runtime.totalMemory()

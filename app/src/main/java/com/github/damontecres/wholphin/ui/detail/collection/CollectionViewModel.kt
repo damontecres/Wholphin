@@ -40,12 +40,12 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -210,7 +210,7 @@ class CollectionViewModel
                 supervisorScope {
                     val jobs =
                         typesInCollection.map { type ->
-                            async(Dispatchers.IO) {
+                            async(WholphinDispatchers.IO) {
                                 val title = ResStringProvider(formatTypeName(type))
                                 val result =
                                     try {
@@ -359,7 +359,7 @@ class CollectionViewModel
             )
 
         suspend fun letterPosition(letter: Char): Int =
-            withContext(Dispatchers.IO) {
+            withContext(WholphinDispatchers.IO) {
                 val sort = state.value.sortAndDirection
                 val filter = state.value.itemFilter
                 val request =
@@ -387,7 +387,7 @@ class CollectionViewModel
             itemId: UUID,
             played: Boolean,
             position: RowColumn?,
-        ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        ) = viewModelScope.launch(WholphinDispatchers.IO + ExceptionHandler()) {
             favoriteWatchManager.setWatched(itemId, played)
             if (itemId == state.value.collection?.id) {
                 refreshCollection()
@@ -400,7 +400,7 @@ class CollectionViewModel
             itemId: UUID,
             favorite: Boolean,
             position: RowColumn?,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             if (itemId == state.value.collection?.id) {
                 refreshCollection()

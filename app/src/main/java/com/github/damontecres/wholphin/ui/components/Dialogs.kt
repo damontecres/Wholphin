@@ -70,6 +70,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
 import com.github.damontecres.wholphin.ui.playback.isDown
 import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -77,6 +78,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
@@ -639,6 +641,16 @@ fun chooseVersionParams(
                                 }.joinToString(", ")
                             }
                         Text(text)
+                    },
+                    trailingContent = {
+                        val runtime =
+                            remember {
+                                source.runTimeTicks
+                                    ?.ticks
+                                    ?.roundMinutes
+                                    .toString()
+                            }
+                        Text(runtime)
                     },
                     onClick = { onClick.invoke(index) },
                 )

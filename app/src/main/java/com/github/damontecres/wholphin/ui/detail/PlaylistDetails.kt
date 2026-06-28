@@ -96,7 +96,7 @@ import com.github.damontecres.wholphin.ui.detail.music.MusicViewModel
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
-import com.github.damontecres.wholphin.ui.getTimeFormatter
+import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -109,12 +109,12 @@ import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -318,14 +318,14 @@ class PlaylistViewModel
         fun setWatched(
             itemId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
         }
 
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
         }
 
@@ -805,10 +805,11 @@ fun PlaylistItem(
         trailingContent = {
             item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
                 val now by LocalClock.current.now
+                val context = LocalContext.current
                 val endTimeStr =
-                    remember(item, now) {
+                    remember(item, now, context) {
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
-                        getTimeFormatter().format(endTime)
+                        formatTime(context, endTime)
                     }
                 val resources = LocalResources.current
                 val durationText = remember(duration) { resources.formatDuration(duration) }

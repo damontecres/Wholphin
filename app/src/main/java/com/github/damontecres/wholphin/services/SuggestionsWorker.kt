@@ -9,9 +9,9 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -81,7 +81,7 @@ class SuggestionsWorker
                         .takeIf { it > 0 }
                         ?: AppPreference.HomePageItems.defaultValue.toInt()
 
-                val context = Dispatchers.IO.limitedParallelism(2, "fetchSuggestions")
+                val context = WholphinDispatchers.IO.limitedParallelism(2, "fetchSuggestions")
                 if (requestedParentId != null && requestedItemKind != null) {
                     Timber.d(
                         "Fetching on-demand suggestions for parent=%s kind=%s",
@@ -128,7 +128,7 @@ class SuggestionsWorker
                     supervisorScope {
                         supportedViews
                             .map { view ->
-                                async(Dispatchers.IO) {
+                                async(WholphinDispatchers.IO) {
                                     runCatching {
                                         Timber.v("Fetching suggestions for parent=%s kind=%s", view.id, view.itemKind)
                                         fetchAndCacheSuggestions(
@@ -293,7 +293,7 @@ class SuggestionsWorker
                             limit = freshLimit,
                         )
                     }
-                withContext(Dispatchers.Default) {
+                withContext(WholphinDispatchers.Default) {
                     val contextual = contextualDeferred.await()
                     val random = randomDeferred.await()
                     val fresh = freshDeferred.await()

@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
@@ -20,9 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -40,7 +43,11 @@ import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PartiallyAvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PendingIndicator
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.LoadingState
 
 data class RequestSeason(
     val season: Season,
@@ -49,14 +56,16 @@ data class RequestSeason(
 
 @Composable
 fun RequestSeasons(
+    id: Int,
     title: String,
     seasons: List<RequestSeason>,
-    onSubmit: (Set<Int>, Boolean) -> Unit,
+    data: SeerrRequestData,
     request4kEnabled: Boolean,
-    modifier: Modifier,
+    onSubmit: (TvRequest) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val allSeasonNumbers = remember(seasons) { seasons.mapNotNull { it.season.seasonNumber }.toSet() }
-    val selected =
+    val selectedSeasons =
         remember {
             mutableStateSetOf<Int>(
                 *seasons
@@ -69,39 +78,74 @@ fun RequestSeasons(
                     }.toTypedArray(),
             )
         }
-    var is4k by remember { mutableStateOf(false) }
+    var is4k by remember { mutableStateOf(request4kEnabled) }
+
+    var profile by remember(is4k) {
+        mutableStateOf(
+            if (is4k) {
+                data.profiles4k.firstOrNull { it.default } ?: data.profiles4k.firstOrNull()
+            } else {
+                data.profiles.firstOrNull { it.default } ?: data.profiles.firstOrNull()
+            },
+        )
+    }
+    var folder by remember(is4k) {
+        mutableStateOf(
+            if (is4k) {
+                data.rootFolders4k.firstOrNull { it.default } ?: data.rootFolders4k.firstOrNull()
+            } else {
+                data.rootFolders.firstOrNull { it.default } ?: data.rootFolders.firstOrNull()
+            },
+        )
+    }
+    val profiles = remember(is4k, data) { if (is4k) data.profiles4k else data.profiles }
+    val folders = remember(is4k, data) { if (is4k) data.rootFolders4k else data.rootFolders }
+
+    fun submit() {
+        onSubmit.invoke(
+            TvRequest(
+                data = data,
+                tvId = id,
+                seasons = selectedSeasons.toList(),
+                is4k = is4k,
+                profileId = profile?.id,
+                folder = folder?.path,
+            ),
+        )
+    }
+
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier,
         )
-        LazyColumn {
+        LazyColumn(
+            modifier = Modifier,
+        ) {
             item {
-                val isSelected = selected.containsAll(allSeasonNumbers)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                 ) {
-                    ClickSwitch(
-                        label = stringResource(R.string.select_all),
-                        checked = isSelected,
-                        onClick = {
-                            if (isSelected) {
-                                selected.removeAll(allSeasonNumbers)
-                            } else {
-                                selected.addAll(allSeasonNumbers)
-                            }
-                        },
-                    )
+                    if (request4kEnabled) {
+                        ClickSwitch(
+                            label = stringResource(R.string.request_4k),
+                            checked = is4k,
+                            onClick = { is4k = !is4k },
+                        )
+                    }
                     Button(
-                        onClick = { onSubmit.invoke(selected, is4k) },
+                        onClick = ::submit,
+                        enabled = selectedSeasons.isNotEmpty(),
                     ) {
                         Text(
                             text = stringResource(R.string.submit),
@@ -109,39 +153,80 @@ fun RequestSeasons(
                     }
                 }
             }
-            if (request4kEnabled) {
-                item {
-                    ClickSwitch(
-                        label = stringResource(R.string.request_4k),
-                        checked = is4k,
-                        onClick = { is4k = !is4k },
-                    )
+            if (profiles.isNotEmpty()) {
+                profile?.let {
+                    item {
+                        ChooseProfile(
+                            selectedProfile = it,
+                            profiles = profiles,
+                            onClickProfile = { profile = it },
+                            modifier = Modifier,
+                        )
+                    }
                 }
+            }
+            if (folders.isNotEmpty()) {
+                folder?.let {
+                    item {
+                        ChooseFolder(
+                            selectedFolder = it,
+                            folders = folders,
+                            onClickFolder = { folder = it },
+                            modifier = Modifier,
+                        )
+                    }
+                }
+            }
+            item {
+                HorizontalDivider()
+            }
+            item {
+                Text(
+                    text = stringResource(R.string.tv_seasons),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                val isSelected = selectedSeasons.containsAll(allSeasonNumbers)
+                ClickSwitch(
+                    label = stringResource(R.string.select_all),
+                    checked = isSelected,
+                    onClick = {
+                        if (isSelected) {
+                            selectedSeasons.removeAll(allSeasonNumbers)
+                        } else {
+                            selectedSeasons.addAll(allSeasonNumbers)
+                        }
+                    },
+                )
             }
             itemsIndexed(seasons) { index, season ->
                 val seasonNumber = season.season.seasonNumber
-                val isSelected = seasonNumber in selected
+                val isSelected = seasonNumber in selectedSeasons
                 SeasonListItem(
                     season = season,
                     selected = isSelected,
                     onClick = {
                         if (isSelected) {
-                            selected.remove(seasonNumber)
+                            selectedSeasons.remove(seasonNumber)
                         } else {
-                            seasonNumber?.let { selected.add(it) }
+                            seasonNumber?.let { selectedSeasons.add(it) }
                         }
                     },
                     modifier = Modifier,
                 )
             }
-            if (seasons.size > 7) {
+            if (seasons.size > 3) {
                 item {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                     ) {
                         Button(
-                            onClick = { onSubmit.invoke(selected, is4k) },
+                            onClick = ::submit,
+                            enabled = selectedSeasons.isNotEmpty(),
                         ) {
                             Text(
                                 text = stringResource(R.string.submit),
@@ -237,7 +322,7 @@ private fun ClickSurface(
 }
 
 @Composable
-private fun ClickSwitch(
+fun ClickSwitch(
     label: String,
     checked: Boolean,
     onClick: () -> Unit,
@@ -267,22 +352,46 @@ private fun ClickSwitch(
 
 @Composable
 fun RequestSeasonsDialog(
+    id: Int,
     title: String,
+    loading: LoadingState,
+    data: SeerrRequestData,
     seasons: List<RequestSeason>,
     request4kEnabled: Boolean,
-    onSubmit: (Set<Int>, Boolean) -> Unit,
+    onSubmit: (TvRequest) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     BasicDialog(
         onDismissRequest = onDismissRequest,
     ) {
-        RequestSeasons(
-            title = title,
-            seasons = seasons,
-            request4kEnabled = request4kEnabled,
-            onSubmit = onSubmit,
-            modifier = Modifier.padding(16.dp),
-        )
+        when (loading) {
+            is LoadingState.Error -> {
+                ErrorMessage(loading, Modifier)
+            }
+
+            LoadingState.Loading,
+            LoadingState.Pending,
+            -> {
+                LoadingPage(Modifier)
+            }
+
+            LoadingState.Success -> {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                RequestSeasons(
+                    id = id,
+                    title = title,
+                    data = data,
+                    seasons = seasons,
+                    request4kEnabled = request4kEnabled,
+                    onSubmit = onSubmit,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .focusRequester(focusRequester),
+                )
+            }
+        }
     }
 }
 
@@ -313,10 +422,23 @@ fun RequestSeasonsPreview() {
 
     WholphinTheme {
         RequestSeasons(
+            id = 1,
             title = "Series title",
             seasons = seasons,
+            data =
+                SeerrRequestData(
+                    profiles4k =
+                        listOf(
+                            SeerrProfile(1, "HD", true),
+                            SeerrProfile(2, "Ultra HD", false),
+                        ),
+                    rootFolders4k =
+                        listOf(
+                            SeerrRootFolder(1, "/tv", "400GB", true),
+                        ),
+                ),
             request4kEnabled = true,
-            onSubmit = { _, _ -> },
+            onSubmit = { },
             modifier = Modifier.width(400.dp),
         )
     }

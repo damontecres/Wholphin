@@ -103,9 +103,9 @@ import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -253,7 +253,7 @@ class SearchViewModel
         }
 
         private fun searchCombined(query: String) {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 try {
                     val request =
                         GetItemsRequest(
@@ -477,7 +477,7 @@ fun SearchPage(
     ) {
         if (!searchClicked) return@LaunchedEffect
 
-        withContext(Dispatchers.IO) {
+        withContext(WholphinDispatchers.IO) {
             // Want to focus on the first successful row after all of the ones before it are finished searching
             val results =
                 if (isLibraryTab) {

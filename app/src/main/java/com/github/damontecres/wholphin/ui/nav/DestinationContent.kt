@@ -405,6 +405,8 @@ fun DestinationContent(
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             DiscoverRequestGrid(
                 destination = destination,
+                showTitle = true,
+                positionCallback = { _, _ -> },
                 modifier = modifier,
             )
         }
