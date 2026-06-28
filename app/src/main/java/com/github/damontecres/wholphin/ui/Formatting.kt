@@ -245,7 +245,7 @@ fun formatTypeName(type: BaseItemKind): Int =
     }
 
 /**
- * Format a [Duration] into a localized "Xh Xm" / "Xm Xs" / "Xs" string using string resources.
+ * Format a [Duration] into a localized "Xh Ym Zs" string using string resources.
  */
 fun Resources.formatDuration(duration: Duration): String =
     duration.toComponents { hours, minutes, seconds, _ ->

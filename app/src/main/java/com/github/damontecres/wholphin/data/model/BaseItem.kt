@@ -159,17 +159,18 @@ data class BaseItem(
                                     } else {
                                         data.productionYear?.let { add(it.toString()) }
                                     }
+                                    val resources = WholphinApplication.instance.resources
                                     data.runTimeTicks
                                         ?.ticks
                                         ?.roundMinutes
-                                        ?.let { add(WholphinApplication.instance.resources.formatDuration(it)) }
+                                        ?.let { add(resources.formatDuration(it)) }
                                     data.timeRemaining
                                         ?.roundMinutes
                                         ?.let {
                                             add(
-                                                WholphinApplication.instance.resources.getString(
+                                                resources.getString(
                                                     R.string.time_left,
-                                                    WholphinApplication.instance.resources.formatDuration(it),
+                                                    resources.formatDuration(it),
                                                 ),
                                             )
                                         }

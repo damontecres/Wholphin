@@ -810,9 +810,11 @@ fun PlaylistItem(
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
                         getTimeFormatter().format(endTime)
                     }
+                val resources = LocalResources.current
+                val durationText = remember(duration) { resources.formatDuration(duration) }
                 Column {
                     Text(
-                        text = LocalResources.current.formatDuration(duration),
+                        text = durationText,
                     )
                     if (item.type != BaseItemKind.AUDIO) {
                         Text(
