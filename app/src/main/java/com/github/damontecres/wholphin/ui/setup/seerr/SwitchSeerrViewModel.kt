@@ -3,14 +3,13 @@ package com.github.damontecres.wholphin.ui.setup.seerr
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.services.SeerrServerRepository
-import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,7 +26,6 @@ class SwitchSeerrViewModel
     constructor(
         @param:ApplicationContext private val context: Context,
         private val seerrServerRepository: SeerrServerRepository,
-        private val seerrService: SeerrService,
         private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val currentUser = serverRepository.currentUserFlow
@@ -35,16 +33,18 @@ class SwitchSeerrViewModel
 
         val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
 
-        val prefilledServerUrl = MutableStateFlow<String?>(null)
+        val prefilledServerUrl = MutableStateFlow<DataLoadingState<String>>(DataLoadingState.Pending)
 
         fun refreshPrefilledServerUrl() {
-            if (!BuildConfig.DISCOVER_ENABLED) {
-                prefilledServerUrl.update { null }
-                return
-            }
             viewModelScope.launchIO {
-                prefilledServerUrl.update {
-                    seerrServerRepository.findPrefillServerUrlForCurrentJellyfinUser()
+                prefilledServerUrl.update { DataLoadingState.Loading }
+                try {
+                    prefilledServerUrl.update {
+                        DataLoadingState.Success(seerrServerRepository.findPrefillServerUrlForCurrentJellyfinUser())
+                    }
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Failed to load Seerr prefilled URL")
+                    prefilledServerUrl.update { DataLoadingState.Error(ex) }
                 }
             }
         }

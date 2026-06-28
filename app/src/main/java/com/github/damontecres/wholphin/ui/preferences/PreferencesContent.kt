@@ -651,14 +651,35 @@ fun PreferencesContent(
                         seerrDialogMode = SeerrDialogMode.None
                     }
                 }
-                AddSeerServerDialog(
-                    currentUsername = currentUser?.name,
-                    currentUrl = prefilledUrl,
-                    status = status,
-                    onSubmit = seerrVm::submitServer,
-                    onResetStatus = seerrVm::resetStatus,
-                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
-                )
+                when (val urlState = prefilledUrl) {
+                    DataLoadingState.Pending,
+                    DataLoadingState.Loading,
+                    -> {
+                        LoadingPage()
+                    }
+
+                    is DataLoadingState.Success -> {
+                        AddSeerServerDialog(
+                            currentUsername = currentUser?.name,
+                            currentUrl = urlState.data,
+                            status = status,
+                            onSubmit = seerrVm::submitServer,
+                            onResetStatus = seerrVm::resetStatus,
+                            onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                        )
+                    }
+
+                    is DataLoadingState.Error -> {
+                        AddSeerServerDialog(
+                            currentUsername = currentUser?.name,
+                            currentUrl = "",
+                            status = status,
+                            onSubmit = seerrVm::submitServer,
+                            onResetStatus = seerrVm::resetStatus,
+                            onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                        )
+                    }
+                }
             }
 
             is SeerrDialogMode.Error -> {

@@ -4,28 +4,28 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class SeerrPluginLoginType {
+sealed interface SeerrPluginLogin {
     @SerialName("None")
-    NONE,
+    @Serializable
+    data object None : SeerrPluginLogin
 
     @SerialName("ApiKey")
-    API_KEY,
+    @Serializable
+    data class ApiKey(
+        val apiKey: String,
+    ) : SeerrPluginLogin
 
     @SerialName("Local")
-    LOCAL,
+    @Serializable
+    data class Local(
+        val local: SeerrPluginLocalLogin,
+    ) : SeerrPluginLogin
 }
 
 @Serializable
 data class SeerrPluginLocalLogin(
-    val username: String? = null,
-    val password: String? = null,
-)
-
-@Serializable
-data class SeerrPluginLogin(
-    val type: SeerrPluginLoginType = SeerrPluginLoginType.NONE,
-    val apiKey: String? = null,
-    val local: SeerrPluginLocalLogin? = null,
+    val username: String,
+    val password: String,
 )
 
 @Serializable
