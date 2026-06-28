@@ -394,9 +394,9 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
+                    if (!value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
                     prefs.updatePlaybackOverrides {
                         ac3Supported = value
-                        if (!value) preferAc3Surround = false
                     }
                 },
                 summaryOn = R.string.enabled,
@@ -406,9 +406,9 @@ sealed interface AppPreference<Pref, T> {
             AppSwitchPreference<AppPreferences>(
                 title = R.string.prefer_ac3_for_surround,
                 defaultValue = true,
-                getter = { it.playbackPreferences.overrides.preferAc3Surround },
+                getter = { it.experimentalPreferences.preferAc3Surround },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides {
+                    prefs.updateExperimentalPreferences {
                         preferAc3Surround = value
                     }
                 },
@@ -433,9 +433,9 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
                 setter = { prefs, value ->
+                    if (value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
                     prefs.updatePlaybackOverrides {
                         downmixStereo = value
-                        if (value) preferAc3Surround = false
                     }
                 },
                 summaryOn = R.string.enabled,

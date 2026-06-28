@@ -647,7 +647,7 @@ class PlaybackViewModel
                             deviceProfile =
                                 if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
                                     deviceProfileService.getOrCreateDeviceProfile(
-                                        preferences.appPreferences.playbackPreferences,
+                                        preferences.appPreferences,
                                         serverRepository.currentServer?.serverVersion,
                                     )
                                 } else {
@@ -858,7 +858,7 @@ class PlaybackViewModel
 
                 // TODO Better way to handle unsupported types in general is needed
                 // This is a workaround for switching to a non AC3 track when the user wants audio transcoded to AC3
-                if (preferences.appPreferences.playbackPreferences.overrides.preferAc3Surround && audioIndex != null) {
+                if (preferences.appPreferences.experimentalPreferences.preferAc3Surround && audioIndex != null) {
                     currentPlayback.mediaSourceInfo.mediaStreams
                         .orEmpty()
                         .firstOrNull { it.index == audioIndex }

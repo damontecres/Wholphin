@@ -57,7 +57,6 @@ message PlaybackOverrides{
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
-  bool prefer_ac3_surround = 9;
 }
 
 message PlaybackPreferences {
@@ -216,6 +215,7 @@ message MusicPreferences {
 message ExperimentalPreferences {
   bool enabled = 1;
   bool video_tunneling_enabled = 2;
+  bool prefer_ac3_surround = 3;
 }
 
 message AppPreferences {
