@@ -654,4 +654,8 @@
     <string name="popularity">Populaarsus</string>
     <string name="production_status">Tootmise olek</string>
     <string name="different_for_hdr">Kasuta HDR-i puhul muud stiili</string>
+    <string name="experimental_settings">Katselised seadistused</string>
+    <string name="confirm_enable_experimental_title">Kas võtad katselised seadistused kasutusele?</string>
+    <string name="confirm_enable_experimental_body">Katselised seadistused ei pruugi olla päris töökindlad!\n\n Lisaks võib arendaja neid omal äranägemisel muuta või sootuks eemaldada.</string>
+    <string name="video_tunneling">Video tunneldus</string>
 </resources>
