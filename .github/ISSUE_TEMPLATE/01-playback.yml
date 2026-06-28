@@ -1,6 +1,5 @@
 name: "Playback Problem"
 description: Report an issue with playback
-title: ""
 labels: [
   "bug", "playback"
 ]
