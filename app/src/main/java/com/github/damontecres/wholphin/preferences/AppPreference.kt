@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 import com.github.damontecres.wholphin.util.DebugLogTree
+import java.util.Locale
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -119,18 +120,25 @@ sealed interface AppPreference<Pref, T> {
                 title = R.string.hide_controller_timeout,
                 defaultValue = 5000,
                 min = 500,
-                max = 15.seconds.inWholeMilliseconds,
+                max = 15_100, // Max 15 seconds but 15.1 is treated as never
                 interval = 100,
-                getter = { it.playbackPreferences.controllerTimeoutMs },
+                getter = { it.playbackPreferences.controllerTimeoutMs.coerceIn(500, 15_100) },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { controllerTimeoutMs = value }
+                    val toSave =
+                        if (value > 15_000) {
+                            Long.MAX_VALUE
+                        } else {
+                            value
+                        }
+                    prefs.updatePlaybackPreferences { controllerTimeoutMs = toSave }
                 },
                 summarizer = { value ->
                     value?.let {
-                        WholphinApplication.instance.getString(
-                            R.string.decimal_seconds,
-                            value / 1000.0,
-                        )
+                        if (value > 15_000) {
+                            WholphinApplication.instance.getString(R.string.next_up_never)
+                        } else {
+                            String.format(Locale.getDefault(), "%.2fs", value / 1000.0)
+                        }
                     }
                 },
             )
@@ -277,10 +285,14 @@ sealed interface AppPreference<Pref, T> {
                     }
                 },
                 summarizer = { value ->
-                    if (value == 0L) {
+                    if (value == null || value == 0L) {
                         WholphinApplication.instance.getString(R.string.disabled)
                     } else {
-                        "${value}s"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     }
                 },
             )
