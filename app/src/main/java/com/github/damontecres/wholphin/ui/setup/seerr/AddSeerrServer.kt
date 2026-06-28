@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 fun AddSeerrServerApiKey(
     onSubmit: (url: String, apiKey: String) -> Unit,
     status: LoadingState,
+    initialUrl: String = "",
     modifier: Modifier = Modifier,
 ) {
     var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
@@ -54,7 +55,7 @@ fun AddSeerrServerApiKey(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember(initialUrl) { mutableStateOf(initialUrl) }
         var apiKey by remember { mutableStateOf("") }
 
         val focusRequester = remember { FocusRequester() }
@@ -155,6 +156,7 @@ fun AddSeerrServerUsername(
     onSubmit: (url: String, username: String, password: String) -> Unit,
     username: String,
     status: LoadingState,
+    initialUrl: String = "",
     modifier: Modifier = Modifier,
 ) {
     var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
@@ -166,7 +168,7 @@ fun AddSeerrServerUsername(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember(initialUrl) { mutableStateOf(initialUrl) }
         var username by remember { mutableStateOf(username) }
         var password by remember { mutableStateOf("") }
 
