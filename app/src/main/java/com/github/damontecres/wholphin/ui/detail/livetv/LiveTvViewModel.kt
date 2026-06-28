@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -643,18 +644,16 @@ data class TvProgram(
             append(time)
 
             if (!isFake) {
+                val resources = WholphinApplication.instance.resources
                 dot()
-                duration
-                    .roundMinutes
-                    .toString()
-                    .let(::append)
+                append(resources.formatDuration(duration.roundMinutes))
                 if (now.isAfter(start) && now.isBefore(end)) {
                     dot()
                     java.time.Duration
                         .between(now, end)
                         .toKotlinDuration()
                         .roundMinutes
-                        .let { append("$it left") }
+                        .let { append(resources.getString(R.string.time_left, resources.formatDuration(it))) }
                 }
                 seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let {
                     dot()

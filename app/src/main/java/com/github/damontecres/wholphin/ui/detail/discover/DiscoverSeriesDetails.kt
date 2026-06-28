@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -449,8 +450,9 @@ fun DiscoverSeriesDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 4.dp
+            val resources = LocalResources.current
             val details =
-                remember(series, rating) {
+                remember(series, rating, resources) {
                     buildList {
                         series.firstAirDate?.let(::add)
                         series.episodeRunTime
@@ -458,8 +460,7 @@ fun DiscoverSeriesDetailsHeader(
                             ?.takeIf { !it.isNaN() && it > 0 }
                             ?.minutes
                             ?.roundMinutes
-                            ?.toString()
-                            ?.let(::add)
+                            ?.let { add(resources.formatDuration(it)) }
                         // TODO
                     }.let {
                         listToDotString(
