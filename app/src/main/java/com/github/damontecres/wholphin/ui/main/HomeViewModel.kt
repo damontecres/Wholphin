@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.withLocalPlayback
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
@@ -17,6 +18,7 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PlaybackResultCache
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
@@ -64,6 +66,7 @@ class HomeViewModel
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
         private val latestNextUpService: LatestNextUpService,
+        private val playbackResultCache: PlaybackResultCache,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeState.EMPTY)
         val state: StateFlow<HomeState> = _state
@@ -174,10 +177,13 @@ class HomeViewModel
                                     }
                                 Timber.v("Got row data index=%s", rowIndex)
                                 remaining.removeIf { it.index == rowIndex }
+                                // Patch outside _state.update: the cache take() has a side effect
+                                // and update {} may re-run its block on concurrent updates.
+                                val patchedRow = patchWatchingRow(rowData, playbackResultCache::take)
                                 _state.update { state ->
                                     val newRows =
                                         state.homeRows.toMutableList().apply {
-                                            set(rowIndex, rowData)
+                                            set(rowIndex, patchedRow)
                                         }
                                     state.copy(
                                         homeRows = newRows,
@@ -191,7 +197,7 @@ class HomeViewModel
                                 )
                             }
                         } else {
-                            val rows = deferred.awaitAll()
+                            val rows = deferred.awaitAll().map { patchWatchingRow(it, playbackResultCache::take) }
                             Timber.v("Got all rows")
                             _state.update {
                                 it.copy(
@@ -311,3 +317,32 @@ private fun isWatchingRow(row: HomeRowConfig) =
     row is HomeRowConfig.ContinueWatching ||
         row is HomeRowConfig.NextUp ||
         row is HomeRowConfig.ContinueWatchingCombined
+
+/**
+ * Applies locally-known playback outcomes (race-free) to a freshly fetched "continue watching"
+ * row: the server may not have processed the playback-stopped report yet, so a just-watched item
+ * would otherwise show a stale resume bar or none at all. Finished items are dropped from the row;
+ * partially-watched items get their resume position/percentage refreshed. Non-watching rows, null
+ * items, and items without a known result are returned unchanged.
+ *
+ * [takeResult] returns (and consumes) the locally-known result for an item id, or null if none.
+ */
+internal fun patchWatchingRow(
+    row: HomeRowLoadingState,
+    takeResult: (UUID) -> PlaybackResultCache.Result?,
+): HomeRowLoadingState {
+    if (row !is HomeRowLoadingState.Success) return row
+    val rowType = row.rowType ?: return row
+    if (!isWatchingRow(rowType)) return row
+    val newItems =
+        row.items.flatMap { item ->
+            if (item == null) return@flatMap listOf<BaseItem?>(null)
+            val result = takeResult(item.id) ?: return@flatMap listOf<BaseItem?>(item)
+            if (result.played) {
+                emptyList()
+            } else {
+                listOf<BaseItem?>(item.withLocalPlayback(result.positionTicks, result.played))
+            }
+        }
+    return row.copy(items = newItems)
+}
