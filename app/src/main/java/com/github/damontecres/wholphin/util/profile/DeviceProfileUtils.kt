@@ -149,32 +149,45 @@ fun createDeviceProfile(
             copyTimestamps = false
             enableSubtitlesInManifest = true
         }
-    }
-    transcodingProfile {
-        type = DlnaProfileType.VIDEO
-        context = EncodingContext.STREAMING
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        if (supportsHevc) videoCodec(Codec.Video.HEVC)
-        videoCodec(Codec.Video.H264)
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
 
-        audioCodec(*allowedAudioCodecs)
+            audioCodec(*allowedAudioCodecs)
 
-        copyTimestamps = false
-        enableSubtitlesInManifest = true
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
     }
 
     // Audio
-    transcodingProfile {
-        type = DlnaProfileType.AUDIO
-        context = EncodingContext.STREAMING
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        audioCodec(Codec.Audio.AAC)
+            audioCodec(Codec.Audio.AC3)
+        }
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            audioCodec(Codec.Audio.AAC)
+        }
     }
 
     // / Direct play profiles
@@ -549,30 +562,24 @@ fun createDeviceProfile(
     }
 
     if (preferAc3ForSurround) {
-        codecProfile {
-            type = CodecType.VIDEO_AUDIO
-            codec = Codec.Audio.AAC
-
-            conditions {
-                ProfileConditionValue.AUDIO_PROFILE equals "none"
+        supportedAudioCodecs
+            .filterNot { it == Codec.Audio.AC3 }
+            .forEach { audioCodec ->
+                codecProfile {
+                    type = CodecType.VIDEO_AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+                codecProfile {
+                    type = CodecType.AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
             }
-
-            applyConditions {
-                ProfileConditionValue.AUDIO_CHANNELS greaterThanOrEquals 3
-            }
-        }
-        codecProfile {
-            type = CodecType.VIDEO_AUDIO
-            codec = Codec.Audio.OPUS
-
-            conditions {
-                ProfileConditionValue.AUDIO_PROFILE equals "none"
-            }
-
-            applyConditions {
-                ProfileConditionValue.AUDIO_CHANNELS greaterThanOrEquals 3
-            }
-        }
     }
 
     // Audio channel profile
