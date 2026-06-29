@@ -148,6 +148,7 @@ fun SeriesOverview(
             )
         }
 
+    // TODO move this to the viewmodel on position updates
     LaunchedEffect(position, state.episodes) {
         val focusedEpisode =
             (state.episodes as? EpisodeList.Success)
@@ -157,6 +158,7 @@ fun SeriesOverview(
         focusedEpisode?.let {
             viewModel.lookUpChosenTracks(it.id, it)
             viewModel.lookupPeopleInEpisode(it)
+            viewModel.resolveStrm(position.episodeRowIndex, it)
         }
     }
     val chosenStreams = state.chosenStreams
