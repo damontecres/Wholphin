@@ -51,12 +51,14 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
-          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
-          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
+          EXTENSIONS_USERNAME: "${{ secrets.EXTENSIONS_USERNAME }}"
+          EXTENSIONS_PASSWORD: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
           GRADLE_TARGETS="assembleDefaultDebug"
           if [ -n "$SIGNING_KEY" ]; then
             GRADLE_TARGETS="assembleDefaultRelease $GRADLE_TARGETS"
+            export ORG_GRADLE_PROJECT_WholphinExtensionsUsername="$EXTENSIONS_USERNAME"
+            export ORG_GRADLE_PROJECT_WholphinExtensionsPassword="$EXTENSIONS_PASSWORD"
           fi
           ./gradlew clean $GRADLE_TARGETS --no-daemon
 
