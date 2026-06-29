@@ -633,4 +633,8 @@
     <string name="popularity">熱門程度</string>
     <string name="production_status">製作狀態</string>
     <string name="different_for_hdr">HDR 使用不同的樣式</string>
+    <string name="video_tunneling">通道播放模式</string>
+    <string name="experimental_settings">實驗性設定</string>
+    <string name="confirm_enable_experimental_title">啟用實驗性設定？</string>
+    <string name="confirm_enable_experimental_body">實驗性設定可能不穩定！\n在後續版本中可能會被移除或變更。</string>
 </resources>
