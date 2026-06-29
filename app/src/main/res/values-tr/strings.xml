@@ -654,4 +654,8 @@
     <string name="popularity">Popülerlik</string>
     <string name="production_status">Yapım Durumu</string>
     <string name="different_for_hdr">HDR için farklı stil kullan</string>
+    <string name="experimental_settings">Deneysel Ayarlar</string>
+    <string name="confirm_enable_experimental_title">Deneysel ayarları açmak istiyor musun?</string>
+    <string name="confirm_enable_experimental_body">Deneysel ayarlar kararsız çalışabilir! \n\nBu ayarlar sonraki sürümlerde kaldırılabilir veya değiştirilebilir.</string>
+    <string name="video_tunneling">Video tünelleme</string>
 </resources>
