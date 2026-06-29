@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
+import com.github.damontecres.wholphin.preferences.DoviDeviceCompatibilityMode
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
@@ -47,6 +48,7 @@ class DeviceProfileService
                             assPlaybackMode = prefs.overrides.assPlaybackMode,
                             pgsDirectPlay = prefs.overrides.directPlayPgs,
                             dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
+                            doviDeviceCompatibilityMode = prefs.overrides.doviDeviceCompatibilityMode,
                             decodeAv1 = prefs.overrides.decodeAv1,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
@@ -62,6 +64,7 @@ class DeviceProfileService
                                 assDirectPlay = newConfig.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
+                                doviDeviceCompatibilityMode = newConfig.doviDeviceCompatibilityMode,
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                             )
@@ -81,6 +84,7 @@ data class DeviceProfileConfiguration(
     val assPlaybackMode: AssPlaybackMode,
     val pgsDirectPlay: Boolean,
     val dolbyVisionELDirectPlay: Boolean,
+    val doviDeviceCompatibilityMode: DoviDeviceCompatibilityMode,
     val decodeAv1: Boolean,
     val jellyfinTenEleven: Boolean,
 )

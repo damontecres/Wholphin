@@ -4,6 +4,7 @@ package com.github.damontecres.wholphin.util.profile
 
 import android.media.MediaCodecInfo
 import androidx.media3.common.MimeTypes
+import com.github.damontecres.wholphin.preferences.DoviDeviceCompatibilityMode
 import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
@@ -69,6 +70,7 @@ fun createDeviceProfile(
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
+    doviDeviceCompatibilityMode: DoviDeviceCompatibilityMode,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
 ) = buildDeviceProfile {
@@ -435,6 +437,19 @@ fun createDeviceProfile(
                     if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
                 }
             }
+
+            // Check the user preferences for DoVi compatibility mode
+            when (doviDeviceCompatibilityMode) {
+                DoviDeviceCompatibilityMode.DISABLE_DOVI_ALL -> {
+                    add(VideoRangeType.DOVI.serialName)
+                    add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
+                }
+                DoviDeviceCompatibilityMode.DISABLE_DOVI_WITH_HDR10 -> {
+                    add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
+                }
+            }
         }
 
     // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
@@ -454,9 +469,27 @@ fun createDeviceProfile(
                     add(VideoRangeType.DOVI.serialName)
                     if (!supportsHevcHDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven && !supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
-                        add(
-                            "DOVIWithHDR10Plus",
-                        )
+                        add("DOVIWithHDR10Plus")
+                    }
+                }
+            }
+
+            // Check the user preferences for DoVi compatibility mode
+            when (doviDeviceCompatibilityMode) {
+                DoviDeviceCompatibilityMode.DISABLE_DOVI_ALL -> {
+                    add(VideoRangeType.DOVI.serialName)
+                    add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven) {
+                        add("DOVIWithHDR10Plus")
+                        add("DOVIWithEL")
+                        add("DOVIWithELHDR10Plus")
+                    }
+                }
+                DoviDeviceCompatibilityMode.DISABLE_DOVI_WITH_HDR10 -> {
+                    add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven) {
+                        add("DOVIWithHDR10Plus")
+                        add("DOVIWithELHDR10Plus")
                     }
                 }
             }
