@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -69,7 +70,6 @@ import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
-import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
@@ -139,7 +139,7 @@ class PlaybackViewModel
         val navigationManager: NavigationManager,
         private val playlistCreator: PlaylistCreator,
         private val itemPlaybackDao: ItemPlaybackDao,
-        private val serverRepository: ServerRepository,
+        internal val serverRepository: ServerRepository,
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
@@ -253,7 +253,7 @@ class PlaybackViewModel
                 val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
-                        preferences.appPreferences.playbackPreferences,
+                        preferences.appPreferences,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {

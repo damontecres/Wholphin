@@ -205,6 +205,19 @@ fun createDeviceProfile(
     }
 
     // / Codec profiles
+    // Prevent 8-channel EAC3 passthrough in TS on certain devices
+    if (KnownDefects.eac3HlsPassthroughBug && Codec.Audio.EAC3 in allowedAudioCodecs) {
+        codecProfile {
+            type = CodecType.VIDEO_AUDIO
+            container = Codec.Container.TS
+            codec = Codec.Audio.EAC3
+
+            conditions {
+                ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 7
+            }
+        }
+    }
+
     // H264 profile
     codecProfile {
         type = CodecType.VIDEO

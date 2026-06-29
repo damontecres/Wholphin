@@ -147,3 +147,11 @@ fun ViewModel.addToQueue(
         }
     }
 }
+
+suspend fun addToQueue(
+    api: ApiClient,
+    musicService: MusicService,
+    item: BaseItem,
+    index: Int,
+) {
+}
