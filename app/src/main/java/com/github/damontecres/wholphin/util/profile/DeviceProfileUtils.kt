@@ -449,6 +449,7 @@ fun createDeviceProfile(
                     add(VideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
                 }
+                else -> {}
             }
         }
 
@@ -492,6 +493,7 @@ fun createDeviceProfile(
                         add("DOVIWithELHDR10Plus")
                     }
                 }
+                else -> {}
             }
 
             if (!supportsHevcHDR10Plus) {
