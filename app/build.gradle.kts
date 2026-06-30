@@ -49,12 +49,10 @@ val gitTags =
         .get()
 
 val gitDescribe =
-    runCatching {
-        providers
-            .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
-            .standardOutput.asText
-            .getOrElse("v0.0.0")
-    }.getOrDefault("v0.0.0")
+    providers
+        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
+        .standardOutput.asText
+        .getOrElse("v0.0.0")
 
 kotlin {
     compilerOptions {

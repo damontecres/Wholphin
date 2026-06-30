@@ -33,8 +33,8 @@ jobs:
 
       - name: Get version names
         run: |
-          LATEST_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
-          VERSION_NAME=$(git describe --tags --match 'v*' --long 2>/dev/null || echo "v0.0.0")
+          LATEST_TAG=$(git describe --tags --match 'v*' --abbrev=0)
+          VERSION_NAME=$(git describe --tags --match 'v*' --long)
           if [[ $BRANCH_NAME == "main" ]]; then
             TAG_NAME="develop"
           else
@@ -51,16 +51,10 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
-          EXTENSIONS_USERNAME: "${{ secrets.EXTENSIONS_USERNAME }}"
-          EXTENSIONS_PASSWORD: "${{ secrets.EXTENSIONS_PASSWORD }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          GRADLE_TARGETS="assembleDefaultDebug"
-          if [ -n "$SIGNING_KEY" ]; then
-            GRADLE_TARGETS="assembleDefaultRelease $GRADLE_TARGETS"
-            export ORG_GRADLE_PROJECT_WholphinExtensionsUsername="$EXTENSIONS_USERNAME"
-            export ORG_GRADLE_PROJECT_WholphinExtensionsPassword="$EXTENSIONS_PASSWORD"
-          fi
-          ./gradlew clean $GRADLE_TARGETS --no-daemon
+          ./gradlew clean assembleDefaultRelease assembleDefaultDebug --no-daemon
 
       - name: Verify signatures
         run: |
