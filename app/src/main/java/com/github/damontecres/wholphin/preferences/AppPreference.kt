@@ -644,6 +644,19 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.SKIP_SEGMENTS),
             )
 
+        val DpadSeekModePref =
+            AppChoicePreference<AppPreferences, DpadSeekMode>(
+                title = R.string.d_pad_seek_mode_title,
+                defaultValue = DpadSeekMode.SKIP_TIME,
+                getter = { it.playbackPreferences.dpadSeekMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { dpadSeekMode = value }
+                },
+                displayValues = R.array.dpad_seek_mode_options,
+                indexToValue = { DpadSeekMode.forNumber(it) },
+                valueToIndex = { if (it != DpadSeekMode.UNRECOGNIZED) it.number else 0 },
+            )
+
         val GlobalContentScale =
             AppChoicePreference<AppPreferences, PrefContentScale>(
                 title = R.string.global_content_scale,
@@ -1208,6 +1221,7 @@ val advancedPreferences =
                         AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
                         AppPreference.SkipSegments,
+                        AppPreference.DpadSeekModePref,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,

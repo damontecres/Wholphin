@@ -270,28 +270,41 @@ fun SeekBar(
             seekBack = seekBack,
             seekForward = seekForward,
         )
-        Row(
+        SeekTimecodes(
+            positionMs = position,
+            durationMs = player.duration,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            val remaining = ((player.duration - position) / 1000).seconds
-            Text(
-                text = (position / 1000).seconds.toString(),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
-            Text(
-                text = "-$remaining",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
-        }
+        )
+    }
+}
+
+@Composable
+fun SeekTimecodes(
+    positionMs: Long,
+    durationMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        val remaining = ((durationMs - positionMs) / 1000).seconds
+        Text(
+            text = (positionMs / 1000).seconds.toString(),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+                Modifier
+                    .padding(8.dp),
+        )
+        Text(
+            text = "-$remaining",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+                Modifier
+                    .padding(8.dp),
+        )
     }
 }
 

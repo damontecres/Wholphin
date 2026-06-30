@@ -168,6 +168,9 @@
     <string name="add_to_playlist">Add to playlist</string>
     <string name="one_click_pause">Pause with one click</string>
     <string name="one_click_pause_summary_on">Press D-Pad center to pause/play</string>
+    <string name="d_pad_seek_mode_title">D-Pad seek mode</string>
+    <string name="dpad_seek_mode_skip_time">Skip time</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay previews</string>
     <string name="italic_font">Italicize font</string>
     <string name="font">Font</string>
     <string name="background">Background</string>
@@ -833,4 +836,9 @@
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
     <string name="video_tunneling">Video tunneling</string>
+
+    <string-array name="dpad_seek_mode_options">
+        <item>@string/dpad_seek_mode_skip_time</item>
+        <item>@string/dpad_seek_mode_trickplay</item>
+    </string-array>
 </resources>
