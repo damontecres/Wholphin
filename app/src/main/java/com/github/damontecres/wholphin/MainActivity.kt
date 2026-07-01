@@ -73,6 +73,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -279,6 +281,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Timber.d("onResume")
+        viewModel.appResume()
         lifecycleScope.launchDefault {
             screensaverService.pulse()
         }
@@ -440,68 +443,89 @@ class MainActivityViewModel
         private val backdropService: BackdropService,
         private val appUpgradeHandler: AppUpgradeHandler,
     ) : ViewModel() {
+        private val mutex = Mutex()
+
         fun appStart() {
             viewModelScope.launchDefault {
-                try {
-                    val needUpgrade = appUpgradeHandler.needUpgrade()
-                    if (needUpgrade) {
-                        showToast(
-                            context,
-                            context.getString(
-                                R.string.updated_toast,
-                                appUpgradeHandler.currentVersion.toString(),
-                            ),
-                        )
-                        appUpgradeHandler.run()
-                    }
-                    appUpgradeHandler.copySubfont(false)
-                    val prefs =
-                        preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    val profileProtected =
-                        serverRepository.current.value?.user?.let {
-                            it.hasPin || it.requireLogin
-                        } == true
-                    if (prefs.signInAutomatically && !profileProtected) {
-                        val current =
-                            serverRepository.restoreSession(
-                                prefs.currentServerId?.toUUIDOrNull(),
-                                prefs.currentUserId?.toUUIDOrNull(),
+                mutex.withLock {
+                    try {
+                        val needUpgrade = appUpgradeHandler.needUpgrade()
+                        if (needUpgrade) {
+                            showToast(
+                                context,
+                                context.getString(
+                                    R.string.updated_toast,
+                                    appUpgradeHandler.currentVersion.toString(),
+                                ),
                             )
-                        if (current != null) {
-                            if (current.user.hasPin || current.user.requireLogin) {
-                                navigationManager.navigateTo(SetupDestination.UserList(current.server))
-                            } else {
-                                // Restored
-                                navigationManager.navigateTo(SetupDestination.AppContent(current))
-                            }
-                        } else {
-                            // Did not restore
-                            navigationManager.navigateTo(SetupDestination.ServerList)
+                            appUpgradeHandler.run()
                         }
-                    } else {
-                        navigationManager.navigateTo(SetupDestination.Loading)
-                        backdropService.clearBackdrop()
-                        val currentServerId = prefs.currentServerId?.toUUIDOrNull()
-                        if (currentServerId != null) {
-                            val currentServer =
-                                serverRepository.serverDao.getServer(currentServerId)?.server
-                            if (currentServer != null) {
-                                navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                        appUpgradeHandler.copySubfont(false)
+                        val prefs =
+                            preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                        val profileProtected =
+                            serverRepository.current.value?.user?.let {
+                                it.hasPin || it.requireLogin
+                            } == true
+                        if (prefs.signInAutomatically && !profileProtected) {
+                            val current =
+                                serverRepository.restoreSession(
+                                    prefs.currentServerId?.toUUIDOrNull(),
+                                    prefs.currentUserId?.toUUIDOrNull(),
+                                )
+                            if (current != null) {
+                                if (current.user.hasPin || current.user.requireLogin) {
+                                    navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                                } else {
+                                    // Restored
+                                    navigationManager.navigateTo(SetupDestination.AppContent(current))
+                                }
                             } else {
+                                // Did not restore
                                 navigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         } else {
-                            navigationManager.navigateTo(SetupDestination.ServerList)
+                            navigationManager.navigateTo(SetupDestination.Loading)
+                            backdropService.clearBackdrop()
+                            val currentServerId = prefs.currentServerId?.toUUIDOrNull()
+                            if (currentServerId != null) {
+                                val currentServer =
+                                    serverRepository.serverDao.getServer(currentServerId)?.server
+                                if (currentServer != null) {
+                                    navigationManager.navigateTo(
+                                        SetupDestination.UserList(
+                                            currentServer,
+                                        ),
+                                    )
+                                } else {
+                                    navigationManager.navigateTo(SetupDestination.ServerList)
+                                }
+                            } else {
+                                navigationManager.navigateTo(SetupDestination.ServerList)
+                            }
                         }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error during appStart")
+                        navigationManager.navigateTo(SetupDestination.ServerList)
                     }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Error during appStart")
-                    navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
             viewModelScope.launchDefault {
                 // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
+            }
+        }
+
+        fun appResume() {
+            viewModelScope.launchDefault {
+                mutex.withLock {
+                    try {
+                        Timber.v("Updating userDto")
+                        serverRepository.updateUserDto()
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "Error during appResume")
+                    }
+                }
             }
         }
     }

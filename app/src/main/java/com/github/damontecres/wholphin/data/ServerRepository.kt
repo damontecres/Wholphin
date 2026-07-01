@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -297,6 +298,16 @@ class ServerRepository
                 val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
                 response.content
             }
+
+        /**
+         * Update [currentUserDto] by querying the server
+         */
+        suspend fun updateUserDto() {
+            val userDto by apiClient.userApi.getCurrentUser()
+            _currentUserDto.update {
+                if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
+            }
+        }
 
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =
