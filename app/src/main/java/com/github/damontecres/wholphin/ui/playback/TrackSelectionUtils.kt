@@ -7,13 +7,11 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
-import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
-import timber.log.Timber
-import kotlin.math.max
 
 /**
  * Functions for selecting which audio & subtitle tracks to activate in the [androidx.media3.common.Player]
@@ -23,120 +21,74 @@ object TrackSelectionUtils {
     fun createTrackSelections(
         trackSelectionParams: TrackSelectionParameters,
         tracks: Tracks,
-        playerBackend: PlayerBackend,
-        supportsDirectPlay: Boolean,
         audioIndex: Int?,
         subtitleIndex: Int?,
         source: MediaSourceInfo,
     ): TrackSelectionResult {
-        val embeddedSubtitleCount = source.embeddedSubtitleCount
-        val externalSubtitleCount = source.externalSubtitlesCount
-
         val paramsBuilder = trackSelectionParams.buildUpon()
-        val groups = tracks.groups
-
         val subtitleSelected =
             if (subtitleIndex != null && subtitleIndex >= 0) {
                 val subtitleIsExternal = source.findExternalSubtitle(subtitleIndex) != null
-                if (subtitleIsExternal || supportsDirectPlay) {
-                    val chosenTrack =
-                        if (subtitleIsExternal && playerBackend == PlayerBackend.EXO_PLAYER) {
-                            groups.firstOrNull { group ->
-                                group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                                    (0..<group.mediaTrackGroup.length)
-                                        .mapNotNull {
-                                            group.getTrackFormat(it).id
-                                        }.any { it.endsWith("e:$subtitleIndex") }
-                            }
-                        } else {
-                            val actualEmbeddedCount =
-                                groups
-                                    .filter { group ->
-                                        group.type == C.TRACK_TYPE_TEXT &&
-                                            (0..<group.mediaTrackGroup.length)
-                                                .mapNotNull {
-                                                    group.getTrackFormat(it).id
-                                                }.none { it.contains("e:") }
-                                    }.size
-                            val indexToFind =
-                                calculateIndexToFind(
-                                    subtitleIndex,
-                                    MediaStreamType.SUBTITLE,
-                                    playerBackend,
-                                    embeddedSubtitleCount,
-                                    externalSubtitleCount,
-                                    subtitleIsExternal,
-                                    actualEmbeddedCount,
-                                    source,
-                                )
-                            Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track")
-                            // subtitleIndex - externalSubtitleCount + 1
-                            groups.firstOrNull { group ->
-                                group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                                    (0..<group.mediaTrackGroup.length)
-                                        .filter {
-                                            if (subtitleIsExternal) {
-                                                group.getTrackFormat(0).id?.contains("e:") == true
-                                            } else {
-                                                group.getTrackFormat(0).id?.contains("e:") == false
-                                            }
-                                        }.map {
-                                            group.getTrackFormat(it).idAsInt
-                                        }.contains(indexToFind)
-                            }
-                        }
-
-                    Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
-                    chosenTrack?.let {
-                        paramsBuilder
-                            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                            .setOverrideForType(
-                                TrackSelectionOverride(
-                                    chosenTrack.mediaTrackGroup,
-                                    0,
-                                ),
-                            )
-                    }
-                    chosenTrack != null
-                } else {
-                    false
-                }
-            } else {
-                paramsBuilder
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-
-                true
-            }
-        val audioSelected =
-            if (audioIndex != null && audioIndex >= 0 && supportsDirectPlay) {
-                val indexToFind =
-                    calculateIndexToFind(
-                        audioIndex,
-                        MediaStreamType.AUDIO,
-                        playerBackend,
-                        embeddedSubtitleCount,
-                        externalSubtitleCount,
-                        false,
-                        null,
-                        source,
-                    )
                 val chosenTrack =
-                    groups.firstOrNull { group ->
-                        group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
-                            (0..<group.mediaTrackGroup.length)
-                                .map {
-                                    group.getTrackFormat(it).idAsInt
-                                }.contains(indexToFind)
+                    if (subtitleIsExternal) {
+                        tracks.groups.firstOrNull { group ->
+                            group.type == C.TRACK_TYPE_TEXT && group.isExternal
+                        }
+                    } else {
+                        val playerIndex =
+                            getPlayerIndex(subtitleIndex, source, MediaStreamType.SUBTITLE)
+                        if (playerIndex != null) {
+                            tracks.groups
+                                .filter { group ->
+                                    group.type == C.TRACK_TYPE_TEXT &&
+                                        group.isSupported &&
+                                        group.length >= 1 &&
+                                        !group.isExternal
+                                }
+                                // TODO why are exoplayer tracks out of order sometimes?
+                                .sortedById()
+                                .getOrNull(playerIndex)
+                        } else {
+                            null
+                        }
                     }
-                Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
                 chosenTrack?.let {
                     paramsBuilder
+                        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
+                        )
+                }
+                chosenTrack != null
+            } else {
+                paramsBuilder
+                    .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                true
+            }
+
+        val audioSelected =
+            if (audioIndex != null && audioIndex >= 0) {
+                val playerIndex = getPlayerIndex(audioIndex, source, MediaStreamType.AUDIO)
+                val chosenTrack =
+                    if (playerIndex != null) {
+                        tracks.groups
+                            .filter { group ->
+                                group.type == C.TRACK_TYPE_AUDIO && group.isSupported && group.length >= 1
+                            }
+                            // TODO why are exoplayer tracks out of order sometimes?
+                            .sortedById()
+                            .getOrNull(playerIndex)
+                    } else {
+                        null
+                    }
+                chosenTrack?.let {
+                    paramsBuilder
+                        .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
                         .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
                         .setOverrideForType(
-                            TrackSelectionOverride(
-                                chosenTrack.mediaTrackGroup,
-                                0,
-                            ),
+                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
                         )
                 }
                 chosenTrack != null
@@ -146,78 +98,56 @@ object TrackSelectionUtils {
         return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
     }
 
-    /**
-     * Maps the server provided index to the track index based on the [PlayerBackend] and other stream information
-     */
-    private fun calculateIndexToFind(
+    private fun getPlayerIndex(
         serverIndex: Int,
-        type: MediaStreamType,
-        playerBackend: PlayerBackend,
-        embeddedSubtitleCount: Int,
-        externalSubtitleCount: Int,
-        subtitleIsExternal: Boolean,
-        actualEmbeddedCount: Int?,
         source: MediaSourceInfo,
-    ): Int =
-        when (playerBackend) {
-            PlayerBackend.EXO_PLAYER,
-            PlayerBackend.UNRECOGNIZED,
-            -> {
-                serverIndex - externalSubtitleCount + 1
-            }
-
-            // TODO MPV could use literal indexes because they are stored in the track format ID
-            PlayerBackend.PREFER_MPV,
-            PlayerBackend.MPV,
-            -> {
-                when (type) {
-                    MediaStreamType.VIDEO -> {
-                        serverIndex - externalSubtitleCount + 1
+        type: MediaStreamType,
+    ): Int? {
+        val playerIndex =
+            source.mediaStreams
+                .orEmpty()
+                .filter { it.type == type }
+                .let {
+                    if (type == MediaStreamType.SUBTITLE) {
+                        it.filter { it.deliveryMethod == SubtitleDeliveryMethod.EMBED || it.deliveryMethod == SubtitleDeliveryMethod.HLS }
+                    } else {
+                        it
                     }
+                }.indexOfFirstOrNull { it.index == serverIndex }
+        return playerIndex
+    }
 
-                    MediaStreamType.AUDIO -> {
-                        val videoStreamsBeforeAudioCount =
-                            source.mediaStreams
-                                .orEmpty()
-                                .indexOfFirst { it.type == MediaStreamType.AUDIO } - externalSubtitleCount
-                        serverIndex - externalSubtitleCount - videoStreamsBeforeAudioCount + 1
-                    }
-
-                    MediaStreamType.SUBTITLE -> {
-                        if (subtitleIsExternal) {
-                            // Need to account for the actual embedded count because if the library
-                            // disables embedded subtitles, they still exist in the direct played file,
-                            // but not included in the MediaStreams list
-                            serverIndex + max(actualEmbeddedCount ?: 0, embeddedSubtitleCount) + 1
-                        } else {
-                            val videoStreamCount = source.videoStreamCount
-                            val audioStreamCount = source.audioStreamCount
-                            serverIndex - externalSubtitleCount - videoStreamCount - audioStreamCount + 1
-                        }
-                    }
-
-                    else -> {
-                        throw UnsupportedOperationException("Cannot calculate index for $type")
-                    }
+    val Tracks.Group.trackFormats: List<Format>
+        @OptIn(UnstableApi::class)
+        get() =
+            (0..<mediaTrackGroup.length)
+                .mapNotNull {
+                    getTrackFormat(it)
                 }
+
+    private val Tracks.Group.isExternal: Boolean
+        get() =
+            trackFormats.any {
+                it.id?.contains(":e:") == true
             }
 
-            PlayerBackend.EXTERNAL_PLAYER -> {
-                throw IllegalStateException("Cannot calculate tracks external playback")
-            }
-        }
-}
-
-val Format.idAsInt: Int?
-    @OptIn(UnstableApi::class)
-    get() =
-        id?.let {
-            if (it.contains(":")) {
-                it.split(":").last().toIntOrNull()
+    private fun Iterable<Tracks.Group>.sortedById(): List<Tracks.Group> =
+        mapNotNull { track ->
+            if (track.isExternal) {
+                // Should be filtered out before calling this though
+                track to listOf(Int.MAX_VALUE, Int.MAX_VALUE)
             } else {
-                it.toIntOrNull()
+                track.trackFormats[0]
+                    .id
+                    ?.split(":")
+                    ?.map { it.toInt() }
+                    ?.let {
+                        track to it
+                    }
             }
-        }
+        }.sortedWith(compareBy<Pair<Tracks.Group, List<Int>>> { it.second[0] }.thenBy { it.second[1] })
+            .map { it.first }
+}
 
 /**
  * Returns the number of external subtitle streams there are
