@@ -29,6 +29,7 @@ class PlaybackKeyHandler(
     private val onInteraction: () -> Unit,
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
+    private val onEnterHiddenControls: () -> Boolean = { false },
 ) {
     private var leftHandledByRepeat = false
     private var rightHandledByRepeat = false
@@ -63,6 +64,8 @@ class PlaybackKeyHandler(
                         player.seekBack(seekBack)
                         updateSkipIndicator(seekBack.inWholeMilliseconds)
                     }
+                } else if (isEnterKey(it) && onEnterHiddenControls()) {
+                    // Enter handled the hidden-controls state without showing the full overlay.
                 } else if (oneClickPause && isEnterKey(it)) {
                     val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
