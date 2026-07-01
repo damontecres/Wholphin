@@ -301,6 +301,89 @@ class TestTrackSelection {
         return Tracks(groups)
     }
 
+    private fun buildDifferentOrderedTracks(backend: PlayerBackend): Tracks {
+        val formats =
+            if (backend == PlayerBackend.MPV) {
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("$it:$it")
+                            .setSampleMimeType("audio/default")
+                            .build()
+                    }
+                val subtitles =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("${it + 3}:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    }
+                (listOf(video) + audios + subtitles)
+            } else {
+                // ExoPlayer
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    listOf(
+                        Format
+                            .Builder()
+                            .setId("0:2")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                        Format
+                            .Builder()
+                            .setId("0:4")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                        Format
+                            .Builder()
+                            .setId("0:3")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                    )
+                val subtitles =
+                    (5..8).map {
+                        Format
+                            .Builder()
+                            .setId("0:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    } +
+                        listOf(
+                            Format
+                                .Builder()
+                                .setId("1:e:8") // External
+                                .setSampleMimeType("text/default")
+                                .build(),
+                        )
+                (listOf(video) + audios + subtitles)
+            }
+        val groups =
+            formats
+                .map { TrackGroup(it) }
+                .map {
+                    Tracks.Group(
+                        it,
+                        false,
+                        intArrayOf(C.FORMAT_HANDLED),
+                        booleanArrayOf(false),
+                    )
+                }
+        return Tracks(groups)
+    }
+
     @Test
     fun `test MPV embedded`() {
         val resource = javaClass.classLoader?.getResource("embedded_subs.json")
@@ -662,6 +745,55 @@ class TestTrackSelection {
                 Assert.assertTrue(result.bothSelected)
                 Assert.assertEquals("2:2", result.trackSelectionParameters.getAudioOverride()?.id)
                 Assert.assertEquals(null, result.trackSelectionParameters.getSubtitleOverride()?.id)
+            }
+    }
+
+    @Test
+    fun `test ExoPlayer different order`() {
+        val source =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio(3)
+                .addSubtitle(4)
+                .addExternalSubtitle(1)
+                .buildMediaSourceInfo()
+        val tracks = buildDifferentOrderedTracks(PlayerBackend.EXO_PLAYER)
+
+        Assert.assertEquals(9, source.mediaStreams?.size)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 1,
+                subtitleIndex = 8,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("0:2", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(
+                    "1:e:8",
+                    result.trackSelectionParameters.getSubtitleOverride()?.id,
+                )
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 3,
+                subtitleIndex = 8,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("0:4", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(
+                    "1:e:8",
+                    result.trackSelectionParameters.getSubtitleOverride()?.id,
+                )
             }
     }
 }

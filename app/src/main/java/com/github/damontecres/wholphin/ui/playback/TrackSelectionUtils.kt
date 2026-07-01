@@ -43,8 +43,11 @@ object TrackSelectionUtils {
                         if (playerIndex != null) {
                             tracks.groups
                                 .filter { group ->
-                                    group.type == C.TRACK_TYPE_TEXT && group.isSupported
-                                }.getOrNull(playerIndex)
+                                    group.type == C.TRACK_TYPE_TEXT && group.isSupported && group.length >= 1
+                                }
+                                // TODO why are exoplayer tracks out of order sometimes?
+                                .sortedBy { it.trackFormats[0].id }
+                                .getOrNull(playerIndex)
                         } else {
                             null
                         }
@@ -72,8 +75,11 @@ object TrackSelectionUtils {
                     if (playerIndex != null) {
                         tracks.groups
                             .filter { group ->
-                                group.type == C.TRACK_TYPE_AUDIO && group.isSupported
-                            }.getOrNull(playerIndex)
+                                group.type == C.TRACK_TYPE_AUDIO && group.isSupported && group.length >= 1
+                            }
+                            // TODO why are exoplayer tracks out of order sometimes?
+                            .sortedBy { it.trackFormats[0].id }
+                            .getOrNull(playerIndex)
                     } else {
                         null
                     }
