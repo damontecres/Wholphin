@@ -546,4 +546,37 @@ class TestTracksTests {
             Assert.assertEquals(8, index)
         }
     }
+
+    @Test
+    fun `test AAVASS in issue 1005`() {
+        // https://github.com/damontecres/Wholphin/issues/1005#issuecomment-4085440175
+        val builder =
+            TestTracks
+                .Builder()
+                .addAudio(2)
+                .addVideo()
+                .addAudio()
+                .addSubtitle(42)
+
+        builder.buildForExoPlayer().tracks.let { exo ->
+            Assert.assertEquals(46, exo.size)
+            assertIdType("1", MediaStreamType.AUDIO, exo[0])
+            assertIdType("2", MediaStreamType.AUDIO, exo[1])
+            assertIdType("3", MediaStreamType.VIDEO, exo[2])
+            assertIdType("4", MediaStreamType.AUDIO, exo[3])
+            assertIdType("5", MediaStreamType.SUBTITLE, exo[4])
+            assertIdType("6", MediaStreamType.SUBTITLE, exo[5])
+        }
+
+        builder.buildForMpv().tracks.let { mpv ->
+            Assert.assertEquals(46, mpv.size)
+            assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
+            assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
+            assertIdType("2:1", MediaStreamType.VIDEO, mpv[2])
+            assertIdType("3:3", MediaStreamType.AUDIO, mpv[3])
+            assertIdType("4:1", MediaStreamType.SUBTITLE, mpv[4])
+            assertIdType("5:2", MediaStreamType.SUBTITLE, mpv[5])
+            assertIdType("6:3", MediaStreamType.SUBTITLE, mpv[6])
+        }
+    }
 }

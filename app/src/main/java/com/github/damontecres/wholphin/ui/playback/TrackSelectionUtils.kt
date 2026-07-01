@@ -32,8 +32,7 @@ object TrackSelectionUtils {
                 val chosenTrack =
                     if (subtitleIsExternal) {
                         tracks.groups.firstOrNull { group ->
-                            group.type == C.TRACK_TYPE_TEXT &&
-                                group.trackFormats.any { it.id?.contains(":e:") == true }
+                            group.type == C.TRACK_TYPE_TEXT && group.isExternal
                         }
                     } else {
                         val playerIndex =
@@ -41,10 +40,13 @@ object TrackSelectionUtils {
                         if (playerIndex != null) {
                             tracks.groups
                                 .filter { group ->
-                                    group.type == C.TRACK_TYPE_TEXT && group.isSupported && group.length >= 1
+                                    group.type == C.TRACK_TYPE_TEXT &&
+                                        group.isSupported &&
+                                        group.length >= 1 &&
+                                        !group.isExternal
                                 }
                                 // TODO why are exoplayer tracks out of order sometimes?
-                                .sortedBy { it.trackFormats[0].id }
+                                .sortedById()
                                 .getOrNull(playerIndex)
                         } else {
                             null
@@ -76,7 +78,7 @@ object TrackSelectionUtils {
                                 group.type == C.TRACK_TYPE_AUDIO && group.isSupported && group.length >= 1
                             }
                             // TODO why are exoplayer tracks out of order sometimes?
-                            .sortedBy { it.trackFormats[0].id }
+                            .sortedById()
                             .getOrNull(playerIndex)
                     } else {
                         null
@@ -122,6 +124,29 @@ object TrackSelectionUtils {
                 .mapNotNull {
                     getTrackFormat(it)
                 }
+
+    private val Tracks.Group.isExternal: Boolean
+        get() =
+            trackFormats.any {
+                it.id?.contains(":e:") == true
+            }
+
+    private fun Iterable<Tracks.Group>.sortedById(): List<Tracks.Group> =
+        mapNotNull { track ->
+            if (track.isExternal) {
+                // Should be filtered out before calling this though
+                track to listOf(Int.MAX_VALUE, Int.MAX_VALUE)
+            } else {
+                track.trackFormats[0]
+                    .id
+                    ?.split(":")
+                    ?.map { it.toInt() }
+                    ?.let {
+                        track to it
+                    }
+            }
+        }.sortedWith(compareBy<Pair<Tracks.Group, List<Int>>> { it.second[0] }.thenBy { it.second[1] })
+            .map { it.first }
 }
 
 /**

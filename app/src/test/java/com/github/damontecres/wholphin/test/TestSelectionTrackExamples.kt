@@ -178,4 +178,26 @@ class TestSelectionTrackExamples {
             Assert.assertEquals("1:e:5", result.trackSelectionParameters.getSubtitleOverride()?.id)
         }
     }
+
+    @Test
+    fun `test AAVASS in issue 1005`() {
+        // https://github.com/damontecres/Wholphin/issues/1005#issuecomment-4085440175
+        val builder =
+            TestTracks
+                .Builder()
+                .addAudio(2)
+                .addVideo()
+                .addAudio()
+                .addSubtitle(42)
+        runTest(
+            builder,
+            PlayerBackend.MPV,
+            audioIndex = 1,
+            subtitleIndex = 5,
+        ) { result ->
+            Assert.assertTrue(result.bothSelected)
+            Assert.assertEquals("1:2", result.trackSelectionParameters.getAudioOverride()?.id)
+            Assert.assertEquals("5:2", result.trackSelectionParameters.getSubtitleOverride()?.id)
+        }
+    }
 }
