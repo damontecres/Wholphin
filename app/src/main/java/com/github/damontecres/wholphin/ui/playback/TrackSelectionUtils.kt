@@ -7,13 +7,11 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
-import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
-import kotlin.math.max
 
 /**
  * Functions for selecting which audio & subtitle tracks to activate in the [androidx.media3.common.Player]
@@ -124,79 +122,7 @@ object TrackSelectionUtils {
                 .mapNotNull {
                     getTrackFormat(it)
                 }
-
-    /**
-     * Maps the server provided index to the track index based on the [PlayerBackend] and other stream information
-     */
-    private fun calculateIndexToFind(
-        serverIndex: Int,
-        type: MediaStreamType,
-        playerBackend: PlayerBackend,
-        embeddedSubtitleCount: Int,
-        externalSubtitleCount: Int,
-        subtitleIsExternal: Boolean,
-        actualEmbeddedCount: Int?,
-        source: MediaSourceInfo,
-    ): Int =
-        when (playerBackend) {
-            PlayerBackend.EXO_PLAYER,
-            PlayerBackend.UNRECOGNIZED,
-            -> {
-                serverIndex - externalSubtitleCount + 1
-            }
-
-            // TODO MPV could use literal indexes because they are stored in the track format ID
-            PlayerBackend.PREFER_MPV,
-            PlayerBackend.MPV,
-            -> {
-                when (type) {
-                    MediaStreamType.VIDEO -> {
-                        serverIndex - externalSubtitleCount + 1
-                    }
-
-                    MediaStreamType.AUDIO -> {
-                        val videoStreamsBeforeAudioCount =
-                            source.mediaStreams
-                                .orEmpty()
-                                .indexOfFirst { it.type == MediaStreamType.AUDIO } - externalSubtitleCount
-                        serverIndex - externalSubtitleCount - videoStreamsBeforeAudioCount + 1
-                    }
-
-                    MediaStreamType.SUBTITLE -> {
-                        if (subtitleIsExternal) {
-                            // Need to account for the actual embedded count because if the library
-                            // disables embedded subtitles, they still exist in the direct played file,
-                            // but not included in the MediaStreams list
-                            serverIndex + max(actualEmbeddedCount ?: 0, embeddedSubtitleCount) + 1
-                        } else {
-                            val videoStreamCount = source.videoStreamCount
-                            val audioStreamCount = source.audioStreamCount
-                            serverIndex - externalSubtitleCount - videoStreamCount - audioStreamCount + 1
-                        }
-                    }
-
-                    else -> {
-                        throw UnsupportedOperationException("Cannot calculate index for $type")
-                    }
-                }
-            }
-
-            PlayerBackend.EXTERNAL_PLAYER -> {
-                throw IllegalStateException("Cannot calculate tracks external playback")
-            }
-        }
 }
-
-val Format.idAsInt: Int?
-    @OptIn(UnstableApi::class)
-    get() =
-        id?.let {
-            if (it.contains(":")) {
-                it.split(":").last().toIntOrNull()
-            } else {
-                it.toIntOrNull()
-            }
-        }
 
 /**
  * Returns the number of external subtitle streams there are
