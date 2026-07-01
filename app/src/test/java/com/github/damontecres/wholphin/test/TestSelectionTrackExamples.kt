@@ -40,7 +40,7 @@ class TestSelectionTrackExamples {
                 supportsDirectPlay = true,
                 audioIndex = audioIndex,
                 subtitleIndex = subtitleIndex,
-                source = testTacks.toMediaSourceInfo(),
+                source = builder.buildMediaSourceInfo(),
             ).also(onResult)
     }
 

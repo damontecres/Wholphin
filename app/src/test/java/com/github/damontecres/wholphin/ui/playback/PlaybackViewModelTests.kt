@@ -165,8 +165,7 @@ class PlaybackViewModelTests {
             .addVideo()
             .addAudio()
             .addSubtitle()
-            .buildForExoPlayer()
-            .toMediaSourceInfo()
+            .buildMediaSourceInfo()
 
     private val playSessionId = "playsessionid12345"
     private val videoStreamUrl = "http://localhost:8096/video/stream"

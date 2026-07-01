@@ -45,47 +45,6 @@ class TestTracks private constructor(
         return Tracks(groups)
     }
 
-    fun toMediaSourceInfo(): MediaSourceInfo {
-        val streams =
-            tracks.mapIndexed { index, track ->
-                MediaStream(
-                    index = index,
-                    type = track.type,
-                    isExternal = track.external,
-                    codec = null,
-                    language = null,
-                    isInterlaced = false,
-                    isDefault = false,
-                    isForced = false,
-                    isHearingImpaired = false,
-                    isTextSubtitleStream = false,
-                    supportsExternalStream = false,
-                )
-            }
-        val source =
-            MediaSourceInfo(
-                mediaStreams = streams,
-                protocol = MediaProtocol.HTTP,
-                type = MediaSourceType.DEFAULT,
-                isRemote = false,
-                readAtNativeFramerate = false,
-                ignoreDts = false,
-                ignoreIndex = false,
-                genPtsInput = false,
-                supportsTranscoding = true,
-                supportsDirectStream = true,
-                supportsDirectPlay = true,
-                isInfiniteStream = false,
-                requiresOpening = false,
-                requiresClosing = false,
-                requiresLooping = false,
-                supportsProbing = false,
-                transcodingSubProtocol = MediaStreamProtocol.HLS,
-                hasSegments = false,
-            )
-        return source
-    }
-
     /**
      * Builder for adding tracks
      */
@@ -118,6 +77,13 @@ class TestTracks private constructor(
             return this
         }
 
+        fun addEmpty(count: Int = 1): Builder {
+            repeat(count) {
+                tracks.add(TestTrackBuilder(null))
+            }
+            return this
+        }
+
         /**
          * Create the [TestTracks] as if being playing by ExoPlayer
          */
@@ -129,7 +95,10 @@ class TestTracks private constructor(
                     var externalSubCount = 0
                     val t =
                         tracks
-                            .mapIndexed { index, track ->
+                            .mapIndexedNotNull { index, track ->
+                                if (track.type == null) {
+                                    return@mapIndexedNotNull null
+                                }
                                 if (track.external) {
                                     externalSubCount++
                                     TestTrack(
@@ -161,20 +130,29 @@ class TestTracks private constructor(
                 tracks.count { it.type == MediaStreamType.SUBTITLE && !it.external }
             val externalSubCount =
                 tracks.count { it.type == MediaStreamType.SUBTITLE && it.external }
+//            val firstNonExternal = tracks.indexOfFirst { it.type != MediaStreamType.SUBTITLE }
+            val firstExternal =
+                tracks.indexOfFirst { it.type == MediaStreamType.SUBTITLE && it.external }
+            val externalSubtitleAreFirst = externalSubCount > 0 && firstExternal == 0
             var videoCount = 0
             var audioCount = 0
             var subtitleCount = 0
             val testTracks =
-                tracks.mapIndexed { index, track ->
+                tracks.mapIndexedNotNull { index, track ->
+                    if (track.type == null) {
+                        return@mapIndexedNotNull null
+                    }
                     val id =
                         if (track.external) {
                             // MPV places external subtitles last
-                            val idx = embeddedCount + index
+                            val idx = index + if (externalSubtitleAreFirst) embeddedCount else 0
                             subtitleCount++
-                            val count = embeddedSubtitleCount + subtitleCount
+                            val count =
+                                subtitleCount + if (externalSubtitleAreFirst) embeddedSubtitleCount else 0
                             "$idx:e:$count"
                         } else {
-                            val idx = index - externalSubCount
+                            val idx =
+                                if (externalSubtitleAreFirst) index - externalSubCount else index
                             when (track.type) {
                                 MediaStreamType.AUDIO -> {
                                     audioCount++
@@ -188,7 +166,8 @@ class TestTracks private constructor(
 
                                 MediaStreamType.SUBTITLE -> {
                                     subtitleCount++
-                                    val count = subtitleCount - externalSubCount
+                                    val count =
+                                        subtitleCount - (if (externalSubtitleAreFirst) externalSubCount else 0)
                                     "$idx:$count"
                                 }
 
@@ -200,6 +179,49 @@ class TestTracks private constructor(
                     TestTrack(id, index, track.type, track.external)
                 }
             return TestTracks(testTracks)
+        }
+
+        fun buildMediaSourceInfo(): MediaSourceInfo {
+            val streams =
+                tracks
+                    .filter { it.type != null }
+                    .mapIndexed { index, track ->
+                        MediaStream(
+                            index = index,
+                            type = track.type!!,
+                            isExternal = track.external,
+                            codec = null,
+                            language = null,
+                            isInterlaced = false,
+                            isDefault = false,
+                            isForced = false,
+                            isHearingImpaired = false,
+                            isTextSubtitleStream = false,
+                            supportsExternalStream = false,
+                        )
+                    }
+            val source =
+                MediaSourceInfo(
+                    mediaStreams = streams,
+                    protocol = MediaProtocol.HTTP,
+                    type = MediaSourceType.DEFAULT,
+                    isRemote = false,
+                    readAtNativeFramerate = false,
+                    ignoreDts = false,
+                    ignoreIndex = false,
+                    genPtsInput = false,
+                    supportsTranscoding = true,
+                    supportsDirectStream = true,
+                    supportsDirectPlay = true,
+                    isInfiniteStream = false,
+                    requiresOpening = false,
+                    requiresClosing = false,
+                    requiresLooping = false,
+                    supportsProbing = false,
+                    transcodingSubProtocol = MediaStreamProtocol.HLS,
+                    hasSegments = false,
+                )
+            return source
         }
     }
 
@@ -226,7 +248,7 @@ data class TestTrack(
 )
 
 class TestTrackBuilder(
-    val type: MediaStreamType,
+    val type: MediaStreamType?,
     val external: Boolean = false,
 )
 
@@ -471,6 +493,43 @@ class TestTracksTests {
             assertIdType("3:2", MediaStreamType.AUDIO, mpv[3])
             assertIdType("4:2", MediaStreamType.SUBTITLE, mpv[4])
             assertIdType("5:3", MediaStreamType.SUBTITLE, mpv[5])
+        }
+    }
+
+    @Test
+    fun `Test external subtitles at end`() {
+        val builder =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio(3)
+                .addSubtitle(4)
+                .addExternalSubtitle()
+
+        builder.buildForExoPlayer().tracks.let { tracks ->
+            Assert.assertEquals(9, tracks.size)
+            Assert.assertEquals("0:1", tracks[0].id)
+            Assert.assertEquals("0:2", tracks[1].id)
+            Assert.assertEquals("0:3", tracks[2].id)
+            Assert.assertEquals("0:4", tracks[3].id)
+            Assert.assertEquals("0:5", tracks[4].id)
+            Assert.assertEquals("0:6", tracks[5].id)
+            Assert.assertEquals("0:7", tracks[6].id)
+            Assert.assertEquals("0:8", tracks[7].id)
+            Assert.assertEquals("1:e:8", tracks[8].id)
+        }
+
+        builder.buildForMpv().tracks.let { tracks ->
+            Assert.assertEquals(9, tracks.size)
+            Assert.assertEquals("0:1", tracks[0].id)
+            Assert.assertEquals("1:1", tracks[1].id)
+            Assert.assertEquals("2:2", tracks[2].id)
+            Assert.assertEquals("3:3", tracks[3].id)
+            Assert.assertEquals("4:1", tracks[4].id)
+            Assert.assertEquals("5:2", tracks[5].id)
+            Assert.assertEquals("6:3", tracks[6].id)
+            Assert.assertEquals("7:4", tracks[7].id)
+            Assert.assertEquals("8:e:5", tracks[8].id)
         }
     }
 }
