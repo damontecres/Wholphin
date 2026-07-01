@@ -13,174 +13,12 @@ import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
-import timber.log.Timber
 import kotlin.math.max
 
 /**
  * Functions for selecting which audio & subtitle tracks to activate in the [androidx.media3.common.Player]
  */
 object TrackSelectionUtils {
-    @OptIn(UnstableApi::class)
-    fun createTrackSelections(
-        trackSelectionParams: TrackSelectionParameters,
-        tracks: Tracks,
-        playerBackend: PlayerBackend,
-        supportsDirectPlay: Boolean,
-        audioIndex: Int?,
-        subtitleIndex: Int?,
-        source: MediaSourceInfo,
-    ): TrackSelectionResult {
-        return createTrackSelections(
-            trackSelectionParams = trackSelectionParams,
-            tracks = tracks,
-            audioIndex = audioIndex,
-            subtitleIndex = subtitleIndex,
-            source = source,
-        )
-        val embeddedSubtitleCount = source.embeddedSubtitleCount
-        val externalSubtitleCount = source.externalSubtitlesCount
-
-        val paramsBuilder = trackSelectionParams.buildUpon()
-        val groups = tracks.groups
-
-        val subtitleSelected =
-            if (subtitleIndex != null && subtitleIndex >= 0) {
-                val subtitleIsExternal = source.findExternalSubtitle(subtitleIndex) != null
-                if (subtitleIsExternal || supportsDirectPlay) {
-                    val chosenTrack =
-                        if (subtitleIsExternal && playerBackend == PlayerBackend.EXO_PLAYER) {
-                            groups.firstOrNull { group ->
-                                group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                                    (0..<group.mediaTrackGroup.length)
-                                        .mapNotNull {
-                                            group.getTrackFormat(it).id
-                                        }.any { it.endsWith("e:$subtitleIndex") }
-                            }
-                        } else {
-                            val actualEmbeddedCount =
-                                groups
-                                    .filter { group ->
-                                        group.type == C.TRACK_TYPE_TEXT &&
-                                            (0..<group.mediaTrackGroup.length)
-                                                .mapNotNull {
-                                                    group.getTrackFormat(it).id
-                                                }.none { it.contains("e:") }
-                                    }.size
-                            val indexToFind =
-                                calculateIndexToFind(
-                                    subtitleIndex,
-                                    MediaStreamType.SUBTITLE,
-                                    playerBackend,
-                                    embeddedSubtitleCount,
-                                    externalSubtitleCount,
-                                    subtitleIsExternal,
-                                    actualEmbeddedCount,
-                                    source,
-                                )
-                            Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track")
-                            // subtitleIndex - externalSubtitleCount + 1
-                            groups.firstOrNull { group ->
-                                group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                                    (0..<group.mediaTrackGroup.length)
-                                        .filter {
-                                            if (subtitleIsExternal) {
-                                                group.getTrackFormat(0).id?.contains("e:") == true
-                                            } else {
-                                                group.getTrackFormat(0).id?.contains("e:") == false
-                                            }
-                                        }.map {
-                                            group.getTrackFormat(it).idAsInt
-                                        }.contains(indexToFind)
-                            }
-                        }
-
-                    Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
-                    chosenTrack?.let {
-                        paramsBuilder
-                            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                            .setOverrideForType(
-                                TrackSelectionOverride(
-                                    chosenTrack.mediaTrackGroup,
-                                    0,
-                                ),
-                            )
-                    }
-                    chosenTrack != null
-                } else {
-                    false
-                }
-            } else {
-                paramsBuilder
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-
-                true
-            }
-        val audioSelected =
-            if (audioIndex != null && audioIndex >= 0 && supportsDirectPlay) {
-                val indexToFind =
-                    calculateIndexToFind(
-                        audioIndex,
-                        MediaStreamType.AUDIO,
-                        playerBackend,
-                        embeddedSubtitleCount,
-                        externalSubtitleCount,
-                        false,
-                        null,
-                        source,
-                    )
-                val chosenTrack =
-                    groups.firstOrNull { group ->
-                        group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
-                            (0..<group.mediaTrackGroup.length)
-                                .map {
-                                    group.getTrackFormat(it).idAsInt
-                                }.contains(indexToFind)
-                    }
-                Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
-                chosenTrack?.let {
-                    paramsBuilder
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(
-                                chosenTrack.mediaTrackGroup,
-                                0,
-                            ),
-                        )
-                }
-                chosenTrack != null
-            } else {
-                true
-            }
-        return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
-    }
-
-    private fun getPlayerIndex(
-        serverIndex: Int,
-        source: MediaSourceInfo,
-        type: MediaStreamType,
-    ): Int? {
-        val playerIndex =
-            source.mediaStreams
-                .orEmpty()
-                .filter { it.type == type }
-                .let {
-                    if (type == MediaStreamType.SUBTITLE) {
-                        it.filter { it.deliveryMethod == SubtitleDeliveryMethod.EMBED || it.deliveryMethod == SubtitleDeliveryMethod.HLS }
-                    } else {
-                        it
-                    }
-                }.indexOfFirstOrNull { it.index == serverIndex }
-        return playerIndex
-    }
-
-    val Tracks.Group.trackFormats: List<Format>
-        @OptIn(UnstableApi::class)
-        get() =
-            (0..<mediaTrackGroup.length)
-                .mapNotNull {
-                    getTrackFormat(it)
-                }
-
     @OptIn(UnstableApi::class)
     fun createTrackSelections(
         trackSelectionParams: TrackSelectionParameters,
@@ -253,6 +91,33 @@ object TrackSelectionUtils {
             }
         return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
     }
+
+    private fun getPlayerIndex(
+        serverIndex: Int,
+        source: MediaSourceInfo,
+        type: MediaStreamType,
+    ): Int? {
+        val playerIndex =
+            source.mediaStreams
+                .orEmpty()
+                .filter { it.type == type }
+                .let {
+                    if (type == MediaStreamType.SUBTITLE) {
+                        it.filter { it.deliveryMethod == SubtitleDeliveryMethod.EMBED || it.deliveryMethod == SubtitleDeliveryMethod.HLS }
+                    } else {
+                        it
+                    }
+                }.indexOfFirstOrNull { it.index == serverIndex }
+        return playerIndex
+    }
+
+    val Tracks.Group.trackFormats: List<Format>
+        @OptIn(UnstableApi::class)
+        get() =
+            (0..<mediaTrackGroup.length)
+                .mapNotNull {
+                    getTrackFormat(it)
+                }
 
     /**
      * Maps the server provided index to the track index based on the [PlayerBackend] and other stream information

@@ -36,8 +36,6 @@ class TestSelectionTrackExamples {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = testTacks.toTracks(),
-                playerBackend = playerBackend,
-                supportsDirectPlay = true,
                 audioIndex = audioIndex,
                 subtitleIndex = subtitleIndex,
                 source = builder.buildMediaSourceInfo(),

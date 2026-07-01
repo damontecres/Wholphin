@@ -250,8 +250,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = 4,
                 source = source,
@@ -265,8 +263,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 4,
                 source = source,
@@ -280,8 +276,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = TrackIndex.DISABLED,
                 source = source,
@@ -307,8 +301,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = 4,
                 source = source,
@@ -322,8 +314,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 4,
                 source = source,
@@ -337,8 +327,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 6,
                 source = source,
@@ -352,8 +340,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = TrackIndex.DISABLED,
                 source = source,
@@ -379,8 +365,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 0,
                 source = source,
@@ -394,8 +378,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 0,
                 source = source,
@@ -421,8 +403,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 0,
                 source = source,
@@ -448,8 +428,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 0,
                 source = source,
@@ -465,8 +443,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 5,
                 source = source,
@@ -500,8 +476,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 0,
                     source = source,
@@ -523,8 +497,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 5,
                     source = source,
@@ -551,8 +523,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 2,
                     source = source,
