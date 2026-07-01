@@ -693,4 +693,11 @@
     <string name="quality_profile">Profil kvality</string>
     <string name="is_default">Predvolené</string>
     <string name="root_folder">Koreňový priečinok</string>
+    <string name="popularity">Popularita</string>
+    <string name="production_status">Stav produkcie</string>
+    <string name="different_for_hdr">Použiť iný štýl pre HDR</string>
+    <string name="experimental_settings">Experimentálne nastavenia</string>
+    <string name="confirm_enable_experimental_title">Povoliť experimentálne nastavenia?</string>
+    <string name="confirm_enable_experimental_body">Experimentálne nastavenia môžu byť nestabilné!\n\n Môžu byť zmenené alebo odstránené v budúcich verziách.</string>
+    <string name="video_tunneling">Video tunneling</string>
 </resources>
