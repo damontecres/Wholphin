@@ -4,6 +4,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 
 object ExperimentalPreference {
     val Enable =
@@ -35,6 +36,32 @@ object ExperimentalPreference {
             summaryOn = R.string.enabled,
             summaryOff = R.string.disabled,
         )
+
+    val PreferAc3ForSurround =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.prefer_ac3_for_surround,
+            defaultValue = true,
+            getter = { it.experimentalPreferences.preferAc3Surround },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences {
+                    preferAc3Surround = value
+                }
+            },
+            summaryOn = R.string.prefer_ac3_for_surround_summary,
+//                summaryOn = R.string.enabled,
+            summaryOff = R.string.disabled,
+            validator = { prefs, value ->
+                prefs.playbackPreferences.overrides.let {
+                    if (value && !it.ac3Supported) {
+                        PreferenceValidation.Invalid("AC3 support is not enabled")
+                    } else if (value && it.downmixStereo) {
+                        PreferenceValidation.Invalid("Always downmixing to stereo")
+                    } else {
+                        PreferenceValidation.Valid
+                    }
+                }
+            },
+        )
 }
 
 val experimentalPreferences =
@@ -45,6 +72,7 @@ val experimentalPreferences =
                 preferences =
                     listOf(
                         ExperimentalPreference.VideoTunneling,
+                        ExperimentalPreference.PreferAc3ForSurround,
                     ),
             ),
         )

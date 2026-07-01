@@ -402,31 +402,7 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
-        val PreferAc3ForSurround =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.prefer_ac3_for_surround,
-                defaultValue = true,
-                getter = { it.experimentalPreferences.preferAc3Surround },
-                setter = { prefs, value ->
-                    prefs.updateExperimentalPreferences {
-                        preferAc3Surround = value
-                    }
-                },
-                summaryOn = R.string.prefer_ac3_for_surround_summary,
-//                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
-                validator = { prefs, value ->
-                    prefs.playbackPreferences.overrides.let {
-                        if (value && !it.ac3Supported) {
-                            PreferenceValidation.Invalid("AC3 support is not enabled")
-                        } else if (value && it.downmixStereo) {
-                            PreferenceValidation.Invalid("Always downmixing to stereo")
-                        } else {
-                            PreferenceValidation.Valid
-                        }
-                    }
-                },
-            )
+
         val DownMixStereo =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.downmix_stereo,
@@ -1169,7 +1145,6 @@ private val ExoPlayerSettings =
         AppPreference.FfmpegPreference,
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
-        AppPreference.PreferAc3ForSurround,
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
