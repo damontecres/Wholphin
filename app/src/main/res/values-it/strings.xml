@@ -674,4 +674,9 @@
     <string name="root_folder">Cartella principale</string>
     <string name="popularity">Popolarità</string>
     <string name="production_status">Stato di produzione</string>
+    <string name="different_for_hdr">Usa stile differente per HDR</string>
+    <string name="experimental_settings">Impostazioni sperimentali</string>
+    <string name="confirm_enable_experimental_title">Abilita impostazioni sperimentali?</string>
+    <string name="confirm_enable_experimental_body">Le impostazioni sperimentali possono essere instabili!\nPossono essere rimosse o cambiate in qualsiasi aggiornamento.</string>
+    <string name="video_tunneling">Tunneling video</string>
 </resources>
