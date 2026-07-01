@@ -47,9 +47,7 @@ object ExperimentalPreference {
                     preferAc3Surround = value
                 }
             },
-            summaryOn = R.string.prefer_ac3_for_surround_summary,
-//                summaryOn = R.string.enabled,
-            summaryOff = R.string.disabled,
+            summary = R.string.prefer_ac3_for_surround_summary,
             validator = { prefs, value ->
                 prefs.playbackPreferences.overrides.let {
                     if (value && !it.ac3Supported) {
