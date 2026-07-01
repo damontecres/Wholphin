@@ -617,7 +617,11 @@ class PlaybackViewModel
             val itemId = item.id
 
             val currentPlayback = state.value.currentPlayback
-            if (currentPlayback != null && currentPlayback.item.id == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+            if (currentPlayback != null &&
+                currentPlayback.item.id == item.id &&
+                currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
+                enableDirectPlay
+            ) {
                 val wasSuccessful =
                     changeStreamsDirectPlay(
                         currentPlayback = currentPlayback,
@@ -807,7 +811,7 @@ class PlaybackViewModel
                         mediaItem,
                         positionMs,
                     )
-                    if (audioIndex != null || subtitleIndex != null) {
+                    if (transcodeType == PlayMethod.DIRECT_PLAY && (audioIndex != null || subtitleIndex != null)) {
                         val onTracksChangedListener =
                             object : Player.Listener {
                                 override fun onTracksChanged(tracks: Tracks) {
@@ -817,8 +821,6 @@ class PlaybackViewModel
                                             TrackSelectionUtils.createTrackSelections(
                                                 player.trackSelectionParameters,
                                                 player.currentTracks,
-                                                currentPlayer.value!!.backend,
-                                                source.supportsDirectPlay,
                                                 audioIndex.takeIf { transcodeType == PlayMethod.DIRECT_PLAY },
                                                 subtitleIndex,
                                                 source,
@@ -864,8 +866,6 @@ class PlaybackViewModel
                             TrackSelectionUtils.createTrackSelections(
                                 onMain { player.trackSelectionParameters },
                                 onMain { player.currentTracks },
-                                currentPlayer.value!!.backend,
-                                true,
                                 audioIndex,
                                 subtitleIndex,
                                 source,
@@ -900,7 +900,7 @@ class PlaybackViewModel
                             it.copy(
                                 currentPlayback =
                                     (it.currentPlayback ?: currentPlayback).copy(
-                                        tracks = checkForSupport(player.currentTracks),
+                                        tracks = checkForSupport(onMain { player.currentTracks }),
                                     ),
                             )
                         }

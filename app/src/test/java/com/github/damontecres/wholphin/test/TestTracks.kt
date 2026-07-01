@@ -10,6 +10,7 @@ import org.jellyfin.sdk.model.api.MediaSourceType
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
 import org.junit.Assert
 import org.junit.Test
 
@@ -18,7 +19,7 @@ import org.junit.Test
  *
  * @see Builder
  */
-class TestTracks private constructor(
+class TestTracks(
     val tracks: List<TestTrack> = emptyList(),
 ) {
     /**
@@ -27,6 +28,7 @@ class TestTracks private constructor(
     fun toTracks(): Tracks {
         val groups =
             tracks
+                .sortedBy { it.external }
                 .map {
                     val mimeType =
                         when (it.type) {
@@ -190,6 +192,12 @@ class TestTracks private constructor(
                             index = index,
                             type = track.type!!,
                             isExternal = track.external,
+                            deliveryMethod =
+                                if (track.type == MediaStreamType.SUBTITLE && track.external) {
+                                    SubtitleDeliveryMethod.EXTERNAL
+                                } else {
+                                    SubtitleDeliveryMethod.EMBED
+                                },
                             codec = null,
                             language = null,
                             isInterlaced = false,
@@ -530,6 +538,12 @@ class TestTracksTests {
             Assert.assertEquals("6:3", tracks[6].id)
             Assert.assertEquals("7:4", tracks[7].id)
             Assert.assertEquals("8:e:5", tracks[8].id)
+        }
+
+        builder.buildMediaSourceInfo().let { source ->
+            val index =
+                source.mediaStreams?.indexOfFirst { it.type == MediaStreamType.SUBTITLE && it.isExternal }
+            Assert.assertEquals(8, index)
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -29,6 +30,13 @@ object TrackSelectionUtils {
         subtitleIndex: Int?,
         source: MediaSourceInfo,
     ): TrackSelectionResult {
+        return createTrackSelections(
+            trackSelectionParams = trackSelectionParams,
+            tracks = tracks,
+            audioIndex = audioIndex,
+            subtitleIndex = subtitleIndex,
+            source = source,
+        )
         val embeddedSubtitleCount = source.embeddedSubtitleCount
         val externalSubtitleCount = source.externalSubtitlesCount
 
@@ -137,6 +145,106 @@ object TrackSelectionUtils {
                                 chosenTrack.mediaTrackGroup,
                                 0,
                             ),
+                        )
+                }
+                chosenTrack != null
+            } else {
+                true
+            }
+        return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
+    }
+
+    private fun getPlayerIndex(
+        serverIndex: Int,
+        source: MediaSourceInfo,
+        type: MediaStreamType,
+    ): Int? {
+        val playerIndex =
+            source.mediaStreams
+                .orEmpty()
+                .filter { it.type == type }
+                .let {
+                    if (type == MediaStreamType.SUBTITLE) {
+                        it.filter { it.deliveryMethod == SubtitleDeliveryMethod.EMBED || it.deliveryMethod == SubtitleDeliveryMethod.HLS }
+                    } else {
+                        it
+                    }
+                }.indexOfFirstOrNull { it.index == serverIndex }
+        return playerIndex
+    }
+
+    val Tracks.Group.trackFormats: List<Format>
+        @OptIn(UnstableApi::class)
+        get() =
+            (0..<mediaTrackGroup.length)
+                .mapNotNull {
+                    getTrackFormat(it)
+                }
+
+    @OptIn(UnstableApi::class)
+    fun createTrackSelections(
+        trackSelectionParams: TrackSelectionParameters,
+        tracks: Tracks,
+        audioIndex: Int?,
+        subtitleIndex: Int?,
+        source: MediaSourceInfo,
+    ): TrackSelectionResult {
+        val paramsBuilder = trackSelectionParams.buildUpon()
+        val subtitleSelected =
+            if (subtitleIndex != null && subtitleIndex >= 0) {
+                val subtitleIsExternal = source.findExternalSubtitle(subtitleIndex) != null
+                val chosenTrack =
+                    if (subtitleIsExternal) {
+                        tracks.groups.firstOrNull { group ->
+                            group.type == C.TRACK_TYPE_TEXT &&
+                                group.trackFormats.any { it.id?.contains(":e:") == true }
+                        }
+                    } else {
+                        val playerIndex =
+                            getPlayerIndex(subtitleIndex, source, MediaStreamType.SUBTITLE)
+                        if (playerIndex != null) {
+                            tracks.groups
+                                .filter { group ->
+                                    group.type == C.TRACK_TYPE_TEXT && group.isSupported
+                                }.getOrNull(playerIndex)
+                        } else {
+                            null
+                        }
+                    }
+                chosenTrack?.let {
+                    paramsBuilder
+                        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
+                        )
+                }
+                chosenTrack != null
+            } else {
+                paramsBuilder
+                    .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                true
+            }
+
+        val audioSelected =
+            if (audioIndex != null && audioIndex >= 0) {
+                val playerIndex = getPlayerIndex(audioIndex, source, MediaStreamType.AUDIO)
+                val chosenTrack =
+                    if (playerIndex != null) {
+                        tracks.groups
+                            .filter { group ->
+                                group.type == C.TRACK_TYPE_AUDIO && group.isSupported
+                            }.getOrNull(playerIndex)
+                    } else {
+                        null
+                    }
+                chosenTrack?.let {
+                    paramsBuilder
+                        .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
                         )
                 }
                 chosenTrack != null
