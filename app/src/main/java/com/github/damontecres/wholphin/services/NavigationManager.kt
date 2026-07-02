@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.services
 import androidx.navigation3.runtime.NavBackStack
 import com.github.damontecres.wholphin.ui.nav.Destination
 import org.acra.ACRA
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,13 +14,20 @@ import javax.inject.Singleton
 @Singleton
 class NavigationManager
     @Inject
-    constructor() {
+    constructor(
+        private val musicService: MusicService,
+    ) {
         var backStack: MutableList<Destination> = NavBackStack(Destination.Home())
 
         /**
          * Go to the specified [com.github.damontecres.wholphin.ui.nav.Destination]
          */
         fun navigateTo(destination: Destination) {
+            // An album-less song has no page of its own, so play it in place instead of navigating.
+            if (destination is Destination.MediaItem && destination.type == BaseItemKind.AUDIO) {
+                musicService.playSong(destination.itemId)
+                return
+            }
             backStack.add(destination)
             log()
         }

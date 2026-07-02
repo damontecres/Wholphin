@@ -435,7 +435,7 @@ fun SearchPage(
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position.row)?.tryRequestFocus()
     }
-    val onClickItem = { index: Int, item: BaseItem ->
+    val onClickItem = { _: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
     val onPlayItem = { _: Int, item: BaseItem ->
