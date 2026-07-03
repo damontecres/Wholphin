@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui
 
 import android.content.Context
+import android.content.res.Resources
 import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.appendInlineContent
@@ -8,7 +9,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
-import android.content.res.Resources
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentType
