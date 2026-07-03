@@ -458,7 +458,7 @@
     <string name="force_dovi_profile_7">Odtwarzanie bezpośrednie Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignoruj sprawdzanie zgodności urządzenia</string>
     <string name="discover">Odkryj</string>
-    <string name="request">Prośby</string>
+    <string name="request">Poproś</string>
     <string name="pending">Oczekujące</string>
     <string name="seerr_integration">Integracja z Seerr</string>
     <string name="remove_seerr_server">Usuń serwer Seerr</string>
