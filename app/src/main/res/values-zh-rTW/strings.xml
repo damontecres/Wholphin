@@ -637,4 +637,11 @@
     <string name="experimental_settings">實驗性設定</string>
     <string name="confirm_enable_experimental_title">啟用實驗性設定？</string>
     <string name="confirm_enable_experimental_body">實驗性設定可能不穩定！\n在後續版本中可能會被移除或變更。</string>
+    <string name="duration_hours_minutes_seconds">%1$d小時 %2$d分 %3$d秒</string>
+    <string name="duration_hours_minutes">%1$d小時 %2$d分</string>
+    <string name="duration_minutes_seconds">%1$d分 %2$d秒</string>
+    <string name="duration_hours">%1$d小時</string>
+    <string name="duration_minutes">%1$d分</string>
+    <string name="duration_seconds">%1$d秒</string>
+    <string name="time_left">還剩 %1$s</string>
 </resources>
