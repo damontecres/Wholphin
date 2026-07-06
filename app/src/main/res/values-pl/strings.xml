@@ -700,4 +700,11 @@
     <string name="confirm_enable_experimental_title">Włączyć ustawienia eksperymentalne?</string>
     <string name="confirm_enable_experimental_body">Eksperymentalne ustawienia mogą powodować problemy!\n\nMogą być usunięte bądź zmienione w kolejnym wydaniu.</string>
     <string name="video_tunneling">Tunelowanie wideo</string>
+    <string name="time_left">Pozostało %1$s</string>
+    <string name="duration_minutes">%1$d min.</string>
+    <string name="duration_seconds">%1$d sek.</string>
+    <string name="duration_hours">%1$d godz.</string>
+    <string name="duration_hours_minutes_seconds">%1$d godz. %2$d min. %3$d sek.</string>
+    <string name="duration_hours_minutes">%1$d godz. %2$d min.</string>
+    <string name="duration_minutes_seconds">%1$d min. %2$d sek.</string>
 </resources>
