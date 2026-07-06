@@ -658,4 +658,11 @@
     <string name="confirm_enable_experimental_title">Deneysel ayarları açmak istiyor musun?</string>
     <string name="confirm_enable_experimental_body">Deneysel ayarlar kararsız çalışabilir! \n\nBu ayarlar sonraki sürümlerde kaldırılabilir veya değiştirilebilir.</string>
     <string name="video_tunneling">Video tünelleme</string>
+    <string name="duration_hours_minutes_seconds">%1$dsa %2$ddk %3$dsn</string>
+    <string name="duration_hours_minutes">%1$dsa %2$ddk</string>
+    <string name="duration_minutes_seconds">%1$ddk %2$dsn</string>
+    <string name="duration_hours">%1$dsa</string>
+    <string name="duration_minutes">%1$ddk</string>
+    <string name="duration_seconds">%1$dsn</string>
+    <string name="time_left">%1$s kaldı</string>
 </resources>
