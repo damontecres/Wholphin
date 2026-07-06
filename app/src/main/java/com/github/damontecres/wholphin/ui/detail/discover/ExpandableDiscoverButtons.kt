@@ -60,7 +60,10 @@ fun ExpandableDiscoverButtons(
                 SeerrAvailability.AVAILABLE,
                 -> R.string.go_to
 
-                SeerrAvailability.DELETED -> R.string.delete // TODO
+                // TODO
+                SeerrAvailability.DELETED -> R.string.delete
+
+                SeerrAvailability.BLOCKLISTED -> R.string.blocklisted
             }
         val icon =
             when (availability) {
@@ -74,13 +77,29 @@ fun ExpandableDiscoverButtons(
                 SeerrAvailability.AVAILABLE,
                 -> R.string.fa_play
 
-                SeerrAvailability.DELETED -> R.string.fa_video // TODO
+                SeerrAvailability.DELETED -> R.string.fa_video
+
+                // TODO
+                SeerrAvailability.BLOCKLISTED -> R.string.fa_xmark
             }
         item("first") {
             ExpandableFaButton(
                 title = text,
                 iconStringRes = icon,
-                enabled = if (availability == SeerrAvailability.UNKNOWN) canRequest else true,
+                enabled =
+                    when (availability) {
+                        SeerrAvailability.UNKNOWN -> canRequest
+
+                        SeerrAvailability.PENDING,
+                        SeerrAvailability.PROCESSING,
+                        SeerrAvailability.PARTIALLY_AVAILABLE,
+                        SeerrAvailability.AVAILABLE,
+                        -> true
+
+                        SeerrAvailability.BLOCKLISTED,
+                        SeerrAvailability.DELETED,
+                        -> false
+                    },
                 onClick = {
                     when (availability) {
                         SeerrAvailability.UNKNOWN -> {
@@ -99,7 +118,9 @@ fun ExpandableDiscoverButtons(
                             goToOnClick.invoke()
                         }
 
-                        SeerrAvailability.DELETED -> {
+                        SeerrAvailability.DELETED,
+                        SeerrAvailability.BLOCKLISTED,
+                        -> {
                             // TODO
                         }
                     }
