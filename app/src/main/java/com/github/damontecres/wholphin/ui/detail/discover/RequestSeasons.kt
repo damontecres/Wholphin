@@ -282,6 +282,11 @@ fun SeasonListItem(
                 SeerrAvailability.AVAILABLE -> {
                     AvailableIndicator()
                 }
+
+                SeerrAvailability.BLOCKLISTED -> {
+                    // TODO handle block listed
+//                    BlocklistedIndicator()
+                }
             }
         },
         trailingContent = {
