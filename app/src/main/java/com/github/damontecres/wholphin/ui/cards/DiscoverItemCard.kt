@@ -131,7 +131,8 @@ fun DiscoverItemCard(
                     }
 
                     SeerrAvailability.BLOCKLISTED -> {
-                        BlocklistedIndicator(Modifier.align(Alignment.TopEnd))
+                        // TODO handle block listed
+//                        BlocklistedIndicator(Modifier.align(Alignment.TopEnd))
                     }
 
                     SeerrAvailability.UNKNOWN,

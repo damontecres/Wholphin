@@ -63,7 +63,8 @@ fun ExpandableDiscoverButtons(
                 // TODO
                 SeerrAvailability.DELETED -> R.string.delete
 
-                SeerrAvailability.BLOCKLISTED -> R.string.blocklisted
+                // TODO Blocklist
+                SeerrAvailability.BLOCKLISTED -> R.string.unavailable
             }
         val icon =
             when (availability) {

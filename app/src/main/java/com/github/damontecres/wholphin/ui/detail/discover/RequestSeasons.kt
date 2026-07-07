@@ -40,7 +40,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.Season
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
-import com.github.damontecres.wholphin.ui.cards.BlocklistedIndicator
 import com.github.damontecres.wholphin.ui.cards.PartiallyAvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PendingIndicator
 import com.github.damontecres.wholphin.ui.components.BasicDialog
@@ -285,7 +284,8 @@ fun SeasonListItem(
                 }
 
                 SeerrAvailability.BLOCKLISTED -> {
-                    BlocklistedIndicator()
+                    // TODO handle block listed
+//                    BlocklistedIndicator()
                 }
             }
         },
