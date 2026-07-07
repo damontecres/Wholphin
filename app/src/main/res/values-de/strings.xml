@@ -657,4 +657,12 @@
     <string name="experimental_settings">Experimentelle Einstellungen</string>
     <string name="confirm_enable_experimental_title">Experimentelle Einstellungen aktivieren?</string>
     <string name="confirm_enable_experimental_body">Die experimentellen Einstellungen sind instabil!\n\n Diese könnten mit jedem Update verändert oder entfernt werden.</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">%1$s verbleibend</string>
+    <string name="video_tunneling">Video Tunneling</string>
 </resources>
