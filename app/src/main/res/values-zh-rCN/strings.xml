@@ -534,15 +534,15 @@
     <string name="search_for">搜索 %s</string>
     <string name="select_all">全选</string>
     <string name="albums">专辑</string>
-    <string name="artists">音乐人</string>
+    <string name="artists">艺人</string>
     <string name="songs">歌曲</string>
-    <string name="go_to_artist">前往音乐人</string>
+    <string name="go_to_artist">前往艺人</string>
     <string name="now_playing">正在播放</string>
     <string name="instant_mix">即时混音</string>
     <string name="go_to_album">前往专辑</string>
     <string name="add_to_queue">添加到待播列表</string>
     <string name="remove_from_queue">从待播列表中移除</string>
-    <string name="album_artist">专辑音乐人</string>
+    <string name="album_artist">专辑艺人</string>
     <string name="album">专辑</string>
     <string name="popular_songs">热门歌曲</string>
     <string name="play_next">接下来播放</string>
@@ -637,4 +637,11 @@
     <string name="confirm_enable_experimental_title">启用实验性设置？</string>
     <string name="confirm_enable_experimental_body">实验性设置可能不稳定！\n\n 这些设置可能会在任何版本中被移除或更改。</string>
     <string name="video_tunneling">隧道播放模式</string>
+    <string name="duration_hours_minutes_seconds">%1$d小时%2$d分%3$d秒</string>
+    <string name="duration_hours_minutes">%1$d小时%2$d分</string>
+    <string name="duration_minutes_seconds">%1$d分%2$d秒</string>
+    <string name="duration_hours">%1$d小时</string>
+    <string name="duration_minutes">%1$d分</string>
+    <string name="duration_seconds">%1$d秒</string>
+    <string name="time_left">还剩%1$s</string>
 </resources>
