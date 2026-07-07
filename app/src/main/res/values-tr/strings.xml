@@ -667,4 +667,6 @@
     <string name="duration_minutes">%1$ddk</string>
     <string name="duration_seconds">%1$dsn</string>
     <string name="time_left">%1$s kaldı</string>
+    <string name="blocklisted">Engellenenler</string>
+    <string name="unavailable">Mevcut Değil</string>
 </resources>
