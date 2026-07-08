@@ -217,6 +217,21 @@ message ExperimentalPreferences {
   bool video_tunneling_enabled = 2;
 }
 
+enum SubtitleMode {
+  SUBTITLE_MODE_SERVER_VALUE = 0;
+  SUBTITLE_MODE_DEFAULT = 1;
+  SUBTITLE_MODE_SMART = 2;
+  SUBTITLE_MODE_ONLY_FORCED = 3;
+  SUBTITLE_MODE_ALWAYS = 4;
+  SUBTITLE_MODE_NONE = 5;
+}
+
+message ServerProfileOverrides {
+  string preferred_audio_language = 1;
+  string preferred_subtitle_language = 2;
+  SubtitleMode preferred_subtitle_mode = 3;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
@@ -235,4 +250,5 @@ message AppPreferences {
   PhotoPreferences photo_preferences = 12;
   MusicPreferences music_preferences = 13;
   ExperimentalPreferences experimental_preferences = 14;
+  ServerProfileOverrides server_profile_overrides = 15;
 }

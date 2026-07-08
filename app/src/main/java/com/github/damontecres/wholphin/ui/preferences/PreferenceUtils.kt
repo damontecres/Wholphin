@@ -38,6 +38,7 @@ enum class PreferenceScreenOption {
     SCREENSAVER,
     SKIP_SEGMENTS,
     EXPERIMENTAL,
+    USER_PROFILE,
     ;
 
     companion object {

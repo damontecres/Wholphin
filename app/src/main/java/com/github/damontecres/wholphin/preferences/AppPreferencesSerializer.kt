@@ -182,6 +182,15 @@ class AppPreferencesSerializer
                                 enabled = false
                                 videoTunnelingEnabled = false
                             }.build()
+
+                    serverProfileOverrides =
+                        ServerProfileOverrides
+                            .newBuilder()
+                            .apply {
+                                preferredAudioLanguage = ""
+                                preferredSubtitleLanguage = ""
+                                preferredSubtitleMode = ServerProfileSetting.SubtitleModePref.defaultValue
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -263,6 +272,11 @@ inline fun AppPreferences.updateMusicPreferences(block: MusicPreferences.Builder
 inline fun AppPreferences.updateExperimentalPreferences(block: ExperimentalPreferences.Builder.() -> Unit): AppPreferences =
     update {
         experimentalPreferences = experimentalPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateServerProfileOverrides(block: ServerProfileOverrides.Builder.() -> Unit): AppPreferences =
+    update {
+        serverProfileOverrides = serverProfileOverrides.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

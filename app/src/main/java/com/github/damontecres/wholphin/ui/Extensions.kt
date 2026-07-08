@@ -448,3 +448,15 @@ fun <T> Flow<T>.collectLatestIn(
  * Easy way to combine two flows into a [Pair]
  */
 fun <T1, T2> Flow<T1>.combinePair(flow: Flow<T2>): Flow<Pair<T1, T2>> = combine(flow) { t1, t2 -> Pair(t1, t2) }
+
+/**
+ * Easy way to combine three flows into a [Triple]
+ */
+fun <T1, T2, T3> Flow<T1>.combineTriple(
+    flow: Flow<T2>,
+    flow2: Flow<T3>,
+): Flow<Triple<T1, T2, T3>> =
+    combine(flow) { t1, t2 -> Pair(t1, t2) }
+        .combine(flow2) { (t1, t2), t3 ->
+            Triple(t1, t2, t3)
+        }

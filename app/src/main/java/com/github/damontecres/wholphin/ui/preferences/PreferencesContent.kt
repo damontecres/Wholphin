@@ -54,15 +54,18 @@ import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.preferences.updateServerProfileOverrides
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -103,6 +106,7 @@ fun PreferencesContent(
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.collectAsState()
+    val currentUserDto by viewModel.currentUserDto.collectAsState()
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
@@ -113,6 +117,10 @@ fun PreferencesContent(
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
     var showLocaleChoiceDialog by remember { mutableStateOf(false) }
+
+    val audioLanguagePref by viewModel.audioLanguage.collectAsState()
+    val subtitleLanguagePref by viewModel.subtitleLanguage.collectAsState()
+    var showPreferredLanguageDialog by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -152,6 +160,7 @@ fun PreferencesContent(
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
             PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
             PreferenceScreenOption.EXPERIMENTAL -> experimentalPreferences
+            PreferenceScreenOption.USER_PROFILE -> ServerProfileSetting.Preferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -162,6 +171,7 @@ fun PreferencesContent(
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
             PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
             PreferenceScreenOption.EXPERIMENTAL -> R.string.experimental_settings
+            PreferenceScreenOption.USER_PROFILE -> R.string.profile_specific_settings
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -614,6 +624,24 @@ fun PreferencesContent(
                                     }
                                 }
 
+                                ServerProfileSetting.PreferredAudioLang -> {
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = { showPreferredLanguageDialog = true },
+                                        summary = audioLanguagePref.selected.displayString.getString(),
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+
+                                ServerProfileSetting.PreferredSubtitleLang -> {
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = { showPreferredLanguageDialog = false },
+                                        summary = subtitleLanguagePref.selected.displayString.getString(),
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+
                                 else -> {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
@@ -789,6 +817,40 @@ fun PreferencesContent(
             onDismissRequest = { showLocaleChoiceDialog = false },
         )
     }
+    showPreferredLanguageDialog?.let { isAudio ->
+        BasicDialog(
+            onDismissRequest = { showPreferredLanguageDialog = null },
+            elevation = 3.dp,
+        ) {
+            val lang = if (isAudio) audioLanguagePref else subtitleLanguagePref
+            FilteredLanguagePreference(
+                title = if (isAudio) R.string.preferred_audio_language else R.string.preferred_subtitle_language,
+                selectedIndex = lang.selectedIndex,
+                options = lang.options,
+                onClickOption = { index, option ->
+                    val value =
+                        when (option) {
+                            PreferredLanguageType.AnyLanguage -> ""
+                            is PreferredLanguageType.Language -> option.iso
+                            is PreferredLanguageType.ServerProfile -> "server"
+                        }
+                    scope.launch {
+                        preferences =
+                            viewModel.preferenceDataStore.updateData { prefs ->
+                                prefs.updateServerProfileOverrides {
+                                    if (isAudio) {
+                                        preferredAudioLanguage = value
+                                    } else {
+                                        preferredSubtitleLanguage = value
+                                    }
+                                }
+                            }
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
 
 @Composable
@@ -808,6 +870,7 @@ fun PreferencesPage(
             PreferenceScreenOption.SCREENSAVER,
             PreferenceScreenOption.SKIP_SEGMENTS,
             PreferenceScreenOption.EXPERIMENTAL,
+            PreferenceScreenOption.USER_PROFILE,
             -> {
                 PreferencesContent(
                     initialPreferences,

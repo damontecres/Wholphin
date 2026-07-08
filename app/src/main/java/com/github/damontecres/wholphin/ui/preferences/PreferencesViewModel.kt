@@ -23,21 +23,28 @@ import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.combineTriple
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.localizationApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
+import org.jellyfin.sdk.model.api.CultureDto
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -57,13 +64,18 @@ class PreferencesViewModel
         private val clientInfo: ClientInfo,
         private val updateChecker: UpdateChecker,
     ) : ViewModel() {
-        val currentUser
-            get() =
-                serverRepository.currentUserFlow.stateIn(
-                    viewModelScope,
-                    SharingStarted.Eagerly,
-                    null,
-                )
+        val currentUser =
+            serverRepository.currentUserFlow.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                null,
+            )
+        val currentUserDto =
+            serverRepository.currentUserDtoFlow.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                null,
+            )
 
         val seerrConnection = seerrServerRepository.connection
 
@@ -73,6 +85,61 @@ class PreferencesViewModel
         val releaseNotes = MutableStateFlow<DataLoadingState<Release>>(DataLoadingState.Pending)
 
         val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
+
+        private val serverLanguages = MutableStateFlow<List<CultureDto>>(emptyList())
+
+        private fun createLanguageFlow(subtitle: Boolean): Flow<PreferredLanguage> =
+            preferenceDataStore.data
+                .combineTriple(serverRepository.currentUserDtoFlow, serverLanguages)
+                .map { (prefs, userDto, languages) ->
+                    val prefLang =
+                        prefs.serverProfileOverrides.let { if (subtitle) it.preferredSubtitleLanguage else it.preferredAudioLanguage }
+                    val userDisplayLang =
+                        userDto
+                            ?.configuration
+                            ?.let { if (subtitle) it.subtitleLanguagePreference else it.audioLanguagePreference }
+                            .let { userLang ->
+                                languages.firstOrNull { it.threeLetterIsoLanguageName == userLang }?.displayName
+                                    ?: userLang
+                            }
+                    val selectedIndex =
+                        when (prefLang) {
+                            "server" -> 0
+                            "" -> 1
+                            else -> languages.indexOfFirstOrNull { it.threeLetterIsoLanguageName == prefLang }
+                        } ?: 0
+                    val options =
+                        buildList {
+                            add(PreferredLanguageType.ServerProfile(userDisplayLang))
+                            add(PreferredLanguageType.AnyLanguage)
+                            languages.forEach {
+                                if (it.threeLetterIsoLanguageName.isNotNullOrBlank()) {
+                                    add(
+                                        PreferredLanguageType.Language(
+                                            it.threeLetterIsoLanguageName!!,
+                                            it.displayName,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                    PreferredLanguage(selectedIndex, options)
+                }
+
+        val subtitleLanguage: StateFlow<PreferredLanguage> =
+            createLanguageFlow(true)
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    PreferredLanguage(),
+                )
+        val audioLanguage: StateFlow<PreferredLanguage> =
+            createLanguageFlow(true)
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    PreferredLanguage(),
+                )
 
         init {
             viewModelScope.launchIO {
@@ -88,6 +155,25 @@ class PreferencesViewModel
                         identifier = "",
                     )
                 this@PreferencesViewModel.externalPlayers.update { listOf(systemDefault) + externalPlayers }
+            }
+            viewModelScope.launchIO {
+//                serverRepository.currentUserDto?.configuration?.audioLanguagePreference
+                serverLanguages.value = listOf(
+                    CultureDto(
+                        name = "",
+                        displayName = "",
+                        twoLetterIsoLanguageName = "",
+                        threeLetterIsoLanguageName = "server",
+                        threeLetterIsoLanguageNames = emptyList(),
+                    ),
+                    CultureDto(
+                        name = "",
+                        displayName = "",
+                        twoLetterIsoLanguageName = "",
+                        threeLetterIsoLanguageName = "",
+                        threeLetterIsoLanguageNames = emptyList(),
+                    ),
+                ) + api.localizationApi.getCultures().content
             }
         }
 
