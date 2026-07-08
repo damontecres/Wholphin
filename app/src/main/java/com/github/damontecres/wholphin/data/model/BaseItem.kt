@@ -5,12 +5,15 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.music.artistsString
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -161,10 +164,18 @@ data class BaseItem(
                                         ?.ticks
                                         ?.roundMinutes
                                         ?.takeIf { it > Duration.ZERO }
-                                        ?.let { add(it.toString()) }
+                                        ?.let { add(WholphinApplication.instance.resources.formatDuration(it)) }
                                     data.timeRemaining
                                         ?.roundMinutes
-                                        ?.let { add("$it left") }
+                                        ?.let {
+                                            val resources = WholphinApplication.instance.resources
+                                            add(
+                                                resources.getString(
+                                                    R.string.time_left,
+                                                    resources.formatDuration(it),
+                                                ),
+                                            )
+                                        }
                                 }
                             details.forEachIndexed { index, string ->
                                 append(string)

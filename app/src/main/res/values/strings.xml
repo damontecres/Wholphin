@@ -26,6 +26,12 @@
     <string name="continue_watching">Continue watching</string>
     <string name="critic_rating">Critic Rating</string>
     <string name="decimal_seconds">%.2f seconds</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
     <string name="default_track">Default</string>
     <string name="delete">Delete</string>
     <string name="died">Died</string>
@@ -144,6 +150,7 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
+    <string name="time_left">%1$s left</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
     <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
@@ -833,4 +840,6 @@
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
     <string name="video_tunneling">Video tunneling</string>
+    <string name="blocklisted">Blocklisted</string>
+    <string name="unavailable">Unavailable</string>
 </resources>

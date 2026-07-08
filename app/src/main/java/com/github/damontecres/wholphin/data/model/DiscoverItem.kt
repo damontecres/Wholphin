@@ -56,12 +56,14 @@ enum class SeerrItemType(
 enum class SeerrAvailability(
     val status: Int,
 ) {
+    // https://github.com/seerr-team/seerr/blob/develop/server/constants/media.ts#L14
     UNKNOWN(1),
     PENDING(2),
     PROCESSING(3),
     PARTIALLY_AVAILABLE(4),
     AVAILABLE(5),
-    DELETED(6),
+    BLOCKLISTED(6),
+    DELETED(7),
     ;
 
     companion object {
