@@ -709,4 +709,6 @@
     <string name="duration_hours_minutes_seconds">%1$d godz. %2$d min. %3$d sek.</string>
     <string name="duration_hours_minutes">%1$d godz. %2$d min.</string>
     <string name="duration_minutes_seconds">%1$d min. %2$d sek.</string>
+    <string name="blocklisted">Na czarnej liście</string>
+    <string name="unavailable">Niedostępne</string>
 </resources>
