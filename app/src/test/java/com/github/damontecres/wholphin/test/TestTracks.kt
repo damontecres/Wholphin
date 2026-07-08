@@ -37,13 +37,20 @@ class TestTracks(
                             MediaStreamType.SUBTITLE -> "text/sample"
                             else -> throw UnsupportedOperationException("${it.type}")
                         }
-                    Format
-                        .Builder()
-                        .setId(it.id)
-                        .setSampleMimeType(mimeType)
-                        .build()
-                }.map { TrackGroup(it) }
-                .map { Tracks.Group(it, false, intArrayOf(C.FORMAT_HANDLED), booleanArrayOf(false)) }
+                    val format =
+                        Format
+                            .Builder()
+                            .setId(it.id)
+                            .setSampleMimeType(mimeType)
+                            .build()
+                    Tracks.Group(
+                        TrackGroup(format),
+                        false,
+                        intArrayOf(it.support),
+                        booleanArrayOf(false),
+                    )
+                }
+
         return Tracks(groups)
     }
 
@@ -53,35 +60,24 @@ class TestTracks(
     class Builder {
         private val tracks = mutableListOf<TestTrackBuilder>()
 
-        fun addVideo(): Builder {
-            tracks.add(TestTrackBuilder(MediaStreamType.VIDEO))
-            return this
-        }
+        fun addVideo(): Builder = addTrack(1, MediaStreamType.VIDEO, false, C.FORMAT_HANDLED)
 
-        fun addAudio(count: Int = 1): Builder {
-            repeat(count) {
-                tracks.add(TestTrackBuilder(MediaStreamType.AUDIO))
-            }
-            return this
-        }
+        fun addAudio(count: Int = 1): Builder = addTrack(count, MediaStreamType.AUDIO, false, C.FORMAT_HANDLED)
 
-        fun addSubtitle(count: Int = 1): Builder {
-            repeat(count) {
-                tracks.add(TestTrackBuilder(MediaStreamType.SUBTITLE, false))
-            }
-            return this
-        }
+        fun addSubtitle(count: Int = 1): Builder = addTrack(count, MediaStreamType.SUBTITLE, false, C.FORMAT_HANDLED)
 
-        fun addExternalSubtitle(count: Int = 1): Builder {
-            repeat(count) {
-                tracks.add(TestTrackBuilder(MediaStreamType.SUBTITLE, true))
-            }
-            return this
-        }
+        fun addExternalSubtitle(count: Int = 1): Builder = addTrack(count, MediaStreamType.SUBTITLE, true, C.FORMAT_HANDLED)
 
-        fun addEmpty(count: Int = 1): Builder {
+        fun addEmpty(count: Int = 1): Builder = addTrack(count, null, false, C.FORMAT_UNSUPPORTED_TYPE)
+
+        fun addTrack(
+            count: Int,
+            type: MediaStreamType?,
+            external: Boolean,
+            @C.FormatSupport support: Int,
+        ): Builder {
             repeat(count) {
-                tracks.add(TestTrackBuilder(null))
+                tracks.add(TestTrackBuilder(type, external, support))
             }
             return this
         }
@@ -108,14 +104,27 @@ class TestTracks(
                                         index,
                                         track.type,
                                         track.external,
+                                        track.support,
                                     )
                                 } else if (hasExternal) {
                                     val idx = index + 1 - externalSubCount
                                     // If there's a sidecar file, the actual file
-                                    TestTrack("0:$idx", index, track.type, track.external)
+                                    TestTrack(
+                                        "0:$idx",
+                                        index,
+                                        track.type,
+                                        track.external,
+                                        track.support,
+                                    )
                                 } else {
                                     val idx = index + 1
-                                    TestTrack("$idx", index, track.type, track.external)
+                                    TestTrack(
+                                        "$idx",
+                                        index,
+                                        track.type,
+                                        track.external,
+                                        track.support,
+                                    )
                                 }
                             }
                     addAll(t)
@@ -253,11 +262,13 @@ data class TestTrack(
     val index: Int,
     val type: MediaStreamType,
     val external: Boolean,
+    @param:C.FormatSupport val support: Int = C.FORMAT_HANDLED,
 )
 
 class TestTrackBuilder(
     val type: MediaStreamType?,
     val external: Boolean = false,
+    @param:C.FormatSupport val support: Int = C.FORMAT_HANDLED,
 )
 
 fun assertIdType(

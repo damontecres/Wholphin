@@ -41,7 +41,6 @@ object TrackSelectionUtils {
                             tracks.groups
                                 .filter { group ->
                                     group.type == C.TRACK_TYPE_TEXT &&
-                                        group.isSupported &&
                                         group.length >= 1 &&
                                         !group.isExternal
                                 }
@@ -52,20 +51,30 @@ object TrackSelectionUtils {
                             null
                         }
                     }
-                chosenTrack?.let {
-                    paramsBuilder
-                        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
-                        )
+                when {
+                    chosenTrack != null && chosenTrack.isSupported -> {
+                        paramsBuilder
+                            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                            .setOverrideForType(
+                                TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
+                            )
+                        TrackSelected.SELECTED
+                    }
+
+                    chosenTrack != null && !chosenTrack.isSupported -> {
+                        TrackSelected.UNSUPPORTED
+                    }
+
+                    else -> {
+                        TrackSelected.NOT_FOUND
+                    }
                 }
-                chosenTrack != null
             } else {
                 paramsBuilder
                     .clearOverridesOfType(C.TRACK_TYPE_TEXT)
                     .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                true
+                TrackSelected.SELECTED
             }
 
         val audioSelected =
@@ -75,7 +84,7 @@ object TrackSelectionUtils {
                     if (playerIndex != null) {
                         tracks.groups
                             .filter { group ->
-                                group.type == C.TRACK_TYPE_AUDIO && group.isSupported && group.length >= 1
+                                group.type == C.TRACK_TYPE_AUDIO && group.length >= 1
                             }
                             // TODO why are exoplayer tracks out of order sometimes?
                             .sortedById()
@@ -83,17 +92,27 @@ object TrackSelectionUtils {
                     } else {
                         null
                     }
-                chosenTrack?.let {
-                    paramsBuilder
-                        .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
-                        )
+                when {
+                    chosenTrack != null && chosenTrack.isSupported -> {
+                        paramsBuilder
+                            .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+                            .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                            .setOverrideForType(
+                                TrackSelectionOverride(chosenTrack.mediaTrackGroup, 0),
+                            )
+                        TrackSelected.SELECTED
+                    }
+
+                    chosenTrack != null && !chosenTrack.isSupported -> {
+                        TrackSelected.UNSUPPORTED
+                    }
+
+                    else -> {
+                        TrackSelected.NOT_FOUND
+                    }
                 }
-                chosenTrack != null
             } else {
-                true
+                TrackSelected.SELECTED
             }
         return TrackSelectionResult(paramsBuilder.build(), audioSelected, subtitleSelected)
     }
@@ -200,8 +219,18 @@ fun List<MediaStream>.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
  */
 data class TrackSelectionResult(
     val trackSelectionParameters: TrackSelectionParameters,
-    val audioSelected: Boolean,
-    val subtitleSelected: Boolean,
+    val audio: TrackSelected,
+    val subtitle: TrackSelected,
 ) {
-    val bothSelected: Boolean = audioSelected && subtitleSelected
+    val audioSelected: Boolean get() = audio == TrackSelected.SELECTED
+
+    val subtitleSelected: Boolean get() = subtitle == TrackSelected.SELECTED
+
+    val bothSelected: Boolean get() = audioSelected && subtitleSelected
+}
+
+enum class TrackSelected {
+    SELECTED,
+    NOT_FOUND,
+    UNSUPPORTED,
 }

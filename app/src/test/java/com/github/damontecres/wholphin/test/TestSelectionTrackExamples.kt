@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.test
 
+import androidx.media3.common.C
 import androidx.media3.common.TrackSelectionParameters
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.playback.TrackSelected
 import com.github.damontecres.wholphin.ui.playback.TrackSelectionResult
 import com.github.damontecres.wholphin.ui.playback.TrackSelectionUtils
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -199,5 +201,99 @@ class TestSelectionTrackExamples {
             Assert.assertEquals("1:2", result.trackSelectionParameters.getAudioOverride()?.id)
             Assert.assertEquals("5:2", result.trackSelectionParameters.getSubtitleOverride()?.id)
         }
+    }
+
+    @Test
+    fun `test unsupported tracks`() {
+        val builder =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio()
+                .addTrack(1, MediaStreamType.AUDIO, false, C.FORMAT_UNSUPPORTED_TYPE)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 1,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.SELECTED, result.audio)
+                Assert.assertTrue(result.bothSelected)
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 2,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.UNSUPPORTED, result.audio)
+                Assert.assertFalse(result.bothSelected)
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 4,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.NOT_FOUND, result.audio)
+                Assert.assertFalse(result.bothSelected)
+            }
+    }
+
+    @Test
+    fun `test exceeds capabilities tracks`() {
+        val builder =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio()
+                .addTrack(1, MediaStreamType.AUDIO, false, C.FORMAT_EXCEEDS_CAPABILITIES)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 1,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.SELECTED, result.audio)
+                Assert.assertTrue(result.bothSelected)
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 2,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.UNSUPPORTED, result.audio)
+                Assert.assertFalse(result.bothSelected)
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = builder.buildForExoPlayer().toTracks(),
+                audioIndex = 4,
+                subtitleIndex = null,
+                source = builder.buildMediaSourceInfo(),
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.NOT_FOUND, result.audio)
+                Assert.assertFalse(result.bothSelected)
+            }
     }
 }
