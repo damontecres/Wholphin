@@ -473,6 +473,17 @@
     <string name="dts">DTS</string>
     <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+    <string name="dovi_device_compatibility_mode">Disable Dolby Vision</string>
+    <string-array name="dovi_device_compatibility_modes">
+        <item>Off</item>
+        <item>Disable All Dolby Vision</item>
+        <item>Disable Dolby Vision with HDR10</item>
+    </string-array>
+    <string-array name="dovi_device_compatibility_mode_descriptions">
+        <item>Allow Dolby Vision media</item>
+        <item>Force transcoding by reporting the device as incompatible with all Dolby Vision media</item>
+        <item>Force transcoding by reporting the device as incompatible with Dolby Vision and HDR10/HDR10+ hybrid media</item>
+    </string-array>
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
