@@ -5,6 +5,8 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.SubtitleMode
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -135,7 +137,18 @@ class StreamChoiceService
                 val seriesLang =
                     playbackLanguageChoice?.audioLanguage?.takeIf { it.isNotNullOrBlank() }
                 // If the user has chosen a different language for the series, prefer that
-                val audioLanguage = seriesLang ?: userConfig?.audioLanguagePreference
+                val audioLanguage =
+                    if (seriesLang != null) {
+                        seriesLang
+                    } else {
+                        val pref =
+                            prefs.appPreferences.serverProfileOverrides.preferredAudioLanguage
+                        when (pref) {
+                            ServerProfileSetting.PREFER_SERVER -> userConfig?.audioLanguagePreference
+                            ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
+                            else -> pref
+                        }
+                    }
 
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
@@ -226,23 +239,27 @@ class StreamChoiceService
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
-            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+            }
+            val seriesLang =
+                playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
+            val subtitleLanguage =
+                if (seriesLang != null) {
+                    seriesLang
+                } else {
+                    val pref =
+                        prefs.appPreferences.serverProfileOverrides.preferredSubtitleLanguage
+                    when (pref) {
+                        ServerProfileSetting.PREFER_SERVER -> userConfig?.subtitleLanguagePreference
+                        ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
+                        else -> pref
+                    }?.takeIf { it.isNotNullOrBlank() }
+                }
+            if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
-                val seriesLang =
-                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-                val subtitleLanguage =
-                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
-                        ?.takeIf { it.isNotNullOrBlank() }
                 return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
-                val seriesLang =
-                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-                val subtitleLanguage =
-                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
-                        ?.takeIf { it.isNotNullOrBlank() }
-
                 val subtitleMode =
                     when {
                         playbackLanguageChoice?.subtitlesDisabled == false && seriesLang != null -> {
@@ -258,9 +275,17 @@ class StreamChoiceService
 
                         else -> {
                             // Fallback to the user's preference
-                            userConfig?.subtitleMode ?: SubtitlePlaybackMode.DEFAULT
+                            when (prefs.appPreferences.serverProfileOverrides.preferredSubtitleMode) {
+                                SubtitleMode.SUBTITLE_MODE_SERVER_VALUE -> userConfig?.subtitleMode
+                                SubtitleMode.SUBTITLE_MODE_DEFAULT -> SubtitlePlaybackMode.DEFAULT
+                                SubtitleMode.SUBTITLE_MODE_SMART -> SubtitlePlaybackMode.SMART
+                                SubtitleMode.SUBTITLE_MODE_ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
+                                SubtitleMode.SUBTITLE_MODE_ALWAYS -> SubtitlePlaybackMode.ALWAYS
+                                SubtitleMode.SUBTITLE_MODE_NONE -> SubtitlePlaybackMode.NONE
+                                SubtitleMode.UNRECOGNIZED -> SubtitlePlaybackMode.DEFAULT
+                            }
                         }
-                    }
+                    } ?: SubtitlePlaybackMode.DEFAULT
                 val candidates =
                     candidates
                         .sortedWith(

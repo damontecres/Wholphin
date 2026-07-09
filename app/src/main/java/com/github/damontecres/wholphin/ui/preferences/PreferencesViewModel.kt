@@ -15,7 +15,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting.PREFER_ANY_LANGUAGE
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -105,11 +105,11 @@ class PreferencesViewModel
                             }
                     val selected =
                         when (prefLang) {
-                            "" -> {
+                            ServerProfileSetting.PREFER_SERVER -> {
                                 PreferredLanguageType.ServerProfile(userDisplayLang)
                             }
 
-                            PREFER_ANY_LANGUAGE -> {
+                            ServerProfileSetting.PREFER_ANY_LANGUAGE -> {
                                 PreferredLanguageType.AnyLanguage
                             }
 

@@ -4,6 +4,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 
 object ServerProfileSetting {
+    const val PREFER_SERVER = ""
     const val PREFER_ANY_LANGUAGE = "_any-language"
 
     val PreferredAudioLang =

@@ -55,7 +55,6 @@ import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting.PREFER_ANY_LANGUAGE
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
@@ -831,9 +830,9 @@ fun PreferencesContent(
                 onClickOption = { option ->
                     val value =
                         when (option) {
-                            PreferredLanguageType.AnyLanguage -> PREFER_ANY_LANGUAGE
+                            PreferredLanguageType.AnyLanguage -> ServerProfileSetting.PREFER_ANY_LANGUAGE
                             is PreferredLanguageType.Language -> option.iso
-                            is PreferredLanguageType.ServerProfile -> ""
+                            is PreferredLanguageType.ServerProfile -> ServerProfileSetting.PREFER_SERVER
                         }
                     Timber.v("Updating language pref to %s", option)
                     scope.launch {
