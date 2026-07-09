@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.preferences
+package com.github.damontecres.wholphin.ui.preferences.user
 
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank

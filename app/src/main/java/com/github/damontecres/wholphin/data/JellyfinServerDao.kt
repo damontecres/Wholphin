@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 @Dao
@@ -55,6 +56,12 @@ interface JellyfinServerDao {
         serverId: UUID,
         userId: UUID,
     ): JellyfinUser?
+
+    @Query("SELECT * FROM users WHERE serverId = :serverId AND id = :userId")
+    fun getUserFlow(
+        serverId: UUID,
+        userId: UUID,
+    ): Flow<JellyfinUser?>
 
     @Query("DELETE FROM servers WHERE id = :serverId")
     fun deleteServer(serverId: UUID)

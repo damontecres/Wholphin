@@ -15,7 +15,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -24,9 +23,7 @@ import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UpdateChecker
-import com.github.damontecres.wholphin.ui.combineTriple
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -36,14 +33,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.localizationApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
-import org.jellyfin.sdk.model.api.CultureDto
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -85,70 +79,6 @@ class PreferencesViewModel
 
         val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
 
-        private val serverLanguages = MutableStateFlow<List<CultureDto>>(emptyList())
-
-        private fun createLanguageFlow(isAudio: Boolean): StateFlow<PreferredLanguage> =
-            preferenceDataStore.data
-                .combineTriple(serverRepository.currentUserDtoFlow, serverLanguages)
-                .map { (prefs, userDto, serverLanguages) ->
-                    val languages =
-                        serverLanguages.filter { it.threeLetterIsoLanguageName.isNotNullOrBlank() }
-                    val prefLang =
-                        prefs.serverProfileOverrides.let { if (isAudio) it.preferredAudioLanguage else it.preferredSubtitleLanguage }
-                    val userDisplayLang =
-                        userDto
-                            ?.configuration
-                            ?.let { if (isAudio) it.audioLanguagePreference else it.subtitleLanguagePreference }
-                            .let { userLang ->
-                                languages.firstOrNull { it.threeLetterIsoLanguageName == userLang }?.displayName
-                                    ?: userLang
-                            }
-                    val selected =
-                        when (prefLang) {
-                            ServerProfileSetting.USE_USER_PROFILE -> {
-                                PreferredLanguageType.ServerProfile(userDisplayLang)
-                            }
-
-                            ServerProfileSetting.PREFER_ANY_LANGUAGE -> {
-                                PreferredLanguageType.AnyLanguage
-                            }
-
-                            else -> {
-                                languages
-                                    .firstOrNull { it.threeLetterIsoLanguageName == prefLang }
-                                    ?.let {
-                                        PreferredLanguageType.Language(
-                                            it.threeLetterIsoLanguageName!!,
-                                            it.displayName,
-                                        )
-                                    }
-                            }
-                        } ?: PreferredLanguageType.ServerProfile(userDisplayLang)
-                    val options =
-                        buildList {
-                            add(PreferredLanguageType.ServerProfile(userDisplayLang))
-                            add(PreferredLanguageType.AnyLanguage)
-                            languages.forEach {
-                                if (it.threeLetterIsoLanguageName.isNotNullOrBlank()) {
-                                    add(
-                                        PreferredLanguageType.Language(
-                                            it.threeLetterIsoLanguageName!!,
-                                            it.displayName,
-                                        ),
-                                    )
-                                }
-                            }
-                        }
-                    PreferredLanguage(selected, options)
-                }.stateIn(
-                    viewModelScope,
-                    SharingStarted.Eagerly,
-                    PreferredLanguage(),
-                )
-
-        val audioLanguage: StateFlow<PreferredLanguage> = createLanguageFlow(true)
-        val subtitleLanguage: StateFlow<PreferredLanguage> = createLanguageFlow(false)
-
         init {
             viewModelScope.launchIO {
                 val fakeIntent =
@@ -163,10 +93,6 @@ class PreferencesViewModel
                         identifier = "",
                     )
                 this@PreferencesViewModel.externalPlayers.update { listOf(systemDefault) + externalPlayers }
-            }
-            viewModelScope.launchIO {
-//                serverRepository.currentUserDto?.configuration?.audioLanguagePreference
-                serverLanguages.value = api.localizationApi.getCultures().content
             }
         }
 

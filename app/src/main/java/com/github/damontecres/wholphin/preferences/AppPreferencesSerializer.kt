@@ -182,15 +182,6 @@ class AppPreferencesSerializer
                                 enabled = false
                                 videoTunnelingEnabled = false
                             }.build()
-
-                    serverProfileOverrides =
-                        ServerProfileOverrides
-                            .newBuilder()
-                            .apply {
-                                preferredAudioLanguage = ""
-                                preferredSubtitleLanguage = ""
-                                preferredSubtitleMode = ServerProfileSetting.SubtitleModePref.defaultValue
-                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {

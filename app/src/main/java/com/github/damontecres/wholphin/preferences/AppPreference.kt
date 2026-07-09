@@ -575,7 +575,7 @@ sealed interface AppPreference<Pref, T> {
         val UserProfileSettings =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.override_user_profile_settings,
-                destination = Destination.Settings(PreferenceScreenOption.USER_PROFILE),
+                destination = Destination.UserAppPreferences,
                 summary = R.string.override_user_profile_settings_summary,
             )
 

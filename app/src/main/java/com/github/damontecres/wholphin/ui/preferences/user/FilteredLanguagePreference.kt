@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.preferences
+package com.github.damontecres.wholphin.ui.preferences.user
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement

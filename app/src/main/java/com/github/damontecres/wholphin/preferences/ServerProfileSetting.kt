@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.preferences
 
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 
 object ServerProfileSetting {
@@ -8,14 +9,14 @@ object ServerProfileSetting {
     const val PREFER_ANY_LANGUAGE = "_any-language"
 
     val PreferredAudioLang =
-        AppClickablePreference<AppPreferences>(
+        AppClickablePreference<JellyfinUserPreferences>(
             title = R.string.preferred_audio_language,
             getter = { },
             setter = { prefs, _ -> prefs },
         )
 
     val PreferredSubtitleLang =
-        AppClickablePreference<AppPreferences>(
+        AppClickablePreference<JellyfinUserPreferences>(
             title = R.string.preferred_subtitle_language,
             summary = null,
             getter = { },
@@ -23,16 +24,16 @@ object ServerProfileSetting {
         )
 
     val SubtitleModePref =
-        AppChoicePreference<AppPreferences, SubtitleMode>(
+        AppChoicePreference<JellyfinUserPreferences, SubtitleModePreference>(
             title = R.string.subtitle_mode,
-            defaultValue = SubtitleMode.SUBTITLE_MODE_SERVER_VALUE,
-            getter = { it.serverProfileOverrides.preferredSubtitleMode },
+            defaultValue = SubtitleModePreference.USE_USER_PROFILE,
+            getter = { it.subtitleMode },
             setter = { prefs, value ->
-                prefs.updateServerProfileOverrides { preferredSubtitleMode = value }
+                prefs.copy(subtitleMode = value)
             },
             displayValues = R.array.subtitle_mode_options,
-            indexToValue = { SubtitleMode.forNumber(it) },
-            valueToIndex = { if (it != SubtitleMode.UNRECOGNIZED) it.number else 0 },
+            indexToValue = { SubtitleModePreference.entries[it] },
+            valueToIndex = { it.ordinal },
         )
 
     val Preferences =

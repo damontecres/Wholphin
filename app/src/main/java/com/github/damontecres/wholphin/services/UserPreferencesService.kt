@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import androidx.datastore.core.DataStore
+import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -17,9 +18,12 @@ class UserPreferencesService
     @Inject
     constructor(
         private val serverRepository: ServerRepository,
+        private val serverDao: JellyfinServerDao,
         private val preferencesDataStore: DataStore<AppPreferences>,
     ) {
-        val flow = preferencesDataStore.data.map { UserPreferences(it) }
+        val flow =
+            preferencesDataStore.data
+                .map { UserPreferences(it) }
 
         suspend fun getCurrent(): UserPreferences =
             serverRepository.currentUserDto!!.configuration.let { userConfig ->
