@@ -13,10 +13,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItem
@@ -69,9 +69,11 @@ fun FilteredLanguagePreference(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        val scope = rememberCoroutineScope()
         val listState = rememberLazyListState()
         val focusRequesters = remember { List(filteredOptions.size) { FocusRequester() } }
+        LaunchedEffect(Unit) {
+            focusRequesters.firstOrNull()?.tryRequestFocus()
+        }
         LazyColumn(
             state = listState,
             modifier = Modifier,
@@ -83,7 +85,7 @@ fun FilteredLanguagePreference(
                     onSearchClick = { focusRequesters.firstOrNull()?.tryRequestFocus() },
                     modifier =
                         Modifier
-                            .padding(horizontal = 0.dp)
+                            .padding(bottom = 8.dp)
                             .fillMaxWidth(),
                 )
             }
@@ -113,6 +115,7 @@ fun FilteredLanguagePreference(
 
                             is PreferredLanguageType.ServerProfile -> option.name?.let { { Text(it) } }
                         },
+                    modifier = Modifier.focusRequester(focusRequesters[index]),
                 )
             }
         }
