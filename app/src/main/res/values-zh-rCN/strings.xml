@@ -646,4 +646,6 @@
     <string name="duration_minutes">%1$d分</string>
     <string name="duration_seconds">%1$d秒</string>
     <string name="time_left">还剩%1$s</string>
+    <string name="blocklisted">被列入黑名单</string>
+    <string name="unavailable">不可用</string>
 </resources>
