@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.enabled
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
@@ -54,6 +55,7 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.formatBitrate
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -657,7 +659,7 @@ class PlaybackViewModel
                                 deviceProfile =
                                     if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
                                         deviceProfileService.getOrCreateDeviceProfile(
-                                            preferences.appPreferences.playbackPreferences,
+                                            preferences.appPreferences,
                                             serverRepository.currentServer?.serverVersion,
                                         )
                                     } else {
@@ -878,8 +880,21 @@ class PlaybackViewModel
             userInitiated: Boolean,
         ): Boolean =
             withContext(WholphinDispatchers.IO) {
-                // TODO there's probably no reason why we can't add external subtitles?
                 Timber.v("changeStreams direct play")
+
+                // TODO Better way to handle unsupported types in general is needed
+                // This is a workaround for switching to a non AC3 track when the user wants audio transcoded to AC3
+                if (preferences.appPreferences.experimentalPreferences.enabled { preferAc3Surround } && audioIndex != null) {
+                    currentPlayback.mediaSourceInfo.mediaStreams
+                        .orEmpty()
+                        .firstOrNull { it.index == audioIndex }
+                        ?.let {
+                            if (it.channels.gt(2) && it.codec != Codec.Audio.AC3) {
+                                // User wants to transcode audio into AC3
+                                return@withContext false
+                            }
+                        }
+                }
 
                 val source = currentPlayback.mediaSourceInfo
                 val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
