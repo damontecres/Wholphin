@@ -25,9 +25,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
-import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
@@ -37,9 +35,9 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun FilteredLanguagePreference(
     @StringRes title: Int,
-    selectedIndex: Int,
+    selectedOption: PreferredLanguageType,
     options: List<PreferredLanguageType>,
-    onClickOption: (Int, PreferredLanguageType) -> Unit,
+    onClickOption: (PreferredLanguageType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var query by remember { mutableStateOf("") }
@@ -49,9 +47,11 @@ fun FilteredLanguagePreference(
         delay(500.milliseconds)
         if (query.isNotNullOrBlank()) {
             withContext(WholphinDispatchers.Default) {
+                val q = query.lowercase()
                 filteredOptions =
                     options.filter {
-                        it is PreferredLanguageType.Language && (it.name.contains(query) || it.iso.contains(query))
+                        it is PreferredLanguageType.Language &&
+                            (it.name.lowercase().contains(q) || it.iso.contains(q))
                     }
             }
         } else {
@@ -83,7 +83,7 @@ fun FilteredLanguagePreference(
                     onSearchClick = { focusRequesters.firstOrNull()?.tryRequestFocus() },
                     modifier =
                         Modifier
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = 0.dp)
                             .fillMaxWidth(),
                 )
             }
@@ -91,13 +91,10 @@ fun FilteredLanguagePreference(
                 ListItem(
                     selected = false,
                     onClick = {
-                        scope.launchDefault {
-                            val index = options.indexOfFirstOrNull { it == option }
-                            index?.let { onClickOption.invoke(index, option) }
-                        }
+                        onClickOption.invoke(option)
                     },
                     leadingContent = {
-                        SelectedLeadingContent(index == selectedIndex)
+                        SelectedLeadingContent(option == selectedOption)
                     },
                     headlineContent = {
                         val text =

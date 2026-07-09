@@ -41,8 +41,6 @@ sealed interface PreferredLanguageType {
 }
 
 data class PreferredLanguage(
-    val selectedIndex: Int = 0,
+    val selected: PreferredLanguageType = PreferredLanguageType.ServerProfile(null),
     val options: List<PreferredLanguageType> = emptyList(),
-) {
-    val selected: PreferredLanguageType get() = options[selectedIndex]
-}
+)

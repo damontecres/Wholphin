@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting.PREFER_ANY_LANGUAGE
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -25,7 +26,6 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.combineTriple
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
-import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -33,7 +33,6 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -88,26 +87,43 @@ class PreferencesViewModel
 
         private val serverLanguages = MutableStateFlow<List<CultureDto>>(emptyList())
 
-        private fun createLanguageFlow(subtitle: Boolean): Flow<PreferredLanguage> =
+        private fun createLanguageFlow(isAudio: Boolean): StateFlow<PreferredLanguage> =
             preferenceDataStore.data
                 .combineTriple(serverRepository.currentUserDtoFlow, serverLanguages)
-                .map { (prefs, userDto, languages) ->
+                .map { (prefs, userDto, serverLanguages) ->
+                    val languages =
+                        serverLanguages.filter { it.threeLetterIsoLanguageName.isNotNullOrBlank() }
                     val prefLang =
-                        prefs.serverProfileOverrides.let { if (subtitle) it.preferredSubtitleLanguage else it.preferredAudioLanguage }
+                        prefs.serverProfileOverrides.let { if (isAudio) it.preferredAudioLanguage else it.preferredSubtitleLanguage }
                     val userDisplayLang =
                         userDto
                             ?.configuration
-                            ?.let { if (subtitle) it.subtitleLanguagePreference else it.audioLanguagePreference }
+                            ?.let { if (isAudio) it.audioLanguagePreference else it.subtitleLanguagePreference }
                             .let { userLang ->
                                 languages.firstOrNull { it.threeLetterIsoLanguageName == userLang }?.displayName
                                     ?: userLang
                             }
-                    val selectedIndex =
+                    val selected =
                         when (prefLang) {
-                            "server" -> 0
-                            "" -> 1
-                            else -> languages.indexOfFirstOrNull { it.threeLetterIsoLanguageName == prefLang }
-                        } ?: 0
+                            "" -> {
+                                PreferredLanguageType.ServerProfile(userDisplayLang)
+                            }
+
+                            PREFER_ANY_LANGUAGE -> {
+                                PreferredLanguageType.AnyLanguage
+                            }
+
+                            else -> {
+                                languages
+                                    .firstOrNull { it.threeLetterIsoLanguageName == prefLang }
+                                    ?.let {
+                                        PreferredLanguageType.Language(
+                                            it.threeLetterIsoLanguageName!!,
+                                            it.displayName,
+                                        )
+                                    }
+                            }
+                        } ?: PreferredLanguageType.ServerProfile(userDisplayLang)
                     val options =
                         buildList {
                             add(PreferredLanguageType.ServerProfile(userDisplayLang))
@@ -123,23 +139,15 @@ class PreferencesViewModel
                                 }
                             }
                         }
-                    PreferredLanguage(selectedIndex, options)
-                }
+                    PreferredLanguage(selected, options)
+                }.stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    PreferredLanguage(),
+                )
 
-        val subtitleLanguage: StateFlow<PreferredLanguage> =
-            createLanguageFlow(true)
-                .stateIn(
-                    viewModelScope,
-                    SharingStarted.Eagerly,
-                    PreferredLanguage(),
-                )
-        val audioLanguage: StateFlow<PreferredLanguage> =
-            createLanguageFlow(true)
-                .stateIn(
-                    viewModelScope,
-                    SharingStarted.Eagerly,
-                    PreferredLanguage(),
-                )
+        val audioLanguage: StateFlow<PreferredLanguage> = createLanguageFlow(true)
+        val subtitleLanguage: StateFlow<PreferredLanguage> = createLanguageFlow(false)
 
         init {
             viewModelScope.launchIO {
@@ -158,22 +166,7 @@ class PreferencesViewModel
             }
             viewModelScope.launchIO {
 //                serverRepository.currentUserDto?.configuration?.audioLanguagePreference
-                serverLanguages.value = listOf(
-                    CultureDto(
-                        name = "",
-                        displayName = "",
-                        twoLetterIsoLanguageName = "",
-                        threeLetterIsoLanguageName = "server",
-                        threeLetterIsoLanguageNames = emptyList(),
-                    ),
-                    CultureDto(
-                        name = "",
-                        displayName = "",
-                        twoLetterIsoLanguageName = "",
-                        threeLetterIsoLanguageName = "",
-                        threeLetterIsoLanguageNames = emptyList(),
-                    ),
-                ) + api.localizationApi.getCultures().content
+                serverLanguages.value = api.localizationApi.getCultures().content
             }
         }
 

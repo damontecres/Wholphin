@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting.PREFER_ANY_LANGUAGE
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
@@ -825,15 +826,16 @@ fun PreferencesContent(
             val lang = if (isAudio) audioLanguagePref else subtitleLanguagePref
             FilteredLanguagePreference(
                 title = if (isAudio) R.string.preferred_audio_language else R.string.preferred_subtitle_language,
-                selectedIndex = lang.selectedIndex,
+                selectedOption = lang.selected,
                 options = lang.options,
-                onClickOption = { index, option ->
+                onClickOption = { option ->
                     val value =
                         when (option) {
-                            PreferredLanguageType.AnyLanguage -> ""
+                            PreferredLanguageType.AnyLanguage -> PREFER_ANY_LANGUAGE
                             is PreferredLanguageType.Language -> option.iso
-                            is PreferredLanguageType.ServerProfile -> "server"
+                            is PreferredLanguageType.ServerProfile -> ""
                         }
+                    Timber.v("Updating language pref to %s", option)
                     scope.launch {
                         preferences =
                             viewModel.preferenceDataStore.updateData { prefs ->
@@ -846,8 +848,12 @@ fun PreferencesContent(
                                 }
                             }
                     }
+                    showPreferredLanguageDialog = null
                 },
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxSize(),
             )
         }
     }
