@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.preferences.user
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,13 +14,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,7 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,14 +45,18 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
+import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.preferences.ChoicePreference
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import timber.log.Timber
 
 @Composable
@@ -58,7 +64,12 @@ fun UserPreferencesPage(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.background),
     ) {
-        UserPreferencesContent()
+        UserPreferencesContent(
+            Modifier
+                .fillMaxWidth(.4f)
+                .fillMaxHeight()
+                .align(Alignment.TopEnd),
+        )
     }
 }
 
@@ -74,6 +85,7 @@ fun UserPreferencesContent(
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
 
+    val userDto by viewModel.currentUserDto.collectAsState()
     val preferences by viewModel.userAppPreferences.collectAsState()
     val audioLanguagePref by viewModel.audioLanguage.collectAsState()
     val subtitleLanguagePref by viewModel.subtitleLanguage.collectAsState()
@@ -112,6 +124,7 @@ fun UserPreferencesContent(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 contentPadding = PaddingValues(16.dp),
+                modifier = Modifier,
             ) {
                 ServerProfileSetting.Preferences.forEachIndexed { groupIndex, group ->
                     item {
@@ -136,8 +149,17 @@ fun UserPreferencesContent(
                         pref as AppPreference<JellyfinUserPreferences, Any>
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
-                            val bringIntoViewRequester = remember { BringIntoViewRequester() }
                             val focused = interactionSource.collectIsFocusedAsState().value
+
+                            val modifier =
+                                Modifier
+                                    .ifElse(
+                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).onFocusChanged {
+                                        if (it.isFocused) focusedIndex = Pair(groupIndex, prefIndex)
+                                    }
+
                             LaunchedEffect(focused) {
                                 if (focused) {
                                     focusedIndex = Pair(groupIndex, prefIndex)
@@ -151,6 +173,7 @@ fun UserPreferencesContent(
                                         onClick = { showPreferredLanguageDialog = true },
                                         summary = audioLanguagePref.selected.displayString.getString(),
                                         interactionSource = interactionSource,
+                                        modifier = modifier,
                                     )
                                 }
 
@@ -160,6 +183,53 @@ fun UserPreferencesContent(
                                         onClick = { showPreferredLanguageDialog = false },
                                         summary = subtitleLanguagePref.selected.displayString.getString(),
                                         interactionSource = interactionSource,
+                                        modifier = modifier,
+                                    )
+                                }
+
+                                ServerProfileSetting.SubtitleModePref -> {
+                                    pref as AppChoicePreference<JellyfinUserPreferences, SubtitleModePreference>
+                                    val value = preferences.subtitleMode
+                                    val values = stringArrayResource(pref.displayValues).toList()
+                                    val summary =
+                                        when (value) {
+                                            SubtitleModePreference.USE_USER_PROFILE -> {
+                                                val userMode = userDto?.configuration?.subtitleMode
+                                                if (userMode != null) {
+                                                    "${values[0]} - ${stringResource(userMode.stringRes)}"
+                                                } else {
+                                                    values[0]
+                                                }
+                                            }
+
+                                            else -> {
+                                                values[value.ordinal]
+                                            }
+                                        }
+                                    val selectedIndex =
+                                        remember(value) { pref.valueToIndex.invoke(value) }
+                                    ChoicePreference(
+                                        title = stringResource(pref.title),
+                                        summary = summary,
+                                        possibleValues = values,
+                                        selectedIndex = selectedIndex,
+                                        onValueChange = { index ->
+                                            viewModel.updatePreferences {
+                                                it.copy(subtitleMode = SubtitleModePreference.entries[index])
+                                            }
+                                        },
+                                        modifier = modifier,
+                                        interactionSource = interactionSource,
+                                        subtitleDisplay = { index, _ ->
+                                            val userMode = userDto?.configuration?.subtitleMode
+                                            if (index == 0 && userMode != null) {
+                                                {
+                                                    Text(stringResource(userMode.stringRes))
+                                                }
+                                            } else {
+                                                null
+                                            }
+                                        },
                                     )
                                 }
 
@@ -190,12 +260,7 @@ fun UserPreferencesContent(
                                             }
                                         },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ).bringIntoViewRequester(bringIntoViewRequester),
+                                        modifier = modifier,
                                     )
                                 }
                             }
@@ -221,6 +286,7 @@ fun UserPreferencesContent(
                             PreferredLanguageType.AnyLanguage -> ServerProfileSetting.PREFER_ANY_LANGUAGE
                             is PreferredLanguageType.Language -> option.iso
                             is PreferredLanguageType.ServerProfile -> ServerProfileSetting.USE_USER_PROFILE
+                            PreferredLanguageType.Divider -> throw IllegalStateException("Cannot click on a divider")
                         }
                     Timber.v("Updating language pref to %s", option)
                     viewModel.updatePreferences {
@@ -240,3 +306,13 @@ fun UserPreferencesContent(
         }
     }
 }
+
+val SubtitlePlaybackMode.stringRes: Int
+    @StringRes get() =
+        when (this) {
+            SubtitlePlaybackMode.DEFAULT -> R.string.subtitle_mode_default
+            SubtitlePlaybackMode.ALWAYS -> R.string.subtitle_mode_always
+            SubtitlePlaybackMode.ONLY_FORCED -> R.string.subtitle_mode_only_forced
+            SubtitlePlaybackMode.NONE -> R.string.subtitle_mode_none
+            SubtitlePlaybackMode.SMART -> R.string.subtitle_mode_smart
+        }

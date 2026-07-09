@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,10 +50,13 @@ fun FilteredLanguagePreference(
             withContext(WholphinDispatchers.Default) {
                 val q = query.lowercase()
                 filteredOptions =
-                    options.filter {
-                        it is PreferredLanguageType.Language &&
-                            (it.name.lowercase().contains(q) || it.iso.contains(q))
-                    }
+                    options
+                        .filter {
+                            it is PreferredLanguageType.Language &&
+                                (it.name.lowercase().contains(q) || it.iso.contains(q))
+                        }.sortedByDescending {
+                            (it as PreferredLanguageType.Language).name.lowercase().startsWith(q)
+                        }
             }
         } else {
             filteredOptions = options
@@ -90,33 +94,47 @@ fun FilteredLanguagePreference(
                 )
             }
             itemsIndexed(filteredOptions) { index, option ->
-                ListItem(
-                    selected = false,
-                    onClick = {
-                        onClickOption.invoke(option)
-                    },
-                    leadingContent = {
-                        SelectedLeadingContent(option == selectedOption)
-                    },
-                    headlineContent = {
-                        val text =
-                            when (option) {
-                                PreferredLanguageType.AnyLanguage -> option.displayString.getString()
-                                is PreferredLanguageType.Language -> option.displayString.getString()
-                                is PreferredLanguageType.ServerProfile -> stringResource(R.string.use_user_profile)
-                            }
-                        Text(text)
-                    },
-                    supportingContent =
-                        when (option) {
-                            PreferredLanguageType.AnyLanguage,
-                            is PreferredLanguageType.Language,
-                            -> null
-
-                            is PreferredLanguageType.ServerProfile -> option.name?.let { { Text(it) } }
+                if (option is PreferredLanguageType.Divider) {
+                    HorizontalDivider()
+                } else {
+                    ListItem(
+                        selected = false,
+                        onClick = {
+                            onClickOption.invoke(option)
                         },
-                    modifier = Modifier.focusRequester(focusRequesters[index]),
-                )
+                        leadingContent = {
+                            SelectedLeadingContent(option == selectedOption)
+                        },
+                        headlineContent = {
+                            val text =
+                                when (option) {
+                                    PreferredLanguageType.AnyLanguage -> option.displayString.getString()
+                                    is PreferredLanguageType.Language -> option.displayString.getString()
+                                    is PreferredLanguageType.ServerProfile -> stringResource(R.string.use_user_profile)
+                                }
+                            Text(text)
+                        },
+                        supportingContent =
+                            when (option) {
+                                PreferredLanguageType.AnyLanguage,
+                                is PreferredLanguageType.Language,
+                                -> {
+                                    null
+                                }
+
+                                is PreferredLanguageType.ServerProfile -> {
+                                    option.name?.let {
+                                        {
+                                            Text(
+                                                it,
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                        modifier = Modifier.focusRequester(focusRequesters[index]),
+                    )
+                }
             }
         }
     }

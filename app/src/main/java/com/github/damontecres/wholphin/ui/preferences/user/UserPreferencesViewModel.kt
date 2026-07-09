@@ -107,6 +107,7 @@ class UserPreferencesViewModel
                         buildList {
                             add(PreferredLanguageType.ServerProfile(userDisplayLang))
                             add(PreferredLanguageType.AnyLanguage)
+                            add(PreferredLanguageType.Divider)
                             languages.forEach {
                                 if (it.threeLetterIsoLanguageName.isNotNullOrBlank()) {
                                     add(

@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.preferences.user
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.util.ConcatStringProvider
+import com.github.damontecres.wholphin.ui.util.EmptyStringProvider
 import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
@@ -37,6 +38,11 @@ sealed interface PreferredLanguageType {
     ) : PreferredLanguageType {
         override val displayString: StringProvider
             get() = StringStringProvider(name)
+    }
+
+    data object Divider : PreferredLanguageType {
+        override val displayString: StringProvider
+            get() = EmptyStringProvider
     }
 }
 
