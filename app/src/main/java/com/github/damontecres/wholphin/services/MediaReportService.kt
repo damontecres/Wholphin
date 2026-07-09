@@ -61,10 +61,10 @@ class MediaReportService
                     .getItem(itemId = item.id)
                     .content.mediaSources
             val sourcesJson = json.encodeToString(sources)
-            val playbackPrefs = userPreferencesService.getCurrent().appPreferences.playbackPreferences
+            val appPreferences = userPreferencesService.getCurrent().appPreferences
             val serverVersion = serverRepository.currentServer?.serverVersion
             val deviceProfile =
-                deviceProfileService.getOrCreateDeviceProfile(playbackPrefs, serverVersion)
+                deviceProfileService.getOrCreateDeviceProfile(appPreferences, serverVersion)
             val deviceProfileJson = json.encodeToString(deviceProfile)
             val body =
                 """
@@ -76,7 +76,14 @@ class MediaReportService
                 model=${Build.MODEL}
                 apiLevel=${Build.VERSION.SDK_INT}
 
-                playbackPrefs=${playbackPrefs.toString().replace("\n", ", ").replace("\t", " ")}
+                playbackPrefs=${
+                    appPreferences.playbackPreferences.toString().replace("\n", ", ")
+                        .replace("\t", " ")
+                }
+                experimental=${
+                    appPreferences.experimentalPreferences.toString().replace("\n", ", ")
+                        .replace("\t", " ")
+                }
 
                 deviceProfile=$deviceProfileJson
 

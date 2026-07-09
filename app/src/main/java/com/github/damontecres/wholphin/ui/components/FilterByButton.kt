@@ -37,8 +37,19 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverFilterBy
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieContentRatingFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverMovieStudiosFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverRatingFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvContentRatingFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
+import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.FilterVideoType
@@ -423,6 +434,286 @@ fun ExpandableFilterButton(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(start = 4.dp, end = 4.dp),
             )
+        }
+    }
+}
+
+// TODO this all duplicated code from FilterByButton
+@Composable
+fun DiscoverFilterByButton(
+    filterOptions: List<DiscoverFilterBy<*>>,
+    current: DiscoverFilter,
+    onFilterChange: (DiscoverFilter) -> Unit,
+    getPossibleValues: suspend (DiscoverFilterBy<*>) -> List<FilterValueOption>,
+    modifier: Modifier = Modifier,
+    onShow: ((Boolean) -> Unit)? = null,
+) {
+    var dropDown by remember { mutableStateOf(false) }
+    var nestedDropDown by remember { mutableStateOf<DiscoverFilterBy<*>?>(null) }
+    val filterCount = remember(current, filterOptions) { current.countFilters(filterOptions) }
+
+    Box(modifier = modifier) {
+        ExpandableFilterButton(
+            filterCount = filterCount,
+            onClick = {
+                onShow?.invoke(true)
+                dropDown = true
+            },
+            modifier = Modifier,
+        )
+
+        DropdownMenu(
+            expanded = dropDown,
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            onDismissRequest = {
+                onShow?.invoke(false)
+                dropDown = false
+                nestedDropDown = null
+            },
+        ) {
+            if (filterCount > 0) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused by interactionSource.collectIsFocusedAsState()
+                TvDropdownMenuItem(
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = Color.Red.copy(alpha = .8f),
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(R.string.remove),
+                            color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    onClick = {
+                        onFilterChange.invoke(current.delete(filterOptions))
+                        dropDown = false
+                    },
+                    interactionSource = interactionSource,
+                    modifier = Modifier,
+                )
+                HorizontalDivider()
+            }
+            filterOptions
+                .forEachIndexed { index, filterOption ->
+                    val focusRequester = remember { FocusRequester() }
+                    if (index == 0) {
+                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                    }
+                    val currentValue = remember(current) { filterOption.get(current) }
+                    TvDropdownMenuItem(
+                        leadingIcon = {
+                            if (currentValue != null) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Filter active",
+                                )
+                            }
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(filterOption.stringRes),
+                            )
+                        },
+                        onClick = {
+                            nestedDropDown = filterOption
+                        },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+        }
+
+        DropdownMenu(
+            expanded = nestedDropDown != null,
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp),
+            offset = DpOffset(80.dp, 16.dp),
+            onDismissRequest = {
+                nestedDropDown = null
+            },
+        ) {
+            nestedDropDown?.let { filterOption ->
+                filterOption as DiscoverFilterBy<Any>
+                val currentValue = remember(current) { filterOption.get(current) }
+
+                var possibleValues by remember { mutableStateOf<List<FilterValueOption>?>(null) }
+                LaunchedEffect(Unit) {
+                    possibleValues = getPossibleValues.invoke(filterOption)
+                }
+
+                if (currentValue != null) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val focused by interactionSource.collectIsFocusedAsState()
+                    TvDropdownMenuItem(
+                        elevation = 5.dp,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = Color.Red.copy(alpha = .8f),
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(R.string.remove),
+                                color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
+                            )
+                        },
+                        onClick = {
+                            onFilterChange.invoke(filterOption.set(null, current))
+                            nestedDropDown = null
+                        },
+                        interactionSource = interactionSource,
+                        modifier = Modifier,
+                    )
+                    HorizontalDivider()
+                }
+
+                if (possibleValues == null) {
+                    CircularProgress(Modifier.size(48.dp))
+                } else if (possibleValues?.isEmpty() == true) {
+                    Text(
+                        text = stringResource(R.string.no_results),
+                    )
+                } else {
+                    possibleValues.orEmpty().forEachIndexed { index, value ->
+                        val focusRequester = remember { FocusRequester() }
+                        if (index == 0) {
+                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                        }
+
+                        val isSelected =
+                            remember(currentValue) {
+                                when (filterOption) {
+                                    DiscoverMovieGenreFilter,
+                                    DiscoverTvGenreFilter,
+                                    DiscoverMovieStudiosFilter,
+                                    DiscoverTvStudiosFilter,
+                                    -> {
+                                        (currentValue as? List<Int>)
+                                            .orEmpty()
+                                            .contains(value.value)
+                                    }
+
+                                    DiscoverTvStatusFilter -> {
+                                        (currentValue as? List<TvDetails.Status>)
+                                            .orEmpty()
+                                            .contains(value.value)
+                                    }
+
+                                    DiscoverMovieContentRatingFilter,
+                                    DiscoverTvContentRatingFilter,
+                                    -> {
+                                        (currentValue as? List<String>)
+                                            .orEmpty()
+                                            .contains(value.value)
+                                    }
+
+                                    DiscoverRatingFilter -> {
+                                        (currentValue as? Int) == value.value
+                                    }
+                                }
+                            }
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        TvDropdownMenuItem(
+                            elevation = 8.dp,
+                            interactionSource = interactionSource,
+                            leadingIcon = {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Filter active",
+                                    )
+                                }
+                            },
+                            text = {
+                                if (filterOption == DiscoverRatingFilter) {
+                                    SimpleStarRating(
+                                        "${value.name}+",
+                                        starColor = if (focused) EmptyStarColor else FilledStarColor,
+                                    )
+                                } else {
+                                    Text(
+                                        text = value.name,
+                                    )
+                                }
+                            },
+                            onClick = {
+                                val newFilter =
+                                    when (filterOption) {
+                                        DiscoverMovieGenreFilter,
+                                        DiscoverTvGenreFilter,
+                                        DiscoverMovieStudiosFilter,
+                                        DiscoverTvStudiosFilter,
+                                        -> {
+                                            val list = (currentValue as? List<Int>).orEmpty()
+                                            val newValue =
+                                                list
+                                                    .toMutableList()
+                                                    .apply {
+                                                        if (isSelected) {
+                                                            remove(value.value!!)
+                                                        } else {
+                                                            add(value.value!! as Int)
+                                                        }
+                                                    }.takeIf { it.isNotEmpty() }
+                                            filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverTvStatusFilter -> {
+                                            val list =
+                                                (currentValue as? List<TvDetails.Status>).orEmpty()
+                                            val newValue =
+                                                list
+                                                    .toMutableList()
+                                                    .apply {
+                                                        if (isSelected) {
+                                                            remove(value.value!!)
+                                                        } else {
+                                                            add(value.value!! as TvDetails.Status)
+                                                        }
+                                                    }.takeIf { it.isNotEmpty() }
+                                            filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverMovieContentRatingFilter,
+                                        DiscoverTvContentRatingFilter,
+                                        -> {
+                                            val list = (currentValue as? List<String>).orEmpty()
+                                            val newValue =
+                                                list
+                                                    .toMutableList()
+                                                    .apply {
+                                                        if (isSelected) {
+                                                            remove(value.value!!)
+                                                        } else {
+                                                            add(value.value!! as String)
+                                                        }
+                                                    }.takeIf { it.isNotEmpty() }
+                                            filterOption.set(newValue, current)
+                                        }
+
+                                        DiscoverRatingFilter -> {
+                                            filterOption.set(
+                                                value.value as? Int,
+                                                current,
+                                            )
+                                        }
+                                    }
+
+                                onFilterChange.invoke(newFilter)
+                                if (!filterOption.supportMultiple) {
+                                    nestedDropDown = null
+                                }
+                            },
+                            modifier = Modifier.focusRequester(focusRequester),
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -111,7 +111,7 @@ class SlideshowViewModel
                     val playerCreation =
                         playerFactory.createVideoPlayer(
                             backend = PlayerBackend.EXO_PLAYER,
-                            appPreferences.playbackPreferences,
+                            appPreferences,
                         )
                     player = playerCreation.player
                     player.addListener(this@SlideshowViewModel)

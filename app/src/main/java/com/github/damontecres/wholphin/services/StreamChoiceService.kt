@@ -277,11 +277,13 @@ class StreamChoiceService
                     SubtitlePlaybackMode.ALWAYS -> {
                         if (subtitleLanguage.isNotNullOrBlank()) {
                             candidates.firstOrNull {
-                                it.language.equals(subtitleLanguage, true) ||
-                                    it.language.isUnknown
+                                // Prefer non-forced first
+                                !it.isForced && it.language.equalsLangOrUnknown(subtitleLanguage)
+                            } ?: candidates.firstOrNull {
+                                it.language.equalsLangOrUnknown(subtitleLanguage)
                             }
                         } else {
-                            candidates.firstOrNull()
+                            candidates.firstOrNull { !it.isForced } ?: candidates.firstOrNull()
                         }
                     }
 
@@ -371,3 +373,5 @@ private val String?.isUnknown: Boolean
             this.equals("undetermined", true) ||
             this.equals("mul", true) ||
             this.equals("zxx", true)
+
+private fun String?.equalsLangOrUnknown(lang: String): Boolean = equals(lang, ignoreCase = true) || this.isUnknown

@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.formatDate
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
@@ -153,7 +154,7 @@ fun ItemDetailsDialog(
                                     )
                                 }
                                 source.runTimeTicks?.let {
-                                    add(runtimeLabel to it.ticks.toString())
+                                    add(runtimeLabel to resources.formatDuration(it.ticks))
                                 }
                             },
                     )

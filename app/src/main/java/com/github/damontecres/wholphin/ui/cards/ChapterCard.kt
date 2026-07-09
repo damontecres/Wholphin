@@ -9,15 +9,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.roundSeconds
 import kotlin.time.Duration
 
@@ -62,8 +65,10 @@ fun ChapterCard(
                             text = it,
                         )
                     }
+                    val resources = LocalResources.current
+                    val positionText = remember(position) { resources.formatDuration(position.roundSeconds) }
                     Text(
-                        text = position.roundSeconds.toString(),
+                        text = positionText,
                     )
                 }
             }
