@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -91,9 +92,6 @@ fun DiscoverSeriesDetails(
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showRequestSeasonDialog by remember { mutableStateOf(false) }
-
-    val requestStr = stringResource(R.string.request)
-    val request4kStr = stringResource(R.string.request_4k)
 
     when (val st = state.tvSeries) {
         is DataLoadingState.Error -> {
@@ -150,9 +148,8 @@ fun DiscoverSeriesDetails(
                 },
                 trailers = state.trailers,
                 requestOnClick = {
-                    item.id?.let { id ->
-                        showRequestSeasonDialog = true
-                    }
+                    viewModel.requestOnClick()
+                    showRequestSeasonDialog = true
                 },
                 cancelOnClick = {
                     item.id?.let { viewModel.cancelRequest(it) }
@@ -192,15 +189,16 @@ fun DiscoverSeriesDetails(
     }
     if (showRequestSeasonDialog) {
         RequestSeasonsDialog(
+            id = state.tvSeries.successValue?.id ?: -1,
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
             request4kEnabled = request4kEnabled,
-            onSubmit = { seasons, is4k ->
-                state.tvSeries.successValue
-                    ?.id
-                    ?.let { viewModel.request(it, seasons, is4k) }
+            onSubmit = {
                 showRequestSeasonDialog = false
+                viewModel.request(it)
             },
+            loading = state.profileLoading,
+            data = state.requestData,
             onDismissRequest = { showRequestSeasonDialog = false },
         )
     }
@@ -449,8 +447,9 @@ fun DiscoverSeriesDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 4.dp
+            val resources = LocalResources.current
             val details =
-                remember(series, rating) {
+                remember(series, rating, resources) {
                     buildList {
                         series.firstAirDate?.let(::add)
                         series.episodeRunTime
@@ -458,8 +457,7 @@ fun DiscoverSeriesDetailsHeader(
                             ?.takeIf { !it.isNaN() && it > 0 }
                             ?.minutes
                             ?.roundMinutes
-                            ?.toString()
-                            ?.let(::add)
+                            ?.let { add(resources.formatDuration(it)) }
                         // TODO
                     }.let {
                         listToDotString(

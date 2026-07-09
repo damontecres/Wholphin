@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.seekBack
@@ -25,6 +26,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.profile.supportedAudioCodecs
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +46,7 @@ import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
@@ -72,6 +75,7 @@ class MusicService
         private val playerFactory: PlayerFactory,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
+        private val userPreferencesService: UserPreferencesService,
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
@@ -91,6 +95,11 @@ class MusicService
             private set
         private var activityTracker: TrackActivityPlaybackListener? = null
         private var websocketJob: Job? = null
+
+        private suspend fun preferAc3Surround() =
+            userPreferencesService
+                .getCurrent()
+                .appPreferences.experimentalPreferences.preferAc3Surround
 
         /**
          * Start music playback
@@ -195,10 +204,11 @@ class MusicService
             shuffled: Boolean,
         ) {
             Timber.d("setQueue: %s items, shuffled=%s", items.size, shuffled)
+            val preferAc3Surround = preferAc3Surround()
             val mediaItems =
                 items
                     .filter { it.type == BaseItemKind.AUDIO }
-                    .map(::convert)
+                    .map { convert(it, preferAc3Surround) }
             withContext(WholphinDispatchers.Main) {
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
@@ -215,7 +225,8 @@ class MusicService
             index: Int? = null,
         ) {
             if (item.type == BaseItemKind.AUDIO) {
-                val mediaItem = convert(item)
+                val preferAc3Surround = preferAc3Surround()
+                val mediaItem = convert(item, preferAc3Surround)
                 withContext(WholphinDispatchers.Main) {
                     if (index != null) {
                         player.addMediaItem(index, mediaItem)
@@ -228,6 +239,8 @@ class MusicService
                         start()
                     }
                 }
+            } else {
+                Timber.w("Tried to add non-audio type %s: %s", item.type, item.id)
             }
         }
 
@@ -240,6 +253,7 @@ class MusicService
             list: BlockingList<BaseItem?>,
             startIndex: Int,
         ) = loading {
+            val preferAc3Surround = preferAc3Surround()
             var remaining = startIndex
             list.indices
                 .chunked(25)
@@ -250,7 +264,7 @@ class MusicService
                                 list
                                     .getBlocking(it)
                                     ?.takeIf { it.type == BaseItemKind.AUDIO }
-                                    ?.let(::convert)
+                                    ?.let { convert(it, preferAc3Surround) }
                             } else {
                                 Timber.v("Skipping $remaining")
                                 remaining--
@@ -266,12 +280,36 @@ class MusicService
         /**
          * Converts a [BaseItem] into a [MediaItem] setting an [AudioItem] as its tag
          */
-        private fun convert(audio: BaseItem): MediaItem {
+        private fun convert(
+            audio: BaseItem,
+            preferAc3Surround: Boolean,
+        ): MediaItem {
+            val needsAc3Transcode =
+                preferAc3Surround &&
+                    audio.data.mediaSources
+                        ?.firstOrNull()
+                        ?.mediaStreams
+                        ?.any { stream ->
+                            stream.type == MediaStreamType.AUDIO &&
+                                stream.channels.gt(2)
+                            stream.codec != Codec.Audio.AC3
+                        } == true
             val url =
-                api.universalAudioApi.getUniversalAudioStreamUrl(
-                    itemId = audio.id,
-                    container = audioFormats,
-                )
+                if (needsAc3Transcode) {
+                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                        itemId = audio.id,
+                        container = listOf("mka"),
+                        transcodingContainer = "mka",
+                        maxAudioChannels = 6,
+                        transcodingAudioChannels = 6,
+                        audioCodec = Codec.Audio.AC3,
+                    )
+                } else {
+                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                        itemId = audio.id,
+                        container = audioFormats,
+                    )
+                }
             Timber.i("url=%s", url)
             val imageUrl =
                 audio.data.albumId?.let { albumId ->
@@ -352,7 +390,7 @@ class MusicService
          * Play this item next after the current, ie add the item as the next index in the queue
          */
         suspend fun playNext(song: BaseItem) {
-            val mediaItem = convert(song)
+            val mediaItem = convert(song, preferAc3Surround())
             onMain {
                 player.addMediaItem(state.value.currentIndex + 1, mediaItem)
                 if (player.mediaItemCount == 1) {

@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -94,7 +95,8 @@ import com.github.damontecres.wholphin.ui.detail.music.MusicViewModel
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
-import com.github.damontecres.wholphin.ui.getTimeFormatter
+import com.github.damontecres.wholphin.ui.formatDuration
+import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -803,14 +805,17 @@ fun PlaylistItem(
         trailingContent = {
             item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
                 val now by LocalClock.current.now
+                val context = LocalContext.current
                 val endTimeStr =
-                    remember(item, now) {
+                    remember(item, now, context) {
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
-                        getTimeFormatter().format(endTime)
+                        formatTime(context, endTime)
                     }
+                val resources = LocalResources.current
+                val durationText = remember(duration) { resources.formatDuration(duration) }
                 Column {
                     Text(
-                        text = duration.toString(),
+                        text = durationText,
                     )
                     if (item.type != BaseItemKind.AUDIO) {
                         Text(

@@ -6,11 +6,11 @@ runs:
   steps:
     # Setup the SDKs
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
       with:
         python-version: '3.14'
     - name: Setup JDK
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
       with:
         distribution: zulu
         java-version: '21'
@@ -21,7 +21,7 @@ runs:
         echo "BUILD_TOOLS_VERSION=36.0.0" >> $GITHUB_ENV
         echo "NDK_VERSION=29.0.14206865" >> $GITHUB_ENV
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v4
+      uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
       with:
         packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
     - name: Add NDK to path
