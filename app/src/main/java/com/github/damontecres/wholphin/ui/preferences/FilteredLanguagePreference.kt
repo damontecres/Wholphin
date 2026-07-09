@@ -103,7 +103,7 @@ fun FilteredLanguagePreference(
                             when (option) {
                                 PreferredLanguageType.AnyLanguage -> option.displayString.getString()
                                 is PreferredLanguageType.Language -> option.displayString.getString()
-                                is PreferredLanguageType.ServerProfile -> stringResource(R.string.use_server_profile)
+                                is PreferredLanguageType.ServerProfile -> stringResource(R.string.use_user_profile)
                             }
                         Text(text)
                     },

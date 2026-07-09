@@ -832,7 +832,7 @@ fun PreferencesContent(
                         when (option) {
                             PreferredLanguageType.AnyLanguage -> ServerProfileSetting.PREFER_ANY_LANGUAGE
                             is PreferredLanguageType.Language -> option.iso
-                            is PreferredLanguageType.ServerProfile -> ServerProfileSetting.PREFER_SERVER
+                            is PreferredLanguageType.ServerProfile -> ServerProfileSetting.USE_USER_PROFILE
                         }
                     Timber.v("Updating language pref to %s", option)
                     scope.launch {

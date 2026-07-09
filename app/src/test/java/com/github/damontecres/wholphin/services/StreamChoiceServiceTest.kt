@@ -832,7 +832,7 @@ class TestStreamChoiceServiceAppPreferences(
                         ),
                     streamAudioLang = "eng",
                     itemPlayback = null,
-                    appSubtitleLang = ServerProfileSetting.PREFER_SERVER,
+                    appSubtitleLang = ServerProfileSetting.USE_USER_PROFILE,
                 ),
                 TestInput(
                     expectedIndex = 0,
@@ -886,8 +886,8 @@ data class TestInput(
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
     val plc: PlaybackLanguageChoice? = null,
-    val appAudioLang: String = ServerProfileSetting.PREFER_SERVER,
-    val appSubtitleLang: String = ServerProfileSetting.PREFER_SERVER,
+    val appAudioLang: String = ServerProfileSetting.USE_USER_PROFILE,
+    val appSubtitleLang: String = ServerProfileSetting.USE_USER_PROFILE,
     val appSubtitleMode: SubtitleMode = SubtitleMode.SUBTITLE_MODE_SERVER_VALUE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"

@@ -144,7 +144,7 @@ class StreamChoiceService
                         val pref =
                             prefs.appPreferences.serverProfileOverrides.preferredAudioLanguage
                         when (pref) {
-                            ServerProfileSetting.PREFER_SERVER -> userConfig?.audioLanguagePreference
+                            ServerProfileSetting.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
                             ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
                             else -> pref
                         }
@@ -249,7 +249,7 @@ class StreamChoiceService
                     val pref =
                         prefs.appPreferences.serverProfileOverrides.preferredSubtitleLanguage
                     when (pref) {
-                        ServerProfileSetting.PREFER_SERVER -> userConfig?.subtitleLanguagePreference
+                        ServerProfileSetting.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
                         ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
                         else -> pref
                     }?.takeIf { it.isNotNullOrBlank() }

@@ -105,7 +105,7 @@ class PreferencesViewModel
                             }
                     val selected =
                         when (prefLang) {
-                            ServerProfileSetting.PREFER_SERVER -> {
+                            ServerProfileSetting.USE_USER_PROFILE -> {
                                 PreferredLanguageType.ServerProfile(userDisplayLang)
                             }
 

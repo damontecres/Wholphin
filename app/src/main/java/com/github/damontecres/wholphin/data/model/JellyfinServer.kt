@@ -11,6 +11,8 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.github.damontecres.wholphin.data.ZonedDateTimeSerializer
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -65,6 +67,7 @@ data class JellyfinUser(
     val requireLogin: Boolean = false,
     val lastUsed: ZonedDateTime? = null,
     val uiLanguage: String? = null,
+    @Embedded val appPreferences: JellyfinUserPreferences = JellyfinUserPreferences(),
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 
@@ -82,4 +85,14 @@ data class JellyfinServerUsers(
         entityColumn = "serverId",
     )
     val users: List<JellyfinUser>,
+)
+
+@Serializable
+data class JellyfinUserPreferences(
+    @ColumnInfo(defaultValue = "")
+    val preferredAudioLanguage: String = ServerProfileSetting.USE_USER_PROFILE,
+    @ColumnInfo(defaultValue = "")
+    val preferredSubtitleLanguage: String = ServerProfileSetting.USE_USER_PROFILE,
+    @ColumnInfo(defaultValue = "USE_USER_PROFILE")
+    val subtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
 )

@@ -4,7 +4,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 
 object ServerProfileSetting {
-    const val PREFER_SERVER = ""
+    const val USE_USER_PROFILE = ""
     const val PREFER_ANY_LANGUAGE = "_any-language"
 
     val PreferredAudioLang =
@@ -47,4 +47,13 @@ object ServerProfileSetting {
                     ),
             ),
         )
+}
+
+enum class SubtitleModePreference {
+    USE_USER_PROFILE,
+    DEFAULT,
+    SMART,
+    ONLY_FORCED,
+    ALWAYS,
+    NONE,
 }

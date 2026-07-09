@@ -844,7 +844,7 @@
     <string name="unavailable">Unavailable</string>
     <string name="subtitle_mode">Subtitle mode</string>
 
-    <string name="use_server_profile">Use server profile setting</string>
+    <string name="use_user_profile">Use your profile setting</string>
 
     <string name="subtitle_mode_default">Default</string>
     <string name="subtitle_mode_smart">Smart</string>
@@ -852,7 +852,7 @@
     <string name="subtitle_mode_always">Always</string>
     <string name="subtitle_mode_none">None</string>
     <string-array name="subtitle_mode_options">
-        <item>@string/use_server_profile</item>
+        <item>@string/use_user_profile</item>
         <item>@string/subtitle_mode_default</item>
         <item>@string/subtitle_mode_smart</item>
         <item>@string/subtitle_mode_only_forced</item>
@@ -862,7 +862,7 @@
 
     <string name="preferred_subtitle_language">Preferred subtitle language</string>
     <string name="preferred_audio_language">Preferred audio language</string>
-    <string name="override_user_profile_settings">Override user profile settings</string>
-    <string name="override_user_profile_settings_summary">Override settings from your user profile on the server</string>
+    <string name="override_user_profile_settings">More user profile settings</string>
+    <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
     <string name="any_language">Any language</string>
 </resources>

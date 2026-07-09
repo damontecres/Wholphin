@@ -18,7 +18,7 @@ sealed interface PreferredLanguageType {
                 ConcatStringProvider(
                     " - ",
                     buildList {
-                        add(ResStringProvider(R.string.use_server_profile))
+                        add(ResStringProvider(R.string.use_user_profile))
                         if (name.isNotNullOrBlank()) {
                             add(StringStringProvider(name))
                         }
