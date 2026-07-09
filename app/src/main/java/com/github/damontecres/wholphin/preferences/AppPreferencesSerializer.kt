@@ -265,11 +265,6 @@ inline fun AppPreferences.updateExperimentalPreferences(block: ExperimentalPrefe
         experimentalPreferences = experimentalPreferences.toBuilder().apply(block).build()
     }
 
-inline fun AppPreferences.updateServerProfileOverrides(block: ServerProfileOverrides.Builder.() -> Unit): AppPreferences =
-    update {
-        serverProfileOverrides = serverProfileOverrides.toBuilder().apply(block).build()
-    }
-
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()

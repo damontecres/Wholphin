@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.SuggestionsSchedulerService
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
@@ -92,6 +93,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userPreferencesDataStore: DataStore<AppPreferences>
+
+    @Inject
+    lateinit var userPreferencesService: UserPreferencesService
 
     @AuthOkHttpClient
     @Inject
@@ -226,8 +230,8 @@ class MainActivity : AppCompatActivity() {
                     .fillMaxSize()
                     .background(Color.Black),
             ) {
-                val appPreferences by userPreferencesDataStore.data.collectAsState(null)
-                if (appPreferences == null) {
+                val userPreferences by userPreferencesService.flow.collectAsState(null)
+                if (userPreferences == null) {
                     // Show loading page if it is taking a while to get app preferences
                     var showLoading by remember { mutableStateOf(false) }
                     LaunchedEffect(Unit) {
@@ -246,7 +250,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    appPreferences?.let { appPreferences ->
+                    userPreferences?.let { userPreferences ->
+                        val appPreferences = userPreferences.appPreferences
                         CoilConfig(
                             prefs = appPreferences,
                             okHttpClient = okHttpClient,
@@ -265,7 +270,7 @@ class MainActivity : AppCompatActivity() {
                                     MainContent(
                                         backStack = setupNavigationManager.backStack,
                                         navigationManager = navigationManager,
-                                        appPreferences = appPreferences,
+                                        userPreferences = userPreferences,
                                         backdropService = backdropService,
                                         screensaverService = screensaverService,
                                         modifier = Modifier.fillMaxSize(),

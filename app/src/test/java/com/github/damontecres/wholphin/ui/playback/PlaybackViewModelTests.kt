@@ -132,7 +132,7 @@ class PlaybackViewModelTests {
 
     private fun setupPreferences(block: PlaybackPreferences.Builder.() -> Unit) {
         val appPrefs = AppPreferences.getDefaultInstance().updatePlaybackPreferences(block)
-        val prefs = UserPreferences(appPrefs)
+        val prefs = UserPreferences(appPrefs, null)
         coEvery { mockUserPreferencesService.getCurrent() } returns prefs
     }
 

@@ -3,14 +3,14 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
-import com.github.damontecres.wholphin.preferences.SubtitleMode
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.updateServerProfileOverrides
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
@@ -888,7 +888,7 @@ data class TestInput(
     val plc: PlaybackLanguageChoice? = null,
     val appAudioLang: String = ServerProfileSetting.USE_USER_PROFILE,
     val appSubtitleLang: String = ServerProfileSetting.USE_USER_PROFILE,
-    val appSubtitleMode: SubtitleMode = SubtitleMode.SUBTITLE_MODE_SERVER_VALUE,
+    val appSubtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"
 }
@@ -932,11 +932,12 @@ private fun runTest(input: TestInput) {
             playbackLanguageChoice = input.plc,
             prefs =
                 UserPreferences(
-                    AppPreferences.getDefaultInstance().updateServerProfileOverrides {
-                        preferredAudioLanguage = input.appAudioLang
-                        preferredSubtitleLanguage = input.appSubtitleLang
-                        preferredSubtitleMode = input.appSubtitleMode
-                    },
+                    AppPreferences.getDefaultInstance(),
+                    JellyfinUserPreferences(
+                        preferredAudioLanguage = input.appAudioLang,
+                        preferredSubtitleLanguage = input.appSubtitleLang,
+                        subtitleMode = input.appSubtitleMode,
+                    ),
                 ),
         )
     Assert.assertEquals(input.expectedIndex, result?.index)

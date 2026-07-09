@@ -6,7 +6,7 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
-import com.github.damontecres.wholphin.preferences.SubtitleMode
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -141,8 +141,7 @@ class StreamChoiceService
                     if (seriesLang != null) {
                         seriesLang
                     } else {
-                        val pref =
-                            prefs.appPreferences.serverProfileOverrides.preferredAudioLanguage
+                        val pref = prefs.userPreferences?.preferredAudioLanguage
                         when (pref) {
                             ServerProfileSetting.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
                             ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
@@ -246,8 +245,7 @@ class StreamChoiceService
                 if (seriesLang != null) {
                     seriesLang
                 } else {
-                    val pref =
-                        prefs.appPreferences.serverProfileOverrides.preferredSubtitleLanguage
+                    val pref = prefs.userPreferences?.preferredSubtitleLanguage
                     when (pref) {
                         ServerProfileSetting.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
                         ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
@@ -275,14 +273,14 @@ class StreamChoiceService
 
                         else -> {
                             // Fallback to the user's preference
-                            when (prefs.appPreferences.serverProfileOverrides.preferredSubtitleMode) {
-                                SubtitleMode.SUBTITLE_MODE_SERVER_VALUE -> userConfig?.subtitleMode
-                                SubtitleMode.SUBTITLE_MODE_DEFAULT -> SubtitlePlaybackMode.DEFAULT
-                                SubtitleMode.SUBTITLE_MODE_SMART -> SubtitlePlaybackMode.SMART
-                                SubtitleMode.SUBTITLE_MODE_ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
-                                SubtitleMode.SUBTITLE_MODE_ALWAYS -> SubtitlePlaybackMode.ALWAYS
-                                SubtitleMode.SUBTITLE_MODE_NONE -> SubtitlePlaybackMode.NONE
-                                SubtitleMode.UNRECOGNIZED -> SubtitlePlaybackMode.DEFAULT
+                            when (prefs.userPreferences?.subtitleMode) {
+                                SubtitleModePreference.USE_USER_PROFILE -> userConfig?.subtitleMode
+                                SubtitleModePreference.DEFAULT -> SubtitlePlaybackMode.DEFAULT
+                                SubtitleModePreference.SMART -> SubtitlePlaybackMode.SMART
+                                SubtitleModePreference.ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
+                                SubtitleModePreference.ALWAYS -> SubtitlePlaybackMode.ALWAYS
+                                SubtitleModePreference.NONE -> SubtitlePlaybackMode.NONE
+                                null -> SubtitlePlaybackMode.DEFAULT
                             }
                         }
                     } ?: SubtitlePlaybackMode.DEFAULT

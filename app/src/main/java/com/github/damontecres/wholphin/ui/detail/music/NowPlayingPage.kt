@@ -104,6 +104,7 @@ fun NowPlayingPage(
             .collectAsState(
                 UserPreferences(
                     AppPreferences.getDefaultInstance(),
+                    null,
                 ),
             ).value.appPreferences
     val musicPrefs = preferences.musicPreferences
