@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.SubtitleMode
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.updateServerProfileOverrides
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
@@ -822,7 +823,7 @@ class TestStreamChoiceServiceAppPreferences(
             listOf(
                 TestInput(
                     expectedIndex = 1,
-                    userSubtitleMode = null,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
                     userSubtitleLang = "spa",
                     subtitles =
                         listOf(
@@ -831,11 +832,11 @@ class TestStreamChoiceServiceAppPreferences(
                         ),
                     streamAudioLang = "eng",
                     itemPlayback = null,
-                    appAudioLang = ServerProfileSetting.PREFER_SERVER,
+                    appSubtitleLang = ServerProfileSetting.PREFER_SERVER,
                 ),
                 TestInput(
                     expectedIndex = 0,
-                    userSubtitleMode = null,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
                     userSubtitleLang = "spa",
                     subtitles =
                         listOf(
@@ -844,11 +845,11 @@ class TestStreamChoiceServiceAppPreferences(
                         ),
                     streamAudioLang = "eng",
                     itemPlayback = null,
-                    appAudioLang = "eng",
+                    appSubtitleLang = "eng",
                 ),
                 TestInput(
                     expectedIndex = 1,
-                    userSubtitleMode = null,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
                     userSubtitleLang = "spa",
                     subtitles =
                         listOf(
@@ -857,20 +858,20 @@ class TestStreamChoiceServiceAppPreferences(
                         ),
                     streamAudioLang = "eng",
                     itemPlayback = null,
-                    appAudioLang = "spa",
+                    appSubtitleLang = "spa",
                 ),
                 TestInput(
                     expectedIndex = 1, // ItemPlayback
-                    userSubtitleMode = null,
-                    userSubtitleLang = "eng",
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = "spa",
                     subtitles =
                         listOf(
                             subtitle(0, "eng", default = true),
                             subtitle(1, "spa"),
                         ),
                     streamAudioLang = "eng",
-                    itemPlayback = itemPlayback(audioIndex = 2),
-                    appAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = 1),
+                    appSubtitleLang = "spa",
                 ),
             )
     }
@@ -885,8 +886,8 @@ data class TestInput(
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
     val plc: PlaybackLanguageChoice? = null,
-    val appAudioLang: String? = "",
-    val appSubtitleLang: String? = "",
+    val appAudioLang: String = ServerProfileSetting.PREFER_SERVER,
+    val appSubtitleLang: String = ServerProfileSetting.PREFER_SERVER,
     val appSubtitleMode: SubtitleMode = SubtitleMode.SUBTITLE_MODE_SERVER_VALUE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"
@@ -929,7 +930,14 @@ private fun runTest(input: TestInput) {
             candidates = input.subtitles,
             itemPlayback = input.itemPlayback,
             playbackLanguageChoice = input.plc,
-            prefs = UserPreferences(AppPreferences.getDefaultInstance()),
+            prefs =
+                UserPreferences(
+                    AppPreferences.getDefaultInstance().updateServerProfileOverrides {
+                        preferredAudioLanguage = input.appAudioLang
+                        preferredSubtitleLanguage = input.appSubtitleLang
+                        preferredSubtitleMode = input.appSubtitleMode
+                    },
+                ),
         )
     Assert.assertEquals(input.expectedIndex, result?.index)
 }
