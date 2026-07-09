@@ -26,7 +26,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,8 +46,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ChoicePreference
@@ -59,12 +58,17 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import timber.log.Timber
 
+/**
+ * Page for showing settings derived from the user's profile on the server
+ *
+ * @see UserProfileSettings
+ */
 @Composable
-fun UserPreferencesPage(modifier: Modifier = Modifier) {
+fun UserProfilePreferencesPage(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.background),
     ) {
-        UserPreferencesContent(
+        UserProfilePreferencesContent(
             Modifier
                 .fillMaxWidth(.4f)
                 .fillMaxHeight()
@@ -74,13 +78,12 @@ fun UserPreferencesPage(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun UserPreferencesContent(
+fun UserProfilePreferencesContent(
     modifier: Modifier = Modifier,
     viewModel: UserPreferencesViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
@@ -126,7 +129,7 @@ fun UserPreferencesContent(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier,
             ) {
-                ServerProfileSetting.Preferences.forEachIndexed { groupIndex, group ->
+                UserProfileSettings.Preferences.forEachIndexed { groupIndex, group ->
                     item {
                         Text(
                             text = stringResource(group.title),
@@ -167,7 +170,7 @@ fun UserPreferencesContent(
                                 }
                             }
                             when (pref) {
-                                ServerProfileSetting.PreferredAudioLang -> {
+                                UserProfileSettings.PreferredAudioLang -> {
                                     ClickPreference(
                                         title = stringResource(pref.title),
                                         onClick = { showPreferredLanguageDialog = true },
@@ -177,7 +180,7 @@ fun UserPreferencesContent(
                                     )
                                 }
 
-                                ServerProfileSetting.PreferredSubtitleLang -> {
+                                UserProfileSettings.PreferredSubtitleLang -> {
                                     ClickPreference(
                                         title = stringResource(pref.title),
                                         onClick = { showPreferredLanguageDialog = false },
@@ -187,7 +190,7 @@ fun UserPreferencesContent(
                                     )
                                 }
 
-                                ServerProfileSetting.SubtitleModePref -> {
+                                UserProfileSettings.SubtitleModePref -> {
                                     pref as AppChoicePreference<JellyfinUserPreferences, SubtitleModePreference>
                                     val value = preferences.subtitleMode
                                     val values = stringArrayResource(pref.displayValues).toList()
@@ -276,16 +279,16 @@ fun UserPreferencesContent(
             elevation = 3.dp,
         ) {
             val lang = if (isAudio) audioLanguagePref else subtitleLanguagePref
-            FilteredLanguagePreference(
+            FilterableLanguagePreference(
                 title = if (isAudio) R.string.preferred_audio_language else R.string.preferred_subtitle_language,
                 selectedOption = lang.selected,
                 options = lang.options,
                 onClickOption = { option ->
                     val value =
                         when (option) {
-                            PreferredLanguageType.AnyLanguage -> ServerProfileSetting.PREFER_ANY_LANGUAGE
+                            PreferredLanguageType.AnyLanguage -> UserProfileSettings.PREFER_ANY_LANGUAGE
                             is PreferredLanguageType.Language -> option.iso
-                            is PreferredLanguageType.ServerProfile -> ServerProfileSetting.USE_USER_PROFILE
+                            is PreferredLanguageType.ServerProfile -> UserProfileSettings.USE_USER_PROFILE
                             PreferredLanguageType.Divider -> throw IllegalStateException("Cannot click on a divider")
                         }
                     Timber.v("Updating language pref to %s", option)

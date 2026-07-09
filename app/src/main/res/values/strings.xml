@@ -95,6 +95,7 @@
     <string name="playlists">Playlists</string>
     <string name="preview">Preview</string>
     <string name="profile_specific_settings">User Profile Settings</string>
+    <string name="profile_specific_settings_from_server">User profile settings from server</string>
     <string name="queue">Queue</string>
     <string name="recap">Recap</string>
     <string name="recently_added_in">Recently added in %1$s</string>

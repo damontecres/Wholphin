@@ -8,9 +8,9 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
@@ -832,7 +832,7 @@ class TestStreamChoiceServiceAppPreferences(
                         ),
                     streamAudioLang = "eng",
                     itemPlayback = null,
-                    appSubtitleLang = ServerProfileSetting.USE_USER_PROFILE,
+                    appSubtitleLang = UserProfileSettings.USE_USER_PROFILE,
                 ),
                 TestInput(
                     expectedIndex = 0,
@@ -886,8 +886,8 @@ data class TestInput(
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
     val plc: PlaybackLanguageChoice? = null,
-    val appAudioLang: String = ServerProfileSetting.USE_USER_PROFILE,
-    val appSubtitleLang: String = ServerProfileSetting.USE_USER_PROFILE,
+    val appAudioLang: String = UserProfileSettings.USE_USER_PROFILE,
+    val appSubtitleLang: String = UserProfileSettings.USE_USER_PROFILE,
     val appSubtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"

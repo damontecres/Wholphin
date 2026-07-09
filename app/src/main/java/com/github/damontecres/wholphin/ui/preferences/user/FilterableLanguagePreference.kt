@@ -33,8 +33,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * A filterable list of language choices ([PreferredLanguageType])
+ */
 @Composable
-fun FilteredLanguagePreference(
+fun FilterableLanguagePreference(
     @StringRes title: Int,
     selectedOption: PreferredLanguageType,
     options: List<PreferredLanguageType>,
@@ -52,9 +55,12 @@ fun FilteredLanguagePreference(
                 filteredOptions =
                     options
                         .filter {
+                            // Only show languages, not "built-in" types
                             it is PreferredLanguageType.Language &&
                                 (it.name.lowercase().contains(q) || it.iso.contains(q))
                         }.sortedByDescending {
+                            // User is likely typing the first letters of a language, so show those first
+                            // IE, for q="en", show English before Armenian and Bengali
                             (it as PreferredLanguageType.Language).name.lowercase().startsWith(q)
                         }
             }
@@ -125,9 +131,7 @@ fun FilteredLanguagePreference(
                                 is PreferredLanguageType.ServerProfile -> {
                                     option.name?.let {
                                         {
-                                            Text(
-                                                it,
-                                            )
+                                            Text(it)
                                         }
                                     }
                                 }

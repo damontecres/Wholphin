@@ -47,7 +47,7 @@ import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
-import com.github.damontecres.wholphin.ui.preferences.user.UserPreferencesPage
+import com.github.damontecres.wholphin.ui.preferences.user.UserProfilePreferencesPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -130,7 +130,7 @@ fun DestinationContent(
         }
 
         Destination.UserAppPreferences -> {
-            UserPreferencesPage(modifier)
+            UserProfilePreferencesPage(modifier)
         }
 
         is Destination.SeriesOverview -> {

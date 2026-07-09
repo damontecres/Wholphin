@@ -8,6 +8,9 @@ import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 
+/**
+ * UI information for displaying a preferred language
+ */
 sealed interface PreferredLanguageType {
     val displayString: StringProvider
 

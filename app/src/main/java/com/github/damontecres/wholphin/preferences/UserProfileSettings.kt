@@ -4,8 +4,18 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 
-object ServerProfileSetting {
+/**
+ * Represents settings from the user's profile on the server that may be overridden within the app
+ */
+object UserProfileSettings {
+    /**
+     * Special value that means the preferred language should be taken from the user's profile on the server
+     */
     const val USE_USER_PROFILE = ""
+
+    /**
+     * Special value that means the user has no preferred language
+     */
     const val PREFER_ANY_LANGUAGE = "_any-language"
 
     val PreferredAudioLang =
@@ -39,7 +49,7 @@ object ServerProfileSetting {
     val Preferences =
         listOf(
             PreferenceGroup(
-                title = R.string.profile_specific_settings,
+                title = R.string.profile_specific_settings_from_server,
                 preferences =
                     listOf(
                         PreferredAudioLang,

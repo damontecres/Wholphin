@@ -5,9 +5,9 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -143,8 +143,8 @@ class StreamChoiceService
                     } else {
                         val pref = prefs.userPreferences?.preferredAudioLanguage
                         when (pref) {
-                            ServerProfileSetting.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
-                            ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
+                            UserProfileSettings.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
+                            UserProfileSettings.PREFER_ANY_LANGUAGE -> null
                             else -> pref
                         }
                     }
@@ -247,8 +247,8 @@ class StreamChoiceService
                 } else {
                     val pref = prefs.userPreferences?.preferredSubtitleLanguage
                     when (pref) {
-                        ServerProfileSetting.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
-                        ServerProfileSetting.PREFER_ANY_LANGUAGE -> null
+                        UserProfileSettings.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
+                        UserProfileSettings.PREFER_ANY_LANGUAGE -> null
                         else -> pref
                     }?.takeIf { it.isNotNullOrBlank() }
                 }

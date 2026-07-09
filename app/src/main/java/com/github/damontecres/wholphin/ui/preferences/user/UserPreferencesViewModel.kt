@@ -8,7 +8,7 @@ import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ScreensaverService
@@ -74,7 +74,11 @@ class UserPreferencesViewModel
                     }
                     val languages =
                         serverLanguages.filter { it.threeLetterIsoLanguageName.isNotNullOrBlank() }
+
+                    // Language user has chosen from local app
                     val prefLang = user.appPreferences.let { if (isAudio) it.preferredAudioLanguage else it.preferredSubtitleLanguage }
+
+                    // Language user has chosen from server user profile
                     val userDisplayLang =
                         userDto.configuration
                             ?.let { if (isAudio) it.audioLanguagePreference else it.subtitleLanguagePreference }
@@ -84,11 +88,11 @@ class UserPreferencesViewModel
                             }
                     val selected =
                         when (prefLang) {
-                            ServerProfileSetting.USE_USER_PROFILE -> {
+                            UserProfileSettings.USE_USER_PROFILE -> {
                                 PreferredLanguageType.ServerProfile(userDisplayLang)
                             }
 
-                            ServerProfileSetting.PREFER_ANY_LANGUAGE -> {
+                            UserProfileSettings.PREFER_ANY_LANGUAGE -> {
                                 PreferredLanguageType.AnyLanguage
                             }
 
