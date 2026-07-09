@@ -59,6 +59,9 @@ kotlin {
         languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
         jvmTarget = JvmTarget.JVM_11
         javaParameters = true
+
+        // Workaround for https://github.com/google/ksp/issues/2964
+        moduleName = "${project.group}_${project.name}"
     }
 }
 
@@ -332,7 +335,6 @@ dependencies {
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.testing)
@@ -360,10 +362,6 @@ dependencies {
     implementation(libs.kache)
     implementation(libs.kache.file)
 
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     if (ffmpegModuleExists.get()) {
@@ -395,6 +393,8 @@ dependencies {
         implementation(project(":wholphin-mpv-stub"))
     }
 
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -402,7 +402,8 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.hilt.android.testing)
-    androidTestImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
 }

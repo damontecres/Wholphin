@@ -20,7 +20,7 @@ jobs:
       with:
         fetch-depth: 0 # Need the tags to build
     - name: Setup Python
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
       with:
         python-version: '3.14'
     - name: Run pre-commit
@@ -42,6 +42,3 @@ jobs:
           ./gradlew clean assembleDefaultDebug testDefaultDebugUnitTest --no-daemon
           apks=$(find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | tr '\0' ',' | sed 's/,$//')
           echo "apks=$apks" >> "$GITHUB_OUTPUT"
-        env:
-          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
-          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
