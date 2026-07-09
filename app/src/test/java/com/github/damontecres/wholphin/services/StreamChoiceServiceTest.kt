@@ -7,6 +7,8 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
+import com.github.damontecres.wholphin.preferences.ServerProfileSetting
+import com.github.damontecres.wholphin.preferences.SubtitleMode
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import io.mockk.every
 import io.mockk.mockk
@@ -800,6 +802,80 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
     }
 }
 
+/**
+ * Tests for client-side "Only Forced" override (TrackIndex.ONLY_FORCED).
+ * This tests the findForcedTrack function with user subtitle language preference.
+ */
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceAppPreferences(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
+                TestInput(
+                    expectedIndex = 1,
+                    userSubtitleMode = null,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appAudioLang = ServerProfileSetting.PREFER_SERVER,
+                ),
+                TestInput(
+                    expectedIndex = 0,
+                    userSubtitleMode = null,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appAudioLang = "eng",
+                ),
+                TestInput(
+                    expectedIndex = 1,
+                    userSubtitleMode = null,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appAudioLang = "spa",
+                ),
+                TestInput(
+                    expectedIndex = 1, // ItemPlayback
+                    userSubtitleMode = null,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(audioIndex = 2),
+                    appAudioLang = "eng",
+                ),
+            )
+    }
+}
+
 data class TestInput(
     val expectedIndex: Int?,
     val userSubtitleMode: SubtitlePlaybackMode?,
@@ -809,6 +885,9 @@ data class TestInput(
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
     val plc: PlaybackLanguageChoice? = null,
+    val appAudioLang: String? = "",
+    val appSubtitleLang: String? = "",
+    val appSubtitleMode: SubtitleMode = SubtitleMode.SUBTITLE_MODE_SERVER_VALUE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"
 }
