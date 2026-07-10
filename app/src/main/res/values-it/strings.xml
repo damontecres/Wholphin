@@ -681,4 +681,15 @@
     <string name="confirm_enable_experimental_title">Abilita impostazioni sperimentali?</string>
     <string name="confirm_enable_experimental_body">Le impostazioni sperimentali possono essere instabili!\nPossono essere rimosse o cambiate in qualsiasi aggiornamento.</string>
     <string name="video_tunneling">Tunneling video</string>
+    <string name="duration_hours_minutes_seconds">%1$do %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$do %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$do</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">%1$s rimanenti</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transcodifica l’audio non stereo in AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Usa AC3 per l’audio surround</string>
+    <string name="blocklisted">Bloccati</string>
+    <string name="unavailable">Non disponibile</string>
 </resources>
