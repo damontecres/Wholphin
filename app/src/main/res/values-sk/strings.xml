@@ -714,4 +714,6 @@
     <string name="time_left">zostáva %1$s</string>
     <string name="blocklisted">Blokované</string>
     <string name="unavailable">Nedostupné</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Prekódovať viackanálový zvuk na AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Použiť AC3 pre viackanálový zvuk</string>
 </resources>
