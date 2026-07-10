@@ -648,4 +648,6 @@
     <string name="time_left">还剩%1$s</string>
     <string name="blocklisted">被列入黑名单</string>
     <string name="unavailable">不可用</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[将非立体声音频转码为 AC3/杜比数字]]></string>
+    <string name="prefer_ac3_for_surround">使用 AC3 处理环绕声音频</string>
 </resources>
