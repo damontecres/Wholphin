@@ -669,4 +669,27 @@
         <item quantity="other">Personas</item>
     </plurals>
     <string name="trailers_title">Tráileres</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">%1$s restantes</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transcodificar audio no estéreo a AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Usar AC3 para audio multicanal</string>
+    <string name="genre_movies">%1$s Películas</string>
+    <string name="genre_tv_shows">%1$s Series</string>
+    <string name="quality_profile">Configuración de calidad</string>
+    <string name="is_default">Predeterminado</string>
+    <string name="root_folder">Carpeta principal</string>
+    <string name="popularity">Popularidad</string>
+    <string name="production_status">Estado</string>
+    <string name="different_for_hdr">Usar estilo diferente para HDR</string>
+    <string name="experimental_settings">Ajustes experimentales</string>
+    <string name="confirm_enable_experimental_title">¿Habilitar ajustes experimentales?</string>
+    <string name="confirm_enable_experimental_body">¡Los ajustes experimentales pueden ser inestables!\n\n Pueden ser cambiados o eliminados en cualquier lanzamiento.</string>
+    <string name="video_tunneling">Tunelización de video</string>
+    <string name="blocklisted">Bloqueado</string>
+    <string name="unavailable">No disponible</string>
 </resources>
