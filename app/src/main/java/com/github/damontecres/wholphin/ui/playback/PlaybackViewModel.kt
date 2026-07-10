@@ -912,11 +912,12 @@ class PlaybackViewModel
                         } else {
                             _state.update { it.copy(currentItemPlayback = itemPlayback) }
                         }
+                        val currentTracks = onMain { player.currentTracks }
                         _state.update {
                             it.copy(
                                 currentPlayback =
                                     (it.currentPlayback ?: currentPlayback).copy(
-                                        tracks = checkForSupport(player.currentTracks),
+                                        tracks = checkForSupport(currentTracks),
                                     ),
                             )
                         }
