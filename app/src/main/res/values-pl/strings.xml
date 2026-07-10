@@ -711,4 +711,6 @@
     <string name="duration_minutes_seconds">%1$d min. %2$d sek.</string>
     <string name="blocklisted">Na czarnej liście</string>
     <string name="unavailable">Niedostępne</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkoduj dźwięk nie-stereo do formatu AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Używaj dźwięku AC3 jako dźwięku przestrzennego</string>
 </resources>
