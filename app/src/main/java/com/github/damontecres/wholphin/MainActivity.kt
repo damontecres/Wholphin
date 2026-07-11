@@ -187,7 +187,6 @@ class MainActivity : AppCompatActivity() {
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
             navigationManager.backStack = NavBackStack(Destination.Home())
-            parseIntent(intent)
         }
 
         viewModel.serverRepository.currentUserFlow
@@ -222,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             playerBackend = prefs.playbackPreferences.playerBackend
         }
 
-        viewModel.appStart()
+        viewModel.appStart(intent)
         setContent {
             Surface(
                 Modifier
@@ -305,7 +304,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        viewModel.appStart()
+        viewModel.appStart(null)
         if (!playExternalViewModel.launched.value) {
             // If restarting during playback that is not external, go back a page
             val lastDest = navigationManager.backStack.lastOrNull()
@@ -382,23 +381,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
         setIntent(intent)
-        parseIntent(intent)
-    }
-
-    private fun parseIntent(intent: Intent) {
-        lifecycleScope.launchDefault {
-            when (val result = intentService.parseIntent(intent)) {
-                is IntentResult.Error -> {
-                    Timber.w("Error parsing intent: %s", result.message)
-                }
-
-                is IntentResult.Target -> {
-                    navigationManager.replace(result.destination)
-                }
-
-                is IntentResult.NoOp -> {}
-            }
-        }
+        viewModel.appStart(intent)
     }
 
     fun changeDisplayMode(modeId: Int) {
@@ -427,16 +410,55 @@ class MainActivityViewModel
         @param:ApplicationContext private val context: Context,
         private val preferences: DataStore<AppPreferences>,
         val serverRepository: ServerRepository,
-        private val navigationManager: SetupNavigationManager,
+        private val setupNavigationManager: SetupNavigationManager,
+        private val navigationManager: NavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
         private val appUpgradeHandler: AppUpgradeHandler,
+        private val intentService: IntentService,
     ) : ViewModel() {
         private val mutex = Mutex()
 
-        fun appStart() {
+        fun appStart(intent: Intent?) {
             viewModelScope.launchDefault {
                 mutex.withLock {
+                    try {
+                        val result = intent?.let { intentService.parseIntent(intent) }
+                        when (result) {
+                            is IntentResult.Error -> {
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                Timber.e("Error parsing intent: %s", result.message)
+                                showToast(context, "Invalid intent: ${result.message}")
+                                return@withLock
+                            }
+
+                            is IntentResult.Target -> {
+                                val current = serverRepository.current.value
+                                if (current != null) {
+                                    Timber.i("Received valid intent, switching to AppContent")
+                                    navigationManager.replace(result.destination)
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.AppContent(current),
+                                    )
+                                } else {
+                                    // This should never happen, but just reset app state if it does
+                                    setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                    Timber.e("Error parsing intent, no user is active")
+                                    showToast(context, "An error occurred parsing the intent")
+                                }
+                                return@withLock
+                            }
+
+                            IntentResult.NoOp,
+                            null,
+                            -> {
+                                // No-op, proceed below
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error parsing intent")
+                    }
+
                     try {
                         val needUpgrade = appUpgradeHandler.needUpgrade()
                         if (needUpgrade) {
@@ -464,38 +486,46 @@ class MainActivityViewModel
                                 )
                             if (current != null) {
                                 if (current.user.hasPin || current.user.requireLogin) {
-                                    navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.UserList(
+                                            current.server,
+                                        ),
+                                    )
                                 } else {
                                     // Restored
-                                    navigationManager.navigateTo(SetupDestination.AppContent(current))
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.AppContent(
+                                            current,
+                                        ),
+                                    )
                                 }
                             } else {
                                 // Did not restore
-                                navigationManager.navigateTo(SetupDestination.ServerList)
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         } else {
-                            navigationManager.navigateTo(SetupDestination.Loading)
+                            setupNavigationManager.navigateTo(SetupDestination.Loading)
                             backdropService.clearBackdrop()
                             val currentServerId = prefs.currentServerId?.toUUIDOrNull()
                             if (currentServerId != null) {
                                 val currentServer =
                                     serverRepository.serverDao.getServer(currentServerId)?.server
                                 if (currentServer != null) {
-                                    navigationManager.navigateTo(
+                                    setupNavigationManager.navigateTo(
                                         SetupDestination.UserList(
                                             currentServer,
                                         ),
                                     )
                                 } else {
-                                    navigationManager.navigateTo(SetupDestination.ServerList)
+                                    setupNavigationManager.navigateTo(SetupDestination.ServerList)
                                 }
                             } else {
-                                navigationManager.navigateTo(SetupDestination.ServerList)
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error during appStart")
-                        navigationManager.navigateTo(SetupDestination.ServerList)
+                        setupNavigationManager.navigateTo(SetupDestination.ServerList)
                     }
                 }
             }
