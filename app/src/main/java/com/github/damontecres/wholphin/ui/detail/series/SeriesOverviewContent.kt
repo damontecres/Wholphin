@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
+import com.github.damontecres.wholphin.ui.components.CornerLoadingIndicator
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -101,6 +102,7 @@ fun SeriesOverviewContent(
     onConfirmDelete: (BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onChooseVersion: (BaseItem, MediaSourceInfo) -> Unit,
+    strmLoading: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -396,6 +398,9 @@ fun SeriesOverviewContent(
                             .focusRequester(extrasRowFocusRequester),
                 )
             }
+        }
+        if (strmLoading) {
+            CornerLoadingIndicator(preferences.appPreferences.interfacePreferences.showClock)
         }
     }
 }

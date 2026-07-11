@@ -352,6 +352,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                             ItemFields.CAN_DELETE,
+                            ItemFields.PATH,
                         ),
                 )
             Timber.v(
@@ -537,17 +538,23 @@ class SeriesViewModel
             item: BaseItem,
         ) {
             strmResolveJob?.cancel()
+            _state.update { it.copy(strmLoading = false) }
             strmResolveJob =
                 viewModelScope.launchIO {
                     try {
-                        val result = strmFileHandler.resolveStrm(item)
-                        if (result != null) {
-                            Timber.d("Got updated item")
-                            refreshEpisode(item.id, index).join()
-                            lookUpChosenTracks(item.id, result)
+                        if (StrmFileHandler.shouldResolveStrm(item, null)) {
+                            _state.update { it.copy(strmLoading = true) }
+                            val result = strmFileHandler.resolveStrm(item)
+                            if (result != null) {
+                                Timber.d("Got updated item")
+                                refreshEpisode(item.id, index).join()
+                                lookUpChosenTracks(item.id, result)
+                            }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error checking strm file for %s", item.id)
+                    } finally {
+                        _state.update { it.copy(strmLoading = false) }
                     }
                 }
         }
@@ -785,4 +792,5 @@ data class SeriesState(
     val discovered: List<DiscoverItem> = emptyList(),
     val discoverSeries: DiscoverItem? = null,
     val chosenStreams: ChosenStreams? = null,
+    val strmLoading: Boolean = false,
 )

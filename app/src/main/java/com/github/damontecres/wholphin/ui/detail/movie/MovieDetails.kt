@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
+import com.github.damontecres.wholphin.ui.components.CornerLoadingIndicator
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -239,6 +240,7 @@ fun MovieDetails(
                 canDelete = state.canDelete,
                 onConfirmDelete = { state.movie?.let { viewModel.deleteItem(it) } },
                 onChooseVersion = { contextActions.onChooseVersion.invoke(movie, it) },
+                strmLoading = state.strmLoading,
                 modifier = modifier,
             )
         }
@@ -308,6 +310,7 @@ fun MovieDetailsContent(
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
     onChooseVersion: (MediaSourceInfo) -> Unit,
+    strmLoading: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -499,6 +502,9 @@ fun MovieDetailsContent(
                     )
                 }
             }
+        }
+        if (strmLoading) {
+            CornerLoadingIndicator(preferences.appPreferences.interfacePreferences.showClock)
         }
     }
 }

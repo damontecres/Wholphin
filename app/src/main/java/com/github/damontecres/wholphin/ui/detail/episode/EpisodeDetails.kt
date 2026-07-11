@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
+import com.github.damontecres.wholphin.ui.components.CornerLoadingIndicator
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -172,6 +173,7 @@ fun EpisodeDetails(
                 canDelete = canDelete,
                 onConfirmDelete = { viewModel.deleteItem(ep) },
                 onChooseVersion = { contextActions.onChooseVersion.invoke(ep, it) },
+                strmLoading = state.strmLoading,
                 modifier = modifier,
             )
         }
@@ -228,6 +230,7 @@ fun EpisodeDetailsContent(
     canDelete: Boolean,
     onConfirmDelete: () -> Unit,
     onChooseVersion: (MediaSourceInfo) -> Unit,
+    strmLoading: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -304,6 +307,9 @@ fun EpisodeDetailsContent(
                     )
                 }
             }
+        }
+        if (strmLoading) {
+            CornerLoadingIndicator(preferences.appPreferences.interfacePreferences.showClock)
         }
     }
 }

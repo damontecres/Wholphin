@@ -181,24 +181,29 @@ class MovieViewModel
 
                 viewModelScope.launchIO {
                     try {
-                        val result = strmFileHandler.resolveStrm(movie)
-                        if (result != null) {
-                            Timber.d("Got updated item")
-                            val chosenStreams =
-                                itemPlaybackRepository.getSelectedTracks(
-                                    itemId,
-                                    result,
-                                    userPreferencesService.getCurrent(),
-                                )
-                            _state.update {
-                                it.copy(
-                                    loading = DataLoadingState.Success(result),
-                                    chosenStreams = chosenStreams,
-                                )
+                        if (StrmFileHandler.shouldResolveStrm(movie)) {
+                            _state.update { it.copy(strmLoading = true) }
+                            val result = strmFileHandler.resolveStrm(movie)
+                            if (result != null) {
+                                Timber.d("Got updated item")
+                                val chosenStreams =
+                                    itemPlaybackRepository.getSelectedTracks(
+                                        itemId,
+                                        result,
+                                        userPreferencesService.getCurrent(),
+                                    )
+                                _state.update {
+                                    it.copy(
+                                        loading = DataLoadingState.Success(result),
+                                        chosenStreams = chosenStreams,
+                                    )
+                                }
                             }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error checking strm file for %s", movie.id)
+                    } finally {
+                        _state.update { it.copy(strmLoading = false) }
                     }
                 }
             }
@@ -332,6 +337,7 @@ data class MovieState(
     val discovered: List<DiscoverItem> = emptyList(),
     val chosenStreams: ChosenStreams? = null,
     val canDelete: Boolean = false,
+    val strmLoading: Boolean = false,
 ) {
     val movie: BaseItem? = (loading as? DataLoadingState.Success<BaseItem>)?.data
 }

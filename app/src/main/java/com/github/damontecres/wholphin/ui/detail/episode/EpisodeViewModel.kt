@@ -119,24 +119,29 @@ class EpisodeViewModel
                     backdropService.submit(item)
                     viewModelScope.launchIO {
                         try {
-                            val result = strmFileHandler.resolveStrm(item)
-                            if (result != null) {
-                                Timber.d("Got updated item")
-                                val chosenStreams =
-                                    itemPlaybackRepository.getSelectedTracks(
-                                        itemId,
-                                        result,
-                                        userPreferencesService.getCurrent(),
-                                    )
-                                _state.update {
-                                    it.copy(
-                                        episode = DataLoadingState.Success(result),
-                                        chosenStreams = chosenStreams,
-                                    )
+                            if (StrmFileHandler.shouldResolveStrm(item)) {
+                                _state.update { it.copy(strmLoading = true) }
+                                val result = strmFileHandler.resolveStrm(item)
+                                if (result != null) {
+                                    Timber.d("Got updated item")
+                                    val chosenStreams =
+                                        itemPlaybackRepository.getSelectedTracks(
+                                            itemId,
+                                            result,
+                                            userPreferencesService.getCurrent(),
+                                        )
+                                    _state.update {
+                                        it.copy(
+                                            episode = DataLoadingState.Success(result),
+                                            chosenStreams = chosenStreams,
+                                        )
+                                    }
                                 }
                             }
                         } catch (ex: Exception) {
                             Timber.e(ex, "Error checking strm file for %s", item.id)
+                        } finally {
+                            _state.update { it.copy(strmLoading = false) }
                         }
                     }
                 } catch (ex: CancellationException) {
@@ -245,4 +250,5 @@ class EpisodeViewModel
 data class EpisodeState(
     val episode: DataLoadingState<BaseItem> = DataLoadingState.Pending,
     val chosenStreams: ChosenStreams? = null,
+    val strmLoading: Boolean = false,
 )
