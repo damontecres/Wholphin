@@ -669,4 +669,27 @@
     <string name="samples_title">דגימות</string>
     <string name="featurettes_title">קטעי בונוס</string>
     <string name="shorts_title">קטעים קצרים</string>
+    <string name="duration_hours_minutes_seconds">%1$d שע\' %2$d דק\' %3$d שנ\'</string>
+    <string name="duration_hours_minutes">%1$d שע\' %2$d דק\'</string>
+    <string name="duration_minutes_seconds">%1$d דק\' %2$d שנ\'</string>
+    <string name="duration_hours">%1$d שע\'</string>
+    <string name="duration_minutes">%1$d דק\'</string>
+    <string name="duration_seconds">%1$d שנ\'</string>
+    <string name="time_left">%1$s נותרו</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[לקודד מחדש שמע שאינו סטריאו ל־AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">להשתמש ב־AC3 עבור שמע סראונד</string>
+    <string name="genre_movies">סרטי %1$s</string>
+    <string name="genre_tv_shows">סדרות %1$s</string>
+    <string name="quality_profile">פרופיל איכות</string>
+    <string name="is_default">ברירת מחדל</string>
+    <string name="root_folder">תיקייה ראשית</string>
+    <string name="popularity">פופולריות</string>
+    <string name="production_status">מצב הפקה</string>
+    <string name="different_for_hdr">השתמש בסגנון שונה עבור HDR</string>
+    <string name="experimental_settings">הגדרות ניסיוניות</string>
+    <string name="confirm_enable_experimental_title">האם לאפשר הגדרות ניסיוניות?</string>
+    <string name="confirm_enable_experimental_body">ההגדרות הניסיוניות עשויות להיות לא יציבות!\n\nהן עשויות להימחק או להשתנות בכל גרסה.</string>
+    <string name="unavailable">לא זמין</string>
+    <string name="blocklisted">ברשימה חסומה</string>
+    <string name="video_tunneling">מנהור וידאו</string>
 </resources>
