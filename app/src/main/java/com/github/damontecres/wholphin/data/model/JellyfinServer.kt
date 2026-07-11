@@ -68,6 +68,8 @@ data class JellyfinUser(
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 
+    val isProtected: Boolean get() = hasPin || requireLogin
+
     override fun toString(): String =
         "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, lastUsed=$lastUsed, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
 }

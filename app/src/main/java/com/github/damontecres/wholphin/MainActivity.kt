@@ -36,6 +36,8 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.IntentResult
+import com.github.damontecres.wholphin.services.IntentService
 import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
@@ -53,7 +55,6 @@ import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
@@ -79,7 +80,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -141,6 +141,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var screensaverService: ScreensaverService
 
+    @Inject
+    lateinit var intentService: IntentService
+
     private var signInAuto = true
     private var playerBackend: PlayerBackend? = null
 
@@ -183,8 +186,8 @@ class MainActivity : AppCompatActivity() {
             }
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
-            val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
-            navigationManager.backStack = NavBackStack(startDestination)
+            navigationManager.backStack = NavBackStack(Destination.Home())
+            parseIntent(intent)
         }
 
         viewModel.serverRepository.currentUserFlow
@@ -379,41 +382,24 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
         setIntent(intent)
-        extractDestination(intent)?.let {
-            navigationManager.replace(it)
-        }
+        parseIntent(intent)
     }
 
-    private fun extractDestination(intent: Intent): Destination? =
-        intent.let {
-            val itemId =
-                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
-            val type =
-                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
-            if (itemId != null && type != null) {
-                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
-                val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
-                val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
-                val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
-                if (seriesId != null && seasonId != null && episodeNumber >= 0 && seasonNumber >= 0) {
-                    Destination.SeriesOverview(
-                        itemId = seriesId,
-                        type = BaseItemKind.SERIES,
-                        seasonEpisode =
-                            SeasonEpisodeIds(
-                                seasonId = seasonId,
-                                seasonNumber = seasonNumber,
-                                episodeId = itemId,
-                                episodeNumber = episodeNumber,
-                            ),
-                    )
-                } else {
-                    Destination.MediaItem(itemId, type)
+    private fun parseIntent(intent: Intent) {
+        lifecycleScope.launchDefault {
+            when (val result = intentService.parseIntent(intent)) {
+                is IntentResult.Error -> {
+                    Timber.w("Error parsing intent: %s", result.message)
                 }
-            } else {
-                null
+
+                is IntentResult.Target -> {
+                    navigationManager.replace(result.destination)
+                }
+
+                is IntentResult.NoOp -> {}
             }
         }
+    }
 
     fun changeDisplayMode(modeId: Int) {
         lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
@@ -426,13 +412,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val INTENT_ITEM_ID = "itemId"
-        const val INTENT_ITEM_TYPE = "itemType"
-        const val INTENT_SERIES_ID = "seriesId"
-        const val INTENT_EPISODE_NUMBER = "epNum"
-        const val INTENT_SEASON_NUMBER = "seaNum"
-        const val INTENT_SEASON_ID = "seaId"
-
         private const val KEY_BACK_STACK = "backStack"
         private const val KEY_EXTERNAL_PLAYER = "extPlayer"
 
@@ -474,9 +453,9 @@ class MainActivityViewModel
                         val prefs =
                             preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                         val profileProtected =
-                            serverRepository.current.value?.user?.let {
-                                it.hasPin || it.requireLogin
-                            } == true
+                            serverRepository.current.value
+                                ?.user
+                                ?.isProtected == true
                         if (prefs.signInAutomatically && !profileProtected) {
                             val current =
                                 serverRepository.restoreSession(
