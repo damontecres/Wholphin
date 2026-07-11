@@ -59,6 +59,8 @@ class ServerRepository
         val currentUser: JellyfinUser? get() = _current.value?.user
         val currentUserFlow: Flow<JellyfinUser?> get() = _current.map { it?.user }
 
+        val serverPluginInstalled = MutableStateFlow<Boolean>(false)
+
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
          *

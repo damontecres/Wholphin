@@ -11,6 +11,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.github.damontecres.wholphin.data.ZonedDateTimeSerializer
+import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -65,12 +66,21 @@ data class JellyfinUser(
     val requireLogin: Boolean = false,
     val lastUsed: ZonedDateTime? = null,
     val uiLanguage: String? = null,
+    @Embedded(prefix = "c_") val config: JellyfinUserConfig = JellyfinUserConfig(),
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 
     override fun toString(): String =
         "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, lastUsed=$lastUsed, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
+
+    fun updateConfig(copy: (JellyfinUserConfig) -> JellyfinUserConfig): JellyfinUser = this.copy(config = copy.invoke(this.config))
 }
+
+@Serializable
+data class JellyfinUserConfig(
+    @ColumnInfo(defaultValue = "UNSET")
+    val homeSettingsSource: HomePageSettingsSource = HomePageSettingsSource.UNSET,
+)
 
 /**
  * Represents the relationship between [JellyfinServer] and its [JellyfinUser]
