@@ -232,7 +232,7 @@ private fun NextUpEpisodePreview() {
                 ColorImage(theme.surfaceVariant.toArgb())
             }
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(Color.Black),
         ) {
             CompositionLocalProvider(
                 LocalAsyncImagePreviewHandler provides previewHandler,
