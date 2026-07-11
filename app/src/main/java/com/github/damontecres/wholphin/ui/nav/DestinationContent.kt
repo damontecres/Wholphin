@@ -346,9 +346,10 @@ fun DestinationContent(
             LicenseInfo(modifier)
         }
 
-        Destination.Search -> {
+        is Destination.Search -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             SearchPage(
+                initialQuery = destination.query,
                 userPreferences = preferences,
                 modifier = modifier,
             )

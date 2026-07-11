@@ -409,7 +409,7 @@ fun NavDrawer(
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.setIndex(SEARCH_INDEX)
-                                    viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
+                                    viewModel.navigationManager.navigateToFromDrawer(Destination.Search())
                                 },
                                 modifier =
                                     Modifier

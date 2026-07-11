@@ -67,8 +67,7 @@ class IntentService
 
             if (action == Intent.ACTION_SEARCH || action == "search") {
                 val query = intent.getStringParam(SearchManager.QUERY)
-                // TODO add query
-                return IntentResult.Target(Destination.Search)
+                return IntentResult.Target(Destination.Search(query ?: ""))
             }
             val itemId =
                 intent.getStringParam("itemId")?.toUUIDOrNull()

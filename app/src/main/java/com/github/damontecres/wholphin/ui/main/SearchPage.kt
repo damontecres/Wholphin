@@ -379,6 +379,7 @@ private const val VOICE_RESULT_FOCUS_DELAY_MS = 350L
 
 @Composable
 fun SearchPage(
+    initialQuery: String,
     userPreferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
@@ -396,7 +397,7 @@ fun SearchPage(
     val voiceSearchButtonVisible = prefs.showVoiceSearchButton
 
 //    val query = rememberTextFieldState()
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
     val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
     val tabFocusRequesters = remember { List(2) { FocusRequester() } }
 
