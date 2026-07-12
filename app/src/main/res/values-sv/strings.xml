@@ -586,7 +586,7 @@
     <string name="slideshow_at_beginning">I början</string>
     <string name="no_more_images">Inga fler bilder</string>
     <string name="go_to_artist">Gå till artist</string>
-    <string name="load_from_web_client">Ladda från webbklient</string>
+    <string name="load_from_web_client">Ladda från web client</string>
     <string name="for_episodes">För episoder</string>
     <string name="increase_all_cards_size">Öka storleken för alla kort</string>
     <string name="decrease_all_cards_size">Minska storleken för alla kort</string>
@@ -605,21 +605,4 @@
     <string name="video_tunneling">Videotunnling</string>
     <string name="blocklisted">Svartlistad</string>
     <string name="unavailable">Otillgänglig</string>
-    <string name="books">Böcker</string>
-    <string name="audio_books">Ljudböcker</string>
-    <string name="duration_hours_minutes_seconds">%1$dt %2$dm %3$ds</string>
-    <string name="duration_hours_minutes">%1$dt %2$dm</string>
-    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
-    <string name="duration_hours">%1$dt</string>
-    <string name="duration_minutes">%1$dm</string>
-    <string name="duration_seconds">%1$ds</string>
-    <string name="time_left">%1$s kvar</string>
-    <string name="mpv_hardware_decoding">MPV: Använd hårdvaruavkodning</string>
-    <string name="interlaced">Sammanflätad</string>
-    <string name="level">Nivå</string>
-    <string name="mpv_conf">Redigera mpv.conf</string>
-    <string name="profile_specific_settings_from_server">Profilinställningar från server</string>
-    <string name="no_max">Ingen övre gräns</string>
-    <string name="include_types">Inkludera typer</string>
-    <string name="load_from_server">Ladda från serverns användarprofil</string>
 </resources>
