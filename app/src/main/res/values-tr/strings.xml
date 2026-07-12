@@ -669,4 +669,6 @@
     <string name="time_left">%1$s kaldı</string>
     <string name="blocklisted">Engellenenler</string>
     <string name="unavailable">Mevcut Değil</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Stereo olmayan sesleri AC3/Dolby Digital\'e dönüştür]]></string>
+    <string name="prefer_ac3_for_surround">Çevresel ses için AC3 kullan</string>
 </resources>
