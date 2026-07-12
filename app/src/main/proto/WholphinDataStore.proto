@@ -198,7 +198,6 @@ message InterfacePreferences {
 
 message AdvancedPreferences {
   int64 image_disk_cache_size_bytes = 1;
-  bool enable_audio_offload = 2;
 }
 
 message PhotoPreferences{
@@ -217,6 +216,7 @@ message ExperimentalPreferences {
   bool enabled = 1;
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
+  bool disable_audio_offload = 4;
 }
 
 message AppPreferences {

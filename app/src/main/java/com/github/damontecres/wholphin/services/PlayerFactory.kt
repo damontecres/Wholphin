@@ -45,8 +45,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import timber.log.Timber
-import androidx.datastore.core.DataStore
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import java.lang.reflect.Constructor
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,7 +58,6 @@ class PlayerFactory
     constructor(
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
-        private val appPreferences: DataStore<AppPreferences>,
     ) {
         @Volatile
         var currentPlayer: Player? = null
@@ -138,10 +135,14 @@ class PlayerFactory
                                     extractorsFactory,
                                 )
                             }
-                        val enableAudioOffload = appPreferences.data.first().advancedPreferences.enableAudioOffload
+                        val disableAudioOffload =
+                            appPreferences.experimentalPreferences.get { disableAudioOffload } ?: false
                         val tunneling =
                             appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
-                        val trackSelector = createTrackSelector(enableAudioOffloadtunneling)
+                        val trackSelector = createTrackSelector(
+                            tunneling = tunneling,
+                            disableAudioOffload = disableAudioOffload
+                        )
 
                         ExoPlayer
                             .Builder(context)
@@ -171,7 +172,10 @@ class PlayerFactory
             return PlayerCreation(newPlayer, assHandler)
         }
 
-        fun createAudioPlayer(extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK): ExoPlayer {
+        fun createAudioPlayer(
+            disableAudioOffload: Boolean,
+            extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK,
+        ): ExoPlayer {
             val rendererMode =
                 when (extensions) {
                     MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
@@ -189,10 +193,7 @@ class PlayerFactory
                     OkHttpDataSource.Factory(authOkHttpClient),
                     extractorsFactory,
                 )
-            val enableAudioOffload = runBlocking {
-                appPreferences.data.first().advancedPreferences.enableAudioOffload
-            }
-            val trackSelector = createTrackSelector(enableAudioOffload)
+            val trackSelector = createTrackSelector(disableAudioOffload = disableAudioOffload)
             return ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
@@ -215,9 +216,9 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector(tunneling: Boolean? = null, enableAudioOffload: Boolean) =
+        private fun createTrackSelector(tunneling: Boolean? = null, disableAudioOffload: Boolean = false) =
             DefaultTrackSelector(context).apply {
-                val offloadMode = enableAudioOffload? AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED:AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED;
+                val offloadMode = if (disableAudioOffload) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
                 setParameters(
                     buildUponParameters()
                         .apply {

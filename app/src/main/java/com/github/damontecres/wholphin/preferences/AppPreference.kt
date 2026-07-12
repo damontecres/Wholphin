@@ -966,16 +966,6 @@ sealed interface AppPreference<Pref, T> {
                     }
                 },
             )
-        val EnableAudioOffload =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.enable_audio_offload,
-                defaultValue = true,
-                getter = { it.advancedPreferences.enableAudioOffload },
-                setter = { prefs, value ->
-                    prefs.updateAdvancedPreferences { enableAudioOffload = value }
-                },
-                summary = R.string.enable_audio_offload_summary,
-            )
 
         val LiveTvShowHeader =
             AppSwitchPreference<AppPreferences>(
@@ -1232,8 +1222,7 @@ val advancedPreferences =
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
-                        AppPreference.EnableAudioOffload,
-                    ),
+                        ),
             ),
         )
         add(
