@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,7 +15,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
@@ -42,21 +42,21 @@ annotation class AuthOkHttpClient
 annotation class StandardOkHttpClient
 
 /**
- * A [CoroutineScope] with [Dispatchers.IO]
+ * A [CoroutineScope] with [WholphinDispatchers.IO]
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
 /**
- * A [CoroutineScope] with [Dispatchers.Default]
+ * A [CoroutineScope] with [WholphinDispatchers.Default]
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCoroutineScope
 
 /**
- * [Dispatchers.IO]
+ * [WholphinDispatchers.IO]
  *
  * @see IoCoroutineScope
  */
@@ -65,7 +65,7 @@ annotation class DefaultCoroutineScope
 annotation class IoDispatcher
 
 /**
- * [Dispatchers.Default]
+ * [WholphinDispatchers.Default]
  *
  * @see DefaultCoroutineScope
  */
@@ -156,7 +156,7 @@ object AppModule {
     @Provides
     @Singleton
     @IoDispatcher
-    fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
+    fun ioDispatcher(): CoroutineDispatcher = WholphinDispatchers.IO
 
     @Provides
     @Singleton
@@ -168,7 +168,7 @@ object AppModule {
     @Provides
     @Singleton
     @DefaultDispatcher
-    fun defaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+    fun defaultDispatcher(): CoroutineDispatcher = WholphinDispatchers.Default
 
     @Provides
     @Singleton

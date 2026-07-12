@@ -62,7 +62,7 @@
     <string name="max_bitrate">Bitrate maks</string>
     <string name="more_like_this">Tampilkan yang serupa</string>
     <string name="more">Lainnya</string>
-    <string name="movies">Film</string>
+    <string name="movies_title">Film</string>
     <string name="name">Nama</string>
     <string name="next_up">Selanjutnya</string>
     <string name="no_data">Tidak ada data</string>
@@ -72,7 +72,7 @@
     <string name="none">Tidak ada</string>
     <string name="outro">Outro</string>
     <string name="path">Berkas</string>
-    <string name="people">Orang</string>
+    <string name="people_title">Orang</string>
     <string name="play_count">Total Pemutaran</string>
     <string name="play_from_here">Putar dari sini</string>
     <string name="play">Putar</string>
@@ -121,7 +121,6 @@
     <string name="switch_servers">Ganti Server</string>
     <string name="switch_user">Ganti</string>
     <string name="top_unwatched">Terbaik Belum Ditonton</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="other">Trailer</item>
     </plurals>
@@ -129,7 +128,7 @@
     <string name="tv_guide">Panduan</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Season</string>
-    <string name="tv_shows">Acara TV</string>
+    <string name="tv_shows_title">Acara TV</string>
     <string name="ui_interface">Antarmuka</string>
     <string name="unknown">Tidak Diketahui</string>
     <string name="updates">Pembaruan</string>
@@ -152,24 +151,24 @@
     <string name="success">Berhasil</string>
     <string name="official_rating">Rating Orang Tua</string>
     <string name="runtime_sort">Durasi</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="other">Lainnya</item>
     </plurals>
     <plurals name="behind_the_scenes">
-        <item quantity="other">Di Balik Layar</item>
+        <item quantity="other">Di balik layar</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="other">Lagu Tema</item>
+        <item quantity="other">Lagu tema</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="other">Video Tema</item>
+        <item quantity="other">Video tema</item>
     </plurals>
     <plurals name="clips">
         <item quantity="other">Klip</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="other">Adegan Dihapus</item>
+        <item quantity="other">Adegan dihapus</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="other">Wawancara</item>
@@ -184,7 +183,7 @@
         <item quantity="other">Featurette</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="other">Klip Pendek</item>
+        <item quantity="other">Klip pendek</item>
     </plurals>
     <plurals name="hours">
         <item quantity="other">%d jam</item>
@@ -446,7 +445,7 @@
     <string name="display_presets">Preset tampilan</string>
     <string name="display_presets_description">Preset bawaan untuk kustomisasi cepat semua baris</string>
     <string name="customize_home_summary">Pilih baris dan gambar di halaman beranda</string>
-    <string name="favorite_items">Favoritkan %s</string>
+    <string name="favorite_items_title">Favoritkan %s</string>
     <string name="artist">Artis</string>
     <plurals name="minutes">
         <item quantity="other">%s menit</item>
@@ -603,4 +602,39 @@
     <string name="continue_watching_click_summary_off">Tampilkan detail saat diklik</string>
     <string name="stars">Bintang</string>
     <string name="tomatoes">Tomatoes</string>
+    <string name="trailers_title">Trailer</string>
+    <string name="other_extras_title">Lainnya</string>
+    <string name="behind_the_scenes_title">Di Balik Layar</string>
+    <string name="theme_songs_title">Lagu Tema</string>
+    <string name="theme_videos_title">Video Tema</string>
+    <string name="clips_title">Klip</string>
+    <string name="deleted_scenes_title">Adegan Dihapus</string>
+    <plurals name="movies">
+        <item quantity="other">Film</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">Acara TV</item>
+    </plurals>
+    <string name="interviews_title">Wawancara</string>
+    <string name="scenes_title">Adegan</string>
+    <string name="samples_title">Sampel</string>
+    <string name="featurettes_title">Featurette</string>
+    <string name="shorts_title">Shorts</string>
+    <string name="sort">Urutkan</string>
+    <string name="split_into_separate_rows">Pisahkan menjadi baris terpisah</string>
+    <string name="genre_movies">%1$s Film</string>
+    <string name="genre_tv_shows">%1$s Acara TV</string>
+    <string name="quality_profile">Profil kualitas</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Folder root</string>
+    <string name="popularity">Popularitas</string>
+    <string name="production_status">Status produksi</string>
+    <string name="different_for_hdr">Gunakan gaya berbeda untuk HDR</string>
+    <string name="experimental_settings">Pengaturan eksperimental</string>
+    <string name="confirm_enable_experimental_title">Aktifkan pengaturan eksperimental?</string>
+    <string name="confirm_enable_experimental_body">Pengaturan eksperimental mungkin tidak stabil!\n\nPengaturan ini dapat dihapus atau diubah pada rilisan mana pun.</string>
+    <string name="video_tunneling">Video tunneling</string>
+    <plurals name="people">
+        <item quantity="other">Orang</item>
+    </plurals>
 </resources>

@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.preferences.subtitle.shouldEnableSeparateHdrToggle
 import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -410,10 +411,10 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("1.0.1-3-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("1.0.2-8-g0"))) {
                 appPreferences.updateData {
-                    it.updateAdvancedPreferences {
-                        enableAudioOffload = true
+                    it.updateSubtitlePreferences {
+                        useSeparateHdr = it.interfacePreferences.shouldEnableSeparateHdrToggle()
                     }
                 }
             }

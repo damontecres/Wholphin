@@ -1,12 +1,14 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
-import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
+import com.github.damontecres.wholphin.preferences.PlaybackOverrides
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -34,20 +36,17 @@ class DeviceProfileService
         private var deviceProfile: DeviceProfile? = null
 
         suspend fun getOrCreateDeviceProfile(
-            prefs: PlaybackPreferences,
+            appPrefs: AppPreferences,
             serverVersion: ServerVersion?,
         ): DeviceProfile =
-            withContext(Dispatchers.Default) {
+            withContext(WholphinDispatchers.Default) {
+                val prefs = appPrefs.playbackPreferences
                 mutex.withLock {
                     val newConfig =
                         DeviceProfileConfiguration(
                             maxBitrate = prefs.maxBitrate.toInt(),
-                            isAC3Enabled = prefs.overrides.ac3Supported,
-                            downMixAudio = prefs.overrides.downmixStereo,
-                            assPlaybackMode = prefs.overrides.assPlaybackMode,
-                            pgsDirectPlay = prefs.overrides.directPlayPgs,
-                            dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
-                            decodeAv1 = prefs.overrides.decodeAv1,
+                            overrides = prefs.overrides,
+                            experimental = appPrefs.experimentalPreferences,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
                         )
@@ -57,12 +56,13 @@ class DeviceProfileService
                             createDeviceProfile(
                                 mediaTest = mediaCodecCapabilitiesTest,
                                 maxBitrate = newConfig.maxBitrate,
-                                isAC3Enabled = newConfig.isAC3Enabled,
-                                downMixAudio = newConfig.downMixAudio,
-                                assDirectPlay = newConfig.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
-                                pgsDirectPlay = newConfig.pgsDirectPlay,
-                                dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
+                                isAC3Enabled = newConfig.overrides.ac3Supported,
+                                downMixAudio = newConfig.overrides.downmixStereo,
+                                assDirectPlay = newConfig.overrides.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
+                                pgsDirectPlay = newConfig.overrides.directPlayPgs,
+                                dolbyVisionELDirectPlay = newConfig.overrides.directPlayDolbyVisionEL,
                                 decodeAv1 = prefs.overrides.decodeAv1,
+                                preferAc3ForSurround = appPrefs.experimentalPreferences.preferAc3Surround,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                             )
                     }
@@ -76,11 +76,7 @@ class DeviceProfileService
  */
 data class DeviceProfileConfiguration(
     val maxBitrate: Int,
-    val isAC3Enabled: Boolean,
-    val downMixAudio: Boolean,
-    val assPlaybackMode: AssPlaybackMode,
-    val pgsDirectPlay: Boolean,
-    val dolbyVisionELDirectPlay: Boolean,
-    val decodeAv1: Boolean,
+    val overrides: PlaybackOverrides,
+    val experimental: ExperimentalPreferences,
     val jellyfinTenEleven: Boolean,
 )

@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
 import dagger.assisted.Assisted
@@ -50,7 +51,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -137,7 +137,7 @@ class SeriesViewModel
 
                 val episodeListDeferred =
                     if (seriesPageType == SeriesPageType.OVERVIEW) {
-                        viewModelScope.async(Dispatchers.IO) {
+                        viewModelScope.async(WholphinDispatchers.IO) {
                             if (seasonEpisodeIds != null) {
                                 loadEpisodesInternal(
                                     seasonEpisodeIds.seasonId,
@@ -292,7 +292,7 @@ class SeriesViewModel
             series: BaseItem,
             seasonNum: Int?,
         ): Deferred<List<BaseItem?>> =
-            viewModelScope.async(Dispatchers.IO) {
+            viewModelScope.async(WholphinDispatchers.IO) {
                 Timber.v("getSeasons for %s", series.id)
                 val request =
                     GetItemsRequest(
@@ -405,7 +405,7 @@ class SeriesViewModel
             itemId: UUID,
             played: Boolean,
             listIndex: Int?,
-        ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        ) = viewModelScope.launch(WholphinDispatchers.IO + ExceptionHandler()) {
             favoriteWatchManager.setWatched(itemId, played)
             listIndex?.let {
                 refreshEpisode(itemId, listIndex)
@@ -440,7 +440,7 @@ class SeriesViewModel
             itemId: UUID,
             favorite: Boolean,
             listIndex: Int?,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
@@ -452,13 +452,13 @@ class SeriesViewModel
         fun setSeasonWatched(
             seasonId: UUID,
             played: Boolean,
-        ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        ) = viewModelScope.launch(WholphinDispatchers.IO + ExceptionHandler()) {
             setWatched(seasonId, played, null)
             updateSeries()
         }
 
         fun setWatchedSeries(played: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setWatched(seriesId, played)
                 updateSeries()
             }
@@ -466,7 +466,7 @@ class SeriesViewModel
         fun refreshEpisode(
             itemId: UUID,
             listIndex: Int,
-        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             val eps = state.value.episodes
             if (eps is EpisodeList.Success) {
                 eps.episodes.refreshItem(listIndex, itemId)
@@ -481,7 +481,7 @@ class SeriesViewModel
          * Play whichever episode is next up for series or else the first episode
          */
         fun playNextUp() {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 val result by api.tvShowsApi.getNextUp(seriesId = seriesId)
                 val nextUp =
                     result.items.firstOrNull() ?: api.tvShowsApi
@@ -491,7 +491,7 @@ class SeriesViewModel
                         ).content.items
                         .firstOrNull()
                 if (nextUp != null) {
-                    withContext(Dispatchers.Main) {
+                    withContext(WholphinDispatchers.Main) {
                         navigateTo(Destination.Playback(BaseItem(nextUp)))
                     }
                 } else {
@@ -582,7 +582,7 @@ class SeriesViewModel
                 val result =
                     peopleInEpisodeCache
                         .get(item.id) {
-                            viewModelScope.async(Dispatchers.IO) {
+                            viewModelScope.async(WholphinDispatchers.IO) {
                                 val list =
                                     api.userLibraryApi
                                         .getItem(item.id)

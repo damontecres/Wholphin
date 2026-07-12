@@ -9,13 +9,14 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -109,7 +110,7 @@ class ServerRepository
                         }.build()
                 }
                 val currentUser = CurrentUser(updatedServer, updatedUser)
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     _current.value = currentUser
                     _currentUserDto.value = userDto
                 }
@@ -222,7 +223,7 @@ class ServerRepository
 
         suspend fun removeUser(user: JellyfinUser) {
             if (current.value?.user?.id == user.id) {
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     _current.value = null
                 }
                 userPreferencesDataStore.updateData {
@@ -241,7 +242,7 @@ class ServerRepository
 
         suspend fun removeServer(server: JellyfinServer) {
             if (current.value?.server?.id == server.id) {
-                withContext(Dispatchers.Main) {
+                withContext(WholphinDispatchers.Main) {
                     _current.value = null
                 }
                 userPreferencesDataStore.updateData {
@@ -297,6 +298,16 @@ class ServerRepository
                 val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
                 response.content
             }
+
+        /**
+         * Update [currentUserDto] by querying the server
+         */
+        suspend fun updateUserDto() {
+            val userDto by apiClient.userApi.getCurrentUser()
+            _currentUserDto.update {
+                if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
+            }
+        }
 
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =

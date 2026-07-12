@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.services.SeerrUserConfig
  */
 enum class SeerrPermission(
     private val flag: Int,
+    vararg val parents: SeerrPermission,
 ) {
     // Source: https://github.com/seerr-team/seerr/blob/develop/server/lib/permissions.ts
     NONE(0),
@@ -17,28 +18,28 @@ enum class SeerrPermission(
     REQUEST(32),
     VOTE(64),
     AUTO_APPROVE(128),
-    AUTO_APPROVE_MOVIE(256),
-    AUTO_APPROVE_TV(512),
+    AUTO_APPROVE_MOVIE(256, AUTO_APPROVE),
+    AUTO_APPROVE_TV(512, AUTO_APPROVE),
     REQUEST_4K(1024),
-    REQUEST_4K_MOVIE(2048),
-    REQUEST_4K_TV(4096),
-    REQUEST_ADVANCED(8192),
-    REQUEST_VIEW(16384),
+    REQUEST_4K_MOVIE(2048, REQUEST_4K),
+    REQUEST_4K_TV(4096, REQUEST_4K),
+    REQUEST_ADVANCED(8192, MANAGE_REQUESTS),
+    REQUEST_VIEW(16384, MANAGE_REQUESTS),
     AUTO_APPROVE_4K(32768),
-    AUTO_APPROVE_4K_MOVIE(65536),
-    AUTO_APPROVE_4K_TV(131072),
-    REQUEST_MOVIE(262144),
-    REQUEST_TV(524288),
+    AUTO_APPROVE_4K_MOVIE(65536, AUTO_APPROVE_4K),
+    AUTO_APPROVE_4K_TV(131072, AUTO_APPROVE_4K),
+    REQUEST_MOVIE(262144, REQUEST),
+    REQUEST_TV(524288, REQUEST),
     MANAGE_ISSUES(1048576),
-    VIEW_ISSUES(2097152),
-    CREATE_ISSUES(4194304),
+    VIEW_ISSUES(2097152, MANAGE_ISSUES),
+    CREATE_ISSUES(4194304, MANAGE_ISSUES),
     AUTO_REQUEST(8388608),
-    AUTO_REQUEST_MOVIE(16777216),
-    AUTO_REQUEST_TV(33554432),
-    RECENT_VIEW(67108864),
-    WATCHLIST_VIEW(134217728),
-    MANAGE_BLACKLIST(268435456),
-    VIEW_BLACKLIST(1073741824),
+    AUTO_REQUEST_MOVIE(16777216, AUTO_REQUEST),
+    AUTO_REQUEST_TV(33554432, AUTO_REQUEST),
+    RECENT_VIEW(67108864, MANAGE_REQUESTS),
+    WATCHLIST_VIEW(134217728, MANAGE_REQUESTS),
+    MANAGE_BLOCKLIST(268435456),
+    VIEW_BLOCKLIST(1073741824, MANAGE_BLOCKLIST),
     ;
 
     internal fun hasPermission(permissions: Int) = flag.and(permissions) == flag
@@ -48,5 +49,8 @@ enum class SeerrPermission(
  * Check whether the user has the given permissions (or is an admin)
  */
 fun SeerrUserConfig?.hasPermission(permission: SeerrPermission): Boolean {
-    return permission.hasPermission(this?.permissions ?: return false) || SeerrPermission.ADMIN.hasPermission(permissions)
+    if (this?.permissions == null) return false
+    return permission.hasPermission(permissions) ||
+        permission.parents.any { hasPermission(it) } ||
+        SeerrPermission.ADMIN.hasPermission(permissions)
 }

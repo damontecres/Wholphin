@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -46,7 +47,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -225,7 +225,7 @@ object TestDatabaseModule {
                 .allowMainThreadQueries()
                 .setQueryCallback({ sqlQuery, args ->
                     Timber.v("sqlQuery=$sqlQuery, args=$args")
-                }, Dispatchers.IO.asExecutor())
+                }, WholphinDispatchers.IO.asExecutor())
                 .build()
 
         @Provides

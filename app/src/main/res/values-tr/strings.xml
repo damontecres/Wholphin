@@ -13,7 +13,7 @@
     <string name="cancel_series_recording">Dizi kaydını iptal et</string>
     <string name="cancel">İptal</string>
     <string name="chapters">Bölümler</string>
-    <string name="choose_stream">%1$s seç</string>
+    <string name="choose_stream">Seç: %1$s</string>
     <string name="clear_image_cache">Resim önbelleğini temizle</string>
     <string name="collection">Koleksiyon</string>
     <string name="collections">Koleksiyonlar</string>
@@ -63,7 +63,7 @@
     <string name="mark_watched">İzlendi olarak işaretle</string>
     <string name="max_bitrate">Maksimum bit hızı</string>
     <string name="more_like_this">Benzerleri</string>
-    <string name="more">Diğer</string>
+    <string name="more">Daha Fazla</string>
     <plurals name="movies">
         <item quantity="one">Film</item>
         <item quantity="other">Filmler</item>
@@ -149,7 +149,6 @@
     <string name="switch_servers">Sunucu değiştir</string>
     <string name="switch_user">Değiştir</string>
     <string name="top_unwatched">İzlenmemiş En İyiler</string>
-    <string name="trailer">Fragman</string>
     <plurals name="trailers">
         <item quantity="one">Fragman</item>
         <item quantity="other">Fragmanlar</item>
@@ -185,10 +184,10 @@
     <string name="success">Başarılı</string>
     <string name="official_rating">Yaş Derecelendirmesi</string>
     <string name="runtime_sort">Süre</string>
-    <string name="extras">Ekstralar</string>
+    <string name="extras_title">Özel Özellikler</string>
     <plurals name="other_extras">
-        <item quantity="one">Diğer Ekstra</item>
-        <item quantity="other">Diğer Ekstralar</item>
+        <item quantity="one">Diğer</item>
+        <item quantity="other">Diğer</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Sahne Arkası</item>
@@ -223,8 +222,8 @@
         <item quantity="other">Örnekler</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Tanıtım</item>
-        <item quantity="other">Tanıtımlar</item>
+        <item quantity="one">Özel Seçenek</item>
+        <item quantity="other">Özel Seçenekler</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kısa Video</item>
@@ -471,7 +470,7 @@
     <string name="settings_saved">Ayarlar kaydedildi</string>
     <string name="display_presets">Görüntü ön ayarları</string>
     <string name="display_presets_description">Tüm satırları hızlıca stilize etmek için hazır ayarlar</string>
-    <string name="favorite_items">Favori %s</string>
+    <string name="favorite_items_title">Favori %s</string>
     <string name="customize_home_summary">Ana sayfadaki satırları ve görselleri seçin</string>
     <string name="content_scale_fit">Sığdır</string>
     <string name="content_scale_crop">Kırp</string>
@@ -632,4 +631,38 @@
     <string name="view_options_type_list_compact">Sıkışık Liste</string>
     <string name="sort">Sırala</string>
     <string name="split_into_separate_rows">Ayrı sıralara ayır</string>
+    <string name="movies_title">Filmler</string>
+    <string name="trailers_title">Fragmanlar</string>
+    <string name="tv_shows_title">Diziler</string>
+    <string name="other_extras_title">Diğer</string>
+    <string name="behind_the_scenes_title">Kamera Arkası</string>
+    <string name="theme_songs_title">Tema Müzikleri</string>
+    <string name="theme_videos_title">Tema Videoları</string>
+    <string name="clips_title">Klipler</string>
+    <string name="deleted_scenes_title">Silinmiş Sahneler</string>
+    <string name="interviews_title">Röportajlar</string>
+    <string name="scenes_title">Sahneler</string>
+    <string name="samples_title">Örnekler</string>
+    <string name="featurettes_title">Özel Seçenekler</string>
+    <string name="shorts_title">Kısa Videolar</string>
+    <string name="people_title">Oyuncular</string>
+    <string name="genre_movies">%1$s Filmleri</string>
+    <string name="genre_tv_shows">%1$s Dizileri</string>
+    <string name="quality_profile">Kalite Profili</string>
+    <string name="is_default">Varsayılan</string>
+    <string name="root_folder">Kök Klasör</string>
+    <string name="popularity">Popülerlik</string>
+    <string name="production_status">Yapım Durumu</string>
+    <string name="different_for_hdr">HDR için farklı stil kullan</string>
+    <string name="experimental_settings">Deneysel Ayarlar</string>
+    <string name="confirm_enable_experimental_title">Deneysel ayarları açmak istiyor musun?</string>
+    <string name="confirm_enable_experimental_body">Deneysel ayarlar kararsız çalışabilir! \n\nBu ayarlar sonraki sürümlerde kaldırılabilir veya değiştirilebilir.</string>
+    <string name="video_tunneling">Video tünelleme</string>
+    <string name="duration_hours_minutes_seconds">%1$dsa %2$ddk %3$dsn</string>
+    <string name="duration_hours_minutes">%1$dsa %2$ddk</string>
+    <string name="duration_minutes_seconds">%1$ddk %2$dsn</string>
+    <string name="duration_hours">%1$dsa</string>
+    <string name="duration_minutes">%1$ddk</string>
+    <string name="duration_seconds">%1$dsn</string>
+    <string name="time_left">%1$s kaldı</string>
 </resources>

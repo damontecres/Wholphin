@@ -149,12 +149,6 @@
     <string name="switch_servers">Trocar de servidores</string>
     <string name="switch_user">Trocar</string>
     <string name="top_unwatched">Não assistidos com melhor avaliação</string>
-    <string name="trailer">Trailer</string>
-    <plurals name="trailers">
-        <item quantity="one">Trailer</item>
-        <item quantity="many">Trailers</item>
-        <item quantity="other">Trailers</item>
-    </plurals>
     <string name="tv_dvr_schedule">Agenda do DVR</string>
     <string name="tv_guide">Guia</string>
     <string name="tv_season">Temporada</string>
@@ -187,7 +181,7 @@
     <string name="success">Sucesso</string>
     <string name="official_rating">Classificação Parental</string>
     <string name="runtime_sort">Duração</string>
-    <string name="extras">Extras</string>
+    <string name="extras_title">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Outro</item>
         <item quantity="many">Outros</item>
@@ -238,7 +232,7 @@
         <item quantity="many">Curtas</item>
         <item quantity="other">Curtas</item>
     </plurals>
-    <string name="favorite_items">Favoritar %s</string>
+    <string name="favorite_items_title">Favoritar %s</string>
     <plurals name="downloads">
         <item quantity="one">%s download</item>
         <item quantity="many">%s downloads</item>
@@ -567,8 +561,6 @@
     <string name="mixer">Mixagem</string>
     <plurals name="featurettes">
         <item quantity="one">Bastidores</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
     </plurals>
     <plurals name="minutes">
         <item quantity="one">%s minuto</item>
@@ -630,4 +622,27 @@
     <string name="skip_behavior_summary">Para introduções, créditos, e etc</string>
     <string name="play_with">Reproduzir com</string>
     <string name="transcoding">Transcodificação</string>
+    <string name="movies_title">Filmes</string>
+    <string name="people_title">Pessoas</string>
+    <string name="trailers_title">Trailers</string>
+    <string name="tv_shows_title">Programas de TV</string>
+    <string name="other_extras_title">Outro</string>
+    <string name="behind_the_scenes_title">Nos Bastidores</string>
+    <string name="theme_songs_title">Músicas Tema</string>
+    <string name="deleted_scenes_title">Cenas Deletadas</string>
+    <string name="interviews_title">Entrevistas</string>
+    <string name="scenes_title">Cenas</string>
+    <string name="samples_title">Amostras</string>
+    <string name="combined_search_results">Resultados de pesquisa combinados</string>
+    <string name="combined_search_results_on">Mostrar todos os resultados em lista única</string>
+    <string name="combined_search_results_off">Mostrar resultados por categoria</string>
+    <string name="show_voice_search_button">Mostrar botão de pesquisa por voz</string>
+    <string name="visible_ui">Visível</string>
+    <string name="hidden_ui">Oculto</string>
+    <string name="results">Resultados</string>
+    <string name="view_options_type_list">Lista</string>
+    <string name="view_options_type_grid">Grade</string>
+    <string name="view_options_type_list_compact">Lista Compacta</string>
+    <string name="theme_videos_title">Vídeos Tema</string>
+    <string name="clips_title">Clipes</string>
 </resources>

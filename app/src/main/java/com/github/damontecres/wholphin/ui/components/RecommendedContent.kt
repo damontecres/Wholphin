@@ -48,13 +48,13 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RequestHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -173,7 +173,7 @@ class RecommendedViewModel
             }
 
         private fun fetchSuggestions() {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(WholphinDispatchers.IO) {
                 val limit =
                     userPreferencesService
                         .getCurrent()

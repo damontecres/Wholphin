@@ -20,11 +20,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.DenseListItem
 import androidx.tv.material3.Icon
-import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.Text
@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -116,7 +117,7 @@ fun SongListItem(
         }
         val trailingContent = @Composable {
             Text(
-                text = runtime.toString(),
+                text = runtime?.let { LocalResources.current.formatDuration(it) } ?: "",
             )
         }
 

@@ -399,7 +399,7 @@ fun TrailerButton(
             } else if (trailers.size == 1) {
                 R.string.play_trailer
             } else {
-                R.string.trailers
+                R.string.trailers_title
             },
         iconStringRes = R.string.fa_film,
         enabled = trailers.isNotEmpty(),

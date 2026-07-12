@@ -13,11 +13,11 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
@@ -132,13 +133,22 @@ class NavDrawerService
                     .content.items
             val recordingFolders =
                 if (tvAccess) {
-                    api.liveTvApi
-                        .getRecordingFolders(userId = userId)
-                        .content.items
-                        .map { it.id }
-                        .toSet()
+                    try {
+                        api.liveTvApi
+                            .getRecordingFolders(userId = userId)
+                            .content.items
+                            .map { it.id }
+                            .toSet()
+                    } catch (ex: InvalidStatusException) {
+                        if (ex.status == 401 || ex.status == 403) {
+                            Timber.w("Got HTTP %s querying for recording folders", ex.status)
+                            emptySet()
+                        } else {
+                            throw ex
+                        }
+                    }
                 } else {
-                    setOf()
+                    emptySet()
                 }
             val libraries =
                 userViews
@@ -209,7 +219,7 @@ class NavDrawerService
             val allItems = builtins + libraries
 
             val navDrawerPins =
-                withContext(Dispatchers.IO) {
+                withContext(WholphinDispatchers.IO) {
                     serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
                 }
 

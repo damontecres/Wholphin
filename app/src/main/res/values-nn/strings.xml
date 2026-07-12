@@ -64,7 +64,7 @@
     <string name="max_bitrate">Maks bitrate</string>
     <string name="more_like_this">Meir som dette</string>
     <string name="more">Meir</string>
-    <string name="movies">Filmar</string>
+    <string name="movies_title">Filmar</string>
     <string name="name">Namn</string>
     <string name="next_up">Neste</string>
     <string name="no_data">Ingen data</string>
@@ -74,7 +74,7 @@
     <string name="no_update_available">Ingen oppdatering tilgjengeleg</string>
     <string name="outro">Outro</string>
     <string name="path">Filveg</string>
-    <string name="people">Folk</string>
+    <string name="people_title">Folk</string>
     <string name="play_count">Antall avspelingar</string>
     <string name="play_from_here">Spel av herfrå</string>
     <string name="play">Spel av</string>
@@ -122,16 +122,14 @@
     <string name="switch_servers">Byt servar</string>
     <string name="switch_user">Byt brukar</string>
     <string name="top_unwatched">Best vurderte usette</string>
-    <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailerar</item>
-        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">Programoversikt</string>
     <string name="tv_season">Sesong</string>
     <string name="tv_seasons">Sesongar</string>
-    <string name="tv_shows">TV-seriar</string>
+    <string name="tv_shows_title">TV-seriar</string>
     <string name="ui_interface">Grensesnitt</string>
     <string name="unknown">Ukjend</string>
     <string name="updates">Oppdateringar</string>
@@ -155,50 +153,39 @@
     <string name="success">Fullført</string>
     <string name="official_rating">Aldersgrense</string>
     <string name="runtime_sort">Speltid</string>
-    <string name="extras">Ekstra</string>
+    <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Anna</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bak kulissane</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasongar</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoar</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Sletta sener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervju</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Smakebitar</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Bakomfilmar</item>
-        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmar</item>
-        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Avanserte innstillingar</string>
     <string name="advanced_ui">Avansert grensesnitt</string>
@@ -378,7 +365,7 @@
     <string name="voice_error_start_failed">Klarte ikkje starta talegjenkjenning</string>
     <string name="voice_error_timeout">Tidsavbrot for talegjenkjenning</string>
     <string name="retry">Prøv på nytt</string>
-    <string name="favorite_items">Favoritt %s</string>
+    <string name="favorite_items_title">Favoritt %s</string>
     <string name="resolution_switching">Oppløysingsbyte</string>
     <string name="local">Lokal</string>
     <string name="play_trailer">Spel trailer</string>

@@ -235,22 +235,153 @@ class TestTrackSelection {
         return Tracks(groups)
     }
 
-    private fun TrackSelectionParameters.getAudioOverride(): Format? {
-        this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
-            if (trackGroup.type == C.TRACK_TYPE_AUDIO) {
-                return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+    private fun buildMissingIdTracks(backend: PlayerBackend): Tracks {
+        val formats =
+            if (backend == PlayerBackend.MPV) {
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("$it:$it")
+                            .setSampleMimeType("audio/default")
+                            .build()
+                    }
+                val subtitles =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("${it + 3}:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    }
+                (listOf(video) + audios + subtitles)
+            } else {
+                // ExoPlayer
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    (3..5).map {
+                        Format
+                            .Builder()
+                            .setId("0:$it")
+                            .setSampleMimeType("audio/default")
+                            .build()
+                    }
+                val subtitles =
+                    (6..8).map {
+                        Format
+                            .Builder()
+                            .setId("0:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    }
+                (listOf(video) + audios + subtitles)
             }
-        }
-        return null
+        val groups =
+            formats
+                .map { TrackGroup(it) }
+                .map {
+                    Tracks.Group(
+                        it,
+                        false,
+                        intArrayOf(C.FORMAT_HANDLED),
+                        booleanArrayOf(false),
+                    )
+                }
+        return Tracks(groups)
     }
 
-    private fun TrackSelectionParameters.getSubtitleOverride(): Format? {
-        this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
-            if (trackGroup.type == C.TRACK_TYPE_TEXT) {
-                return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+    private fun buildDifferentOrderedTracks(backend: PlayerBackend): Tracks {
+        val formats =
+            if (backend == PlayerBackend.MPV) {
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("$it:$it")
+                            .setSampleMimeType("audio/default")
+                            .build()
+                    }
+                val subtitles =
+                    (1..3).map {
+                        Format
+                            .Builder()
+                            .setId("${it + 3}:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    }
+                (listOf(video) + audios + subtitles)
+            } else {
+                // ExoPlayer
+                val video =
+                    Format
+                        .Builder()
+                        .setId("0:1")
+                        .setSampleMimeType("video/default")
+                        .build()
+                val audios =
+                    listOf(
+                        Format
+                            .Builder()
+                            .setId("0:2")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                        Format
+                            .Builder()
+                            .setId("0:4")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                        Format
+                            .Builder()
+                            .setId("0:3")
+                            .setSampleMimeType("audio/default")
+                            .build(),
+                    )
+                val subtitles =
+                    (5..8).map {
+                        Format
+                            .Builder()
+                            .setId("0:$it")
+                            .setSampleMimeType("text/default")
+                            .build()
+                    } +
+                        listOf(
+                            Format
+                                .Builder()
+                                .setId("1:e:8") // External
+                                .setSampleMimeType("text/default")
+                                .build(),
+                        )
+                (listOf(video) + audios + subtitles)
             }
-        }
-        return null
+        val groups =
+            formats
+                .map { TrackGroup(it) }
+                .map {
+                    Tracks.Group(
+                        it,
+                        false,
+                        intArrayOf(C.FORMAT_HANDLED),
+                        booleanArrayOf(false),
+                    )
+                }
+        return Tracks(groups)
     }
 
     @Test
@@ -268,8 +399,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = 4,
                 source = source,
@@ -283,8 +412,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 4,
                 source = source,
@@ -298,8 +425,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = TrackIndex.DISABLED,
                 source = source,
@@ -325,8 +450,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = 4,
                 source = source,
@@ -340,8 +463,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 4,
                 source = source,
@@ -355,8 +476,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 6,
                 source = source,
@@ -370,8 +489,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 1,
                 subtitleIndex = TrackIndex.DISABLED,
                 source = source,
@@ -397,8 +514,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 0,
                 source = source,
@@ -412,8 +527,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 0,
                 source = source,
@@ -439,8 +552,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.EXO_PLAYER,
-                supportsDirectPlay = true,
                 audioIndex = 2,
                 subtitleIndex = 0,
                 source = source,
@@ -466,8 +577,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 0,
                 source = source,
@@ -483,8 +592,6 @@ class TestTrackSelection {
             .createTrackSelections(
                 trackSelectionParams = trackSelectionParameters,
                 tracks = tracks,
-                playerBackend = PlayerBackend.MPV,
-                supportsDirectPlay = true,
                 audioIndex = 3,
                 subtitleIndex = 5,
                 source = source,
@@ -518,8 +625,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 0,
                     source = source,
@@ -541,8 +646,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 5,
                     source = source,
@@ -569,8 +672,6 @@ class TestTrackSelection {
                 .createTrackSelections(
                     trackSelectionParams = trackSelectionParameters,
                     tracks = tracks,
-                    playerBackend = PlayerBackend.EXO_PLAYER,
-                    supportsDirectPlay = true,
                     audioIndex = 3,
                     subtitleIndex = 2,
                     source = source,
@@ -588,4 +689,129 @@ class TestTrackSelection {
                 }
         }
     }
+
+    @Test
+    fun `test ExoPlayer missing ids`() {
+        val resource = javaClass.classLoader?.getResource("no_embedded_subs.json")
+        Assert.assertNotNull(resource)
+        val fileContents = Paths.get(resource!!.toURI()).readText()
+        val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
+        val tracks = buildMissingIdTracks(PlayerBackend.EXO_PLAYER)
+        val ids = tracks.groups.flatMap { g -> (0..<g.length).map { g.getTrackFormat(it).id } }
+        Assert.assertTrue("0:1" in ids)
+        Assert.assertTrue("0:2" !in ids)
+        Assert.assertTrue("0:3" in ids)
+
+        Assert.assertEquals(5, source.mediaStreams?.size)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 3,
+                subtitleIndex = TrackIndex.DISABLED,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("0:4", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(null, result.trackSelectionParameters.getSubtitleOverride()?.id)
+            }
+    }
+
+    @Test
+    fun `test MPV missing ids`() {
+        val resource = javaClass.classLoader?.getResource("no_embedded_subs.json")
+        Assert.assertNotNull(resource)
+        val fileContents = Paths.get(resource!!.toURI()).readText()
+        val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
+        val tracks = buildMissingIdTracks(PlayerBackend.MPV)
+        val ids = tracks.groups.flatMap { g -> (0..<g.length).map { g.getTrackFormat(it).id } }
+        println(ids)
+
+        Assert.assertEquals(5, source.mediaStreams?.size)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 3,
+                subtitleIndex = TrackIndex.DISABLED,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("2:2", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(null, result.trackSelectionParameters.getSubtitleOverride()?.id)
+            }
+    }
+
+    @Test
+    fun `test ExoPlayer different order`() {
+        val source =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio(3)
+                .addSubtitle(4)
+                .addExternalSubtitle(1)
+                .buildMediaSourceInfo()
+        val tracks = buildDifferentOrderedTracks(PlayerBackend.EXO_PLAYER)
+
+        Assert.assertEquals(9, source.mediaStreams?.size)
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 1,
+                subtitleIndex = 8,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("0:2", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(
+                    "1:e:8",
+                    result.trackSelectionParameters.getSubtitleOverride()?.id,
+                )
+            }
+
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = tracks,
+                audioIndex = 3,
+                subtitleIndex = 8,
+                source = source,
+            ).also { result ->
+                Assert.assertTrue(result.bothSelected)
+                Assert.assertEquals("0:4", result.trackSelectionParameters.getAudioOverride()?.id)
+                Assert.assertEquals(
+                    "1:e:8",
+                    result.trackSelectionParameters.getSubtitleOverride()?.id,
+                )
+            }
+    }
+}
+
+internal fun TrackSelectionParameters.getAudioOverride(): Format? {
+    this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
+        if (trackGroup.type == C.TRACK_TYPE_AUDIO) {
+            return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+        }
+    }
+    return null
+}
+
+internal fun TrackSelectionParameters.getSubtitleOverride(): Format? {
+    this.overrides.forEach { (trackGroup, trackSelectionOverride) ->
+        if (trackGroup.type == C.TRACK_TYPE_TEXT) {
+            return trackGroup.getFormat(trackSelectionOverride.trackIndices.first())
+        }
+    }
+    return null
 }

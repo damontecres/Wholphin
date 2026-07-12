@@ -53,9 +53,6 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DialogItem
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
@@ -90,7 +87,7 @@ fun DiscoverMovieDetails(
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showRequestDialog by remember { mutableStateOf(false) }
 
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
@@ -119,28 +116,8 @@ fun DiscoverMovieDetails(
                 similar = state.similar,
                 recommended = state.recommended,
                 requestOnClick = {
-                    movie.id?.let { id ->
-                        if (request4kEnabled) {
-                            moreDialog =
-                                DialogParams(
-                                    fromLongClick = false,
-                                    title = movie.title + " (${movie.releaseDate ?: ""})",
-                                    items =
-                                        listOf(
-                                            DialogItem(
-                                                text = requestStr,
-                                                onClick = { viewModel.request(id, false) },
-                                            ),
-                                            DialogItem(
-                                                text = request4kStr,
-                                                onClick = { viewModel.request(id, true) },
-                                            ),
-                                        ),
-                                )
-                        } else {
-                            viewModel.request(id, false)
-                        }
-                    }
+                    viewModel.requestOnClick()
+                    showRequestDialog = true
                 },
                 cancelOnClick = {
                     movie.id?.let { viewModel.cancelRequest(it) }
@@ -170,14 +147,7 @@ fun DiscoverMovieDetails(
                         )
                     }
                 },
-                moreOnClick = {
-                    moreDialog =
-                        DialogParams(
-                            fromLongClick = false,
-                            title = movie.title + " (${movie.releaseDate ?: ""})",
-                            items = listOf(),
-                        )
-                },
+                moreOnClick = {},
                 onLongClickPerson = { index, person -> },
                 onLongClickSimilar = { index, similar ->
                 },
@@ -186,6 +156,19 @@ fun DiscoverMovieDetails(
                 },
                 modifier = modifier,
             )
+            if (showRequestDialog) {
+                RequestMovieDialog(
+                    loading = state.profileLoading,
+                    data = state.requestData,
+                    request4kEnabled = request4kEnabled,
+                    movie = movie,
+                    onSubmit = {
+                        viewModel.request(it)
+                        showRequestDialog = false
+                    },
+                    onDismissRequest = { showRequestDialog = false },
+                )
+            }
         }
     }
     overviewDialog?.let { info ->
@@ -193,16 +176,6 @@ fun DiscoverMovieDetails(
             info = info,
             showFilePath = false,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
         )
     }
 }
@@ -390,7 +363,7 @@ fun TrailerRow(
         modifier = modifier,
     ) {
         Text(
-            text = stringResource(R.string.trailers),
+            text = stringResource(R.string.trailers_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )

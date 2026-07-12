@@ -53,7 +53,10 @@ sealed interface AppPreference<Pref, T> {
         value: T?,
     ): String? = null
 
-    fun validate(value: T): PreferenceValidation = PreferenceValidation.Valid
+    fun validate(
+        prefs: Pref,
+        value: T,
+    ): PreferenceValidation = PreferenceValidation.Valid
 
     companion object {
         val SkipForward =
@@ -391,18 +394,25 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                    if (!value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
+                    prefs.updatePlaybackOverrides {
+                        ac3Supported = value
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
         val DownMixStereo =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.downmix_stereo,
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                    if (value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
+                    prefs.updatePlaybackOverrides {
+                        downmixStereo = value
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -1277,7 +1287,15 @@ val advancedPreferences =
                         AppPreference.DebugLogging,
                         AppPreference.ImageDiskCacheSize,
                         AppPreference.ClearImageCache,
+                        ExperimentalPreference.Enable,
                         AppPreference.OssLicenseInfo,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.experimentalPreferences.enabled },
+                            preferences = listOf(ExperimentalPreference.ExperimentalSettings),
+                        ),
                     ),
             ),
         )
@@ -1314,11 +1332,16 @@ data class AppSwitchPreference<Pref>(
     override val defaultValue: Boolean,
     override val getter: (prefs: Pref) -> Boolean,
     override val setter: (prefs: Pref, value: Boolean) -> Pref,
-    val validator: (value: Boolean) -> PreferenceValidation = { PreferenceValidation.Valid },
+    val validator: (prefs: Pref, value: Boolean) -> PreferenceValidation = { _, _ -> PreferenceValidation.Valid },
     @param:StringRes val summary: Int? = null,
     @param:StringRes val summaryOn: Int? = null,
     @param:StringRes val summaryOff: Int? = null,
 ) : AppPreference<Pref, Boolean> {
+    override fun validate(
+        prefs: Pref,
+        value: Boolean,
+    ): PreferenceValidation = validator.invoke(prefs, value)
+
     override fun summary(
         context: Context,
         value: Boolean?,

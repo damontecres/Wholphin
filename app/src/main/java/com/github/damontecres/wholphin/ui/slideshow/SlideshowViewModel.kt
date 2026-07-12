@@ -27,13 +27,13 @@ import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +111,7 @@ class SlideshowViewModel
                     val playerCreation =
                         playerFactory.createVideoPlayer(
                             backend = PlayerBackend.EXO_PLAYER,
-                            appPreferences.playbackPreferences,
+                            appPreferences,
                         )
                     player = playerCreation.player
                     player.addListener(this@SlideshowViewModel)
@@ -377,7 +377,7 @@ class SlideshowViewModel
                                     ),
                                 )
                             Timber.d("Saved VideoFilter for image %s", it.image.id)
-                            withContext(Dispatchers.Main) {
+                            withContext(WholphinDispatchers.Main) {
                                 showToast(
                                     context,
                                     "Saved",
@@ -406,7 +406,7 @@ class SlideshowViewModel
                                 ),
                             )
                         Timber.d("Saved VideoFilter for album %s", slideshowSettings.parentId)
-                        withContext(Dispatchers.Main) {
+                        withContext(WholphinDispatchers.Main) {
                             showToast(
                                 context,
                                 "Saved",

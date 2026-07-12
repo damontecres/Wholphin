@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui
 
+import android.content.Context
+import android.content.res.Resources
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
@@ -12,19 +15,36 @@ import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
+import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration
 
-private var timeFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+/**
+ * Format the time-of-day of [time] honouring the device's 12/24-hour setting and the current
+ * locale. [context] should be an Activity/composition context (e.g. `LocalContext.current`) so an
+ * in-app language switch (`AppCompatDelegate.setApplicationLocales`) is reflected; the application
+ * context may carry a stale locale.
+ */
+fun formatTime(
+    context: Context,
+    time: LocalDateTime,
+): String = formatTime(context, time.toLocalTime())
 
-fun getTimeFormatter(): DateTimeFormatter {
-    if (timeFormatter.locale != Locale.getDefault()) {
-        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
-    }
-    return timeFormatter
+fun formatTime(
+    context: Context,
+    time: LocalTime,
+): String {
+    val instant =
+        time
+            .atDate(LocalDate.now())
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+    return DateFormat.getTimeFormat(context).format(Date.from(instant))
 }
 
 private var dateFormatter: DateTimeFormatter =
@@ -203,12 +223,12 @@ fun listToDotString(
 @StringRes
 fun formatTypeName(type: BaseItemKind): Int =
     when (type) {
-        BaseItemKind.MOVIE -> R.string.movies
-        BaseItemKind.SERIES -> R.string.tv_shows
+        BaseItemKind.MOVIE -> R.string.movies_title
+        BaseItemKind.SERIES -> R.string.tv_shows_title
         BaseItemKind.EPISODE -> R.string.episodes
         BaseItemKind.VIDEO -> R.string.videos
         BaseItemKind.PLAYLIST -> R.string.playlists
-        BaseItemKind.PERSON -> R.string.people
+        BaseItemKind.PERSON -> R.string.people_title
         BaseItemKind.BOX_SET -> R.string.collections
         BaseItemKind.AUDIO -> TODO()
         BaseItemKind.CHANNEL -> R.string.channels
@@ -224,7 +244,7 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.RECORDING -> TODO()
         BaseItemKind.SEASON -> R.string.tv_seasons
         BaseItemKind.STUDIO -> R.string.studios
-        BaseItemKind.TRAILER -> R.string.trailers
+        BaseItemKind.TRAILER -> R.string.trailers_title
         BaseItemKind.TV_CHANNEL -> R.string.channels
         BaseItemKind.TV_PROGRAM -> TODO()
         BaseItemKind.USER_ROOT_FOLDER -> TODO()
@@ -240,4 +260,19 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
         BaseItemKind.LIVE_TV_PROGRAM -> TODO()
         BaseItemKind.PLAYLISTS_FOLDER -> TODO()
+    }
+
+/**
+ * Format a [Duration] into a localized "Xh Ym Zs" string using string resources.
+ */
+fun Resources.formatDuration(duration: Duration): String =
+    duration.toComponents { hours, minutes, seconds, _ ->
+        when {
+            hours > 0 && minutes > 0 && seconds > 0 -> getString(R.string.duration_hours_minutes_seconds, hours.toInt(), minutes, seconds)
+            hours > 0 && minutes > 0 -> getString(R.string.duration_hours_minutes, hours.toInt(), minutes)
+            hours > 0 -> getString(R.string.duration_hours, hours.toInt())
+            minutes > 0 && seconds > 0 -> getString(R.string.duration_minutes_seconds, minutes, seconds)
+            minutes > 0 -> getString(R.string.duration_minutes, minutes)
+            else -> getString(R.string.duration_seconds, seconds)
+        }
     }

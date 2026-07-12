@@ -56,12 +56,14 @@ enum class SeerrItemType(
 enum class SeerrAvailability(
     val status: Int,
 ) {
+    // https://github.com/seerr-team/seerr/blob/develop/server/constants/media.ts#L14
     UNKNOWN(1),
     PENDING(2),
     PROCESSING(3),
     PARTIALLY_AVAILABLE(4),
     AVAILABLE(5),
-    DELETED(6),
+    BLOCKLISTED(6),
+    DELETED(7),
     ;
 
     companion object {
@@ -92,13 +94,7 @@ data class DiscoverItem(
 
     val destination: Destination
         get() {
-            val jfType =
-                when (type) {
-                    SeerrItemType.MOVIE -> BaseItemKind.MOVIE
-                    SeerrItemType.TV -> BaseItemKind.SERIES
-                    SeerrItemType.PERSON -> BaseItemKind.PERSON
-                    SeerrItemType.UNKNOWN -> null
-                }
+            val jfType = type.baseItemKind
             return if (jellyfinItemId != null && jfType != null) {
                 Destination.MediaItem(
                     itemId = jellyfinItemId,
