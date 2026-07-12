@@ -64,3 +64,5 @@ app/src/main/jnilibs
 app/src/main/jnilibs/
 scripts/mpv/deps/
 scripts/mpv/prefix/
+
+.github/
