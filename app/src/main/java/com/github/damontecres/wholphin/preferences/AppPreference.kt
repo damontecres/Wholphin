@@ -1222,7 +1222,7 @@ val advancedPreferences =
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
-                        ),
+                    ),
             ),
         )
         add(
