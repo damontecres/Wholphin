@@ -669,7 +669,7 @@
     <string name="time_left">%1$s verbleibend</string>
     <string name="video_tunneling">Video Tunneling</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Nicht-Stereo Audio zu AC3/Dolby Digital transcodieren]]></string>
-    <string name="prefer_ac3_for_surround">AC3 für Surround Sound Audio nutzen</string>
+    <string name="prefer_ac3_for_surround">AC3 für Surround Sound bevorzugen</string>
     <string name="blocklisted">Auf Blockliste hinzugefügt</string>
     <string name="unavailable">Nicht verfügbar</string>
 </resources>
