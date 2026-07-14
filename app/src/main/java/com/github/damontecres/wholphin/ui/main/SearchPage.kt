@@ -131,6 +131,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class SearchViewModel
@@ -149,9 +150,6 @@ class SearchViewModel
         private val mediaReportService: MediaReportService,
     ) : ViewModel(),
         ContextMenuProvider {
-        val voiceState = voiceInputManager.state
-        val soundLevel = voiceInputManager.soundLevel
-        val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
 
         private val _state = MutableStateFlow(SearchState())
@@ -253,8 +251,8 @@ class SearchViewModel
                         )
                     val result = api.itemsApi.getItems(request).content
                     val items =
-                        (result.items ?: emptyList()).map {
-                            BaseItem.from(it, api, false)
+                        result.items.map {
+                            BaseItem(it, false)
                         }
                     val sorted =
                         items.sortedWith(
@@ -290,8 +288,8 @@ class SearchViewModel
 
                     val result = api.itemsApi.getItems(request).content
                     val items =
-                        (result.items ?: emptyList()).map {
-                            BaseItem.from(it, api, false)
+                        result.items.map {
+                            BaseItem(it, false)
                         }
                     val sorted =
                         items.sortedWith(
@@ -344,11 +342,6 @@ class SearchViewModel
             addCloseable(voiceInputManager)
         }
 
-        fun getHints(query: String) {
-            // TODO
-//        api.searchApi.getSearchHints()
-        }
-
         override fun navigateTo(destination: Destination) {
             navigationManager.navigateTo(destination)
         }
@@ -390,39 +383,37 @@ class SearchViewModel
                     } ?: return
                 val items = (searchResult as? SearchResult.Success)?.items ?: return
 
-                position.let {
-                    Timber.v("Item refresh: position=%s", it)
-                    val item = items.getOrNull(it.column)
-                    // Exact item deleted (eg a movie) or deleted item was within the series
-                    if (item != null && item.id == itemId) {
-                        val newItem =
-                            api.userLibraryApi
-                                .getItem(item.id)
-                                .content
-                                .let { BaseItem(it) }
-                        val newList =
-                            SearchResult.Success(
-                                items.toMutableList().apply {
-                                    set(position.column, newItem)
-                                },
+                Timber.v("Item refresh: position=%s", position)
+                val item = items.getOrNull(position.column)
+                // Exact item deleted (eg a movie) or deleted item was within the series
+                if (item != null && item.id == itemId) {
+                    val newItem =
+                        api.userLibraryApi
+                            .getItem(item.id)
+                            .content
+                            .let { BaseItem(it) }
+                    val newList =
+                        SearchResult.Success(
+                            items.toMutableList().apply {
+                                set(position.column, newItem)
+                            },
+                        )
+                    _state.update {
+                        if (combinedMode) {
+                            it.copy(
+                                combinedResults = newList,
                             )
-                        _state.update {
-                            if (combinedMode) {
-                                it.copy(
-                                    combinedResults = newList,
-                                )
-                            } else {
-                                when (position.row) {
-                                    MOVIE_ROW -> it.copy(movies = newList)
-                                    SERIES_ROW -> it.copy(series = newList)
-                                    EPISODE_ROW -> it.copy(episodes = newList)
-                                    COLLECTION_ROW -> it.copy(collections = newList)
-                                    ALBUM_ROW -> it.copy(albums = newList)
-                                    ARTIST_ROW -> it.copy(artists = newList)
-                                    SONG_ROW -> it.copy(songs = newList)
-                                    SEERR_ROW -> it
-                                    else -> it
-                                }
+                        } else {
+                            when (position.row) {
+                                MOVIE_ROW -> it.copy(movies = newList)
+                                SERIES_ROW -> it.copy(series = newList)
+                                EPISODE_ROW -> it.copy(episodes = newList)
+                                COLLECTION_ROW -> it.copy(collections = newList)
+                                ALBUM_ROW -> it.copy(albums = newList)
+                                ARTIST_ROW -> it.copy(artists = newList)
+                                SONG_ROW -> it.copy(songs = newList)
+                                SEERR_ROW -> it
+                                else -> it
                             }
                         }
                     }
@@ -503,9 +494,6 @@ private const val SEERR_ROW = SONG_ROW + 1
 
 private const val COMBINED_ROW = TAB_ROW + 1
 
-/** Delay for focus to settle after voice search dialog dismisses. */
-private const val VOICE_RESULT_FOCUS_DELAY_MS = 350L
-
 @Composable
 fun SearchPage(
     userPreferences: UserPreferences,
@@ -527,7 +515,6 @@ fun SearchPage(
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
     val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
-    val tabFocusRequesters = remember { List(2) { FocusRequester() } }
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
@@ -563,7 +550,7 @@ fun SearchPage(
             }
 
             else -> {
-                delay(750L)
+                delay(750.milliseconds)
                 viewModel.search(query, combinedMode)
             }
         }
@@ -571,7 +558,7 @@ fun SearchPage(
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position.row)?.tryRequestFocus()
     }
-    val onClickItem = { index: Int, item: BaseItem ->
+    val onClickItem = { _: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
     val onLongClickItem = { rowIndex: Int, index: Int, item: BaseItem ->
@@ -618,7 +605,7 @@ fun SearchPage(
         if (!searchClicked || position.row > TAB_ROW) return@LaunchedEffect
 
         withContext(WholphinDispatchers.IO) {
-            // Want to focus on the first successful row after all of the ones before it are finished searching
+            // Want to focus on the first successful row after all the ones before it are finished searching
             val results =
                 if (isLibraryTab) {
                     if (combinedMode) {
@@ -1100,10 +1087,8 @@ fun SearchCombinedResults(
     positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (val r = result) {
-        SearchResult.NoQuery -> {
-            Unit
-        }
+    when (result) {
+        SearchResult.NoQuery -> {}
 
         SearchResult.Searching -> {
             SearchResultPlaceholder(
@@ -1116,14 +1101,14 @@ fun SearchCombinedResults(
         is SearchResult.Error -> {
             SearchResultPlaceholder(
                 title = stringResource(R.string.results),
-                message = r.ex.localizedMessage ?: "Error occurred during search",
+                message = result.ex.localizedMessage ?: "Error occurred during search",
                 messageColor = MaterialTheme.colorScheme.error,
                 modifier = modifier.padding(16.dp),
             )
         }
 
         is SearchResult.Success -> {
-            if (r.items.isEmpty()) {
+            if (result.items.isEmpty()) {
                 SearchResultPlaceholder(
                     title = stringResource(R.string.results),
                     message = stringResource(R.string.no_results),
@@ -1131,7 +1116,7 @@ fun SearchCombinedResults(
                 )
             } else {
                 SearchGrid(
-                    items = r.items,
+                    items = result.items,
                     focusRequester = focusRequester,
                     onClickItem = onClickItem,
                     onLongClickItem = onLongClickItem,
@@ -1153,7 +1138,7 @@ fun SearchCombinedResults(
         }
 
         is SearchResult.SuccessSeerr -> {
-            if (r.items.isEmpty()) {
+            if (result.items.isEmpty()) {
                 SearchResultPlaceholder(
                     title = stringResource(R.string.results),
                     message = stringResource(R.string.no_results),
@@ -1161,7 +1146,7 @@ fun SearchCombinedResults(
                 )
             } else {
                 SearchGrid(
-                    items = r.items,
+                    items = result.items,
                     focusRequester = focusRequester,
                     onClickItem = onClickDiscover,
                     onLongClickItem = { _, _ -> },
