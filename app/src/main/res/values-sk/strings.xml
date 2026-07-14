@@ -713,4 +713,17 @@
     <string name="unavailable">Nedostupné</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Prekódovať viackanálový zvuk na AC3/Dolby Digital]]></string>
     <string name="prefer_ac3_for_surround">Použiť AC3 pre viackanálový zvuk</string>
+    <string name="profile_specific_settings_from_server">Nastavenia používateľského profilu zo servera</string>
+    <string name="subtitle_mode">Režim titulkov</string>
+    <string name="use_user_profile">Použiť nastavenie profilu</string>
+    <string name="subtitle_mode_default">Predvolené</string>
+    <string name="subtitle_mode_smart">Inteligentné</string>
+    <string name="subtitle_mode_only_forced">Len vynútené</string>
+    <string name="subtitle_mode_always">Vždy</string>
+    <string name="subtitle_mode_none">Žiadne</string>
+    <string name="preferred_subtitle_language">Preferovaný jazyk titulkov</string>
+    <string name="preferred_audio_language">Preferovaný jazyk zvuku</string>
+    <string name="override_user_profile_settings">Viac nastavení používateľského profilu</string>
+    <string name="override_user_profile_settings_summary">Prepísať nastavenia používateľského profilu zo servera</string>
+    <string name="any_language">Akýkoľvek jazyk</string>
 </resources>
