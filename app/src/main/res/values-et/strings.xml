@@ -672,4 +672,17 @@
     <string name="unavailable">Pole saadaval</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Kodeeri mittestereoheli AC3/Dolby Digital vormingusse]]></string>
     <string name="prefer_ac3_for_surround">Kasuta ruumilise heli jaoks AC3 koodekit</string>
+    <string name="profile_specific_settings_from_server">Kasutajaprofiili seadistus serverist</string>
+    <string name="subtitle_mode">Subtiitrite režiim</string>
+    <string name="use_user_profile">Kasuta oma profiili seadistust</string>
+    <string name="subtitle_mode_default">Vaikimisi</string>
+    <string name="subtitle_mode_smart">Nutikas</string>
+    <string name="subtitle_mode_only_forced">Ainult sundkorras</string>
+    <string name="subtitle_mode_always">Alati</string>
+    <string name="subtitle_mode_none">Määramata</string>
+    <string name="preferred_subtitle_language">Subtiitrite eelistatud keel</string>
+    <string name="preferred_audio_language">Heliriba eelistatud keel</string>
+    <string name="override_user_profile_settings">Veel kasutajaprofiili seadistusi</string>
+    <string name="override_user_profile_settings_summary">Sürjuta serveris leiduvad kasutajaprofiili seadistused</string>
+    <string name="any_language">Iga keel</string>
 </resources>
