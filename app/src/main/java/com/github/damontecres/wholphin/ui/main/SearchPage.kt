@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.main
 
+import android.content.Context
 import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
@@ -66,15 +67,20 @@ import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -84,27 +90,31 @@ import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.TabDetails
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
+import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.preferences.SwitchColors
-import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,22 +125,30 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
         private val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
         val userPreferencesService: UserPreferencesService,
-    ) : ViewModel() {
+        private val serverRepository: ServerRepository,
+        private val favoriteWatchManager: FavoriteWatchManager,
+        private val mediaManagementService: MediaManagementService,
+        private val mediaReportService: MediaReportService,
+    ) : ViewModel(),
+        ContextMenuProvider {
         val voiceState = voiceInputManager.state
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
@@ -138,6 +156,7 @@ class SearchViewModel
 
         private val _state = MutableStateFlow(SearchState())
         val state: StateFlow<SearchState> = _state
+        val position = MutableStateFlow(RowColumn(0, 0))
 
         private var currentQuery: String? = null
         private var combinedMode = false
@@ -329,6 +348,116 @@ class SearchViewModel
             // TODO
 //        api.searchApi.getSearchHints()
         }
+
+        override fun navigateTo(destination: Destination) {
+            navigationManager.navigateTo(destination)
+        }
+
+        override fun canDelete(
+            item: BaseItem,
+            appPreferences: AppPreferences,
+        ): Boolean = mediaManagementService.canDelete(item, appPreferences)
+
+        override fun deleteItem(
+            index: Int,
+            item: BaseItem,
+        ) {
+            deleteItem(context, mediaManagementService, item) {
+                viewModelScope.launchDefault {
+                    refreshItem(item.id)
+                }
+            }
+        }
+
+        private suspend fun refreshItem(itemId: UUID) {
+            try {
+                val position = position.value
+                val searchResult =
+                    if (combinedMode) {
+                        state.value.combinedResults
+                    } else {
+                        when (position.row) {
+                            MOVIE_ROW -> state.value.movies
+                            SERIES_ROW -> state.value.series
+                            EPISODE_ROW -> state.value.episodes
+                            COLLECTION_ROW -> state.value.collections
+                            ALBUM_ROW -> state.value.albums
+                            ARTIST_ROW -> state.value.artists
+                            SONG_ROW -> state.value.songs
+                            SEERR_ROW -> null
+                            else -> null
+                        }
+                    } ?: return
+                val items = (searchResult as? SearchResult.Success)?.items ?: return
+
+                position.let {
+                    Timber.v("Item refresh: position=%s", it)
+                    val item = items.getOrNull(it.column)
+                    // Exact item deleted (eg a movie) or deleted item was within the series
+                    if (item != null && item.id == itemId) {
+                        val newItem =
+                            api.userLibraryApi
+                                .getItem(item.id)
+                                .content
+                                .let { BaseItem(it) }
+                        val newList =
+                            SearchResult.Success(
+                                items.toMutableList().apply {
+                                    set(position.column, newItem)
+                                },
+                            )
+                        _state.update {
+                            if (combinedMode) {
+                                it.copy(
+                                    combinedResults = newList,
+                                )
+                            } else {
+                                when (position.row) {
+                                    MOVIE_ROW -> it.copy(movies = newList)
+                                    SERIES_ROW -> it.copy(series = newList)
+                                    EPISODE_ROW -> it.copy(episodes = newList)
+                                    COLLECTION_ROW -> it.copy(collections = newList)
+                                    ALBUM_ROW -> it.copy(albums = newList)
+                                    ARTIST_ROW -> it.copy(artists = newList)
+                                    SONG_ROW -> it.copy(songs = newList)
+                                    SEERR_ROW -> it
+                                    else -> it
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error refreshing item %s", itemId)
+                showToast(context, "Error refreshing")
+            }
+        }
+
+        override fun setWatched(
+            position: Int,
+            itemId: UUID,
+            played: Boolean,
+        ) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+                favoriteWatchManager.setWatched(itemId, played)
+                refreshItem(itemId)
+            }
+        }
+
+        override fun setFavorite(
+            position: Int,
+            itemId: UUID,
+            favorite: Boolean,
+        ) {
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+                favoriteWatchManager.setFavorite(itemId, favorite)
+                refreshItem(itemId)
+            }
+        }
+
+        override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
+
+        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
     }
 
 sealed interface SearchResult {
@@ -403,10 +532,17 @@ fun SearchPage(
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
-
-    var position by rememberPosition(0, 0)
     var searchClicked by rememberSaveable(query) { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val position by viewModel.position.collectAsState()
+
+    fun setPosition(pos: RowColumn) {
+        Timber.v("pos=%s", pos)
+        viewModel.position.value = pos
+    }
+
+    val contextMenu = rememberContextMenu(userPreferences, viewModel)
 
     LifecycleResumeEffect(Unit) {
         onPauseOrDispose {
@@ -437,6 +573,10 @@ fun SearchPage(
     }
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
+    }
+    val onLongClickItem = { rowIndex: Int, index: Int, item: BaseItem ->
+        setPosition(RowColumn(rowIndex, index))
+        contextMenu.showContextMenu(index, item)
     }
     val onPlayItem = { _: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(Destination.Playback(item))
@@ -513,7 +653,7 @@ fun SearchPage(
                         } else {
                             SEERR_ROW
                         }
-                    position = RowColumn(targetRow, 0)
+//                    setPosition(RowColumn(targetRow, 0))
                     onMain { focusRequesters[targetRow].tryRequestFocus() }
                 }
             }
@@ -628,12 +768,15 @@ fun SearchPage(
                             0 -> COMBINED_ROW
                             else -> SEERR_ROW
                         }
-                    position = RowColumn(row, 0)
+                    setPosition(RowColumn(row, 0))
                 },
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp),
+                        .padding(start = 16.dp, end = 16.dp)
+                        .onFocusChanged {
+                            if (it.hasFocus) setPosition(RowColumn(TAB_ROW, 0))
+                        },
             )
         }
         Box(
@@ -648,8 +791,9 @@ fun SearchPage(
                         result = state.combinedResults,
                         focusRequester = focusRequesters[COMBINED_ROW],
                         onClickItem = onClickItem,
+                        onLongClickItem = contextMenu::showContextMenu,
                         onPlayItem = onPlayItem,
-                        onClickPosition = { position = it },
+                        onClickPosition = { setPosition(it) },
                         onClickDiscover = onClickDiscover,
                         positionCallback = positionCallback,
                         modifier = Modifier.fillMaxSize(),
@@ -661,8 +805,9 @@ fun SearchPage(
                         result = state.seerrResults,
                         focusRequester = focusRequesters[SEERR_ROW],
                         onClickItem = onClickItem,
+                        onLongClickItem = { _, _ -> },
                         onPlayItem = onPlayItem,
-                        onClickPosition = { position = it },
+                        onClickPosition = { setPosition(it) },
                         onClickDiscover = onClickDiscover,
                         positionCallback = positionCallback,
                         modifier = Modifier.fillMaxSize(),
@@ -688,7 +833,10 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[MOVIE_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(MOVIE_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
@@ -698,7 +846,10 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[SERIES_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(SERIES_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
@@ -708,13 +859,16 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[EPISODE_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(EPISODE_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = @Composable { index, item, mod, onClick, onLongClick ->
                                 EpisodeCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(EPISODE_ROW, index)
+                                        setPosition(RowColumn(EPISODE_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -730,7 +884,10 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[COLLECTION_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(COLLECTION_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                         searchResultRow(
@@ -740,13 +897,16 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[ALBUM_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(ALBUM_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(ALBUM_ROW, index)
+                                        setPosition(RowColumn(ALBUM_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -764,13 +924,16 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[ARTIST_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(ARTIST_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(ARTIST_ROW, index)
+                                        setPosition(RowColumn(ARTIST_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -788,13 +951,16 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[SONG_ROW],
                             onClickItem = onClickItem,
-                            onClickPosition = { position = it },
+                            onLongClickItem = { index, item ->
+                                onLongClickItem(SONG_ROW, index, item)
+                            },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,
                                     onClick = {
-                                        position = RowColumn(SONG_ROW, index)
+                                        setPosition(RowColumn(SONG_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
@@ -812,14 +978,16 @@ fun SearchPage(
                             position = position,
                             focusRequester = focusRequesters[SEERR_ROW],
                             onClickItem = onClickItem,
+                            onLongClickItem = { _, _ -> },
                             onClickDiscover = onClickDiscover,
-                            onClickPosition = { position = it },
+                            onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
         }
+        contextMenu.Compose()
     }
 
     if (showViewOptions) {
@@ -923,6 +1091,7 @@ fun SearchCombinedResults(
     result: SearchResult,
     focusRequester: FocusRequester,
     onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     onPlayItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
@@ -963,6 +1132,7 @@ fun SearchCombinedResults(
                     items = r.items,
                     focusRequester = focusRequester,
                     onClickItem = onClickItem,
+                    onLongClickItem = onLongClickItem,
                     onPlayItem = onPlayItem,
                     onClickPosition = onClickPosition,
                     positionCallback = positionCallback,
@@ -992,6 +1162,7 @@ fun SearchCombinedResults(
                     items = r.items,
                     focusRequester = focusRequester,
                     onClickItem = onClickDiscover,
+                    onLongClickItem = { _, _ -> },
                     onPlayItem = { _, _ -> },
                     onClickPosition = onClickPosition,
                     positionCallback = positionCallback,
@@ -1015,6 +1186,7 @@ private fun <T : CardGridItem> SearchGrid(
     items: List<T?>,
     focusRequester: FocusRequester,
     onClickItem: (Int, T) -> Unit,
+    onLongClickItem: (Int, T) -> Unit,
     onPlayItem: (Int, T) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     cardContent: @Composable (GridItemDetails<T>) -> Unit,
@@ -1033,7 +1205,7 @@ private fun <T : CardGridItem> SearchGrid(
                 onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
                 onClickItem.invoke(index, item)
             },
-            onLongClickItem = { _, _ -> },
+            onLongClickItem = onLongClickItem,
             onClickPlay = { index, item ->
                 onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
                 onPlayItem.invoke(index, item)
@@ -1056,6 +1228,7 @@ fun LazyListScope.searchResultRow(
     position: RowColumn,
     focusRequester: FocusRequester,
     onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     onClickDiscover: ((Int, DiscoverItem) -> Unit)? = null,
@@ -1108,7 +1281,7 @@ fun LazyListScope.searchResultRow(
                         title = stringResource(title),
                         items = r.items,
                         onClickItem = onClickItem,
-                        onLongClickItem = { _, _ -> },
+                        onLongClickItem = onLongClickItem,
                         modifier = modifier.focusRequester(focusRequester),
                         cardContent = cardContent,
                     )
