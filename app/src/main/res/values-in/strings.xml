@@ -649,19 +649,4 @@
     <string name="time_left">Sisa %1$s</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkode audio non-stereo ke AC3/Dolby Digital]]></string>
     <string name="unavailable">Tidak tersedia</string>
-    <string name="profile_specific_settings_from_server">Pengaturan profil pengguna dari server</string>
-    <string name="subtitle_mode">Mode subtitel</string>
-    <string name="use_user_profile">Gunakan pengaturan profil kamu</string>
-    <string name="subtitle_mode_default">Default</string>
-    <string name="subtitle_mode_smart">Pintar</string>
-    <string name="subtitle_mode_only_forced">Hanya Paksaan</string>
-    <string name="subtitle_mode_always">Selalu</string>
-    <string name="subtitle_mode_none">Tidak ada</string>
-    <string name="preferred_subtitle_language">Bahasa subtitel preferensi</string>
-    <string name="preferred_audio_language">Bahasa audio preferensi</string>
-    <string name="override_user_profile_settings">Pengaturan profil pengguna lainnya</string>
-    <string name="override_user_profile_settings_summary">Timpa pengaturan profil pengguna dari server</string>
-    <string name="any_language">Semua bahasa</string>
-    <string name="brown">Cokelat</string>
-    <string name="d_pad_seek_mode_title">Mode bilah geser D-Pad</string>
 </resources>
