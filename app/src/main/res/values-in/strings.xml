@@ -639,4 +639,14 @@
     <plurals name="people">
         <item quantity="other">Orang</item>
     </plurals>
+    <string name="prefer_ac3_for_surround">Gunakan AC3 untuk surround sound</string>
+    <string name="duration_hours_minutes_seconds">%1$dj %2$dm %3$dd</string>
+    <string name="duration_hours_minutes">%1$dj %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$dd</string>
+    <string name="duration_hours">%1$dj</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$dd</string>
+    <string name="time_left">Sisa %1$s</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkode audio non-stereo ke AC3/Dolby Digital]]></string>
+    <string name="unavailable">Tidak tersedia</string>
 </resources>
