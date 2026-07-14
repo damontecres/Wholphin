@@ -542,7 +542,7 @@ class SeriesViewModel
             strmResolveJob =
                 viewModelScope.launchIO {
                     try {
-                        if (StrmFileHandler.shouldResolveStrm(item, null)) {
+                        if (StrmFileHandler.shouldResolveStrm(item)) {
                             _state.update { it.copy(strmLoading = true) }
                             val result = strmFileHandler.resolveStrm(item)
                             if (result != null) {
