@@ -615,7 +615,7 @@ fun SearchPage(
         selectedTab,
         seerrActive,
     ) {
-        if (!searchClicked) return@LaunchedEffect
+        if (!searchClicked || position.row > TAB_ROW) return@LaunchedEffect
 
         withContext(WholphinDispatchers.IO) {
             // Want to focus on the first successful row after all of the ones before it are finished searching
@@ -791,7 +791,9 @@ fun SearchPage(
                         result = state.combinedResults,
                         focusRequester = focusRequesters[COMBINED_ROW],
                         onClickItem = onClickItem,
-                        onLongClickItem = contextMenu::showContextMenu,
+                        onLongClickItem = { index, item ->
+                            onLongClickItem(COMBINED_ROW, index, item)
+                        },
                         onPlayItem = onPlayItem,
                         onClickPosition = { setPosition(it) },
                         onClickDiscover = onClickDiscover,
