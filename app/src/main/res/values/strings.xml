@@ -401,7 +401,7 @@
     <string name="pin_digits_hint">[0-9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="disable_audio_offload">Disable audio hardware offload</string>
-    <string name="disable_audio_offload_summary">Offload audio decoding to the hardware DSP may cause playback hangs on some devices (e.g. TCL TVs). Toggling this option will disable audio hardware offload. Restart the app to take effect.</string>
+    <string name="disable_audio_offload_summary">Disabling offloading audio decoding may fix playback freezes on some devices</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
     <string name="spacing">Spacing</string>
