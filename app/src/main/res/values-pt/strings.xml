@@ -707,20 +707,4 @@
     <string name="override_user_profile_settings">Mais definições do perfil</string>
     <string name="override_user_profile_settings_summary">Substituir as definições do seu perfil a partir do servidor</string>
     <string name="any_language">Qualquer idioma</string>
-    <string name="brown">Castanho</string>
-    <string name="d_pad_seek_mode_title">Modo de barra de busca do D-Pad</string>
-    <string name="dpad_seek_mode_minimal">Mínimo</string>
-    <string name="dpad_seek_mode_trickplay">Fotograma</string>
-    <string name="dpad_seek_mode_minimal_summary">Barra de pesquisa pequena na parte inferior do ecrã (por predefinição)</string>
-    <string name="dpad_seek_mode_trickplay_summary">Barra de pesquisa com imagens de pré-visualização de fotogramas</string>
-    <string name="dpad_seek_mode_none_summary">Sem barra de pesquisa</string>
-    <string name="hash_matches">Correspondências de hash</string>
-    <string name="subtitles_hearing_impaired">SDH</string>
-    <string name="programs">Programas de TV</string>
-    <string name="recordings">Gravações</string>
-    <string name="folders_title">Pastas</string>
-    <string name="user_views">Visualizações do utilizador</string>
-    <string name="books">Livros</string>
-    <string name="audio_books">Audiolivros</string>
-    <string name="server_version_not_supported">Versão do servidor não suportada</string>
 </resources>
