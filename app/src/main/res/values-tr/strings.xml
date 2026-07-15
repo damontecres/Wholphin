@@ -672,4 +672,17 @@
     <string name="unavailable">Mevcut Değil</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Stereo olmayan sesleri AC3/Dolby Digital\'e dönüştür]]></string>
     <string name="prefer_ac3_for_surround">Çevresel ses için AC3 kullan</string>
+    <string name="profile_specific_settings_from_server">Sunucudaki kullanıcı profili ayarları</string>
+    <string name="subtitle_mode">Altyazı Modu</string>
+    <string name="use_user_profile">Profil ayarlarını kullan</string>
+    <string name="subtitle_mode_default">Varsayılan</string>
+    <string name="subtitle_mode_smart">Akıllı</string>
+    <string name="subtitle_mode_only_forced">Sadece Zorunlu</string>
+    <string name="subtitle_mode_always">Her zaman</string>
+    <string name="subtitle_mode_none">Hiçbiri</string>
+    <string name="preferred_subtitle_language">Tercih edilen altyazı dili</string>
+    <string name="preferred_audio_language">Tercih edilen ses dili</string>
+    <string name="override_user_profile_settings">Daha fazla kullanıcı profili ayarı</string>
+    <string name="override_user_profile_settings_summary">Sunucudaki kullanıcı profili ayarlarını geçersiz kıl</string>
+    <string name="any_language">Herhangi bir dil</string>
 </resources>
