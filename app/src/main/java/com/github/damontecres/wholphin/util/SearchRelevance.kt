@@ -10,14 +10,20 @@ object SearchRelevance {
     fun score(
         item: BaseItem,
         query: String,
+    ): Int = score(item.name, item.type, query)
+
+    fun score(
+        name: String?,
+        type: BaseItemKind,
+        query: String,
     ): Int {
-        val name = item.name?.lowercase(Locale.getDefault()) ?: return Int.MAX_VALUE
+        val name = name?.lowercase(Locale.getDefault()) ?: return Int.MAX_VALUE
         val q = query.lowercase(Locale.getDefault())
 
         REGEX_PATTERN.find(query)?.let { match ->
             val pattern = match.groupValues[1]
             val caseInsensitive = match.groupValues[2] == "i"
-            return regexScore(item.name ?: "", pattern, caseInsensitive) + typeBonus(item.type)
+            return regexScore(name, pattern, caseInsensitive) + typeBonus(type)
         }
 
         return when {
@@ -26,7 +32,7 @@ object SearchRelevance {
             name.contains(" $q") -> 200
             name.contains(q) -> 300
             else -> fuzzyScore(name, q)
-        } + typeBonus(item.type)
+        } + typeBonus(type)
     }
 
     private fun regexScore(

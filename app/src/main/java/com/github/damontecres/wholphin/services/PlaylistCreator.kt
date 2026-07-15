@@ -15,13 +15,11 @@ import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.TransformList
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
@@ -344,26 +342,49 @@ class PlaylistCreator
          * Get the playlists on the server for a given media type
          */
         suspend fun getServerPlaylists(
+            query: String,
             mediaType: MediaType?,
-            scope: CoroutineScope,
-        ): List<PlaylistInfo?> {
+        ): List<PlaylistInfo> {
+            val userId =
+                serverRepository.currentUser?.id ?: throw IllegalStateException("No user found")
             val request =
                 GetItemsRequest(
+                    searchTerm = query.takeIf { it.isNotBlank() },
                     includeItemTypes = listOf(BaseItemKind.PLAYLIST),
                     mediaTypes = mediaType?.let { listOf(mediaType) },
                     recursive = true,
+                    limit = 100,
+                    sortBy = listOf(ItemSortBy.DATE_LAST_CONTENT_ADDED),
+                    sortOrder = listOf(SortOrder.DESCENDING),
                 )
-            val pager = ApiRequestPager(api, request, GetItemsRequestHandler, scope).init()
-            return TransformList(pager) {
-                it?.let {
-                    PlaylistInfo(
-                        id = it.id,
-                        name = it.name ?: context.getString(R.string.unknown),
-                        count = it.data.childCount ?: 0,
-                        mediaType = it.data.mediaType,
-                    )
+            val playlists = GetItemsRequestHandler.execute(api, request).content.items
+            return playlists
+                .mapNotNull { playlist ->
+                    try {
+                        val response = api.playlistsApi.getPlaylistUser(playlist.id, userId).content
+                        if (response.canEdit) {
+                            PlaylistInfo(
+                                id = playlist.id,
+                                name = playlist.name ?: context.getString(R.string.unknown),
+                                count = playlist.childCount ?: 0,
+                                mediaType = playlist.mediaType,
+                            )
+                        } else {
+                            null
+                        }
+                    } catch (ex: InvalidStatusException) {
+                        if (ex.status == 404) {
+                            null
+                        } else {
+                            throw ex
+                        }
+                    }
                 }
-            }
+//                .sortedWith(
+//                    compareBy<PlaylistInfo> {
+//                        SearchRelevance.score(it.name, BaseItemKind.PLAYLIST, query)
+//                    }.thenBy { it.name },
+//                )
         }
 
         suspend fun createServerPlaylist(
