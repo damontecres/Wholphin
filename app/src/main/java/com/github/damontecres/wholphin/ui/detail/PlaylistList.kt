@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -217,7 +219,7 @@ fun PlaylistDialog(
     val elevatedContainerColor =
         MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
 
-    val outerFocusRequester = remember { FocusRequester() }
+    val placeholderFocusRequester = remember { FocusRequester() }
     val focusRequester = remember { FocusRequester() }
     val searchFocusRequester = remember { FocusRequester() }
     var query by remember { mutableStateOf("") }
@@ -270,20 +272,62 @@ fun PlaylistDialog(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .focusRequester(searchFocusRequester)
                         .onFocusChanged { searchHasFocus = it.hasFocus }
                         .focusProperties {
+                            // Block focus to except for down/next to the results
+                            // Don't want to focus on the placeholder
+                            up = FocusRequester.Cancel
+                            left = FocusRequester.Cancel
+                            right = FocusRequester.Cancel
+                            previous = FocusRequester.Cancel
+                            start = FocusRequester.Cancel
+                            end = FocusRequester.Cancel
                             down = focusRequester
+                            next = focusRequester
                         },
             )
-            LaunchedEffect(Unit) { outerFocusRequester.tryRequestFocus() }
+            LaunchedEffect(Unit) {
+                if (state !is PlaylistLoadingState.Success) {
+                    placeholderFocusRequester.tryRequestFocus()
+                }
+            }
+            // Placeholder for initial focus
+            // After results load, focus will move to the first one
             Box(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
+                        .width(0.dp)
                         .height(0.dp)
-                        .focusRequester(outerFocusRequester)
+                        .focusRequester(placeholderFocusRequester)
                         .focusable(),
             )
+            val resultsModifier =
+                Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .focusProperties {
+                        // Only focus up to search bar and ignore the placeholder
+                        left = FocusRequester.Cancel
+                        right = FocusRequester.Cancel
+                        start = FocusRequester.Cancel
+                        end = FocusRequester.Cancel
+                        down = FocusRequester.Cancel
+                        next = FocusRequester.Cancel
+                        up = searchFocusRequester
+                        previous = searchFocusRequester
+                        onExit = {
+                            if (requestedFocusDirection == FocusDirection.Next ||
+                                requestedFocusDirection == FocusDirection.Left ||
+                                requestedFocusDirection == FocusDirection.Right
+                            ) {
+                                cancelFocusChange()
+                            } else {
+                                searchFocusRequester.tryRequestFocus()
+                            }
+                        }
+                    }
             when (val s = state) {
                 PlaylistLoadingState.Pending,
                 PlaylistLoadingState.Loading,
@@ -301,30 +345,21 @@ fun PlaylistDialog(
                     ErrorMessage(
                         message = s.message,
                         exception = s.exception,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester)
-                                .focusProperties {
-                                    up = searchFocusRequester
-                                },
+                        modifier = resultsModifier,
                     )
                 }
 
                 is PlaylistLoadingState.Success -> {
-                    LaunchedEffect(Unit) { if (!searchHasFocus) focusRequester.tryRequestFocus() }
+                    LaunchedEffect(Unit) {
+                        // Once results load, focus unless the user is still focused on the search box
+                        if (!searchHasFocus) focusRequester.tryRequestFocus()
+                    }
                     PlaylistList(
                         playlists = s.items,
                         onClick = onClick,
                         createEnabled = createEnabled,
                         onCreatePlaylist = onCreatePlaylist,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester)
-                                .focusProperties {
-                                    up = searchFocusRequester
-                                },
+                        modifier = resultsModifier,
                     )
                 }
             }

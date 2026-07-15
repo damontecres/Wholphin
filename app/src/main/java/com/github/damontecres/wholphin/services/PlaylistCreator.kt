@@ -353,7 +353,7 @@ class PlaylistCreator
                     includeItemTypes = listOf(BaseItemKind.PLAYLIST),
                     mediaTypes = mediaType?.let { listOf(mediaType) },
                     recursive = true,
-                    limit = 100,
+                    limit = 25,
                     sortBy = listOf(ItemSortBy.DATE_LAST_CONTENT_ADDED),
                     sortOrder = listOf(SortOrder.DESCENDING),
                 )
