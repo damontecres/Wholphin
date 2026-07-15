@@ -166,7 +166,7 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val index =
                             (seasons as? ApiRequestPager<*>)?.let {
-                                findIndexOf(
+                                findIndexByNumberOrId(
                                     seasonEpisodeIds.seasonNumber,
                                     seasonEpisodeIds.seasonId,
                                     it,
@@ -362,7 +362,7 @@ class SeriesViewModel
             pager.init(episodeNumber ?: 0)
             val initialIndex =
                 if (episodeId != null || episodeNumber != null) {
-                    findIndexOf(episodeNumber, episodeId, pager)
+                    findIndexByNumberOrId(episodeNumber, episodeId, pager)
                         .coerceAtLeast(0)
                 } else {
                     // Force the first page to to be fetched
@@ -705,6 +705,18 @@ enum class SeriesPageType {
     OVERVIEW,
 }
 
+private fun checkNumberOrId(
+    targetNum: Int?,
+    targetId: UUID?,
+    indexNumber: Int?,
+    id: UUID?,
+): Boolean =
+    if (targetId != null) {
+        equalsNotNull(targetId, id)
+    } else {
+        equalsNotNull(indexNumber, targetNum)
+    }
+
 /**
  * Find the index in the [list] where the item's `indexNumber`==[targetNum] or `id`==[targetId]
  *
@@ -716,7 +728,7 @@ enum class SeriesPageType {
  *
  * @return the index within [list] that matches, or zero if no match is found
  */
-private suspend fun findIndexOf(
+suspend fun findIndexByNumberOrId(
     targetNum: Int?,
     targetId: UUID?,
     list: BlockingList<BaseItem?>,
@@ -726,35 +738,34 @@ private suspend fun findIndexOf(
     val index =
         if (targetId != null && (targetNum == null || listIndex !in list.indices)) {
             // No hint info, so have to check everything
-            list.indexOfBlocking {
-                equalsNotNull(it?.indexNumber, targetNum) ||
-                    equalsNotNull(it?.id, targetId)
-            }
+            list
+                .indexOfBlocking {
+                    checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id)
+                }.coerceAtLeast(0)
         } else if (listIndex != null && listIndex in list.indices) {
             // Start searching from the target number and choose direction from there
             val num = list.getBlocking(listIndex)?.indexNumber
             if (num.lt(targetNum)) {
                 for (i in listIndex + 1 until list.lastIndex) {
-                    val season = list.getBlocking(i)
-                    if (equalsNotNull(season?.indexNumber, targetNum) ||
-                        equalsNotNull(season?.id, targetId)
-                    ) {
+                    val item = list.getBlocking(i)
+                    if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
                         return i
                     }
                 }
                 return 0
             } else if (num.gt(targetNum)) {
                 for (i in listIndex - 1 downTo 0) {
-                    val season = list.getBlocking(i)
-                    if (equalsNotNull(season?.indexNumber, targetNum) ||
-                        equalsNotNull(season?.id, targetId)
-                    ) {
+                    val item = list.getBlocking(i)
+                    if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
                         return i
                     }
                 }
                 return 0
             } else {
-                listIndex
+                list
+                    .indexOfBlocking {
+                        checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id)
+                    }.coerceAtLeast(0)
             }
         } else {
             0
