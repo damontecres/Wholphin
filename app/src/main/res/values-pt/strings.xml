@@ -137,7 +137,9 @@
     <string name="video">Vídeo</string>
     <string name="videos">Vídeos</string>
     <string name="watch_live">Ver em directo</string>
-    <string name="years_old">%1$d anos</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d anos</item>
+    </plurals>
     <string name="play_with_transcoding">Reproduzir com transcodificação</string>
     <string name="show_clock">Mostrar Relógio</string>
     <string name="aired_episode_order">Ordem de Emissão</string>

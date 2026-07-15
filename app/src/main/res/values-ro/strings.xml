@@ -217,7 +217,9 @@
     <string name="updates">Actualizări</string>
     <string name="version">Versiune</string>
     <string name="show_clock">Arată ceasul</string>
-    <string name="years_old">%1$d ani vechime</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d ani vechime</item>
+    </plurals>
     <string name="tv_guide">Ghid</string>
     <string name="one_click_pause">Pauză cu un click</string>
     <plurals name="interviews">

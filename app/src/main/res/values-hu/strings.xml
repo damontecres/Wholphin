@@ -136,7 +136,9 @@
     <string name="video">Videó</string>
     <string name="videos">Videók</string>
     <string name="watch_live">Nézze élőben</string>
-    <string name="years_old">%1$d éves</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d éves</item>
+    </plurals>
     <string name="play_with_transcoding">Lejátszás átalakítással</string>
     <string name="show_clock">Aktuális idő mutatása</string>
     <string name="aired_episode_order">Sorrend epizód vetítése alapján</string>

@@ -166,8 +166,12 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>
-    <string name="years_old">%1$d years old</string>
+    <string name="watch_live">Watch live</string>g
+    <plurals name="years_old">
+        <item quantity="zero">%1$d years old</item>
+        <item quantity="one">%1$d year old</item>
+        <item quantity="other">%1$d years old</item>
+    </plurals>
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>

@@ -161,7 +161,9 @@
     <string name="video">Video</string>
     <string name="videos">Videa</string>
     <string name="watch_live">Sledujte živě</string>
-    <string name="years_old">%1$d let starý</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d let starý</item>
+    </plurals>
     <string name="play_with_transcoding">Přehraj s překódováním</string>
     <string name="media_information">Informace o médiu</string>
     <string name="show_clock">Zobrazit hodiny</string>
