@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.lt
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
@@ -704,24 +705,37 @@ enum class SeriesPageType {
     OVERVIEW,
 }
 
+/**
+ * Find the index in the [list] where the item's `indexNumber`==[targetNum] or `id`==[targetId]
+ *
+ * This is necessary in cases where items are missing. E.g. if looking for episode 4 but
+ * episodes 2 & 3 is missing, then the index in the list for episode 4 will be `1`.
+ *
+ * @param targetNum the 1-index season or episode number
+ * @param targetId the season or episode ID
+ *
+ * @return the index within [list] that matches, or zero if no match is found
+ */
 private suspend fun findIndexOf(
     targetNum: Int?,
     targetId: UUID?,
-    pager: ApiRequestPager<*>,
+    list: BlockingList<BaseItem?>,
 ): Int {
+    // Adjust for 1-based numbers
+    val listIndex = targetNum?.minus(1)?.coerceAtLeast(0)
     val index =
-        if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
+        if (targetId != null && (targetNum == null || listIndex !in list.indices)) {
             // No hint info, so have to check everything
-            pager.indexOfBlocking {
+            list.indexOfBlocking {
                 equalsNotNull(it?.indexNumber, targetNum) ||
                     equalsNotNull(it?.id, targetId)
             }
-        } else if (targetNum != null && targetNum in pager.indices) {
-            // Start searching from the season number and choose direction from there
-            val num = pager.getBlocking(targetNum)?.indexNumber
+        } else if (listIndex != null && listIndex in list.indices) {
+            // Start searching from the target number and choose direction from there
+            val num = list.getBlocking(listIndex)?.indexNumber
             if (num.lt(targetNum)) {
-                for (i in targetNum + 1 until pager.lastIndex) {
-                    val season = pager.getBlocking(i)
+                for (i in listIndex + 1 until list.lastIndex) {
+                    val season = list.getBlocking(i)
                     if (equalsNotNull(season?.indexNumber, targetNum) ||
                         equalsNotNull(season?.id, targetId)
                     ) {
@@ -730,8 +744,8 @@ private suspend fun findIndexOf(
                 }
                 return 0
             } else if (num.gt(targetNum)) {
-                for (i in targetNum - 1 downTo 0) {
-                    val season = pager.getBlocking(i)
+                for (i in listIndex - 1 downTo 0) {
+                    val season = list.getBlocking(i)
                     if (equalsNotNull(season?.indexNumber, targetNum) ||
                         equalsNotNull(season?.id, targetId)
                     ) {
@@ -740,7 +754,7 @@ private suspend fun findIndexOf(
                 }
                 return 0
             } else {
-                targetNum
+                listIndex
             }
         } else {
             0
