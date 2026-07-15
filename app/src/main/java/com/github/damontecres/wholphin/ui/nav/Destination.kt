@@ -58,6 +58,8 @@ sealed class Destination(
         val query: String = "",
     ) : Destination()
 
+    data object UserAppPreferences : Destination(true)
+
     @Serializable
     data class SeriesOverview(
         val itemId: UUID,
