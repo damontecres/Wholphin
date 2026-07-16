@@ -104,7 +104,6 @@ import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
@@ -337,7 +336,7 @@ fun AlbumDetailsPage(
                 onClickAddToQueue = { item -> viewModel.addToQueue(item, -1) },
                 onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
                 onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.AUDIO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onClickRemoveFromQueue = { _, _ -> },
@@ -635,6 +634,7 @@ fun AlbumDetailsPage(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

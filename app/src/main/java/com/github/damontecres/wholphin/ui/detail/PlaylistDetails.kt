@@ -412,7 +412,7 @@ fun PlaylistDetails(
             onClickAddToQueue = { item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
             onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
             onClickAddPlaylist = { itemId ->
-                addToPlaylistViewModel.loadPlaylists(MediaType.AUDIO)
+                addToPlaylistViewModel.loadPlaylists()
                 showPlaylistDialog.makePresent(itemId)
             },
             onClickRemoveFromQueue = { _, _ -> },
@@ -425,7 +425,7 @@ fun PlaylistDetails(
                 onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
                 onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
                 onClickAddPlaylist = { itemId ->
-                    addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
+                    addToPlaylistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onSendMediaInfo = viewModel::sendMediaReport,
@@ -511,6 +511,7 @@ fun PlaylistDetails(
                 addToPlaylistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = addToPlaylistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

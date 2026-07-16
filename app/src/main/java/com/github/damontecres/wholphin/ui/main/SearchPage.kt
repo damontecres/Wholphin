@@ -240,7 +240,7 @@ class SearchViewModel
                     val sorted =
                         items.sortedWith(
                             compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.name ?: "" },
+                                .thenBy { it.sortName },
                         )
                     _state.update { update.invoke(SearchResult.Success(sorted), it) }
                 } catch (ex: CancellationException) {

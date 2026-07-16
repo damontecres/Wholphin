@@ -18,7 +18,6 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.nav.Destination
-import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
 /**
@@ -76,7 +75,7 @@ class ContextMenuUtils(
                             provider.setFavorite(position, itemId, favorite)
                         },
                         onClickAddPlaylist = { itemId ->
-                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                            playlistViewModel.loadPlaylists()
                             showPlaylistDialog.makePresent(itemId)
                         },
                         onSendMediaInfo = provider::sendReportFor,
@@ -129,6 +128,7 @@ class ContextMenuUtils(
                     playlistViewModel.createPlaylistAndAddItem(it, itemId)
                     showPlaylistDialog.makeAbsent()
                 },
+                onSearch = playlistViewModel::loadPlaylists,
                 elevation = 3.dp,
             )
         }
