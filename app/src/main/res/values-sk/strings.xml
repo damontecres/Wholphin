@@ -318,7 +318,7 @@
     </plurals>
     <string name="auto_play_next_delay">Oneskorenie pred prehrávaním nasledujúceho</string>
     <string name="auto_play_next">Automatické prehrávanie nasledujúceho</string>
-    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
+    <string name="combine_continue_next"><![CDATA[Spojiť sekcie Pokračovať v pozeraní a Nasleduje]]></string>
     <string name="playback_overrides">Prepísanie prehrávania</string>
     <string name="rewatch_next_up">Povoliť opätovné prehrávanie v nasledujúcich</string>
     <string name="skip_back_on_resume_preference">Pri obnovení prehrávania preskočiť späť</string>
