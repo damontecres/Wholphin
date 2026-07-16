@@ -181,7 +181,7 @@ class PlaybackViewModel
         private val _state = MutableStateFlow(PlaybackState())
         val state: StateFlow<PlaybackState> = _state
 
-        private lateinit var preferences: UserPreferences
+        internal lateinit var preferences: UserPreferences
         internal lateinit var itemId: UUID
         internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
