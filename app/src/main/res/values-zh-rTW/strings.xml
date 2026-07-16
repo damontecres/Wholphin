@@ -650,4 +650,17 @@
     <string name="unavailable">無法請求</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[將非立體聲音訊轉碼為 AC3/杜比數位格式]]></string>
     <string name="prefer_ac3_for_surround">使用 AC3 處理環繞音效</string>
+    <string name="profile_specific_settings_from_server">由伺服器提供的個人化設定</string>
+    <string name="subtitle_mode">字幕模式</string>
+    <string name="use_user_profile">使用伺服器設定</string>
+    <string name="subtitle_mode_default">預設</string>
+    <string name="subtitle_mode_smart">智慧模式</string>
+    <string name="subtitle_mode_only_forced">僅強制字幕</string>
+    <string name="subtitle_mode_always">總是顯示</string>
+    <string name="subtitle_mode_none">不顯示</string>
+    <string name="preferred_subtitle_language">偏好字幕語言</string>
+    <string name="preferred_audio_language">偏好音軌語言</string>
+    <string name="override_user_profile_settings">更多個人化設定</string>
+    <string name="override_user_profile_settings_summary">覆寫伺服器提供的個人化設定</string>
+    <string name="any_language">任何語言</string>
 </resources>
