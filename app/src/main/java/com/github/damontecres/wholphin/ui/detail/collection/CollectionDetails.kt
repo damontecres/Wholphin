@@ -343,6 +343,7 @@ fun CollectionDetailsContent(
                                 modifier =
                                     Modifier
                                         .padding(
+                                            start = HeaderUtils.startPadding,
                                             top = HeaderUtils.topPadding,
                                             bottom = 8.dp,
                                         ).height(HeaderUtils.height),
