@@ -94,6 +94,7 @@ import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -600,6 +601,7 @@ fun PlaybackPageContent(
                         viewModel.playNextUp()
                     },
                     timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
+                    runtime = it.data.runTimeTicks?.ticks,
                     modifier =
                         Modifier
                             .padding(8.dp)

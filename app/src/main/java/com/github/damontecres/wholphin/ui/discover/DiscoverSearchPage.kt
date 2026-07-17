@@ -239,6 +239,7 @@ fun DiscoverSearchPage(
             result = seerrResults,
             focusRequester = gridFocusRequester,
             onClickItem = { _, _ -> },
+            onLongClickItem = { _, _ -> },
             onPlayItem = { _, _ -> },
             onClickPosition = { position = it.column },
             onClickDiscover = onClickDiscover,

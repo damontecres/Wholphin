@@ -54,6 +54,9 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
+    data object UserAppPreferences : Destination(true)
+
+    @Serializable
     data object Search : Destination()
 
     @Serializable

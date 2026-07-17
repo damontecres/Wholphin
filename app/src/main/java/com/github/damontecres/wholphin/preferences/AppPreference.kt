@@ -582,6 +582,13 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.ADVANCED),
             )
 
+        val UserProfileSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.override_user_profile_settings,
+                destination = Destination.UserAppPreferences,
+                summary = R.string.override_user_profile_settings_summary,
+            )
+
         val SkipIntros =
             AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_intro_behavior,
@@ -1116,6 +1123,7 @@ val basicPreferences =
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                     AppPreference.UserInterfaceLanguage,
+                    AppPreference.UserProfileSettings,
                 ),
         ),
         PreferenceGroup(

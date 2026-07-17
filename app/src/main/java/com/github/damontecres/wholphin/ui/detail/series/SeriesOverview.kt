@@ -36,7 +36,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -116,7 +115,7 @@ fun SeriesOverview(
                     viewModel.setFavorite(itemId, favorite, currentPosition.episodeRowIndex)
                 },
                 onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog = itemId
                 },
                 onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -351,6 +350,7 @@ fun SeriesOverview(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog = null
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

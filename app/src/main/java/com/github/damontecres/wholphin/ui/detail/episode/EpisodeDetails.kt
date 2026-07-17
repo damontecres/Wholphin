@@ -50,7 +50,6 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSourceInfo
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
@@ -89,7 +88,7 @@ fun EpisodeDetails(
                 onClickWatch = viewModel::setWatched,
                 onClickFavorite = viewModel::setFavorite,
                 onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -210,6 +209,7 @@ fun EpisodeDetails(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }
