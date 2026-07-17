@@ -31,7 +31,7 @@
     <string name="director">Režisors</string>
     <string name="disabled">Atslēgts</string>
     <string name="discovered_servers">Atrastie serveri</string>
-    <string name="download_and_update"><![CDATA[Lejupielādēt & Atjaunināt]]></string>
+    <string name="download_and_update">Lejupielādēt &amp; Atjaunināt</string>
     <string name="downloading">Lejupielādē…</string>
     <string name="enabled">Ieslēgts</string>
     <string name="ends_at">Beigsies %1$s</string>
@@ -65,6 +65,7 @@
     <string name="more">Vairāk</string>
     <plurals name="movies">
         <item quantity="zero">Filmas</item>
+        <item quantity="other">Filmas</item>
     </plurals>
     <string name="name">Nosaukums</string>
     <string name="next_up">Rindā</string>
@@ -79,6 +80,7 @@
     <string name="path">Ceļš</string>
     <plurals name="people">
         <item quantity="zero">Cilvēki</item>
+        <item quantity="other">Cilvēki</item>
     </plurals>
     <string name="play_count">Skatījumu skaits</string>
     <string name="play_from_here">Atskaņot no šejienes</string>
@@ -103,7 +105,7 @@
     <string name="restart">Restartēt</string>
     <string name="resume">Turpināt</string>
     <string name="save">Saglabāt</string>
-    <string name="search_and_download"><![CDATA[Meklēt & Lejupielādēt]]></string>
+    <string name="search_and_download">Meklēt &amp; Lejupielādēt</string>
     <string name="search">Meklēt</string>
     <string name="searching">Meklē…</string>
     <string name="voice_search">Balss meklēšana</string>
@@ -148,6 +150,7 @@
     <string name="top_unwatched">Augstāk novērtētie un neredzētie</string>
     <plurals name="trailers">
         <item quantity="zero">Treileri</item>
+        <item quantity="other">Treileri</item>
     </plurals>
     <string name="tv_dvr_schedule">Ierakstu plāns</string>
     <string name="tv_guide">Programma</string>
@@ -155,6 +158,7 @@
     <string name="tv_seasons">Sezonas</string>
     <plurals name="tv_shows">
         <item quantity="zero">TV Šovi</item>
+        <item quantity="other">TV Šovi</item>
     </plurals>
     <string name="ui_interface">Saskarne</string>
     <string name="unknown">Nezināms</string>
@@ -182,36 +186,47 @@
     <string name="extras_title">Ekstras</string>
     <plurals name="other_extras">
         <item quantity="zero">Cits</item>
+        <item quantity="other">Cits</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="zero">Aizkadri</item>
+        <item quantity="other">Aizkadri</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="zero">Tituldziesmas</item>
+        <item quantity="other">Tituldziesmas</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="zero">Titulvideo</item>
+        <item quantity="other">Titulvideo</item>
     </plurals>
     <plurals name="clips">
         <item quantity="zero">Klipi</item>
+        <item quantity="other">Klipi</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="zero">Izgrieztās ainas</item>
+        <item quantity="other">Izgrieztās ainas</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="zero">Intervijas</item>
+        <item quantity="other">Intervijas</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="zero">Ainas</item>
+        <item quantity="other">Ainas</item>
     </plurals>
     <plurals name="samples">
         <item quantity="zero">Paraugi</item>
+        <item quantity="other">Paraugi</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="zero">Īssižeti</item>
+        <item quantity="other">Īssižeti</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="zero">Īsie rullīši</item>
+        <item quantity="other">Īsie rullīši</item>
     </plurals>
     <string name="favorite_items_title">Izlase %s</string>
     <plurals name="downloads">

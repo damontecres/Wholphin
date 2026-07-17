@@ -561,18 +561,19 @@
     <string name="mixer">Mixagem</string>
     <plurals name="featurettes">
         <item quantity="one">Bastidores</item>
+        <item quantity="other">Bastidores</item>
     </plurals>
     <plurals name="minutes">
         <item quantity="one">%s minuto</item>
         <item quantity="many">%s minutos</item>
         <item quantity="other">%s minutos</item>
     </plurals>
-    <string name="enter_url_api_key"><![CDATA[Insira a URL e a chave de API]]></string>
-    <string name="search_and_download_subtitles"><![CDATA[Procurar e baixar legendas]]></string>
-    <string name="download_and_update"><![CDATA[Baixar e atualizar]]></string>
-    <string name="search_and_download"><![CDATA[Procurar e baixar]]></string>
-    <string name="combine_continue_next"><![CDATA[Combinar \"Continue Assistindo\" e \"A Seguir\"]]></string>
-    <string name="cast_and_crew"><![CDATA[Elenco e equipe]]></string>
+    <string name="enter_url_api_key">Insira a URL e a chave de API</string>
+    <string name="search_and_download_subtitles">Procurar e baixar legendas</string>
+    <string name="download_and_update">Baixar e atualizar</string>
+    <string name="search_and_download">Procurar e baixar</string>
+    <string name="combine_continue_next">Combinar \"Continue Assistindo\" e \"A Seguir\"</string>
+    <string name="cast_and_crew">Elenco e equipe</string>
     <string name="albums">Álbuns</string>
     <string name="artists">Artistas</string>
     <string name="songs">Músicas</string>

@@ -30,7 +30,7 @@
     <string name="director">Instruktør</string>
     <string name="disabled">Deaktiveret</string>
     <string name="discovered_servers">Opdagede servere</string>
-    <string name="download_and_update"><![CDATA[Download og opdater]]></string>
+    <string name="download_and_update">Download og opdater</string>
     <string name="downloading">Downloader…</string>
     <string name="enabled">Aktiveret</string>
     <string name="ends_at">Slutter %1$s</string>
@@ -65,6 +65,7 @@
     <string name="more">Mere</string>
     <plurals name="movies">
         <item quantity="one">Film</item>
+        <item quantity="other">Film</item>
     </plurals>
     <string name="name">Navn</string>
     <string name="next_up">Næste</string>
@@ -79,6 +80,7 @@
     <string name="path">Filsti</string>
     <plurals name="people">
         <item quantity="one">Personer</item>
+        <item quantity="other">Personer</item>
     </plurals>
     <string name="play_count">Antal afspilninger</string>
     <string name="play_from_here">Afspil herfra</string>
@@ -103,7 +105,7 @@
     <string name="restart">Genstart</string>
     <string name="resume">Fortsæt</string>
     <string name="save">Gem</string>
-    <string name="search_and_download"><![CDATA[Søg og download]]></string>
+    <string name="search_and_download">Søg og download</string>
     <string name="search">Søg</string>
     <string name="searching">Søger…</string>
     <string name="voice_search">Stemmesøgning</string>
@@ -148,6 +150,7 @@
     <string name="top_unwatched">Bedst bedømte usete</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
+        <item quantity="other">Trailere</item>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">TV-guide</string>
@@ -155,6 +158,7 @@
     <string name="tv_seasons">Sæsoner</string>
     <plurals name="tv_shows">
         <item quantity="one">TV-serier</item>
+        <item quantity="other">TV-serier</item>
     </plurals>
     <string name="ui_interface">Grænseflade</string>
     <string name="unknown">Ukendt</string>
@@ -182,36 +186,47 @@
     <string name="extras_title">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Andet</item>
+        <item quantity="other">Andet</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bag kulisserne</item>
+        <item quantity="other">Bag kulisserne</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasange</item>
+        <item quantity="other">Temasange</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoer</item>
+        <item quantity="other">Temavideoer</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klip</item>
+        <item quantity="other">Klip</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Slettede scener</item>
+        <item quantity="other">Slettede scener</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interview</item>
+        <item quantity="other">Interview</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
+        <item quantity="other">Scener</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Prøver</item>
+        <item quantity="other">Prøver</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Specialindslag</item>
+        <item quantity="other">Specialindslag</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilm</item>
+        <item quantity="other">Kortfilm</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s download</item>
@@ -242,7 +257,7 @@
     <string name="auto_play_next">Afspil næste automatisk</string>
     <string name="check_for_updates">Søg efter opdateringer</string>
     <string name="combine_continue_next_summary">Gælder kun for tv-serier</string>
-    <string name="combine_continue_next"><![CDATA[Kombiner Fortsæt med at se & Næste]]></string>
+    <string name="combine_continue_next">Kombiner Fortsæt med at se &amp; Næste</string>
     <string name="direct_play_ass">Direkte afspilning af ASS-undertekster</string>
     <string name="direct_play_pgs">Direkte afspilning af PGS-undertekster</string>
     <string name="downmix_stereo">Mix altid ned til stereo</string>
@@ -327,7 +342,7 @@
     <string name="aspect_ratio">Aspektforhold</string>
     <string name="show_details">Vis detaljer</string>
     <string name="image_type">Billedtype</string>
-    <string name="cast_and_crew"><![CDATA[Skuespillere og filmhold]]></string>
+    <string name="cast_and_crew">Skuespillere og filmhold</string>
     <string name="guest_stars">Gæsteroller</string>
     <string name="edge_size">Kantstørrelse</string>
     <string name="refresh_rate_switching">Skift af billedopdateringsfrekvens</string>

@@ -75,6 +75,7 @@
     <string name="top_unwatched">Topprankade osedda</string>
     <plurals name="trailers">
         <item quantity="one">Förhandsvisningar</item>
+        <item quantity="other">Förhandsvisningar</item>
     </plurals>
     <string name="tv_dvr_schedule">DVR-schema</string>
     <string name="tv_guide">TV Guide</string>
@@ -106,36 +107,47 @@
     <string name="extras_title">Extramaterial</string>
     <plurals name="other_extras">
         <item quantity="one">Annat</item>
+        <item quantity="other">Annat</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bakom kulisserna</item>
+        <item quantity="other">Bakom kulisserna</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temalåtar</item>
+        <item quantity="other">Temalåtar</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideor</item>
+        <item quantity="other">Temavideor</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
+        <item quantity="other">Klipp</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Borttagna scener</item>
+        <item quantity="other">Borttagna scener</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuer</item>
+        <item quantity="other">Intervjuer</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
+        <item quantity="other">Scener</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Exempel</item>
+        <item quantity="other">Exempel</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Specialinslag</item>
+        <item quantity="other">Specialinslag</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmer</item>
+        <item quantity="other">Kortfilmer</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s nedladdning</item>
@@ -231,7 +243,7 @@
     <string name="disable_if_crash">Inaktivera om du upplever krascher</string>
     <string name="mpv_options">MPV inställningar</string>
     <string name="exoplayer_options">ExoPlayer inställningar</string>
-    <string name="download_and_update"><![CDATA[Ladda ner och uppdatera]]></string>
+    <string name="download_and_update">Ladda ner och uppdatera</string>
     <string name="skip_segment_intro">Hoppa över intro</string>
     <string name="skip_segment_outro">Hoppa över eftertexter</string>
     <string name="skip_segment_unknown">Hoppa över segment</string>
@@ -362,8 +374,8 @@
     <string name="skip_ask">Fråga om att hoppa över</string>
     <string name="skip_automatically">Hoppa över automatiskt</string>
     <string name="send_app_logs_summary">Användbart för felsökning</string>
-    <string name="search_and_download_subtitles"><![CDATA[Sök och ladda ner undertexter]]></string>
-    <string name="search_and_download"><![CDATA[Sök och ladda ner]]></string>
+    <string name="search_and_download_subtitles">Sök och ladda ner undertexter</string>
+    <string name="search_and_download">Sök och ladda ner</string>
     <string name="saturation">Mättnad</string>
     <string name="save_for_album">Spara till album</string>
     <string name="save_to_server">Spara till serverns användarprofil</string>
@@ -443,7 +455,7 @@
     <string name="view_options_type_grid">Rutnät</string>
     <string name="view_options_type_list">Lista</string>
     <string name="view_options_type_list_compact">Kompakt lista</string>
-    <string name="enter_url_api_key"><![CDATA[Ange URL och API-nyckel]]></string>
+    <string name="enter_url_api_key">Ange URL och API-nyckel</string>
     <string name="no_subtitles_found">Inga externa undertexter hittades</string>
     <string name="in_app_screensaver">Använd skärmsläckare i appen</string>
     <string name="lyricist">Textförfattare</string>
@@ -501,13 +513,13 @@
     <string name="no_servers_found">Inga servrar hittades</string>
     <string name="only_forced_subtitles">Endast tvingade undertexter</string>
     <string name="no_trailers">Inga trailrar</string>
-    <string name="combine_continue_next"><![CDATA[Kombinera Fortsätt titta och kommande avsnitt]]></string>
+    <string name="combine_continue_next">Kombinera Fortsätt titta och kommande avsnitt</string>
     <string name="framerate">Bildfrekvens</string>
     <string name="bit_depth">Bitdjup</string>
     <string name="video_range">Videoomfång</string>
     <string name="video_range_type">Typ av videoomfång</string>
     <string name="color_space">Färgrymd</string>
-    <string name="cast_and_crew"><![CDATA[Rollista och team]]></string>
+    <string name="cast_and_crew">Rollista och team</string>
     <string name="genres_in">Genrer i %1$s</string>
     <string name="remove_continue_watching">Ta bort från Fortsätt titta</string>
     <string name="local">Lokal</string>

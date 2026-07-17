@@ -42,6 +42,7 @@
     <string name="no_update_available">Nu este disponibilă nicio actualizare</string>
     <plurals name="movies">
         <item quantity="one">Filme</item>
+        <item quantity="other">Filme</item>
     </plurals>
     <string name="library">Librărie</string>
     <string name="go_to">Mergi la</string>
@@ -53,6 +54,7 @@
     <string name="mark_watched">Marchează ca vizionat</string>
     <plurals name="people">
         <item quantity="one">Persoane</item>
+        <item quantity="other">Persoane</item>
     </plurals>
     <string name="play_count">Număr de redări</string>
     <string name="more">Mai mult</string>
@@ -84,7 +86,7 @@
     <string name="aspect_ratio">Rată de aspect</string>
     <string name="show_details">Înregistrare detaliată</string>
     <string name="image_type">Tip imagine</string>
-    <string name="cast_and_crew"><![CDATA[Distribuție și echipă]]></string>
+    <string name="cast_and_crew">Distribuție și echipă</string>
     <string name="guest_stars">Vedete invitate</string>
     <string name="level">Nivel</string>
     <string name="channels">Canale</string>
@@ -169,7 +171,7 @@
     <string name="api_key">Cheie API</string>
     <string name="seerr_login">Conectează-te la serverul Seerr</string>
     <string name="discovered_servers">Servere descoperite</string>
-    <string name="download_and_update"><![CDATA[Descarcă & Actualizează]]></string>
+    <string name="download_and_update">Descarcă &amp; Actualizează</string>
     <string name="commercial">Reclamă</string>
     <string name="community_rating">Evaluarea comunității</string>
     <string name="compose_error_message_title">A apărut o eroare! Apasă butonul pentru a trimite jurnalele către serverul tău.</string>
@@ -211,6 +213,7 @@
     <string name="tv_seasons">Sezoane</string>
     <plurals name="tv_shows">
         <item quantity="one">Seriale TV</item>
+        <item quantity="other">Seriale TV</item>
     </plurals>
     <string name="ui_interface">Interfață</string>
     <string name="unknown">Necunoscut</string>
@@ -222,6 +225,7 @@
     <string name="one_click_pause">Pauză cu un click</string>
     <plurals name="interviews">
         <item quantity="one">Interviuri</item>
+        <item quantity="other">Interviuri</item>
     </plurals>
     <string name="background">Fundal</string>
     <plurals name="downloads">
@@ -289,7 +293,7 @@
     <string name="skip_ask">Cere să sari peste</string>
     <string name="seerr_jellyfin_user">Utilizator Jellyfin</string>
     <string name="seerr_local_user">Utilizator local</string>
-    <string name="search_and_download_subtitles"><![CDATA[Caută & descarcă subtitrări]]></string>
+    <string name="search_and_download_subtitles">Caută &amp; descarcă subtitrări</string>
     <string name="composer">Compozitor</string>
     <string name="writer">Scriitor</string>
     <string name="lyrics">Versuri</string>
@@ -311,7 +315,7 @@
     <string name="playback_debug_info">Afișează informații de depanare privind redarea</string>
     <string name="only_forced_subtitles">Doar subtitrări forțate</string>
     <string name="save">Salvează</string>
-    <string name="search_and_download"><![CDATA[Caută & Descarcă]]></string>
+    <string name="search_and_download">Caută &amp; Descarcă</string>
     <string name="resume">Reia</string>
     <string name="voice_starting">Începe</string>
     <string name="voice_search_prompt">Vorbește pentru a căuta</string>
@@ -321,6 +325,7 @@
     <string name="top_unwatched">Cele mai bine cotate, nevizionate</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
+        <item quantity="other">Trailere</item>
     </plurals>
     <string name="play_with_transcoding">Redă cu transcodare</string>
     <string name="media_information">Informații media</string>
@@ -328,21 +333,26 @@
     <string name="add_to_playlist">Adaugă în lista de redare</string>
     <plurals name="other_extras">
         <item quantity="one">Altele</item>
+        <item quantity="other">Altele</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">În spatele scenelor</item>
+        <item quantity="other">În spatele scenelor</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Melodii tematice</item>
+        <item quantity="other">Melodii tematice</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Scene șterse</item>
+        <item quantity="other">Scene șterse</item>
     </plurals>
     <string name="official_rating">Evaluare parentală</string>
     <string name="runtime_sort">Timp de execuție</string>
     <string name="extras_title">Extra</string>
     <plurals name="clips">
         <item quantity="one">Clipuri</item>
+        <item quantity="other">Clipuri</item>
     </plurals>
     <string name="favorite_items_title">%s favorit</string>
     <string name="app_theme">Temă aplicație</string>
