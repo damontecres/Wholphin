@@ -272,32 +272,45 @@ fun SeekBar(
             seekBack = seekBack,
             seekForward = seekForward,
         )
-        Row(
+        SeekTimecodes(
+            positionMs = position,
+            durationMs = player.duration,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            val resources = LocalResources.current
-            val positionSec = position / 1000
-            val remainingSec = (player.duration - position) / 1000
-            val positionText = remember(positionSec) { resources.formatDuration(positionSec.seconds) }
-            val remainingText = remember(remainingSec) { "-${resources.formatDuration(remainingSec.seconds)}" }
-            Text(
-                text = positionText,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
-            Text(
-                text = remainingText,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
-        }
+        )
+    }
+}
+
+@Composable
+fun SeekTimecodes(
+    positionMs: Long,
+    durationMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        val resources = LocalResources.current
+        val positionSec = positionMs / 1000
+        val remainingSec = (durationMs - positionMs) / 1000
+        val positionText = remember(positionSec) { resources.formatDuration(positionSec.seconds) }
+        val remainingText = remember(remainingSec) { "-${resources.formatDuration(remainingSec.seconds)}" }
+        Text(
+            text = positionText,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+                Modifier
+                    .padding(8.dp),
+        )
+        Text(
+            text = remainingText,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+                Modifier
+                    .padding(8.dp),
+        )
     }
 }
 

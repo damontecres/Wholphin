@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,13 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
@@ -57,7 +53,6 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
-import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
@@ -67,7 +62,6 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * The overlay during playback showing controls, seek preview image, debug info, etc
@@ -291,33 +285,10 @@ fun PlaybackOverlay(
                                 xPercentage = seekProgressPercent.coerceIn(0f, 1f),
                             ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
                 ) {
-                    if (trickplayInfo != null) {
-                        val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
-                        val index =
-                            (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
-                        val imageUrl = remember(index) { trickplayUrlFor(index) }
-
-                        if (imageUrl != null) {
-                            SeekPreviewImage(
-                                modifier = Modifier,
-                                previewImageUrl = imageUrl,
-                                seekProgressMs = seekProgressMs,
-                                trickPlayInfo = trickplayInfo,
-                            )
-                        }
-                    }
-                    val resources = LocalResources.current
-                    val seekText = remember(seekProgressMs / 1000L) { resources.formatDuration((seekProgressMs / 1000L).seconds) }
-                    Text(
-                        text = seekText,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier =
-                            Modifier
-                                .background(
-                                    Color.Black.copy(alpha = 0.6f),
-                                    shape = RoundedCornerShape(4.dp),
-                                ).padding(horizontal = 8.dp, vertical = 4.dp),
+                    TrickplayPreview(
+                        seekProgressMs = seekProgressMs,
+                        trickplayInfo = trickplayInfo,
+                        trickplayUrlFor = trickplayUrlFor,
                     )
                 }
             }

@@ -87,6 +87,12 @@ message PlaybackPreferences {
   bool resolution_switching = 23;
   string external_player = 24;
   bool cinema_mode = 25;
+  DpadSeekMode dpad_seek_mode = 26;
+}
+
+enum DpadSeekMode {
+  SKIP_TIME = 0;
+  TRICKPLAY = 1;
 }
 
 message HomePagePreferences{

@@ -69,6 +69,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
+import com.github.damontecres.wholphin.preferences.DpadSeekMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
@@ -78,6 +79,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.overlay.DpadSeekOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.PauseIndicator
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
@@ -242,6 +244,14 @@ fun PlaybackPageContent(
                     viewModel.navigationManager.goBack()
                 },
                 onPlaybackDialogTypeClick = { playbackDialog = it },
+                onEnterHiddenControls = {
+                    if (prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY && skipIndicatorDuration != 0L) {
+                        skipIndicatorDuration = 0L
+                        true
+                    } else {
+                        false
+                    }
+                },
             )
         }
 
@@ -353,29 +363,52 @@ fun PlaybackPageContent(
 
             // If D-pad skipping, show the amount skipped in an animation
             if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
-                SkipIndicator(
-                    durationMs = skipIndicatorDuration,
-                    onFinish = {
-                        skipIndicatorDuration = 0L
-                    },
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 70.dp),
-                )
-                // Show a small progress bar along the bottom of the screen
-                val showSkipProgress = true // TODO get from preferences
-                if (showSkipProgress) {
-                    val percent = skipPosition.toFloat() / player.duration.toFloat()
-                    Box(
+                val seekMode = prefs.dpadSeekMode
+
+                if (seekMode == DpadSeekMode.TRICKPLAY) {
+                    // Trickplay preview overlay
+                    DpadSeekOverlay(
+                        player = player,
+                        seekPositionMs = skipPosition,
+                        trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                        trickplayUrlFor = viewModel::getTrickplayUrl,
                         modifier =
                             Modifier
-                                .align(Alignment.BottomStart)
-                                .background(MaterialTheme.colorScheme.border)
-                                .clip(RectangleShape)
-                                .height(3.dp)
-                                .fillMaxWidth(percent),
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 24.dp)
+                                .fillMaxWidth(.95f),
                     )
+                    // Clear the overlay after a delay
+                    LaunchedEffect(skipIndicatorDuration) {
+                        delay(1_500L)
+                        skipIndicatorDuration = 0L
+                    }
+                } else {
+                    // Skip time mode: show seek distance indicator
+                    SkipIndicator(
+                        durationMs = skipIndicatorDuration,
+                        onFinish = {
+                            skipIndicatorDuration = 0L
+                        },
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 70.dp),
+                    )
+                    // Show a small progress bar along the bottom of the screen
+                    val showSkipProgress = true // TODO get from preferences
+                    if (showSkipProgress) {
+                        val percent = skipPosition.toFloat() / player.duration.toFloat()
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomStart)
+                                    .background(MaterialTheme.colorScheme.border)
+                                    .clip(RectangleShape)
+                                    .height(3.dp)
+                                    .fillMaxWidth(percent),
+                        )
+                    }
                 }
             }
 
