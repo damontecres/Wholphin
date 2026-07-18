@@ -135,7 +135,9 @@
     <string name="video">Video</string>
     <string name="videos">Videoer</string>
     <string name="watch_live">Se direkte</string>
-    <string name="years_old">%1$d år gammel</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d år gammel</item>
+    </plurals>
     <string name="play_with_transcoding">Spill av med transkoding</string>
     <string name="media_information">Mediainformasjon</string>
     <string name="show_clock">Vis klokke</string>

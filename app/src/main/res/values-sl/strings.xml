@@ -164,7 +164,9 @@
     <string name="video">Video</string>
     <string name="videos">Videji</string>
     <string name="watch_live">Glej v živo</string>
-    <string name="years_old">%1$d let staro</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d let staro</item>
+    </plurals>
     <string name="play_with_transcoding">Igrajte s transkodiranjem</string>
     <string name="media_information">Informacije o mediji</string>
     <string name="show_clock">Prikaži uro</string>

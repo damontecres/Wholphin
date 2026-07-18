@@ -166,7 +166,9 @@
     <string name="video">Vídeo</string>
     <string name="videos">Vídeos</string>
     <string name="watch_live">Assista ao vivo</string>
-    <string name="years_old">%1$d anos de idade</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d anos de idade</item>
+    </plurals>
     <string name="play_with_transcoding">Reproduzir com transcodificação</string>
     <string name="media_information">Informação de Mídia</string>
     <string name="show_clock">Mostrar Relógio</string>

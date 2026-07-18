@@ -111,7 +111,9 @@
     <string name="video_scale">Масштаб видео</string>
     <string name="video">Видео</string>
     <string name="videos">Видео</string>
-    <string name="years_old">%1$d возраст</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d возраст</item>
+    </plurals>
     <string name="play_with_transcoding">Воспроизвести с перекодированием</string>
     <string name="show_clock">Показывать часы</string>
     <string name="create_playlist">Создать новый плейлист</string>

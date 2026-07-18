@@ -231,7 +231,9 @@
     <string name="video">Video</string>
     <string name="videos">Videod</string>
     <string name="watch_live">Vaata otse-eetris</string>
-    <string name="years_old">%1$d aasta(t) vana</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d aasta(t) vana</item>
+    </plurals>
     <string name="play_with_transcoding">Esita koos teisendamisega</string>
     <string name="show_clock">Näita kella</string>
     <string name="aired_episode_order">Eetris olnud osade järjestus</string>
