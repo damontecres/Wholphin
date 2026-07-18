@@ -27,7 +27,7 @@
     <string name="director">Regissør</string>
     <string name="disabled">Deaktivert</string>
     <string name="discovered_servers">Oppdagede servere</string>
-    <string name="download_and_update"><![CDATA[Last ned og oppdater]]></string>
+    <string name="download_and_update">Last ned og oppdater</string>
     <string name="downloading">Laster ned…</string>
     <string name="enabled">Aktivert</string>
     <string name="enter_server_url">Oppgi server-IP eller URL</string>
@@ -94,7 +94,7 @@
     <string name="restart">Start på nytt</string>
     <string name="resume">Fortsett</string>
     <string name="save">Lagre</string>
-    <string name="search_and_download"><![CDATA[Søk og last ned]]></string>
+    <string name="search_and_download">Søk og last ned</string>
     <string name="search">Søk</string>
     <string name="searching">Søker…</string>
     <string name="select_server">Velg server</string>
@@ -121,6 +121,7 @@
     <string name="top_unwatched">Best vurderte usette</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
+        <item quantity="other">Trailere</item>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">Programoversikt</string>
@@ -155,36 +156,47 @@
     <string name="extras_title">Ekstramateriale</string>
     <plurals name="other_extras">
         <item quantity="one">Annet</item>
+        <item quantity="other">Annet</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bak kulissene</item>
+        <item quantity="other">Bak kulissene</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasanger</item>
+        <item quantity="other">Temasanger</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoer</item>
+        <item quantity="other">Temavideoer</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
+        <item quantity="other">Klipp</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Slettede scener</item>
+        <item quantity="other">Slettede scener</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuer</item>
+        <item quantity="other">Intervjuer</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
+        <item quantity="other">Scener</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Smakebiter</item>
+        <item quantity="other">Smakebiter</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Bakomfilmer</item>
+        <item quantity="other">Bakomfilmer</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmer</item>
+        <item quantity="other">Kortfilmer</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s nedlasting</item>
@@ -210,7 +222,7 @@
     <string name="auto_play_next">Spill neste automatisk</string>
     <string name="check_for_updates">Sjekk etter oppdateringer</string>
     <string name="combine_continue_next_summary">Gjelder kun TV-serier</string>
-    <string name="combine_continue_next"><![CDATA[Slå sammen \'Fortsett å se\' og \'Neste\']]></string>
+    <string name="combine_continue_next">Slå sammen \'Fortsett å se\' og \'Neste\'</string>
     <string name="direct_play_ass">Direkteavspilling av ASS-undertekster</string>
     <string name="direct_play_pgs">Direkteavspilling av PGS-undertekster</string>
     <string name="downmix_stereo">Alltid nedmiks til stereo</string>
@@ -295,7 +307,7 @@
     <string name="aspect_ratio">Bildeforhold</string>
     <string name="show_details">Vis detaljer</string>
     <string name="image_type">Bildetype</string>
-    <string name="cast_and_crew"><![CDATA[Skuespillere og medarbeidere]]></string>
+    <string name="cast_and_crew">Skuespillere og medarbeidere</string>
     <string name="guest_stars">Gjesteroller</string>
     <string name="edge_size">Kantstørrelse</string>
     <string name="refresh_rate_switching">Bytting av bildeoppdateringsfrekvens</string>

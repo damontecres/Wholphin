@@ -5,6 +5,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.pluralRes
+import com.github.damontecres.wholphin.data.stringRes
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -48,9 +50,10 @@ class ExtrasService
                         if (items.size == 1) {
                             val item = items.first()
                             val title =
-                                item.title ?: context.resources.getQuantityString(type.pluralRes, 1)
+                                item.title.takeIf { it.isNotNullOrBlank() }
+                                    ?: context.resources.getQuantityString(type.pluralRes, 1)
                             val subtitle =
-                                if (item.title == null) {
+                                if (item.title.isNotNullOrBlank()) {
                                     context.resources.getQuantityString(type.pluralRes, 1)
                                 } else {
                                     null
@@ -64,8 +67,7 @@ class ExtrasService
                                 imageUrl = imageUrlService.getItemImageUrl(item, ImageType.PRIMARY),
                             )
                         } else if (items.size > 1) {
-                            val title =
-                                context.resources.getQuantityString(type.pluralRes, items.size)
+                            val title = context.resources.getString(type.stringRes)
                             val subtitle =
                                 context.resources.getQuantityString(
                                     R.plurals.items,
