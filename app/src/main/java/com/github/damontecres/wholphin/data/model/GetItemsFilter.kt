@@ -22,9 +22,13 @@ data class CollectionFolderFilter(
     val nameOverride: String? = null,
     val filter: GetItemsFilter = GetItemsFilter(),
     /**
-     * Whether to use the libray's saved sort & filter
+     * Whether to use the library's saved sort & filter
      */
     val useSavedLibraryDisplayInfo: Boolean = true,
+    /**
+     * Use a different ID for the library's saved sort & filter, such as for library's genres
+     */
+    val libraryDisplayInfoIdOverride: String? = null,
 )
 
 /**

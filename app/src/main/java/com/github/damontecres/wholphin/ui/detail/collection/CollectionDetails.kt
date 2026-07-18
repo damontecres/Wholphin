@@ -56,7 +56,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
-import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 
@@ -91,7 +90,7 @@ fun CollectionDetails(
                 viewModel.setFavorite(itemId, favorite, position)
             },
             onClickAddPlaylist = { itemId ->
-                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                playlistViewModel.loadPlaylists()
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -273,6 +272,7 @@ fun CollectionDetails(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

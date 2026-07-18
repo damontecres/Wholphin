@@ -91,7 +91,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -177,7 +176,7 @@ fun HomePage(
                                         onClickWatch = viewModel::setWatched,
                                         onClickFavorite = viewModel::setFavorite,
                                         onClickAddPlaylist = { itemId ->
-                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            playlistViewModel.loadPlaylists()
                                             showPlaylistDialog = itemId
                                         },
                                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -258,6 +257,7 @@ fun HomePage(
                         playlistViewModel.createPlaylistAndAddItem(it, itemId)
                         showPlaylistDialog = null
                     },
+                    onSearch = playlistViewModel::loadPlaylists,
                     elevation = 3.dp,
                 )
             }

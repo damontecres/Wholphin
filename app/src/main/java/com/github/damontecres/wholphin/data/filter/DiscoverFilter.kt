@@ -6,7 +6,7 @@ import com.github.damontecres.wholphin.api.seerr.SearchApi
 import com.github.damontecres.wholphin.api.seerr.SearchApi.CertificationModeDiscoverTvGet
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverMoviesGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.DiscoverTvGet200Response
-import com.github.damontecres.wholphin.api.seerr.model.TvDetails
+import com.github.damontecres.wholphin.api.seerr.model.TvShowStatus
 import com.github.damontecres.wholphin.ui.data.flip
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.SortOrder
@@ -63,7 +63,7 @@ data class DiscoverFilter(
     val watchRegion: String? = null, // US
     // networkIds?
     // val watchProviders: String? = null,
-    val status: List<TvDetails.Status>? = null,
+    val status: List<TvShowStatus>? = null,
     val certification: List<String>? = null,
 //    val certificationGte: String? = null,
 //    val certificationLte: String? = null,
@@ -233,15 +233,15 @@ data object DiscoverTvStudiosFilter : DiscoverFilterBy<List<Int>> {
     ): DiscoverFilter = filter.copy(networkIds = value)
 }
 
-data object DiscoverTvStatusFilter : DiscoverFilterBy<List<TvDetails.Status>> {
+data object DiscoverTvStatusFilter : DiscoverFilterBy<List<TvShowStatus>> {
     override val stringRes: Int = R.string.production_status
 
     override val supportMultiple: Boolean = true
 
-    override fun get(filter: DiscoverFilter): List<TvDetails.Status>? = filter.status
+    override fun get(filter: DiscoverFilter): List<TvShowStatus>? = filter.status
 
     override fun set(
-        value: List<TvDetails.Status>?,
+        value: List<TvShowStatus>?,
         filter: DiscoverFilter,
     ): DiscoverFilter = filter.copy(status = value)
 }
