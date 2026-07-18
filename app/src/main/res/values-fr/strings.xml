@@ -692,4 +692,8 @@
     <string name="prefer_ac3_for_surround">Utilisez AC3 pour l\'audio surround</string>
     <string name="blocklisted">sur liste noire</string>
     <string name="unavailable">Indisponible</string>
+    <string name="subtitle_mode_only_forced">forcés uniquement</string>
+    <string name="subtitle_mode_none">Aucun</string>
+    <string name="preferred_subtitle_language">Langue de sous-titre préférée</string>
+    <string name="preferred_audio_language">Langue audio préférée</string>
 </resources>
