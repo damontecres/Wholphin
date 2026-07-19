@@ -184,6 +184,8 @@
     <string name="video">Video</string>
     <string name="videos">I video</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d anno</item>
+        <item quantity="many">%1$d anni</item>
         <item quantity="other">%1$d anni</item>
     </plurals>
     <string name="play_with_transcoding">Riproduci con transcodifica</string>
@@ -619,7 +621,7 @@
     <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
     <string name="play_with">Riproduci con</string>
     <string name="transcoding">Trascodifica</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="results">Risultati</string>
     <string name="require_login">Richiedi login per il profilo</string>
     <string name="combined_search_results">Risultati di ricerca combinati</string>
@@ -692,4 +694,17 @@
     <string name="prefer_ac3_for_surround">Usa AC3 per l’audio surround</string>
     <string name="blocklisted">Bloccati</string>
     <string name="unavailable">Non disponibile</string>
+    <string name="subtitle_mode_default">Predefinito</string>
+    <string name="subtitle_mode_none">Nessuno</string>
+    <string name="profile_specific_settings_from_server">Impostazioni profilo utente dal server</string>
+    <string name="subtitle_mode">Modalità sottotitoli</string>
+    <string name="use_user_profile">Usa le impostazioni del tuo profilo</string>
+    <string name="subtitle_mode_smart">Intelligente</string>
+    <string name="subtitle_mode_only_forced">Solo forzati</string>
+    <string name="subtitle_mode_always">Sempre</string>
+    <string name="preferred_subtitle_language">Lingua preferita per i sottotitoli</string>
+    <string name="preferred_audio_language">Lingua preferita per l\'audio</string>
+    <string name="override_user_profile_settings">Altre impostazioni del profilo utente</string>
+    <string name="override_user_profile_settings_summary">Sovrascrivi le impostazioni del tuo profilo utente dal server</string>
+    <string name="any_language">Qualsiasi lingua</string>
 </resources>
