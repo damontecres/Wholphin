@@ -9,7 +9,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.util.LocalDateTimeSerializer
 import com.github.damontecres.wholphin.util.WholphinDispatchers
-import com.github.damontecres.wholphin.util.supportItemKinds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Semaphore
@@ -23,6 +22,7 @@ import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
@@ -60,16 +60,8 @@ class LatestNextUpService
                     userId = userId,
                     fields = SlimItemFields,
                     limit = limit,
-                    includeItemTypes =
-                        if (includeEpisodes) {
-                            supportItemKinds
-                        } else {
-                            supportItemKinds
-                                .toMutableSet()
-                                .apply {
-                                    remove(BaseItemKind.EPISODE)
-                                }
-                        },
+                    mediaTypes = listOf(MediaType.VIDEO),
+                    excludeItemTypes = if (!includeEpisodes) listOf(BaseItemKind.EPISODE) else null,
                     enableTotalRecordCount = false,
                 )
             val items =

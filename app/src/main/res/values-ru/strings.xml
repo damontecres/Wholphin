@@ -27,7 +27,7 @@
     <string name="directed_by">Режиссёр %1$s</string>
     <string name="director">Режиссёр</string>
     <string name="discovered_servers">Обнаруженные серверы</string>
-    <string name="download_and_update"><![CDATA[Загрузить и Обновить]]></string>
+    <string name="download_and_update">Загрузить и Обновить</string>
     <string name="downloading">Скачивание…</string>
     <string name="enter_server_url">Введите IP или URL сервера</string>
     <string name="episodes">Эпизоды</string>
@@ -73,7 +73,7 @@
     <string name="remove_favorite">Убрать из избранного</string>
     <string name="resume">Продолжить</string>
     <string name="save">Сохранить</string>
-    <string name="search_and_download"><![CDATA[Найти и скачать]]></string>
+    <string name="search_and_download">Найти и скачать</string>
     <string name="search">Найти</string>
     <string name="searching">Поиск…</string>
     <string name="select_server">Выберите сервер</string>
@@ -111,7 +111,9 @@
     <string name="video_scale">Масштаб видео</string>
     <string name="video">Видео</string>
     <string name="videos">Видео</string>
-    <string name="years_old">%1$d возраст</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d возраст</item>
+    </plurals>
     <string name="play_with_transcoding">Воспроизвести с перекодированием</string>
     <string name="show_clock">Показывать часы</string>
     <string name="create_playlist">Создать новый плейлист</string>
@@ -132,6 +134,7 @@
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">За кадром</item>
+        <item quantity="other">За кадром</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Клип</item>
@@ -199,7 +202,7 @@
     <string name="watch_live">Смотреть прямой эфир</string>
     <string name="aired_episode_order">Порядок выхода эпизодов</string>
     <string name="reset">Сброс</string>
-    <string name="cast_and_crew"><![CDATA[Снимались и снимали]]></string>
+    <string name="cast_and_crew">Снимались и снимали</string>
     <string name="guest_stars">Приглашённые звёзды</string>
     <string name="aspect_ratio">Соотношение сторон</string>
     <string name="show_details">Показать подробности</string>
@@ -271,7 +274,7 @@
     <string name="auto_play_next_delay">Задержка перед воспроизведением следующей серии</string>
     <string name="auto_play_next">Автовоспроизведение следующей серии</string>
     <string name="combine_continue_next_summary">Применяется только к Телешоу</string>
-    <string name="combine_continue_next"><![CDATA[Объединить Продолжить просмотр и Далее]]></string>
+    <string name="combine_continue_next">Объединить Продолжить просмотр и Далее</string>
     <string name="direct_play_ass">Прямое воспроизведение ASS-субтитров</string>
     <string name="direct_play_pgs">Прямое воспроизведение PGS-субтитров</string>
     <string name="font_size">Размер шрифта</string>
@@ -295,9 +298,11 @@
     </plurals>
     <plurals name="samples">
         <item quantity="one">Отрывки</item>
+        <item quantity="other">Отрывки</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Дополнительные материалы</item>
+        <item quantity="other">Дополнительные материалы</item>
     </plurals>
     <string name="player_backend">Выбор плеера</string>
     <string name="edge_size">Толщина обводки</string>
@@ -306,9 +311,11 @@
     <string name="forced_track">Форсированные</string>
     <plurals name="theme_songs">
         <item quantity="one">Саундтреки</item>
+        <item quantity="other">Саундтреки</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Видеоролики</item>
+        <item quantity="other">Видеоролики</item>
     </plurals>
     <string name="nav_drawer_pins">Настроить элементы боковой панели</string>
     <string name="nav_drawer_pins_summary">Выберите элементы для показа на панели, остальные элементы будут скрыты</string>
@@ -323,6 +330,7 @@
     <string name="pass_out_protection">Остановка воспроизведения при бездействии</string>
     <plurals name="shorts">
         <item quantity="one">Короткометражки</item>
+        <item quantity="other">Короткометражки</item>
     </plurals>
     <string name="ends_at">Конец в %1$s</string>
     <string name="enter_server_address">Введите адрес сервера</string>

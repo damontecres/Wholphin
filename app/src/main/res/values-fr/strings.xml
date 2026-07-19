@@ -178,7 +178,9 @@
     <string name="tv_guide">Guide</string>
     <string name="ui_interface">Interface</string>
     <string name="video_scale">Échelle de la vidéo</string>
-    <string name="years_old">%1$d ans</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d ans</item>
+    </plurals>
     <string name="italic_font">Mettre la police en italique</string>
     <string name="official_rating">Classification parentale</string>
     <string name="extras_title">Bonus</string>

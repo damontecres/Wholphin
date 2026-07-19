@@ -432,6 +432,7 @@ fun NavDrawer(
                                     viewModel.setIndex(HOME_INDEX)
                                     if (destination is Destination.Home) {
                                         viewModel.navigationManager.reloadHome()
+                                        onClearBackdrop.invoke()
                                     } else {
                                         viewModel.navigationManager.goToHome()
                                     }
