@@ -173,9 +173,9 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                             }
                         if (newStream != null) {
                             var audioIndex = currentPlayback.audioIndex
-                            if (audioIndex != TrackIndex.UNSPECIFIED) {
-                                // User has picked a specific audio track
-                                // Since, now adding a new external subtitle track, need to adjust the audio index as well
+                            if (audioIndex != TrackIndex.UNSPECIFIED && audioIndex >= newStream.index) {
+                                // User has previously picked a specific audio track
+                                // If the new external subtitle track was added before the audio track, need to adjust the audio index as well
                                 Timber.v("New external subtitle, audioIndex=$audioIndex, adding 1")
                                 audioIndex += 1
                                 state.value.currentItemPlayback?.let { currentItemPlayback ->
