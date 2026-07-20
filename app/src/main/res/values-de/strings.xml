@@ -672,4 +672,17 @@
     <string name="prefer_ac3_for_surround">AC3 für Surround Sound bevorzugen</string>
     <string name="blocklisted">Auf Blockliste hinzugefügt</string>
     <string name="unavailable">Nicht verfügbar</string>
+    <string name="profile_specific_settings_from_server">Benutzerprofil-Einstellungen auf dem Server</string>
+    <string name="subtitle_mode">Modus Untertitel</string>
+    <string name="use_user_profile">Nutze deine Profileinstellungen</string>
+    <string name="subtitle_mode_default">Standard</string>
+    <string name="subtitle_mode_smart">Intelligent</string>
+    <string name="subtitle_mode_only_forced">Nur Forced</string>
+    <string name="subtitle_mode_always">Immer</string>
+    <string name="subtitle_mode_none">Keine</string>
+    <string name="preferred_subtitle_language">Bevorzugte Untertitelsprache</string>
+    <string name="preferred_audio_language">Bevorzugte Audiosprache</string>
+    <string name="override_user_profile_settings">Weitere Benutzerprofil-Einstellungen</string>
+    <string name="override_user_profile_settings_summary">Überschreibe deine Benutzerprofileinstellungen mit denen vom Server</string>
+    <string name="any_language">Beliebige Sprache</string>
 </resources>
