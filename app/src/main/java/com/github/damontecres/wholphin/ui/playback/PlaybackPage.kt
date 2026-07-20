@@ -223,6 +223,28 @@ fun PlaybackPageContent(
         skipIndicatorDuration += delta
         skipPosition = player.currentPosition
     }
+    val onDpadSeek: (Long) -> Boolean = { deltaMs ->
+        if (prefs.dpadSeekMode != DpadSeekMode.TRICKPLAY) {
+            false
+        } else {
+            if (skipIndicatorDuration == 0L) {
+                skipPosition = player.currentPosition
+            }
+            if ((skipIndicatorDuration > 0 && deltaMs < 0) ||
+                (skipIndicatorDuration < 0 && deltaMs > 0)
+            ) {
+                skipIndicatorDuration = 0L
+            }
+            skipIndicatorDuration += deltaMs
+            skipPosition =
+                (skipPosition + deltaMs).coerceIn(
+                    minimumValue = 0L,
+                    maximumValue = player.duration.coerceAtLeast(0L),
+                )
+            seekBarState.onValueChange(skipPosition)
+            true
+        }
+    }
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
         remember(isLtr, preferences) {
@@ -252,6 +274,7 @@ fun PlaybackPageContent(
                         false
                     }
                 },
+                onDpadSeek = onDpadSeek,
             )
         }
 
