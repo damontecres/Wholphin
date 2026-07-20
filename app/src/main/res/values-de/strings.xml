@@ -59,6 +59,7 @@
     <string name="version">Version</string>
     <string name="watch_live">Live ansehen</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d Jahr alt</item>
         <item quantity="other">%1$d Jahre alt</item>
     </plurals>
     <string name="extras_title">Extras</string>
@@ -181,7 +182,7 @@
     <string name="installed_version">Installierte Version</string>
     <string name="max_homepage_items">Max. Anzahl Objekte je Startseiten-Reihe</string>
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ</string>
-    <string name="live_tv">Live TV</string>
+    <string name="live_tv">Live-TV</string>
     <string name="outro">Abspann</string>
     <string name="play_count">Wiedergabeanzahl</string>
     <string name="playback_debug_info">Wiedergabe Debug-Infos anzeigen</string>
@@ -601,7 +602,7 @@
     <string name="cinema_mode">Kinomodus</string>
     <string name="play_with">Abspielen mit</string>
     <string name="transcoding">Transkodieren</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Zusammengefasste Suchergebnisse</string>
     <string name="combined_search_results_on">Alle Ergebnisse in einer gemeinsamen Liste anzeigen</string>
     <string name="combined_search_results_off">Ergebnisse nach Kategorie anzeigen</string>
@@ -671,4 +672,17 @@
     <string name="prefer_ac3_for_surround">AC3 für Surround Sound bevorzugen</string>
     <string name="blocklisted">Auf Blockliste hinzugefügt</string>
     <string name="unavailable">Nicht verfügbar</string>
+    <string name="profile_specific_settings_from_server">Benutzerprofil-Einstellungen auf dem Server</string>
+    <string name="subtitle_mode">Modus Untertitel</string>
+    <string name="use_user_profile">Nutze deine Profileinstellungen</string>
+    <string name="subtitle_mode_default">Standard</string>
+    <string name="subtitle_mode_smart">Intelligent</string>
+    <string name="subtitle_mode_only_forced">Nur Forced</string>
+    <string name="subtitle_mode_always">Immer</string>
+    <string name="subtitle_mode_none">Keine</string>
+    <string name="preferred_subtitle_language">Bevorzugte Untertitelsprache</string>
+    <string name="preferred_audio_language">Bevorzugte Audiosprache</string>
+    <string name="override_user_profile_settings">Weitere Benutzerprofil-Einstellungen</string>
+    <string name="override_user_profile_settings_summary">Überschreibe deine Benutzerprofileinstellungen mit denen vom Server</string>
+    <string name="any_language">Beliebige Sprache</string>
 </resources>
