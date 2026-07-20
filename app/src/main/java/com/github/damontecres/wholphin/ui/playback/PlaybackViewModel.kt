@@ -140,7 +140,7 @@ class PlaybackViewModel
         private val playlistCreator: PlaylistCreator,
         private val itemPlaybackDao: ItemPlaybackDao,
         internal val serverRepository: ServerRepository,
-        private val itemPlaybackRepository: ItemPlaybackRepository,
+        internal val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
         private val deviceInfo: DeviceInfo,
@@ -403,7 +403,7 @@ class PlaybackViewModel
             }
         }
 
-        private fun updateCurrentPlayback(block: (CurrentPlayback?) -> CurrentPlayback?) {
+        internal fun updateCurrentPlayback(block: (CurrentPlayback?) -> CurrentPlayback?) {
             _state.update {
                 it.copy(currentPlayback = block.invoke(it.currentPlayback))
             }
@@ -492,32 +492,9 @@ class PlaybackViewModel
 
                 // Create the correct player for the media
                 createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
-                val subtitleLanguagePreference =
-                    serverRepository.currentUserDto
-                        ?.configuration
-                        ?.subtitleLanguagePreference
-                val subtitleStreams =
-                    mediaSource.mediaStreams
-                        ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        .let {
-                            if (subtitleLanguagePreference.isNotNullOrBlank()) {
-                                it?.sortedByDescending { it.language != null && subtitleLanguagePreference == it.language }
-                            } else {
-                                it
-                            }
-                        }?.map {
-                            // TODO should use a string provider instead
-                            SimpleMediaStream.from(context.resources, it, true)
-                        }.orEmpty()
 
-                val audioStreams =
-                    mediaSource.mediaStreams
-                        ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map {
-                            SimpleMediaStream.from(context.resources, it, true)
-                        }
-//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
-                        .orEmpty()
+                val subtitleStreams = getSubtitleStreams(mediaSource)
+                val audioStreams = getAudioStreams(mediaSource)
                 val audioStream =
                     streamChoiceService
                         .chooseAudioStream(
@@ -925,16 +902,9 @@ class PlaybackViewModel
                 val currentPlayback = state.value.currentPlayback
                 if (currentPlayback != null) {
                     Timber.d("Changing audio track to %s", index)
-                    val itemPlayback =
-                        itemPlaybackRepository.saveTrackSelection(
-                            item = currentItem.item,
-                            itemPlayback = state.value.currentItemPlayback,
-                            trackIndex = index,
-                            type = MediaStreamType.AUDIO,
-                        )
+                    saveTrackSelection(index, MediaStreamType.AUDIO)
                     _state.update {
                         it.copy(
-                            currentItemPlayback = itemPlayback,
                             currentPlayback = it.currentPlayback?.copy(audioIndex = index),
                         )
                     }
@@ -968,16 +938,9 @@ class PlaybackViewModel
                 val currentPlayback = state.value.currentPlayback
                 if (currentPlayback != null) {
                     Timber.d("Changing subtitle track to %s", index)
-                    val itemPlayback =
-                        itemPlaybackRepository.saveTrackSelection(
-                            item = currentItem.item,
-                            itemPlayback = state.value.currentItemPlayback,
-                            trackIndex = index,
-                            type = MediaStreamType.SUBTITLE,
-                        )
+                    saveTrackSelection(index, MediaStreamType.SUBTITLE)
                     _state.update {
                         it.copy(
-                            currentItemPlayback = itemPlayback,
                             currentPlayback = it.currentPlayback?.copy(subtitleIndex = index),
                         )
                     }
@@ -995,7 +958,7 @@ class PlaybackViewModel
                     changeStreams(
                         item = currentItem.item,
                         sourceId = currentPlayback.mediaSourceInfo.id,
-                        audioIndex = itemPlayback.audioIndex,
+                        audioIndex = currentPlayback.audioIndex,
                         subtitleIndex = resolvedIndex,
                         positionMs = onMain { player.currentPosition },
                         enableDirectPlay = true,
@@ -1004,6 +967,24 @@ class PlaybackViewModel
                     Timber.w("Trying to change subtitle, but currentPlayback is null")
                 }
             }
+
+        internal suspend fun saveTrackSelection(
+            trackIndex: Int,
+            type: MediaStreamType,
+        ) {
+            val itemPlayback =
+                itemPlaybackRepository.saveTrackSelection(
+                    item = currentItem.item,
+                    itemPlayback = state.value.currentItemPlayback,
+                    trackIndex = trackIndex,
+                    type = type,
+                )
+            _state.update {
+                it.copy(
+                    currentItemPlayback = itemPlayback,
+                )
+            }
+        }
 
         private suspend fun prefetchTrickplay(
             duration: Duration,
@@ -1459,7 +1440,7 @@ class PlaybackViewModel
          * Atomically update [currentMediaInfo]
          */
         internal suspend fun updateCurrentMedia(block: (CurrentMediaInfo) -> CurrentMediaInfo) =
-            withContext(WholphinDispatchers.IO) {
+            withContext(WholphinDispatchers.Default) {
                 _state.update {
                     it.copy(currentMediaInfo = block.invoke(it.currentMediaInfo))
                 }

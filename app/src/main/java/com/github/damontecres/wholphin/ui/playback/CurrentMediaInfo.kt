@@ -4,7 +4,10 @@ import androidx.core.net.toUri
 import androidx.media3.common.MediaMetadata
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -25,6 +28,40 @@ data class CurrentMediaInfo(
         val EMPTY = CurrentMediaInfo(null, null, listOf(), listOf(), listOf(), null)
     }
 }
+
+/**
+ * Gets a sorted list of subtitle streams in a [MediaSourceInfo]
+ */
+internal fun PlaybackViewModel.getSubtitleStreams(mediaSource: MediaSourceInfo): List<SimpleMediaStream> {
+    val subtitleLanguagePreference =
+        serverRepository.currentUserDto
+            ?.configuration
+            ?.subtitleLanguagePreference
+    return mediaSource.mediaStreams
+        ?.filter { it.type == MediaStreamType.SUBTITLE }
+        .let {
+            if (subtitleLanguagePreference.isNotNullOrBlank()) {
+                it?.sortedByDescending { it.language != null && subtitleLanguagePreference == it.language }
+            } else {
+                it
+            }
+        }?.map {
+            // TODO should use a string provider instead
+            SimpleMediaStream.from(context.resources, it, true)
+        }.orEmpty()
+}
+
+/**
+ * Gets a list of audio streams in a [MediaSourceInfo]
+ */
+internal fun PlaybackViewModel.getAudioStreams(mediaSource: MediaSourceInfo): List<SimpleMediaStream> =
+    mediaSource.mediaStreams
+        ?.filter { it.type == MediaStreamType.AUDIO }
+        ?.map {
+            SimpleMediaStream.from(context.resources, it, true)
+        }
+//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+        .orEmpty()
 
 fun BaseItem.toMediaMetadata(imageUrl: String?): MediaMetadata =
     MediaMetadata

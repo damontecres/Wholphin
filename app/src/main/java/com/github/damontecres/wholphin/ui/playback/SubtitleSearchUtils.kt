@@ -177,15 +177,30 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 // Since, now adding a new external subtitle track, need to adjust the audio index as well
                                 Timber.v("New external subtitle, audioIndex=$audioIndex, adding 1")
                                 audioIndex += 1
+                                state.value.currentItemPlayback?.let { currentItemPlayback ->
+                                    if (currentItemPlayback.audioIndex != TrackIndex.UNSPECIFIED) {
+                                        Timber.d("User has a previously saved audio index that needs to be updated")
+                                        saveTrackSelection(audioIndex, MediaStreamType.AUDIO)
+                                    }
+                                }
                             }
+                            saveTrackSelection(newStream.index, MediaStreamType.SUBTITLE)
                             updateCurrentMedia {
                                 it.copy(
-                                    subtitleStreams =
-                                        subtitlesStreams.map {
-                                            SimpleMediaStream.from(context.resources, it, true)
-                                        },
+                                    sourceId = mediaSource.id,
+                                    audioStreams = getAudioStreams(mediaSource),
+                                    subtitleStreams = getSubtitleStreams(mediaSource),
                                 )
                             }
+                            updateCurrentPlayback {
+                                it?.copy(
+                                    item = currentItem.item,
+                                    mediaSourceInfo = mediaSource,
+                                    audioIndex = audioIndex,
+                                    subtitleIndex = newStream.index,
+                                )
+                            }
+
                             this@downloadAndSwitchSubtitles.changeStreams(
                                 item = currentItem.item,
                                 sourceId = currentPlayback.mediaSourceInfo.id,
