@@ -31,7 +31,6 @@ import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
-import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
@@ -65,7 +64,6 @@ import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.showToast
-import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
@@ -544,15 +542,6 @@ class PlaybackViewModel
 
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
-                val itemPlaybackToUse =
-                    itemPlayback ?: ItemPlayback(
-                        rowId = -1,
-                        userId = -1,
-                        itemId = base.id,
-                        sourceId = if (!isLiveTv) mediaSource.id?.toUUIDOrNull() else null,
-                        audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                        subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
-                    )
                 val trickPlayInfo =
                     item.data.trickplay
                         ?.get(mediaSource.id)
@@ -572,7 +561,10 @@ class PlaybackViewModel
 
                 val chapters = Chapter.fromDto(base, api)
                 _state.update {
-                    it.copy(currentItemPlayback = itemPlaybackToUse)
+                    it.copy(
+                        currentItemPlayback = itemPlayback,
+                        currentPlayback = null,
+                    )
                 }
                 updateCurrentMedia {
                     CurrentMediaInfo(
@@ -586,12 +578,11 @@ class PlaybackViewModel
                 }
                 withContext(WholphinDispatchers.Main) {
                     changeStreams(
-                        item,
-                        itemPlaybackToUse,
-                        audioIndex,
-                        subtitleIndex,
-                        if (positionMs > 0) positionMs else C.TIME_UNSET,
-                        itemPlayback != null, // If it was passed in, then it was not queried from the database
+                        item = item,
+                        audioIndex = audioIndex,
+                        subtitleIndex = subtitleIndex,
+                        positionMs = if (positionMs > 0) positionMs else C.TIME_UNSET,
+                        sourceId = mediaSource.id,
                         enableDirectPlay = !forceTranscoding,
                         enableDirectStream = !forceTranscoding,
                     )
@@ -608,38 +599,34 @@ class PlaybackViewModel
         @OptIn(UnstableApi::class)
         internal suspend fun changeStreams(
             item: BaseItem,
-            currentItemPlayback: ItemPlayback = state.value.currentItemPlayback!!,
+            sourceId: String?,
             audioIndex: Int?,
             subtitleIndex: Int?,
             positionMs: Long = 0,
-            userInitiated: Boolean,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
 
-                val currentPlayback = state.value.currentPlayback
-                if (currentPlayback != null &&
-                    currentPlayback.item.id == item.id &&
-                    currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                    enableDirectPlay
-                ) {
-                    val wasSuccessful =
-                        changeStreamsDirectPlay(
-                            currentPlayback = currentPlayback,
-                            currentItemPlayback = currentItemPlayback,
-                            audioIndex = audioIndex,
-                            subtitleIndex = subtitleIndex,
-                            userInitiated = userInitiated,
-                        )
-                    if (wasSuccessful) return@withContext
+                state.value.currentPlayback?.let { currentPlayback ->
+                    if (currentPlayback.item.id == item.id &&
+                        currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
+                        enableDirectPlay
+                    ) {
+                        val wasSuccessful =
+                            changeStreamsDirectPlay(
+                                currentPlayback = currentPlayback,
+                                audioIndex = audioIndex,
+                                subtitleIndex = subtitleIndex,
+                            )
+                        if (wasSuccessful) return@withContext
+                    }
                 }
 
                 Timber.i(
-                    "changeStreams (%s): userInitiated=%s, audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s",
+                    "changeStreams (%s): audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s",
                     itemId,
-                    userInitiated,
                     audioIndex,
                     subtitleIndex,
                     enableDirectPlay,
@@ -668,7 +655,7 @@ class PlaybackViewModel
                                 maxAudioChannels = null,
                                 audioStreamIndex = audioIndex,
                                 subtitleStreamIndex = subtitleIndex,
-                                mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
+                                mediaSourceId = sourceId,
                                 alwaysBurnInSubtitleWhenTranscoding = false,
                                 maxStreamingBitrate = maxBitrate.toInt(),
                                 enableDirectPlay = enableDirectPlay,
@@ -680,6 +667,7 @@ class PlaybackViewModel
                             ),
                         )
                 if (response.errorCode != null) {
+                    Timber.e("Error in PostedPlaybackInfo: %s", response.errorCode)
                     _state.update { it.copy(loading = LoadingState.Error(response.errorCode?.serialName)) }
                     return@withContext
                 }
@@ -782,6 +770,8 @@ class PlaybackViewModel
                             playSessionId = response.playSessionId,
                             liveStreamId = source.liveStreamId,
                             mediaSourceInfo = source,
+                            audioIndex = audioIndex ?: TrackIndex.DISABLED,
+                            subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
                         )
 
                     preferences.appPreferences.playbackPreferences.let { prefs ->
@@ -802,7 +792,7 @@ class PlaybackViewModel
                             player.removeListener(it)
                         }
 
-                        val playbackItemState = PlaybackItemState(playback, currentItemPlayback)
+                        val playbackItemState = PlaybackItemState(playback)
                         val activityListener =
                             TrackActivityPlaybackListener(
                                 api = api,
@@ -843,15 +833,17 @@ class PlaybackViewModel
                                                     result.trackSelectionParameters
                                             } else {
                                                 // Fall back to transcoding
-                                                Timber.w("Failed to select tracks, falling back to transcoding")
+                                                Timber.w(
+                                                    "Failed to select tracks, falling back to transcoding: %s",
+                                                    result,
+                                                )
                                                 viewModelScope.launchIO {
                                                     changeStreams(
                                                         item = item,
-                                                        currentItemPlayback = currentItemPlayback,
+                                                        sourceId = sourceId,
                                                         audioIndex = audioIndex,
                                                         subtitleIndex = subtitleIndex,
                                                         positionMs = positionMs,
-                                                        userInitiated = userInitiated,
                                                         enableDirectPlay = false,
                                                         enableDirectStream = true,
                                                     )
@@ -874,10 +866,8 @@ class PlaybackViewModel
         @OptIn(UnstableApi::class)
         private suspend fun changeStreamsDirectPlay(
             currentPlayback: CurrentPlayback,
-            currentItemPlayback: ItemPlayback,
             audioIndex: Int?,
             subtitleIndex: Int?,
-            userInitiated: Boolean,
         ): Boolean =
             withContext(WholphinDispatchers.IO) {
                 Timber.v("changeStreams direct play")
@@ -912,29 +902,7 @@ class PlaybackViewModel
                         }
                     if (result.bothSelected) {
                         onMain { player.trackSelectionParameters = result.trackSelectionParameters }
-                        // TODO lots of duplicate code in this block
                         Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
-                        val itemPlayback =
-                            currentItemPlayback.copy(
-                                sourceId = source.id?.toUUIDOrNull(),
-                                audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
-                                subtitleIndex =
-                                    if (currentItemPlayback.subtitleIndex < 0) {
-                                        currentItemPlayback.subtitleIndex
-                                    } else {
-                                        subtitleIndex ?: TrackIndex.DISABLED
-                                    },
-                            )
-                        if (userInitiated) {
-                            viewModelScope.launchIO {
-                                Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                                val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
-                                _state.update { it.copy(currentItemPlayback = updated) }
-                            }
-                        } else {
-                            _state.update { it.copy(currentItemPlayback = itemPlayback) }
-                        }
                         _state.update {
                             it.copy(
                                 currentPlayback =
@@ -954,77 +922,87 @@ class PlaybackViewModel
 
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
-                Timber.d("Changing audio track to %s", index)
-                val itemPlayback =
-                    itemPlaybackRepository.saveTrackSelection(
-                        item = currentItem.item,
-                        itemPlayback = state.value.currentItemPlayback!!,
-                        trackIndex = index,
-                        type = MediaStreamType.AUDIO,
-                    )
-                _state.update { it.copy(currentItemPlayback = itemPlayback) }
-
-                // Resolve ONLY_FORCED to actual track based on new audio language
-                val source = state.value.currentPlayback?.mediaSourceInfo
-                val resolvedSubtitleIndex =
-                    if (source != null) {
-                        streamChoiceService.resolveSubtitleIndex(
-                            source = source,
-                            audioStreamIndex = index,
-                            seriesId = currentItem.item.data.seriesId,
-                            subtitleIndex = itemPlayback.subtitleIndex,
-                            prefs = preferences,
+                val currentPlayback = state.value.currentPlayback
+                if (currentPlayback != null) {
+                    Timber.d("Changing audio track to %s", index)
+                    val itemPlayback =
+                        itemPlaybackRepository.saveTrackSelection(
+                            item = currentItem.item,
+                            itemPlayback = state.value.currentItemPlayback,
+                            trackIndex = index,
+                            type = MediaStreamType.AUDIO,
                         )
-                    } else {
-                        itemPlayback.subtitleIndex.takeIf { it >= 0 }
+                    _state.update {
+                        it.copy(
+                            currentItemPlayback = itemPlayback,
+                            currentPlayback = it.currentPlayback?.copy(audioIndex = index),
+                        )
                     }
 
-                changeStreams(
-                    currentItem.item,
-                    itemPlayback,
-                    index,
-                    resolvedSubtitleIndex,
-                    onMain { player.currentPosition },
-                    true,
-                )
+                    // Resolve ONLY_FORCED to actual track based on new audio language
+                    val resolvedSubtitleIndex =
+                        streamChoiceService.resolveSubtitleIndex(
+                            source = currentPlayback.mediaSourceInfo,
+                            audioStreamIndex = index,
+                            seriesId = currentItem.item.data.seriesId,
+                            subtitleIndex = currentPlayback.subtitleIndex,
+                            prefs = preferences,
+                        )
+
+                    changeStreams(
+                        item = currentItem.item,
+                        sourceId = currentPlayback.mediaSourceInfo.id,
+                        audioIndex = index,
+                        subtitleIndex = resolvedSubtitleIndex,
+                        positionMs = onMain { player.currentPosition },
+                        enableDirectPlay = true,
+                    )
+                } else {
+                    Timber.w("Trying to change audio, but currentPlayback is null")
+                }
             }
         }
 
         fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
-                Timber.d("Changing subtitle track to %s", index)
-                val itemPlayback =
-                    itemPlaybackRepository.saveTrackSelection(
-                        item = currentItem.item,
-                        itemPlayback = state.value.currentItemPlayback!!,
-                        trackIndex = index,
-                        type = MediaStreamType.SUBTITLE,
-                    )
-                _state.update { it.copy(currentItemPlayback = itemPlayback) }
+                val currentPlayback = state.value.currentPlayback
+                if (currentPlayback != null) {
+                    Timber.d("Changing subtitle track to %s", index)
+                    val itemPlayback =
+                        itemPlaybackRepository.saveTrackSelection(
+                            item = currentItem.item,
+                            itemPlayback = state.value.currentItemPlayback,
+                            trackIndex = index,
+                            type = MediaStreamType.SUBTITLE,
+                        )
+                    _state.update {
+                        it.copy(
+                            currentItemPlayback = itemPlayback,
+                            currentPlayback = it.currentPlayback?.copy(subtitleIndex = index),
+                        )
+                    }
 
-                // Resolve ONLY_FORCED to actual track index for playback
-                val source = state.value.currentPlayback?.mediaSourceInfo
-                val resolvedIndex =
-                    if (source != null) {
+                    // Resolve ONLY_FORCED to actual track index for playback
+                    val resolvedIndex =
                         streamChoiceService.resolveSubtitleIndex(
-                            source = source,
-                            audioStreamIndex = itemPlayback.audioIndex,
+                            source = currentPlayback.mediaSourceInfo,
+                            audioStreamIndex = currentPlayback.audioIndex,
                             seriesId = currentItem.item.data.seriesId,
                             subtitleIndex = index,
                             prefs = preferences,
                         )
-                    } else {
-                        index.takeIf { it >= 0 }
-                    }
 
-                changeStreams(
-                    currentItem.item,
-                    itemPlayback,
-                    itemPlayback.audioIndex,
-                    resolvedIndex,
-                    onMain { player.currentPosition },
-                    true,
-                )
+                    changeStreams(
+                        item = currentItem.item,
+                        sourceId = currentPlayback.mediaSourceInfo.id,
+                        audioIndex = itemPlayback.audioIndex,
+                        subtitleIndex = resolvedIndex,
+                        positionMs = onMain { player.currentPosition },
+                        enableDirectPlay = true,
+                    )
+                } else {
+                    Timber.w("Trying to change subtitle, but currentPlayback is null")
+                }
             }
 
         private suspend fun prefetchTrickplay(
@@ -1050,7 +1028,11 @@ class PlaybackViewModel
         fun getTrickplayUrl(
             index: Int,
             trickPlayInfo: TrickplayInfo? = state.value.currentMediaInfo.trickPlayInfo,
-            mediaSourceId: UUID? = state.value.currentItemPlayback?.sourceId,
+            mediaSourceId: UUID? =
+                state.value.currentPlayback
+                    ?.mediaSourceInfo
+                    ?.id
+                    ?.toUUIDOrNull(),
         ): String? =
             trickPlayInfo?.let {
                 val itemId = currentItem.id
@@ -1388,14 +1370,16 @@ class PlaybackViewModel
 
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
                             Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
-                            val currentItemPlayback = state.value.currentItemPlayback!!
+                            val currentPlayback = state.value.currentPlayback
+                            if (currentPlayback == null) {
+                                Timber.w("Playback error, currentPlayback is null")
+                            }
                             changeStreams(
-                                currentItem.item,
-                                currentItemPlayback,
-                                currentItemPlayback.audioIndex,
-                                currentItemPlayback.subtitleIndex,
-                                player.currentPosition,
-                                false,
+                                item = currentItem.item,
+                                sourceId = currentPlayback?.mediaSourceInfo?.id,
+                                audioIndex = currentPlayback?.audioIndex,
+                                subtitleIndex = currentPlayback?.subtitleIndex,
+                                positionMs = player.currentPosition,
                                 enableDirectPlay = false,
                                 enableDirectStream = false,
                             )
@@ -1598,16 +1582,16 @@ class PlaybackViewModel
         }
 
         suspend fun loadSubtitleDelay() {
-            state.value.currentItemPlayback?.let {
+            state.value.currentPlayback?.let {
                 if (it.subtitleIndexEnabled) {
                     val result =
-                        itemPlaybackRepository.getTrackModifications(it.itemId, it.subtitleIndex)
+                        itemPlaybackRepository.getTrackModifications(it.item.id, it.subtitleIndex)
                     if (result != null) {
                         Timber.v(
                             "Loading subtitle delay %s for track=%s, itemId=%s",
                             result.delayMs,
                             it.subtitleIndex,
-                            it.itemId,
+                            it.item.id,
                         )
                         updateCurrentPlayback { it?.copy(subtitleDelay = result.delayMs.milliseconds) }
                     }

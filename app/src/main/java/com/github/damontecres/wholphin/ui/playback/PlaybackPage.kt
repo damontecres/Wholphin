@@ -444,7 +444,7 @@ fun PlaybackPageContent(
 
             val subtitleVisible =
                 skipIndicatorDuration == 0L &&
-                    state.currentItemPlayback?.subtitleIndexEnabled == true &&
+                    state.currentPlayback?.subtitleIndexEnabled == true &&
                     !presentationState.coverSurface
 
             AndroidView(
@@ -660,9 +660,9 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = state.currentItemPlayback?.audioIndex,
+                    audioIndex = state.currentPlayback?.audioIndex,
                     audioStreams = state.currentMediaInfo.audioStreams,
-                    subtitleIndex = state.currentItemPlayback?.subtitleIndex,
+                    subtitleIndex = state.currentPlayback?.subtitleIndex,
                     subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,
