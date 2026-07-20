@@ -73,7 +73,8 @@ fun PlaybackViewModel.searchForSubtitles(language: String? = null) {
                             language = language,
                         ).content
                         .sortedWith(
-                            compareByDescending<RemoteSubtitleInfo> { it.communityRating }
+                            compareByDescending<RemoteSubtitleInfo> { it.isHashMatch }
+                                .thenByDescending { it.communityRating }
                                 .thenByDescending { it.downloadCount },
                         )
                 subtitleSearchState.update { it.copy(status = SubtitleSearchStatus.Success(results)) }

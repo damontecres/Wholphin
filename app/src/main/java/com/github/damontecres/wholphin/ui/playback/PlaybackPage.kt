@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -75,6 +74,7 @@ import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -629,28 +629,29 @@ fun PlaybackPageContent(
             }
             viewModel.cancelSubtitleSearch()
         }
-        Dialog(
+        BasicDialog(
             onDismissRequest = onDismissRequest,
             properties =
                 DialogProperties(
                     usePlatformDefaultWidth = false,
                 ),
         ) {
-            DownloadSubtitlesContent(
-                state = subtitleSearchState.status,
-                language = subtitleSearchState.language,
-                onSearch = { lang ->
-                    viewModel.searchForSubtitles(lang)
-                },
-                onClickDownload = {
-                    viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
-                },
-                onDismissRequest = onDismissRequest,
-                modifier =
-                    Modifier
-                        .widthIn(max = 640.dp)
-                        .heightIn(max = 400.dp),
-            )
+            Box(modifier = Modifier.padding(24.dp)) {
+                DownloadSubtitlesContent(
+                    state = subtitleSearchState.status,
+                    language = subtitleSearchState.language,
+                    onSearch = { lang ->
+                        viewModel.searchForSubtitles(lang)
+                    },
+                    onClickDownload = {
+                        viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
+                    },
+                    modifier =
+                        Modifier
+                            .widthIn(max = 640.dp)
+                            .heightIn(max = 400.dp),
+                )
+            }
         }
     }
 
