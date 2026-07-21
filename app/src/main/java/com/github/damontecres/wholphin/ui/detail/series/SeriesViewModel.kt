@@ -746,7 +746,7 @@ suspend fun findIndexByNumberOrId(
             // Start searching from the target number and choose direction from there
             val num = list.getBlocking(listIndex)?.indexNumber
             if (num.lt(targetNum)) {
-                for (i in listIndex + 1 until list.lastIndex) {
+                for (i in listIndex + 1 until list.size) {
                     val item = list.getBlocking(i)
                     if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
                         return i

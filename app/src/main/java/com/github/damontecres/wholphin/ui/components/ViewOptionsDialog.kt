@@ -4,8 +4,11 @@ import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +22,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -74,45 +78,52 @@ fun ViewOptionsDialog(
                     ViewOptionsType.DENSE_LIST -> ViewOptions.LIST_OPTIONS
                 }
             }
-        LazyColumn(
-            state = columnState,
-            contentPadding = PaddingValues(16.dp),
+        Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier =
                 Modifier
                     .width(256.dp)
                     .heightIn(max = 380.dp)
-                    .focusRequester(focusRequester)
                     .background(
                         MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
                         shape = RoundedCornerShape(8.dp),
                     ),
         ) {
-            stickyHeader {
-                Text(
-                    text = stringResource(R.string.view_options),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            items(options, key = { it.title }) { pref ->
-                pref as AppPreference<ViewOptions, Any>
-                val interactionSource = remember { MutableInteractionSource() }
-                val value = pref.getter.invoke(viewOptions)
-                ComposablePreference(
-                    preference = pref,
-                    value = value,
-                    onNavigate = {},
-                    onValueChange = { newValue ->
-                        onViewOptionsChange.invoke(pref.setter(viewOptions, newValue))
-                    },
-                    interactionSource = interactionSource,
-                    modifier = Modifier,
-                    onClickPreference = { pref ->
-                        if (pref == ViewOptions.ViewOptionsReset) {
-                            onViewOptionsChange.invoke(defaultViewOptions)
-                        }
-                    },
-                )
+            Text(
+                text = stringResource(R.string.view_options),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
+            )
+            LazyColumn(
+                state = columnState,
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                modifier = Modifier.focusRequester(focusRequester),
+            ) {
+                items(options, key = { it.title }) { pref ->
+                    pref as AppPreference<ViewOptions, Any>
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val value = pref.getter.invoke(viewOptions)
+                    ComposablePreference(
+                        preference = pref,
+                        value = value,
+                        onNavigate = {},
+                        onValueChange = { newValue ->
+                            onViewOptionsChange.invoke(pref.setter(viewOptions, newValue))
+                        },
+                        interactionSource = interactionSource,
+                        modifier = Modifier,
+                        onClickPreference = { pref ->
+                            if (pref == ViewOptions.ViewOptionsReset) {
+                                onViewOptionsChange.invoke(defaultViewOptions)
+                            }
+                        },
+                    )
+                }
             }
         }
     }
