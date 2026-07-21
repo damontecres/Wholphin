@@ -379,7 +379,13 @@ fun PlaybackPageContent(
                 }
             }
 
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+            val controlsVisible =
+                remember(controllerViewState.controlsVisible, playbackDialog, subtitleSearchState) {
+                    controllerViewState.controlsVisible ||
+                        playbackDialog != null ||
+                        subtitleSearchState.status != SubtitleSearchStatus.Inactive
+                }
+            if (!controlsVisible && skipIndicatorDuration == 0L) {
                 PauseIndicator(
                     player = player,
                     modifier =
