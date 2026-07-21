@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.cards
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -26,11 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
@@ -99,10 +95,6 @@ fun PersonCard(
         focusedAfterDelay = false
     }
 
-    // Do not use `by` here, this way we are Defer reads and recompositions to only when modifier calculates
-    val spaceBetweenState = animateDpAsState(if (focused) 12.dp else 4.dp, label = "spaceBetween")
-    val spaceBelowState = animateDpAsState(if (focused) 4.dp else 12.dp, label = "spaceBelow")
-
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp), // Fixed base spacing
         modifier = modifier,
@@ -170,21 +162,7 @@ fun PersonCard(
                         .clip(CircleShape),
             )
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    // Optimization: move animation reads to layout/draw phase
-                    .offset {
-                        IntOffset(0, (spaceBetweenState.value - 4.dp).roundToPx())
-                    }.layout { measurable, constraints ->
-                        val paddingPx = spaceBelowState.value.roundToPx()
-                        val placeable = measurable.measure(constraints)
-                        layout(placeable.width, placeable.height + paddingPx) {
-                            placeable.placeRelative(0, 0)
-                        }
-                    }.fillMaxWidth(),
-        ) {
+        SlidingCardText(focused) {
             Text(
                 text = name ?: "",
                 maxLines = 1,
