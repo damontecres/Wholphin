@@ -59,6 +59,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
@@ -124,11 +125,15 @@ class AlbumViewModel
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
         private val extrasService: ExtrasService,
-        @Assisted itemId: UUID,
+        @Assisted("itemId") itemId: UUID,
+        @Assisted("initialSongId") private val initialSongId: UUID?,
     ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
-            fun create(itemId: UUID): AlbumViewModel
+            fun create(
+                @Assisted("itemId") itemId: UUID,
+                @Assisted("initialSongId") initialSongId: UUID?,
+            ): AlbumViewModel
         }
 
         private val _state = MutableStateFlow(AlbumState.EMPTY)
@@ -158,6 +163,11 @@ class AlbumViewModel
                     val songsDeferred = async { getPagerForAlbum(api, itemId) }
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
+                    // Resolve the deep-linked song's index up front so Success renders already focused on it.
+                    val initialSongIndex =
+                        initialSongId?.let { id ->
+                            songs.indexOfBlocking { it?.id == id }
+                        } ?: -1
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
                     val allArtists =
                         album.data.artists.orEmpty() +
@@ -175,6 +185,7 @@ class AlbumViewModel
                             isVariousArtists = isVariousArtists,
                             imageUrl = imageUrl,
                             songs = songs,
+                            initialSongIndex = initialSongIndex,
                             loading = LoadingState.Success,
                         )
                     }
@@ -289,6 +300,7 @@ data class AlbumState(
     val songs: List<BaseItem?>,
     val similar: List<BaseItem>,
     val loading: LoadingState,
+    val initialSongIndex: Int = -1,
     val musicVideos: List<BaseItem?> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
@@ -308,10 +320,11 @@ private const val SIMILAR_ROW = EXTRAS_ROW + 1
 fun AlbumDetailsPage(
     itemId: UUID,
     preferences: UserPreferences,
+    initialSongId: UUID? = null,
     modifier: Modifier = Modifier,
     viewModel: AlbumViewModel =
         hiltViewModel<AlbumViewModel, AlbumViewModel.Factory>(
-            creationCallback = { it.create(itemId) },
+            creationCallback = { it.create(itemId, initialSongId) },
         ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
@@ -320,7 +333,6 @@ fun AlbumDetailsPage(
     val state by viewModel.state.collectAsState()
     val currentMusic by viewModel.currentMusic.collectAsState()
 
-    var position by rememberPosition(0, 0)
     val focusRequesters =
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val focusManager = LocalFocusManager.current
@@ -356,25 +368,34 @@ fun AlbumDetailsPage(
 
         LoadingState.Success -> {
             val album = state.album!!
+            val itemsBefore = 2
+            val initialSongIndex = state.initialSongIndex
+            val hasInitialSong = initialSongIndex >= 0
+            var position by rememberPosition(
+                row = if (hasInitialSong) SONG_ROW else 0,
+                column = initialSongIndex.coerceAtLeast(0),
+            )
+
+            LaunchedEffect(Unit) { viewModel.updateBackDrop() }
 
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
-            val listState = rememberLazyListState()
-            val itemsBefore = 2
+            val listState =
+                rememberLazyListState(
+                    initialFirstVisibleItemIndex =
+                        if (hasInitialSong) itemsBefore + initialSongIndex else 0,
+                )
 
             val songFocusRequester = remember { FocusRequester() }
-            LaunchedEffect(Unit) {
-                if (position.row == SONG_ROW) {
-                    songFocusRequester.tryRequestFocus()
-                } else {
-                    focusRequesters.getOrNull(position.row)?.tryRequestFocus()
-                }
-                viewModel.updateBackDrop()
-            }
+            RequestOrRestoreFocus(
+                if (position.row == SONG_ROW) songFocusRequester else focusRequesters.getOrNull(position.row),
+            )
             val backHandlerActive by remember {
                 derivedStateOf {
-                    listState.firstVisibleItemIndex > itemsBefore
+                    // Deep-linked opens already start scrolled to the song, so let back pop the
+                    // screen instead of scrolling back up to the header.
+                    !hasInitialSong && listState.firstVisibleItemIndex > itemsBefore
                 }
             }
             BackHandler(backHandlerActive) {

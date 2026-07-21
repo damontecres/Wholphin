@@ -37,12 +37,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -176,6 +178,27 @@ class MusicService
                         .map { BaseItem(it, false) }
                 setQueue(items, false)
             }
+
+        /**
+         * Fetch a song by id and play it in place, without navigating.
+         *
+         * Used for album-less songs, which have no page of their own (see [NavigationManager.navigateTo]).
+         * Fire-and-forget on [defaultScope] so the caller stays on the current screen.
+         */
+        fun playSong(itemId: UUID) {
+            defaultScope.launch {
+                try {
+                    val song =
+                        api.userLibraryApi
+                            .getItem(itemId = itemId)
+                            .content
+                            .let { BaseItem(it, false) }
+                    setQueue(listOf(song), false)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to play audio item %s", itemId)
+                }
+            }
+        }
 
         /**
          * Replace the queue with the given list and starting playing the song as startIndex as soon as its ready

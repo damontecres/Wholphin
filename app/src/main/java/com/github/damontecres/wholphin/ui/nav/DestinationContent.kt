@@ -257,6 +257,7 @@ fun DestinationContent(
                     AlbumDetailsPage(
                         preferences = preferences,
                         itemId = destination.itemId,
+                        initialSongId = destination.initialSongId,
                         modifier = modifier,
                     )
                 }

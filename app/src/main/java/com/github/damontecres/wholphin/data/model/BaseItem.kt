@@ -272,6 +272,16 @@ data class BaseItem(
                     }
                 }
 
+                BaseItemKind.AUDIO -> {
+                    data.albumId?.let { albumId ->
+                        Destination.MediaItem(
+                            itemId = albumId,
+                            type = BaseItemKind.MUSIC_ALBUM,
+                            initialSongId = id,
+                        )
+                    } ?: Destination.MediaItem(this)
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }
