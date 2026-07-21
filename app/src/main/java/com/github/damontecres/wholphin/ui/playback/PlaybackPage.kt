@@ -379,10 +379,9 @@ fun PlaybackPageContent(
                 }
             }
 
-            if (skipIndicatorDuration == 0L) {
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
                 PauseIndicator(
                     player = player,
-                    controlsVisible = controllerViewState.controlsVisible,
                     modifier =
                         Modifier
                             .align(Alignment.Center),

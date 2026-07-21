@@ -33,7 +33,6 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun PauseIndicator(
     player: Player,
-    controlsVisible: Boolean,
     modifier: Modifier = Modifier,
     duration: Duration = 300.milliseconds,
 ) {
@@ -43,7 +42,7 @@ fun PauseIndicator(
         if (state.isPaused) visible = true
     }
     AnimatedVisibility(
-        visible = visible && !controlsVisible,
+        visible = visible,
         enter =
             scaleIn(
                 animationSpec =
