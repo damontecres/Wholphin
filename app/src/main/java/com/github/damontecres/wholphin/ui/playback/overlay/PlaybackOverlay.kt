@@ -52,9 +52,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.PlaylistItem
-import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.formatDuration
@@ -228,7 +226,6 @@ fun PlaybackOverlay(
                             controllerViewState = controllerViewState,
                             chapters = chapters,
                             hasNext = nextEnabled,
-                            aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
                             onChangeState = onChangeState,
                             modifier =
                                 Modifier
