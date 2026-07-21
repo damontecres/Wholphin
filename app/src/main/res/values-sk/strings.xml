@@ -636,7 +636,7 @@
         <item quantity="other">Osôb</item>
     </plurals>
     <string name="require_login">Vyžadovať prihlásenie pre profil</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Kombinované výsledky vyhľadávania</string>
     <string name="combined_search_results_on">Zobraziť všetky výsledky v jednom zozname</string>
     <string name="combined_search_results_off">Zobraziť výsledky podľa kategórie</string>
