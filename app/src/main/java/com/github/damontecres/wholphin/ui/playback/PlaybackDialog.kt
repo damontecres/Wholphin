@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,7 +50,6 @@ import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
@@ -288,12 +286,9 @@ fun SubtitleChoiceBottomDialog(
 ) {
     val numberBefore = 2
     val initialChoice =
-        remember {
-            choices.firstOrNull { it.index == currentChoice }?.index
+        remember(choices) {
+            choices.indexOfFirstOrNull { it.index == currentChoice }
         }
-    SideEffect {
-        Timber.v("initialChoice=$initialChoice")
-    }
     val scope = rememberCoroutineScope()
     val listState =
         rememberLazyListState(
@@ -303,11 +298,9 @@ fun SubtitleChoiceBottomDialog(
     val lastFocusRequester = remember { FocusRequester() }
     val choiceFocusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
     LaunchedEffect(Unit) {
-        if (initialChoice != null) {
-            choiceFocusRequesters[initialChoice].tryRequestFocus()
-        } else {
-            firstFocusRequester.tryRequestFocus()
-        }
+        val focusRequester =
+            initialChoice?.let { choiceFocusRequesters.getOrNull(it) } ?: firstFocusRequester
+        focusRequester.tryRequestFocus()
     }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
@@ -389,6 +382,9 @@ fun SubtitleChoiceBottomDialog(
                         },
                         supportingContent = {},
                     )
+                    if (choices.isNotEmpty()) {
+                        HorizontalDivider()
+                    }
                 }
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
