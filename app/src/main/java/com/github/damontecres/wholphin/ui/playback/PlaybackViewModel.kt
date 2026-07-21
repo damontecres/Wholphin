@@ -570,7 +570,7 @@ class PlaybackViewModel
                     }
                 }
 
-                val chapters = Chapter.fromDto(base, api)
+                val chapters = Chapter.fromDto(base)
                 _state.update {
                     it.copy(currentItemPlayback = itemPlaybackToUse)
                 }

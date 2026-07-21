@@ -44,7 +44,6 @@ fun ChapterRowOverlay(
     controllerViewState: ControllerViewState,
     chapters: List<Chapter>,
     hasNext: Boolean,
-    aspectRatio: Float,
     onChangeState: (OverlayViewState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -115,10 +114,7 @@ fun ChapterRowOverlay(
                     if (isFocused) controllerViewState.pulseControls()
                 }
                 ChapterCard(
-                    name = chapter.name,
-                    position = chapter.position,
-                    imageUrl = chapter.imageUrl,
-                    aspectRatio = aspectRatio,
+                    chapter = chapter,
                     onClick = {
                         player.seekTo(chapter.position.inWholeMilliseconds)
                         controllerViewState.hideControls()
