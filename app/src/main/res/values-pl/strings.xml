@@ -710,4 +710,23 @@
     <string name="unavailable">Niedostępne</string>
     <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkoduj dźwięk nie-stereo do formatu AC3/Dolby Digital]]></string>
     <string name="prefer_ac3_for_surround">Używaj dźwięku AC3 jako dźwięku przestrzennego</string>
+    <string name="profile_specific_settings_from_server">Ustawienia użytkownika z serwera</string>
+    <plurals name="years_old">
+        <item quantity="one">%1$d rok</item>
+        <item quantity="few">%1$d lata</item>
+        <item quantity="many">%1$d lat</item>
+        <item quantity="other">%1$d lat</item>
+    </plurals>
+    <string name="subtitle_mode">Tryb napisów</string>
+    <string name="use_user_profile">Użyj ustawień użytkownika</string>
+    <string name="subtitle_mode_default">Domyślny</string>
+    <string name="subtitle_mode_smart">Inteligentny</string>
+    <string name="subtitle_mode_only_forced">Tylko wymuszone</string>
+    <string name="subtitle_mode_always">Wszystkie</string>
+    <string name="subtitle_mode_none">Brak</string>
+    <string name="preferred_subtitle_language">Preferowany język napisów</string>
+    <string name="preferred_audio_language">Preferowany język dźwięku</string>
+    <string name="override_user_profile_settings">Więcej ustawień użytkownika</string>
+    <string name="any_language">Dowolny język</string>
+    <string name="override_user_profile_settings_summary">Napisz swoje ustawienia użytkownika, ustawieniami z serwera</string>
 </resources>
