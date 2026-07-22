@@ -124,8 +124,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
@@ -227,7 +226,7 @@ class SearchViewModel
                             fields = SlimItemFields,
                             limit = 50,
                         )
-                    val result = api.itemsApi.getItems(request).content
+                    val result = api.libraryApi.getItems(request).content
                     val items =
                         result.items.map {
                             BaseItem(it, false)
@@ -264,7 +263,7 @@ class SearchViewModel
                             limit = 50,
                         )
 
-                    val result = api.itemsApi.getItems(request).content
+                    val result = api.libraryApi.getItems(request).content
                     val items =
                         result.items.map {
                             BaseItem(it, false)
@@ -366,7 +365,7 @@ class SearchViewModel
                 // Exact item deleted (eg a movie) or deleted item was within the series
                 if (item != null && item.id == itemId) {
                     val newItem =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(item.id)
                             .content
                             .let { BaseItem(it) }

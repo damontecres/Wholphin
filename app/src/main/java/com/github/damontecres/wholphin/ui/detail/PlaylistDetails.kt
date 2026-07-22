@@ -120,7 +120,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
@@ -165,7 +165,7 @@ class PlaylistViewModel
             viewModelScope.launchDefault {
                 try {
                     val playlist =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(itemId)
                             .content
                             .let { BaseItem(it, false) }

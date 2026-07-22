@@ -13,7 +13,7 @@ import org.acra.sender.ReportSender
 import org.acra.sender.ReportSenderException
 import org.acra.sender.ReportSenderFactory
 import org.jellyfin.sdk.Jellyfin
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
+import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
 import org.json.JSONObject
@@ -66,7 +66,7 @@ class CrashReportSender : ReportSender {
                 val jsonStr = obj.toString(2)
                 runBlocking {
                     val filename =
-                        api.clientLogApi
+                        api.systemApi
                             .logFile(
                                 """
                                 ---

@@ -54,7 +54,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
+import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import timber.log.Timber
@@ -272,7 +272,7 @@ class DebugViewModel
 
                         """.trimIndent()
                     Timber.w(body)
-                    val response by api.clientLogApi.logFile(body + logcat)
+                    val response by api.systemApi.logFile(body + logcat)
                     showToast(context, "Sent! Filename=${response.fileName}")
                 }
             }

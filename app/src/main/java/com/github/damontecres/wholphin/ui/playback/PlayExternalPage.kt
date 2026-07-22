@@ -47,10 +47,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackOrder
@@ -105,7 +105,7 @@ class PlayExternalViewModel
                         }
                     }
                 try {
-                    val queriedItem = api.userLibraryApi.getItem(itemId).content
+                    val queriedItem = api.libraryApi.getItem(itemId).content
                     val playlistItem =
                         if (queriedItem.type.playable) {
                             PlaylistItem.Media(BaseItem(queriedItem))
@@ -193,7 +193,7 @@ class PlayExternalViewModel
                         }
 
                     val uri =
-                        api.videosApi
+                        api.videoApi
                             .getVideoStreamUrl(
                                 itemId = item.id,
                                 mediaSourceId = mediaSource.id,
@@ -254,7 +254,7 @@ class PlayExternalViewModel
                                     putExtra("forcedsrt", subtitleUrls[it])
                                 }
                         }
-                    api.playStateApi.reportPlaybackStart(
+                    api.sessionApi.reportPlaybackStart(
                         PlaybackStartInfo(
                             canSeek = false,
                             itemId = itemId,
@@ -342,7 +342,7 @@ class PlayExternalViewModel
                             Timber.w("Unknown stop position for external playback")
                         }
                         if (position != null || result.data?.action != null) {
-                            api.playStateApi.reportPlaybackStopped(
+                            api.sessionApi.reportPlaybackStopped(
                                 PlaybackStopInfo(
                                     itemId = itemId,
                                     mediaSourceId = mediaSourceId,

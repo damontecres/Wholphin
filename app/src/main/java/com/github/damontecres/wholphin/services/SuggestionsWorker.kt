@@ -21,7 +21,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.api.client.extensions.userViewApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -104,7 +104,7 @@ class SuggestionsWorker
                 }
 
                 val views =
-                    api.userViewsApi
+                    api.userViewApi
                         .getUserViews(userId = userId)
                         .content.items
                         .orEmpty()

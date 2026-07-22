@@ -96,7 +96,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -146,7 +145,7 @@ class ArtistViewModel
                 try {
                     val itemDeferred =
                         async {
-                            api.userLibraryApi
+                            api.libraryApi
                                 .getItem(itemId = itemId)
                                 .content
                                 .let { BaseItem(it, false) }
@@ -288,7 +287,7 @@ class ArtistViewModel
             // Refresh if artist, otherwise only could be a music video
             if (itemId == this@ArtistViewModel.itemId) {
                 val artist =
-                    api.userLibraryApi
+                    api.libraryApi
                         .getItem(itemId = itemId)
                         .content
                         .let { BaseItem(it, false) }

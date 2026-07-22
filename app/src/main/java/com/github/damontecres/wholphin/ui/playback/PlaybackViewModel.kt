@@ -95,12 +95,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
-import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
+import org.jellyfin.sdk.api.client.extensions.mediaSegmentApi
 import org.jellyfin.sdk.api.client.extensions.sessionApi
-import org.jellyfin.sdk.api.client.extensions.trickplayApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.trickPlayApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -112,7 +112,7 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.extensions.inWholeTicks
@@ -312,7 +312,7 @@ class PlaybackViewModel
                     }
                 }
             this.itemId = itemId
-            val queriedItem = api.userLibraryApi.getItem(itemId).content
+            val queriedItem = api.libraryApi.getItem(itemId).content
             val playlistItem =
                 if (queriedItem.type.playable) {
                     PlaylistItem.Media(BaseItem(queriedItem, false))
@@ -359,7 +359,7 @@ class PlaybackViewModel
             val intros =
                 // If not resuming playback & cinema mode is enabled, get potential intros
                 if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
-                    api.userLibraryApi
+                    api.libraryApi
                         .getIntros(
                             itemId = playlistItem.id,
                             userId = serverRepository.currentUser?.id,
@@ -674,7 +674,7 @@ class PlaybackViewModel
                                 Timber.i("Playback is remote for source: %s", source.id)
                                 source.path
                             } else {
-                                api.videosApi.getVideoStreamUrl(
+                                api.videoApi.getVideoStreamUrl(
                                     itemId = itemId,
                                     mediaSourceId = source.id,
                                     static = true,
@@ -1006,7 +1006,7 @@ class PlaybackViewModel
 
         private suspend fun prefetchTrickplay(
             duration: Duration,
-            trickplayInfo: TrickplayInfo,
+            trickplayInfo: TrickplayInfoDto,
             mediaSourceId: UUID?,
         ) {
             val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
@@ -1026,7 +1026,7 @@ class PlaybackViewModel
 
         fun getTrickplayUrl(
             index: Int,
-            trickPlayInfo: TrickplayInfo? = state.value.currentMediaInfo.trickPlayInfo,
+            trickPlayInfo: TrickplayInfoDto? = state.value.currentMediaInfo.trickPlayInfo,
             mediaSourceId: UUID? =
                 state.value.currentPlayback
                     ?.mediaSourceInfo
@@ -1035,7 +1035,7 @@ class PlaybackViewModel
         ): String? =
             trickPlayInfo?.let {
                 val itemId = currentItem.id
-                return api.trickplayApi.getTrickplayTileImageUrl(
+                return api.trickPlayApi.getTrickplayTileImageUrl(
                     itemId,
                     trickPlayInfo.width,
                     index,
@@ -1110,7 +1110,7 @@ class PlaybackViewModel
             segmentJob =
                 viewModelScope.launchIO {
                     val prefs = preferences.appPreferences.playbackPreferences
-                    val segments by api.mediaSegmentsApi.getItemSegments(itemId)
+                    val segments by api.mediaSegmentApi.getItemSegments(itemId)
                     if (segments.items.isNotEmpty()) {
                         while (isActive) {
                             delay(500L)

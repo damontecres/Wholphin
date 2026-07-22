@@ -11,8 +11,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
@@ -47,7 +47,7 @@ class MediaReportService
          */
         fun sendReportFor(itemId: UUID) {
             ioScope.launchIO(ExceptionHandler(autoToast = true)) {
-                val item = api.userLibraryApi.getItem(itemId = itemId).content
+                val item = api.libraryApi.getItem(itemId = itemId).content
                 sendReportFor(item)
             }
         }
@@ -57,7 +57,7 @@ class MediaReportService
          */
         suspend fun sendReportFor(item: BaseItemDto) {
             val sources =
-                item.mediaSources ?: api.userLibraryApi
+                item.mediaSources ?: api.libraryApi
                     .getItem(itemId = item.id)
                     .content.mediaSources
             val sourcesJson = json.encodeToString(sources)
@@ -90,7 +90,7 @@ class MediaReportService
                 mediaSources=$sourcesJson
                 """.trimIndent()
             Timber.w(body)
-            val response by api.clientLogApi.logFile(body)
+            val response by api.systemApi.logFile(body)
             showToast(context, "Sent! Filename=${response.fileName}")
         }
     }

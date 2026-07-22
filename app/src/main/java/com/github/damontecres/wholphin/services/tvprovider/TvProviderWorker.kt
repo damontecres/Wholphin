@@ -32,7 +32,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
@@ -261,7 +261,7 @@ class TvProviderWorker
             val channelsPrefs = context.getSharedPreferences("channels", Context.MODE_PRIVATE)
 
             val latest =
-                api.userLibraryApi
+                api.libraryApi
                     .getLatestMedia(
                         GetLatestMediaRequest(
                             fields = SlimItemFields,

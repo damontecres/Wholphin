@@ -44,9 +44,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.lyricsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.lyricApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -158,7 +157,7 @@ class NowPlayingViewModel
                             val lyrics =
                                 lyricCache.getOrPut(audio.id) {
                                     // TODO remote lyrics?
-                                    api.lyricsApi.getLyrics(audio.id).content
+                                    api.lyricApi.getLyrics(audio.id).content
                                 }
                             val lyricIndex =
                                 if (lyrics != null) {
@@ -205,7 +204,7 @@ class NowPlayingViewModel
                         val lyrics =
                             lyricCache.getOrPut(audio.id) {
                                 // TODO remote lyrics?
-                                api.lyricsApi.getLyrics(audio.id).content
+                                api.lyricApi.getLyrics(audio.id).content
                             }
                         Timber.d("Got lyrics for %s: %s", audio.id, lyrics != null)
                         state.update {
@@ -232,14 +231,14 @@ class NowPlayingViewModel
                         var backdropItem: BaseItem? = null
                         try {
                             if (audio?.artistId != null) {
-                                api.userLibraryApi.getItem(audio.artistId).content.let {
+                                api.libraryApi.getItem(audio.artistId).content.let {
                                     if (it.backdropImageTags?.isNotEmpty() == true) {
                                         backdropItem = BaseItem(it, false)
                                     }
                                 }
                             }
                             if (backdropItem == null && audio?.albumId != null) {
-                                api.userLibraryApi.getItem(audio.albumId).content.let {
+                                api.libraryApi.getItem(audio.albumId).content.let {
                                     backdropItem =
                                         getBackdropItemForAlbum(api, BaseItem(it, false))
                                 }
@@ -261,7 +260,7 @@ class NowPlayingViewModel
 
         private suspend fun doUpdateBackdropRandom() {
             val randomArtist =
-                api.itemsApi
+                api.libraryApi
                     .getItems(
                         recursive = true,
                         imageTypes = listOf(ImageType.BACKDROP),
