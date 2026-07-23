@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,12 +44,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Preview(
-    device = "spec:width=1200dp,height=2500dp",
+    device = "spec:width=1200dp,height=3000dp",
     backgroundColor = 0xFF383535,
     uiMode = UI_MODE_TYPE_TELEVISION,
 )
 @Composable
 private fun ThemePreview() {
+    val themes = AppThemeColors.entries.filterNot { it == AppThemeColors.UNRECOGNIZED }
     Column {
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
@@ -58,7 +58,7 @@ private fun ThemePreview() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            items(AppThemeColors.entries.filterNot { it == AppThemeColors.UNRECOGNIZED }) {
+            items(themes) {
                 ThemeExample(it)
             }
         }
