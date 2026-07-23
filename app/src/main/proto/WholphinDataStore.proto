@@ -222,6 +222,7 @@ message ExperimentalPreferences {
   bool enabled = 1;
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
+  bool disable_audio_offload = 4;
 }
 
 message AppPreferences {
