@@ -51,8 +51,6 @@ fun EpisodeCard(
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
-    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
     var focusedAfterDelay by remember { mutableStateOf(false) }
 
     val hideOverlayDelay = 500L
@@ -74,7 +72,7 @@ fun EpisodeCard(
     val density = LocalDensity.current
     val imageWidthPx = remember(imageWidth) { with(density) { imageWidth.roundToPx() } }
     Column(
-        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.size(width, height),
     ) {
         Card(
@@ -126,13 +124,7 @@ fun EpisodeCard(
                 }
             }
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
-        ) {
+        SlidingCardText(focused) {
             Text(
                 text = dto?.seriesName ?: "",
                 maxLines = 1,

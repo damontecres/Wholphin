@@ -203,7 +203,9 @@
     <string name="tv_dvr_schedule">錄影排程</string>
     <string name="tv_shows_title">電視劇</string>
     <string name="ui_interface">介面</string>
-    <string name="years_old">%1$d 歲</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d 歲</item>
+    </plurals>
     <string name="play_with_transcoding">轉碼播放</string>
     <string name="one_click_pause_summary_on">按下方向鍵中央以暫停/播放</string>
     <plurals name="deleted_scenes">

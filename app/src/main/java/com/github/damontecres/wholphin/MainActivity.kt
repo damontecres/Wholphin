@@ -36,6 +36,8 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.IntentResult
+import com.github.damontecres.wholphin.services.IntentService
 import com.github.damontecres.wholphin.services.LatestNextUpSchedulerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
@@ -54,7 +56,6 @@ import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
@@ -80,7 +81,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -145,6 +145,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var screensaverService: ScreensaverService
 
+    @Inject
+    lateinit var intentService: IntentService
+
     private var signInAuto = true
     private var playerBackend: PlayerBackend? = null
 
@@ -187,8 +190,7 @@ class MainActivity : AppCompatActivity() {
             }
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
-            val startDestination = intent?.let(::extractDestination) ?: Destination.Home()
-            navigationManager.backStack = NavBackStack(startDestination)
+            navigationManager.backStack = NavBackStack(Destination.Home())
         }
 
         viewModel.serverRepository.currentUserFlow
@@ -223,7 +225,7 @@ class MainActivity : AppCompatActivity() {
             playerBackend = prefs.playbackPreferences.playerBackend
         }
 
-        viewModel.appStart()
+        viewModel.appStart(intent)
         setContent {
             Surface(
                 Modifier
@@ -307,7 +309,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        viewModel.appStart()
+        viewModel.appStart(null)
         if (!playExternalViewModel.launched.value) {
             // If restarting during playback that is not external, go back a page
             val lastDest = navigationManager.backStack.lastOrNull()
@@ -384,41 +386,8 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
         setIntent(intent)
-        extractDestination(intent)?.let {
-            navigationManager.replace(it)
-        }
+        viewModel.appStart(intent)
     }
-
-    private fun extractDestination(intent: Intent): Destination? =
-        intent.let {
-            val itemId =
-                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
-            val type =
-                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
-            if (itemId != null && type != null) {
-                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
-                val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
-                val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
-                val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
-                if (seriesId != null && seasonId != null && episodeNumber >= 0 && seasonNumber >= 0) {
-                    Destination.SeriesOverview(
-                        itemId = seriesId,
-                        type = BaseItemKind.SERIES,
-                        seasonEpisode =
-                            SeasonEpisodeIds(
-                                seasonId = seasonId,
-                                seasonNumber = seasonNumber,
-                                episodeId = itemId,
-                                episodeNumber = episodeNumber,
-                            ),
-                    )
-                } else {
-                    Destination.MediaItem(itemId, type)
-                }
-            } else {
-                null
-            }
-        }
 
     fun changeDisplayMode(modeId: Int) {
         lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
@@ -431,13 +400,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val INTENT_ITEM_ID = "itemId"
-        const val INTENT_ITEM_TYPE = "itemType"
-        const val INTENT_SERIES_ID = "seriesId"
-        const val INTENT_EPISODE_NUMBER = "epNum"
-        const val INTENT_SEASON_NUMBER = "seaNum"
-        const val INTENT_SEASON_ID = "seaId"
-
         private const val KEY_BACK_STACK = "backStack"
         private const val KEY_EXTERNAL_PLAYER = "extPlayer"
 
@@ -453,16 +415,55 @@ class MainActivityViewModel
         @param:ApplicationContext private val context: Context,
         private val preferences: DataStore<AppPreferences>,
         val serverRepository: ServerRepository,
-        private val navigationManager: SetupNavigationManager,
+        private val setupNavigationManager: SetupNavigationManager,
+        private val navigationManager: NavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
         private val appUpgradeHandler: AppUpgradeHandler,
+        private val intentService: IntentService,
     ) : ViewModel() {
         private val mutex = Mutex()
 
-        fun appStart() {
+        fun appStart(intent: Intent?) {
             viewModelScope.launchDefault {
                 mutex.withLock {
+                    try {
+                        val result = intent?.let { intentService.parseIntent(intent) }
+                        when (result) {
+                            is IntentResult.Error -> {
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                Timber.e("Error parsing intent: %s", result.message)
+                                showToast(context, "Invalid intent: ${result.message}")
+                                return@withLock
+                            }
+
+                            is IntentResult.Target -> {
+                                val current = serverRepository.current.value
+                                if (current != null) {
+                                    Timber.i("Received valid intent, switching to AppContent")
+                                    navigationManager.replace(result.destination)
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.AppContent(current),
+                                    )
+                                } else {
+                                    // This should never happen, but just reset app state if it does
+                                    setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                    Timber.e("Error parsing intent, no user is active")
+                                    showToast(context, "An error occurred parsing the intent")
+                                }
+                                return@withLock
+                            }
+
+                            IntentResult.NoOp,
+                            null,
+                            -> {
+                                // No-op, proceed below
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error parsing intent")
+                    }
+
                     try {
                         val needUpgrade = appUpgradeHandler.needUpgrade()
                         if (needUpgrade) {
@@ -479,9 +480,9 @@ class MainActivityViewModel
                         val prefs =
                             preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                         val profileProtected =
-                            serverRepository.current.value?.user?.let {
-                                it.hasPin || it.requireLogin
-                            } == true
+                            serverRepository.current.value
+                                ?.user
+                                ?.isProtected == true
                         if (prefs.signInAutomatically && !profileProtected) {
                             val current =
                                 serverRepository.restoreSession(
@@ -490,38 +491,46 @@ class MainActivityViewModel
                                 )
                             if (current != null) {
                                 if (current.user.hasPin || current.user.requireLogin) {
-                                    navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.UserList(
+                                            current.server,
+                                        ),
+                                    )
                                 } else {
                                     // Restored
-                                    navigationManager.navigateTo(SetupDestination.AppContent(current))
+                                    setupNavigationManager.navigateTo(
+                                        SetupDestination.AppContent(
+                                            current,
+                                        ),
+                                    )
                                 }
                             } else {
                                 // Did not restore
-                                navigationManager.navigateTo(SetupDestination.ServerList)
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         } else {
-                            navigationManager.navigateTo(SetupDestination.Loading)
+                            setupNavigationManager.navigateTo(SetupDestination.Loading)
                             backdropService.clearBackdrop()
                             val currentServerId = prefs.currentServerId?.toUUIDOrNull()
                             if (currentServerId != null) {
                                 val currentServer =
                                     serverRepository.serverDao.getServer(currentServerId)?.server
                                 if (currentServer != null) {
-                                    navigationManager.navigateTo(
+                                    setupNavigationManager.navigateTo(
                                         SetupDestination.UserList(
                                             currentServer,
                                         ),
                                     )
                                 } else {
-                                    navigationManager.navigateTo(SetupDestination.ServerList)
+                                    setupNavigationManager.navigateTo(SetupDestination.ServerList)
                                 }
                             } else {
-                                navigationManager.navigateTo(SetupDestination.ServerList)
+                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error during appStart")
-                        navigationManager.navigateTo(SetupDestination.ServerList)
+                        setupNavigationManager.navigateTo(SetupDestination.ServerList)
                     }
                 }
             }

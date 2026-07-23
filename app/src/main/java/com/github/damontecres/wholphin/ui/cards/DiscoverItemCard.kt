@@ -59,8 +59,6 @@ fun DiscoverItemCard(
     width: Dp = Cards.height2x3 * AspectRatios.TALL,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
-    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
     var focusedAfterDelay by remember { mutableStateOf(false) }
 
     val hideOverlayDelay = 500L
@@ -78,7 +76,7 @@ fun DiscoverItemCard(
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.size(width, Dp.Unspecified),
     ) {
         Card(
@@ -180,13 +178,7 @@ fun DiscoverItemCard(
                 }
             }
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
-        ) {
+        SlidingCardText(focused) {
             Text(
                 text = item?.title ?: "",
                 maxLines = 1,

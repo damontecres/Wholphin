@@ -54,10 +54,11 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
-    data object UserAppPreferences : Destination(true)
+    data class Search(
+        val query: String = "",
+    ) : Destination()
 
-    @Serializable
-    data object Search : Destination()
+    data object UserAppPreferences : Destination(true)
 
     @Serializable
     data class SeriesOverview(

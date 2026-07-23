@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.cards
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -219,13 +218,11 @@ fun BannerCardWithTitle(
     useSeriesForPrimary: Boolean = item?.useSeriesForPrimary ?: true,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
-    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 0.dp else 8.dp)
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
     val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
     val width = cardHeight * aspectRationToUse
     Column(
-        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.width(width),
     ) {
         BannerCard(
@@ -245,13 +242,7 @@ fun BannerCardWithTitle(
             imageContentScale = imageContentScale,
             useSeriesForPrimary = useSeriesForPrimary,
         )
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
-        ) {
+        SlidingCardText(focused) {
             Text(
                 text = title ?: "",
                 style = MaterialTheme.typography.bodyLarge,

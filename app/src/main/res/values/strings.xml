@@ -166,8 +166,12 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>
-    <string name="years_old">%1$d years old</string>
+    <string name="watch_live">Watch live</string>g
+    <plurals name="years_old">
+        <item quantity="zero">%1$d years old</item>
+        <item quantity="one">%1$d year old</item>
+        <item quantity="other">%1$d years old</item>
+    </plurals>
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
@@ -398,7 +402,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -499,7 +503,7 @@
     <string name="image_subtitle_opacity">Image subtitle opacity</string>
 
     <string name="brightness">Brightness</string>
-    <string name="contrast">Constrast</string>
+    <string name="contrast">Contrast</string>
     <string name="saturation">Saturation</string>
     <string name="hue">Hue</string>
     <string name="red">Red</string>
@@ -871,4 +875,12 @@
     <string name="override_user_profile_settings">More user profile settings</string>
     <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
     <string name="any_language">Any language</string>
+    <string name="hash_matches">Hash matches</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programs</string>
+    <string name="recordings">Recordings</string>
+    <string name="folders_title">Folders</string>
+    <string name="user_views">User views</string>
+    <string name="books">Books</string>
+    <string name="audio_books">Audio books</string>
 </resources>

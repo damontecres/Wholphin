@@ -343,6 +343,7 @@ fun CollectionDetailsContent(
                                 modifier =
                                     Modifier
                                         .padding(
+                                            start = HeaderUtils.startPadding,
                                             top = HeaderUtils.topPadding,
                                             bottom = 8.dp,
                                         ).height(HeaderUtils.height),
@@ -424,7 +425,7 @@ fun CollectionDetailsContent(
                     onClickPlay = onClickPlay,
                     modifier = Modifier.fillMaxSize(),
                     onFocusPosition = { position ->
-                        Timber.v("onFocusPosition=%s", position)
+//                        Timber.v("onFocusPosition=%s", position)
                         focusedItem =
                             position.let {
                                 val key =

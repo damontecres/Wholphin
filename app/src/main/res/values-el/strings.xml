@@ -19,9 +19,11 @@
     <string name="background">Παρασκήνιο</string>
     <plurals name="theme_songs">
         <item quantity="one">Θεματικά τραγούδια</item>
+        <item quantity="other">Θεματικά τραγούδια</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Θεματικά βίντεο</item>
+        <item quantity="other">Θεματικά βίντεο</item>
     </plurals>
     <string name="next_up">Επόμενο</string>
     <string name="rewatch_next_up">Ενεργοποιήστε την επανάληψη παρακολούθησης στα \'Επόμενα\'</string>
@@ -40,7 +42,7 @@
     <string name="director">Σκηνοθέτης</string>
     <string name="studios">Στούντιο</string>
     <string name="sdr">SDR</string>
-    <string name="cast_and_crew"><![CDATA[Ηθοποιοί και Συνεργείο]]></string>
+    <string name="cast_and_crew">Ηθοποιοί και Συνεργείο</string>
     <string name="more_like_this">Περισσότερα Σαν Αυτό</string>
     <string name="episodes">Επεισόδια</string>
     <string name="jump_letters">#ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ</string>
@@ -169,27 +171,35 @@
     <string name="extras_title">Επιπρόσθετα</string>
     <plurals name="other_extras">
         <item quantity="one">Άλλο</item>
+        <item quantity="other">Άλλο</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Παρασκήνια</item>
+        <item quantity="other">Παρασκήνια</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Αποσπάσματα</item>
+        <item quantity="other">Αποσπάσματα</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Διαγραμμένες σκηνές</item>
+        <item quantity="other">Διαγραμμένες σκηνές</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Συνεντεύξεις</item>
+        <item quantity="other">Συνεντεύξεις</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Σκηνές</item>
+        <item quantity="other">Σκηνές</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Δείγματα</item>
+        <item quantity="other">Δείγματα</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Χαρακτηριστικά</item>
+        <item quantity="other">Χαρακτηριστικά</item>
     </plurals>
     <string name="auto_check_for_updates">Αυτόματος έλεγχος για ενημερώσεις</string>
     <string name="auto_play_next_delay">Καθυστέρηση πριν την έναρξη του επόμενου</string>
