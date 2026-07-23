@@ -58,7 +58,7 @@ fun LyricsContent(
         LaunchedEffect(currentLyricPosition) {
             if (currentLyricPosition != null) {
                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let {
-                    if (currentLyricPosition !in listState.firstVisibleItemIndex..it) {
+                    if (currentLyricPosition >= 0 && currentLyricPosition !in listState.firstVisibleItemIndex..it) {
                         listState.animateScrollToItem(currentLyricPosition)
                     }
                 }
