@@ -880,4 +880,5 @@
     <string name="user_views">User views</string>
     <string name="books">Books</string>
     <string name="audio_books">Audio books</string>
+    <string name="server_version_not_supported">Server version not supported</string>
 </resources>

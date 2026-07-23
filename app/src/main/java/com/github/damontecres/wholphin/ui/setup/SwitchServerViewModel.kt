@@ -24,6 +24,7 @@ import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.discovery.RecommendedServerInfoScore
 import org.jellyfin.sdk.discovery.RecommendedServerIssue
+import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -73,11 +74,30 @@ class SwitchServerViewModel
             server: JellyfinServer,
             result: ServerConnectionStatus,
         ) {
+            val supported =
+                if (result is ServerConnectionStatus.Success) {
+                    val serverVersion =
+                        result.systemInfo.version?.let { ServerVersion.fromString(it) }
+                    if (serverVersion == null || serverVersion < Jellyfin.minimumVersion) {
+                        ServerVersionSupported.NOT_SUPPORTED
+                    } else {
+                        ServerVersionSupported.SUPPORTED
+                    }
+                } else {
+                    ServerVersionSupported.UNKNOWN
+                }
             _state.update {
                 val servers =
                     it.servers.toMutableList().apply {
                         val index = indexOfFirst { it.server.id == server.id }
-                        set(index, get(index).copy(server = server, status = result))
+                        set(
+                            index,
+                            get(index).copy(
+                                server = server,
+                                status = result,
+                                versionSupported = supported,
+                            ),
+                        )
                     }
                 it.copy(servers = servers)
             }
@@ -245,4 +265,11 @@ data class ServerState(
     val server: JellyfinServer,
     val status: ServerConnectionStatus = ServerConnectionStatus.Pending,
     val quickConnect: Boolean = false,
+    val versionSupported: ServerVersionSupported = ServerVersionSupported.UNKNOWN,
 )
+
+enum class ServerVersionSupported {
+    SUPPORTED,
+    NOT_SUPPORTED,
+    UNKNOWN,
+}
