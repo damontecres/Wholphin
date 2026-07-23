@@ -489,6 +489,9 @@ class CollectionViewModel
                     BaseItemKind.EPISODE,
                     BaseItemKind.VIDEO,
                     BaseItemKind.BOX_SET,
+                    BaseItemKind.MUSIC_ARTIST,
+                    BaseItemKind.MUSIC_ALBUM,
+                    BaseItemKind.MUSIC_VIDEO,
                 )
 
             const val VIEW_OPTIONS_KEY = "CollectionViewOptions"

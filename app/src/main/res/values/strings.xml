@@ -874,4 +874,10 @@
     <string name="any_language">Any language</string>
     <string name="hash_matches">Hash matches</string>
     <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programs</string>
+    <string name="recordings">Recordings</string>
+    <string name="folders_title">Folders</string>
+    <string name="user_views">User views</string>
+    <string name="books">Books</string>
+    <string name="audio_books">Audio books</string>
 </resources>

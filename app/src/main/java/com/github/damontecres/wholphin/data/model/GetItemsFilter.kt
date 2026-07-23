@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.VideoType
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -138,6 +139,22 @@ data class GetItemsFilter(
             isFavorite = favorite,
         )
 
+    fun applyTo(req: GetArtistsRequest) =
+        req.copy(
+            minCommunityRating = minCommunityRating,
+            isFavorite = favorite,
+            genreIds = genres,
+            personIds = persons,
+            studioIds = studios,
+            tags = tags,
+            officialRatings = officialRatings,
+            years =
+                buildSet {
+                    years?.letNotEmpty(::addAll)
+                    decades?.forEach { addAll(it..<(it + 10)) }
+                },
+        )
+
     /**
      * Merge another [GetItemsFilter] onto this one, replacing only unset values
      */
@@ -162,4 +179,5 @@ data class GetItemsFilter(
 enum class GetItemsFilterOverride {
     NONE,
     PERSON,
+    ARTIST,
 }
