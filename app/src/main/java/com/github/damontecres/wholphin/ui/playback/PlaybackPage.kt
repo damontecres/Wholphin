@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -75,6 +74,7 @@ import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -379,7 +379,13 @@ fun PlaybackPageContent(
                 }
             }
 
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+            val controlsVisible =
+                remember(controllerViewState.controlsVisible, playbackDialog, subtitleSearchState) {
+                    controllerViewState.controlsVisible ||
+                        playbackDialog != null ||
+                        subtitleSearchState.status != SubtitleSearchStatus.Inactive
+                }
+            if (!controlsVisible && skipIndicatorDuration == 0L) {
                 PauseIndicator(
                     player = player,
                     modifier =
@@ -444,7 +450,7 @@ fun PlaybackPageContent(
 
             val subtitleVisible =
                 skipIndicatorDuration == 0L &&
-                    state.currentItemPlayback?.subtitleIndexEnabled == true &&
+                    state.currentPlayback?.subtitleIndexEnabled == true &&
                     !presentationState.coverSurface
 
             AndroidView(
@@ -629,28 +635,29 @@ fun PlaybackPageContent(
             }
             viewModel.cancelSubtitleSearch()
         }
-        Dialog(
+        BasicDialog(
             onDismissRequest = onDismissRequest,
             properties =
                 DialogProperties(
                     usePlatformDefaultWidth = false,
                 ),
         ) {
-            DownloadSubtitlesContent(
-                state = subtitleSearchState.status,
-                language = subtitleSearchState.language,
-                onSearch = { lang ->
-                    viewModel.searchForSubtitles(lang)
-                },
-                onClickDownload = {
-                    viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
-                },
-                onDismissRequest = onDismissRequest,
-                modifier =
-                    Modifier
-                        .widthIn(max = 640.dp)
-                        .heightIn(max = 400.dp),
-            )
+            Box(modifier = Modifier.padding(24.dp)) {
+                DownloadSubtitlesContent(
+                    state = subtitleSearchState.status,
+                    language = subtitleSearchState.language,
+                    onSearch = { lang ->
+                        viewModel.searchForSubtitles(lang)
+                    },
+                    onClickDownload = {
+                        viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
+                    },
+                    modifier =
+                        Modifier
+                            .widthIn(max = 640.dp)
+                            .heightIn(max = 400.dp),
+                )
+            }
         }
     }
 
@@ -660,9 +667,9 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = state.currentItemPlayback?.audioIndex,
+                    audioIndex = state.currentPlayback?.audioIndex,
                     audioStreams = state.currentMediaInfo.audioStreams,
-                    subtitleIndex = state.currentItemPlayback?.subtitleIndex,
+                    subtitleIndex = state.currentPlayback?.subtitleIndex,
                     subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,

@@ -872,4 +872,6 @@
     <string name="override_user_profile_settings">More user profile settings</string>
     <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
     <string name="any_language">Any language</string>
+    <string name="hash_matches">Hash matches</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
 </resources>
