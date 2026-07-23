@@ -604,4 +604,6 @@
     <string name="video_tunneling">Videotunnling</string>
     <string name="blocklisted">Svartlistad</string>
     <string name="unavailable">Otillgänglig</string>
+    <string name="books">Böcker</string>
+    <string name="audio_books">Ljudböcker</string>
 </resources>
