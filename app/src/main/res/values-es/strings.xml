@@ -705,4 +705,15 @@
     <string name="override_user_profile_settings">Más ajustes de usuario</string>
     <string name="override_user_profile_settings_summary">Sobreescribir los ajustes de usuario del servidor</string>
     <string name="any_language">Cualquier idioma</string>
+    <string name="d_pad_seek_mode_title">Modo de búsqueda con mando</string>
+    <string name="dpad_seek_mode_skip_time">Tiempo de salto</string>
+    <string name="dpad_seek_mode_trickplay">Miniaturas de previsualización</string>
+    <string name="hash_matches">Coincidencias de valores hash</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programas de televisión</string>
+    <string name="recordings">Grabaciones</string>
+    <string name="folders_title">Carpetas</string>
+    <string name="user_views">Vistas de usuario</string>
+    <string name="books">Libros</string>
+    <string name="audio_books">Audiolibros</string>
 </resources>
