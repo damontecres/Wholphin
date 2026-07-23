@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -76,9 +75,8 @@ fun HomeSettingsRowList(
     }
     Column(modifier = modifier) {
         TitleText(stringResource(R.string.customize_home))
-        LazyColumn(
+        HomeSettingsLazyColumn(
             state = listState,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 modifier
                     .fillMaxHeight()
@@ -253,6 +251,24 @@ fun HomeRowConfigContent(
 @Composable
 @NonRestartableComposable
 fun TitleText(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Start,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
+    )
+}
+
+@Composable
+@NonRestartableComposable
+fun SubTitleText(
     title: String,
     modifier: Modifier = Modifier,
 ) {
