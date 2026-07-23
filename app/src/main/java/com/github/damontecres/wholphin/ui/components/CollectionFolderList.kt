@@ -103,9 +103,11 @@ fun CollectionFolderList(
 
     fun jumpTo(newPosition: Int) {
         scope.launch {
-            position = newPosition
-            listState.animateScrollToItem(newPosition)
-            positionFocusRequester.tryRequestFocus()
+            if (newPosition >= 0) {
+                position = newPosition
+                listState.animateScrollToItem(newPosition)
+                positionFocusRequester.tryRequestFocus()
+            }
         }
     }
 
