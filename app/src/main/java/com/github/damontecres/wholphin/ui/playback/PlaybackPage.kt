@@ -265,7 +265,7 @@ fun PlaybackPageContent(
                 },
                 onPlaybackDialogTypeClick = { playbackDialog = it },
                 isDpadSeekVisible = {
-                    prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY && skipIndicatorDuration != 0L
+                    prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY && skipIndicatorDuration != 0L
                 },
                 onDpadSeek = onDpadSeek,
                 dpadSeekMode = prefs.dpadSeekMode,
@@ -382,7 +382,7 @@ fun PlaybackPageContent(
                 visible =
                     !controllerViewState.controlsVisible &&
                         skipIndicatorDuration != 0L &&
-                        prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY,
+                        prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY,
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = fadeOut() + slideOutVertically { it },
                 modifier =
@@ -408,7 +408,9 @@ fun PlaybackPageContent(
             }
 
             // If D-pad skipping, show the amount skipped in an animation
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L && prefs.dpadSeekMode != DpadSeekMode.TRICKPLAY) {
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L &&
+                prefs.dpadSeekMode != DpadSeekMode.SEEKBAR_TRICKPLAY
+            ) {
                 // Skip time mode: show seek distance indicator
                 SkipIndicator(
                     durationMs = skipIndicatorDuration,
@@ -421,8 +423,7 @@ fun PlaybackPageContent(
                             .padding(bottom = 70.dp),
                 )
                 // Show a small progress bar along the bottom of the screen
-                val showSkipProgress = true // TODO get from preferences
-                if (showSkipProgress) {
+                if (prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_MINIMAL) {
                     val percent = skipPosition.toFloat() / player.duration.toFloat()
                     Box(
                         modifier =

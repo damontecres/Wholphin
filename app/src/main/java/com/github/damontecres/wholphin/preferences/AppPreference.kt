@@ -664,7 +664,7 @@ sealed interface AppPreference<Pref, T> {
         val DpadSeekModePref =
             AppChoicePreference<AppPreferences, DpadSeekMode>(
                 title = R.string.d_pad_seek_mode_title,
-                defaultValue = DpadSeekMode.SKIP_TIME,
+                defaultValue = DpadSeekMode.SEEKBAR_MINIMAL,
                 getter = { it.playbackPreferences.dpadSeekMode },
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { dpadSeekMode = value }
@@ -672,6 +672,7 @@ sealed interface AppPreference<Pref, T> {
                 displayValues = R.array.dpad_seek_mode_options,
                 indexToValue = { DpadSeekMode.forNumber(it) },
                 valueToIndex = { if (it != DpadSeekMode.UNRECOGNIZED) it.number else 0 },
+                subtitles = R.array.dpad_seek_mode_summaries,
             )
 
         val GlobalContentScale =
