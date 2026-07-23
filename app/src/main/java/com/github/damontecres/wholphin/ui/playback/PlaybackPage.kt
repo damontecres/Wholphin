@@ -253,6 +253,7 @@ fun PlaybackPageContent(
                 getDurationMs = { player.duration.coerceAtLeast(0L) },
                 controllerViewState = controllerViewState,
                 updateSkipIndicator = updateSkipIndicator,
+                clearSkipIndicator = { skipIndicatorDuration = 0 },
                 skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                 onInteraction = viewModel::reportInteraction,
                 oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
@@ -261,13 +262,8 @@ fun PlaybackPageContent(
                     viewModel.navigationManager.goBack()
                 },
                 onPlaybackDialogTypeClick = { playbackDialog = it },
-                onEnterHiddenControls = {
-                    if (prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY && skipIndicatorDuration != 0L) {
-                        skipIndicatorDuration = 0L
-                        true
-                    } else {
-                        false
-                    }
+                isDpadSeekVisible = {
+                    prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY && skipIndicatorDuration != 0L
                 },
                 onDpadSeek = onDpadSeek,
                 dpadSeekMode = prefs.dpadSeekMode,

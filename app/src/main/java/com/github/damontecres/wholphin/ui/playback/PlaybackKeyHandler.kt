@@ -25,12 +25,13 @@ class PlaybackKeyHandler(
     private val getDurationMs: () -> Long,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
+    private val clearSkipIndicator: () -> Unit,
     private val skipBackOnResume: Duration?,
     private val oneClickPause: Boolean,
     private val onInteraction: () -> Unit,
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
-    private val onEnterHiddenControls: () -> Boolean = { false },
+    private val isDpadSeekVisible: () -> Boolean = { false },
     private val onDpadSeek: (Long) -> Unit = { },
     private val dpadSeekMode: DpadSeekMode,
 ) {
@@ -63,8 +64,9 @@ class PlaybackKeyHandler(
                     } else {
                         seekBy(-seekBack)
                     }
-                } else if (isEnterKey(it) && onEnterHiddenControls()) {
-                    // Enter handled the hidden-controls state without showing the full overlay.
+                } else if (isEnterKey(it) && isDpadSeekVisible()) {
+                    // If d-pad seek bar is visible, hide it
+                    clearSkipIndicator.invoke()
                 } else if (oneClickPause && isEnterKey(it)) {
                     val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
