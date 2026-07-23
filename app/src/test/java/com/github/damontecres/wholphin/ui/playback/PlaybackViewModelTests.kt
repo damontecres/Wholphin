@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
 import com.github.damontecres.wholphin.test.movie
@@ -101,6 +102,7 @@ class PlaybackViewModelTests {
     private val mockImageUrlService = mockk<ImageUrlService>(relaxed = true)
     private val mockScreensaverService = mockk<ScreensaverService>(relaxed = true)
     private val mockMusicService = mockk<MusicService>(relaxed = true)
+    private val mockStrmFileHandler = mockk<StrmFileHandler>(relaxed = true)
 
     private val mockUserLibraryApi = mockk<UserLibraryApi>()
     private val mockMediaInfoApi = mockk<MediaInfoApi>()
@@ -127,6 +129,7 @@ class PlaybackViewModelTests {
             imageUrlService = mockImageUrlService,
             screensaverService = mockScreensaverService,
             musicService = mockMusicService,
+            strmFileHandler = mockStrmFileHandler,
             destination = destination,
         )
 

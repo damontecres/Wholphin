@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -100,6 +101,7 @@ class SeriesViewModel
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
         private val mediaManagementService: MediaManagementService,
+        private val strmFileHandler: StrmFileHandler,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
         @Assisted val seriesPageType: SeriesPageType,
@@ -351,6 +353,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                             ItemFields.CAN_DELETE,
+                            ItemFields.PATH,
                         ),
                 )
             Timber.v(
@@ -526,6 +529,34 @@ class SeriesViewModel
                             userPreferencesService.getCurrent(),
                         )
                     _state.update { it.copy(chosenStreams = result) }
+                }
+        }
+
+        private var strmResolveJob: Job? = null
+
+        fun resolveStrm(
+            index: Int,
+            item: BaseItem,
+        ) {
+            strmResolveJob?.cancel()
+            _state.update { it.copy(strmLoading = false) }
+            strmResolveJob =
+                viewModelScope.launchIO {
+                    try {
+                        if (StrmFileHandler.shouldResolveStrm(item)) {
+                            _state.update { it.copy(strmLoading = true) }
+                            val result = strmFileHandler.resolveStrm(item)
+                            if (result != null) {
+                                Timber.d("Got updated item")
+                                refreshEpisode(item.id, index).join()
+                                lookUpChosenTracks(item.id, result)
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error checking strm file for %s", item.id)
+                    } finally {
+                        _state.update { it.copy(strmLoading = false) }
+                    }
                 }
         }
 
@@ -786,4 +817,5 @@ data class SeriesState(
     val discovered: List<DiscoverItem> = emptyList(),
     val discoverSeries: DiscoverItem? = null,
     val chosenStreams: ChosenStreams? = null,
+    val strmLoading: Boolean = false,
 )

@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.gt
@@ -151,6 +152,7 @@ class PlaybackViewModel
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
         private val musicService: MusicService,
+        private val strmFileHandler: StrmFileHandler,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -430,6 +432,13 @@ class PlaybackViewModel
                     }
 
                 Timber.i("Playing ${item.id}")
+
+                try {
+                    strmFileHandler.resolveStrm(item)
+                } catch (ex: Exception) {
+                    Timber.e(ex, "strm file error playing %s", item.id)
+                    return@withContext false
+                }
 
                 // New item, so we can clear the media segment tracker & subtitle cues
                 resetSegmentState()
