@@ -607,4 +607,17 @@
     <string name="unavailable">Otillgänglig</string>
     <string name="books">Böcker</string>
     <string name="audio_books">Ljudböcker</string>
+    <string name="duration_hours_minutes_seconds">%1$dt %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dt %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dt</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">%1$s kvar</string>
+    <string name="trailers_title"></string>
+    <string name="mpv_hardware_decoding">MPV: Använd hårdvaruavkodning</string>
+    <string name="interlaced">Sammanflätad</string>
+    <string name="level">Nivå</string>
+    <string name="mpv_conf">Redigera mpv.conf</string>
+    <string name="profile_specific_settings_from_server">Profilinställningar från server</string>
 </resources>
