@@ -425,7 +425,7 @@ fun CollectionDetailsContent(
                     onClickPlay = onClickPlay,
                     modifier = Modifier.fillMaxSize(),
                     onFocusPosition = { position ->
-                        Timber.v("onFocusPosition=%s", position)
+//                        Timber.v("onFocusPosition=%s", position)
                         focusedItem =
                             position.let {
                                 val key =

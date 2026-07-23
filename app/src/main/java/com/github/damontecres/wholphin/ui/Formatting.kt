@@ -230,36 +230,36 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.PLAYLIST -> R.string.playlists
         BaseItemKind.PERSON -> R.string.people_title
         BaseItemKind.BOX_SET -> R.string.collections
-        BaseItemKind.AUDIO -> TODO()
+        BaseItemKind.AUDIO -> R.string.songs
         BaseItemKind.CHANNEL -> R.string.channels
         BaseItemKind.GENRE -> R.string.genres
         BaseItemKind.LIVE_TV_CHANNEL -> R.string.channels
-        BaseItemKind.MUSIC_ALBUM -> TODO()
-        BaseItemKind.MUSIC_ARTIST -> TODO()
-        BaseItemKind.MUSIC_GENRE -> TODO()
-        BaseItemKind.MUSIC_VIDEO -> TODO()
+        BaseItemKind.MUSIC_ALBUM -> R.string.albums
+        BaseItemKind.MUSIC_ARTIST -> R.string.artists
+        BaseItemKind.MUSIC_GENRE -> R.string.genres
+        BaseItemKind.MUSIC_VIDEO -> R.string.music_videos
         BaseItemKind.PHOTO -> R.string.photos
-        BaseItemKind.PHOTO_ALBUM -> TODO()
-        BaseItemKind.PROGRAM -> TODO()
-        BaseItemKind.RECORDING -> TODO()
+        BaseItemKind.PHOTO_ALBUM -> R.string.photos
+        BaseItemKind.PROGRAM -> R.string.programs
+        BaseItemKind.RECORDING -> R.string.recordings
         BaseItemKind.SEASON -> R.string.tv_seasons
         BaseItemKind.STUDIO -> R.string.studios
         BaseItemKind.TRAILER -> R.string.trailers_title
         BaseItemKind.TV_CHANNEL -> R.string.channels
-        BaseItemKind.TV_PROGRAM -> TODO()
-        BaseItemKind.USER_ROOT_FOLDER -> TODO()
-        BaseItemKind.USER_VIEW -> TODO()
-        BaseItemKind.YEAR -> TODO()
-        BaseItemKind.AGGREGATE_FOLDER -> TODO()
-        BaseItemKind.AUDIO_BOOK -> TODO()
-        BaseItemKind.BASE_PLUGIN_FOLDER -> TODO()
-        BaseItemKind.BOOK -> TODO()
-        BaseItemKind.CHANNEL_FOLDER_ITEM -> TODO()
-        BaseItemKind.COLLECTION_FOLDER -> TODO()
-        BaseItemKind.FOLDER -> TODO()
-        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
-        BaseItemKind.LIVE_TV_PROGRAM -> TODO()
-        BaseItemKind.PLAYLISTS_FOLDER -> TODO()
+        BaseItemKind.TV_PROGRAM -> R.string.programs
+        BaseItemKind.USER_ROOT_FOLDER -> R.string.folders_title
+        BaseItemKind.USER_VIEW -> R.string.user_views
+        BaseItemKind.YEAR -> R.string.year
+        BaseItemKind.AGGREGATE_FOLDER -> R.string.folders_title
+        BaseItemKind.AUDIO_BOOK -> R.string.audio_books
+        BaseItemKind.BASE_PLUGIN_FOLDER -> R.string.folders_title
+        BaseItemKind.BOOK -> R.string.books
+        BaseItemKind.CHANNEL_FOLDER_ITEM -> R.string.folders_title
+        BaseItemKind.COLLECTION_FOLDER -> R.string.library
+        BaseItemKind.FOLDER -> R.string.folders_title
+        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> R.string.playlists
+        BaseItemKind.LIVE_TV_PROGRAM -> R.string.programs
+        BaseItemKind.PLAYLISTS_FOLDER -> R.string.playlists
     }
 
 /**
