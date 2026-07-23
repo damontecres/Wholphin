@@ -857,7 +857,7 @@
         <item>@string/none</item>
     </string-array>
     <string name="dpad_seek_mode_minimal_summary">Small seek bar along the bottom of the screen (default)</string>
-    <string name="dpad_seek_mode_trickplay_summary">Seek bar with trick play preview images</string>
+    <string name="dpad_seek_mode_trickplay_summary">Seek bar with trickplay preview images</string>
     <string name="dpad_seek_mode_none_summary">No seek bar</string>
     <string-array name="dpad_seek_mode_summaries">
         <item>@string/dpad_seek_mode_minimal_summary</item>
