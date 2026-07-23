@@ -123,6 +123,7 @@ fun NowPlayingPage(
 //                seekBack = preferences.playbackPreferences.skipBackMs.milliseconds,
                 controllerViewState = controllerViewState,
                 updateSkipIndicator = {},
+                clearSkipIndicator = {},
                 skipBackOnResume = null,
 //                skipBackOnResume = preferences.playbackPreferences.skipBackOnResume,
                 onInteraction = viewModel::reportInteraction,
@@ -132,6 +133,7 @@ fun NowPlayingPage(
                 },
                 onPlaybackDialogTypeClick = { },
                 getDurationMs = { player.duration },
+                dpadSeekMode = preferences.playbackPreferences.dpadSeekMode,
             )
         }
 
