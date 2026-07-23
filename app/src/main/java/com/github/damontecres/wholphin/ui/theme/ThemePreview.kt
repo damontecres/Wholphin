@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItem
@@ -42,24 +44,35 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Preview(
-    device = "spec:width=1200dp,height=2500dp",
+    device = "spec:width=1200dp,height=3000dp",
     backgroundColor = 0xFF383535,
     uiMode = UI_MODE_TYPE_TELEVISION,
 )
 @Composable
 private fun ThemePreview() {
+    val themes = AppThemeColors.entries.filterNot { it == AppThemeColors.UNRECOGNIZED }
     Column {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Fixed(3),
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            items(AppThemeColors.entries.filterNot { it == AppThemeColors.UNRECOGNIZED }) {
+            items(themes) {
                 ThemeExample(it)
             }
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        color = Color.White,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 8.dp),
+    )
 }
 
 @Composable
@@ -71,10 +84,13 @@ private fun ThemeExample(theme: AppThemeColors) {
                 Text(
                     text = theme.toString(),
                     color = Color.White,
+                    modifier = Modifier.padding(8.dp),
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(8.dp),
                 ) {
+                    SectionTitle("Cards")
                     Row(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically,
@@ -134,6 +150,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             aspectRatio = AspectRatios.SQUARE,
                         )
                     }
+                    SectionTitle("Controls")
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         SliderPreference(
                             preference = AppPreference.AutoPlayNextDelay,
@@ -191,6 +208,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             interactionSource = source,
                         )
                     }
+                    SectionTitle("Nav drawer")
                     val navScope = NavScope(true)
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -240,6 +258,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             )
                         }
                     }
+                    SectionTitle("Playback controls")
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant),
@@ -271,6 +290,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             interactionSource = source,
                         )
                     }
+                    SectionTitle("List items")
                     Column(
                         modifier = Modifier.background(MaterialTheme.colorScheme.surface),
                     ) {
