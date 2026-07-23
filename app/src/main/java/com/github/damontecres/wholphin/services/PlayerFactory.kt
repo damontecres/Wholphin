@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.profile.KnownDefects
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
@@ -336,11 +337,13 @@ class WholphinRenderersFactory(
             eventListener,
             out,
         )
-        // Replace the platform audio renderer with one that reports multichannel FLAC as
-        // unsupported, so the track selector routes it to the FFmpeg decoder instead. The AOSP
-        // software FLAC decoder (OMX.google.flac / c2.android.flac) claims to support it but fails
-        // at runtime with "no streaminfo metadata block"; stereo FLAC and vendor decoders are left
-        // alone. Via supportsFormat -- that, not getDecoderInfos, is what track selection consults.
+        // Devices in KnownDefects.multichannelFlacBug can't decode multichannel FLAC with the
+        // platform decoder. Replace the platform audio renderer with one that reports >2-channel
+        // FLAC as unsupported, so the track selector routes it to the bundled FFmpeg decoder;
+        // stereo FLAC and every other format keep the platform decoder, unchanged. Replaced in
+        // place (not appended) to preserve renderer order, and done via supportsFormat -- that,
+        // not getDecoderInfos, is what track selection consults.
+        if (!KnownDefects.multichannelFlacBug) return
         val platformIndex = out.indexOfFirst { it is MediaCodecAudioRenderer }
         if (platformIndex < 0) return
         out[platformIndex] =
@@ -357,16 +360,8 @@ class WholphinRenderersFactory(
                     mediaCodecSelector: MediaCodecSelector,
                     format: Format,
                 ): Int {
-                    if (MimeTypes.AUDIO_FLAC == format.sampleMimeType && format.channelCount > 2) {
-                        val decoders = super.getDecoderInfos(mediaCodecSelector, format, false)
-                        val aospSoftwareOnly =
-                            decoders.isNotEmpty() &&
-                                decoders.all {
-                                    it.name.startsWith("OMX.google.") || it.name.startsWith("c2.android.")
-                                }
-                        if (aospSoftwareOnly) {
-                            return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_SUBTYPE)
-                        }
+                    if (format.sampleMimeType == MimeTypes.AUDIO_FLAC && format.channelCount > 2) {
+                        return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_SUBTYPE)
                     }
                     return super.supportsFormat(mediaCodecSelector, format)
                 }
