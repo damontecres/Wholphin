@@ -8,6 +8,8 @@ import android.os.Handler
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.ExperimentalApi
@@ -17,7 +19,11 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.RendererCapabilities
 import androidx.media3.exoplayer.RenderersFactory
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -33,6 +39,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.profile.KnownDefects
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
@@ -308,5 +315,56 @@ class WholphinRenderersFactory(
                 throw java.lang.IllegalStateException("Error instantiating AV1 extension", e)
             }
         }
+    }
+
+    override fun buildAudioRenderers(
+        context: Context,
+        extensionRendererMode: Int,
+        mediaCodecSelector: MediaCodecSelector,
+        enableDecoderFallback: Boolean,
+        audioSink: AudioSink,
+        eventHandler: Handler,
+        eventListener: AudioRendererEventListener,
+        out: ArrayList<Renderer>,
+    ) {
+        super.buildAudioRenderers(
+            context,
+            extensionRendererMode,
+            mediaCodecSelector,
+            enableDecoderFallback,
+            audioSink,
+            eventHandler,
+            eventListener,
+            out,
+        )
+        // Devices in KnownDefects.multichannelFlacBug can't decode multichannel FLAC with the
+        // platform decoder. Replace the platform audio renderer with one that reports >2-channel
+        // FLAC as unsupported, so the track selector routes it to the bundled FFmpeg decoder;
+        // stereo FLAC and every other format keep the platform decoder, unchanged. Replaced in
+        // place (not appended) to preserve renderer order, and done via supportsFormat -- that,
+        // not getDecoderInfos, is what track selection consults.
+        if (!KnownDefects.multichannelFlacBug) return
+        val platformIndex = out.indexOfFirst { it is MediaCodecAudioRenderer }
+        if (platformIndex < 0) return
+        out[platformIndex] =
+            object : MediaCodecAudioRenderer(
+                context,
+                codecAdapterFactory,
+                mediaCodecSelector,
+                enableDecoderFallback,
+                eventHandler,
+                eventListener,
+                audioSink,
+            ) {
+                override fun supportsFormat(
+                    mediaCodecSelector: MediaCodecSelector,
+                    format: Format,
+                ): Int {
+                    if (format.sampleMimeType == MimeTypes.AUDIO_FLAC && format.channelCount > 2) {
+                        return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_SUBTYPE)
+                    }
+                    return super.supportsFormat(mediaCodecSelector, format)
+                }
+            }
     }
 }
