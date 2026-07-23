@@ -7,10 +7,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.media3.common.Player
 import androidx.media3.common.util.Util
+import com.github.damontecres.wholphin.preferences.DpadSeekMode
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Handles [KeyEvent]s during playback on [PlaybackPage]
@@ -31,7 +31,8 @@ class PlaybackKeyHandler(
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
     private val onEnterHiddenControls: () -> Boolean = { false },
-    private val onDpadSeek: (Long) -> Boolean = { false },
+    private val onDpadSeek: (Long) -> Unit = { },
+    private val dpadSeekMode: DpadSeekMode,
 ) {
     private var leftHandledByRepeat = false
     private var rightHandledByRepeat = false
@@ -52,15 +53,15 @@ class PlaybackKeyHandler(
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
                     if (isLtr) {
-                        seekBy(-seekBack.inWholeMilliseconds)
+                        seekBy(-seekBack)
                     } else {
-                        seekBy(seekForward.inWholeMilliseconds)
+                        seekBy(seekForward)
                     }
                 } else if (skipWithLeftRight && isSkipForward(it)) {
                     if (isLtr) {
-                        seekBy(seekForward.inWholeMilliseconds)
+                        seekBy(seekForward)
                     } else {
-                        seekBy(-seekBack.inWholeMilliseconds)
+                        seekBy(-seekBack)
                     }
                 } else if (isEnterKey(it) && onEnterHiddenControls()) {
                     // Enter handled the hidden-controls state without showing the full overlay.
@@ -181,22 +182,25 @@ class PlaybackKeyHandler(
     ) {
         if (isBack) {
             val skipDuration = seekBack * multiplier
-            seekBy(-skipDuration.inWholeMilliseconds)
+            seekBy(-skipDuration)
         } else {
             val skipDuration = seekForward * multiplier
-            seekBy(skipDuration.inWholeMilliseconds)
+            seekBy(skipDuration)
         }
     }
 
-    private fun seekBy(deltaMs: Long) {
-        if (onDpadSeek(deltaMs)) return
-
-        if (deltaMs < 0) {
-            player.seekBack((-deltaMs).milliseconds)
+    private fun seekBy(duration: Duration) {
+        val durationMs = duration.inWholeMilliseconds
+        if (dpadSeekMode == DpadSeekMode.TRICKPLAY) {
+            onDpadSeek.invoke(durationMs)
         } else {
-            player.seekForward(deltaMs.milliseconds)
+            if (duration < Duration.ZERO) {
+                player.seekBack(-duration)
+            } else {
+                player.seekForward(duration)
+            }
+            updateSkipIndicator(durationMs)
         }
-        updateSkipIndicator(deltaMs)
     }
 
     private fun setHandledByRepeat(

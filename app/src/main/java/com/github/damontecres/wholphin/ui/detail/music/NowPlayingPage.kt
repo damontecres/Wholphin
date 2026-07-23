@@ -132,6 +132,7 @@ fun NowPlayingPage(
                 },
                 onPlaybackDialogTypeClick = { },
                 getDurationMs = { player.duration },
+                dpadSeekMode = preferences.playbackPreferences.dpadSeekMode,
             )
         }
 
