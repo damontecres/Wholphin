@@ -11,6 +11,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -376,54 +378,61 @@ fun PlaybackPageContent(
                 }
             }
 
-            // If D-pad skipping, show the amount skipped in an animation
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
-                val seekMode = prefs.dpadSeekMode
+            AnimatedVisibility(
+                visible =
+                    !controllerViewState.controlsVisible &&
+                        skipIndicatorDuration != 0L &&
+                        prefs.dpadSeekMode == DpadSeekMode.TRICKPLAY,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it },
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter),
+            ) {
+                DpadSeekOverlay(
+                    player = player,
+                    seekPositionMs = skipPosition,
+                    trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                    trickplayUrlFor = viewModel::getTrickplayUrl,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                            .fillMaxWidth(.95f),
+                )
+                // Clear the overlay after a delay
+                LaunchedEffect(skipIndicatorDuration) {
+                    delay(1.5.seconds)
+                    skipIndicatorDuration = 0L
+                }
+            }
 
-                if (seekMode == DpadSeekMode.TRICKPLAY) {
-                    // Trickplay preview overlay
-                    DpadSeekOverlay(
-                        player = player,
-                        seekPositionMs = skipPosition,
-                        trickplayInfo = state.currentMediaInfo.trickPlayInfo,
-                        trickplayUrlFor = viewModel::getTrickplayUrl,
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 24.dp)
-                                .fillMaxWidth(.95f),
-                    )
-                    // Clear the overlay after a delay
-                    LaunchedEffect(skipIndicatorDuration) {
-                        delay(1_500L)
+            // If D-pad skipping, show the amount skipped in an animation
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L && prefs.dpadSeekMode != DpadSeekMode.TRICKPLAY) {
+                // Skip time mode: show seek distance indicator
+                SkipIndicator(
+                    durationMs = skipIndicatorDuration,
+                    onFinish = {
                         skipIndicatorDuration = 0L
-                    }
-                } else {
-                    // Skip time mode: show seek distance indicator
-                    SkipIndicator(
-                        durationMs = skipIndicatorDuration,
-                        onFinish = {
-                            skipIndicatorDuration = 0L
-                        },
+                    },
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 70.dp),
+                )
+                // Show a small progress bar along the bottom of the screen
+                val showSkipProgress = true // TODO get from preferences
+                if (showSkipProgress) {
+                    val percent = skipPosition.toFloat() / player.duration.toFloat()
+                    Box(
                         modifier =
                             Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 70.dp),
+                                .align(Alignment.BottomStart)
+                                .background(MaterialTheme.colorScheme.border)
+                                .clip(RectangleShape)
+                                .height(3.dp)
+                                .fillMaxWidth(percent),
                     )
-                    // Show a small progress bar along the bottom of the screen
-                    val showSkipProgress = true // TODO get from preferences
-                    if (showSkipProgress) {
-                        val percent = skipPosition.toFloat() / player.duration.toFloat()
-                        Box(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomStart)
-                                    .background(MaterialTheme.colorScheme.border)
-                                    .clip(RectangleShape)
-                                    .height(3.dp)
-                                    .fillMaxWidth(percent),
-                        )
-                    }
                 }
             }
 
