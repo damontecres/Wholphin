@@ -345,7 +345,7 @@ fun <T : CardGridItem> CardGrid(
                         items(pager.size) { index ->
                             val item = pager[index]
                             val details =
-                                remember(index, item, cardWidthPx) {
+                                remember(index, item, cardWidthPx, columns) {
                                     val mod =
                                         if ((index == currentFocusedIndex) or (currentFocusedIndex < 0 && index == 0)) {
                                             if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")

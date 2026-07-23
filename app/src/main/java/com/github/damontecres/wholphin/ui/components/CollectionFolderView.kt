@@ -253,6 +253,7 @@ class CollectionFolderViewModel
         }
 
         fun saveViewOptions(viewOptions: ViewOptions) {
+            position = 0
             _state.update { it.copy(viewOptions = viewOptions) }
             viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
