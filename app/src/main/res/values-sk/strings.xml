@@ -168,7 +168,10 @@
     <string name="videos">Videá</string>
     <string name="watch_live">Sledovať naživo</string>
     <plurals name="years_old">
-        <item quantity="other">%1$d rokov</item>
+        <item quantity="one">vo veku %1$d roka</item>
+        <item quantity="few">vo veku %1$d rokov</item>
+        <item quantity="many">vo veku %1$d rokov</item>
+        <item quantity="other">vo veku %1$d rokov</item>
     </plurals>
     <string name="play_with_transcoding">Prehrávať s prekódovaním</string>
     <string name="media_information">Informácie o médiu</string>
@@ -726,4 +729,15 @@
     <string name="override_user_profile_settings">Viac nastavení používateľského profilu</string>
     <string name="override_user_profile_settings_summary">Prepísať nastavenia používateľského profilu zo servera</string>
     <string name="any_language">Akýkoľvek jazyk</string>
+    <string name="d_pad_seek_mode_title">Režim pretáčania pomocou D-Padu</string>
+    <string name="dpad_seek_mode_skip_time">Čas preskočenia</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay náhľady</string>
+    <string name="hash_matches">Hash zhody</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programy</string>
+    <string name="recordings">Nahrávky</string>
+    <string name="folders_title">Priečinky</string>
+    <string name="user_views">Používateľské zobrazenia</string>
+    <string name="books">Knihy</string>
+    <string name="audio_books">Audioknihy</string>
 </resources>
