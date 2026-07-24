@@ -614,7 +614,6 @@
     <string name="duration_minutes">%1$dm</string>
     <string name="duration_seconds">%1$ds</string>
     <string name="time_left">%1$s kvar</string>
-    <string name="trailers_title"></string>
     <string name="mpv_hardware_decoding">MPV: Använd hårdvaruavkodning</string>
     <string name="interlaced">Sammanflätad</string>
     <string name="level">Nivå</string>
