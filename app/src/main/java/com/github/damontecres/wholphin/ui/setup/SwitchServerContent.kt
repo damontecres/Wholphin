@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.content.res.Resources
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -217,24 +218,7 @@ private fun SwitchServerContentInternal(
         val errorMessage =
             remember(resources, focusedIndex, state.servers) {
                 val server = state.servers.getOrNull(focusedIndex)
-                when {
-                    server?.status is ServerConnectionStatus.Error -> {
-                        server.status.message
-                    }
-
-                    server?.status is ServerConnectionStatus.Success &&
-                        server.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
-                        resources.getString(R.string.server_version_not_supported) + ": ${server.status.systemInfo.version}"
-                    }
-
-                    server?.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
-                        resources.getString(R.string.server_version_not_supported)
-                    }
-
-                    else -> {
-                        null
-                    }
-                }
+                serverErrorMessage(server, resources)
             }
         AnimatedContent(
             targetState = errorMessage,
@@ -482,3 +466,26 @@ private fun SwitchServerContentInternal(
         }
     }
 }
+
+fun serverErrorMessage(
+    server: ServerState?,
+    resources: Resources,
+): String? =
+    when {
+        server?.status is ServerConnectionStatus.Error -> {
+            server.status.message
+        }
+
+        server?.status is ServerConnectionStatus.Success &&
+            server.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
+            resources.getString(R.string.server_version_not_supported) + ": ${server.status.systemInfo.version}"
+        }
+
+        server?.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
+            resources.getString(R.string.server_version_not_supported)
+        }
+
+        else -> {
+            null
+        }
+    }

@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
@@ -78,7 +79,7 @@ class SwitchServerViewModel
                 if (result is ServerConnectionStatus.Success) {
                     val serverVersion =
                         result.systemInfo.version?.let { ServerVersion.fromString(it) }
-                    if (serverVersion == null || serverVersion < Jellyfin.minimumVersion) {
+                    if (serverVersion == null || serverVersion < WholphinApplication.minimumServerVersion) {
                         ServerVersionSupported.NOT_SUPPORTED
                     } else {
                         ServerVersionSupported.SUPPORTED
