@@ -685,9 +685,9 @@
     <string name="override_user_profile_settings">Daha fazla kullanıcı profili ayarı</string>
     <string name="override_user_profile_settings_summary">Sunucudaki kullanıcı profili ayarlarını geçersiz kıl</string>
     <string name="any_language">Herhangi bir dil</string>
-    <string name="d_pad_seek_mode_title">D-Pad İlerleme Modu</string>
+    <string name="d_pad_seek_mode_title">Yön Tuşu Arama Çubuğu Modu</string>
     <string name="dpad_seek_mode_skip_time">Atlama Süresi</string>
-    <string name="dpad_seek_mode_trickplay">Trickplay Önizlemeleri</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
     <string name="hash_matches">Hash Eşleşmeleri</string>
     <string name="subtitles_hearing_impaired">SDH</string>
     <string name="programs">TV Programları</string>
@@ -696,4 +696,8 @@
     <string name="user_views">Kullanıcı Görünümleri</string>
     <string name="books">Kitaplar</string>
     <string name="audio_books">Sesli Kitaplar</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_minimal_summary">Ekranın alt kısmında küçük ilerleme çubuğu (varsayılan)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Trickplay önizleme görsellerine sahip arama çubuğu</string>
+    <string name="dpad_seek_mode_none_summary">İlerleme çubuğu yok</string>
 </resources>
