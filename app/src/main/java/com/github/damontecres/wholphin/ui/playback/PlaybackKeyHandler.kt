@@ -193,7 +193,7 @@ class PlaybackKeyHandler(
 
     private fun seekBy(duration: Duration) {
         val durationMs = duration.inWholeMilliseconds
-        if (dpadSeekMode == DpadSeekMode.TRICKPLAY) {
+        if (dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY) {
             onDpadSeek.invoke(durationMs)
         } else {
             if (duration < Duration.ZERO) {

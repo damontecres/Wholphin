@@ -180,9 +180,6 @@
     <string name="add_to_playlist">Add to playlist</string>
     <string name="one_click_pause">Pause with one click</string>
     <string name="one_click_pause_summary_on">Press D-Pad center to pause/play</string>
-    <string name="d_pad_seek_mode_title">D-Pad seek mode</string>
-    <string name="dpad_seek_mode_skip_time">Skip time</string>
-    <string name="dpad_seek_mode_trickplay">Trickplay previews</string>
     <string name="italic_font">Italicize font</string>
     <string name="font">Font</string>
     <string name="background">Background</string>
@@ -850,9 +847,22 @@
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
     <string name="video_tunneling">Video tunneling</string>
+
+    <string name="d_pad_seek_mode_title">D-Pad seek bar mode</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
     <string-array name="dpad_seek_mode_options">
-        <item>@string/dpad_seek_mode_skip_time</item>
+        <item>@string/dpad_seek_mode_minimal</item>
         <item>@string/dpad_seek_mode_trickplay</item>
+        <item>@string/none</item>
+    </string-array>
+    <string name="dpad_seek_mode_minimal_summary">Small seek bar along the bottom of the screen (default)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Seek bar with trickplay preview images</string>
+    <string name="dpad_seek_mode_none_summary">No seek bar</string>
+    <string-array name="dpad_seek_mode_summaries">
+        <item>@string/dpad_seek_mode_minimal_summary</item>
+        <item>@string/dpad_seek_mode_trickplay_summary</item>
+        <item>@string/dpad_seek_mode_none_summary</item>
     </string-array>
 
     <string name="blocklisted">Blocklisted</string>
