@@ -59,7 +59,6 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.DefaultItemFields
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
@@ -167,8 +166,8 @@ class AlbumViewModel
                     // Resolve the deep-linked song's index up front so Success renders already focused on it.
                     val initialSongIndex =
                         initialSongId?.let { id ->
-                            songs.indexOfBlocking { it?.id == id }
-                        } ?: -1
+                            songs.indexOfBlocking { it?.id == id }.takeIf { it >= 0 }
+                        }
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
                     val allArtists =
                         album.data.artists.orEmpty() +
@@ -301,7 +300,7 @@ data class AlbumState(
     val songs: List<BaseItem?>,
     val similar: List<BaseItem>,
     val loading: LoadingState,
-    val initialSongIndex: Int = -1,
+    val initialSongIndex: Int? = null,
     val musicVideos: List<BaseItem?> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
@@ -321,8 +320,8 @@ private const val SIMILAR_ROW = EXTRAS_ROW + 1
 fun AlbumDetailsPage(
     itemId: UUID,
     preferences: UserPreferences,
-    initialSongId: UUID? = null,
     modifier: Modifier = Modifier,
+    initialSongId: UUID? = null,
     viewModel: AlbumViewModel =
         hiltViewModel<AlbumViewModel, AlbumViewModel.Factory>(
             creationCallback = { it.create(itemId, initialSongId) },
@@ -371,32 +370,32 @@ fun AlbumDetailsPage(
             val album = state.album!!
             val itemsBefore = 2
             val initialSongIndex = state.initialSongIndex
-            val hasInitialSong = initialSongIndex >= 0
             var position by rememberPosition(
-                row = if (hasInitialSong) SONG_ROW else 0,
-                column = initialSongIndex.coerceAtLeast(0),
+                row = if (initialSongIndex != null) SONG_ROW else 0,
+                column = initialSongIndex ?: 0,
             )
-
-            LaunchedEffect(Unit) { viewModel.updateBackDrop() }
 
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
+            // A deep-linked open starts already scrolled down to the song rather than at the top
             val listState =
                 rememberLazyListState(
-                    initialFirstVisibleItemIndex =
-                        if (hasInitialSong) itemsBefore + initialSongIndex else 0,
+                    initialFirstVisibleItemIndex = initialSongIndex?.let { itemsBefore + it } ?: 0,
                 )
 
             val songFocusRequester = remember { FocusRequester() }
-            RequestOrRestoreFocus(
-                if (position.row == SONG_ROW) songFocusRequester else focusRequesters.getOrNull(position.row),
-            )
+            LaunchedEffect(Unit) {
+                if (position.row == SONG_ROW) {
+                    songFocusRequester.tryRequestFocus()
+                } else {
+                    focusRequesters.getOrNull(position.row)?.tryRequestFocus()
+                }
+                viewModel.updateBackDrop()
+            }
             val backHandlerActive by remember {
                 derivedStateOf {
-                    // Deep-linked opens already start scrolled to the song, so let back pop the
-                    // screen instead of scrolling back up to the header.
-                    !hasInitialSong && listState.firstVisibleItemIndex > itemsBefore
+                    listState.firstVisibleItemIndex > itemsBefore
                 }
             }
             BackHandler(backHandlerActive) {

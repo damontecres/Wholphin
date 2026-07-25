@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.music.AlbumDetailsPage
 import com.github.damontecres.wholphin.ui.detail.music.ArtistDetailsPage
 import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
+import com.github.damontecres.wholphin.ui.detail.music.SongDetailsPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
@@ -260,6 +261,15 @@ fun DestinationContent(
                 BaseItemKind.MUSIC_ARTIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     ArtistDetailsPage(
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.AUDIO -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    SongDetailsPage(
                         preferences = preferences,
                         itemId = destination.itemId,
                         modifier = modifier,
