@@ -685,4 +685,15 @@
     <string name="override_user_profile_settings">Weitere Benutzerprofil-Einstellungen</string>
     <string name="override_user_profile_settings_summary">Überschreibe deine Benutzerprofileinstellungen mit denen vom Server</string>
     <string name="any_language">Beliebige Sprache</string>
+    <string name="hash_matches">Hash Übereinstimmungen</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV Programme</string>
+    <string name="recordings">Aufnahmen</string>
+    <string name="folders_title">Ordner</string>
+    <string name="books">Bücher</string>
+    <string name="audio_books">Hörbücher</string>
+    <string name="d_pad_seek_mode_title">D-Pad Suchmodus</string>
+    <string name="dpad_seek_mode_skip_time">Zeit überspringen</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay Vorschau</string>
+    <string name="user_views">Benutzeransicht</string>
 </resources>
