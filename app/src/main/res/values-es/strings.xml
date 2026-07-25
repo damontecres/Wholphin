@@ -707,7 +707,7 @@
     <string name="any_language">Cualquier idioma</string>
     <string name="d_pad_seek_mode_title">Modo de búsqueda con mando</string>
     <string name="dpad_seek_mode_skip_time">Tiempo de salto</string>
-    <string name="dpad_seek_mode_trickplay">Miniaturas de previsualización</string>
+    <string name="dpad_seek_mode_trickplay">Fotograma</string>
     <string name="hash_matches">Coincidencias de valores hash</string>
     <string name="subtitles_hearing_impaired">SDH</string>
     <string name="programs">Programas de televisión</string>
@@ -716,4 +716,8 @@
     <string name="user_views">Vistas de usuario</string>
     <string name="books">Libros</string>
     <string name="audio_books">Audiolibros</string>
+    <string name="dpad_seek_mode_minimal">Mínima</string>
+    <string name="dpad_seek_mode_minimal_summary">Barra de progreso pequeña en la parte inferior de la pantalla (predeterminado)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Barra de progreso con vista previa de fotogramas</string>
+    <string name="dpad_seek_mode_none_summary">Sin barra de progreso</string>
 </resources>
