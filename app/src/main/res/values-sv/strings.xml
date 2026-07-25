@@ -586,7 +586,7 @@
     <string name="slideshow_at_beginning">I början</string>
     <string name="no_more_images">Inga fler bilder</string>
     <string name="go_to_artist">Gå till artist</string>
-    <string name="load_from_web_client">Ladda från web client</string>
+    <string name="load_from_web_client">Ladda från webbklient</string>
     <string name="for_episodes">För episoder</string>
     <string name="increase_all_cards_size">Öka storleken för alla kort</string>
     <string name="decrease_all_cards_size">Minska storleken för alla kort</string>
@@ -619,4 +619,6 @@
     <string name="level">Nivå</string>
     <string name="mpv_conf">Redigera mpv.conf</string>
     <string name="profile_specific_settings_from_server">Profilinställningar från server</string>
+    <string name="no_max">Ingen övre gräns</string>
+    <string name="include_types">Inkludera typer</string>
 </resources>
