@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.playback
 import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,15 +12,21 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -42,6 +49,7 @@ import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
@@ -276,6 +284,24 @@ fun SubtitleChoiceBottomDialog(
     hasDownloadPermission: Boolean,
     currentChoice: Int? = null,
 ) {
+    val numberBefore = 2
+    val initialChoice =
+        remember(choices) {
+            choices.indexOfFirstOrNull { it.index == currentChoice }
+        }
+    val scope = rememberCoroutineScope()
+    val listState =
+        rememberLazyListState(
+            initialFirstVisibleItemIndex = initialChoice?.plus(numberBefore) ?: 0,
+        )
+    val firstFocusRequester = remember { FocusRequester() }
+    val lastFocusRequester = remember { FocusRequester() }
+    val choiceFocusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
+    LaunchedEffect(Unit) {
+        val focusRequester =
+            initialChoice?.let { choiceFocusRequesters.getOrNull(it) } ?: firstFocusRequester
+        focusRequester.tryRequestFocus()
+    }
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -298,6 +324,7 @@ fun SubtitleChoiceBottomDialog(
                     ),
         ) {
             LazyColumn(
+                state = listState,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -307,8 +334,11 @@ fun SubtitleChoiceBottomDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val focused by interactionSource.collectIsFocusedAsState()
                     ListItem(
                         selected = currentChoice == TrackIndex.DISABLED,
+                        interactionSource = interactionSource,
                         onClick = {
                             onSelectChoice(TrackIndex.DISABLED)
                         },
@@ -321,6 +351,19 @@ fun SubtitleChoiceBottomDialog(
                             )
                         },
                         supportingContent = {},
+                        modifier =
+                            Modifier
+                                .focusRequester(firstFocusRequester)
+                                .onKeyEvent {
+                                    if (focused && isUp(it) && it.type == KeyEventType.KeyDown) {
+                                        scope.launch {
+                                            listState.animateScrollToItem(Int.MAX_VALUE)
+                                            lastFocusRequester.tryRequestFocus()
+                                        }
+                                        return@onKeyEvent true
+                                    }
+                                    false
+                                },
                     )
                 }
                 item {
@@ -339,6 +382,9 @@ fun SubtitleChoiceBottomDialog(
                         },
                         supportingContent = {},
                     )
+                    if (choices.isNotEmpty()) {
+                        HorizontalDivider()
+                    }
                 }
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
@@ -359,10 +405,13 @@ fun SubtitleChoiceBottomDialog(
                             if (choice.streamTitle != null) Text(choice.displayTitle)
                         },
                         interactionSource = interactionSource,
+                        modifier = Modifier.focusRequester(choiceFocusRequesters[index]),
                     )
                 }
                 item {
                     HorizontalDivider()
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val focused by interactionSource.collectIsFocusedAsState()
                     ListItem(
                         selected = false,
                         enabled = hasDownloadPermission,
@@ -374,6 +423,20 @@ fun SubtitleChoiceBottomDialog(
                             )
                         },
                         supportingContent = {},
+                        interactionSource = interactionSource,
+                        modifier =
+                            Modifier
+                                .focusRequester(lastFocusRequester)
+                                .onKeyEvent {
+                                    if (focused && isDown(it) && it.type == KeyEventType.KeyDown) {
+                                        scope.launch {
+                                            listState.animateScrollToItem(0)
+                                            firstFocusRequester.tryRequestFocus()
+                                        }
+                                        return@onKeyEvent true
+                                    }
+                                    false
+                                },
                     )
                 }
             }

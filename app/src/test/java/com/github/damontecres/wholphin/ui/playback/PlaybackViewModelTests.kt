@@ -132,7 +132,7 @@ class PlaybackViewModelTests {
 
     private fun setupPreferences(block: PlaybackPreferences.Builder.() -> Unit) {
         val appPrefs = AppPreferences.getDefaultInstance().updatePlaybackPreferences(block)
-        val prefs = UserPreferences(appPrefs)
+        val prefs = UserPreferences(appPrefs, null)
         coEvery { mockUserPreferencesService.getCurrent() } returns prefs
     }
 
@@ -165,8 +165,7 @@ class PlaybackViewModelTests {
             .addVideo()
             .addAudio()
             .addSubtitle()
-            .buildForExoPlayer()
-            .toMediaSourceInfo()
+            .buildMediaSourceInfo()
 
     private val playSessionId = "playsessionid12345"
     private val videoStreamUrl = "http://localhost:8096/video/stream"

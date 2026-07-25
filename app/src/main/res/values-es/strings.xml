@@ -73,7 +73,9 @@
     <string name="version">Versión</string>
     <string name="video">Vídeo</string>
     <string name="videos">Vídeos</string>
-    <string name="years_old">%1$d años</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d años</item>
+    </plurals>
     <string name="play_with_transcoding">Reproducir con transcodificación</string>
     <string name="show_clock">Mostrar reloj</string>
     <string name="create_playlist">Crear nueva lista de reproducción</string>

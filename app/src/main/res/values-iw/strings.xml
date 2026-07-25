@@ -215,7 +215,9 @@
     <string name="video_scale">קנה מידה של הוידאו</string>
     <string name="video">וידאו</string>
     <string name="watch_live">צפה בשידור חי</string>
-    <string name="years_old">בגיל %1$d</string>
+    <plurals name="years_old">
+        <item quantity="other">בגיל %1$d</item>
+    </plurals>
     <string name="play_with_transcoding">נגן עם המרת קידוד</string>
     <string name="media_information">פרטי המדיה</string>
     <string name="show_clock">הצג שעון</string>

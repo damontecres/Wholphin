@@ -3,11 +3,14 @@ package com.github.damontecres.wholphin.services
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
@@ -800,6 +803,80 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
     }
 }
 
+/**
+ * Tests for client-side "Only Forced" override (TrackIndex.ONLY_FORCED).
+ * This tests the findForcedTrack function with user subtitle language preference.
+ */
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceAppPreferences(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
+                TestInput(
+                    expectedIndex = 1,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appSubtitleLang = UserProfileSettings.USE_USER_PROFILE,
+                ),
+                TestInput(
+                    expectedIndex = 0,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appSubtitleLang = "eng",
+                ),
+                TestInput(
+                    expectedIndex = 1,
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = null,
+                    appSubtitleLang = "spa",
+                ),
+                TestInput(
+                    expectedIndex = 1, // ItemPlayback
+                    userSubtitleMode = SubtitlePlaybackMode.ALWAYS,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", default = true),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = 1),
+                    appSubtitleLang = "spa",
+                ),
+            )
+    }
+}
+
 data class TestInput(
     val expectedIndex: Int?,
     val userSubtitleMode: SubtitlePlaybackMode?,
@@ -809,6 +886,9 @@ data class TestInput(
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
     val plc: PlaybackLanguageChoice? = null,
+    val appAudioLang: String = UserProfileSettings.USE_USER_PROFILE,
+    val appSubtitleLang: String = UserProfileSettings.USE_USER_PROFILE,
+    val appSubtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
 ) {
     override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"
 }
@@ -850,7 +930,15 @@ private fun runTest(input: TestInput) {
             candidates = input.subtitles,
             itemPlayback = input.itemPlayback,
             playbackLanguageChoice = input.plc,
-            prefs = UserPreferences(AppPreferences.getDefaultInstance()),
+            prefs =
+                UserPreferences(
+                    AppPreferences.getDefaultInstance(),
+                    JellyfinUserPreferences(
+                        preferredAudioLanguage = input.appAudioLang,
+                        preferredSubtitleLanguage = input.appSubtitleLang,
+                        subtitleMode = input.appSubtitleMode,
+                    ),
+                ),
         )
     Assert.assertEquals(input.expectedIndex, result?.index)
 }

@@ -67,7 +67,7 @@ fun ItemCardImage(
 ) {
     val imageUrlService = LocalImageUrlService.current
     val imageUrl =
-        remember(item) {
+        remember(item, imageType, fillWidth, fillHeight) {
             item?.let {
                 imageUrlService.getItemImageUrl(
                     item,

@@ -38,6 +38,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
+import com.github.damontecres.wholphin.api.seerr.model.TvShowStatus
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
@@ -598,7 +599,7 @@ fun DiscoverFilterByButton(
                                     }
 
                                     DiscoverTvStatusFilter -> {
-                                        (currentValue as? List<TvDetails.Status>)
+                                        (currentValue as? List<TvShowStatus>)
                                             .orEmpty()
                                             .contains(value.value)
                                     }
@@ -665,7 +666,7 @@ fun DiscoverFilterByButton(
 
                                         DiscoverTvStatusFilter -> {
                                             val list =
-                                                (currentValue as? List<TvDetails.Status>).orEmpty()
+                                                (currentValue as? List<TvShowStatus>).orEmpty()
                                             val newValue =
                                                 list
                                                     .toMutableList()
@@ -673,7 +674,7 @@ fun DiscoverFilterByButton(
                                                         if (isSelected) {
                                                             remove(value.value!!)
                                                         } else {
-                                                            add(value.value!! as TvDetails.Status)
+                                                            add(value.value!! as TvShowStatus)
                                                         }
                                                     }.takeIf { it.isNotEmpty() }
                                             filterOption.set(newValue, current)

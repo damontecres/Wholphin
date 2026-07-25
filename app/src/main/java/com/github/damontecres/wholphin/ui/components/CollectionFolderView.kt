@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -92,6 +93,7 @@ import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -160,7 +162,8 @@ class CollectionFolderViewModel
 
                     val libraryDisplayInfo =
                         serverRepository.currentUser?.let { user ->
-                            libraryDisplayInfoDao.getItem(user, itemId)
+                            val id = collectionFilter.libraryDisplayInfoIdOverride ?: itemId
+                            libraryDisplayInfoDao.getItem(user, id)
                         }
                     _state.update {
                         it.copy(
@@ -237,7 +240,7 @@ class CollectionFolderViewModel
                         val libraryDisplayInfo =
                             LibraryDisplayInfo(
                                 userId = user.rowId,
-                                itemId = itemId,
+                                itemId = collectionFilter.libraryDisplayInfoIdOverride ?: itemId,
                                 sort = newSort.sort,
                                 direction = newSort.direction,
                                 filter = newFilter,
@@ -367,6 +370,26 @@ class CollectionFolderViewModel
                             api,
                             request,
                             GetPersonsHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = useSeriesForPrimary,
+                        )
+                    newPager
+                }
+
+                GetItemsFilterOverride.ARTIST -> {
+                    val item = state.value.item.successValue
+                    val request =
+                        filter.applyTo(
+                            GetArtistsRequest(
+                                parentId = item?.id,
+                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            ),
+                        )
+                    val newPager =
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetArtistsHandler,
                             viewModelScope,
                             useSeriesForPrimary = useSeriesForPrimary,
                         )

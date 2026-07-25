@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,6 +26,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.listToDotString
@@ -64,16 +66,16 @@ fun DiscoverMovieDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 4.dp
+            val resources = LocalResources.current
             val details =
-                remember(movie, rating) {
+                remember(movie, rating, resources) {
                     buildList {
                         movie.releaseDate?.let(::add)
                         movie.runtime
                             ?.toDouble()
                             ?.minutes
                             ?.roundMinutes
-                            ?.toString()
-                            ?.let(::add)
+                            ?.let { add(resources.formatDuration(it)) }
                         val release =
                             movie.releases
                                 ?.results

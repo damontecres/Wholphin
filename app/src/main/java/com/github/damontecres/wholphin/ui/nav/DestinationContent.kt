@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
+import com.github.damontecres.wholphin.ui.preferences.user.UserProfilePreferencesPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -127,6 +128,10 @@ fun DestinationContent(
                 destination.hdr,
                 modifier,
             )
+        }
+
+        Destination.UserAppPreferences -> {
+            UserProfilePreferencesPage(modifier)
         }
 
         is Destination.SeriesOverview -> {
@@ -357,9 +362,10 @@ fun DestinationContent(
             LicenseInfo(modifier)
         }
 
-        Destination.Search -> {
+        is Destination.Search -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             SearchPage(
+                initialQuery = destination.query,
                 userPreferences = preferences,
                 modifier = modifier,
             )

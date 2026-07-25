@@ -515,7 +515,7 @@ fun AlphabetButtons(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val index = letters.indexOf(currentLetter)
+    val index = remember(letters, currentLetter) { letters.indexOf(currentLetter) }
     LaunchedEffect(currentLetter) {
         scope.launch(ExceptionHandler()) {
             val firstVisibleItemIndex = listState.firstVisibleItemIndex
@@ -523,7 +523,7 @@ fun AlphabetButtons(
                 listState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index ?: -1
-            if (index !in firstVisibleItemIndex..lastVisibleItemIndex) {
+            if (index >= 0 && index !in firstVisibleItemIndex..lastVisibleItemIndex) {
                 listState.animateScrollToItem(index)
             }
         }

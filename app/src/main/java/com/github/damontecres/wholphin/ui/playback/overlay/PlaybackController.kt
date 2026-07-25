@@ -215,7 +215,7 @@ fun Controller(
                     }
                 }
                 Text(
-                    text = "Ends $endTimeStr",
+                    text = stringResource(R.string.ends_at, endTimeStr),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelLarge,
                     modifier =

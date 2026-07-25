@@ -88,7 +88,7 @@ import java.util.UUID
 data class DialogParams(
     val fromLongClick: Boolean,
     val title: String,
-    val items: List<DialogItem>,
+    val items: List<DialogItemEntry>,
 )
 
 sealed interface DialogItemEntry
@@ -675,8 +675,9 @@ fun chooseStream(
     type: MediaStreamType,
     preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
-): DialogParams =
-    DialogParams(
+): DialogParams {
+    val filteredStreams = streams.filter { it.type == type }
+    return DialogParams(
         fromLongClick = false,
         title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
         items =
@@ -709,10 +710,12 @@ fun chooseStream(
                             onClick = { onClick.invoke(TrackIndex.ONLY_FORCED) },
                         ),
                     )
+                    if (filteredStreams.isNotEmpty()) {
+                        add(DialogItemDivider)
+                    }
                 }
                 addAll(
-                    streams
-                        .filter { it.type == type }
+                    filteredStreams
                         .let {
                             if (type == MediaStreamType.SUBTITLE && preferredSubtitleLanguage.isNotNullOrBlank()) {
                                 it.sortedByDescending { it.language != null && it.language == preferredSubtitleLanguage }
@@ -728,7 +731,9 @@ fun chooseStream(
                                 },
                                 headlineContent = {
                                     Text(
-                                        text = simpleStream.streamTitle ?: simpleStream.displayTitle,
+                                        text =
+                                            simpleStream.streamTitle
+                                                ?: simpleStream.displayTitle,
                                     )
                                 },
                                 supportingContent = {
@@ -740,3 +745,4 @@ fun chooseStream(
                 )
             },
     )
+}

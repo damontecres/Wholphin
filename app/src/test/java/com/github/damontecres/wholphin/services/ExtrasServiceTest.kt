@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import android.content.res.Resources
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.successResponse
@@ -47,12 +46,9 @@ class ExtrasServiceTest {
 
         every { mockApiClient.userLibraryApi } returns mockUserLibraryApi
         every { mockContext.resources } returns mockResources
-        every { mockResources.getQuantityString(R.plurals.interviews, any()) } returns "Interviews"
-        every { mockResources.getQuantityString(R.plurals.clips, any()) } returns "Clips"
-        every { mockResources.getQuantityString(R.plurals.interviews, any(), any<Int>()) } returns "Interviews"
-        every { mockResources.getQuantityString(R.plurals.clips, any(), any<Int>()) } returns "Clips"
-
-        every { mockResources.getQuantityString(R.plurals.items, any(), any<Int>()) } returns "Items"
+        every { mockResources.getString(any()) } returns "Interviews"
+        every { mockResources.getQuantityString(any(), any()) } returns "Interviews"
+        every { mockResources.getQuantityString(any(), any(), any<Int>()) } returns "Interviews"
 
         every { mockImageUrlService.getItemImageUrl(any<BaseItem>(), ImageType.PRIMARY, any(), any(), any()) } returns
             "https://localhost/image.jpg"
