@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,13 +89,20 @@ class DiscoverSearchViewModel
                 }
                 Timber.v("Starting seerr search")
                 seerrResults.value = SearchResult.Searching
-                val results =
-                    seerrService
-                        .search(query)
-                        .map { seerrService.createDiscoverItem(it) }
-                        .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
-                Timber.v("Seerr search complete: %s results", results.size)
-                seerrResults.value = SearchResult.SuccessSeerr(results)
+                try {
+                    val results =
+                        seerrService
+                            .search(query)
+                            .map { seerrService.createDiscoverItem(it) }
+                            .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
+                    Timber.v("Seerr search complete: %s results", results.size)
+                    seerrResults.value = SearchResult.SuccessSeerr(results)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during seerr search")
+                    seerrResults.value = SearchResult.Error(ex)
+                }
             }
         }
     }
