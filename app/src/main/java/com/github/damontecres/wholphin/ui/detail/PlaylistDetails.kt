@@ -556,10 +556,15 @@ fun PlaylistDetailsContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier =
                 Modifier
-                    .padding(top = 16.dp)
                     .fillMaxSize(),
         ) {
-            GridTitle(playlist?.name ?: stringResource(R.string.playlist))
+            val title =
+                if (loadingState is LoadingState.Success) {
+                    playlist?.name ?: stringResource(R.string.playlist)
+                } else {
+                    ""
+                }
+            GridTitle(title)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier =
@@ -714,16 +719,14 @@ fun PlaylistItems(
                         modifier
                             .padding(bottom = 32.dp)
                             .fillMaxHeight()
-//                            .fillMaxWidth(.8f)
                             .background(
                                 MaterialTheme.colorScheme
                                     .surfaceColorAtElevation(1.dp)
                                     .copy(alpha = .75f),
                                 shape = RoundedCornerShape(16.dp),
                             ).focusProperties {
-                                onExit = {
-                                    playButtonFocusRequester.tryRequestFocus()
-                                }
+                                left = playButtonFocusRequester
+                                previous = playButtonFocusRequester
                             }.focusGroup()
                             .focusRestorer(),
                 ) {
