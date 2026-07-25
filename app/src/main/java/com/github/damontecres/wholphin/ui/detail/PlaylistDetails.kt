@@ -102,6 +102,7 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.roundSeconds
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.LocalClock
@@ -811,7 +812,23 @@ fun PlaylistItem(
             )
         },
         trailingContent = {
-            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
+            val duration =
+                when (item?.type) {
+                    BaseItemKind.AUDIO -> {
+                        item.data.runTimeTicks
+                            ?.ticks
+                            ?.roundSeconds
+                    }
+
+                    else -> {
+                        item
+                            ?.data
+                            ?.runTimeTicks
+                            ?.ticks
+                            ?.roundMinutes
+                    }
+                }
+            duration?.let { duration ->
                 val now by LocalClock.current.now
                 val context = LocalContext.current
                 val endTimeStr =
@@ -820,12 +837,13 @@ fun PlaylistItem(
                         formatTime(context, endTime)
                     }
                 val resources = LocalResources.current
-                val durationText = remember(duration) { resources.formatDuration(duration) }
+                val durationText =
+                    remember(resources, duration) { resources.formatDuration(duration) }
                 Column {
                     Text(
                         text = durationText,
                     )
-                    if (item.type != BaseItemKind.AUDIO) {
+                    if (item?.type != BaseItemKind.AUDIO) {
                         Text(
                             text = stringResource(R.string.ends_at, endTimeStr),
                             style = MaterialTheme.typography.bodySmall,
