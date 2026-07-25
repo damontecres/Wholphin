@@ -57,7 +57,6 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = SongViewModel.Factory::class)
@@ -164,7 +163,7 @@ fun SongDetailsPage(
                 onClickAddToQueue = { item -> viewModel.addToQueue(item, -1) },
                 onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
                 onClickAddPlaylist = { id ->
-                    playlistViewModel.loadPlaylists(MediaType.AUDIO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(id)
                 },
                 onClickRemoveFromQueue = { _, _ -> },
@@ -266,6 +265,7 @@ fun SongDetailsPage(
                 playlistViewModel.createPlaylistAndAddItem(it, songId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }
