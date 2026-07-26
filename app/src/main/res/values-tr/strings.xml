@@ -700,4 +700,6 @@
     <string name="dpad_seek_mode_minimal_summary">Ekranın alt kısmında küçük ilerleme çubuğu (varsayılan)</string>
     <string name="dpad_seek_mode_trickplay_summary">Trickplay önizleme görsellerine sahip arama çubuğu</string>
     <string name="dpad_seek_mode_none_summary">İlerleme çubuğu yok</string>
+    <string name="brown">Kahverengi</string>
+    <string name="server_version_not_supported">Sunucu sürümü desteklenmiyor</string>
 </resources>
