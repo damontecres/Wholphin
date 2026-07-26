@@ -1,5 +1,10 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.content.res.Resources
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +35,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -55,6 +64,7 @@ import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 
@@ -85,8 +95,10 @@ private fun SwitchServerContentInternal(
     viewModel: SwitchServerViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val resources = LocalResources.current
     var showAddServer by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<JellyfinServer?>(null) }
+    var focusedIndex by rememberInt(0)
     Box(
         modifier = modifier.dimAndBlur(showAddServer || showDeleteDialog != null),
     ) {
@@ -125,8 +137,13 @@ private fun SwitchServerContentInternal(
             ) {
                 val focusRequester = remember { FocusRequester() }
                 val firstServerFocus = remember { FocusRequester() }
-                if (state.servers.isNotEmpty()) {
-                    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                LaunchedEffect(state.loading) {
+                    val state = state
+                    if (state.loading == LoadingState.Success && state.servers.isNotEmpty()) {
+                        firstServerFocus.tryRequestFocus()
+                    } else if (state.loading == LoadingState.Pending) {
+                        firstServerFocus.tryRequestFocus()
+                    }
                 }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -141,6 +158,7 @@ private fun SwitchServerContentInternal(
                         ServerIconCard(
                             server = server.server,
                             connectionStatus = server.status,
+                            serverVersionSupported = server.versionSupported,
                             isCurrentServer = false, // TODO: Determine current server if needed
                             onClick = {
                                 when (server.status) {
@@ -162,10 +180,13 @@ private fun SwitchServerContentInternal(
                             },
                             allowDelete = true,
                             modifier =
-                                Modifier.ifElse(
-                                    index == 0,
-                                    Modifier.focusRequester(firstServerFocus),
-                                ),
+                                Modifier
+                                    .onFocusChanged {
+                                        if (it.isFocused) focusedIndex = index
+                                    }.ifElse(
+                                        index == 0,
+                                        Modifier.focusRequester(firstServerFocus),
+                                    ),
                         )
                     }
                     // Add Server card - always rightmost
@@ -173,10 +194,13 @@ private fun SwitchServerContentInternal(
                         AddServerCard(
                             onClick = { showAddServer = true },
                             modifier =
-                                Modifier.ifElse(
-                                    state.servers.isEmpty(),
-                                    Modifier.focusRequester(firstServerFocus),
-                                ),
+                                Modifier
+                                    .onFocusChanged {
+                                        if (it.isFocused) focusedIndex = -1
+                                    }.ifElse(
+                                        state.servers.isEmpty(),
+                                        Modifier.focusRequester(firstServerFocus),
+                                    ),
                         )
                     }
                 }
@@ -188,6 +212,37 @@ private fun SwitchServerContentInternal(
                         .fillMaxWidth()
                         .height(56.dp),
                 // approximate TV button height
+            )
+        }
+
+        val errorMessage =
+            remember(resources, focusedIndex, state.servers) {
+                val server = state.servers.getOrNull(focusedIndex)
+                serverErrorMessage(server, resources)
+            }
+        AnimatedContent(
+            targetState = errorMessage,
+            transitionSpec = {
+                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
+            },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter),
+        ) { message ->
+
+            Text(
+                text = message ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
+                        .align(Alignment.BottomCenter),
             )
         }
 
@@ -411,3 +466,26 @@ private fun SwitchServerContentInternal(
         }
     }
 }
+
+fun serverErrorMessage(
+    server: ServerState?,
+    resources: Resources,
+): String? =
+    when {
+        server?.status is ServerConnectionStatus.Error -> {
+            server.status.message
+        }
+
+        server?.status is ServerConnectionStatus.Success &&
+            server.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
+            resources.getString(R.string.server_version_not_supported) + ": ${server.status.systemInfo.version}"
+        }
+
+        server?.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
+            resources.getString(R.string.server_version_not_supported)
+        }
+
+        else -> {
+            null
+        }
+    }
