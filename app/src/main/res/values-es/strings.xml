@@ -720,4 +720,6 @@
     <string name="dpad_seek_mode_minimal_summary">Barra de progreso pequeña en la parte inferior de la pantalla (predeterminado)</string>
     <string name="dpad_seek_mode_trickplay_summary">Barra de progreso con vista previa de fotogramas</string>
     <string name="dpad_seek_mode_none_summary">Sin barra de progreso</string>
+    <string name="brown">Marrón</string>
+    <string name="server_version_not_supported">Versión de servidor no soportada</string>
 </resources>
