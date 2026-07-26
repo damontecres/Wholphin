@@ -772,6 +772,8 @@ fun navItemColor(
                     AppThemeColors.BLUE,
                     AppThemeColors.GREEN,
                     AppThemeColors.ORANGE,
+                    AppThemeColors.RED,
+                    AppThemeColors.BROWN,
                     -> MaterialTheme.colorScheme.border
 
                     AppThemeColors.BOLD_BLUE,
