@@ -707,4 +707,20 @@
     <string name="override_user_profile_settings">Altre impostazioni del profilo utente</string>
     <string name="override_user_profile_settings_summary">Sovrascrivi le impostazioni del tuo profilo utente dal server</string>
     <string name="any_language">Qualsiasi lingua</string>
+    <string name="brown">Marrone</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programmi TV</string>
+    <string name="recordings">Registrazioni</string>
+    <string name="folders_title">Cartelle</string>
+    <string name="books">Libri</string>
+    <string name="d_pad_seek_mode_title">Modalità barra di avanzamento con D-Pad</string>
+    <string name="dpad_seek_mode_minimal">Minimale</string>
+    <string name="dpad_seek_mode_minimal_summary">Barra di avanzamento piccola in basso allo schermo (predefinita)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Barra di avanzamento con anteprime trickplay</string>
+    <string name="dpad_seek_mode_none_summary">Nessuna barra di avanzamento</string>
+    <string name="hash_matches">Corrispondenze hash</string>
+    <string name="user_views">Viste utente</string>
+    <string name="audio_books">Audiolibri</string>
+    <string name="server_version_not_supported">Versione del server non supportata</string>
 </resources>
