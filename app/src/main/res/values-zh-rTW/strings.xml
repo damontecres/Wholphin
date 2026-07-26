@@ -663,4 +663,19 @@
     <string name="override_user_profile_settings">更多個人化設定</string>
     <string name="override_user_profile_settings_summary">覆寫伺服器提供的個人化設定</string>
     <string name="any_language">任何語言</string>
+    <string name="brown">棕色</string>
+    <string name="d_pad_seek_mode_title">方向鍵進度條模式</string>
+    <string name="dpad_seek_mode_minimal">精簡</string>
+    <string name="dpad_seek_mode_trickplay">縮圖預覽</string>
+    <string name="dpad_seek_mode_minimal_summary">在畫面底部顯示小進度條 (預設)</string>
+    <string name="dpad_seek_mode_trickplay_summary">顯示有縮圖預覽的進度條</string>
+    <string name="dpad_seek_mode_none_summary">不顯示進度條</string>
+    <string name="hash_matches">雜湊值相符</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">電視劇</string>
+    <string name="recordings">錄影節目</string>
+    <string name="folders_title">資料夾</string>
+    <string name="books">書籍</string>
+    <string name="audio_books">有聲書</string>
+    <string name="server_version_not_supported">不支援此伺服器版本</string>
 </resources>
