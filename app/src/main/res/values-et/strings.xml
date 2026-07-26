@@ -685,4 +685,12 @@
     <string name="override_user_profile_settings">Veel kasutajaprofiili seadistusi</string>
     <string name="override_user_profile_settings_summary">Sürjuta serveris leiduvad kasutajaprofiili seadistused</string>
     <string name="any_language">Iga keel</string>
+    <string name="brown">Pruun</string>
+    <string name="programs">Teleprogrammid</string>
+    <string name="recordings">Salvestused</string>
+    <string name="folders_title">Kaustad</string>
+    <string name="user_views">Kasutajate vaatamisi</string>
+    <string name="books">Raamatud</string>
+    <string name="audio_books">Heliraamatud</string>
+    <string name="server_version_not_supported">Serveri versioon pole toetatud</string>
 </resources>
