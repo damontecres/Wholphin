@@ -84,8 +84,8 @@ import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
-import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
@@ -855,15 +855,17 @@ fun SearchPage(
                             onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                                EpisodeCard(
+                                BannerCardWithTitle(
+                                    title = item?.title,
+                                    subtitle = item?.subtitle,
                                     item = item,
                                     onClick = {
                                         setPosition(RowColumn(EPISODE_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
-                                    imageHeight = 140.dp,
                                     modifier = mod.padding(horizontal = 8.dp),
+                                    cardHeight = Cards.heightEpisode,
                                 )
                             },
                         )
