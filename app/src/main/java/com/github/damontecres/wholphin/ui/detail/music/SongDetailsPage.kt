@@ -195,8 +195,6 @@ fun SongDetailsPage(
                         .bringIntoViewRequester(bringIntoViewRequester)
                         .padding(bottom = 32.dp),
             ) {
-                // Reusing AlbumHeader: a song's header has the same shape as an album's
-                // (art, artist, title, quick details, genres, overview).
                 AlbumHeader(
                     album = song,
                     imageUrl = state.imageUrl,

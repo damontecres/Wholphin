@@ -162,7 +162,6 @@ class AlbumViewModel
                     val songsDeferred = async { getPagerForAlbum(api, itemId) }
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
-                    // Resolve the deep-linked song's index up front so Success renders already focused on it.
                     val initialSongIndex =
                         initialSongId?.let { id ->
                             songs.indexOfBlocking { it?.id == id }.takeIf { it >= 0 }
@@ -377,7 +376,6 @@ fun AlbumDetailsPage(
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
-            // A deep-linked open starts already scrolled down to the song rather than at the top
             val listState =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = initialSongIndex?.let { itemsBefore + it } ?: 0,
