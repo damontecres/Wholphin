@@ -729,4 +729,20 @@
     <string name="override_user_profile_settings">Więcej ustawień użytkownika</string>
     <string name="any_language">Dowolny język</string>
     <string name="override_user_profile_settings_summary">Napisz swoje ustawienia użytkownika, ustawieniami z serwera</string>
+    <string name="brown">Brązowy</string>
+    <string name="d_pad_seek_mode_title">Tryb paska wyszukiwania D-Pad</string>
+    <string name="dpad_seek_mode_minimal">Minimalistyczny</string>
+    <string name="dpad_seek_mode_trickplay">Podgląd scen</string>
+    <string name="dpad_seek_mode_minimal_summary">Mały pasek przewijania u dołu ekranu (domyślnie)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Pasek wyszukiwania z podglądem wideo</string>
+    <string name="dpad_seek_mode_none_summary">Brak paska przewijania</string>
+    <string name="hash_matches">Dopasowania hashy</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programy TV</string>
+    <string name="recordings">Nagrania</string>
+    <string name="folders_title">Foldery</string>
+    <string name="user_views">Widoki użytkownika</string>
+    <string name="books">Książki</string>
+    <string name="audio_books">Audiobooki</string>
+    <string name="server_version_not_supported">Wersja serwera nie jest wspierana</string>
 </resources>
