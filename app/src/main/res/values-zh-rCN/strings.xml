@@ -663,9 +663,9 @@
     <string name="override_user_profile_settings">更多用户配置设置</string>
     <string name="override_user_profile_settings_summary">从服务器覆盖您的用户配置设置</string>
     <string name="any_language">任何语言</string>
-    <string name="d_pad_seek_mode_title">方向键跳转模式</string>
+    <string name="d_pad_seek_mode_title">方向键进度条模式</string>
     <string name="dpad_seek_mode_skip_time">跳过时间</string>
-    <string name="dpad_seek_mode_trickplay">特技播放预览</string>
+    <string name="dpad_seek_mode_trickplay">特技播放</string>
     <string name="hash_matches">哈希匹配</string>
     <string name="subtitles_hearing_impaired">SDH</string>
     <string name="programs">电视节目</string>
@@ -674,4 +674,10 @@
     <string name="user_views">用户视图</string>
     <string name="books">书籍</string>
     <string name="audio_books">有声读物</string>
+    <string name="brown">棕色</string>
+    <string name="dpad_seek_mode_minimal">极简</string>
+    <string name="dpad_seek_mode_minimal_summary">屏幕底部的小型进度条（默认）</string>
+    <string name="dpad_seek_mode_trickplay_summary">带有特技播放预览图的进度条</string>
+    <string name="dpad_seek_mode_none_summary">无进度条</string>
+    <string name="server_version_not_supported">服务器版本不支持</string>
 </resources>
