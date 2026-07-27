@@ -449,7 +449,13 @@ class MainActivityViewModel
                                 val current = serverRepository.current.value
                                 if (current != null) {
                                     Timber.i("Received valid intent, switching to AppContent")
-                                    navigationManager.replace(result.destination)
+
+                                    navigationManager.goToHome()
+
+                                    result.destinations.forEach { destination ->
+                                        navigationManager.navigateTo(destination)
+                                    }
+
                                     setupNavigationManager.navigateTo(
                                         SetupDestination.AppContent(current),
                                     )
