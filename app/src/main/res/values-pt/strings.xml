@@ -138,6 +138,8 @@
     <string name="videos">Vídeos</string>
     <string name="watch_live">Ver em directo</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d ano</item>
+        <item quantity="many">%1$d anos</item>
         <item quantity="other">%1$d anos</item>
     </plurals>
     <string name="play_with_transcoding">Reproduzir com transcodificação</string>
@@ -619,7 +621,7 @@
     <string name="skip_behavior_summary">Para intros, créditos, etc</string>
     <string name="play_with">Reproduzir com</string>
     <string name="transcoding">Transcodificar</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Combinar resultados da pesquisa</string>
     <string name="combined_search_results_on">Mostrar todos os resultados numa única lista</string>
     <string name="combined_search_results_off">Mostrar resultados por categoria</string>
@@ -705,4 +707,20 @@
     <string name="override_user_profile_settings">Mais definições do perfil</string>
     <string name="override_user_profile_settings_summary">Substituir as definições do seu perfil a partir do servidor</string>
     <string name="any_language">Qualquer idioma</string>
+    <string name="brown">Castanho</string>
+    <string name="d_pad_seek_mode_title">Modo de barra de busca do D-Pad</string>
+    <string name="dpad_seek_mode_minimal">Mínimo</string>
+    <string name="dpad_seek_mode_trickplay">Fotograma</string>
+    <string name="dpad_seek_mode_minimal_summary">Barra de pesquisa pequena na parte inferior do ecrã (por predefinição)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Barra de pesquisa com imagens de pré-visualização de fotogramas</string>
+    <string name="dpad_seek_mode_none_summary">Sem barra de pesquisa</string>
+    <string name="hash_matches">Correspondências de hash</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programas de TV</string>
+    <string name="recordings">Gravações</string>
+    <string name="folders_title">Pastas</string>
+    <string name="user_views">Visualizações do utilizador</string>
+    <string name="books">Livros</string>
+    <string name="audio_books">Audiolivros</string>
+    <string name="server_version_not_supported">Versão do servidor não suportada</string>
 </resources>
