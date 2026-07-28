@@ -154,7 +154,9 @@ class ArtistViewModel
                         async {
                             val request =
                                 GetItemsRequest(
-                                    parentId = itemId,
+                                    albumArtistIds = listOf(itemId),
+                                    // Without this the query is scoped to the root folder's children, ie the libraries
+                                    recursive = true,
                                     fields = DefaultItemFields,
                                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
                                     sortBy =
