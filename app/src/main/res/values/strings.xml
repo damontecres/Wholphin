@@ -482,8 +482,8 @@
     </string-array>
     <string-array name="dovi_device_compatibility_mode_descriptions">
         <item>Allow Dolby Vision media</item>
-        <item>Force transcoding by reporting the device as incompatible with all Dolby Vision media</item>
-        <item>Force transcoding by reporting the device as incompatible with Dolby Vision and HDR10/HDR10+ hybrid media</item>
+        <item>Force transcoding all Dolby Vision media</item>
+        <item>Force transcoding Dolby Vision with HDR10/HDR10+ hybrid media</item>
     </string-array>
 
     <string name="discover">Discover</string>
