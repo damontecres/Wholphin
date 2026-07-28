@@ -75,13 +75,7 @@ class CollectionFolderMusicViewModel
             index: Int,
             item: BaseItem,
         ) {
-            if (item.type == BaseItemKind.AUDIO) {
-                viewModelScope.launchDefault {
-                    musicService.setQueue(listOf(item), false)
-                }
-            } else {
-                navigationManager.navigateTo(item.destination())
-            }
+            navigationManager.navigateTo(item.destination())
         }
 
         fun onClickPlayAll(shuffle: Boolean) {
