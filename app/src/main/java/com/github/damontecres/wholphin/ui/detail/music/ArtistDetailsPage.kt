@@ -59,6 +59,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
@@ -243,24 +244,7 @@ class ArtistViewModel
                             _state.update { it.copy(similar = similar) }
                         }
                     }
-                    viewModelScope.launchIO {
-                        val request =
-                            GetItemsRequest(
-                                userId = serverRepository.currentUser?.id,
-                                artistIds = listOf(itemId),
-                                parentId = null,
-                                fields = DefaultItemFields,
-                                recursive = true,
-                                includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
-                            )
-                        val musicVideos =
-                            GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                        if (musicVideos.isNotEmpty()) {
-                            _state.update {
-                                it.copy(musicVideos = musicVideos)
-                            }
-                        }
-                    }
+                    updateMusicVideos()
                 } catch (ex: Exception) {
                     _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
@@ -275,17 +259,52 @@ class ArtistViewModel
             }
         }
 
+        private fun updateMusicVideos() {
+            viewModelScope.launchIO {
+                val request =
+                    GetItemsRequest(
+                        userId = serverRepository.currentUser?.id,
+                        artistIds = listOf(itemId),
+                        parentId = null,
+                        fields = DefaultItemFields,
+                        recursive = true,
+                        includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
+                    )
+                val musicVideos =
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                if (musicVideos.isNotEmpty()) {
+                    _state.update {
+                        it.copy(musicVideos = musicVideos)
+                    }
+                }
+            }
+        }
+
         fun setFavorite(
             itemId: UUID,
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
-            val artist =
-                api.userLibraryApi
-                    .getItem(itemId = itemId)
-                    .content
-                    .let { BaseItem(it, false) }
-            _state.update { it.copy(artist = artist) }
+            // Refresh if artist, otherwise only could be a music video
+            if (itemId == this@ArtistViewModel.itemId) {
+                val artist =
+                    api.userLibraryApi
+                        .getItem(itemId = itemId)
+                        .content
+                        .let { BaseItem(it, false) }
+                _state.update { it.copy(artist = artist) }
+            } else {
+                updateMusicVideos()
+            }
+        }
+
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+            favoriteWatchManager.setWatched(itemId, played)
+            // Only applies to music videos
+            updateMusicVideos()
         }
     }
 
@@ -613,7 +632,37 @@ fun ArtistDetailsPage(
                                     viewModel.navigationManager.navigateTo(item.destination())
                                 },
                                 onLongClickItem = { index, item ->
-                                    // TODO
+                                    showContextMenu =
+                                        ContextMenu.ForBaseItem(
+                                            fromLongClick = true,
+                                            item = item,
+                                            chosenStreams = null,
+                                            showGoTo = true,
+                                            showStreamChoices = false,
+                                            canDelete =
+                                                viewModel.canDelete(
+                                                    item,
+                                                    preferences.appPreferences,
+                                                ),
+                                            canRemoveContinueWatching = false,
+                                            canRemoveNextUp = false,
+                                            actions =
+                                                ContextMenuActions(
+                                                    navigateTo = viewModel.navigationManager::navigateTo,
+                                                    onShowOverview = {},
+                                                    onClickWatch = viewModel::setWatched,
+                                                    onClickFavorite = viewModel::setFavorite,
+                                                    onClickAddPlaylist = { itemId ->
+                                                        playlistViewModel.loadPlaylists()
+                                                        showPlaylistDialog.makePresent(itemId)
+                                                    },
+                                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                                    onDeleteItem = viewModel::deleteItem,
+                                                    onChooseVersion = { _, _ -> },
+                                                    onChooseTracks = { },
+                                                    onClearChosenStreams = {},
+                                                ),
+                                        )
                                 },
                                 cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
                                     BannerCardWithTitle(
