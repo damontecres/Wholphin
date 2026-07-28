@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
@@ -304,8 +306,10 @@ fun PlaybackOverlay(
                             )
                         }
                     }
+                    val resources = LocalResources.current
+                    val seekText = remember(seekProgressMs / 1000L) { resources.formatDuration((seekProgressMs / 1000L).seconds) }
                     Text(
-                        text = (seekProgressMs / 1000L).seconds.toString(),
+                        text = seekText,
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.labelLarge,
                         modifier =

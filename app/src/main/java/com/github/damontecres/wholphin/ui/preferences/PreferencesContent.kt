@@ -103,7 +103,6 @@ fun PreferencesContent(
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.collectAsState()
-    val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
     val players by viewModel.externalPlayers.collectAsState()
@@ -621,7 +620,7 @@ fun PreferencesContent(
                                         value = value,
                                         onNavigate = viewModel.navigationManager::navigateTo,
                                         onValueChange = { newValue ->
-                                            val validation = pref.validate(newValue)
+                                            val validation = pref.validate(preferences, newValue)
                                             when (validation) {
                                                 is PreferenceValidation.Invalid -> {
                                                     // TODO?

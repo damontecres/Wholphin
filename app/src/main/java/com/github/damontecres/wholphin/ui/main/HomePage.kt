@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -90,7 +91,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -103,8 +103,9 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
+    LifecycleStartEffect(Unit) {
         viewModel.init()
+        onStopOrDispose { }
     }
     val state by viewModel.state.collectAsState()
     val loading = state.loadingState
@@ -175,7 +176,7 @@ fun HomePage(
                                         onClickWatch = viewModel::setWatched,
                                         onClickFavorite = viewModel::setFavorite,
                                         onClickAddPlaylist = { itemId ->
-                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            playlistViewModel.loadPlaylists()
                                             showPlaylistDialog = itemId
                                         },
                                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -256,6 +257,7 @@ fun HomePage(
                         playlistViewModel.createPlaylistAndAddItem(it, itemId)
                         showPlaylistDialog = null
                     },
+                    onSearch = playlistViewModel::loadPlaylists,
                     elevation = 3.dp,
                 )
             }

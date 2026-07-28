@@ -5,7 +5,9 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -135,7 +137,17 @@ class StreamChoiceService
                 val seriesLang =
                     playbackLanguageChoice?.audioLanguage?.takeIf { it.isNotNullOrBlank() }
                 // If the user has chosen a different language for the series, prefer that
-                val audioLanguage = seriesLang ?: userConfig?.audioLanguagePreference
+                val audioLanguage =
+                    if (seriesLang != null) {
+                        seriesLang
+                    } else {
+                        val pref = prefs.userPreferences?.preferredAudioLanguage
+                        when (pref) {
+                            UserProfileSettings.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
+                            UserProfileSettings.PREFER_ANY_LANGUAGE -> null
+                            else -> pref
+                        }
+                    }
 
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
@@ -226,23 +238,26 @@ class StreamChoiceService
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
-            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+            }
+            val seriesLang =
+                playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
+            val subtitleLanguage =
+                if (seriesLang != null) {
+                    seriesLang
+                } else {
+                    val pref = prefs.userPreferences?.preferredSubtitleLanguage
+                    when (pref) {
+                        UserProfileSettings.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
+                        UserProfileSettings.PREFER_ANY_LANGUAGE -> null
+                        else -> pref
+                    }?.takeIf { it.isNotNullOrBlank() }
+                }
+            if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
-                val seriesLang =
-                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-                val subtitleLanguage =
-                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
-                        ?.takeIf { it.isNotNullOrBlank() }
                 return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
-                val seriesLang =
-                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-                val subtitleLanguage =
-                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
-                        ?.takeIf { it.isNotNullOrBlank() }
-
                 val subtitleMode =
                     when {
                         playbackLanguageChoice?.subtitlesDisabled == false && seriesLang != null -> {
@@ -258,9 +273,17 @@ class StreamChoiceService
 
                         else -> {
                             // Fallback to the user's preference
-                            userConfig?.subtitleMode ?: SubtitlePlaybackMode.DEFAULT
+                            when (prefs.userPreferences?.subtitleMode) {
+                                SubtitleModePreference.USE_USER_PROFILE -> userConfig?.subtitleMode
+                                SubtitleModePreference.DEFAULT -> SubtitlePlaybackMode.DEFAULT
+                                SubtitleModePreference.SMART -> SubtitlePlaybackMode.SMART
+                                SubtitleModePreference.ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
+                                SubtitleModePreference.ALWAYS -> SubtitlePlaybackMode.ALWAYS
+                                SubtitleModePreference.NONE -> SubtitlePlaybackMode.NONE
+                                null -> SubtitlePlaybackMode.DEFAULT
+                            }
                         }
-                    }
+                    } ?: SubtitlePlaybackMode.DEFAULT
                 val candidates =
                     candidates
                         .sortedWith(

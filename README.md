@@ -103,7 +103,7 @@ Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
 
-Seerr integration is tested with `v3.2.0`. Older versions may not work.
+Seerr integration is tested with `v3.3.0`. Older versions may not work.
 
 ## Contributions
 

@@ -12,10 +12,14 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -56,7 +60,18 @@ class ServerRepository
         val currentServer: JellyfinServer? get() = _current.value?.server
         val currentServerFlow: Flow<JellyfinServer?> get() = _current.map { it?.server }
         val currentUser: JellyfinUser? get() = _current.value?.user
-        val currentUserFlow: Flow<JellyfinUser?> get() = _current.map { it?.user }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        val currentUserFlow: Flow<JellyfinUser?>
+            get() =
+                _current
+                    .flatMapLatest { user ->
+                        if (user?.user != null) {
+                            serverDao.getUserFlow(user.user.serverId, user.user.id)
+                        } else {
+                            flow { emit(null) }
+                        }
+                    }
 
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
@@ -297,6 +312,16 @@ class ServerRepository
                 val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
                 response.content
             }
+
+        /**
+         * Update [currentUserDto] by querying the server
+         */
+        suspend fun updateUserDto() {
+            val userDto by apiClient.userApi.getCurrentUser()
+            _currentUserDto.update {
+                if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
+            }
+        }
 
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =

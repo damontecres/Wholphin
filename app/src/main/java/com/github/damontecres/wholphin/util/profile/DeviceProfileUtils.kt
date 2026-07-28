@@ -73,6 +73,7 @@ fun createDeviceProfile(
     doviDeviceCompatibilityMode: DoviDeviceCompatibilityMode,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
+    preferAc3ForSurround: Boolean,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -134,31 +135,61 @@ fun createDeviceProfile(
 
     // / Transcoding profiles
     // Video
-    transcodingProfile {
-        type = DlnaProfileType.VIDEO
-        context = EncodingContext.STREAMING
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        if (supportsHevc) videoCodec(Codec.Video.HEVC)
-        videoCodec(Codec.Video.H264)
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
 
-        audioCodec(*allowedAudioCodecs)
+            audioCodec(Codec.Audio.AC3)
 
-        copyTimestamps = false
-        enableSubtitlesInManifest = true
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
+
+            audioCodec(*allowedAudioCodecs)
+
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
     }
 
     // Audio
-    transcodingProfile {
-        type = DlnaProfileType.AUDIO
-        context = EncodingContext.STREAMING
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        audioCodec(Codec.Audio.AAC)
+            audioCodec(Codec.Audio.AC3)
+        }
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            audioCodec(Codec.Audio.AAC)
+        }
     }
 
     // / Direct play profiles
@@ -563,6 +594,27 @@ fun createDeviceProfile(
                 ProfileConditionValue.VIDEO_RANGE_TYPE inCollection unsupportedRangeTypesHevc
             }
         }
+    }
+
+    if (preferAc3ForSurround) {
+        supportedAudioCodecs
+            .filterNot { it == Codec.Audio.AC3 }
+            .forEach { audioCodec ->
+                codecProfile {
+                    type = CodecType.VIDEO_AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+                codecProfile {
+                    type = CodecType.AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+            }
     }
 
     // Audio channel profile

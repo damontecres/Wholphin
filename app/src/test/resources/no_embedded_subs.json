@@ -50,7 +50,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Path": "",
-      "Level": 0
+      "Level": 0,
+      "DeliveryMethod": "External"
     },
     {
       "Codec": "hevc",

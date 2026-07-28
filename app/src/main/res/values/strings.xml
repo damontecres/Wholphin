@@ -26,6 +26,12 @@
     <string name="continue_watching">Continue watching</string>
     <string name="critic_rating">Critic Rating</string>
     <string name="decimal_seconds">%.2f seconds</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
     <string name="default_track">Default</string>
     <string name="delete">Delete</string>
     <string name="died">Died</string>
@@ -89,6 +95,7 @@
     <string name="playlists">Playlists</string>
     <string name="preview">Preview</string>
     <string name="profile_specific_settings">User Profile Settings</string>
+    <string name="profile_specific_settings_from_server">User profile settings from server</string>
     <string name="queue">Queue</string>
     <string name="recap">Recap</string>
     <string name="recently_added_in">Recently added in %1$s</string>
@@ -144,6 +151,7 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
+    <string name="time_left">%1$s left</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
     <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
@@ -555,6 +563,8 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transcode non-stereo audio to AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Use AC3 for surround sound audio</string>
     <string name="start_after">Start after</string>
     <string name="animate">Animate</string>
     <string name="max_age_rating">Max age rating</string>
@@ -844,4 +854,29 @@
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
     <string name="video_tunneling">Video tunneling</string>
+    <string name="blocklisted">Blocklisted</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="subtitle_mode">Subtitle mode</string>
+
+    <string name="use_user_profile">Use your profile setting</string>
+
+    <string name="subtitle_mode_default">Default</string>
+    <string name="subtitle_mode_smart">Smart</string>
+    <string name="subtitle_mode_only_forced">Only Forced</string>
+    <string name="subtitle_mode_always">Always</string>
+    <string name="subtitle_mode_none">None</string>
+    <string-array name="subtitle_mode_options">
+        <item>@string/use_user_profile</item>
+        <item>@string/subtitle_mode_default</item>
+        <item>@string/subtitle_mode_smart</item>
+        <item>@string/subtitle_mode_only_forced</item>
+        <item>@string/subtitle_mode_always</item>
+        <item>@string/subtitle_mode_none</item>
+    </string-array>
+
+    <string name="preferred_subtitle_language">Preferred subtitle language</string>
+    <string name="preferred_audio_language">Preferred audio language</string>
+    <string name="override_user_profile_settings">More user profile settings</string>
+    <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
+    <string name="any_language">Any language</string>
 </resources>

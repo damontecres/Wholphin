@@ -120,10 +120,16 @@
     <string name="one_click_pause">Pauza jednym kliknięciem</string>
     <string name="one_click_pause_summary_on">Wciśnij środek by pauzować/wznowić</string>
     <plurals name="interviews">
-        <item quantity="one">Wywiady</item>
+        <item quantity="one">Wywiad</item>
+        <item quantity="few">Wywiady</item>
+        <item quantity="many">Wywiadów</item>
+        <item quantity="other">Wywiadów</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Sceny</item>
+        <item quantity="one">Scena</item>
+        <item quantity="few">Sceny</item>
+        <item quantity="many">Scen</item>
+        <item quantity="other">Scen</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Czołówka</item>
@@ -262,7 +268,10 @@
     <string name="official_rating">Ocena rodzicielska</string>
     <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
-        <item quantity="one">Inne</item>
+        <item quantity="one">Inny</item>
+        <item quantity="few">Inne</item>
+        <item quantity="many">Innych</item>
+        <item quantity="other">Innych</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Usunięta scena</item>
@@ -449,7 +458,7 @@
     <string name="force_dovi_profile_7">Odtwarzanie bezpośrednie Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignoruj sprawdzanie zgodności urządzenia</string>
     <string name="discover">Odkryj</string>
-    <string name="request">Prośby</string>
+    <string name="request">Poproś</string>
     <string name="pending">Oczekujące</string>
     <string name="seerr_integration">Integracja z Seerr</string>
     <string name="remove_seerr_server">Usuń serwer Seerr</string>
@@ -464,7 +473,7 @@
     <string name="voice_error_start_failed">Nie udało się uruchomić rozpoznawania głosu</string>
     <string name="voice_error_timeout">Przekroczono limit czasu rozpoznawania głosu</string>
     <plurals name="theme_songs">
-        <item quantity="one">Piosenka tematyczne</item>
+        <item quantity="one">Piosenka tematyczna</item>
         <item quantity="few">Piosenki tematyczne</item>
         <item quantity="many">Piosenek tematycznych</item>
         <item quantity="other">Piosenek tematycznych</item>
@@ -580,16 +589,28 @@
     <string name="aired_episode_order">Kolejność emisji odcinków</string>
     <string name="runtime_sort">Czas trwania</string>
     <plurals name="clips">
-        <item quantity="one">Klipy</item>
+        <item quantity="one">Klip</item>
+        <item quantity="few">Klipy</item>
+        <item quantity="many">Klipów</item>
+        <item quantity="other">Klipów</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Próbki</item>
+        <item quantity="one">Próbka</item>
+        <item quantity="few">Próbki</item>
+        <item quantity="many">Próbek</item>
+        <item quantity="other">Próbek</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Filmy krótkometrażowe</item>
+        <item quantity="one">Film krótkometrażowy</item>
+        <item quantity="few">Filmy krótkometrażowe</item>
+        <item quantity="many">Filmów krótkometrażowych</item>
+        <item quantity="other">Filmów krótkometrażowych</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Krótkie filmy</item>
+        <item quantity="one">Krótki filmy</item>
+        <item quantity="few">Krótkie filmy</item>
+        <item quantity="many">Krótkich filmy</item>
+        <item quantity="other">Krótkich filmy</item>
     </plurals>
     <string name="aspect_ratio">Proporcje ekranu</string>
     <string name="guest_stars">Aktorzy gościnni</string>
@@ -667,4 +688,23 @@
         <item quantity="many">Serialów</item>
         <item quantity="other">Serialów</item>
     </plurals>
+    <string name="genre_movies">Filmy z gatunku: %1$s</string>
+    <string name="genre_tv_shows">Seriale z gatunku: %1$s</string>
+    <string name="quality_profile">Profil jakości</string>
+    <string name="is_default">Domyślny</string>
+    <string name="root_folder">Folder główny</string>
+    <string name="popularity">Popularność</string>
+    <string name="production_status">Status produkcji</string>
+    <string name="different_for_hdr">Użyj innych styli dla HDR</string>
+    <string name="experimental_settings">Ustawienia eksperymentalne</string>
+    <string name="confirm_enable_experimental_title">Włączyć ustawienia eksperymentalne?</string>
+    <string name="confirm_enable_experimental_body">Eksperymentalne ustawienia mogą powodować problemy!\n\nMogą być usunięte bądź zmienione w kolejnym wydaniu.</string>
+    <string name="video_tunneling">Tunelowanie wideo</string>
+    <string name="time_left">Pozostało %1$s</string>
+    <string name="duration_minutes">%1$d min.</string>
+    <string name="duration_seconds">%1$d sek.</string>
+    <string name="duration_hours">%1$d godz.</string>
+    <string name="duration_hours_minutes_seconds">%1$d godz. %2$d min. %3$d sek.</string>
+    <string name="duration_hours_minutes">%1$d godz. %2$d min.</string>
+    <string name="duration_minutes_seconds">%1$d min. %2$d sek.</string>
 </resources>

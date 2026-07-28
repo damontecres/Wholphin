@@ -31,7 +31,7 @@
     <string name="recently_released">最近發行</string>
     <string name="recommended">推薦</string>
     <string name="record_program">錄製節目</string>
-    <string name="restart">重頭播放</string>
+    <string name="restart">從頭播放</string>
     <string name="save">儲存</string>
     <string name="search">搜尋</string>
     <string name="searching">搜尋中…</string>
@@ -625,4 +625,23 @@
     <plurals name="people">
         <item quantity="other">演職人員</item>
     </plurals>
+    <string name="genre_movies">%1$s 電影</string>
+    <string name="genre_tv_shows">%1$s 電視劇</string>
+    <string name="quality_profile">品質設定</string>
+    <string name="is_default">預設</string>
+    <string name="root_folder">根目錄</string>
+    <string name="popularity">熱門程度</string>
+    <string name="production_status">製作狀態</string>
+    <string name="different_for_hdr">HDR 使用不同的樣式</string>
+    <string name="video_tunneling">影片直通模式</string>
+    <string name="experimental_settings">實驗性設定</string>
+    <string name="confirm_enable_experimental_title">啟用實驗性設定？</string>
+    <string name="confirm_enable_experimental_body">實驗性設定可能不穩定！\n在後續版本中可能會被移除或變更。</string>
+    <string name="duration_hours_minutes_seconds">%1$d小時 %2$d分 %3$d秒</string>
+    <string name="duration_hours_minutes">%1$d小時 %2$d分</string>
+    <string name="duration_minutes_seconds">%1$d分 %2$d秒</string>
+    <string name="duration_hours">%1$d小時</string>
+    <string name="duration_minutes">%1$d分</string>
+    <string name="duration_seconds">%1$d秒</string>
+    <string name="time_left">還剩 %1$s</string>
 </resources>

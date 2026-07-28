@@ -1,7 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import com.github.damontecres.wholphin.api.seerr.model.TvDetails
+import com.github.damontecres.wholphin.api.seerr.model.TvShowStatus
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
@@ -239,7 +239,7 @@ class FilterOptionCache
                 }
 
                 DiscoverTvStatusFilter -> {
-                    TvDetails.Status.entries.map {
+                    TvShowStatus.entries.map {
                         FilterValueOption(it.value, it)
                     }
                 }

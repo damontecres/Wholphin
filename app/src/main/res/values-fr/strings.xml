@@ -667,4 +667,16 @@
         <item quantity="many">Acteurs</item>
         <item quantity="other">Acteur</item>
     </plurals>
+    <string name="genre_movies">%1$s Films</string>
+    <string name="genre_tv_shows">%1$s Séries télévisées</string>
+    <string name="quality_profile">Profil de qualité</string>
+    <string name="is_default">Par défaut</string>
+    <string name="root_folder">Dossier racine</string>
+    <string name="popularity">Popularité</string>
+    <string name="production_status">État de la production</string>
+    <string name="different_for_hdr">Utiliser un style différent pour le HDR</string>
+    <string name="experimental_settings">Conditions expérimentales</string>
+    <string name="confirm_enable_experimental_title">Activer les paramètres expérimentaux ?</string>
+    <string name="confirm_enable_experimental_body">Les paramètres expérimentaux peuvent être instables !\n\nIls sont susceptibles d\'être supprimés ou modifiés dans n\'importe quelle version.</string>
+    <string name="video_tunneling">Tunneling vidéo</string>
 </resources>

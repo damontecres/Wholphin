@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +71,7 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
@@ -274,9 +276,13 @@ fun SeekBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            val remaining = ((player.duration - position) / 1000).seconds
+            val resources = LocalResources.current
+            val positionSec = position / 1000
+            val remainingSec = (player.duration - position) / 1000
+            val positionText = remember(positionSec) { resources.formatDuration(positionSec.seconds) }
+            val remainingText = remember(remainingSec) { "-${resources.formatDuration(remainingSec.seconds)}" }
             Text(
-                text = (position / 1000).seconds.toString(),
+                text = positionText,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 modifier =
@@ -284,7 +290,7 @@ fun SeekBar(
                         .padding(8.dp),
             )
             Text(
-                text = "-$remaining",
+                text = remainingText,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 modifier =

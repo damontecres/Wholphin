@@ -56,4 +56,5 @@
     <string name="fa_compass" translatable="false">&#xf14e;</string>
     <string name="fa_repeat" translatable="false">&#xf363;</string>
     <string name="fa_compact_disc" translatable="false">&#xf51f;</string>
+    <string name="fa_xmark" translatable="false">&#xf00d;</string>
 </resources>

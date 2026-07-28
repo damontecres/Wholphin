@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.util
 
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import timber.log.Timber
 import java.lang.reflect.Field
@@ -7,6 +9,7 @@ import java.lang.reflect.Field
 /**
  * Utility class to override private fields in media3's [SubtitleView]
  */
+@OptIn(UnstableApi::class)
 class Media3SubtitleOverride(
     val outlineThicknessPx: Float,
 ) {

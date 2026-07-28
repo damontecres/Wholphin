@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -94,6 +95,7 @@ import com.github.damontecres.wholphin.ui.detail.music.MusicViewModel
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -410,7 +412,7 @@ fun PlaylistDetails(
             onClickAddToQueue = { item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
             onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
             onClickAddPlaylist = { itemId ->
-                addToPlaylistViewModel.loadPlaylists(MediaType.AUDIO)
+                addToPlaylistViewModel.loadPlaylists()
                 showPlaylistDialog.makePresent(itemId)
             },
             onClickRemoveFromQueue = { _, _ -> },
@@ -423,7 +425,7 @@ fun PlaylistDetails(
                 onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
                 onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
                 onClickAddPlaylist = { itemId ->
-                    addToPlaylistViewModel.loadPlaylists(MediaType.VIDEO)
+                    addToPlaylistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onSendMediaInfo = viewModel::sendMediaReport,
@@ -509,6 +511,7 @@ fun PlaylistDetails(
                 addToPlaylistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = addToPlaylistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }
@@ -809,9 +812,11 @@ fun PlaylistItem(
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
                         formatTime(context, endTime)
                     }
+                val resources = LocalResources.current
+                val durationText = remember(duration) { resources.formatDuration(duration) }
                 Column {
                     Text(
-                        text = duration.toString(),
+                        text = durationText,
                     )
                     if (item.type != BaseItemKind.AUDIO) {
                         Text(

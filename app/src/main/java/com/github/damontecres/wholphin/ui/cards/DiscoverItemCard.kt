@@ -130,7 +130,16 @@ fun DiscoverItemCard(
                         AvailableIndicator(Modifier.align(Alignment.TopEnd))
                     }
 
-                    else -> {}
+                    SeerrAvailability.BLOCKLISTED -> {
+                        // TODO handle block listed
+//                        BlocklistedIndicator(Modifier.align(Alignment.TopEnd))
+                    }
+
+                    SeerrAvailability.UNKNOWN,
+                    SeerrAvailability.DELETED,
+                    null,
+                    -> {
+                    }
                 }
                 if (showOverlay) {
                     val color =
@@ -284,6 +293,31 @@ fun PartiallyAvailableIndicator(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun BlocklistedIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = CircleShape,
+                ).background(
+                    color = AppColors.Discover.Red.copy(alpha = .85f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_xmark),
+            fontFamily = FontAwesome,
+            fontSize = 10.sp,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
 @PreviewTvSpec
 @Composable
 private fun Preview() {
@@ -292,6 +326,7 @@ private fun Preview() {
             PendingIndicator()
             AvailableIndicator()
             PartiallyAvailableIndicator()
+            BlocklistedIndicator()
         }
     }
 }
