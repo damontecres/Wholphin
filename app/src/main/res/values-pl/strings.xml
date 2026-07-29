@@ -263,9 +263,6 @@
     <string name="people_title">Obsada</string>
     <string name="none">Brak</string>
     <string name="unknown">Nieznany</string>
-    <plurals name="years_old">
-        <item quantity="other">%1$d lat temu</item>
-    </plurals>
     <string name="success">Powodzenie</string>
     <string name="official_rating">Ocena rodzicielska</string>
     <string name="extras_title">Dodatki</string>
@@ -709,4 +706,43 @@
     <string name="duration_hours_minutes_seconds">%1$d godz. %2$d min. %3$d sek.</string>
     <string name="duration_hours_minutes">%1$d godz. %2$d min.</string>
     <string name="duration_minutes_seconds">%1$d min. %2$d sek.</string>
+    <string name="blocklisted">Na czarnej liście</string>
+    <string name="unavailable">Niedostępne</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkoduj dźwięk nie-stereo do formatu AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Używaj dźwięku AC3 jako dźwięku przestrzennego</string>
+    <string name="profile_specific_settings_from_server">Ustawienia użytkownika z serwera</string>
+    <plurals name="years_old">
+        <item quantity="one">%1$d rok</item>
+        <item quantity="few">%1$d lata</item>
+        <item quantity="many">%1$d lat</item>
+        <item quantity="other">%1$d lat</item>
+    </plurals>
+    <string name="subtitle_mode">Tryb napisów</string>
+    <string name="use_user_profile">Użyj ustawień użytkownika</string>
+    <string name="subtitle_mode_default">Domyślny</string>
+    <string name="subtitle_mode_smart">Inteligentny</string>
+    <string name="subtitle_mode_only_forced">Tylko wymuszone</string>
+    <string name="subtitle_mode_always">Wszystkie</string>
+    <string name="subtitle_mode_none">Brak</string>
+    <string name="preferred_subtitle_language">Preferowany język napisów</string>
+    <string name="preferred_audio_language">Preferowany język dźwięku</string>
+    <string name="override_user_profile_settings">Więcej ustawień użytkownika</string>
+    <string name="any_language">Dowolny język</string>
+    <string name="override_user_profile_settings_summary">Napisz swoje ustawienia użytkownika, ustawieniami z serwera</string>
+    <string name="brown">Brązowy</string>
+    <string name="d_pad_seek_mode_title">Tryb paska wyszukiwania D-Pad</string>
+    <string name="dpad_seek_mode_minimal">Minimalistyczny</string>
+    <string name="dpad_seek_mode_trickplay">Podgląd scen</string>
+    <string name="dpad_seek_mode_minimal_summary">Mały pasek przewijania u dołu ekranu (domyślnie)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Pasek wyszukiwania z podglądem wideo</string>
+    <string name="dpad_seek_mode_none_summary">Brak paska przewijania</string>
+    <string name="hash_matches">Dopasowania hashy</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programy TV</string>
+    <string name="recordings">Nagrania</string>
+    <string name="folders_title">Foldery</string>
+    <string name="user_views">Widoki użytkownika</string>
+    <string name="books">Książki</string>
+    <string name="audio_books">Audiobooki</string>
+    <string name="server_version_not_supported">Wersja serwera nie jest wspierana</string>
 </resources>

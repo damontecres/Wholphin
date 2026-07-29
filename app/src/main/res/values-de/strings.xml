@@ -32,7 +32,7 @@
     <string name="no_scheduled_recordings">Keine geplanten Aufnahmen</string>
     <string name="no_update_available">Kein Update verfügbar</string>
     <string name="path">Pfad</string>
-    <string name="people_title">Darsteller</string>
+    <string name="people_title">Personen</string>
     <string name="recently_added_in">Zuletzt hinzugefügt in %1$s</string>
     <string name="recently_added">Zuletzt hinzugefügt</string>
     <string name="recently_recorded">Zuletzt aufgenommen</string>
@@ -59,6 +59,7 @@
     <string name="version">Version</string>
     <string name="watch_live">Live ansehen</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d Jahr alt</item>
         <item quantity="other">%1$d Jahre alt</item>
     </plurals>
     <string name="extras_title">Extras</string>
@@ -181,7 +182,7 @@
     <string name="installed_version">Installierte Version</string>
     <string name="max_homepage_items">Max. Anzahl Objekte je Startseiten-Reihe</string>
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ</string>
-    <string name="live_tv">Live TV</string>
+    <string name="live_tv">Live-TV</string>
     <string name="outro">Abspann</string>
     <string name="play_count">Wiedergabeanzahl</string>
     <string name="playback_debug_info">Wiedergabe Debug-Infos anzeigen</string>
@@ -470,7 +471,7 @@
     <string name="for_all_ages">Ohne Altersbeschränkung</string>
     <string name="up_to_age">Bis %s Jahre</string>
     <string name="screensaver">Bildschirmschoner</string>
-    <string name="screensaver_settings">Bildschirmschoner-Einstellungen</string>
+    <string name="screensaver_settings">Bildschirmschoner Einstellungen</string>
     <string name="start_screensaver">Bildschirmschoner starten</string>
     <string name="duration">Dauer</string>
     <string name="photos">Fotos</string>
@@ -601,7 +602,7 @@
     <string name="cinema_mode">Kinomodus</string>
     <string name="play_with">Abspielen mit</string>
     <string name="transcoding">Transkodieren</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Zusammengefasste Suchergebnisse</string>
     <string name="combined_search_results_on">Alle Ergebnisse in einer gemeinsamen Liste anzeigen</string>
     <string name="combined_search_results_off">Ergebnisse nach Kategorie anzeigen</string>
@@ -667,4 +668,32 @@
     <string name="duration_seconds">%1$ds</string>
     <string name="time_left">%1$s verbleibend</string>
     <string name="video_tunneling">Video Tunneling</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Nicht-Stereo Audio zu AC3/Dolby Digital transcodieren]]></string>
+    <string name="prefer_ac3_for_surround">AC3 für Surround Sound bevorzugen</string>
+    <string name="blocklisted">Auf Blockliste hinzugefügt</string>
+    <string name="unavailable">Nicht verfügbar</string>
+    <string name="profile_specific_settings_from_server">Benutzerprofil-Einstellungen auf dem Server</string>
+    <string name="subtitle_mode">Modus Untertitel</string>
+    <string name="use_user_profile">Nutze deine Profileinstellungen</string>
+    <string name="subtitle_mode_default">Standard</string>
+    <string name="subtitle_mode_smart">Intelligent</string>
+    <string name="subtitle_mode_only_forced">Nur Forced</string>
+    <string name="subtitle_mode_always">Immer</string>
+    <string name="subtitle_mode_none">Keine</string>
+    <string name="preferred_subtitle_language">Bevorzugte Untertitelsprache</string>
+    <string name="preferred_audio_language">Bevorzugte Audiosprache</string>
+    <string name="override_user_profile_settings">Weitere Benutzerprofil-Einstellungen</string>
+    <string name="override_user_profile_settings_summary">Überschreibe deine Benutzerprofileinstellungen mit denen vom Server</string>
+    <string name="any_language">Beliebige Sprache</string>
+    <string name="hash_matches">Hash Übereinstimmungen</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV Programme</string>
+    <string name="recordings">Aufnahmen</string>
+    <string name="folders_title">Ordner</string>
+    <string name="books">Bücher</string>
+    <string name="audio_books">Hörbücher</string>
+    <string name="d_pad_seek_mode_title">D-Pad Suchmodus</string>
+    <string name="dpad_seek_mode_skip_time">Zeit überspringen</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay Vorschau</string>
+    <string name="user_views">Benutzeransicht</string>
 </resources>
