@@ -67,7 +67,8 @@ import java.util.UUID
         AutoMigration(31, 32),
         AutoMigration(32, 33),
         AutoMigration(33, 34),
-        AutoMigration(34, 40),
+        AutoMigration(34, 35),
+        AutoMigration(35, 40),
     ],
 )
 @TypeConverters(Converters::class)

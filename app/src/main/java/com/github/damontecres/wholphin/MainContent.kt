@@ -27,7 +27,6 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -44,12 +43,12 @@ import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 fun MainContent(
     backStack: MutableList<SetupDestination>,
     navigationManager: NavigationManager,
-    appPreferences: AppPreferences,
+    userPreferences: UserPreferences,
     backdropService: BackdropService,
     screensaverService: ScreensaverService,
     modifier: Modifier = Modifier,
 ) {
-    val preferences by rememberUpdatedState(UserPreferences(appPreferences))
+    val preferences by rememberUpdatedState(userPreferences)
     Surface(
         modifier =
             modifier
@@ -59,7 +58,7 @@ fun MainContent(
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
         val interfaceCustomization =
-            remember(appPreferences) { InterfaceCustomization(appPreferences) }
+            remember(userPreferences.appPreferences) { InterfaceCustomization(userPreferences.appPreferences) }
         CompositionLocalProvider(LocalInterfaceCustomization provides interfaceCustomization) {
             NavDisplay(
                 backStack = backStack,
@@ -105,7 +104,7 @@ fun MainContent(
                                     mutableStateOf(true)
                                 }
                                 LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                                    if (!appPreferences.signInAutomatically) {
+                                    if (!userPreferences.appPreferences.signInAutomatically) {
                                         showContent = false
                                     }
                                 }
@@ -140,7 +139,7 @@ fun MainContent(
                     screenSaverState.show,
                     Modifier.fillMaxSize(),
                 ) {
-                    AppScreensaver(appPreferences, Modifier.fillMaxSize())
+                    AppScreensaver(userPreferences.appPreferences, Modifier.fillMaxSize())
                 }
             }
         }

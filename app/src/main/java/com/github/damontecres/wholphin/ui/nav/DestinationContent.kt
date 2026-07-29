@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.music.AlbumDetailsPage
 import com.github.damontecres.wholphin.ui.detail.music.ArtistDetailsPage
 import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
+import com.github.damontecres.wholphin.ui.detail.music.SongDetailsPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
@@ -47,6 +48,7 @@ import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
+import com.github.damontecres.wholphin.ui.preferences.user.UserProfilePreferencesPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -126,6 +128,10 @@ fun DestinationContent(
                 destination.hdr,
                 modifier,
             )
+        }
+
+        Destination.UserAppPreferences -> {
+            UserProfilePreferencesPage(modifier)
         }
 
         is Destination.SeriesOverview -> {
@@ -252,6 +258,7 @@ fun DestinationContent(
                     AlbumDetailsPage(
                         preferences = preferences,
                         itemId = destination.itemId,
+                        initialSongId = destination.initialSongId,
                         modifier = modifier,
                     )
                 }
@@ -259,6 +266,15 @@ fun DestinationContent(
                 BaseItemKind.MUSIC_ARTIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     ArtistDetailsPage(
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
+                BaseItemKind.AUDIO -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    SongDetailsPage(
                         preferences = preferences,
                         itemId = destination.itemId,
                         modifier = modifier,
@@ -346,9 +362,10 @@ fun DestinationContent(
             LicenseInfo(modifier)
         }
 
-        Destination.Search -> {
+        is Destination.Search -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             SearchPage(
+                initialQuery = destination.query,
                 userPreferences = preferences,
                 modifier = modifier,
             )

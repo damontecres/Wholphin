@@ -137,7 +137,9 @@
     <string name="video">Video</string>
     <string name="videos">Video</string>
     <string name="watch_live">Tonton langsung</string>
-    <string name="years_old">%1$d tahun</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d tahun</item>
+    </plurals>
     <string name="play_with_transcoding">Putar dengan transcoding</string>
     <string name="show_clock">Tampilkan Jam</string>
     <string name="aired_episode_order">Urutan Episode Tayang</string>
@@ -581,7 +583,7 @@
     <string name="play_with">Putar dengan</string>
     <string name="skip_behavior_summary">Untuk intro, kredit, dll</string>
     <string name="skip_behavior">Perilaku lewati</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Hasil pencarian gabungan</string>
     <string name="combined_search_results_on">Tampilkan semua hasil dalam satu daftar</string>
     <string name="combined_search_results_off">Tampilkan hasil berdasarkan kategori</string>
@@ -637,4 +639,29 @@
     <plurals name="people">
         <item quantity="other">Orang</item>
     </plurals>
+    <string name="prefer_ac3_for_surround">Gunakan AC3 untuk surround sound</string>
+    <string name="duration_hours_minutes_seconds">%1$dj %2$dm %3$dd</string>
+    <string name="duration_hours_minutes">%1$dj %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$dd</string>
+    <string name="duration_hours">%1$dj</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$dd</string>
+    <string name="time_left">Sisa %1$s</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkode audio non-stereo ke AC3/Dolby Digital]]></string>
+    <string name="unavailable">Tidak tersedia</string>
+    <string name="profile_specific_settings_from_server">Pengaturan profil pengguna dari server</string>
+    <string name="subtitle_mode">Mode subtitel</string>
+    <string name="use_user_profile">Gunakan pengaturan profil kamu</string>
+    <string name="subtitle_mode_default">Default</string>
+    <string name="subtitle_mode_smart">Pintar</string>
+    <string name="subtitle_mode_only_forced">Hanya Paksaan</string>
+    <string name="subtitle_mode_always">Selalu</string>
+    <string name="subtitle_mode_none">Tidak ada</string>
+    <string name="preferred_subtitle_language">Bahasa subtitel preferensi</string>
+    <string name="preferred_audio_language">Bahasa audio preferensi</string>
+    <string name="override_user_profile_settings">Pengaturan profil pengguna lainnya</string>
+    <string name="override_user_profile_settings_summary">Timpa pengaturan profil pengguna dari server</string>
+    <string name="any_language">Semua bahasa</string>
+    <string name="brown">Cokelat</string>
+    <string name="d_pad_seek_mode_title">Mode bilah geser D-Pad</string>
 </resources>

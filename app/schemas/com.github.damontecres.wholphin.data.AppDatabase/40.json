@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 40,
-    "identityHash": "3ebe2fa2b31fdd9594510f867cb12d9b",
+    "identityHash": "08eb77f7fcc6438b8c77e878a632fee2",
     "entities": [
       {
         "tableName": "servers",
@@ -45,7 +45,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, `uiLanguage` TEXT, `c_homeSettingsSource` TEXT NOT NULL DEFAULT 'UNSET', FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, `requireLogin` INTEGER NOT NULL DEFAULT false, `lastUsed` TEXT, `uiLanguage` TEXT, `preferredAudioLanguage` TEXT NOT NULL DEFAULT '', `preferredSubtitleLanguage` TEXT NOT NULL DEFAULT '', `subtitleMode` TEXT NOT NULL DEFAULT 'USE_USER_PROFILE', `c_homeSettingsSource` TEXT NOT NULL DEFAULT 'UNSET', FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "rowId",
@@ -96,6 +96,27 @@
             "fieldPath": "uiLanguage",
             "columnName": "uiLanguage",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "appPreferences.preferredAudioLanguage",
+            "columnName": "preferredAudioLanguage",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "appPreferences.preferredSubtitleLanguage",
+            "columnName": "preferredSubtitleLanguage",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "appPreferences.subtitleMode",
+            "columnName": "subtitleMode",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'USE_USER_PROFILE'"
           },
           {
             "fieldPath": "config.homeSettingsSource",
@@ -721,7 +742,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3ebe2fa2b31fdd9594510f867cb12d9b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '08eb77f7fcc6438b8c77e878a632fee2')"
     ]
   }
 }

@@ -104,7 +104,6 @@ import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
@@ -125,11 +124,15 @@ class AlbumViewModel
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
         private val extrasService: ExtrasService,
-        @Assisted itemId: UUID,
+        @Assisted("itemId") itemId: UUID,
+        @Assisted("initialSongId") private val initialSongId: UUID?,
     ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
-            fun create(itemId: UUID): AlbumViewModel
+            fun create(
+                @Assisted("itemId") itemId: UUID,
+                @Assisted("initialSongId") initialSongId: UUID?,
+            ): AlbumViewModel
         }
 
         private val _state = MutableStateFlow(AlbumState.EMPTY)
@@ -159,6 +162,10 @@ class AlbumViewModel
                     val songsDeferred = async { getPagerForAlbum(api, itemId) }
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
+                    val initialSongIndex =
+                        initialSongId?.let { id ->
+                            songs.indexOfBlocking { it?.id == id }.takeIf { it >= 0 }
+                        }
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
                     val allArtists =
                         album.data.artists.orEmpty() +
@@ -176,6 +183,7 @@ class AlbumViewModel
                             isVariousArtists = isVariousArtists,
                             imageUrl = imageUrl,
                             songs = songs,
+                            initialSongIndex = initialSongIndex,
                             loading = LoadingState.Success,
                         )
                     }
@@ -290,6 +298,7 @@ data class AlbumState(
     val songs: List<BaseItem?>,
     val similar: List<BaseItem>,
     val loading: LoadingState,
+    val initialSongIndex: Int? = null,
     val musicVideos: List<BaseItem?> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
@@ -310,9 +319,10 @@ fun AlbumDetailsPage(
     itemId: UUID,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
+    initialSongId: UUID? = null,
     viewModel: AlbumViewModel =
         hiltViewModel<AlbumViewModel, AlbumViewModel.Factory>(
-            creationCallback = { it.create(itemId) },
+            creationCallback = { it.create(itemId, initialSongId) },
         ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
@@ -321,7 +331,6 @@ fun AlbumDetailsPage(
     val state by viewModel.state.collectAsState()
     val currentMusic by viewModel.currentMusic.collectAsState()
 
-    var position by rememberPosition(0, 0)
     val focusRequesters =
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val focusManager = LocalFocusManager.current
@@ -337,7 +346,7 @@ fun AlbumDetailsPage(
                 onClickAddToQueue = { item -> viewModel.addToQueue(item, -1) },
                 onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
                 onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.AUDIO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
                 onClickRemoveFromQueue = { _, _ -> },
@@ -357,12 +366,20 @@ fun AlbumDetailsPage(
 
         LoadingState.Success -> {
             val album = state.album!!
+            val itemsBefore = 2
+            val initialSongIndex = state.initialSongIndex
+            var position by rememberPosition(
+                row = if (initialSongIndex != null) SONG_ROW else 0,
+                column = initialSongIndex ?: 0,
+            )
 
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
-            val listState = rememberLazyListState()
-            val itemsBefore = 2
+            val listState =
+                rememberLazyListState(
+                    initialFirstVisibleItemIndex = initialSongIndex?.let { itemsBefore + it } ?: 0,
+                )
 
             val songFocusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
@@ -635,6 +652,7 @@ fun AlbumDetailsPage(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

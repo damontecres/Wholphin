@@ -43,6 +43,24 @@ fun episode(
     )
 
 /**
+ * Create a simple [BaseItemDto] song
+ */
+fun song(
+    id: UUID = UUID.randomUUID(),
+    albumId: UUID? = null,
+    name: String = "Test Song",
+    genres: List<NameGuidPair>? = null,
+): BaseItemDto =
+    BaseItemDto(
+        id = id,
+        type = BaseItemKind.AUDIO,
+        name = name,
+        albumId = albumId,
+        seriesId = null,
+        genreItems = genres,
+    )
+
+/**
  * Create a simple [BaseItemDto] playlist
  */
 fun playlist(

@@ -57,13 +57,18 @@ class PreferencesViewModel
         private val clientInfo: ClientInfo,
         private val updateChecker: UpdateChecker,
     ) : ViewModel() {
-        val currentUser
-            get() =
-                serverRepository.currentUserFlow.stateIn(
-                    viewModelScope,
-                    SharingStarted.Eagerly,
-                    null,
-                )
+        val currentUser =
+            serverRepository.currentUserFlow.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                null,
+            )
+        val currentUserDto =
+            serverRepository.currentUserDtoFlow.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                null,
+            )
 
         val seerrConnection = seerrServerRepository.connection
 

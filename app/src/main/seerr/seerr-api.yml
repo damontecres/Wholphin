@@ -1092,6 +1092,9 @@ components:
           example: 0
           description: Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 = DECLINED
           readOnly: true
+    TvShowStatus:
+        type: string
+        enum: ["Returning Series", "Planned", "In Production", "Ended", "Canceled", "Pilot"]
     TvDetails:
       type: object
       properties:
@@ -1197,9 +1200,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Season'
-        status:
-          type: string
-          enum: ["Returning Series", "Planned", "In Production", "Ended", "Cancelled", "Pilot"]
         tagline:
           type: string
         type:

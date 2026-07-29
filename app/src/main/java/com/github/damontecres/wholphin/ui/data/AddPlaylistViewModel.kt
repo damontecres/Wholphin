@@ -18,7 +18,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -38,13 +37,13 @@ class AddPlaylistViewModel
     ) : ViewModel() {
         val playlistState = MutableStateFlow<PlaylistLoadingState>(PlaylistLoadingState.Pending)
 
-        fun loadPlaylists(mediaType: MediaType?) {
+        fun loadPlaylists(query: String = "") {
             viewModelScope.launchIO {
                 this@AddPlaylistViewModel.playlistState.value = PlaylistLoadingState.Loading
                 try {
-                    val playlists = playlistCreator.getServerPlaylists(mediaType, viewModelScope)
+                    val playlists = playlistCreator.getServerPlaylists(query, null)
                     this@AddPlaylistViewModel.playlistState.value =
-                        PlaylistLoadingState.Success(playlists)
+                        PlaylistLoadingState.Success(playlists, query)
                 } catch (ex: Exception) {
                     playlistState.value = PlaylistLoadingState.Error(ex)
                 }

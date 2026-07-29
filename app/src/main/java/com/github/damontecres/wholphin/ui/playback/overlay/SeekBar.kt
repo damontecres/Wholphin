@@ -109,6 +109,30 @@ fun SteppedSeekBarImpl(
 }
 
 /**
+ * A read-only seek bar for showing progress without taking focus or handling D-Pad input.
+ *
+ * This is used by overlays where seeking is handled elsewhere and the bar is only a visual indicator.
+ */
+@Composable
+fun StaticSeekBarImpl(
+    progress: Float,
+    durationMs: Long,
+    bufferedProgress: Float,
+    modifier: Modifier = Modifier,
+) {
+    SeekBarDisplay(
+        enabled = false,
+        progress = progress,
+        bufferedProgress = bufferedProgress,
+        durationMs = durationMs,
+        onLeft = {},
+        onRight = {},
+        interactionSource = remember { MutableInteractionSource() },
+        modifier = modifier,
+    )
+}
+
+/**
  * A seek (or scrubber) bar which seeks forward or back a fixed amount of time per move
  */
 @OptIn(FlowPreview::class)

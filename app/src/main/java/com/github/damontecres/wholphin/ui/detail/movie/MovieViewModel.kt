@@ -117,7 +117,7 @@ class MovieViewModel
                         userPreferencesService.getCurrent(),
                     )
                 val remoteTrailers = trailerService.getRemoteTrailers(movie)
-                val chapters = Chapter.fromDto(movie.data, api)
+                val chapters = Chapter.fromDto(movie.data)
                 _state.update {
                     it.copy(
                         loading = DataLoadingState.Success(movie),

@@ -93,3 +93,13 @@ data class ResProviderStringProvider(
     @NonRestartableComposable
     override fun getString(): String = stringResource(stringResId, argProvider.getString())
 }
+
+@Serializable
+data class ConcatStringProvider(
+    val separator: String,
+    val providers: List<StringProvider>,
+) : StringProvider {
+    @Composable
+    @NonRestartableComposable
+    override fun getString(): String = providers.map { it.getString() }.joinToString(separator)
+}
