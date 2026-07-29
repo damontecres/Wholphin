@@ -169,21 +169,10 @@ class SearchViewModel
             currentQuery = query
             combinedMode = combined
             if (query.isNotNullOrBlank()) {
+                _state.update { SearchState.searchingState }
                 if (combined) {
-                    _state.update { it.copy(combinedResults = SearchResult.Searching) }
                     searchCombined(query)
                 } else {
-                    _state.update {
-                        it.copy(
-                            movies = SearchResult.Searching,
-                            series = SearchResult.Searching,
-                            episodes = SearchResult.Searching,
-                            collections = SearchResult.Searching,
-                            albums = SearchResult.Searching,
-                            artists = SearchResult.Searching,
-                            songs = SearchResult.Searching,
-                        )
-                    }
                     searchInternal(
                         query,
                         BaseItemKind.MOVIE,
@@ -219,18 +208,7 @@ class SearchViewModel
                 }
                 searchSeerr(query)
             } else {
-                _state.update {
-                    it.copy(
-                        combinedResults = SearchResult.NoQuery,
-                        movies = SearchResult.NoQuery,
-                        series = SearchResult.NoQuery,
-                        episodes = SearchResult.NoQuery,
-                        collections = SearchResult.NoQuery,
-                        albums = SearchResult.NoQuery,
-                        artists = SearchResult.NoQuery,
-                        songs = SearchResult.NoQuery,
-                    )
-                }
+                _state.update { SearchState() }
             }
         }
 
@@ -479,7 +457,22 @@ data class SearchState(
     val songs: SearchResult = SearchResult.NoQuery,
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
-)
+) {
+    companion object {
+        val searchingState =
+            SearchState(
+                movies = SearchResult.Searching,
+                series = SearchResult.Searching,
+                episodes = SearchResult.Searching,
+                collections = SearchResult.Searching,
+                albums = SearchResult.Searching,
+                artists = SearchResult.Searching,
+                songs = SearchResult.Searching,
+                seerrResults = SearchResult.Searching,
+                combinedResults = SearchResult.Searching,
+            )
+    }
+}
 
 private const val SEARCH_ROW = 0
 private const val TAB_ROW = SEARCH_ROW + 1

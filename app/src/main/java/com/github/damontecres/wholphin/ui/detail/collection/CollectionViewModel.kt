@@ -46,6 +46,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -136,26 +137,33 @@ class CollectionViewModel
                     }
                 }
             viewModelScope.launchDefault {
-                val collection =
-                    api.userLibraryApi
-                        .getItem(itemId)
-                        .content
-                        .let { BaseItem(it, false) }
-                backdropService.submit(collection)
-                val logoImageUrl =
-                    if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
-                        imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
-                    } else {
-                        null
+                try {
+                    val collection =
+                        api.userLibraryApi
+                            .getItem(itemId)
+                            .content
+                            .let { BaseItem(it, false) }
+                    backdropService.submit(collection)
+                    val logoImageUrl =
+                        if (ImageType.LOGO in collection.data.imageTags.orEmpty()) {
+                            imageUrlService.getItemImageUrl(collection, ImageType.LOGO)
+                        } else {
+                            null
+                        }
+                    _state.update {
+                        it.copy(
+                            collection = collection,
+                            logoImageUrl = logoImageUrl,
+                        )
                     }
-                _state.update {
-                    it.copy(
-                        collection = collection,
-                        logoImageUrl = logoImageUrl,
-                    )
+                    listenForStateUpdates()
+                    themeSongPlayer.playThemeFor(itemId)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting collection %s", itemId)
+                    _state.update { it.copy(loadingState = LoadingState.Error(ex)) }
                 }
-                listenForStateUpdates()
-                themeSongPlayer.playThemeFor(itemId)
             }
         }
 
@@ -179,6 +187,8 @@ class CollectionViewModel
                     .collectLatest { (sort, filter, separateTypes) ->
                         try {
                             updateData(sort, filter, separateTypes)
+                        } catch (ex: CancellationException) {
+                            throw ex
                         } catch (ex: Exception) {
                             Timber.e(
                                 ex,

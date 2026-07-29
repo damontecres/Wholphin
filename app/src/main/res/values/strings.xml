@@ -888,6 +888,11 @@
         <item>@string/subtitle_mode_none</item>
     </string-array>
 
+    <string-array name="home_click_to_play_options">
+        <item>@string/continue_watching_click_summary_off</item>
+        <item>@string/continue_watching_click_summary_on</item>
+    </string-array>
+
     <string name="preferred_subtitle_language">Preferred subtitle language</string>
     <string name="preferred_audio_language">Preferred audio language</string>
     <string name="override_user_profile_settings">More user profile settings</string>

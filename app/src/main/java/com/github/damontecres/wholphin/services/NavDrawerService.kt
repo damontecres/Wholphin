@@ -70,10 +70,11 @@ class NavDrawerService
                     userDto?.id,
                     discoverActive,
                 )
-                _state.update { NavDrawerItemState() }
                 try {
                     if (user != null && userDto != null && user.id == userDto.id) {
                         updateNavDrawer(user, userDto, discoverActive)
+                    } else {
+                        _state.update { NavDrawerItemState() }
                     }
                 } catch (ex: CancellationException) {
                     throw ex

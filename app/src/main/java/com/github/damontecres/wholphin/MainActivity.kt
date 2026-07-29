@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -391,10 +392,17 @@ class MainActivity : AppCompatActivity() {
 
     fun changeDisplayMode(modeId: Int) {
         lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
-            val attrs = window.attributes
-            if (attrs.preferredDisplayModeId != modeId) {
-                Timber.d("Switch preferredDisplayModeId to %s", modeId)
-                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+            try {
+                val attrs = window.attributes
+                if (attrs.preferredDisplayModeId != modeId) {
+                    Timber.d("Switch preferredDisplayModeId to %s", modeId)
+                    window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error switching preferredDisplayModeId to %s", modeId)
+                Toast
+                    .makeText(this@MainActivity, "Error changing display mode", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }
