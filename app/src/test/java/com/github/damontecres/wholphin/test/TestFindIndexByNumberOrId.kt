@@ -28,6 +28,7 @@ class TestFindIndexByNumberOrId {
     val epS02E03 = create(3, 2)
     val epS02E04 = create(4, 2)
     val epS02E05 = create(5, 2)
+    val epS02E06 = create(6, 2)
     val epS00E08 = create(8, 0)
     val epS00E02 = create(2, 0)
 
@@ -67,6 +68,30 @@ class TestFindIndexByNumberOrId {
             }
             findIndexByNumberOrId(targetNum = 100, targetId = UUID.randomUUID(), list = BlockingList.of(episodes)).let { index ->
                 Assert.assertEquals(0, index)
+            }
+        }
+
+    @Test
+    fun `Test last index with zero start`() =
+        runTest {
+            val episodes =
+                BlockingList.of(
+                    listOf(
+                        create(0, 2),
+                        epS02E01,
+                        epS02E02,
+                        epS02E03,
+                        epS02E04,
+                        epS02E05,
+                        epS02E06,
+                    ),
+                )
+            findIndexByNumberOrId(
+                targetNum = 6,
+                targetId = epS02E06.id,
+                list = BlockingList.of(episodes),
+            ).let { index ->
+                Assert.assertEquals(6, index)
             }
         }
 

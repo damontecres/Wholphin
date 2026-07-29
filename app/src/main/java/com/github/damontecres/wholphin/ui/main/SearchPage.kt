@@ -84,8 +84,8 @@ import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
-import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
@@ -169,21 +169,10 @@ class SearchViewModel
             currentQuery = query
             combinedMode = combined
             if (query.isNotNullOrBlank()) {
+                _state.update { SearchState.searchingState }
                 if (combined) {
-                    _state.update { it.copy(combinedResults = SearchResult.Searching) }
                     searchCombined(query)
                 } else {
-                    _state.update {
-                        it.copy(
-                            movies = SearchResult.Searching,
-                            series = SearchResult.Searching,
-                            episodes = SearchResult.Searching,
-                            collections = SearchResult.Searching,
-                            albums = SearchResult.Searching,
-                            artists = SearchResult.Searching,
-                            songs = SearchResult.Searching,
-                        )
-                    }
                     searchInternal(
                         query,
                         BaseItemKind.MOVIE,
@@ -219,18 +208,7 @@ class SearchViewModel
                 }
                 searchSeerr(query)
             } else {
-                _state.update {
-                    it.copy(
-                        combinedResults = SearchResult.NoQuery,
-                        movies = SearchResult.NoQuery,
-                        series = SearchResult.NoQuery,
-                        episodes = SearchResult.NoQuery,
-                        collections = SearchResult.NoQuery,
-                        albums = SearchResult.NoQuery,
-                        artists = SearchResult.NoQuery,
-                        songs = SearchResult.NoQuery,
-                    )
-                }
+                _state.update { SearchState() }
             }
         }
 
@@ -479,7 +457,22 @@ data class SearchState(
     val songs: SearchResult = SearchResult.NoQuery,
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
-)
+) {
+    companion object {
+        val searchingState =
+            SearchState(
+                movies = SearchResult.Searching,
+                series = SearchResult.Searching,
+                episodes = SearchResult.Searching,
+                collections = SearchResult.Searching,
+                albums = SearchResult.Searching,
+                artists = SearchResult.Searching,
+                songs = SearchResult.Searching,
+                seerrResults = SearchResult.Searching,
+                combinedResults = SearchResult.Searching,
+            )
+    }
+}
 
 private const val SEARCH_ROW = 0
 private const val TAB_ROW = SEARCH_ROW + 1
@@ -496,6 +489,7 @@ private const val COMBINED_ROW = TAB_ROW + 1
 
 @Composable
 fun SearchPage(
+    initialQuery: String,
     userPreferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
@@ -513,7 +507,7 @@ fun SearchPage(
     val voiceSearchButtonVisible = prefs.showVoiceSearchButton
 
 //    val query = rememberTextFieldState()
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
     val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
@@ -854,15 +848,17 @@ fun SearchPage(
                             onClickPosition = { setPosition(it) },
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                                EpisodeCard(
+                                BannerCardWithTitle(
+                                    title = item?.title,
+                                    subtitle = item?.subtitle,
                                     item = item,
                                     onClick = {
                                         setPosition(RowColumn(EPISODE_ROW, index))
                                         onClick.invoke()
                                     },
                                     onLongClick = onLongClick,
-                                    imageHeight = 140.dp,
                                     modifier = mod.padding(horizontal = 8.dp),
+                                    cardHeight = Cards.heightEpisode,
                                 )
                             },
                         )

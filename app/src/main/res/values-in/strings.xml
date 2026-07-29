@@ -137,7 +137,9 @@
     <string name="video">Video</string>
     <string name="videos">Video</string>
     <string name="watch_live">Tonton langsung</string>
-    <string name="years_old">%1$d tahun</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d tahun</item>
+    </plurals>
     <string name="play_with_transcoding">Putar dengan transcoding</string>
     <string name="show_clock">Tampilkan Jam</string>
     <string name="aired_episode_order">Urutan Episode Tayang</string>

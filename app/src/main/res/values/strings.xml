@@ -166,8 +166,12 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>
-    <string name="years_old">%1$d years old</string>
+    <string name="watch_live">Watch live</string>g
+    <plurals name="years_old">
+        <item quantity="zero">%1$d years old</item>
+        <item quantity="one">%1$d year old</item>
+        <item quantity="other">%1$d years old</item>
+    </plurals>
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
@@ -398,7 +402,7 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -499,7 +503,7 @@
     <string name="image_subtitle_opacity">Image subtitle opacity</string>
 
     <string name="brightness">Brightness</string>
-    <string name="contrast">Constrast</string>
+    <string name="contrast">Contrast</string>
     <string name="saturation">Saturation</string>
     <string name="hue">Hue</string>
     <string name="red">Red</string>
@@ -595,6 +599,7 @@
     <string name="orange">Orange</string>
     <string name="bold_blue">Bold Blue</string>
     <string name="black">Black</string>
+    <string name="brown">Brown</string>
     <string-array name="app_theme_colors">
         <item>@string/purple</item>
         <item>@string/blue</item>
@@ -602,6 +607,8 @@
         <item>@string/orange</item>
         <item>@string/bold_blue</item>
         <item>@string/black</item>
+        <item>@string/red</item>
+        <item>@string/brown</item>
     </string-array>
 
     <string name="skip_ignore">Ignore</string>
@@ -843,6 +850,24 @@
     <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
     <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
     <string name="video_tunneling">Video tunneling</string>
+
+    <string name="d_pad_seek_mode_title">D-Pad seek bar mode</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string-array name="dpad_seek_mode_options">
+        <item>@string/dpad_seek_mode_minimal</item>
+        <item>@string/dpad_seek_mode_trickplay</item>
+        <item>@string/none</item>
+    </string-array>
+    <string name="dpad_seek_mode_minimal_summary">Small seek bar along the bottom of the screen (default)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Seek bar with trickplay preview images</string>
+    <string name="dpad_seek_mode_none_summary">No seek bar</string>
+    <string-array name="dpad_seek_mode_summaries">
+        <item>@string/dpad_seek_mode_minimal_summary</item>
+        <item>@string/dpad_seek_mode_trickplay_summary</item>
+        <item>@string/dpad_seek_mode_none_summary</item>
+    </string-array>
+
     <string name="blocklisted">Blocklisted</string>
     <string name="unavailable">Unavailable</string>
     <string name="subtitle_mode">Subtitle mode</string>
@@ -863,9 +888,24 @@
         <item>@string/subtitle_mode_none</item>
     </string-array>
 
+    <string-array name="home_click_to_play_options">
+        <item>@string/continue_watching_click_summary_off</item>
+        <item>@string/continue_watching_click_summary_on</item>
+    </string-array>
+
     <string name="preferred_subtitle_language">Preferred subtitle language</string>
     <string name="preferred_audio_language">Preferred audio language</string>
     <string name="override_user_profile_settings">More user profile settings</string>
     <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
     <string name="any_language">Any language</string>
+    <string name="hash_matches">Hash matches</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programs</string>
+    <string name="recordings">Recordings</string>
+    <string name="folders_title">Folders</string>
+    <string name="user_views">User views</string>
+    <string name="books">Books</string>
+    <string name="audio_books">Audio books</string>
+    <string name="server_version_not_supported">Server version not supported</string>
+    <string name="appears_on">Appears on</string>
 </resources>

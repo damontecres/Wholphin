@@ -169,7 +169,9 @@
     <string name="video">Video</string>
     <string name="videos">Videolar</string>
     <string name="watch_live">Canlı izle</string>
-    <string name="years_old">%1$d yaşında</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d yaşında</item>
+    </plurals>
     <string name="play_with_transcoding">Kod dönüştürerek oynat</string>
     <string name="media_information">Medya Bilgisi</string>
     <string name="show_clock">Saati göster</string>

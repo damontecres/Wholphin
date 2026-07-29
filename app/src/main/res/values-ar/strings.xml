@@ -31,7 +31,7 @@
     <string name="director">المخرج</string>
     <string name="disabled">مُعطّل</string>
     <string name="discovered_servers">الخوادم المكتشفة</string>
-    <string name="download_and_update"><![CDATA[تنزيل وتحديث]]></string>
+    <string name="download_and_update">تنزيل وتحديث</string>
     <string name="downloading">تنزيل…</string>
     <string name="enabled">مُفعّل</string>
     <string name="ends_at">ينتهي عند %1$s</string>
@@ -66,6 +66,7 @@
     <string name="more">المزيد</string>
     <plurals name="movies">
         <item quantity="zero">الأفلام</item>
+        <item quantity="other">الأفلام</item>
     </plurals>
     <string name="name">الاسم</string>
     <string name="next_up">التالي</string>
@@ -80,6 +81,7 @@
     <string name="path">المسار</string>
     <plurals name="people">
         <item quantity="zero">الأشخاص</item>
+        <item quantity="other">الأشخاص</item>
     </plurals>
     <string name="play_count">عدد مرات التشغيل</string>
     <string name="play_from_here">تشغيل من هنا</string>
@@ -104,7 +106,7 @@
     <string name="restart">إعادة تشغيل</string>
     <string name="resume">استئناف</string>
     <string name="save">حفظ</string>
-    <string name="search_and_download"><![CDATA[بحث وتنزيل]]></string>
+    <string name="search_and_download">بحث وتنزيل</string>
     <string name="search">بحث</string>
     <string name="searching">جارٍ البحث…</string>
     <string name="voice_search">البحث الصوتي</string>
@@ -151,32 +153,41 @@
     <string name="show_clock">إظهار الساعة</string>
     <plurals name="behind_the_scenes">
         <item quantity="zero">الكواليس</item>
+        <item quantity="other">الكواليس</item>
     </plurals>
     <string name="official_rating">التصنيف العمري</string>
     <string name="runtime_sort">مدة العرض</string>
     <string name="extras_title">إضافات</string>
     <plurals name="other_extras">
         <item quantity="zero">أخرى</item>
+        <item quantity="other">أخرى</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="zero">الأغاني الرئيسية</item>
+        <item quantity="other">الأغاني الرئيسية</item>
     </plurals>
     <plurals name="clips">
         <item quantity="zero">مقاطع</item>
+        <item quantity="other">مقاطع</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="zero">مشاهد محذوفة</item>
+        <item quantity="other">مشاهد محذوفة</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="zero">مقابلات</item>
+        <item quantity="other">مقابلات</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="zero">مشاهد</item>
+        <item quantity="other">مشاهد</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="zero">مقاطع خاصة</item>
+        <item quantity="other">مقاطع خاصة</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="zero">مقاطع قصيرة</item>
+        <item quantity="other">مقاطع قصيرة</item>
     </plurals>
 </resources>

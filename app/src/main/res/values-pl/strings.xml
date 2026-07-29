@@ -263,7 +263,9 @@
     <string name="people_title">Obsada</string>
     <string name="none">Brak</string>
     <string name="unknown">Nieznany</string>
-    <string name="years_old">%1$d lat temu</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d lat temu</item>
+    </plurals>
     <string name="success">Powodzenie</string>
     <string name="official_rating">Ocena rodzicielska</string>
     <string name="extras_title">Dodatki</string>

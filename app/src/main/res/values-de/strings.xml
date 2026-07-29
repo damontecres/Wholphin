@@ -58,7 +58,9 @@
     <string name="updates">Aktualisierungen</string>
     <string name="version">Version</string>
     <string name="watch_live">Live ansehen</string>
-    <string name="years_old">%1$d Jahre alt</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d Jahre alt</item>
+    </plurals>
     <string name="extras_title">Extras</string>
     <plurals name="scenes">
         <item quantity="one">Szene</item>

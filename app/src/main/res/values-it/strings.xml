@@ -183,7 +183,9 @@
     <string name="video_scale">Scala Video</string>
     <string name="video">Video</string>
     <string name="videos">I video</string>
-    <string name="years_old">%1$d anni</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d anni</item>
+    </plurals>
     <string name="play_with_transcoding">Riproduci con transcodifica</string>
     <string name="immediate">Immediato</string>
     <string name="show_next_up_when">Mostra prossimo episodio</string>

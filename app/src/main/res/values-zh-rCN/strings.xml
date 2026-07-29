@@ -137,7 +137,9 @@
     <string name="video">视频</string>
     <string name="videos">视频</string>
     <string name="watch_live">观看直播</string>
-    <string name="years_old">%1$d 岁</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d 岁</item>
+    </plurals>
     <string name="play_with_transcoding">转码播放</string>
     <string name="show_clock">显示时钟</string>
     <string name="aired_episode_order">剧集播出顺序</string>

@@ -51,6 +51,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -160,8 +161,18 @@ class SeriesViewModel
                     } else {
                         CompletableDeferred(value = EpisodeList.Loading)
                     }
-                val seasons = seasonsDeferred.await()
-                val episodes = episodeListDeferred.await()
+                val (seasons, episodes) =
+                    try {
+                        val seasons = seasonsDeferred.await()
+                        val episodes = episodeListDeferred.await()
+                        seasons to episodes
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Exception fetching seasons/episodes for series %s", seriesId)
+                        _state.update { it.copy(series = DataLoadingState.Error(ex)) }
+                        return@launchIO
+                    }
                 Timber.v("Done")
 
                 if (seriesPageType == SeriesPageType.OVERVIEW && seasonEpisodeIds != null) {
@@ -777,7 +788,7 @@ suspend fun findIndexByNumberOrId(
             // Start searching from the target number and choose direction from there
             val num = list.getBlocking(listIndex)?.indexNumber
             if (num.lt(targetNum)) {
-                for (i in listIndex + 1 until list.lastIndex) {
+                for (i in listIndex + 1 until list.size) {
                     val item = list.getBlocking(i)
                     if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
                         return i

@@ -345,7 +345,7 @@ fun <T : CardGridItem> CardGrid(
                         items(pager.size) { index ->
                             val item = pager[index]
                             val details =
-                                remember(index, item) {
+                                remember(index, item, cardWidthPx, columns) {
                                     val mod =
                                         if ((index == currentFocusedIndex) or (currentFocusedIndex < 0 && index == 0)) {
                                             if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
@@ -515,7 +515,7 @@ fun AlphabetButtons(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val index = letters.indexOf(currentLetter)
+    val index = remember(letters, currentLetter) { letters.indexOf(currentLetter) }
     LaunchedEffect(currentLetter) {
         scope.launch(ExceptionHandler()) {
             val firstVisibleItemIndex = listState.firstVisibleItemIndex
@@ -523,7 +523,7 @@ fun AlphabetButtons(
                 listState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index ?: -1
-            if (index !in firstVisibleItemIndex..lastVisibleItemIndex) {
+            if (index >= 0 && index !in firstVisibleItemIndex..lastVisibleItemIndex) {
                 listState.animateScrollToItem(index)
             }
         }
