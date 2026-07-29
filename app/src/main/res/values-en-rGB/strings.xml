@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_favorite">Favourite</string>
+    <string name="favorites">Favourites</string>
+    <string name="license_info">Licence information</string>
+    <string name="record_program">Record Programme</string>
+    <string name="remove_favorite">Unfavourite</string>
+    <string name="voice_error_no_match">No speech recognised</string>
+    <string name="one_click_pause_summary_on">Press D-Pad centre to pause/play</string>
+    <string name="italic_font">Italicise font</string>
+    <string name="favorite_items_title">Favourite %s</string>
+    <string name="nav_drawer_pins">Customise Navigation Drawer Items</string>
+    <string name="skip_commercials_behavior">Skip commercials behaviour</string>
+    <string name="skip_intro_behavior">Skip intro behaviour</string>
+    <string name="skip_outro_behavior">Skip outro behaviour</string>
+    <string name="skip_previews_behavior">Skip previews behaviour</string>
+    <string name="skip_recap_behavior">Skip recap behaviour</string>
+    <string name="font_color">Font colour</string>
+    <string name="edge_color">Edge colour</string>
+    <string name="background_color">Background colour</string>
+    <string name="press_enter_to_confirm">Press centre to confirm</string>
+    <string name="color_space">Colour space</string>
+    <string name="color_transfer">Colour transfer</string>
+    <string name="color_primaries">Colour primaries</string>
+    <string name="favorite_channels_at_beginning">Show favourite channels first</string>
+    <string name="color_code_programs">Colour-code programmes</string>
+    <string name="quick_connect_summary">Authorise another device to log in to your account</string>
+    <string name="quick_connect_success">Device authorised successfully</string>
+    <string name="contrast">Contrast</string>
+    <string name="customize_home">Customise home page</string>
+    <string name="light_gray">Light grey</string>
+    <string name="dark_gray">Dark grey</string>
+    <string name="backdrop_style_dynamic">Image with dynamic colour</string>
+    <string name="show_visualizer">Show visualiser</string>
+    <string name="visualizer_rationale">Visualising the currently playing audio requires permission to record audio.</string>
+    <string name="skip_behavior">Skip behaviour</string>
+    <string name="display_toggles_summary">Customise which to display</string>
+    <string name="continue_watching_click_behavior">Continue watching/Next up click behaviour</string>
+</resources>
