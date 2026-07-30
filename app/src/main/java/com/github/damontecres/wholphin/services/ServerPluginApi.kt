@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.model.HomePageSettings
+import com.github.damontecres.wholphin.data.model.SeerrPluginSettings
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -25,11 +26,12 @@ class ServerPluginApi
 
         private val json =
             Json {
-                ignoreUnknownKeys = false
+                ignoreUnknownKeys = true
             }
 
         companion object {
             private const val HOME_CONFIG_PATH = "homesettings"
+            private const val SEERR_CONFIG_PATH = "seerrsettings"
         }
 
         suspend fun public(): Boolean {
@@ -57,6 +59,27 @@ class ServerPluginApi
                     json.decodeFromStream<HomePageSettings>(res.body.byteStream())
                 } else if (res.code == 404) {
                     Timber.w("fetchHomePageSettings returned 404")
+                    null
+                } else {
+                    throw ApiClientException(res.code.toString() + " " + res.body.string())
+                }
+            }
+        }
+
+        @OptIn(ExperimentalSerializationApi::class)
+        suspend fun fetchSeerrSettings(): SeerrPluginSettings? {
+            val url = createUrl(SEERR_CONFIG_PATH) ?: return null
+            val request =
+                Request
+                    .Builder()
+                    .url(url)
+                    .get()
+                    .build()
+            return okHttpClient.newCall(request).execute().use { res ->
+                if (res.isSuccessful) {
+                    json.decodeFromStream<SeerrPluginSettings>(res.body.byteStream())
+                } else if (res.code == 404) {
+                    Timber.d("fetchSeerrSettings: plugin not configured (404)")
                     null
                 } else {
                     throw ApiClientException(res.code.toString() + " " + res.body.string())
