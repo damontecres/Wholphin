@@ -296,4 +296,61 @@ class TestSelectionTrackExamples {
                 Assert.assertFalse(result.bothSelected)
             }
     }
+
+    @Test
+    fun `test exo track IDs with slashes`() {
+        val testTracks =
+            TestTracks(
+                listOf(
+                    // .ts files (eg recorded TV) report IDs like this in ExoPlayer
+                    TestTrack("3/49", 0, MediaStreamType.VIDEO, false),
+                    TestTrack("3/52", 1, MediaStreamType.AUDIO, false),
+                    TestTrack("", 2, MediaStreamType.DATA, false),
+                    TestTrack("3/53", 3, MediaStreamType.AUDIO, false),
+                ),
+            )
+        val mediaSource =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio()
+                .addTrack(1, MediaStreamType.DATA, false, C.FORMAT_HANDLED)
+                .addAudio()
+                .buildMediaSourceInfo()
+
+        val trackSelectionParameters = TrackSelectionParameters.Builder().build()
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = testTracks.toTracks(),
+                audioIndex = 1,
+                subtitleIndex = null,
+                source = mediaSource,
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.SELECTED, result.audio)
+                Assert.assertTrue(result.bothSelected)
+            }
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = testTracks.toTracks(),
+                audioIndex = 2,
+                subtitleIndex = null,
+                source = mediaSource,
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.NOT_FOUND, result.audio)
+                Assert.assertFalse(result.bothSelected)
+            }
+        TrackSelectionUtils
+            .createTrackSelections(
+                trackSelectionParams = trackSelectionParameters,
+                tracks = testTracks.toTracks(),
+                audioIndex = 3,
+                subtitleIndex = null,
+                source = mediaSource,
+            ).let { result ->
+                Assert.assertEquals(TrackSelected.SELECTED, result.audio)
+                Assert.assertTrue(result.bothSelected)
+            }
+    }
 }

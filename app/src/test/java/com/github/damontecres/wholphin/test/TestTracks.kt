@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.test
 
 import androidx.media3.common.C
 import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.Tracks
 import org.jellyfin.sdk.model.api.MediaProtocol
@@ -35,6 +36,7 @@ class TestTracks(
                             MediaStreamType.VIDEO -> "video/sample"
                             MediaStreamType.AUDIO -> "audio/default"
                             MediaStreamType.SUBTITLE -> "text/sample"
+                            MediaStreamType.DATA -> MimeTypes.APPLICATION_ID3
                             else -> throw UnsupportedOperationException("${it.type}")
                         }
                     val format =
