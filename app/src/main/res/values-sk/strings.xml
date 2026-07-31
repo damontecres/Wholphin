@@ -730,7 +730,6 @@
     <string name="override_user_profile_settings_summary">Prepísať nastavenia používateľského profilu zo servera</string>
     <string name="any_language">Akýkoľvek jazyk</string>
     <string name="d_pad_seek_mode_title">Režim pretáčania pomocou D-Padu</string>
-    <string name="dpad_seek_mode_skip_time">Čas preskočenia</string>
     <string name="dpad_seek_mode_trickplay">Trickplay náhľady</string>
     <string name="hash_matches">Hash zhody</string>
     <string name="subtitles_hearing_impaired">SDH</string>
