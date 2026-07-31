@@ -664,7 +664,6 @@
     <string name="override_user_profile_settings_summary">从服务器覆盖您的用户配置设置</string>
     <string name="any_language">任何语言</string>
     <string name="d_pad_seek_mode_title">方向键进度条模式</string>
-    <string name="dpad_seek_mode_skip_time">跳过时间</string>
     <string name="dpad_seek_mode_trickplay">特技播放</string>
     <string name="hash_matches">哈希匹配</string>
     <string name="subtitles_hearing_impaired">SDH</string>
