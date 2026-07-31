@@ -686,6 +686,7 @@
     <string name="override_user_profile_settings_summary">Sunucudaki kullanıcı profili ayarlarını geçersiz kıl</string>
     <string name="any_language">Herhangi bir dil</string>
     <string name="d_pad_seek_mode_title">Yön Tuşu Arama Çubuğu Modu</string>
+    <string name="dpad_seek_mode_skip_time">Atlama Süresi</string>
     <string name="dpad_seek_mode_trickplay">Trickplay</string>
     <string name="hash_matches">Hash Eşleşmeleri</string>
     <string name="subtitles_hearing_impaired">SDH</string>
