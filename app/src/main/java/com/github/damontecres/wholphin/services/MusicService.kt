@@ -58,6 +58,8 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.runBlocking
+import com.github.damontecres.wholphin.preferences.get
 
 /**
  * Manage the global state for playing music
@@ -83,8 +85,11 @@ class MusicService
         private val audioFormats by lazy { listOf(*supportedAudioCodecs) }
 
         val player: Player by lazy {
+            val disableAudioOffload = runBlocking {
+                userPreferencesService.getCurrent().appPreferences.experimentalPreferences.get { disableAudioOffload } ?: false
+            }
             playerFactory
-                .createAudioPlayer()
+                .createAudioPlayer(disableAudioOffload = disableAudioOffload)
                 .also {
                     it.addListener(MusicPlayerListener(it, _state))
                 }
