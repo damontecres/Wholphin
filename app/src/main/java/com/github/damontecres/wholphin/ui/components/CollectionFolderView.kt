@@ -378,7 +378,7 @@ class CollectionFolderViewModel
                     newPager
                 }
 
-                GetItemsFilterOverride.ARTIST ->
+                GetItemsFilterOverride.ARTIST -> {
                     ApiRequestPager(
                         api,
                         createGetArtistsRequest(filter),
@@ -386,6 +386,7 @@ class CollectionFolderViewModel
                         viewModelScope,
                         useSeriesForPrimary = useSeriesForPrimary,
                     )
+                }
             }
 
         /**
@@ -472,7 +473,7 @@ class CollectionFolderViewModel
             withContext(WholphinDispatchers.IO) {
                 val filter = state.value.filter
                 when (filter.override) {
-                    GetItemsFilterOverride.ARTIST ->
+                    GetItemsFilterOverride.ARTIST -> {
                         GetArtistsHandler.countMatching(
                             createGetArtistsRequest(filter).copy(
                                 enableImageTypes = null,
@@ -481,12 +482,15 @@ class CollectionFolderViewModel
                                 enableTotalRecordCount = true,
                             ),
                         )
+                    }
 
                     // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
                     // counted up to a letter at all
-                    GetItemsFilterOverride.PERSON -> null
+                    GetItemsFilterOverride.PERSON -> {
+                        null
+                    }
 
-                    GetItemsFilterOverride.NONE ->
+                    GetItemsFilterOverride.NONE -> {
                         GetItemsRequestHandler.countMatching(
                             createGetItemsRequest(
                                 sortAndDirection = state.value.sortAndDirection,
@@ -500,6 +504,7 @@ class CollectionFolderViewModel
                                 enableTotalRecordCount = true,
                             ),
                         )
+                    }
                 }
             }
 
