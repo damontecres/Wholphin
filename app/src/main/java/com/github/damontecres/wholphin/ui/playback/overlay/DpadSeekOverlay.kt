@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 
 /**
  * The compact overlay shown during D-Pad seeking in trickplay mode.
@@ -19,7 +19,7 @@ import org.jellyfin.sdk.model.api.TrickplayInfo
 fun DpadSeekOverlay(
     player: Player,
     seekPositionMs: Long,
-    trickplayInfo: TrickplayInfo?,
+    trickplayInfo: TrickplayInfoDto?,
     trickplayUrlFor: (Int) -> String?,
     modifier: Modifier = Modifier,
 ) {
