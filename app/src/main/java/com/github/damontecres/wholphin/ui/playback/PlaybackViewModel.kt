@@ -715,6 +715,7 @@ class PlaybackViewModel
 
                     val externalSubtitle =
                         source.findExternalSubtitle(subtitleIndex)?.let {
+                            Timber.v("Using externally delivered subtitle tracks %s", subtitleIndex)
                             it.deliveryUrl?.let { deliveryUrl ->
                                 var flags = 0
                                 if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
@@ -807,48 +808,43 @@ class PlaybackViewModel
                             mediaItem,
                             positionMs,
                         )
-                        if (transcodeType == PlayMethod.DIRECT_PLAY && (audioIndex != null || subtitleIndex != null)) {
-                            val onTracksChangedListener =
-                                object : Player.Listener {
-                                    override fun onTracksChanged(tracks: Tracks) {
-                                        Timber.v("onTracksChanged: $tracks")
-                                        if (tracks.groups.isNotEmpty()) {
-                                            val result =
-                                                TrackSelectionUtils.createTrackSelections(
-                                                    player.trackSelectionParameters,
-                                                    player.currentTracks,
-                                                    audioIndex,
-                                                    subtitleIndex,
-                                                    source,
-                                                )
-                                            Timber.v("onTracksChanged: %s", result)
-                                            player.removeListener(this)
-                                            if (result.bothSelected) {
-                                                player.trackSelectionParameters =
-                                                    result.trackSelectionParameters
-                                            } else {
-                                                // Fall back to transcoding
-                                                Timber.w(
-                                                    "Failed to select tracks, falling back to transcoding: %s",
-                                                    result,
-                                                )
-                                                viewModelScope.launchIO {
-                                                    changeStreams(
-                                                        item = item,
-                                                        sourceId = sourceId,
-                                                        audioIndex = audioIndex,
-                                                        subtitleIndex = subtitleIndex,
-                                                        positionMs = positionMs,
-                                                        enableDirectPlay = false,
-                                                        enableDirectStream = true,
-                                                    )
-                                                }
-                                            }
-                                            viewModelScope.launchIO { loadSubtitleDelay() }
-                                        }
-                                    }
-                                }
-                            player.addListener(onTracksChangedListener)
+                        val onFailure: () -> Unit = {
+                            viewModelScope.launchIO {
+                                changeStreams(
+                                    item = item,
+                                    sourceId = sourceId,
+                                    audioIndex = audioIndex,
+                                    subtitleIndex = subtitleIndex,
+                                    positionMs = positionMs,
+                                    enableDirectPlay = false,
+                                    enableDirectStream = true,
+                                )
+                            }
+                        }
+                        val onTracksChangedListener =
+                            if (transcodeType == PlayMethod.DIRECT_PLAY && (audioIndex != null || subtitleIndex != null)) {
+                                TracksChangedListener(
+                                    player = player,
+                                    audioIndex = audioIndex,
+                                    subtitleIndex = subtitleIndex,
+                                    source = source,
+                                    onFailure = onFailure,
+                                )
+                            } else if (externalSubtitle != null) {
+                                TracksChangedListener(
+                                    player = player,
+                                    audioIndex = null, // Do not manually activate audio
+                                    subtitleIndex = subtitleIndex,
+                                    source = source,
+                                    onFailure = onFailure,
+                                )
+                            } else {
+                                null
+                            }
+                        onTracksChangedListener?.let { player.addListener(it) }
+
+                        if (subtitleIndex != null) {
+//                            viewModelScope.launchIO { loadSubtitleDelay() }
                         }
                     }
                 }
