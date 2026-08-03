@@ -179,6 +179,8 @@
     <string name="ui_interface">Interface</string>
     <string name="video_scale">Échelle de la vidéo</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d an</item>
+        <item quantity="many">%1$d ans</item>
         <item quantity="other">%1$d ans</item>
     </plurals>
     <string name="italic_font">Mettre la police en italique</string>
@@ -721,4 +723,5 @@
     <string name="books">Livres</string>
     <string name="audio_books">Livre audio</string>
     <string name="server_version_not_supported">Version du serveur non prise en charge</string>
+    <string name="appears_on">Apparaît dans</string>
 </resources>
