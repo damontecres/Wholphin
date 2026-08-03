@@ -695,4 +695,11 @@
     <string name="d_pad_seek_mode_title">D-Pad Suchmodus</string>
     <string name="dpad_seek_mode_trickplay">Trickplay Vorschau</string>
     <string name="user_views">Benutzeransicht</string>
+    <string name="appears_on">Erscheint auf</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_minimal_summary">Kleine Suchleiste am unteren Rand des Bildschirms (Standard)</string>
+    <string name="brown">Braun</string>
+    <string name="dpad_seek_mode_trickplay_summary">Suchleiste mit Trickplay Vorschaubildern</string>
+    <string name="dpad_seek_mode_none_summary">Keine Suchleiste</string>
+    <string name="server_version_not_supported">Nicht unterstützte Server-Version</string>
 </resources>
