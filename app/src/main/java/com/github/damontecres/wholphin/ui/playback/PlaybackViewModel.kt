@@ -184,6 +184,7 @@ class PlaybackViewModel
         internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
+        private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
 
         private val isPlaylist = destination is Destination.PlaybackList
@@ -604,6 +605,9 @@ class PlaybackViewModel
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
 
+                trackChangeListener?.let { onMain { player.removeListener(it) } }
+                trackChangeListener = null
+
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
@@ -809,16 +813,21 @@ class PlaybackViewModel
                             positionMs,
                         )
                         val onFailure: () -> Unit = {
-                            viewModelScope.launchIO {
-                                changeStreams(
-                                    item = item,
-                                    sourceId = sourceId,
-                                    audioIndex = audioIndex,
-                                    subtitleIndex = subtitleIndex,
-                                    positionMs = positionMs,
-                                    enableDirectPlay = false,
-                                    enableDirectStream = true,
-                                )
+                            if (player is MpvPlayer && externalSubtitle != null) {
+                                // MpvPlayer may change tracks more than once to add external subtitles
+                                trackChangeListener?.let { player.addListener(it) }
+                            } else {
+                                viewModelScope.launchIO {
+                                    changeStreams(
+                                        item = item,
+                                        sourceId = sourceId,
+                                        audioIndex = audioIndex,
+                                        subtitleIndex = subtitleIndex,
+                                        positionMs = positionMs,
+                                        enableDirectPlay = false,
+                                        enableDirectStream = true,
+                                    )
+                                }
                             }
                         }
                         val onTracksChangedListener =
@@ -841,10 +850,13 @@ class PlaybackViewModel
                             } else {
                                 null
                             }
-                        onTracksChangedListener?.let { player.addListener(it) }
+                        onTracksChangedListener?.let {
+                            player.addListener(it)
+                            this@PlaybackViewModel.trackChangeListener = it
+                        }
 
                         if (subtitleIndex != null) {
-//                            viewModelScope.launchIO { loadSubtitleDelay() }
+                            viewModelScope.launchIO { loadSubtitleDelay() }
                         }
                     }
                 }
