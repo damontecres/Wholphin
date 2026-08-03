@@ -698,9 +698,9 @@
     <string name="subtitle_mode_none">Aucun</string>
     <string name="preferred_subtitle_language">Langue de sous-titre préférée</string>
     <string name="preferred_audio_language">Langue audio préférée</string>
-    <string name="profile_specific_settings_from_server">Paramètres du profil utilisateur provenant du serveur</string>
+    <string name="profile_specific_settings_from_server">Paramètres du profil utilisateur à partir du serveur</string>
     <string name="subtitle_mode">Mode sous-titres</string>
-    <string name="use_user_profile">Accédez aux paramètres de votre profil</string>
+    <string name="use_user_profile">Utiliser vos paramètres</string>
     <string name="subtitle_mode_default">Par défaut</string>
     <string name="subtitle_mode_smart">Intelligent</string>
     <string name="subtitle_mode_always">Toujours</string>
