@@ -216,6 +216,9 @@ class PlaybackViewModel
                     it.release()
                     player.removeListener(it)
                 }
+                this@PlaybackViewModel.trackChangeListener?.let {
+                    player.removeListener(it)
+                }
                 player.release()
                 mediaSession?.release()
             }
