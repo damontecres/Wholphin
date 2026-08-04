@@ -27,12 +27,11 @@ class IntentService
             Timber.v("Parsing intent %s", intent)
             Timber.v("Intent extras: %s", intent.extras)
             Timber.v("Intent data: %s", intent.data)
-            if (intent.getStringParam("type") != null) {
-                return getDestinationFromChannel(intent)?.let { IntentResult.Target(it) }
-                    ?: IntentResult.Error("Invalid parameters")
-            }
             val action = intent.action ?: intent.data?.host
-            if (action == Intent.ACTION_MAIN || action.isNullOrBlank()) {
+            if (
+                intent.getStringParam("type") == null &&
+                    (action == Intent.ACTION_MAIN || action.isNullOrBlank())
+            ) {
                 return IntentResult.NoOp
             }
 
@@ -65,9 +64,19 @@ class IntentService
                 }
             }
 
+            if (intent.getStringParam("type") != null) {
+                return getDestinationFromChannel(intent)?.let {
+                    IntentResult.Target(
+                        destinations = listOf(it),
+                        addHomeToBackStack = false,
+                    )
+                }
+                    ?: IntentResult.Error("Invalid parameters")
+            }
+
             if (action == Intent.ACTION_SEARCH || action == "search") {
                 val query = intent.getStringParam(SearchManager.QUERY)
-                return IntentResult.Target(Destination.Search(query ?: ""))
+                return IntentResult.Target(listOf(Destination.Search(query ?: "")))
             }
             val itemId =
                 intent.getStringParam("itemId")?.toUUIDOrNull()
@@ -84,25 +93,39 @@ class IntentService
                     return IntentResult.Error("Could not fetch item $itemId")
                 }
 
-            val destination =
+            val itemDestination = item.destination()
+
+            val destinations =
                 when (action) {
                     Intent.ACTION_VIEW, "view" -> {
-                        item.destination()
+                        listOf(itemDestination)
                     }
 
                     "com.github.damontecres.wholphin.PLAYBACK", "play" -> {
                         val position = intent.getLongParam("position")?.coerceAtLeast(0)
-                        Destination.Playback(
-                            itemId = itemId,
-                            positionMs = position ?: 0L,
-                        )
+
+                        val playbackDestination =
+                            Destination.Playback(
+                                itemId = itemId,
+                                positionMs = position ?: 0L,
+                            )
+
+                        if (itemDestination is Destination.Playback) {
+                            listOf(playbackDestination)
+                        } else {
+                            listOf(
+                                itemDestination,
+                                playbackDestination,
+                            )
+                        }
                     }
 
                     else -> {
                         return IntentResult.Error("Invalid action: ${intent.action}")
                     }
                 }
-            return IntentResult.Target(destination)
+
+            return IntentResult.Target(destinations)
         }
 
         private fun Intent.getStringParam(key: String) = getStringExtra(key) ?: data?.getQueryParameter(key)
@@ -159,6 +182,7 @@ sealed interface IntentResult {
     data object NoOp : IntentResult
 
     data class Target(
-        val destination: Destination,
+        val destinations: List<Destination>,
+        val addHomeToBackStack: Boolean = true,
     ) : IntentResult
 }
