@@ -231,6 +231,9 @@ class PlaybackViewModelTests {
                 any(),
             )
         } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }
+
+        val item = slot<BaseItem>()
+        coEvery { mockStrmFileHandler.resolveStrm(capture(item)) } answers { item.captured }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
