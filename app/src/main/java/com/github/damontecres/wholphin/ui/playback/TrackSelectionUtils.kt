@@ -158,10 +158,16 @@ object TrackSelectionUtils {
             } else {
                 track.trackFormats[0]
                     .id
-                    ?.split(":")
-                    ?.map { it.toInt() }
+                    ?.split(":", "/")
+                    ?.map { it.toIntOrNull() ?: Int.MAX_VALUE }
                     ?.let {
-                        track to it
+                        if (it.size >= 2) {
+                            track to it
+                        } else if (it.isEmpty()) {
+                            track to listOf(Int.MAX_VALUE, Int.MAX_VALUE)
+                        } else {
+                            track to listOf(it[0], Int.MAX_VALUE)
+                        }
                     }
             }
         }.sortedWith(compareBy<Pair<Tracks.Group, List<Int>>> { it.second[0] }.thenBy { it.second[1] })
