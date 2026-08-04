@@ -29,7 +29,7 @@ class StrmFileHandler
          *
          * @return the resolved item or null if could not be resolved
          */
-        suspend fun resolveStrm(item: BaseItem): BaseItem? {
+        suspend fun resolveStrmOrNull(item: BaseItem): BaseItem? {
             if (shouldResolveStrm(item)) {
                 Timber.d("Resolving strm %s", item.id)
                 // Resolve the file as a while
@@ -54,7 +54,7 @@ class StrmFileHandler
          *
          * @return the resolved item or null if could not be resolved
          */
-        suspend fun resolveStrm(
+        suspend fun resolveStrmOrNull(
             item: BaseItem,
             sourceId: String,
         ): BaseItem? {
@@ -65,6 +65,15 @@ class StrmFileHandler
             }
             return null
         }
+
+        /**
+         * Attempts to resolve a specific media source in the strm file if is not yet resolved.
+         *
+         * If the item is not a strm file, nothing happens
+         *
+         * @return the resolved item or the original item if does not need to be resolved
+         */
+        suspend fun resolveStrm(item: BaseItem): BaseItem = resolveStrmOrNull(item) ?: item
 
         private suspend fun resolve(
             itemId: UUID,

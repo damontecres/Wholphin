@@ -183,7 +183,7 @@ class MovieViewModel
                     try {
                         if (StrmFileHandler.shouldResolveStrm(movie)) {
                             _state.update { it.copy(strmLoading = true) }
-                            val result = strmFileHandler.resolveStrm(movie)
+                            val result = strmFileHandler.resolveStrmOrNull(movie)
                             if (result != null) {
                                 Timber.d("Got updated item")
                                 val chosenStreams =

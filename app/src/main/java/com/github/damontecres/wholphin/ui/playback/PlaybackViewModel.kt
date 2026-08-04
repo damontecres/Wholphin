@@ -426,19 +426,22 @@ class PlaybackViewModel
         ): Boolean =
             withContext(WholphinDispatchers.IO) {
                 val item =
-                    when (playlistItem) {
-                        is PlaylistItem.Intro -> playlistItem.item
-                        is PlaylistItem.Media -> playlistItem.item
+                    playlistItem.let {
+                        var item =
+                            when (playlistItem) {
+                                is PlaylistItem.Intro -> playlistItem.item
+                                is PlaylistItem.Media -> playlistItem.item
+                            }
+                        try {
+                            item = strmFileHandler.resolveStrm(item)
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "strm file error playing %s", item.id)
+                            return@withContext false
+                        }
+                        item
                     }
 
                 Timber.i("Playing ${item.id}")
-
-                try {
-                    strmFileHandler.resolveStrm(item)
-                } catch (ex: Exception) {
-                    Timber.e(ex, "strm file error playing %s", item.id)
-                    return@withContext false
-                }
 
                 // New item, so we can clear the media segment tracker & subtitle cues
                 resetSegmentState()

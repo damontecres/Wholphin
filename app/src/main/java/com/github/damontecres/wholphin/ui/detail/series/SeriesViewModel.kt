@@ -556,7 +556,7 @@ class SeriesViewModel
                     try {
                         if (StrmFileHandler.shouldResolveStrm(item)) {
                             _state.update { it.copy(strmLoading = true) }
-                            val result = strmFileHandler.resolveStrm(item)
+                            val result = strmFileHandler.resolveStrmOrNull(item)
                             if (result != null) {
                                 Timber.d("Got updated item")
                                 refreshEpisode(item.id, index).join()
