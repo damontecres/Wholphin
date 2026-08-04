@@ -450,11 +450,12 @@ class MainActivityViewModel
                                 if (current != null) {
                                     Timber.i("Received valid intent, switching to AppContent")
 
-                                    navigationManager.goToHome()
-
-                                    result.destinations.forEach { destination ->
-                                        navigationManager.navigateTo(destination)
+                                    if (result.addHomeToBackStack) {
+                                        navigationManager.reloadHome()
+                                    } else {
+                                        navigationManager.backStack.clear()
                                     }
+                                    navigationManager.backStack.addAll(result.destinations)
 
                                     setupNavigationManager.navigateTo(
                                         SetupDestination.AppContent(current),

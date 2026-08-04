@@ -27,12 +27,11 @@ class IntentService
             Timber.v("Parsing intent %s", intent)
             Timber.v("Intent extras: %s", intent.extras)
             Timber.v("Intent data: %s", intent.data)
-            if (intent.getStringParam("type") != null) {
-                return getDestinationFromChannel(intent)?.let { IntentResult.Target(listOf(it)) }
-                    ?: IntentResult.Error("Invalid parameters")
-            }
             val action = intent.action ?: intent.data?.host
-            if (action == Intent.ACTION_MAIN || action.isNullOrBlank()) {
+            if (
+                intent.getStringParam("type") == null &&
+                    (action == Intent.ACTION_MAIN || action.isNullOrBlank())
+            ) {
                 return IntentResult.NoOp
             }
 
@@ -63,6 +62,16 @@ class IntentService
                 } else {
                     return IntentResult.Error("Auto sign-in not enabled, specify a server & user")
                 }
+            }
+
+            if (intent.getStringParam("type") != null) {
+                return getDestinationFromChannel(intent)?.let {
+                    IntentResult.Target(
+                        destinations = listOf(it),
+                        addHomeToBackStack = false,
+                    )
+                }
+                    ?: IntentResult.Error("Invalid parameters")
             }
 
             if (action == Intent.ACTION_SEARCH || action == "search") {
@@ -174,5 +183,6 @@ sealed interface IntentResult {
 
     data class Target(
         val destinations: List<Destination>,
+        val addHomeToBackStack: Boolean = true,
     ) : IntentResult
 }
