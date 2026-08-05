@@ -74,6 +74,8 @@
     <string name="video">Vídeo</string>
     <string name="videos">Vídeos</string>
     <plurals name="years_old">
+        <item quantity="one">%1$d año</item>
+        <item quantity="many">%1$d años</item>
         <item quantity="other">%1$d años</item>
     </plurals>
     <string name="play_with_transcoding">Reproducir con transcodificación</string>
@@ -646,7 +648,7 @@
     <string name="behind_the_scenes_title">Detrás de las cámaras</string>
     <string name="theme_songs_title">Temas musicales</string>
     <string name="theme_videos_title">Vídeos temáticos</string>
-    <string name="clips_title">Clips</string>
+    <string name="clips_title">Fragmentos de vídeo</string>
     <string name="deleted_scenes_title">Escenas eliminadas</string>
     <string name="interviews_title">Entrevistas</string>
     <string name="scenes_title">Escenas</string>
@@ -721,4 +723,5 @@
     <string name="dpad_seek_mode_none_summary">Sin barra de progreso</string>
     <string name="brown">Marrón</string>
     <string name="server_version_not_supported">Versión de servidor no soportada</string>
+    <string name="appears_on">Aparece en</string>
 </resources>
