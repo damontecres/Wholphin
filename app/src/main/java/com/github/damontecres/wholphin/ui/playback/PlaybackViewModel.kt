@@ -95,6 +95,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
 import org.jellyfin.sdk.api.client.extensions.sessionApi
@@ -105,6 +106,7 @@ import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
@@ -112,9 +114,11 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
+import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -391,7 +395,10 @@ class PlaybackViewModel
                 playNextUp()
             }
 
-            if (!isPlaylist) {
+            if (queriedItem.type == BaseItemKind.TV_CHANNEL) {
+                // For live TV, the "playlist" is the channel list so that channel up/down can surf it
+                loadChannelPlaylist(queriedItem.id)
+            } else if (!isPlaylist) {
                 val result = playlistCreator.createFrom(queriedItem)
                 if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
                     _state.update {
@@ -399,6 +406,83 @@ class PlaybackViewModel
                             playlist = Playlist(it.playlist.items + result.playlist.items),
                         )
                     }
+                }
+            }
+        }
+
+        /**
+         * Load the live TV channel list into the playlist so that channel up/down can move through it.
+         *
+         * Uses the same sorting as the TV guide so surfing order matches what the user sees there.
+         */
+        private suspend fun loadChannelPlaylist(currentChannelId: UUID) {
+            try {
+                val liveTvPrefs =
+                    preferences.appPreferences.interfacePreferences.liveTvPreferences
+                val sortByRecent = liveTvPrefs.sortByRecentlyWatched
+                val channels =
+                    api.liveTvApi
+                        .getLiveTvChannels(
+                            GetLiveTvChannelsRequest(
+                                startIndex = 0,
+                                userId = serverRepository.currentUser?.id,
+                                enableFavoriteSorting = liveTvPrefs.favoriteChannelsAtBeginning,
+                                sortBy = if (sortByRecent) listOf(ItemSortBy.DATE_PLAYED) else null,
+                                sortOrder = if (sortByRecent) SortOrder.DESCENDING else null,
+                                addCurrentProgram = false,
+                            ),
+                        ).content.items
+                        .map { PlaylistItem.Media(BaseItem(it, false)) }
+                if (channels.isEmpty()) {
+                    Timber.w("No live TV channels returned, channel surfing disabled")
+                    return
+                }
+                val index = channels.indexOfFirst { it.id == currentChannelId }.coerceAtLeast(0)
+                Timber.d("Loaded %d channels, current index %d", channels.size, index)
+                _state.update {
+                    it.copy(playlist = Playlist(channels), playlistIndex = index)
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Failed to load channel list, channel surfing disabled")
+            }
+        }
+
+        /**
+         * Move [delta] channels through the live TV channel list, wrapping around at either end.
+         *
+         * @param attempt guards against looping forever if no channel is playable
+         */
+        fun changeChannel(
+            delta: Int,
+            attempt: Int = 0,
+        ) {
+            if (delta == 0) return
+            viewModelScope.launchDefault {
+                playlistMutex.withLock {
+                    val state = state.value
+                    val items = state.playlist.items
+                    if (!state.isLiveTv || items.size < 2) {
+                        Timber.v("Not live TV or nothing to surf, ignoring channel change")
+                        return@withLock
+                    }
+                    if (attempt >= items.size) {
+                        Timber.w("No playable channel found after %d attempts", attempt)
+                        return@withLock
+                    }
+                    val size = items.size
+                    val newIndex = ((state.playlistIndex + delta) % size + size) % size
+                    val item = items[newIndex]
+                    Timber.i("Changing channel to index %d: %s", newIndex, item.id)
+                    _state.update { it.copy(playlistIndex = newIndex, nextUp = null) }
+                    playlistJob?.cancel()
+                    playlistJob =
+                        viewModelScope.launchDefault {
+                            val played = play(item, 0)
+                            if (!played) {
+                                // Skip over a channel that failed to start
+                                changeChannel(delta, attempt + 1)
+                            }
+                        }
                 }
             }
         }
@@ -452,6 +536,7 @@ class PlaybackViewModel
                 this@PlaybackViewModel.itemId = item.id
 
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
+                _state.update { it.copy(isLiveTv = isLiveTv) }
                 val base = item.data
 
                 // Use the provided playback parameters or else check if the database has some
@@ -1044,6 +1129,13 @@ class PlaybackViewModel
             }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED && state.value.isLiveTv) {
+                // The channel list is the playlist during live TV, so don't treat a dead
+                // stream as "next up" and zap the user to another channel
+                Timber.d("Live TV stream ended")
+                navigationManager.goBack()
+                return
+            }
             if (playbackState == Player.STATE_ENDED) {
                 Timber.v("Playback state is STATE_ENDED")
                 viewModelScope.launchDefault {

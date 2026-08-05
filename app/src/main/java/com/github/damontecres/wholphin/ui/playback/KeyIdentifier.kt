@@ -64,6 +64,8 @@ fun isMedia(event: KeyEvent): Boolean =
         event.key == Key.MediaAudioTrack ||
         event.key == Key.MediaStop
 
+fun isChannelKey(event: KeyEvent): Boolean = event.key == Key.ChannelUp || event.key == Key.ChannelDown
+
 fun isBackwardButton(event: KeyEvent): Boolean =
     event.key == Key.PageUp ||
         event.key == Key.ChannelUp ||
