@@ -678,6 +678,6 @@
     <string name="books">書籍</string>
     <string name="audio_books">有聲書</string>
     <string name="server_version_not_supported">不支援此伺服器版本</string>
-    <string name="user_views">使用者檢視</string>
+    <string name="user_views">使用者檢視方式</string>
     <string name="appears_on">出現於</string>
 </resources>
