@@ -34,6 +34,12 @@ class PlaybackKeyHandler(
     private val isDpadSeekVisible: () -> Boolean = { false },
     private val onDpadSeek: (Long) -> Unit = { },
     private val dpadSeekMode: DpadSeekMode,
+    /**
+     * Whether channel up/down (and next/previous) should change live TV channels
+     */
+    private val channelKeysEnabled: () -> Boolean = { false },
+    private val onChannelUp: () -> Unit = { },
+    private val onChannelDown: () -> Unit = { },
 ) {
     private var leftHandledByRepeat = false
     private var rightHandledByRepeat = false
@@ -81,6 +87,12 @@ class PlaybackKeyHandler(
             } else {
                 // When controller is visible, its buttons will handle pulsing
             }
+        } else if (isChannelKey(it) && channelKeysEnabled.invoke()) {
+            if (it.key == Key.ChannelUp) {
+                onChannelUp.invoke()
+            } else {
+                onChannelDown.invoke()
+            }
         } else if (isMedia(it)) {
             when (it.key) {
                 Key.MediaPlay, Key.MediaPause, Key.MediaPlayPause -> {
@@ -98,11 +110,19 @@ class PlaybackKeyHandler(
                 }
 
                 Key.MediaNext -> {
-                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()
+                    if (channelKeysEnabled.invoke()) {
+                        onChannelUp.invoke()
+                    } else if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) {
+                        player.seekToNext()
+                    }
                 }
 
                 Key.MediaPrevious -> {
-                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) player.seekToPrevious()
+                    if (channelKeysEnabled.invoke()) {
+                        onChannelDown.invoke()
+                    } else if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) {
+                        player.seekToPrevious()
+                    }
                 }
 
                 Key.Captions -> {
