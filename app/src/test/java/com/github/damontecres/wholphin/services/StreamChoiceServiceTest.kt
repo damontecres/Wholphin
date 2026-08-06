@@ -525,6 +525,54 @@ class TestStreamChoiceServiceOnlyForced(
                         ),
                     streamAudioLang = "eng",
                 ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.NONE,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitlesOnlyForced = true),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.DEFAULT,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true),
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitlesOnlyForced = true),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.DEFAULT,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitlesOnlyForced = true),
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.NONE,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitlesOnlyForced = true),
+                ),
             )
     }
 }
@@ -942,7 +990,7 @@ private fun runTest(input: TestInput) {
                     ),
                 ),
         )
-    Assert.assertEquals(input.expectedIndex, result?.index)
+    Assert.assertEquals(input.expectedIndex, result.stream?.index)
 }
 
 fun subtitle(
@@ -983,6 +1031,7 @@ private fun plc(
     audioLang: String? = null,
     subtitleLang: String? = null,
     subtitlesDisabled: Boolean? = if (subtitleLang != null) false else null,
+    subtitlesOnlyForced: Boolean? = if (subtitleLang != null) false else null,
 ): List<SeriesTrackChoice> =
     buildList {
         audioLang
@@ -997,7 +1046,7 @@ private fun plc(
                     codec = null,
                     trackIndex = null,
                     title = null,
-                    channels = null,
+                    audioChannels = null,
                 )
             }?.let(::add)
 
@@ -1012,7 +1061,7 @@ private fun plc(
                 codec = null,
                 trackIndex = null,
                 title = null,
-                channels = null,
+                audioChannels = null,
             ).let(::add)
         } else if (subtitlesDisabled == true) {
             SeriesTrackChoice(
@@ -1025,7 +1074,20 @@ private fun plc(
                 codec = null,
                 trackIndex = null,
                 title = null,
-                channels = null,
+                audioChannels = null,
+            ).let(::add)
+        } else if (subtitlesOnlyForced == true) {
+            SeriesTrackChoice(
+                userId = 1,
+                language = null,
+                parentId = UUID.randomUUID(),
+                type = SeriesTrackChoiceType.SUBTITLE,
+                activation = ActivationFlag.ONLY_FORCED,
+                trackFlags = 0,
+                codec = null,
+                trackIndex = null,
+                title = null,
+                audioChannels = null,
             ).let(::add)
         }
     }

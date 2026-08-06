@@ -29,6 +29,8 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.StreamChoiceReason
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
@@ -223,7 +225,11 @@ class PlaybackViewModelTests {
                 any(),
                 any(),
             )
-        } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.AUDIO }
+        } returns
+            StreamChoiceResult(
+                mediaSource.mediaStreams!!.first { it.type == MediaStreamType.AUDIO },
+                StreamChoiceReason.Unknown,
+            )
 
         coEvery {
             mockStreamChoiceService.chooseSubtitleStream(
@@ -234,7 +240,11 @@ class PlaybackViewModelTests {
                 stc = any(),
                 prefs = any(),
             )
-        } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }
+        } returns
+            StreamChoiceResult(
+                mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE },
+                StreamChoiceReason.Unknown,
+            )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
