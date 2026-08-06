@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 40,
-    "identityHash": "2a0a381e21cb3d9a1e7c17e8a7e6016a",
+    "identityHash": "6665de652ff1c6353131b437f4cdd489",
     "entities": [
       {
         "tableName": "servers",
@@ -734,7 +734,7 @@
       },
       {
         "tableName": "SeriesTrackChoice",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `parentId` TEXT NOT NULL, `type` TEXT NOT NULL, `itemId` TEXT, `language` TEXT, `activation` TEXT NOT NULL, `trackFlags` INTEGER NOT NULL, `codec` TEXT, `trackIndex` INTEGER, `title` TEXT, `channels` INTEGER, PRIMARY KEY(`userId`, `parentId`, `type`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `parentId` TEXT NOT NULL, `type` TEXT NOT NULL, `parentType` TEXT NOT NULL, `itemId` TEXT, `language` TEXT, `activation` TEXT NOT NULL, `trackFlags` INTEGER NOT NULL, `codec` TEXT, `trackIndex` INTEGER, `title` TEXT, `audioChannels` INTEGER, PRIMARY KEY(`userId`, `parentId`, `type`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "userId",
@@ -751,6 +751,12 @@
           {
             "fieldPath": "type",
             "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentType",
+            "columnName": "parentType",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -792,8 +798,8 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "channels",
-            "columnName": "channels",
+            "fieldPath": "audioChannels",
+            "columnName": "audioChannels",
             "affinity": "INTEGER"
           }
         ],
@@ -822,7 +828,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a0a381e21cb3d9a1e7c17e8a7e6016a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6665de652ff1c6353131b437f4cdd489')"
     ]
   }
 }

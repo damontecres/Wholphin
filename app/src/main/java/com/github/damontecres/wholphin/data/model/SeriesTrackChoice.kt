@@ -26,9 +26,18 @@ import java.util.UUID
 @Serializable
 data class SeriesTrackChoice(
     val userId: Int,
-    // Season or Series
+    /**
+     * Season or Series
+     */
     val parentId: UUID,
+    /**
+     * Type of track, ie audio or subtitle
+     */
     val type: SeriesTrackChoiceType,
+    /**
+     * Origin of the [parentId]
+     */
+    val parentType: TrackChoiceParentType = TrackChoiceParentType.UNKNOWN,
     val itemId: UUID? = null,
     val language: String? = null,
     val activation: ActivationFlag = ActivationFlag.ACTIVATED,
@@ -36,7 +45,7 @@ data class SeriesTrackChoice(
     val codec: String? = null,
     val trackIndex: Int? = null,
     val title: String? = null,
-    val channels: Int? = null,
+    val audioChannels: Int? = null,
 ) {
     companion object {
         fun from(plc: PlaybackLanguageChoice): List<SeriesTrackChoice> =
@@ -46,6 +55,7 @@ data class SeriesTrackChoice(
                         SeriesTrackChoice(
                             userId = plc.userId,
                             parentId = plc.seriesId,
+                            parentType = TrackChoiceParentType.DEPRECATED,
                             type = SeriesTrackChoiceType.SUBTITLE,
                             itemId = plc.itemId,
                             language = plc.subtitleLanguage,
@@ -54,7 +64,7 @@ data class SeriesTrackChoice(
                             codec = null,
                             trackIndex = null,
                             title = null,
-                            channels = null,
+                            audioChannels = null,
                         ),
                     )
                 }
@@ -63,6 +73,7 @@ data class SeriesTrackChoice(
                         SeriesTrackChoice(
                             userId = plc.userId,
                             parentId = plc.seriesId,
+                            parentType = TrackChoiceParentType.DEPRECATED,
                             type = SeriesTrackChoiceType.AUDIO,
                             itemId = plc.itemId,
                             language = plc.audioLanguage,
@@ -71,7 +82,7 @@ data class SeriesTrackChoice(
                             codec = null,
                             trackIndex = null,
                             title = null,
-                            channels = null,
+                            audioChannels = null,
                         ),
                     )
                 }
@@ -84,6 +95,9 @@ enum class SeriesTrackChoiceType {
     SUBTITLE,
 }
 
+/**
+ * Flags for a track such as forced or defect
+ */
 enum class TrackFlag(
     val flag: Int,
     val hasFlag: (MediaStream) -> Boolean,
@@ -102,8 +116,36 @@ enum class TrackFlag(
     }
 }
 
+/**
+ * How was the track activated
+ */
 enum class ActivationFlag {
     ACTIVATED,
     DISABLED,
     ONLY_FORCED,
+}
+
+/**
+ * Where the [SeriesTrackChoice.parentId] comes from
+ */
+enum class TrackChoiceParentType {
+    /**
+     * Parent ID is from the series
+     */
+    SERIES,
+
+    /**
+     * Parent ID is from the season
+     */
+    SEASON,
+
+    /**
+     * Parent ID is from the deprecated [PlaybackLanguageChoice]
+     */
+    DEPRECATED,
+
+    /**
+     * Parent ID origin is unknown
+     */
+    UNKNOWN,
 }

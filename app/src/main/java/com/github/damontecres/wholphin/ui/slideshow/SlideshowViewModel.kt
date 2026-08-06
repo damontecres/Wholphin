@@ -17,6 +17,8 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.StreamChoiceReason
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
@@ -222,8 +224,16 @@ class SlideshowViewModel
                                             itemId = image.id,
                                             source = source,
                                             videoStream = video,
-                                            audioStream = audio,
-                                            subtitleStream = null,
+                                            audioStream =
+                                                StreamChoiceResult(
+                                                    audio,
+                                                    StreamChoiceReason.Unknown,
+                                                ),
+                                            subtitleStream =
+                                                StreamChoiceResult(
+                                                    null,
+                                                    StreamChoiceReason.Unknown,
+                                                ),
                                             subtitlesDisabled = false,
                                         )
                                     }

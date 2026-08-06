@@ -179,7 +179,8 @@ class PlayExternalViewModel
                                 itemPlayback = playbackConfig,
                                 stc = subtitleStc,
                                 prefs = prefs,
-                            )?.index
+                            )?.stream
+                            ?.index
                     val externalSubtitles =
                         mediaSource.mediaStreams
                             ?.filter { it.isExternal }

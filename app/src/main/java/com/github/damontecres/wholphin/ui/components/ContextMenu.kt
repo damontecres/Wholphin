@@ -234,11 +234,11 @@ fun ContextMenu(
                                     resources = resources,
                                     streams = source.mediaStreams.orEmpty(),
                                     type = type,
-                                    currentIndex =
+                                    streamChoice =
                                         if (type == MediaStreamType.AUDIO) {
-                                            chosenStreams?.audioStream?.index
+                                            chosenStreams?.audioStream
                                         } else {
-                                            chosenStreams?.subtitleStream?.index
+                                            chosenStreams?.subtitleStream
                                         },
                                     onClick = { trackIndex ->
                                         actions.onChooseTracks.invoke(

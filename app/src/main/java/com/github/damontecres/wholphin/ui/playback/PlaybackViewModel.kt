@@ -512,7 +512,7 @@ class PlaybackViewModel
 
                 val subtitleStreams = mediaSource?.let { getSubtitleStreams(mediaSource) }.orEmpty()
                 val audioStreams = mediaSource?.let { getAudioStreams(mediaSource) }.orEmpty()
-                val audioStream =
+                val audioResult =
                     mediaSource?.let {
                         streamChoiceService
                             .chooseAudioStream(
@@ -523,7 +523,7 @@ class PlaybackViewModel
                                 prefs = preferences,
                             )
                     }
-                val audioIndex = audioStream?.index
+                val audioIndex = audioResult?.stream?.index
 
                 val subtitleIndex =
                     mediaSource?.let {
@@ -531,11 +531,12 @@ class PlaybackViewModel
                             .chooseSubtitleStream(
                                 item = base,
                                 source = mediaSource,
-                                audioStream = audioStream,
+                                audioStream = audioResult?.stream,
                                 itemPlayback = itemPlayback,
                                 stc = subtitleStc,
                                 prefs = preferences,
-                            )?.index
+                            )?.stream
+                            ?.index
                     }
                 Timber.d(
                     "Selected mediaSource=%s, audioIndex=%s, subtitleIndex=%s",

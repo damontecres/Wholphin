@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.data.model.ActivationFlag
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
+import com.github.damontecres.wholphin.data.model.TrackChoiceParentType
 import com.github.damontecres.wholphin.data.model.TrackFlag
 import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.has
 import com.github.damontecres.wholphin.data.model.TrackIndex
@@ -15,6 +16,8 @@ import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.util.StringProvider
+import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
@@ -57,6 +60,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seasonId,
+                                parentType = TrackChoiceParentType.SEASON,
                                 type = type,
                                 itemId = dto.id,
                                 language = stream.language,
@@ -65,7 +69,7 @@ class StreamChoiceService
                                 codec = stream.codec,
                                 trackIndex = stream.index,
                                 title = stream.title,
-                                channels = stream.channels,
+                                audioChannels = stream.channels,
                             )
                         }?.let(::add)
                     dto.seriesId
@@ -73,6 +77,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seriesId,
+                                parentType = TrackChoiceParentType.SERIES,
                                 type = type,
                                 itemId = dto.id,
                                 language = stream.language,
@@ -81,7 +86,7 @@ class StreamChoiceService
                                 codec = stream.codec,
                                 trackIndex = stream.index,
                                 title = stream.title,
-                                channels = stream.channels,
+                                audioChannels = stream.channels,
                             )
                         }?.let(::add)
                 }
@@ -113,6 +118,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seasonId,
+                                parentType = TrackChoiceParentType.SEASON,
                                 type = type,
                                 itemId = dto.id,
                                 language = null,
@@ -121,7 +127,7 @@ class StreamChoiceService
                                 codec = null,
                                 trackIndex = null,
                                 title = null,
-                                channels = null,
+                                audioChannels = null,
                             )
                         }?.let(::add)
                     dto.seriesId
@@ -129,6 +135,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seriesId,
+                                parentType = TrackChoiceParentType.SERIES,
                                 type = type,
                                 itemId = dto.id,
                                 language = null,
@@ -137,7 +144,7 @@ class StreamChoiceService
                                 codec = null,
                                 trackIndex = null,
                                 title = null,
-                                channels = null,
+                                audioChannels = null,
                             )
                         }?.let(::add)
                 }
@@ -168,6 +175,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seasonId,
+                                parentType = TrackChoiceParentType.SEASON,
                                 type = type,
                                 itemId = dto.id,
                                 language = null,
@@ -176,7 +184,7 @@ class StreamChoiceService
                                 codec = null,
                                 trackIndex = null,
                                 title = null,
-                                channels = null,
+                                audioChannels = null,
                             )
                         }?.let(::add)
                     dto.seriesId
@@ -184,6 +192,7 @@ class StreamChoiceService
                             SeriesTrackChoice(
                                 userId = userId,
                                 parentId = seriesId,
+                                parentType = TrackChoiceParentType.SERIES,
                                 type = type,
                                 itemId = dto.id,
                                 language = null,
@@ -192,7 +201,7 @@ class StreamChoiceService
                                 codec = null,
                                 trackIndex = null,
                                 title = null,
-                                channels = null,
+                                audioChannels = null,
                             )
                         }?.let(::add)
                 }
@@ -238,7 +247,7 @@ class StreamChoiceService
             itemPlayback: ItemPlayback?,
             stc: List<SeriesTrackChoice>?,
             prefs: UserPreferences,
-        ): MediaStream? {
+        ): StreamChoiceResult? {
             val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.SUBTITLE)
             return source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.AUDIO }
@@ -254,11 +263,15 @@ class StreamChoiceService
             itemPlayback: ItemPlayback?,
             stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
-        ): MediaStream? =
+        ): StreamChoiceResult =
             if (itemPlayback?.audioIndexEnabled == true) {
-                candidates.firstOrNull { it.index == itemPlayback.audioIndex }
+                candidates.firstOrNull { it.index == itemPlayback.audioIndex } with
+                    StreamChoiceReason.Item(
+                        itemPlayback,
+                    )
             } else if (stc.isNotEmpty()) {
-                val result = scoreStreams(candidates, stc.first())
+                val first = stc.first()
+                val result = scoreStreams(candidates, first)
                 if (result.isEmpty() && stc.size > 1) {
                     // SeriesTrackChoice did not apply to any streams, but there are more options
                     chooseAudioStream(candidates, itemPlayback, stc.subList(1, stc.size), prefs)
@@ -268,22 +281,24 @@ class StreamChoiceService
                     chooseAudioStream(candidates, itemPlayback, emptyList(), prefs)
                 } else {
                     // Otherwise, use the best scored stream
-                    Timber.v("Using audio STC from %s", stc.first().parentId)
-                    result.first().second
+                    Timber.v("Using audio STC from %s", first.parentId)
+                    result.first().second with StreamChoiceReason.from(first)
                 }
             } else {
                 val audioLanguage = getPreferredLanguage(MediaStreamType.AUDIO, prefs, userConfig)
-                if (audioLanguage.isNotNullOrBlank()) {
-                    val sorted =
-                        candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
-                    sorted.firstOrNull { it.language == audioLanguage && it.isDefault }
-                        ?: sorted.firstOrNull { it.language == audioLanguage }
-                        ?: sorted.firstOrNull { it.isDefault }
-                        ?: sorted.firstOrNull()
-                } else {
-                    candidates.firstOrNull { it.isDefault }
-                        ?: candidates.firstOrNull()
-                }
+                val stream =
+                    if (audioLanguage.isNotNullOrBlank()) {
+                        val sorted =
+                            candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
+                        sorted.firstOrNull { it.language == audioLanguage && it.isDefault }
+                            ?: sorted.firstOrNull { it.language == audioLanguage }
+                            ?: sorted.firstOrNull { it.isDefault }
+                            ?: sorted.firstOrNull()
+                    } else {
+                        candidates.firstOrNull { it.isDefault }
+                            ?: candidates.firstOrNull()
+                    }
+                stream with StreamChoiceReason.UserPreferences
             }
 
         /**
@@ -296,7 +311,7 @@ class StreamChoiceService
             itemPlayback: ItemPlayback?,
             stc: List<SeriesTrackChoice>?,
             prefs: UserPreferences,
-        ): MediaStream? =
+        ): StreamChoiceResult? =
             source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
                 val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.SUBTITLE)
@@ -340,7 +355,7 @@ class StreamChoiceService
                     itemPlayback = itemPlayback,
                     stc = null,
                     prefs = prefs,
-                )?.index
+                )?.stream?.index
             }
 
         /**
@@ -352,25 +367,29 @@ class StreamChoiceService
             itemPlayback: ItemPlayback?,
             stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
-        ): MediaStream? {
+        ): StreamChoiceResult {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                return null
+                return null with StreamChoiceReason.Item(itemPlayback)
             } else if (stc.isNotEmpty()) {
                 val first = stc.first()
-                when (first.activation) {
+                return when (first.activation) {
                     ActivationFlag.DISABLED -> {
-                        return null
+                        null with StreamChoiceReason.from(first)
                     }
 
                     ActivationFlag.ONLY_FORCED -> {
                         val subtitleLanguage =
                             getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
-                        return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
+                        findForcedTrack(
+                            candidates,
+                            subtitleLanguage,
+                            audioStreamLang,
+                        ) with StreamChoiceReason.from(first)
                     }
 
                     ActivationFlag.ACTIVATED -> {
                         val result = scoreStreams(candidates, first)
-                        return if (result.isEmpty() && stc.size > 1) {
+                        if (result.isEmpty() && stc.size > 1) {
                             // SeriesTrackChoice did not apply to any streams, but there are more options
                             chooseSubtitleStream(
                                 audioStreamLang,
@@ -391,8 +410,8 @@ class StreamChoiceService
                             )
                         } else {
                             // Otherwise, use the best scored stream
-                            Timber.v("Using subtitle STC from %s", stc.first().parentId)
-                            result.first().second
+                            Timber.v("Using subtitle STC from %s", first.parentId)
+                            result.first().second with StreamChoiceReason.from(first)
                         }
                     }
                 }
@@ -400,9 +419,14 @@ class StreamChoiceService
             val subtitleLanguage = getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
             if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
-                return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
+                return findForcedTrack(
+                    candidates,
+                    subtitleLanguage,
+                    audioStreamLang,
+                ) with StreamChoiceReason.Item(itemPlayback)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
-                return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
+                return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex } with
+                    StreamChoiceReason.Item(itemPlayback)
             } else {
                 val subtitleMode =
                     when (prefs.userPreferences?.subtitleMode) {
@@ -426,63 +450,65 @@ class StreamChoiceService
                                 }.thenByDescending { it.isForced && it.language.isUnknown }
                                 .thenByDescending { it.isForced },
                         )
-                return when (subtitleMode) {
-                    SubtitlePlaybackMode.ALWAYS -> {
-                        if (subtitleLanguage.isNotNullOrBlank()) {
-                            candidates.firstOrNull {
-                                // Prefer non-forced first
-                                !it.isForced && it.language.equalsLangOrUnknown(subtitleLanguage)
-                            } ?: candidates.firstOrNull {
-                                it.language.equalsLangOrUnknown(subtitleLanguage)
-                            }
-                        } else {
-                            candidates.firstOrNull { !it.isForced } ?: candidates.firstOrNull()
-                        }
-                    }
-
-                    SubtitlePlaybackMode.ONLY_FORCED -> {
-                        if (subtitleLanguage.isNotNullOrBlank()) {
-                            candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
-                                ?: candidates.firstOrNull { it.language.isUnknown && it.isForced }
-                        } else {
-                            candidates.firstOrNull { it.isForced }
-                        }
-                    }
-
-                    SubtitlePlaybackMode.SMART -> {
-                        if (subtitleLanguage.isNotNullOrBlank()) {
-                            val audioLanguage = userConfig?.audioLanguagePreference
-                            if (
-                                // Has preferred subtitle lang & preferred audio, so only show subtitles if actual audio is different
-                                (audioLanguage.isNotNullOrBlank() && audioLanguage != audioStreamLang) ||
-                                // Has preferred subtitle lang, but no preferred audio lang, so show subtitle if subtitle lang is different from actual audio
-                                (audioLanguage.isNullOrBlank() && subtitleLanguage != audioStreamLang)
-                            ) {
-                                candidates.firstOrNull { it.language == subtitleLanguage }
-                                    ?: candidates.firstOrNull { it.language.isUnknown }
+                val stream =
+                    when (subtitleMode) {
+                        SubtitlePlaybackMode.ALWAYS -> {
+                            if (subtitleLanguage.isNotNullOrBlank()) {
+                                candidates.firstOrNull {
+                                    // Prefer non-forced first
+                                    !it.isForced && it.language.equalsLangOrUnknown(subtitleLanguage)
+                                } ?: candidates.firstOrNull {
+                                    it.language.equalsLangOrUnknown(subtitleLanguage)
+                                }
                             } else {
-                                // Otherwise, show forced subtitles in preferred lang
-                                candidates.firstOrNull { it.isForced && it.language == subtitleLanguage }
-                                    ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
+                                candidates.firstOrNull { !it.isForced } ?: candidates.firstOrNull()
                             }
-                        } else {
-                            candidates.firstOrNull { it.isDefault }
+                        }
+
+                        SubtitlePlaybackMode.ONLY_FORCED -> {
+                            if (subtitleLanguage.isNotNullOrBlank()) {
+                                candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
+                                    ?: candidates.firstOrNull { it.language.isUnknown && it.isForced }
+                            } else {
+                                candidates.firstOrNull { it.isForced }
+                            }
+                        }
+
+                        SubtitlePlaybackMode.SMART -> {
+                            if (subtitleLanguage.isNotNullOrBlank()) {
+                                val audioLanguage = userConfig?.audioLanguagePreference
+                                if (
+                                    // Has preferred subtitle lang & preferred audio, so only show subtitles if actual audio is different
+                                    (audioLanguage.isNotNullOrBlank() && audioLanguage != audioStreamLang) ||
+                                    // Has preferred subtitle lang, but no preferred audio lang, so show subtitle if subtitle lang is different from actual audio
+                                    (audioLanguage.isNullOrBlank() && subtitleLanguage != audioStreamLang)
+                                ) {
+                                    candidates.firstOrNull { it.language == subtitleLanguage }
+                                        ?: candidates.firstOrNull { it.language.isUnknown }
+                                } else {
+                                    // Otherwise, show forced subtitles in preferred lang
+                                    candidates.firstOrNull { it.isForced && it.language == subtitleLanguage }
+                                        ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
+                                }
+                            } else {
+                                candidates.firstOrNull { it.isDefault }
+                            }
+                        }
+
+                        SubtitlePlaybackMode.DEFAULT -> {
+                            if (subtitleLanguage.isNotNullOrBlank()) {
+                                candidates.firstOrNull { it.language == subtitleLanguage && (it.isDefault || it.isForced) }
+                                    ?: candidates.firstOrNull { it.isDefault || it.isForced }
+                            } else {
+                                candidates.firstOrNull { it.isDefault || it.isForced }
+                            }
+                        }
+
+                        SubtitlePlaybackMode.NONE -> {
+                            null
                         }
                     }
-
-                    SubtitlePlaybackMode.DEFAULT -> {
-                        if (subtitleLanguage.isNotNullOrBlank()) {
-                            candidates.firstOrNull { it.language == subtitleLanguage && (it.isDefault || it.isForced) }
-                                ?: candidates.firstOrNull { it.isDefault || it.isForced }
-                        } else {
-                            candidates.firstOrNull { it.isDefault || it.isForced }
-                        }
-                    }
-
-                    SubtitlePlaybackMode.NONE -> {
-                        null
-                    }
-                }
+                return stream with StreamChoiceReason.UserPreferences
             }
         }
 
@@ -691,9 +717,9 @@ fun scoreStreams(
                     score += 10
                 }
 
-                if (choice.channels != null && s.channels == choice.channels) {
+                if (choice.audioChannels != null && s.channels == choice.audioChannels) {
                     score += 100
-                } else if (choice.channels != null && s.channels.gt(choice.channels)) {
+                } else if (choice.audioChannels != null && s.channels.gt(choice.audioChannels)) {
                     score += 50
                 }
 
@@ -708,4 +734,51 @@ private fun calculateTrackFlags(track: MediaStream): Int {
         if (it.hasFlag.invoke(track)) flag = flag or it.flag
     }
     return flag
+}
+
+data class StreamChoiceResult(
+    val stream: MediaStream?,
+    val reason: StreamChoiceReason,
+)
+
+private infix fun MediaStream?.with(reason: StreamChoiceReason) = StreamChoiceResult(this, reason)
+
+sealed interface StreamChoiceReason {
+    val description: StringProvider
+
+    data object Unknown : StreamChoiceReason {
+        override val description: StringProvider = StringStringProvider("Unknown")
+    }
+
+    data object UserPreferences : StreamChoiceReason {
+        override val description: StringProvider = StringStringProvider("User preferences")
+    }
+
+    data class Series(
+        val stc: SeriesTrackChoice,
+    ) : StreamChoiceReason {
+        override val description: StringProvider = StringStringProvider("Series")
+    }
+
+    data class Season(
+        val stc: SeriesTrackChoice,
+    ) : StreamChoiceReason {
+        override val description: StringProvider = StringStringProvider("Season")
+    }
+
+    data class Item(
+        val itemPlayback: ItemPlayback,
+    ) : StreamChoiceReason {
+        override val description: StringProvider = StringStringProvider("Item specific")
+    }
+
+    companion object {
+        fun from(stc: SeriesTrackChoice) =
+            when (stc.parentType) {
+                TrackChoiceParentType.SERIES -> Series(stc)
+                TrackChoiceParentType.SEASON -> Season(stc)
+                TrackChoiceParentType.DEPRECATED -> Unknown
+                TrackChoiceParentType.UNKNOWN -> Unknown
+            }
+    }
 }

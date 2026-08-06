@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
@@ -90,7 +91,7 @@ class ItemPlaybackRepository
                 item.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == itemPlayback?.sourceId }
                     ?: streamChoiceService.chooseSource(item.data.mediaSources.orEmpty())
             if (source != null) {
-                val audioStream =
+                val audioResult =
                     streamChoiceService.chooseAudioStream(
                         candidates =
                             source.mediaStreams
@@ -102,7 +103,7 @@ class ItemPlaybackRepository
                     )
                 val subtitleStream =
                     streamChoiceService.chooseSubtitleStream(
-                        audioStreamLang = audioStream?.language,
+                        audioStreamLang = audioResult.stream?.language,
                         candidates =
                             source.mediaStreams
                                 ?.filter { it.type == MediaStreamType.SUBTITLE }
@@ -118,7 +119,7 @@ class ItemPlaybackRepository
                     itemId = item.id,
                     source = source,
                     videoStream = source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO },
-                    audioStream = audioStream,
+                    audioStream = audioResult,
                     subtitleStream = subtitleStream,
                     subtitlesDisabled = itemPlayback?.subtitleIndex == TrackIndex.DISABLED,
                 )
@@ -288,7 +289,7 @@ data class ChosenStreams(
     val itemId: UUID,
     val source: MediaSourceInfo,
     val videoStream: MediaStream?,
-    val audioStream: MediaStream?,
-    val subtitleStream: MediaStream?,
+    val audioStream: StreamChoiceResult,
+    val subtitleStream: StreamChoiceResult,
     val subtitlesDisabled: Boolean,
 )
