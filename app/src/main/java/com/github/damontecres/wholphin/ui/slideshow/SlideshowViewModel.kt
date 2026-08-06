@@ -217,7 +217,8 @@ class SlideshowViewModel
                                             source.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
                                         ChosenStreams(
                                             itemPlayback = null,
-                                            plc = null,
+                                            audioStc = emptyList(),
+                                            subtitleStc = emptyList(),
                                             itemId = image.id,
                                             source = source,
                                             videoStream = video,

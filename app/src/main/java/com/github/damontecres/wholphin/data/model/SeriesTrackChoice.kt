@@ -4,8 +4,10 @@ package com.github.damontecres.wholphin.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import com.github.damontecres.wholphin.services.isSigns
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -84,12 +86,13 @@ enum class SeriesTrackChoiceType {
 
 enum class TrackFlag(
     val flag: Int,
+    val hasFlag: (MediaStream) -> Boolean,
 ) {
-    DEFAULT(1),
-    FORCED(2),
-    SDH(4),
-    EXTERNAL(8),
-    SIGNS(16),
+    DEFAULT(flag = 1, hasFlag = { it.isDefault }),
+    FORCED(flag = 2, hasFlag = { it.isForced }),
+    SDH(flag = 4, hasFlag = { it.isHearingImpaired }),
+    EXTERNAL(flag = 8, hasFlag = { it.isExternal }),
+    SIGNS(flag = 16, hasFlag = { isSigns(it) }),
     ;
 
     fun within(flag: Int) = flag and this.flag == this.flag

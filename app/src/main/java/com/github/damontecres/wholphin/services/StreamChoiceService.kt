@@ -1,10 +1,9 @@
 package com.github.damontecres.wholphin.services
 
-import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
+import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ActivationFlag
 import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackFlag
@@ -23,7 +22,6 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.UserConfiguration
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
-import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,50 +34,156 @@ class StreamChoiceService
     @Inject
     constructor(
         private val serverRepository: ServerRepository,
-        private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
+        private val seriesTrackChoiceDao: SeriesTrackChoiceDao,
     ) {
         private val userConfig: UserConfiguration? get() = serverRepository.currentUserDto?.configuration
 
-        suspend fun updateAudio(
+        suspend fun saveSeriesTrackChoice(
             dto: BaseItemDto,
-            audioLang: String,
-        ) = update(dto) {
-            it.copy(
-                audioLanguage = audioLang,
-            )
-        }
-
-        suspend fun updateSubtitles(
-            dto: BaseItemDto,
-            subtitleLang: String?,
-            subtitlesDisabled: Boolean,
-        ) = update(dto) {
-            it.copy(
-                subtitleLanguage = if (subtitlesDisabled) null else subtitleLang,
-                subtitlesDisabled = subtitlesDisabled,
-            )
-        }
-
-        suspend fun update(
-            dto: BaseItemDto,
-            update: (PlaybackLanguageChoice) -> PlaybackLanguageChoice,
+            stream: MediaStream,
         ) {
-            val seriesId = dto.seriesId
-            if (seriesId != null) {
-                val userId = serverRepository.currentUser!!.rowId
-                val currentPlc =
-                    playbackLanguageChoiceDao.get(userId, seriesId)
-                        ?: PlaybackLanguageChoice(userId, seriesId, dto.id)
-                val newPlc = update.invoke(currentPlc)
-                Timber.v("Saving series PLC: %s", newPlc)
-                playbackLanguageChoiceDao.save(newPlc)
-            }
+            val type =
+                when (stream.type) {
+                    MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
+                    MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
+                    else -> return
+                }
+            val userId = serverRepository.currentUser!!.rowId
+            val newStc =
+                buildList {
+                    dto.parentId
+                        ?.let { seasonId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seasonId,
+                                type = type,
+                                itemId = dto.id,
+                                language = stream.language,
+                                activation = ActivationFlag.ACTIVATED,
+                                trackFlags = calculateTrackFlags(stream),
+                                codec = stream.codec,
+                                trackIndex = stream.index,
+                                title = stream.title,
+                                channels = stream.channels,
+                            )
+                        }?.let(::add)
+                    dto.seriesId
+                        ?.let { seriesId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seriesId,
+                                type = type,
+                                itemId = dto.id,
+                                language = stream.language,
+                                activation = ActivationFlag.ACTIVATED,
+                                trackFlags = calculateTrackFlags(stream),
+                                codec = stream.codec,
+                                trackIndex = stream.index,
+                                title = stream.title,
+                                channels = stream.channels,
+                            )
+                        }?.let(::add)
+                }
+            seriesTrackChoiceDao.save(newStc)
         }
 
-        suspend fun getPlaybackLanguageChoice(dto: BaseItemDto) =
-            dto.seriesId?.let {
-                playbackLanguageChoiceDao.get(serverRepository.currentUser!!.rowId, it)
-            }
+        suspend fun saveDisabledSeriesTrackChoice(
+            dto: BaseItemDto,
+            type: MediaStreamType,
+        ) {
+            val type =
+                when (type) {
+                    MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
+                    MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
+                    else -> return
+                }
+            val userId = serverRepository.currentUser!!.rowId
+            val newStc =
+                buildList {
+                    dto.parentId
+                        ?.let { seasonId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seasonId,
+                                type = type,
+                                itemId = dto.id,
+                                language = null,
+                                activation = ActivationFlag.DISABLED,
+                                trackFlags = 0,
+                                codec = null,
+                                trackIndex = null,
+                                title = null,
+                                channels = null,
+                            )
+                        }?.let(::add)
+                    dto.seriesId
+                        ?.let { seriesId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seriesId,
+                                type = type,
+                                itemId = dto.id,
+                                language = null,
+                                activation = ActivationFlag.DISABLED,
+                                trackFlags = 0,
+                                codec = null,
+                                trackIndex = null,
+                                title = null,
+                                channels = null,
+                            )
+                        }?.let(::add)
+                }
+            seriesTrackChoiceDao.save(newStc)
+        }
+
+        suspend fun saveOnlyForcedSeriesTrackChoice(
+            dto: BaseItemDto,
+            type: MediaStreamType,
+        ) {
+            val type =
+                when (type) {
+                    MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
+                    MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
+                    else -> return
+                }
+            val userId = serverRepository.currentUser!!.rowId
+            val newStc =
+                buildList {
+                    dto.parentId
+                        ?.let { seasonId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seasonId,
+                                type = type,
+                                itemId = dto.id,
+                                language = null,
+                                activation = ActivationFlag.ONLY_FORCED,
+                                trackFlags = 0,
+                                codec = null,
+                                trackIndex = null,
+                                title = null,
+                                channels = null,
+                            )
+                        }?.let(::add)
+                    dto.seriesId
+                        ?.let { seriesId ->
+                            SeriesTrackChoice(
+                                userId = userId,
+                                parentId = seriesId,
+                                type = type,
+                                itemId = dto.id,
+                                language = null,
+                                activation = ActivationFlag.ONLY_FORCED,
+                                trackFlags = 0,
+                                codec = null,
+                                trackIndex = null,
+                                title = null,
+                                channels = null,
+                            )
+                        }?.let(::add)
+                }
+            seriesTrackChoiceDao.save(newStc)
+        }
 
         /**
          * Returns the [MediaSourceInfo] that matched the [ItemPlayback] or else the one with the highest resolution
@@ -110,21 +214,15 @@ class StreamChoiceService
          */
         suspend fun chooseAudioStream(
             source: MediaSourceInfo,
-            seriesId: UUID?,
+            item: BaseItemDto,
             itemPlayback: ItemPlayback?,
-            plc: PlaybackLanguageChoice?,
+            stc: List<SeriesTrackChoice>?,
             prefs: UserPreferences,
         ): MediaStream? {
-            val plc =
-                plc ?: seriesId?.let {
-                    playbackLanguageChoiceDao.get(
-                        serverRepository.currentUser!!.rowId,
-                        it,
-                    )
-                }
+            val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.SUBTITLE)
             return source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.AUDIO }
-                chooseAudioStream(candidates, itemPlayback, plc, prefs)
+                chooseAudioStream(candidates, itemPlayback, stc, prefs)
             }
         }
 
@@ -134,17 +232,25 @@ class StreamChoiceService
         fun chooseAudioStream(
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
-            playbackLanguageChoice: PlaybackLanguageChoice?,
+            stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
         ): MediaStream? =
             if (itemPlayback?.audioIndexEnabled == true) {
                 candidates.firstOrNull { it.index == itemPlayback.audioIndex }
+            } else if (stc.isNotEmpty()) {
+                val result = scoreStreams(candidates, stc.first())
+                if (result.isEmpty() && stc.size > 1) {
+                    // SeriesTrackChoice did not apply to any streams, but there are more options
+                    chooseAudioStream(candidates, itemPlayback, stc.subList(1, stc.size), prefs)
+                } else if (result.isEmpty()) {
+                    // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                    chooseAudioStream(candidates, itemPlayback, emptyList(), prefs)
+                } else {
+                    // Otherwise, use the best scored stream
+                    result.first().second
+                }
             } else {
-                val seriesLang =
-                    playbackLanguageChoice?.audioLanguage?.takeIf { it.isNotNullOrBlank() }
-                // If the user has chosen a different language for the series, prefer that
-                val audioLanguage =
-                    seriesLang ?: getPreferredLanguage(MediaStreamType.AUDIO, prefs, userConfig)
+                val audioLanguage = getPreferredLanguage(MediaStreamType.AUDIO, prefs, userConfig)
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
                         candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
@@ -164,29 +270,20 @@ class StreamChoiceService
         suspend fun chooseSubtitleStream(
             source: MediaSourceInfo,
             audioStream: MediaStream?,
-            seriesId: UUID?,
             itemPlayback: ItemPlayback?,
-            plc: PlaybackLanguageChoice?,
+            stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
-        ): MediaStream? {
-            val plc =
-                plc ?: seriesId?.let {
-                    playbackLanguageChoiceDao.get(
-                        serverRepository.currentUser!!.rowId,
-                        it,
-                    )
-                }
-            return source.mediaStreams?.letNotEmpty { streams ->
+        ): MediaStream? =
+            source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
                 chooseSubtitleStream(
                     audioStream?.language,
                     candidates,
                     itemPlayback,
-                    plc,
+                    stc,
                     prefs,
                 )
             }
-        }
 
         /**
          * Resolves ONLY_FORCED to an actual subtitle track index.
@@ -195,7 +292,7 @@ class StreamChoiceService
         suspend fun resolveSubtitleIndex(
             source: MediaSourceInfo,
             audioStreamIndex: Int?,
-            seriesId: UUID?,
+            item: BaseItemDto,
             subtitleIndex: Int,
             prefs: UserPreferences,
         ): Int? =
@@ -215,9 +312,8 @@ class StreamChoiceService
                 chooseSubtitleStream(
                     source = source,
                     audioStream = audioStream,
-                    seriesId = seriesId,
                     itemPlayback = itemPlayback,
-                    plc = null,
+                    stc = emptyList(), // Do not use SeriesTrackChoices because the user has explicitly chosen ONLY_FORCED
                     prefs = prefs,
                 )?.index
             }
@@ -229,16 +325,37 @@ class StreamChoiceService
             audioStreamLang: String?,
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
-            playbackLanguageChoice: PlaybackLanguageChoice?,
+            stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
+            } else if (stc.isNotEmpty()) {
+                val result = scoreStreams(candidates, stc.first())
+                if (result.isEmpty() && stc.size > 1) {
+                    // SeriesTrackChoice did not apply to any streams, but there are more options
+                    chooseSubtitleStream(
+                        audioStreamLang,
+                        candidates,
+                        itemPlayback,
+                        stc.subList(1, stc.size),
+                        prefs,
+                    )
+                } else if (result.isEmpty()) {
+                    // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                    chooseSubtitleStream(
+                        audioStreamLang,
+                        candidates,
+                        itemPlayback,
+                        emptyList(),
+                        prefs,
+                    )
+                } else {
+                    // Otherwise, use the best scored stream
+                    result.first().second
+                }
             }
-            val seriesLang =
-                playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-            val subtitleLanguage =
-                seriesLang ?: getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
+            val subtitleLanguage = getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
             if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
                 return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
@@ -246,30 +363,14 @@ class StreamChoiceService
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
                 val subtitleMode =
-                    when {
-                        playbackLanguageChoice?.subtitlesDisabled == false && seriesLang != null -> {
-                            // User has chosen a series level subtitle language, so override their normal
-                            // subtitle mode to display that language
-                            SubtitlePlaybackMode.ALWAYS
-                        }
-
-                        playbackLanguageChoice?.subtitlesDisabled == true && seriesLang == null -> {
-                            // Series level settings disables subtitles
-                            SubtitlePlaybackMode.NONE
-                        }
-
-                        else -> {
-                            // Fallback to the user's preference
-                            when (prefs.userPreferences?.subtitleMode) {
-                                SubtitleModePreference.USE_USER_PROFILE -> userConfig?.subtitleMode
-                                SubtitleModePreference.DEFAULT -> SubtitlePlaybackMode.DEFAULT
-                                SubtitleModePreference.SMART -> SubtitlePlaybackMode.SMART
-                                SubtitleModePreference.ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
-                                SubtitleModePreference.ALWAYS -> SubtitlePlaybackMode.ALWAYS
-                                SubtitleModePreference.NONE -> SubtitlePlaybackMode.NONE
-                                null -> SubtitlePlaybackMode.DEFAULT
-                            }
-                        }
+                    when (prefs.userPreferences?.subtitleMode) {
+                        SubtitleModePreference.USE_USER_PROFILE -> userConfig?.subtitleMode
+                        SubtitleModePreference.DEFAULT -> SubtitlePlaybackMode.DEFAULT
+                        SubtitleModePreference.SMART -> SubtitlePlaybackMode.SMART
+                        SubtitleModePreference.ONLY_FORCED -> SubtitlePlaybackMode.ONLY_FORCED
+                        SubtitleModePreference.ALWAYS -> SubtitlePlaybackMode.ALWAYS
+                        SubtitleModePreference.NONE -> SubtitlePlaybackMode.NONE
+                        null -> SubtitlePlaybackMode.DEFAULT
                     } ?: SubtitlePlaybackMode.DEFAULT
                 val candidates =
                     candidates
@@ -364,6 +465,64 @@ class StreamChoiceService
             // 3. Unknown language forced track
             return candidates.firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
         }
+
+        suspend fun getSeriesTrackChoices(
+            seriesId: UUID?,
+            seasonId: UUID?,
+            type: SeriesTrackChoiceType,
+        ): List<SeriesTrackChoice> {
+            val userId = serverRepository.currentUser?.rowId ?: return emptyList()
+            return when {
+                seriesId != null && seasonId != null -> {
+                    seriesTrackChoiceDao.get(
+                        userId = userId,
+                        seasonId = seasonId,
+                        seriesId = seriesId,
+                        type = type,
+                    )
+                }
+
+                seriesId != null -> {
+                    seriesTrackChoiceDao.getBySeriesId(
+                        userId = userId,
+                        seriesId = seriesId,
+                        type = type,
+                    )
+                }
+
+                seasonId != null -> {
+                    seriesTrackChoiceDao.getBySeasonId(
+                        userId = userId,
+                        seasonId = seasonId,
+                        type = type,
+                    )
+                }
+
+                else -> {
+                    emptyList()
+                }
+            }
+        }
+
+        suspend fun getSeriesTrackChoices(
+            item: BaseItemDto,
+            type: SeriesTrackChoiceType,
+        ): List<SeriesTrackChoice> = getSeriesTrackChoices(item.seriesId, item.parentId, type)
+
+        suspend fun getSeriesTrackChoices(
+            item: BaseItemDto,
+            type: MediaStreamType,
+        ): List<SeriesTrackChoice> =
+            getSeriesTrackChoices(
+                seriesId = item.seriesId,
+                seasonId = item.parentId,
+                type =
+                    when (type) {
+                        MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
+                        MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
+                        else -> return emptyList()
+                    },
+            )
     }
 
 private val String?.isUnknown: Boolean
@@ -444,11 +603,8 @@ fun scoreStreams(
                 // Filter out non-forced tracks if the user only wants forced
                 return@filter false
             }
-            if (it.language.isNotUnknown && choice.language.isNotUnknown &&
-                !it.language.equals(
-                    choice.language,
-                    ignoreCase = true,
-                )
+            if (choice.language.isNotUnknown &&
+                !choice.language.equalsLangExact(it.language)
             ) {
                 // Filter out languages that do not match
                 return@filter false
@@ -466,6 +622,7 @@ fun scoreStreams(
 
                 // Prefer exact language match over unknown
                 // TODO what if choice.language.isUnknown and the user has a preferred subtitle language?
+                // choice.language is never unknown, it is only saved if specified
                 if (choice.language.equalsLangExact(s.language)) score += 10_000
 
 //                        if (s.language.isUnknown) score += 10
@@ -501,4 +658,12 @@ fun scoreStreams(
                 score to s
             }.sortedByDescending { it.first }
     return scored
+}
+
+private fun calculateTrackFlags(track: MediaStream): Int {
+    var flag = 0
+    TrackFlag.entries.forEach {
+        if (it.hasFlag.invoke(track)) flag = flag or it.flag
+    }
+    return flag
 }

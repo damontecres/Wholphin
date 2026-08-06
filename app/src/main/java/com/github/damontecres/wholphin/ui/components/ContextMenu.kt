@@ -199,7 +199,12 @@ fun ContextMenu(
                 favorite = item.favorite,
                 seriesId = item.data.seriesId,
                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
-                canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
+                canClearChosenStreams =
+                    chosenStreams.let {
+                        it?.itemPlayback != null ||
+                            it?.audioStc?.isNotEmpty() == true ||
+                            it?.subtitleStc?.isNotEmpty() == true
+                    },
                 showGoTo = contextMenu.showGoTo,
                 showStreamChoices = contextMenu.showStreamChoices,
                 canDelete = contextMenu.canDelete,

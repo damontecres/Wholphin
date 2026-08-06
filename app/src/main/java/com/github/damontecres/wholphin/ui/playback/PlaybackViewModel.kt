@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreference
@@ -473,7 +474,16 @@ class PlaybackViewModel
                         null
                     }
 
-                val plc = streamChoiceService.getPlaybackLanguageChoice(base)
+                val audioStc =
+                    streamChoiceService.getSeriesTrackChoices(
+                        base,
+                        SeriesTrackChoiceType.AUDIO,
+                    )
+                val subtitleStc =
+                    streamChoiceService.getSeriesTrackChoices(
+                        base,
+                        SeriesTrackChoiceType.AUDIO,
+                    )
 
                 if (mediaSource == null && !isLiveTv) {
                     showToast(
@@ -507,9 +517,9 @@ class PlaybackViewModel
                         streamChoiceService
                             .chooseAudioStream(
                                 source = mediaSource,
-                                seriesId = base.seriesId,
+                                item = base,
                                 itemPlayback = itemPlayback,
-                                plc = plc,
+                                stc = audioStc,
                                 prefs = preferences,
                             )
                     }
@@ -521,9 +531,8 @@ class PlaybackViewModel
                             .chooseSubtitleStream(
                                 source = mediaSource,
                                 audioStream = audioStream,
-                                seriesId = base.seriesId,
                                 itemPlayback = itemPlayback,
-                                plc = plc,
+                                stc = subtitleStc,
                                 prefs = preferences,
                             )?.index
                     }
@@ -932,7 +941,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = currentPlayback.mediaSourceInfo,
                             audioStreamIndex = index,
-                            seriesId = currentItem.item.data.seriesId,
+                            item = currentItem.item.data,
                             subtitleIndex = currentPlayback.subtitleIndex,
                             prefs = preferences,
                         )
@@ -968,7 +977,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = currentPlayback.mediaSourceInfo,
                             audioStreamIndex = currentPlayback.audioIndex,
-                            seriesId = currentItem.item.data.seriesId,
+                            item = currentItem.item.data,
                             subtitleIndex = index,
                             prefs = preferences,
                         )

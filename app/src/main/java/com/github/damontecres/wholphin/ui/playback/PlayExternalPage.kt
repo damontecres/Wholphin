@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -158,7 +159,11 @@ class PlayExternalViewModel
                             is PlaylistItem.Media -> playlistItem.item
                         }
                     val mediaSource = streamChoiceService.chooseSource(item.data, playbackConfig)
-                    val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
+                    val subtitleStc =
+                        streamChoiceService.getSeriesTrackChoices(
+                            item.data,
+                            SeriesTrackChoiceType.SUBTITLE,
+                        )
                     if (mediaSource == null) {
                         Timber.w("Media source is null")
                         return@launchDefault
@@ -170,9 +175,8 @@ class PlayExternalViewModel
                             .chooseSubtitleStream(
                                 source = mediaSource,
                                 audioStream = null,
-                                seriesId = item.data.seriesId,
                                 itemPlayback = playbackConfig,
-                                plc = plc,
+                                stc = subtitleStc,
                                 prefs = prefs,
                             )?.index
                     val externalSubtitles =
