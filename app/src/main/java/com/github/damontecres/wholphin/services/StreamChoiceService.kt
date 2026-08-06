@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ActivationFlag
@@ -16,6 +17,7 @@ import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -747,23 +749,34 @@ sealed interface StreamChoiceReason {
     val description: StringProvider
 
     data object Unknown : StreamChoiceReason {
-        override val description: StringProvider = StringStringProvider("Unknown")
+        override val description: StringProvider = ResStringProvider(R.string.unknown)
     }
 
     data object UserPreferences : StreamChoiceReason {
-        override val description: StringProvider = StringStringProvider("User preferences")
+        override val description: StringProvider =
+            ResStringProvider(R.string.profile_specific_settings)
     }
 
     data class Series(
         val stc: SeriesTrackChoice,
     ) : StreamChoiceReason {
-        override val description: StringProvider = StringStringProvider("Series")
+        override val description: StringProvider =
+            when (stc.activation) {
+                ActivationFlag.ACTIVATED -> StringStringProvider("Series choice")
+                ActivationFlag.DISABLED -> StringStringProvider("Disabled by Series")
+                ActivationFlag.ONLY_FORCED -> StringStringProvider("Only forced by Series")
+            }
     }
 
     data class Season(
         val stc: SeriesTrackChoice,
     ) : StreamChoiceReason {
-        override val description: StringProvider = StringStringProvider("Season")
+        override val description: StringProvider =
+            when (stc.activation) {
+                ActivationFlag.ACTIVATED -> StringStringProvider("Season choice")
+                ActivationFlag.DISABLED -> StringStringProvider("Disabled by Season")
+                ActivationFlag.ONLY_FORCED -> StringStringProvider("Only forced by Season")
+            }
     }
 
     data class Item(

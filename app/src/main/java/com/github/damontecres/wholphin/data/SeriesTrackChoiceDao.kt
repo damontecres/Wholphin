@@ -42,8 +42,11 @@ interface SeriesTrackChoiceDao {
     suspend fun save(stc: List<SeriesTrackChoice>): List<Long>
 
     @Delete
-    fun delete(stc: List<SeriesTrackChoice>)
+    suspend fun delete(stc: List<SeriesTrackChoice>)
 
     @Query("SELECT * from SeriesTrackChoice WHERE userId=:userId")
-    fun getAll(userId: Int): List<SeriesTrackChoice>
+    suspend fun getAll(userId: Int): List<SeriesTrackChoice>
+
+    @Query("SELECT count(*) from SeriesTrackChoice")
+    suspend fun count(): Int
 }
