@@ -48,6 +48,12 @@ enum AssPlaybackMode{
   ASS_TRANSCODE = 2;
 }
 
+enum DoviDeviceCompatibilityMode{
+  DOVI_ALLOW = 0;
+  DISABLE_DOVI_ALL = 1;
+  DISABLE_DOVI_WITH_HDR10 = 2;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -57,6 +63,7 @@ message PlaybackOverrides{
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
+  DoviDeviceCompatibilityMode dovi_device_compatibility_mode = 9;
 }
 
 message PlaybackPreferences {
