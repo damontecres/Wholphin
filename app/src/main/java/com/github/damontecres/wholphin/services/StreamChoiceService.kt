@@ -22,6 +22,7 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.UserConfiguration
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,6 +85,13 @@ class StreamChoiceService
                             )
                         }?.let(::add)
                 }
+            Timber.d(
+                "Saving series track choices for itemId=%s, seriesId=%s, parentId=%s: %s",
+                dto.id,
+                dto.seriesId,
+                dto.parentId,
+                newStc,
+            )
             seriesTrackChoiceDao.save(newStc)
         }
 
@@ -133,6 +141,12 @@ class StreamChoiceService
                             )
                         }?.let(::add)
                 }
+            Timber.d(
+                "Saving disabled series track choices for itemId=%s, seriesId=%s, parentId=%s",
+                dto.id,
+                dto.seriesId,
+                dto.parentId,
+            )
             seriesTrackChoiceDao.save(newStc)
         }
 
@@ -182,6 +196,12 @@ class StreamChoiceService
                             )
                         }?.let(::add)
                 }
+            Timber.d(
+                "Saving only forced series track choices for itemId=%s, seriesId=%s, parentId=%s",
+                dto.id,
+                dto.seriesId,
+                dto.parentId,
+            )
             seriesTrackChoiceDao.save(newStc)
         }
 
@@ -244,9 +264,11 @@ class StreamChoiceService
                     chooseAudioStream(candidates, itemPlayback, stc.subList(1, stc.size), prefs)
                 } else if (result.isEmpty()) {
                     // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                    Timber.v("No audio STC applied")
                     chooseAudioStream(candidates, itemPlayback, emptyList(), prefs)
                 } else {
                     // Otherwise, use the best scored stream
+                    Timber.v("Using audio STC from %s", stc.first().parentId)
                     result.first().second
                 }
             } else {
@@ -359,6 +381,7 @@ class StreamChoiceService
                             )
                         } else if (result.isEmpty()) {
                             // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                            Timber.v("No subtitle STC applied")
                             chooseSubtitleStream(
                                 audioStreamLang,
                                 candidates,
@@ -368,6 +391,7 @@ class StreamChoiceService
                             )
                         } else {
                             // Otherwise, use the best scored stream
+                            Timber.v("Using subtitle STC from %s", stc.first().parentId)
                             result.first().second
                         }
                     }

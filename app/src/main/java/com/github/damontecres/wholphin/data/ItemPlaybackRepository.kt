@@ -80,7 +80,7 @@ class ItemPlaybackRepository
             prefs: UserPreferences,
         ): ChosenStreams? {
             Timber.v(
-                "For ${item.id}: itemPlayback=%s, audioStc=%s, subtitleStc=%s",
+                "For %s: itemPlayback=%s, audioStc=%s, subtitleStc=%s",
                 item.id,
                 itemPlayback != null,
                 audioStc.isNotEmpty(),
