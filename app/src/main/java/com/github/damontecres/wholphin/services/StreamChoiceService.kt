@@ -2,12 +2,18 @@ package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.ActivationFlag
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
+import com.github.damontecres.wholphin.data.model.TrackFlag
+import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.has
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.UserProfileSettings
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -337,15 +343,6 @@ class StreamChoiceService
             }
         }
 
-        /** Returns true if the track is forced (via metadata flag or title patterns). */
-        private fun isForcedOrSigns(track: MediaStream): Boolean {
-            if (track.isForced) return true
-            val title = track.title ?: track.displayTitle ?: return false
-            return title.contains("forced", ignoreCase = true) ||
-                title.contains("signs", ignoreCase = true) ||
-                title.contains("songs", ignoreCase = true)
-        }
-
         /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> null. */
         private fun findForcedTrack(
             candidates: List<MediaStream>,
@@ -371,14 +368,29 @@ class StreamChoiceService
 
 private val String?.isUnknown: Boolean
     get() =
-        this == null ||
+        this.isNullOrBlank() ||
             this.equals("unknown", true) ||
             this.equals("und", true) ||
             this.equals("undetermined", true) ||
             this.equals("mul", true) ||
             this.equals("zxx", true)
 
+private val String?.isNotUnknown: Boolean
+    get() = !this.isUnknown
+
 private fun String?.equalsLangOrUnknown(lang: String): Boolean = equals(lang, ignoreCase = true) || this.isUnknown
+
+private fun String?.equalsLangExact(lang: String?): Boolean = this.isNotUnknown && lang.isNotUnknown && equals(lang, ignoreCase = true)
+
+/** Returns true if the track is forced (via metadata flag or title patterns). */
+fun isForcedOrSigns(track: MediaStream): Boolean = track.isForced || isSigns(track)
+
+fun isSigns(track: MediaStream): Boolean {
+    val title = track.title ?: track.displayTitle ?: return false
+    return title.contains("forced", ignoreCase = true) ||
+        title.contains("signs", ignoreCase = true) ||
+        title.contains("songs", ignoreCase = true)
+}
 
 /**
  * Based on the user's preferences, get their preferred language for audio or subtitles
@@ -411,4 +423,82 @@ fun getPreferredLanguage(
         UserProfileSettings.PREFER_ANY_LANGUAGE -> null
         else -> pref
     }?.takeIf { it.isNotNullOrBlank() }
+}
+
+/**
+ * Scores streams based the user's explicit [SeriesTrackChoice]
+ */
+fun scoreStreams(
+    streams: List<MediaStream>,
+    choice: SeriesTrackChoice,
+): List<Pair<Int, MediaStream>> {
+    if (choice.activation == ActivationFlag.DISABLED) {
+        return emptyList()
+    }
+    val streams =
+        streams.filter {
+            if (
+                (choice.activation == ActivationFlag.ONLY_FORCED || choice.has(TrackFlag.FORCED)) &&
+                !isForcedOrSigns(it)
+            ) {
+                // Filter out non-forced tracks if the user only wants forced
+                return@filter false
+            }
+            if (it.language.isNotUnknown && choice.language.isNotUnknown &&
+                !it.language.equals(
+                    choice.language,
+                    ignoreCase = true,
+                )
+            ) {
+                // Filter out languages that do not match
+                return@filter false
+            }
+            // Filter by type
+            when (choice.type) {
+                SeriesTrackChoiceType.AUDIO -> it.type == MediaStreamType.AUDIO
+                SeriesTrackChoiceType.SUBTITLE -> it.type == MediaStreamType.SUBTITLE
+            }
+        }
+    val scored =
+        streams
+            .map { s ->
+                var score = 0
+
+                // Prefer exact language match over unknown
+                // TODO what if choice.language.isUnknown and the user has a preferred subtitle language?
+                if (choice.language.equalsLangExact(s.language)) score += 10_000
+
+//                        if (s.language.isUnknown) score += 10
+
+                if (s.isForced && choice.has(TrackFlag.FORCED)) {
+                    score += 1_000
+                }
+                if (choice.has(TrackFlag.SIGNS) && isSigns(s)) {
+                    score += 500
+                }
+                if (s.isDefault && choice.has(TrackFlag.DEFAULT)) {
+                    score += 500
+                }
+                if (s.isHearingImpaired && choice.has(TrackFlag.SDH)) {
+                    score += 500
+                }
+                if (s.isExternal && choice.has(TrackFlag.EXTERNAL)) {
+                    score += 100
+                }
+                if (s.index == choice.trackIndex) {
+                    score += 100
+                }
+                if (s.title == choice.title) {
+                    score += 10
+                }
+
+                if (choice.channels != null && s.channels == choice.channels) {
+                    score += 100
+                } else if (choice.channels != null && s.channels.gt(choice.channels)) {
+                    score += 50
+                }
+
+                score to s
+            }.sortedByDescending { it.first }
+    return scored
 }
