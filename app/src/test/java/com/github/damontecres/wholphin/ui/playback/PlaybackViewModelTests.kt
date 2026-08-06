@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -63,6 +64,7 @@ import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.api.operations.VideosApi
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
 import org.jellyfin.sdk.model.api.MediaSegmentType
@@ -203,7 +205,12 @@ class PlaybackViewModelTests {
 
         coEvery { mockItemPlaybackDao.getItem(user, any()) } returns null
         coEvery { mockStreamChoiceService.chooseSource(any(), any()) } returns mediaSource
-        coEvery { mockStreamChoiceService.getPlaybackLanguageChoice(any()) } returns null
+        coEvery {
+            mockStreamChoiceService.getSeriesTrackChoices(
+                any<BaseItemDto>(),
+                any<SeriesTrackChoiceType>(),
+            )
+        } returns emptyList()
         coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
             PlayerCreation(mockPlayer)
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
@@ -221,11 +228,10 @@ class PlaybackViewModelTests {
         coEvery {
             mockStreamChoiceService.chooseSubtitleStream(
                 source = mediaSource,
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
+                audioStream = any(),
+                itemPlayback = any(),
+                stc = any(),
+                prefs = any(),
             )
         } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }
     }

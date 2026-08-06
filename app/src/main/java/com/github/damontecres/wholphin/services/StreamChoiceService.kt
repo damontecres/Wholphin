@@ -267,7 +267,7 @@ class StreamChoiceService
         /**
          * Returns the subtitle stream that should play
          */
-        suspend fun chooseSubtitleStream(
+        fun chooseSubtitleStream(
             source: MediaSourceInfo,
             audioStream: MediaStream?,
             itemPlayback: ItemPlayback?,
@@ -331,28 +331,43 @@ class StreamChoiceService
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
             } else if (stc.isNotEmpty()) {
-                val result = scoreStreams(candidates, stc.first())
-                if (result.isEmpty() && stc.size > 1) {
-                    // SeriesTrackChoice did not apply to any streams, but there are more options
-                    chooseSubtitleStream(
-                        audioStreamLang,
-                        candidates,
-                        itemPlayback,
-                        stc.subList(1, stc.size),
-                        prefs,
-                    )
-                } else if (result.isEmpty()) {
-                    // SeriesTrackChoice did not apply to any streams, so use regular selection logic
-                    chooseSubtitleStream(
-                        audioStreamLang,
-                        candidates,
-                        itemPlayback,
-                        emptyList(),
-                        prefs,
-                    )
-                } else {
-                    // Otherwise, use the best scored stream
-                    result.first().second
+                val first = stc.first()
+                when (first.activation) {
+                    ActivationFlag.DISABLED -> {
+                        return null
+                    }
+
+                    ActivationFlag.ONLY_FORCED -> {
+                        val subtitleLanguage =
+                            getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
+                        return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
+                    }
+
+                    ActivationFlag.ACTIVATED -> {
+                        val result = scoreStreams(candidates, first)
+                        return if (result.isEmpty() && stc.size > 1) {
+                            // SeriesTrackChoice did not apply to any streams, but there are more options
+                            chooseSubtitleStream(
+                                audioStreamLang,
+                                candidates,
+                                itemPlayback,
+                                stc.subList(1, stc.size),
+                                prefs,
+                            )
+                        } else if (result.isEmpty()) {
+                            // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                            chooseSubtitleStream(
+                                audioStreamLang,
+                                candidates,
+                                itemPlayback,
+                                emptyList(),
+                                prefs,
+                            )
+                        } else {
+                            // Otherwise, use the best scored stream
+                            result.first().second
+                        }
+                    }
                 }
             }
             val subtitleLanguage = getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)

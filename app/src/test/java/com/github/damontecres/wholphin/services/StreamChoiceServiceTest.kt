@@ -1,10 +1,12 @@
 package com.github.damontecres.wholphin.services
 
-import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
+import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.ActivationFlag
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
-import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -885,7 +887,7 @@ data class TestInput(
     val streamAudioLang: String? = "eng",
     val subtitles: List<MediaStream>,
     val itemPlayback: ItemPlayback? = null,
-    val plc: PlaybackLanguageChoice? = null,
+    val plc: List<SeriesTrackChoice> = emptyList(),
     val appAudioLang: String = UserProfileSettings.USE_USER_PROFILE,
     val appSubtitleLang: String = UserProfileSettings.USE_USER_PROFILE,
     val appSubtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
@@ -922,14 +924,14 @@ private fun runTest(input: TestInput) {
     val service =
         StreamChoiceService(
             serverRepo(input.userAudioLang, input.userSubtitleMode, input.userSubtitleLang),
-            mockk<PlaybackLanguageChoiceDao>(),
+            mockk<SeriesTrackChoiceDao>(),
         )
     val result =
         service.chooseSubtitleStream(
             audioStreamLang = input.streamAudioLang,
             candidates = input.subtitles,
             itemPlayback = input.itemPlayback,
-            playbackLanguageChoice = input.plc,
+            stc = input.plc,
             prefs =
                 UserPreferences(
                     AppPreferences.getDefaultInstance(),
@@ -981,11 +983,49 @@ private fun plc(
     audioLang: String? = null,
     subtitleLang: String? = null,
     subtitlesDisabled: Boolean? = if (subtitleLang != null) false else null,
-): PlaybackLanguageChoice =
-    PlaybackLanguageChoice(
-        userId = 1,
-        seriesId = UUID.randomUUID(),
-        audioLanguage = audioLang,
-        subtitleLanguage = subtitleLang,
-        subtitlesDisabled = subtitlesDisabled,
-    )
+): List<SeriesTrackChoice> =
+    buildList {
+        audioLang
+            ?.let {
+                SeriesTrackChoice(
+                    userId = 1,
+                    language = audioLang,
+                    parentId = UUID.randomUUID(),
+                    type = SeriesTrackChoiceType.AUDIO,
+                    activation = ActivationFlag.ACTIVATED,
+                    trackFlags = 0,
+                    codec = null,
+                    trackIndex = null,
+                    title = null,
+                    channels = null,
+                )
+            }?.let(::add)
+
+        if (subtitleLang != null) {
+            SeriesTrackChoice(
+                userId = 1,
+                language = subtitleLang,
+                parentId = UUID.randomUUID(),
+                type = SeriesTrackChoiceType.SUBTITLE,
+                activation = ActivationFlag.ACTIVATED,
+                trackFlags = 0,
+                codec = null,
+                trackIndex = null,
+                title = null,
+                channels = null,
+            ).let(::add)
+        } else if (subtitlesDisabled == true) {
+            SeriesTrackChoice(
+                userId = 1,
+                language = null,
+                parentId = UUID.randomUUID(),
+                type = SeriesTrackChoiceType.SUBTITLE,
+                activation = ActivationFlag.DISABLED,
+                trackFlags = 0,
+                codec = null,
+                trackIndex = null,
+                title = null,
+                channels = null,
+            ).let(::add)
+        }
+    }
