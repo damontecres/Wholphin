@@ -696,6 +696,16 @@ fun chooseStream(
                             },
                             supportingContent = {
                             },
+                            trailingContent =
+                                if (currentIndex == null && streamChoice != null) {
+                                    {
+                                        Text(
+                                            text = streamChoice.reason.description.getString(),
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                             onClick = { onClick.invoke(TrackIndex.DISABLED) },
                         ),
                     )

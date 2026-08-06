@@ -274,7 +274,9 @@ class StreamChoiceService
             } else if (stc.isNotEmpty()) {
                 val first = stc.first()
                 val result = scoreStreams(candidates, first)
-                if (result.isEmpty() && stc.size > 1) {
+                if (result == null) {
+                    null with StreamChoiceReason.from(first)
+                } else if (result.isEmpty() && stc.size > 1) {
                     // SeriesTrackChoice did not apply to any streams, but there are more options
                     chooseAudioStream(candidates, itemPlayback, stc.subList(1, stc.size), prefs)
                 } else if (result.isEmpty()) {
@@ -390,7 +392,9 @@ class StreamChoiceService
                     }
 
                     ActivationFlag.ACTIVATED -> {
-                        val result = scoreStreams(candidates, first)
+                        val result =
+                            scoreStreams(candidates, first)
+                                ?: throw IllegalStateException("scoreStreams should not return null for activated")
                         if (result.isEmpty() && stc.size > 1) {
                             // SeriesTrackChoice did not apply to any streams, but there are more options
                             chooseSubtitleStream(
@@ -656,13 +660,15 @@ fun getPreferredLanguage(
 
 /**
  * Scores streams based the user's explicit [SeriesTrackChoice]
+ *
+ * @return sorted list of preferred streams or null if stream should be disabled
  */
 fun scoreStreams(
     streams: List<MediaStream>,
     choice: SeriesTrackChoice,
-): List<Pair<Int, MediaStream>> {
+): List<Pair<Int, MediaStream>>? {
     if (choice.activation == ActivationFlag.DISABLED) {
-        return emptyList()
+        return null
     }
     val streams =
         streams.filter {
@@ -695,8 +701,6 @@ fun scoreStreams(
                 // choice.language is never unknown, it is only saved if specified
                 if (choice.language.equalsLangExact(s.language)) score += 10_000
 
-//                        if (s.language.isUnknown) score += 10
-
                 if (s.isForced && choice.has(TrackFlag.FORCED)) {
                     score += 1_000
                 }
@@ -712,6 +716,8 @@ fun scoreStreams(
                 if (s.isExternal && choice.has(TrackFlag.EXTERNAL)) {
                     score += 100
                 }
+
+                // TODO should relative indexes be used instead? eg 2nd _subtitle_ stream
                 if (s.index == choice.trackIndex) {
                     score += 100
                 }
