@@ -43,4 +43,7 @@ interface SeriesTrackChoiceDao {
 
     @Delete
     fun delete(stc: List<SeriesTrackChoice>)
+
+    @Query("SELECT * from SeriesTrackChoice WHERE userId=:userId")
+    fun getAll(userId: Int): List<SeriesTrackChoice>
 }

@@ -21,7 +21,7 @@ import java.util.UUID
             onUpdate = ForeignKey.CASCADE,
         ),
     ],
-    primaryKeys = ["userId", "parentId"],
+    primaryKeys = ["userId", "parentId", "type"],
 )
 @Serializable
 data class SeriesTrackChoice(
@@ -31,12 +31,12 @@ data class SeriesTrackChoice(
     val type: SeriesTrackChoiceType,
     val itemId: UUID? = null,
     val language: String? = null,
-    val activation: ActivationFlag,
-    val trackFlags: Int,
-    val codec: String?,
-    val trackIndex: Int?,
-    val title: String?,
-    val channels: Int?,
+    val activation: ActivationFlag = ActivationFlag.ACTIVATED,
+    val trackFlags: Int = 0,
+    val codec: String? = null,
+    val trackIndex: Int? = null,
+    val title: String? = null,
+    val channels: Int? = null,
 ) {
     companion object {
         fun from(plc: PlaybackLanguageChoice): List<SeriesTrackChoice> =

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 40,
-    "identityHash": "af65a845fbdae9f60cdb29a7c2925b92",
+    "identityHash": "2a0a381e21cb3d9a1e7c17e8a7e6016a",
     "entities": [
       {
         "tableName": "servers",
@@ -734,7 +734,7 @@
       },
       {
         "tableName": "SeriesTrackChoice",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `parentId` TEXT NOT NULL, `type` TEXT NOT NULL, `itemId` TEXT, `language` TEXT, `activation` TEXT NOT NULL, `trackFlags` INTEGER NOT NULL, `codec` TEXT, `trackIndex` INTEGER, `title` TEXT, `channels` INTEGER, PRIMARY KEY(`userId`, `parentId`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `parentId` TEXT NOT NULL, `type` TEXT NOT NULL, `itemId` TEXT, `language` TEXT, `activation` TEXT NOT NULL, `trackFlags` INTEGER NOT NULL, `codec` TEXT, `trackIndex` INTEGER, `title` TEXT, `channels` INTEGER, PRIMARY KEY(`userId`, `parentId`, `type`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "userId",
@@ -801,7 +801,8 @@
           "autoGenerate": false,
           "columnNames": [
             "userId",
-            "parentId"
+            "parentId",
+            "type"
           ]
         },
         "foreignKeys": [
@@ -821,7 +822,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'af65a845fbdae9f60cdb29a7c2925b92')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a0a381e21cb3d9a1e7c17e8a7e6016a')"
     ]
   }
 }
