@@ -529,6 +529,7 @@ class PlaybackViewModel
                     mediaSource?.let {
                         streamChoiceService
                             .chooseSubtitleStream(
+                                item = base,
                                 source = mediaSource,
                                 audioStream = audioStream,
                                 itemPlayback = itemPlayback,

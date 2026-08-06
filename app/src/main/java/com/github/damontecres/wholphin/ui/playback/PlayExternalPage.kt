@@ -173,6 +173,7 @@ class PlayExternalViewModel
                     val subtitleIndex =
                         streamChoiceService
                             .chooseSubtitleStream(
+                                item = item.data,
                                 source = mediaSource,
                                 audioStream = null,
                                 itemPlayback = playbackConfig,

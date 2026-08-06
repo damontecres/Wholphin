@@ -227,6 +227,7 @@ class PlaybackViewModelTests {
 
         coEvery {
             mockStreamChoiceService.chooseSubtitleStream(
+                item = any(),
                 source = mediaSource,
                 audioStream = any(),
                 itemPlayback = any(),

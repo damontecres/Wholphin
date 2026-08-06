@@ -267,15 +267,17 @@ class StreamChoiceService
         /**
          * Returns the subtitle stream that should play
          */
-        fun chooseSubtitleStream(
+        suspend fun chooseSubtitleStream(
+            item: BaseItemDto,
             source: MediaSourceInfo,
             audioStream: MediaStream?,
             itemPlayback: ItemPlayback?,
-            stc: List<SeriesTrackChoice>,
+            stc: List<SeriesTrackChoice>?,
             prefs: UserPreferences,
         ): MediaStream? =
             source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
+                val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.SUBTITLE)
                 chooseSubtitleStream(
                     audioStream?.language,
                     candidates,
@@ -306,14 +308,15 @@ class StreamChoiceService
                 val itemPlayback =
                     ItemPlayback(
                         userId = serverRepository.currentUser!!.rowId,
-                        itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
+                        itemId = item.id,
                         subtitleIndex = TrackIndex.ONLY_FORCED,
                     )
                 chooseSubtitleStream(
+                    item = item,
                     source = source,
                     audioStream = audioStream,
                     itemPlayback = itemPlayback,
-                    stc = emptyList(), // Do not use SeriesTrackChoices because the user has explicitly chosen ONLY_FORCED
+                    stc = null,
                     prefs = prefs,
                 )?.index
             }
