@@ -9,7 +9,6 @@ import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackChoiceParentType
 import com.github.damontecres.wholphin.data.model.TrackFlag
-import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.calculateFlag
 import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.has
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
@@ -47,10 +46,12 @@ class StreamChoiceService
 
         suspend fun saveSeriesTrackChoice(
             dto: BaseItemDto,
-            stream: MediaStream,
+            type: MediaStreamType,
+            stream: MediaStream?,
+            activation: ActivationFlag = ActivationFlag.ACTIVATED,
         ) {
             val type =
-                when (stream.type) {
+                when (stream?.type ?: type) {
                     MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
                     MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
                     else -> return
@@ -62,34 +63,24 @@ class StreamChoiceService
                         ?.let { seasonId ->
                             SeriesTrackChoice(
                                 userId = userId,
-                                parentId = seasonId,
-                                parentType = TrackChoiceParentType.SEASON,
-                                type = type,
                                 itemId = dto.id,
-                                language = stream.language,
-                                activation = ActivationFlag.ACTIVATED,
-                                trackFlags = calculateTrackFlags(stream),
-                                codec = stream.codec,
-                                trackIndex = stream.index,
-                                title = stream.title,
-                                audioChannels = stream.channels,
+                                parentId = seasonId,
+                                type = type,
+                                parentType = TrackChoiceParentType.SEASON,
+                                stream = stream,
+                                activation = activation,
                             )
                         }?.let(::add)
                     dto.seriesId
                         ?.let { seriesId ->
                             SeriesTrackChoice(
                                 userId = userId,
-                                parentId = seriesId,
-                                parentType = TrackChoiceParentType.SERIES,
-                                type = type,
                                 itemId = dto.id,
-                                language = stream.language,
-                                activation = ActivationFlag.ACTIVATED,
-                                trackFlags = calculateTrackFlags(stream),
-                                codec = stream.codec,
-                                trackIndex = stream.index,
-                                title = stream.title,
-                                audioChannels = stream.channels,
+                                parentId = seriesId,
+                                type = type,
+                                parentType = TrackChoiceParentType.SERIES,
+                                stream = stream,
+                                activation = activation,
                             )
                         }?.let(::add)
                 }
@@ -106,116 +97,12 @@ class StreamChoiceService
         suspend fun saveDisabledSeriesTrackChoice(
             dto: BaseItemDto,
             type: MediaStreamType,
-        ) {
-            val type =
-                when (type) {
-                    MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
-                    MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
-                    else -> return
-                }
-            val userId = serverRepository.currentUser!!.rowId
-            val newStc =
-                buildList {
-                    dto.parentId
-                        ?.let { seasonId ->
-                            SeriesTrackChoice(
-                                userId = userId,
-                                parentId = seasonId,
-                                parentType = TrackChoiceParentType.SEASON,
-                                type = type,
-                                itemId = dto.id,
-                                language = null,
-                                activation = ActivationFlag.DISABLED,
-                                trackFlags = 0,
-                                codec = null,
-                                trackIndex = null,
-                                title = null,
-                                audioChannels = null,
-                            )
-                        }?.let(::add)
-                    dto.seriesId
-                        ?.let { seriesId ->
-                            SeriesTrackChoice(
-                                userId = userId,
-                                parentId = seriesId,
-                                parentType = TrackChoiceParentType.SERIES,
-                                type = type,
-                                itemId = dto.id,
-                                language = null,
-                                activation = ActivationFlag.DISABLED,
-                                trackFlags = 0,
-                                codec = null,
-                                trackIndex = null,
-                                title = null,
-                                audioChannels = null,
-                            )
-                        }?.let(::add)
-                }
-            Timber.d(
-                "Saving disabled series track choices for itemId=%s, seriesId=%s, parentId=%s",
-                dto.id,
-                dto.seriesId,
-                dto.parentId,
-            )
-            seriesTrackChoiceDao.save(newStc)
-        }
+        ) = saveSeriesTrackChoice(dto, type, null, ActivationFlag.DISABLED)
 
         suspend fun saveOnlyForcedSeriesTrackChoice(
             dto: BaseItemDto,
             type: MediaStreamType,
-        ) {
-            val type =
-                when (type) {
-                    MediaStreamType.AUDIO -> SeriesTrackChoiceType.AUDIO
-                    MediaStreamType.SUBTITLE -> SeriesTrackChoiceType.SUBTITLE
-                    else -> return
-                }
-            val userId = serverRepository.currentUser!!.rowId
-            val newStc =
-                buildList {
-                    dto.parentId
-                        ?.let { seasonId ->
-                            SeriesTrackChoice(
-                                userId = userId,
-                                parentId = seasonId,
-                                parentType = TrackChoiceParentType.SEASON,
-                                type = type,
-                                itemId = dto.id,
-                                language = null,
-                                activation = ActivationFlag.ONLY_FORCED,
-                                trackFlags = 0,
-                                codec = null,
-                                trackIndex = null,
-                                title = null,
-                                audioChannels = null,
-                            )
-                        }?.let(::add)
-                    dto.seriesId
-                        ?.let { seriesId ->
-                            SeriesTrackChoice(
-                                userId = userId,
-                                parentId = seriesId,
-                                parentType = TrackChoiceParentType.SERIES,
-                                type = type,
-                                itemId = dto.id,
-                                language = null,
-                                activation = ActivationFlag.ONLY_FORCED,
-                                trackFlags = 0,
-                                codec = null,
-                                trackIndex = null,
-                                title = null,
-                                audioChannels = null,
-                            )
-                        }?.let(::add)
-                }
-            Timber.d(
-                "Saving only forced series track choices for itemId=%s, seriesId=%s, parentId=%s",
-                dto.id,
-                dto.seriesId,
-                dto.parentId,
-            )
-            seriesTrackChoiceDao.save(newStc)
-        }
+        ) = saveSeriesTrackChoice(dto, type, null, ActivationFlag.ONLY_FORCED)
 
         /**
          * Returns the [MediaSourceInfo] that matched the [ItemPlayback] or else the one with the highest resolution
@@ -775,8 +662,6 @@ fun scoreStreams(
             }.sortedByDescending { it.first }
     return scored
 }
-
-private fun calculateTrackFlags(track: MediaStream): Int = TrackFlag.entries.filter { it.hasFlag.invoke(track) }.calculateFlag()
 
 data class StreamChoiceResult(
     val stream: MediaStream?,

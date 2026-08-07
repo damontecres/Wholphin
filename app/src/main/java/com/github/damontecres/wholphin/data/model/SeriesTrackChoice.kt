@@ -47,6 +47,29 @@ data class SeriesTrackChoice(
     val title: String? = null,
     val audioChannels: Int? = null,
 ) {
+    constructor(
+        userId: Int,
+        itemId: UUID,
+        parentId: UUID,
+        type: SeriesTrackChoiceType,
+        parentType: TrackChoiceParentType,
+        stream: MediaStream?,
+        activation: ActivationFlag,
+    ) : this(
+        userId = userId,
+        parentId = parentId,
+        parentType = parentType,
+        type = type,
+        itemId = itemId,
+        language = stream?.language,
+        activation = activation,
+        trackFlags = stream?.let { TrackFlag.calculateTrackFlags(stream) } ?: 0,
+        codec = stream?.codec,
+        trackIndex = stream?.index,
+        title = stream?.title,
+        audioChannels = stream?.channels,
+    )
+
     companion object {
         fun from(plc: PlaybackLanguageChoice): List<SeriesTrackChoice> =
             buildList {
@@ -115,6 +138,8 @@ enum class TrackFlag(
         fun SeriesTrackChoice.has(flag: TrackFlag) = flag.within(trackFlags)
 
         fun Iterable<TrackFlag>.calculateFlag() = fold(0) { flag, trackFlag -> flag or trackFlag.flag }
+
+        fun calculateTrackFlags(track: MediaStream): Int = TrackFlag.entries.filter { it.hasFlag.invoke(track) }.calculateFlag()
     }
 }
 

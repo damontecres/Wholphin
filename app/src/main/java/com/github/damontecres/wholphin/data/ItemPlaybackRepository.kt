@@ -187,7 +187,11 @@ class ItemPlaybackRepository
                     if (type == MediaStreamType.AUDIO) {
                         val stream = source.mediaStreams?.first { it.index == trackIndex }
                         if (stream?.language != null) {
-                            streamChoiceService.saveSeriesTrackChoice(item.data, stream)
+                            streamChoiceService.saveSeriesTrackChoice(
+                                item.data,
+                                stream.type,
+                                stream,
+                            )
                         }
                     } else if (type == MediaStreamType.SUBTITLE) {
                         if (trackIndex == TrackIndex.DISABLED) {
@@ -203,7 +207,11 @@ class ItemPlaybackRepository
                         } else {
                             val stream = source.mediaStreams?.firstOrNull { it.index == trackIndex }
                             if (stream?.language != null) {
-                                streamChoiceService.saveSeriesTrackChoice(item.data, stream)
+                                streamChoiceService.saveSeriesTrackChoice(
+                                    item.data,
+                                    stream.type,
+                                    stream,
+                                )
                             }
                         }
                     }
