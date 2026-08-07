@@ -174,6 +174,8 @@ message ScreensaverPreferences{
   bool enabled = 5;
   repeated string item_types = 6;
   bool show_clock = 7;
+  bool dim_enabled = 8;
+  int32 dim_percent = 9;
 }
 
 message SearchPreferences {
