@@ -998,6 +998,8 @@ fun subtitle(
     lang: String?,
     default: Boolean = false,
     forced: Boolean = false,
+    sdh: Boolean = false,
+    external: Boolean = false,
     title: String? = null,
 ): MediaStream =
     MediaStream(
@@ -1005,10 +1007,10 @@ fun subtitle(
         language = lang,
         isDefault = default,
         isForced = forced,
-        isHearingImpaired = false,
+        isHearingImpaired = sdh,
         isInterlaced = false,
         index = index,
-        isExternal = false,
+        isExternal = external,
         isTextSubtitleStream = true,
         supportsExternalStream = true,
         title = title,

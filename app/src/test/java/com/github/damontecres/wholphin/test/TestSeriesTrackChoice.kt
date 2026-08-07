@@ -8,6 +8,8 @@ import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackChoiceParentType
+import com.github.damontecres.wholphin.data.model.TrackFlag
+import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.calculateFlag
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.StreamChoiceReason
@@ -374,5 +376,159 @@ class TestSeriesTrackChoice {
             assertNotNull(result.stream)
             assertEquals(1, result.stream!!.index)
             assertTrue(result.reason is StreamChoiceReason.Series)
+        }
+
+    @Test
+    fun `Test STC has forced flag`() =
+        runTest {
+            val stc =
+                listOf(
+                    SeriesTrackChoice(
+                        userId = user.rowId,
+                        parentId = season1Id,
+                        parentType = TrackChoiceParentType.SEASON,
+                        type = SeriesTrackChoiceType.SUBTITLE,
+                        activation = ActivationFlag.ACTIVATED,
+                        trackFlags = listOf(TrackFlag.FORCED).calculateFlag(),
+                    ),
+                )
+
+            // Choose forced track
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = true, forced = true),
+                            subtitle(1, "spa"),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNotNull(result.stream)
+                    assertEquals(0, result.stream!!.index)
+                    assertTrue(result.reason is StreamChoiceReason.Season)
+                }
+
+            // No forced track to choose from, so nothing should be chosen
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = false, forced = false),
+                            subtitle(1, "spa"),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNull(result.stream)
+                }
+        }
+
+    @Test
+    fun `Test prefer SDH`() =
+        runTest {
+            val stc =
+                listOf(
+                    SeriesTrackChoice(
+                        userId = user.rowId,
+                        parentId = season1Id,
+                        parentType = TrackChoiceParentType.SEASON,
+                        type = SeriesTrackChoiceType.SUBTITLE,
+                        activation = ActivationFlag.ACTIVATED,
+                        trackFlags = listOf(TrackFlag.SDH).calculateFlag(),
+                    ),
+                )
+
+            // Prefer SDH over default and non-SDH
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = true, forced = true),
+                            subtitle(1, "eng", default = false, forced = false, sdh = false),
+                            subtitle(2, "eng", default = false, forced = false, sdh = true),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNotNull(result.stream)
+                    assertEquals(2, result.stream!!.index)
+                    assertTrue(result.reason is StreamChoiceReason.Season)
+                }
+
+            // No SDH, so prefer regular over forced
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = true, forced = true),
+                            subtitle(1, "eng", default = false, forced = false, sdh = false),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNotNull(result.stream)
+                    assertEquals(1, result.stream!!.index)
+                    assertTrue(result.reason is StreamChoiceReason.Season)
+                }
+        }
+
+    @Test
+    fun `Test prefer default track with no other flags`() =
+        runTest {
+            val stc =
+                listOf(
+                    SeriesTrackChoice(
+                        userId = user.rowId,
+                        parentId = season1Id,
+                        parentType = TrackChoiceParentType.SEASON,
+                        type = SeriesTrackChoiceType.SUBTITLE,
+                        activation = ActivationFlag.ACTIVATED,
+                        trackFlags = 0,
+                    ),
+                )
+
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = true, forced = false),
+                            subtitle(1, "eng", default = false, forced = false),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNotNull(result.stream)
+                    assertEquals(0, result.stream!!.index)
+                    assertTrue(result.reason is StreamChoiceReason.Season)
+                }
+
+            // Test out-of-order tracks
+            streamChoiceService
+                .chooseSubtitleStream(
+                    audioStreamLang = "eng",
+                    itemPlayback = null,
+                    prefs = UserPreferences(AppPreferences.getDefaultInstance(), null),
+                    candidates =
+                        listOf(
+                            subtitle(0, "eng", default = false, forced = false),
+                            subtitle(1, "eng", default = true, forced = false),
+                        ),
+                    stc = stc,
+                ).let { result ->
+                    assertNotNull(result.stream)
+                    assertEquals(1, result.stream!!.index)
+                    assertTrue(result.reason is StreamChoiceReason.Season)
+                }
         }
 }
