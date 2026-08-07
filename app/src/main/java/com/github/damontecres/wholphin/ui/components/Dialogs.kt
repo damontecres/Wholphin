@@ -63,6 +63,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.ifElse
@@ -671,12 +672,13 @@ fun resourceFor(type: MediaStreamType): Int =
 fun chooseStream(
     resources: Resources,
     streams: List<MediaStream>,
-    currentIndex: Int?,
+    streamChoice: StreamChoiceResult?,
     type: MediaStreamType,
     preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
 ): DialogParams {
     val filteredStreams = streams.filter { it.type == type }
+    val currentIndex = streamChoice?.stream?.index
     return DialogParams(
         fromLongClick = false,
         title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
@@ -694,6 +696,16 @@ fun chooseStream(
                             },
                             supportingContent = {
                             },
+                            trailingContent =
+                                if (currentIndex == null && streamChoice != null) {
+                                    {
+                                        Text(
+                                            text = streamChoice.reason.description.getString(),
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                             onClick = { onClick.invoke(TrackIndex.DISABLED) },
                         ),
                     )
@@ -739,6 +751,16 @@ fun chooseStream(
                                 supportingContent = {
                                     if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
                                 },
+                                trailingContent =
+                                    if (currentIndex == stream.index) {
+                                        {
+                                            Text(
+                                                text = streamChoice.reason.description.getString(),
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
                                 onClick = { onClick.invoke(stream.index) },
                             )
                         },
