@@ -113,6 +113,8 @@ enum class TrackFlag(
 
     companion object {
         fun SeriesTrackChoice.has(flag: TrackFlag) = flag.within(trackFlags)
+
+        fun Iterable<TrackFlag>.calculateFlag() = fold(0) { flag, trackFlag -> flag or trackFlag.flag }
     }
 }
 

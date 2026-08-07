@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackChoiceParentType
 import com.github.damontecres.wholphin.data.model.TrackFlag
+import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.calculateFlag
 import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.has
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
@@ -372,8 +373,22 @@ class StreamChoiceService
             stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
         ): StreamChoiceResult {
-            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                return null with StreamChoiceReason.Item(itemPlayback)
+            if (itemPlayback != null && itemPlayback.subtitleIndex != TrackIndex.UNSPECIFIED) {
+                if (itemPlayback.subtitleIndex == TrackIndex.DISABLED) {
+                    return null with StreamChoiceReason.Item(itemPlayback)
+                } else if (itemPlayback.subtitleIndex == TrackIndex.ONLY_FORCED) {
+                    val subtitleLanguage =
+                        getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
+                    // Client-side manual override: User selected "Only Forced" in player menu
+                    return findForcedTrack(
+                        candidates,
+                        subtitleLanguage,
+                        audioStreamLang,
+                    ) with StreamChoiceReason.Item(itemPlayback)
+                } else {
+                    return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex } with
+                        StreamChoiceReason.Item(itemPlayback)
+                }
             } else if (stc.isNotEmpty()) {
                 val first = stc.first()
                 return when (first.activation) {
@@ -384,56 +399,43 @@ class StreamChoiceService
                     ActivationFlag.ONLY_FORCED -> {
                         val subtitleLanguage =
                             getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
-                        findForcedTrack(
-                            candidates,
-                            subtitleLanguage,
-                            audioStreamLang,
-                        ) with StreamChoiceReason.from(first)
+                        val stream =
+                            findForcedTrack(
+                                candidates,
+                                subtitleLanguage,
+                                audioStreamLang,
+                            )
+                        if (stream != null) {
+                            stream with StreamChoiceReason.from(first)
+                        } else {
+                            handleSubtitleStreamChoiceResult(
+                                result = emptyList(),
+                                audioStreamLang = audioStreamLang,
+                                candidates = candidates,
+                                itemPlayback = itemPlayback,
+                                stc = stc,
+                                prefs = prefs,
+                            )
+                        }
                     }
 
                     ActivationFlag.ACTIVATED -> {
                         val result =
                             scoreStreams(candidates, first)
                                 ?: throw IllegalStateException("scoreStreams should not return null for activated")
-                        if (result.isEmpty() && stc.size > 1) {
-                            // SeriesTrackChoice did not apply to any streams, but there are more options
-                            chooseSubtitleStream(
-                                audioStreamLang,
-                                candidates,
-                                itemPlayback,
-                                stc.subList(1, stc.size),
-                                prefs,
-                            )
-                        } else if (result.isEmpty()) {
-                            // SeriesTrackChoice did not apply to any streams, so use regular selection logic
-                            Timber.v("No subtitle STC applied")
-                            chooseSubtitleStream(
-                                audioStreamLang,
-                                candidates,
-                                itemPlayback,
-                                emptyList(),
-                                prefs,
-                            )
-                        } else {
-                            // Otherwise, use the best scored stream
-                            Timber.v("Using subtitle STC from %s", first.parentId)
-                            result.first().second with StreamChoiceReason.from(first)
-                        }
+                        handleSubtitleStreamChoiceResult(
+                            result = result,
+                            audioStreamLang = audioStreamLang,
+                            candidates = candidates,
+                            itemPlayback = itemPlayback,
+                            stc = stc,
+                            prefs = prefs,
+                        )
                     }
                 }
-            }
-            val subtitleLanguage = getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
-            if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
-                // Client-side manual override: User selected "Only Forced" in player menu
-                return findForcedTrack(
-                    candidates,
-                    subtitleLanguage,
-                    audioStreamLang,
-                ) with StreamChoiceReason.Item(itemPlayback)
-            } else if (itemPlayback?.subtitleIndexEnabled == true) {
-                return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex } with
-                    StreamChoiceReason.Item(itemPlayback)
             } else {
+                val subtitleLanguage =
+                    getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
                 val subtitleMode =
                     when (prefs.userPreferences?.subtitleMode) {
                         SubtitleModePreference.USE_USER_PROFILE -> userConfig?.subtitleMode
@@ -515,6 +517,44 @@ class StreamChoiceService
                         }
                     }
                 return stream with StreamChoiceReason.UserPreferences
+            }
+        }
+
+        /**
+         * Recursively calls [chooseSubtitleStream] based on [result] and [stc]
+         */
+        private fun handleSubtitleStreamChoiceResult(
+            result: List<Pair<Int, MediaStream>>,
+            audioStreamLang: String?,
+            candidates: List<MediaStream>,
+            itemPlayback: ItemPlayback?,
+            stc: List<SeriesTrackChoice>,
+            prefs: UserPreferences,
+        ): StreamChoiceResult {
+            val first = stc.first()
+            return if (result.isEmpty() && stc.size > 1) {
+                // SeriesTrackChoice did not apply to any streams, but there are more options
+                chooseSubtitleStream(
+                    audioStreamLang,
+                    candidates,
+                    itemPlayback,
+                    stc.subList(1, stc.size),
+                    prefs,
+                )
+            } else if (result.isEmpty()) {
+                // SeriesTrackChoice did not apply to any streams, so use regular selection logic
+                Timber.v("No subtitle STC applied")
+                chooseSubtitleStream(
+                    audioStreamLang,
+                    candidates,
+                    itemPlayback,
+                    emptyList(),
+                    prefs,
+                )
+            } else {
+                // Otherwise, use the best scored stream
+                Timber.v("Using subtitle STC from %s", first.parentId)
+                result.first().second with StreamChoiceReason.from(first)
             }
         }
 
@@ -736,13 +776,7 @@ fun scoreStreams(
     return scored
 }
 
-private fun calculateTrackFlags(track: MediaStream): Int {
-    var flag = 0
-    TrackFlag.entries.forEach {
-        if (it.hasFlag.invoke(track)) flag = flag or it.flag
-    }
-    return flag
-}
+private fun calculateTrackFlags(track: MediaStream): Int = TrackFlag.entries.filter { it.hasFlag.invoke(track) }.calculateFlag()
 
 data class StreamChoiceResult(
     val stream: MediaStream?,

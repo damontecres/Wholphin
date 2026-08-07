@@ -945,7 +945,7 @@ data class TestInput(
 
 private fun MediaStream.toShortString(): String = "$type(index=$index, lang=$language, default=$isDefault, forced=$isForced)"
 
-private fun serverRepo(
+fun mockServerRepo(
     audioLang: String?,
     subtitleMode: SubtitlePlaybackMode?,
     subtitleLang: String?,
@@ -971,7 +971,7 @@ private fun serverRepo(
 private fun runTest(input: TestInput) {
     val service =
         StreamChoiceService(
-            serverRepo(input.userAudioLang, input.userSubtitleMode, input.userSubtitleLang),
+            mockServerRepo(input.userAudioLang, input.userSubtitleMode, input.userSubtitleLang),
             mockk<SeriesTrackChoiceDao>(),
         )
     val result =
@@ -1005,6 +1005,26 @@ fun subtitle(
         language = lang,
         isDefault = default,
         isForced = forced,
+        isHearingImpaired = false,
+        isInterlaced = false,
+        index = index,
+        isExternal = false,
+        isTextSubtitleStream = true,
+        supportsExternalStream = true,
+        title = title,
+    )
+
+fun audio(
+    index: Int,
+    lang: String?,
+    default: Boolean = false,
+    title: String? = null,
+): MediaStream =
+    MediaStream(
+        type = MediaStreamType.AUDIO,
+        language = lang,
+        isDefault = default,
+        isForced = false,
         isHearingImpaired = false,
         isInterlaced = false,
         index = index,
