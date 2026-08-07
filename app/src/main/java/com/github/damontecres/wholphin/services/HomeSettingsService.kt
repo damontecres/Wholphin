@@ -3,10 +3,12 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
@@ -38,6 +40,7 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -87,7 +90,9 @@ class HomeSettingsService
     constructor(
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
+        private val serverPluginApi: ServerPluginApi,
         private val serverRepository: ServerRepository,
+        private val serverDao: JellyfinServerDao,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
         private val latestNextUpService: LatestNextUpService,
@@ -207,59 +212,99 @@ class HomeSettingsService
             return HomePageSettings(rows, version)
         }
 
+        private suspend fun tryLoad(block: suspend () -> HomePageSettings?): HomePageSettings? =
+            try {
+                block.invoke()
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error loading settings")
+                null
+            }
+
+        suspend fun fetchSettingsFor(
+            userId: UUID,
+            source: HomePageSettingsSource,
+        ): HomePageResolvedSettings? {
+            val settings =
+                when (source) {
+                    HomePageSettingsSource.UNSET -> loadInOrder(userId)
+                    HomePageSettingsSource.LOCAL -> loadFromLocal(userId)
+                    HomePageSettingsSource.SERVER_PROFILE -> loadFromServer(userId)
+                    HomePageSettingsSource.PLUGIN -> serverPluginApi.fetchHomePageSettings()
+                }
+            return settings?.let {
+                val resolvedRows =
+                    settings.rows.mapIndexed { index, config ->
+                        resolve(index, config)
+                    }
+                HomePageResolvedSettings(resolvedRows)
+            }
+        }
+
         /**
-         * Loads [HomePageSettings] into [currentSettings]
-         *
-         * First checks locally, then on the server, and finally creates a default if needed
-         *
-         * Does not persist either the server nor default
+         * Loads [HomePageSettings] into [currentSettings] based on the user's config
          */
-        suspend fun loadCurrentSettings(userId: UUID) {
-            Timber.v("Getting setting for %s", userId)
-            // User local then server/remote otherwise create a default
+        suspend fun loadCurrentSettings(user: JellyfinUser) {
+            currentSettings.update { HomePageResolvedSettings.EMPTY }
+
+            Timber.v("Getting setting for %s", user.id)
             val settings =
                 try {
-                    val local = loadFromLocal(userId)
-                    Timber.v("Found local? %s", local != null)
-                    local
+                    fetchSettingsFor(user.id, user.config.homeSettingsSource)
+                } catch (ex: CancellationException) {
+                    throw ex
                 } catch (ex: Exception) {
-                    Timber.w(ex, "Error loading local settings")
-                    // TODO show toast?
-                    null
-                } ?: try {
-                    val remote = loadFromServer(userId)
-                    Timber.v("Found remote? %s", remote != null)
-                    remote
-                } catch (ex: Exception) {
-                    Timber.w(ex, "Error loading remote settings")
+                    Timber.e(ex, "Error loading settings for %s", user.config.homeSettingsSource)
                     null
                 }
-            val resolvedSettings =
-                if (settings != null) {
-                    Timber.v("Found settings")
-                    // Resolve
-                    val resolvedRows =
-                        settings.rows.mapIndexed { index, config ->
-                            resolve(index, config)
-                        }
-                    HomePageResolvedSettings(resolvedRows)
-                } else {
-                    createDefault(userId)
+            if (settings != null) {
+                Timber.v("Found settings")
+            }
+
+            val resolvedSettings = settings ?: createDefault(user.id)
+            currentSettings.update { resolvedSettings }
+        }
+
+        /**
+         * Tries to load settings from local->server->plugin
+         */
+        private suspend fun loadInOrder(userId: UUID): HomePageSettings? {
+            var settings =
+                tryLoad {
+                    loadFromLocal(userId)
                 }
 
-            currentSettings.update { resolvedSettings }
+            if (settings == null) {
+                settings =
+                    tryLoad {
+                        loadFromServer(userId)
+                    }
+            }
+
+            if (settings == null) {
+                settings =
+                    tryLoad {
+                        serverPluginApi.fetchHomePageSettings()
+                    }
+            }
+            return settings
         }
 
         /**
          * Resolve the settings and set them to be the current settings
          */
-        suspend fun updateCurrent(settings: HomePageSettings) {
+        suspend fun updateCurrent(
+            source: HomePageSettingsSource,
+            settings: HomePageSettings,
+        ) {
             val resolvedRows =
                 settings.rows.mapIndexed { index, config ->
                     resolve(index, config)
                 }
-            val resolvedSettings = HomePageResolvedSettings(resolvedRows)
-            currentSettings.update { resolvedSettings }
+            currentSettings.update { it.copy(rows = resolvedRows) }
+            serverRepository.currentUser?.let { user ->
+                val toSave = user.updateConfig { it.copy(homeSettingsSource = source) }
+                serverDao.updateUser(toSave)
+            }
         }
 
         /**
@@ -838,7 +883,7 @@ class HomeSettingsService
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem.from(it, api, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
                     }.let {
                         Success(
                             title,
@@ -1184,9 +1229,20 @@ data class HomeRowConfigDisplay(
 data class HomePageResolvedSettings(
     val rows: List<HomeRowConfigDisplay>,
 ) {
+    fun asHomePageSettings(): HomePageSettings = HomePageSettings(rows.map { it.config }, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
+
     companion object {
-        val EMPTY = HomePageResolvedSettings(listOf())
+        val EMPTY = HomePageResolvedSettings(emptyList())
     }
+}
+
+enum class HomePageSettingsSource(
+    @param:StringRes val stringResId: Int,
+) {
+    UNSET(R.string.home_settings_source_unset),
+    LOCAL(R.string.home_settings_source_local),
+    SERVER_PROFILE(R.string.home_settings_source_server_profile),
+    PLUGIN(R.string.home_settings_source_plugin),
 }
 
 // https://github.com/jellyfin/jellyfin/blob/v10.11.6/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/HomeSectionType.cs
