@@ -693,4 +693,13 @@
     <string name="books">Raamatud</string>
     <string name="audio_books">Heliraamatud</string>
     <string name="server_version_not_supported">Serveri versioon pole toetatud</string>
+    <string name="dpad_seek_mode_minimal">Minimaalne</string>
+    <string name="d_pad_seek_mode_title">D-Pad\'i kerimisriba tööpõhimõte</string>
+    <string name="dpad_seek_mode_minimal_summary">Väike kerimisriba ekraani allosas (vaikimisi variant)</string>
+    <string name="dpad_seek_mode_trickplay">Trikitamine</string>
+    <string name="dpad_seek_mode_trickplay_summary">Kerimisriba trikitamise eelvaatepiltidega</string>
+    <string name="dpad_seek_mode_none_summary">Kerimisriba pole</string>
+    <string name="hash_matches">Räsivasted</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="appears_on">On osalenud siin:</string>
 </resources>
