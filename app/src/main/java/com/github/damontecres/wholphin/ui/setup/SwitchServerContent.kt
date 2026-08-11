@@ -406,6 +406,9 @@ private fun AddServerDialog(
                 LaunchedEffect(Unit) {
                     textBoxFocusRequester.tryRequestFocus()
                 }
+                LaunchedEffect(url) {
+                    viewModel.clearAddServerState()
+                }
 
                 Text(
                     text = stringResource(R.string.enter_server_url),
