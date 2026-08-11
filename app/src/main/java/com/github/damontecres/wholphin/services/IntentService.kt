@@ -30,7 +30,7 @@ class IntentService
             val action = intent.action ?: intent.data?.host
             if (
                 intent.getStringParam("type") == null &&
-                    (action == Intent.ACTION_MAIN || action.isNullOrBlank())
+                (action == Intent.ACTION_MAIN || action.isNullOrBlank())
             ) {
                 return IntentResult.NoOp
             }
