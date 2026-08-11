@@ -333,10 +333,17 @@ class PlaybackViewModel
                                 filter = destination.filter,
                             )
                         } else {
+                            val shuffled =
+                                if (destination is Destination.Playback) {
+                                    destination.shuffle
+                                } else {
+                                    false
+                                }
                             // Try to create a playlist
                             playlistCreator.createFrom(
                                 item = queriedItem,
                                 recursive = true,
+                                shuffled = shuffled,
                             )
                         }
                     when (val r = playlistResult) {
