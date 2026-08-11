@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
 import org.jellyfin.sdk.model.api.ImageType
@@ -67,14 +68,16 @@ fun ItemCardImage(
 ) {
     val imageUrlService = LocalImageUrlService.current
     val imageUrl =
-        remember(item) {
-            item?.let {
+        remember(item, imageType, fillWidth, fillHeight) {
+            if (item != null && (fillWidth.gt(0) || fillHeight.gt(0))) {
                 imageUrlService.getItemImageUrl(
                     item,
                     imageType,
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
                 )
+            } else {
+                null
             }
         }
     ItemCardImage(

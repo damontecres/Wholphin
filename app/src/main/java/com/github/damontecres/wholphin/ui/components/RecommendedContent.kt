@@ -62,7 +62,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -388,7 +387,7 @@ fun RecommendedContent(
                             viewModel.setFavorite(position, itemId, favorite)
                         },
                         onClickAddPlaylist = { itemId ->
-                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                            playlistViewModel.loadPlaylists()
                             showPlaylistDialog.makePresent(itemId)
                         },
                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
@@ -485,12 +484,8 @@ fun RecommendedContent(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }
 }
-
-data class RowColumnItem(
-    val position: RowColumn,
-    val item: BaseItem,
-)

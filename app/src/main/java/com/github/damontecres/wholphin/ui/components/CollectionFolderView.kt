@@ -67,9 +67,11 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.RequestHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
@@ -92,6 +94,7 @@ import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -160,7 +163,8 @@ class CollectionFolderViewModel
 
                     val libraryDisplayInfo =
                         serverRepository.currentUser?.let { user ->
-                            libraryDisplayInfoDao.getItem(user, itemId)
+                            val id = collectionFilter.libraryDisplayInfoIdOverride ?: itemId
+                            libraryDisplayInfoDao.getItem(user, id)
                         }
                     _state.update {
                         it.copy(
@@ -237,7 +241,7 @@ class CollectionFolderViewModel
                         val libraryDisplayInfo =
                             LibraryDisplayInfo(
                                 userId = user.rowId,
-                                itemId = itemId,
+                                itemId = collectionFilter.libraryDisplayInfoIdOverride ?: itemId,
                                 sort = newSort.sort,
                                 direction = newSort.direction,
                                 filter = newFilter,
@@ -250,6 +254,7 @@ class CollectionFolderViewModel
         }
 
         fun saveViewOptions(viewOptions: ViewOptions) {
+            position = 0
             _state.update { it.copy(viewOptions = viewOptions) }
             viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
@@ -372,7 +377,32 @@ class CollectionFolderViewModel
                         )
                     newPager
                 }
+
+                GetItemsFilterOverride.ARTIST -> {
+                    ApiRequestPager(
+                        api,
+                        createGetArtistsRequest(filter),
+                        GetArtistsHandler,
+                        viewModelScope,
+                        useSeriesForPrimary = useSeriesForPrimary,
+                    )
+                }
             }
+
+        /**
+         * Shared with [positionOfLetter] so that the alphabet jump counts the same artists that are
+         * actually paged through
+         */
+        private fun createGetArtistsRequest(filter: GetItemsFilter): GetArtistsRequest {
+            val item = state.value.item.successValue
+            return filter.applyTo(
+                GetArtistsRequest(
+                    parentId = item?.id,
+                    enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                    fields = SlimItemFields,
+                ),
+            )
+        }
 
         private fun createGetItemsRequest(
             sortAndDirection: SortAndDirection,
@@ -436,25 +466,57 @@ class CollectionFolderViewModel
                 filterOption,
             )
 
+        /**
+         * The count must come from the same endpoint that [createPager] pages through, otherwise
+         * the index refers to a different result set and lands past the end of the list.
+         */
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(WholphinDispatchers.IO) {
-                val sort = state.value.sortAndDirection
                 val filter = state.value.filter
-                val request =
-                    createGetItemsRequest(
-                        sortAndDirection = sort,
-                        recursive = recursive,
-                        filter = filter,
-                    ).copy(
-                        enableImageTypes = null,
-                        fields = null,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                    )
-                val result by GetItemsRequestHandler.execute(api, request)
-                result.totalRecordCount
+                when (filter.override) {
+                    GetItemsFilterOverride.ARTIST -> {
+                        GetArtistsHandler.countMatching(
+                            createGetArtistsRequest(filter).copy(
+                                enableImageTypes = null,
+                                fields = null,
+                                nameLessThan = letter.toString(),
+                                limit = 0,
+                                enableTotalRecordCount = true,
+                            ),
+                        )
+                    }
+
+                    // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
+                    // counted up to a letter at all
+                    GetItemsFilterOverride.PERSON -> {
+                        null
+                    }
+
+                    GetItemsFilterOverride.NONE -> {
+                        GetItemsRequestHandler.countMatching(
+                            createGetItemsRequest(
+                                sortAndDirection = state.value.sortAndDirection,
+                                recursive = recursive,
+                                filter = filter,
+                            ).copy(
+                                enableImageTypes = null,
+                                fields = null,
+                                nameLessThan = letter.toString(),
+                                limit = 0,
+                                enableTotalRecordCount = true,
+                            ),
+                        )
+                    }
+                }
             }
+
+        /**
+         * [request] must ask for the count, ie `limit = 0` and `enableTotalRecordCount = true`
+         */
+        private suspend fun <T> RequestHandler<T>.countMatching(request: T): Int {
+            val result by execute(api, request)
+            return result.totalRecordCount
+        }
 
         override fun setWatched(
             position: Int,

@@ -138,17 +138,7 @@ class StreamChoiceService
                     playbackLanguageChoice?.audioLanguage?.takeIf { it.isNotNullOrBlank() }
                 // If the user has chosen a different language for the series, prefer that
                 val audioLanguage =
-                    if (seriesLang != null) {
-                        seriesLang
-                    } else {
-                        val pref = prefs.userPreferences?.preferredAudioLanguage
-                        when (pref) {
-                            UserProfileSettings.USE_USER_PROFILE -> userConfig?.audioLanguagePreference
-                            UserProfileSettings.PREFER_ANY_LANGUAGE -> null
-                            else -> pref
-                        }
-                    }
-
+                    seriesLang ?: getPreferredLanguage(MediaStreamType.AUDIO, prefs, userConfig)
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
                         candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
@@ -242,16 +232,7 @@ class StreamChoiceService
             val seriesLang =
                 playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
             val subtitleLanguage =
-                if (seriesLang != null) {
-                    seriesLang
-                } else {
-                    val pref = prefs.userPreferences?.preferredSubtitleLanguage
-                    when (pref) {
-                        UserProfileSettings.USE_USER_PROFILE -> userConfig?.subtitleLanguagePreference
-                        UserProfileSettings.PREFER_ANY_LANGUAGE -> null
-                        else -> pref
-                    }?.takeIf { it.isNotNullOrBlank() }
-                }
+                seriesLang ?: getPreferredLanguage(MediaStreamType.SUBTITLE, prefs, userConfig)
             if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
                 return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
@@ -398,3 +379,36 @@ private val String?.isUnknown: Boolean
             this.equals("zxx", true)
 
 private fun String?.equalsLangOrUnknown(lang: String): Boolean = equals(lang, ignoreCase = true) || this.isUnknown
+
+/**
+ * Based on the user's preferences, get their preferred language for audio or subtitles
+ *
+ * @param prefs the [UserPreferences]
+ */
+fun getPreferredLanguage(
+    type: MediaStreamType,
+    prefs: UserPreferences,
+    userConfig: UserConfiguration?,
+): String? {
+    val (pref, profileLang) =
+        when (type) {
+            MediaStreamType.AUDIO -> {
+                prefs.userPreferences?.preferredAudioLanguage to
+                    userConfig?.audioLanguagePreference
+            }
+
+            MediaStreamType.SUBTITLE -> {
+                prefs.userPreferences?.preferredSubtitleLanguage to
+                    userConfig?.subtitleLanguagePreference
+            }
+
+            else -> {
+                throw IllegalArgumentException("Only audio or subtitle supported, not $type")
+            }
+        }
+    return when (pref) {
+        UserProfileSettings.USE_USER_PROFILE -> profileLang
+        UserProfileSettings.PREFER_ANY_LANGUAGE -> null
+        else -> pref
+    }?.takeIf { it.isNotNullOrBlank() }
+}

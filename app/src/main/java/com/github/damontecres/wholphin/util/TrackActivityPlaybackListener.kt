@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.util
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import kotlinx.coroutines.CoroutineScope
@@ -177,12 +176,11 @@ data class PlaybackItemState(
 ) {
     constructor(
         playback: CurrentPlayback,
-        itemPlayback: ItemPlayback,
     ) : this(
-        itemId = itemPlayback.itemId,
+        itemId = playback.item.id,
         playMethod = playback.playMethod,
-        audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
-        subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
+        audioStreamIndex = playback.audioIndex.takeIf { it >= 0 },
+        subtitleStreamIndex = playback.subtitleIndex.takeIf { it >= 0 },
         playSessionId = playback.playSessionId,
         liveStreamId = playback.liveStreamId,
     )

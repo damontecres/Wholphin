@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.timeRemaining
+import com.github.damontecres.wholphin.ui.toServerString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -53,7 +54,7 @@ data class BaseItem(
         get() = type.playable
 
     override val sortName: String
-        get() = data.sortName ?: data.name ?: ""
+        get() = data.alphabetSortName
 
     val type get() = data.type
 
@@ -271,6 +272,16 @@ data class BaseItem(
                     }
                 }
 
+                BaseItemKind.AUDIO -> {
+                    data.albumId?.let { albumId ->
+                        Destination.MediaItem(
+                            itemId = albumId,
+                            type = BaseItemKind.MUSIC_ALBUM,
+                            initialSongId = id,
+                        )
+                    } ?: Destination.MediaItem(this)
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }
@@ -293,6 +304,9 @@ data class BaseItem(
 }
 
 val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }
+
+/** The server strips leading articles (eg "The ") from [BaseItemDto.sortName]. */
+val BaseItemDto.alphabetSortName: String get() = sortName ?: name ?: ""
 
 @Immutable
 data class BaseItemUi(
@@ -333,7 +347,8 @@ fun createGenreDestination(
                     genres = listOf(genreId),
                     includeItemTypes = includeItemTypes,
                 ),
-            useSavedLibraryDisplayInfo = false,
+            useSavedLibraryDisplayInfo = true,
+            libraryDisplayInfoIdOverride = "${parentId.toServerString()}_genres",
         ),
     recursive = true,
     collectionType = collectionType,
@@ -360,7 +375,8 @@ fun createStudioDestination(
                     studios = listOf(studioId),
                     includeItemTypes = includeItemTypes,
                 ),
-            useSavedLibraryDisplayInfo = false,
+            useSavedLibraryDisplayInfo = true,
+            libraryDisplayInfoIdOverride = "${parentId.toServerString()}_studios",
         ),
     recursive = true,
     collectionType = CollectionType.UNKNOWN,

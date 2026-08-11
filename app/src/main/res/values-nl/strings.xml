@@ -138,7 +138,9 @@
     <string name="video">Video</string>
     <string name="videos">Video\'s</string>
     <string name="watch_live">Live kijken</string>
-    <string name="years_old">%1$d jaar oud</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d jaar oud</item>
+    </plurals>
     <string name="play_with_transcoding">Afspelen met transcodering</string>
     <string name="show_clock">Klok tonen</string>
     <string name="aired_episode_order">Volgorde van uitgezonden afleveringen</string>
