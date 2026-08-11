@@ -39,9 +39,6 @@ import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import timber.log.Timber
@@ -139,10 +136,11 @@ class PlayerFactory
                             appPreferences.experimentalPreferences.get { disableAudioOffload } ?: false
                         val tunneling =
                             appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
-                        val trackSelector = createTrackSelector(
-                            tunneling = tunneling,
-                            disableAudioOffload = disableAudioOffload
-                        )
+                        val trackSelector =
+                            createTrackSelector(
+                                tunneling = tunneling,
+                                disableAudioOffload = disableAudioOffload,
+                            )
 
                         ExoPlayer
                             .Builder(context)
@@ -216,21 +214,28 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector(tunneling: Boolean? = null, disableAudioOffload: Boolean = false) =
-            DefaultTrackSelector(context).apply {
-                val offloadMode = if (disableAudioOffload) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
-                setParameters(
-                    buildUponParameters()
-                        .apply {
-                            tunneling?.let { setTunnelingEnabled(tunneling) }
-                        }.setAudioOffloadPreferences(
-                            AudioOffloadPreferences
-                                .Builder()
-                                .setAudioOffloadMode(offloadMode)
-                                .build(),
-                        ),
-                )
-            }
+        private fun createTrackSelector(
+            tunneling: Boolean? = null,
+            disableAudioOffload: Boolean = false,
+        ) = DefaultTrackSelector(context).apply {
+            val offloadMode =
+                if (disableAudioOffload) {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                } else {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                }
+            setParameters(
+                buildUponParameters()
+                    .apply {
+                        tunneling?.let { setTunnelingEnabled(tunneling) }
+                    }.setAudioOffloadPreferences(
+                        AudioOffloadPreferences
+                            .Builder()
+                            .setAudioOffloadMode(offloadMode)
+                            .build(),
+                    ),
+            )
+        }
 
         fun createMediaSession(player: Player) =
             MediaSession
