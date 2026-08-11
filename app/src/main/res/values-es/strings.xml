@@ -724,4 +724,6 @@
     <string name="brown">Marrón</string>
     <string name="server_version_not_supported">Versión de servidor no soportada</string>
     <string name="appears_on">Aparece en</string>
+    <string name="disable_audio_offload">Desactivar el procesamiento de audio por hardware</string>
+    <string name="disable_audio_offload_summary">Desactivar el procesamiento de audio por hardware puede solucionar los bloqueos de reproducción en algunos dispositivos</string>
 </resources>
