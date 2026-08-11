@@ -71,6 +71,23 @@ enum class SeerrAvailability(
     }
 }
 
+@Serializable
+enum class RequestStatus(
+    val status: Int,
+) {
+    UNKNOWN(0),
+    PENDING(1),
+    APPROVED(2),
+    DECLINED(3),
+    FAILURE(4),
+    COMPLETED(5),
+    ;
+
+    companion object {
+        fun from(status: Int?) = RequestStatus.entries.firstOrNull { it.status == status } ?: UNKNOWN
+    }
+}
+
 /**
  * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well, see [availability].
  */

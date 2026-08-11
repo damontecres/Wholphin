@@ -1090,7 +1090,12 @@ components:
         status:
           type: integer
           example: 0
-          description: Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 = DECLINED
+          description: Availability of the season
+          readOnly: true
+        status4k:
+          type: integer
+          example: 0
+          description: Availability of the season in 4K
           readOnly: true
     TvShowStatus:
         type: string

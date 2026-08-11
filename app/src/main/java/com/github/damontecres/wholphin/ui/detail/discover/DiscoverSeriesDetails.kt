@@ -192,6 +192,7 @@ fun DiscoverSeriesDetails(
             id = state.tvSeries.successValue?.id ?: -1,
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
+            seasons4k = state.seasons4k,
             request4kEnabled = request4kEnabled,
             onSubmit = {
                 showRequestSeasonDialog = false
