@@ -280,7 +280,7 @@ class HomeSettingsService
                 libraries
                     .mapIndexed { index, it ->
                         val parentId = it.itemId
-                        val title = getRecentlyAddedTitle(it)
+                        val title = getRecentlyAddedTitle(it.name)
                         if (it.collectionType == CollectionType.LIVETV) {
                             HomeRowConfigDisplay(
                                 id = index,
@@ -769,7 +769,7 @@ class HomeSettingsService
                     val library =
                         libraries
                             .firstOrNull { it.itemId == row.parentId }
-                    val title = getRecentlyAddedTitle(library)
+                    val title = getRecentlyAddedTitle(library?.name)
                     val request =
                         GetLatestMediaRequest(
                             fields = SlimItemFields,
@@ -1215,10 +1215,6 @@ class UnsupportedHomeSettingsVersionException(
     val maxSupportedVersion: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
 ) : Exception("Unsupported version $unsupportedVersion, max supported is $maxSupportedVersion")
 
-fun getRecentlyAddedTitle(library: Library?): StringProvider =
-    if (library?.isRecordingFolder == true) {
-        ResStringProvider(R.string.recently_recorded)
-    } else {
-        library?.name?.let { ResArgStringProvider(R.string.recently_added_in, it) }
-            ?: ResStringProvider(R.string.recently_added)
-    }
+fun getRecentlyAddedTitle(name: String?): StringProvider =
+    name?.let { ResArgStringProvider(R.string.recently_added_in, it) }
+        ?: ResStringProvider(R.string.recently_added)
