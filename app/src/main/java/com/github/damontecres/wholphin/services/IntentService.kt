@@ -103,11 +103,13 @@ class IntentService
 
                     "com.github.damontecres.wholphin.PLAYBACK", "play" -> {
                         val position = intent.getLongParam("position")?.coerceAtLeast(0)
+                        val shuffle = intent.getBooleanExtra("shuffle", false)
 
                         val playbackDestination =
                             Destination.Playback(
                                 itemId = itemId,
                                 positionMs = position ?: 0L,
+                                shuffle = shuffle,
                             )
 
                         if (itemDestination is Destination.Playback) {
