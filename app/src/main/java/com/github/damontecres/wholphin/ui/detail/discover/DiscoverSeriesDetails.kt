@@ -86,7 +86,7 @@ fun DiscoverSeriesDetails(
     val context = LocalContext.current
     val resources = LocalResources.current
     val state by viewModel.state.collectAsState()
-    val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }

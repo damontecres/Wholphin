@@ -37,10 +37,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import timber.log.Timber
@@ -67,7 +69,10 @@ class DiscoverSeriesViewModel
         val state: StateFlow<DiscoverSeriesState> = _state
 
         val userConfig = seerrServerRepository.current.map { it?.config }
-        val request4kEnabled = seerrServerRepository.current.map { it?.request4kTvEnabled ?: false }
+        val request4kEnabled =
+            seerrServerRepository.current
+                .map { it?.request4kTvEnabled ?: false }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         init {
             init()
@@ -155,6 +160,16 @@ class DiscoverSeriesViewModel
         }
 
         private suspend fun updateSeasonStatus(tv: TvDetails) {
+            if (request4kEnabled.first()) {
+                updateSeasonStatus(tv, true)
+            }
+            updateSeasonStatus(tv, false)
+        }
+
+        private suspend fun updateSeasonStatus(
+            tv: TvDetails,
+            is4k: Boolean,
+        ) {
             val currentUserId = seerrServerRepository.currentUserId.first()
             val seasonStatus = mutableMapOf<Int, RequestStatus>()
             val seasonAvailability = mutableMapOf<Int, SeerrAvailability>()
@@ -162,19 +177,23 @@ class DiscoverSeriesViewModel
             tv.seasons?.forEach {
                 it.seasonNumber?.let { seasonNumber ->
                     seasonStatus[seasonNumber] = RequestStatus.UNKNOWN
+                    val status = if (is4k) it.status4k else it.status
                     val availability =
-                        SeerrAvailability.from(it.status) ?: SeerrAvailability.UNKNOWN
+                        SeerrAvailability.from(status) ?: SeerrAvailability.UNKNOWN
                     seasonAvailability[seasonNumber] = availability
                 }
             }
 
             tv.mediaInfo
                 ?.requests
+                ?.filter { it.is4k == is4k }
                 ?.forEach { req ->
                     req.seasons?.mapNotNull { season ->
                         season.seasonNumber?.let {
                             val current = seasonStatus[season.seasonNumber]
-                            val new = RequestStatus.from(season.status)
+                            // Not status4k because the request itself is marked as is4k or not
+                            val status = season.status
+                            val new = RequestStatus.from(status)
                             if (current == null || new.status > current.status) {
                                 seasonStatus[season.seasonNumber] = new
                             }
@@ -183,6 +202,7 @@ class DiscoverSeriesViewModel
                         }
                     }
                 }
+            Timber.v("seasonAvailability=%s", seasonAvailability)
             Timber.v("seasonStatus=%s", seasonStatus)
             val requestSeasons =
                 seasonStatus.mapNotNull { (seasonNumber, status) ->
@@ -224,7 +244,14 @@ class DiscoverSeriesViewModel
                         )
                     }
                 }
-            _state.update { it.copy(seasons = requestSeasons) }
+            Timber.v("Got %s seasons, is4k=%s", requestSeasons.size, is4k)
+            _state.update {
+                if (is4k) {
+                    it.copy(seasons4k = requestSeasons)
+                } else {
+                    it.copy(seasons = requestSeasons)
+                }
+            }
         }
 
         private suspend fun updateCanCancel() {

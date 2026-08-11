@@ -49,7 +49,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
-import timber.log.Timber
 
 data class RequestSeason(
     val season: Season,
@@ -229,12 +228,6 @@ fun RequestSeasons(
                     season = season,
                     checked = checked,
                     onClick = {
-                        Timber.v(
-                            "Clicked: seasons=%s, checked=%s, selectedSeasons=%s",
-                            season,
-                            checked,
-                            selectedSeasons,
-                        )
                         if (checked) {
                             selectedSeasons.remove(seasonNumber)
                         } else {
