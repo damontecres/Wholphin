@@ -38,6 +38,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.Season
+import com.github.damontecres.wholphin.data.model.RequestStatus
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.PartiallyAvailableIndicator
@@ -51,7 +52,9 @@ import com.github.damontecres.wholphin.util.LoadingState
 
 data class RequestSeason(
     val season: Season,
+    val status: RequestStatus,
     val availability: SeerrAvailability,
+    val editable: Boolean,
 )
 
 @Composable
@@ -59,26 +62,45 @@ fun RequestSeasons(
     id: Int,
     title: String,
     seasons: List<RequestSeason>,
+    seasons4k: List<RequestSeason>,
     data: SeerrRequestData,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val allSeasonNumbers = remember(seasons) { seasons.mapNotNull { it.season.seasonNumber }.toSet() }
-    val selectedSeasons =
-        remember {
-            mutableStateSetOf<Int>(
+    var is4k by remember { mutableStateOf(request4kEnabled) }
+    val seasons = remember(is4k, seasons, seasons4k) { if (is4k) seasons4k else seasons }
+
+    val allSeasonNumbers =
+        remember(seasons) {
+            seasons
+                .filter { it.editable }
+                .mapNotNull { it.season.seasonNumber }
+                .toSet()
+        }
+    val availableSeasons =
+        remember(seasons) {
+            mutableStateSetOf(
                 *seasons
-                    .mapNotNull {
-                        if (it.availability > SeerrAvailability.UNKNOWN) {
-                            it.season.seasonNumber
-                        } else {
-                            null
-                        }
-                    }.toTypedArray(),
+                    .filter { season ->
+                        season.status == RequestStatus.PENDING ||
+                            season.status == RequestStatus.APPROVED ||
+                            season.status == RequestStatus.COMPLETED ||
+                            season.availability == SeerrAvailability.PARTIALLY_AVAILABLE ||
+                            season.availability == SeerrAvailability.AVAILABLE
+                    }.mapNotNull { season -> season.season.seasonNumber }
+                    .toTypedArray(),
             )
         }
-    var is4k by remember { mutableStateOf(request4kEnabled) }
+    val selectedSeasons =
+        remember(seasons) {
+            mutableStateSetOf<Int>(
+                *seasons
+                    .filter { season -> season.status == RequestStatus.PENDING }
+                    .mapNotNull { season -> season.season.seasonNumber }
+                    .toTypedArray(),
+            )
+        }
 
     var profile by remember(is4k) {
         mutableStateOf(
@@ -201,12 +223,12 @@ fun RequestSeasons(
             }
             itemsIndexed(seasons) { index, season ->
                 val seasonNumber = season.season.seasonNumber
-                val isSelected = seasonNumber in selectedSeasons
+                val checked = seasonNumber in selectedSeasons || seasonNumber in availableSeasons
                 SeasonListItem(
                     season = season,
-                    selected = isSelected,
+                    checked = checked,
                     onClick = {
-                        if (isSelected) {
+                        if (checked) {
                             selectedSeasons.remove(seasonNumber)
                         } else {
                             seasonNumber?.let { selectedSeasons.add(it) }
@@ -242,11 +264,12 @@ fun RequestSeasons(
 @Composable
 fun SeasonListItem(
     season: RequestSeason,
-    selected: Boolean,
+    checked: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ListItem(
+        enabled = season.editable,
         selected = false,
         headlineContent = {
             Text(
@@ -265,9 +288,10 @@ fun SeasonListItem(
         },
         leadingContent = {
             when (season.availability) {
-                SeerrAvailability.UNKNOWN -> {}
-
-                SeerrAvailability.DELETED -> {}
+                SeerrAvailability.UNKNOWN,
+                SeerrAvailability.DELETED,
+                -> {
+                }
 
                 SeerrAvailability.PENDING,
                 SeerrAvailability.PROCESSING,
@@ -285,14 +309,14 @@ fun SeasonListItem(
 
                 SeerrAvailability.BLOCKLISTED -> {
                     // TODO handle block listed
-//                    BlocklistedIndicator()
+                    //                    BlocklistedIndicator()
                 }
             }
         },
         trailingContent = {
             Row {
                 Switch(
-                    checked = selected,
+                    checked = checked,
                     onCheckedChange = {
                         onClick.invoke()
                     },
@@ -362,6 +386,7 @@ fun RequestSeasonsDialog(
     loading: LoadingState,
     data: SeerrRequestData,
     seasons: List<RequestSeason>,
+    seasons4k: List<RequestSeason>,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
     onDismissRequest: () -> Unit,
@@ -388,6 +413,7 @@ fun RequestSeasonsDialog(
                     title = title,
                     data = data,
                     seasons = seasons,
+                    seasons4k = seasons4k,
                     request4kEnabled = request4kEnabled,
                     onSubmit = onSubmit,
                     modifier =
@@ -416,12 +442,14 @@ fun RequestSeasonsPreview() {
                         seasonNumber = it + 1,
                         episodeCount = 10 + it,
                     ),
+                status = RequestStatus.UNKNOWN,
                 availability =
                     if (it < 3) {
                         SeerrAvailability.AVAILABLE
                     } else {
                         SeerrAvailability.UNKNOWN
                     },
+                editable = it >= 3,
             )
         }
 
@@ -430,6 +458,7 @@ fun RequestSeasonsPreview() {
             id = 1,
             title = "Series title",
             seasons = seasons,
+            seasons4k = emptyList(),
             data =
                 SeerrRequestData(
                     profiles4k =

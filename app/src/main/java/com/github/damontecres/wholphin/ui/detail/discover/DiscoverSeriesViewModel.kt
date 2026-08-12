@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.RequestStatus
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -36,10 +37,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import timber.log.Timber
@@ -66,7 +69,10 @@ class DiscoverSeriesViewModel
         val state: StateFlow<DiscoverSeriesState> = _state
 
         val userConfig = seerrServerRepository.current.map { it?.config }
-        val request4kEnabled = seerrServerRepository.current.map { it?.request4kTvEnabled ?: false }
+        val request4kEnabled =
+            seerrServerRepository.current
+                .map { it?.request4kTvEnabled ?: false }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         init {
             init()
@@ -153,39 +159,99 @@ class DiscoverSeriesViewModel
             navigationManager.navigateTo(destination)
         }
 
-        private fun updateSeasonStatus(tv: TvDetails) {
-            val seasonStatus = mutableMapOf<Int, SeerrAvailability>()
+        private suspend fun updateSeasonStatus(tv: TvDetails) {
+            if (request4kEnabled.first()) {
+                updateSeasonStatus(tv, true)
+            }
+            updateSeasonStatus(tv, false)
+        }
+
+        private suspend fun updateSeasonStatus(
+            tv: TvDetails,
+            is4k: Boolean,
+        ) {
+            val currentUserId = seerrServerRepository.currentUserId.first()
+            val seasonStatus = mutableMapOf<Int, RequestStatus>()
+            val seasonAvailability = mutableMapOf<Int, SeerrAvailability>()
+            val editable = mutableMapOf<Int, Boolean>()
             tv.seasons?.forEach {
-                it.seasonNumber?.let {
-                    seasonStatus[it] = SeerrAvailability.UNKNOWN
+                it.seasonNumber?.let { seasonNumber ->
+                    seasonStatus[seasonNumber] = RequestStatus.UNKNOWN
+                    val status = if (is4k) it.status4k else it.status
+                    val availability =
+                        SeerrAvailability.from(status) ?: SeerrAvailability.UNKNOWN
+                    seasonAvailability[seasonNumber] = availability
                 }
             }
-            val tvStatus =
-                SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN
+
             tv.mediaInfo
                 ?.requests
-                ?.forEach {
-                    it.seasons?.mapNotNull { season ->
+                ?.filter { it.is4k == is4k }
+                ?.forEach { req ->
+                    req.seasons?.mapNotNull { season ->
                         season.seasonNumber?.let {
                             val current = seasonStatus[season.seasonNumber]
-                            val new =
-                                SeerrAvailability
-                                    .from(season.status)
-                                    ?.takeIf { it != SeerrAvailability.UNKNOWN } ?: tvStatus
+                            // Not status4k because the request itself is marked as is4k or not
+                            val status = season.status
+                            val new = RequestStatus.from(status)
                             if (current == null || new.status > current.status) {
                                 seasonStatus[season.seasonNumber] = new
                             }
+                            editable[season.seasonNumber] =
+                                currentUserId == req.requestedBy?.id && req.status == RequestStatus.PENDING.status
                         }
                     }
                 }
+            Timber.v("seasonAvailability=%s", seasonAvailability)
             Timber.v("seasonStatus=%s", seasonStatus)
             val requestSeasons =
-                seasonStatus.mapNotNull { (seasonNumber, availability) ->
+                seasonStatus.mapNotNull { (seasonNumber, status) ->
                     tv.seasons?.firstOrNull { it.seasonNumber == seasonNumber }?.let {
-                        RequestSeason(it, availability)
+                        val availability =
+                            when (status) {
+                                RequestStatus.UNKNOWN -> {
+                                    SeerrAvailability.UNKNOWN
+                                }
+
+                                RequestStatus.PENDING -> {
+                                    SeerrAvailability.PENDING
+                                }
+
+                                RequestStatus.APPROVED -> {
+                                    SeerrAvailability.PROCESSING
+                                }
+
+                                RequestStatus.DECLINED -> {
+                                    SeerrAvailability.UNKNOWN
+                                }
+
+                                RequestStatus.FAILURE -> {
+                                    SeerrAvailability.UNKNOWN
+                                }
+
+                                RequestStatus.COMPLETED -> {
+                                    seasonAvailability.getOrDefault(
+                                        seasonNumber,
+                                        SeerrAvailability.UNKNOWN,
+                                    )
+                                }
+                            }
+                        RequestSeason(
+                            season = it,
+                            status = status,
+                            availability = availability,
+                            editable = editable.getOrDefault(seasonNumber, true),
+                        )
                     }
                 }
-            _state.update { it.copy(seasons = requestSeasons) }
+            Timber.v("Got %s seasons, is4k=%s", requestSeasons.size, is4k)
+            _state.update {
+                if (is4k) {
+                    it.copy(seasons4k = requestSeasons)
+                } else {
+                    it.copy(seasons = requestSeasons)
+                }
+            }
         }
 
         private suspend fun updateCanCancel() {
@@ -225,10 +291,11 @@ class DiscoverSeriesViewModel
         fun request(request: TvRequest) {
             viewModelScope.launchIO {
                 state.value.tvSeries.successValue?.let { tv ->
+                    val currentUserId = seerrServerRepository.currentUserId.first()
                     val currentRequest =
                         tv.mediaInfo?.requests?.firstOrNull {
-                            it.requestedBy?.id ==
-                                seerrServerRepository.currentUserId.first()
+                            it.status == RequestStatus.PENDING.status &&
+                                it.requestedBy?.id == currentUserId
                         }
                     try {
                         if (currentRequest != null) {
@@ -311,6 +378,7 @@ data class DiscoverSeriesState(
     val tvSeries: DataLoadingState<TvDetails> = DataLoadingState.Pending,
     val rating: DiscoverRating? = null,
     val seasons: List<RequestSeason> = emptyList(),
+    val seasons4k: List<RequestSeason> = emptyList(),
     val trailers: List<Trailer> = emptyList(),
     val people: List<DiscoverItem> = emptyList(),
     val similar: List<DiscoverItem> = emptyList(),

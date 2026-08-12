@@ -86,7 +86,7 @@ fun DiscoverSeriesDetails(
     val context = LocalContext.current
     val resources = LocalResources.current
     val state by viewModel.state.collectAsState()
-    val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -192,6 +192,7 @@ fun DiscoverSeriesDetails(
             id = state.tvSeries.successValue?.id ?: -1,
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
+            seasons4k = state.seasons4k,
             request4kEnabled = request4kEnabled,
             onSubmit = {
                 showRequestSeasonDialog = false
