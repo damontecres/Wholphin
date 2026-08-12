@@ -859,18 +859,28 @@ class HomeSettingsService
                             sortBy =
                                 row.sort?.let {
                                     buildList {
-                                        add(it.sort)
-                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                        if (it.sort == ItemSortBy.RANDOM) {
                                             add(ItemSortBy.SORT_NAME)
+                                            add(ItemSortBy.RANDOM)
+                                        } else {
+                                            add(it.sort)
+                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                                add(ItemSortBy.SORT_NAME)
+                                            }
                                         }
                                     }
                                 },
                             sortOrder =
                                 row.sort?.let {
                                     buildList {
-                                        add(it.direction)
-                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                        if (it.sort == ItemSortBy.RANDOM) {
                                             add(SortOrder.ASCENDING)
+                                            add(it.direction)
+                                        } else {
+                                            add(it.direction)
+                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                                add(SortOrder.ASCENDING)
+                                            }
                                         }
                                     }
                                 },
