@@ -177,10 +177,11 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val index =
                             (seasons as? ApiRequestPager<*>)?.let {
-                                findIndexByNumberOrId(
+                                findIndexByNumberOrIdFast(
                                     seasonEpisodeIds.seasonNumber,
                                     seasonEpisodeIds.seasonId,
                                     it,
+                                    null,
                                 )
                             } ?: 0
                         Timber.v("Got initial season index: $index")
@@ -362,6 +363,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                             ItemFields.CAN_DELETE,
+                            ItemFields.PARENT_ID,
                         ),
                 )
             Timber.v(
@@ -373,10 +375,10 @@ class SeriesViewModel
             pager.init(episodeNumber ?: 0)
             val initialIndex =
                 if (episodeId != null || episodeNumber != null) {
-                    findIndexByNumberOrId(episodeNumber, episodeId, pager)
+                    findIndexByNumberOrIdFast(episodeNumber, episodeId, pager, seasonId)
                         .coerceAtLeast(0)
                 } else {
-                    // Force the first page to to be fetched
+                    // Force the first page to be fetched
                     if (pager.isNotEmpty()) {
                         pager.getBlocking(0)
                     }
@@ -731,6 +733,32 @@ private fun checkNumberOrId(
 /**
  * Find the index in the [list] where the item's `indexNumber`==[targetNum] or `id`==[targetId]
  *
+ * If the list is smaller than its page size, then the entire dataset is cached and
+ * [BlockingList.indexOfBlocking] is used, otherwise this function calls [findIndexByNumberOrId]
+ */
+suspend fun findIndexByNumberOrIdFast(
+    targetNum: Int?,
+    targetId: UUID?,
+    list: ApiRequestPager<*>,
+    parentId: UUID?,
+): Int =
+    if (list.size <= list.pageSize) {
+        Timber.v("Using findIndexByNumberOrIdFast indexOfBlocking method")
+        list.indexOfBlocking {
+            checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id) &&
+                if (parentId != null) {
+                    it?.data?.parentId == parentId
+                } else {
+                    true
+                }
+        }
+    } else {
+        findIndexByNumberOrId(targetNum, targetId, list as BlockingList<BaseItem?>, parentId)
+    }
+
+/**
+ * Find the index in the [list] where the item's `indexNumber`==[targetNum] or `id`==[targetId]
+ *
  * This is necessary in cases where items are missing. E.g. if looking for episode 4 but
  * episodes 2 & 3 is missing, then the index in the list for episode 4 will be `1`.
  *
@@ -743,7 +771,9 @@ suspend fun findIndexByNumberOrId(
     targetNum: Int?,
     targetId: UUID?,
     list: BlockingList<BaseItem?>,
+    parentId: UUID? = null,
 ): Int {
+    Timber.v("Using findIndexByNumberOrId")
     // Adjust for 1-based numbers
     val listIndex = targetNum?.minus(1)?.coerceAtLeast(0)
     val index =
@@ -754,34 +784,53 @@ suspend fun findIndexByNumberOrId(
                     checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id)
                 }.coerceAtLeast(0)
         } else if (listIndex != null && listIndex in list.indices) {
-            // Start searching from the target number and choose direction from there
-            val num = list.getBlocking(listIndex)?.indexNumber
-            if (num.lt(targetNum)) {
-                for (i in listIndex + 1 until list.size) {
-                    val item = list.getBlocking(i)
-                    if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
-                        return i
-                    }
-                }
-                return 0
-            } else if (num.gt(targetNum)) {
-                for (i in listIndex - 1 downTo 0) {
-                    val item = list.getBlocking(i)
-                    if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
-                        return i
-                    }
-                }
-                return 0
-            } else {
-                list
-                    .indexOfBlocking {
-                        checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id)
-                    }.coerceAtLeast(0)
-            }
+            searchList(listIndex, targetNum, targetId, list, parentId)
         } else {
             0
         }
     return index
+}
+
+private suspend fun searchList(
+    listIndex: Int,
+    targetNum: Int,
+    targetId: UUID?,
+    list: BlockingList<BaseItem?>,
+    parentId: UUID?,
+): Int {
+    val item = list.getBlocking(listIndex)
+    if (parentId != null && item?.data?.parentId != parentId) {
+        return if (listIndex - 1 in list.indices) {
+            searchList(listIndex - 1, targetNum, targetId, list, parentId)
+        } else if (listIndex + 1 in list.indices) {
+            searchList(listIndex + 1, targetNum, targetId, list, parentId)
+        } else {
+            0
+        }
+    }
+    val num = item?.indexNumber
+    if (num.lt(targetNum)) {
+        for (i in listIndex + 1 until list.size) {
+            val item = list.getBlocking(i)
+            if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
+                return i
+            }
+        }
+        return 0
+    } else if (num.gt(targetNum)) {
+        for (i in listIndex - 1 downTo 0) {
+            val item = list.getBlocking(i)
+            if (checkNumberOrId(targetNum, targetId, item?.indexNumber, item?.id)) {
+                return i
+            }
+        }
+        return 0
+    } else {
+        return list
+            .indexOfBlocking {
+                checkNumberOrId(targetNum, targetId, it?.indexNumber, it?.id)
+            }.coerceAtLeast(0)
+    }
 }
 
 data class SeriesState(
