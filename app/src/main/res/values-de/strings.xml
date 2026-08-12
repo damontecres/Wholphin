@@ -702,4 +702,6 @@
     <string name="dpad_seek_mode_trickplay_summary">Suchleiste mit Trickplay Vorschaubildern</string>
     <string name="dpad_seek_mode_none_summary">Keine Suchleiste</string>
     <string name="server_version_not_supported">Nicht unterstützte Server-Version</string>
+    <string name="disable_audio_offload">Audio-Hardware-Offload deaktivieren</string>
+    <string name="disable_audio_offload_summary">Das Auslagern der Audio Decodierung zu deaktivieren könnte Wiedergabeprobleme auf einigen Gräten beheben</string>
 </resources>
