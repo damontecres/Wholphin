@@ -275,7 +275,7 @@ fun GenreCardGrid(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val cardWidthPx =
-        remember {
+        remember(density) {
             with(density) {
                 // Grid has 16dp padding on either side & 16dp spacing between 4 cards
                 // This isn't exact though because it doesn't account for nav drawer or letters, but it's close and the calculation is much faster
