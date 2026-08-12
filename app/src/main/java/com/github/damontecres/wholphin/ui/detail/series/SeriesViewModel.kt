@@ -314,6 +314,7 @@ class SeriesViewModel
                         includeItemTypes = listOf(BaseItemKind.SEASON),
                         sortBy = listOf(ItemSortBy.INDEX_NUMBER),
                         sortOrder = listOf(SortOrder.ASCENDING),
+                        enableUserData = seriesPageType == SeriesPageType.DETAILS,
                         fields =
                             if (seriesPageType == SeriesPageType.DETAILS) {
                                 listOf(
@@ -332,16 +333,8 @@ class SeriesViewModel
                         request,
                         GetItemsRequestHandler,
                         viewModelScope,
-                        pageSize = 10,
+                        pageSize = 20,
                     ).init(seasonNum ?: 0)
-//                val seasons =
-//                    GetItemsRequestHandler.execute(api, request).content.items.map {
-//                        BaseItem.from(
-//                            it,
-//                            api,
-//                        )
-//                    }
-//                Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
                 pager
             }
 
