@@ -380,7 +380,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        Timber.d("onConfigurationChanged")
+        Timber.d("onConfigurationChanged: newConfig=%s", newConfig)
     }
 
     override fun onNewIntent(intent: Intent) {
