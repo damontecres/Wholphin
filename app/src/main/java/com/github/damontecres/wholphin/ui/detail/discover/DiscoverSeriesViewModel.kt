@@ -105,8 +105,11 @@ class DiscoverSeriesViewModel
                     updateCanCancel()
 
                     viewModelScope.launchIO {
-                        val result = seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id)
-                        _state.update { it.copy(rating = DiscoverRating(result)) }
+                        val rating =
+                            getDiscoverRating(item.id) {
+                                DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
+                            }
+                        _state.update { it.copy(rating = rating) }
                     }
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
@@ -183,6 +186,18 @@ class DiscoverSeriesViewModel
                     seasonAvailability[seasonNumber] = availability
                 }
             }
+            tv.mediaInfo?.seasons?.forEach {
+                it.seasonNumber?.let { seasonNumber ->
+                    val status = if (is4k) it.status4k else it.status
+                    val availability =
+                        SeerrAvailability.from(status) ?: SeerrAvailability.UNKNOWN
+                    val current =
+                        seasonAvailability.getOrDefault(seasonNumber, SeerrAvailability.UNKNOWN)
+                    if (availability > current) {
+                        seasonAvailability[seasonNumber] = availability
+                    }
+                }
+            }
 
             tv.mediaInfo
                 ?.requests
@@ -209,10 +224,6 @@ class DiscoverSeriesViewModel
                     tv.seasons?.firstOrNull { it.seasonNumber == seasonNumber }?.let {
                         val availability =
                             when (status) {
-                                RequestStatus.UNKNOWN -> {
-                                    SeerrAvailability.UNKNOWN
-                                }
-
                                 RequestStatus.PENDING -> {
                                     SeerrAvailability.PENDING
                                 }
@@ -229,22 +240,39 @@ class DiscoverSeriesViewModel
                                     SeerrAvailability.UNKNOWN
                                 }
 
-                                RequestStatus.COMPLETED -> {
+                                RequestStatus.UNKNOWN,
+                                RequestStatus.COMPLETED,
+                                -> {
                                     seasonAvailability.getOrDefault(
                                         seasonNumber,
                                         SeerrAvailability.UNKNOWN,
                                     )
                                 }
                             }
+                        val defaultEditable =
+                            availability != SeerrAvailability.AVAILABLE &&
+                                availability != SeerrAvailability.PARTIALLY_AVAILABLE &&
+                                availability != SeerrAvailability.PROCESSING &&
+                                availability != SeerrAvailability.BLOCKLISTED
                         RequestSeason(
                             season = it,
                             status = status,
                             availability = availability,
-                            editable = editable.getOrDefault(seasonNumber, true),
+                            editable = editable.getOrDefault(seasonNumber, defaultEditable),
                         )
                     }
                 }
             Timber.v("Got %s seasons, is4k=%s", requestSeasons.size, is4k)
+//            requestSeasons.forEach {
+//                Timber.v(
+//                    "is4k=%s, season %s: availability=%s, status=%s, editable=%s",
+//                    is4k,
+//                    it.season.seasonNumber,
+//                    it.availability,
+//                    it.status,
+//                    it.editable,
+//                )
+//            }
             _state.update {
                 if (is4k) {
                     it.copy(seasons4k = requestSeasons)

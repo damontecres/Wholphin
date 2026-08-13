@@ -83,11 +83,13 @@ fun RequestSeasons(
             mutableStateSetOf(
                 *seasons
                     .filter { season ->
-                        season.status == RequestStatus.PENDING ||
-                            season.status == RequestStatus.APPROVED ||
-                            season.status == RequestStatus.COMPLETED ||
-                            season.availability == SeerrAvailability.PARTIALLY_AVAILABLE ||
-                            season.availability == SeerrAvailability.AVAILABLE
+                        !season.editable && (
+                            season.status == RequestStatus.PENDING ||
+                                season.status == RequestStatus.APPROVED ||
+                                season.status == RequestStatus.COMPLETED ||
+                                season.availability == SeerrAvailability.PARTIALLY_AVAILABLE ||
+                                season.availability == SeerrAvailability.AVAILABLE
+                        )
                     }.mapNotNull { season -> season.season.seasonNumber }
                     .toTypedArray(),
             )
