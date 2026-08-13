@@ -105,8 +105,11 @@ class DiscoverSeriesViewModel
                     updateCanCancel()
 
                     viewModelScope.launchIO {
-                        val result = seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id)
-                        _state.update { it.copy(rating = DiscoverRating(result)) }
+                        val rating =
+                            getDiscoverRating(item.id) {
+                                DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
+                            }
+                        _state.update { it.copy(rating = rating) }
                     }
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
@@ -260,16 +263,16 @@ class DiscoverSeriesViewModel
                     }
                 }
             Timber.v("Got %s seasons, is4k=%s", requestSeasons.size, is4k)
-            requestSeasons.forEach {
-                Timber.v(
-                    "is4k=%s, season %s: availability=%s, status=%s, editable=%s",
-                    is4k,
-                    it.season.seasonNumber,
-                    it.availability,
-                    it.status,
-                    it.editable,
-                )
-            }
+//            requestSeasons.forEach {
+//                Timber.v(
+//                    "is4k=%s, season %s: availability=%s, status=%s, editable=%s",
+//                    is4k,
+//                    it.season.seasonNumber,
+//                    it.availability,
+//                    it.status,
+//                    it.editable,
+//                )
+//            }
             _state.update {
                 if (is4k) {
                     it.copy(seasons4k = requestSeasons)
