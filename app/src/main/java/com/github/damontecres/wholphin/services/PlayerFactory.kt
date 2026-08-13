@@ -132,9 +132,15 @@ class PlayerFactory
                                     extractorsFactory,
                                 )
                             }
+                        val disableAudioOffload =
+                            appPreferences.experimentalPreferences.get { disableAudioOffload } ?: false
                         val tunneling =
                             appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
-                        val trackSelector = createTrackSelector(tunneling)
+                        val trackSelector =
+                            createTrackSelector(
+                                tunneling = tunneling,
+                                disableAudioOffload = disableAudioOffload,
+                            )
 
                         ExoPlayer
                             .Builder(context)
@@ -164,7 +170,10 @@ class PlayerFactory
             return PlayerCreation(newPlayer, assHandler)
         }
 
-        fun createAudioPlayer(extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK): ExoPlayer {
+        fun createAudioPlayer(
+            disableAudioOffload: Boolean,
+            extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK,
+        ): ExoPlayer {
             val rendererMode =
                 when (extensions) {
                     MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
@@ -182,7 +191,7 @@ class PlayerFactory
                     OkHttpDataSource.Factory(authOkHttpClient),
                     extractorsFactory,
                 )
-            val trackSelector = createTrackSelector()
+            val trackSelector = createTrackSelector(disableAudioOffload = disableAudioOffload)
             return ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
@@ -205,20 +214,28 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector(tunneling: Boolean? = null) =
-            DefaultTrackSelector(context).apply {
-                setParameters(
-                    buildUponParameters()
-                        .apply {
-                            tunneling?.let { setTunnelingEnabled(tunneling) }
-                        }.setAudioOffloadPreferences(
-                            AudioOffloadPreferences
-                                .Builder()
-                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
-                                .build(),
-                        ),
-                )
-            }
+        private fun createTrackSelector(
+            tunneling: Boolean? = null,
+            disableAudioOffload: Boolean = false,
+        ) = DefaultTrackSelector(context).apply {
+            val offloadMode =
+                if (disableAudioOffload) {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                } else {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                }
+            setParameters(
+                buildUponParameters()
+                    .apply {
+                        tunneling?.let { setTunnelingEnabled(tunneling) }
+                    }.setAudioOffloadPreferences(
+                        AudioOffloadPreferences
+                            .Builder()
+                            .setAudioOffloadMode(offloadMode)
+                            .build(),
+                    ),
+            )
+        }
 
         fun createMediaSession(player: Player) =
             MediaSession

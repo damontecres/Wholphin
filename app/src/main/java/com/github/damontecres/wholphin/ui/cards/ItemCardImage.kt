@@ -265,7 +265,7 @@ fun ItemCardImageOverlay(
             }
         }
 
-        watchedPercent?.let { percent ->
+        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100) {
             Box(
                 modifier =
                     Modifier
@@ -274,7 +274,7 @@ fun ItemCardImageOverlay(
                             MaterialTheme.colorScheme.tertiary,
                         ).clip(RectangleShape)
                         .height(Cards.playedPercentHeight)
-                        .fillMaxWidth((percent / 100.0).toFloat()),
+                        .fillMaxWidth((watchedPercent / 100.0).toFloat()),
             )
         }
     }

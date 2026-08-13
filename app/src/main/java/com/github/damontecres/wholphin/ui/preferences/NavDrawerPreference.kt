@@ -227,7 +227,7 @@ fun NavDrawerPreferenceListItem(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 40.dp, max = 88.dp),
+                    .heightIn(min = 40.dp),
         ) {
             ListItem(
                 selected = false,

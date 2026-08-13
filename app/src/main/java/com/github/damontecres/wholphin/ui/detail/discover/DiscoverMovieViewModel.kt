@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.RequestStatus
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -20,6 +21,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.SeerrUserConfig
+import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -100,9 +102,13 @@ class DiscoverMovieViewModel
                     updateCanCancel()
 
                     viewModelScope.launchIO {
-                        val result =
-                            seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = item.id)
-                        _state.update { it.copy(rating = DiscoverRating(result)) }
+                        val rating =
+                            getDiscoverRating(item.id) {
+                                DiscoverRating(
+                                    seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = item.id),
+                                )
+                            }
+                        _state.update { it.copy(rating = rating) }
                     }
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
@@ -248,7 +254,12 @@ fun canUserCancelRequest(
     (
         // User requested this
         user.hasPermission(SeerrPermission.REQUEST) &&
-            requests?.any { it.requestedBy?.id == user?.id } == true
+            requests
+                .orEmpty()
+                .any {
+                    equalsNotNull(it.requestedBy?.id, user?.id) &&
+                        RequestStatus.from(it.status) < RequestStatus.APPROVED
+                }
     )
 
 data class DiscoverMovieState(

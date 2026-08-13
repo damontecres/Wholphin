@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.jellyfin.sdk.api.client.ApiClient
@@ -94,6 +95,8 @@ class ServerEventListener
                                     .joinToString("\n")
                             showToast(context, toast, Toast.LENGTH_LONG)
                         }
+                    }.catch { ex ->
+                        Timber.e(ex, "Error in websocket subscription")
                     }.launchIn(activity.lifecycleScope)
         }
 

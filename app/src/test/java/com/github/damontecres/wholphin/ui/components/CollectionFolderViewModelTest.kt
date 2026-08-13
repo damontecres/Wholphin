@@ -33,10 +33,12 @@ import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.util.UUID
@@ -139,6 +141,19 @@ class CollectionFolderViewModelTest {
 
             // Counting library items rather than artists is the bug this guards against
             coVerify(exactly = 0) { GetItemsRequestHandler.execute(any(), any<GetItemsRequest>()) }
+        }
+
+    /**
+     * Without SortName, the alphabet highlight falls back to Name and highlights "T" for artists
+     * like "The Beatles" even though the grid sorts them under "B".
+     */
+    @Test
+    fun `artist pager requests SortName for alphabet highlighting`() =
+        runTest(testDispatcher) {
+            createViewModel(GetItemsFilter(override = GetItemsFilterOverride.ARTIST))
+            advanceUntilIdle()
+
+            assertTrue(ItemFields.SORT_NAME in artistsRequest.captured.fields.orEmpty())
         }
 
     /**

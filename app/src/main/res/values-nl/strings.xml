@@ -43,7 +43,7 @@
     <string name="forced_track">Geforceerd</string>
     <string name="genres">Genres</string>
     <string name="go_to_series">Ga naar serie</string>
-    <string name="go_to">Ga naar</string>
+    <string name="go_to">Ga naar item</string>
     <string name="hide_controller_timeout">Afspeelbediening verbergen</string>
     <string name="hide_debug_info">Foutopsporingsinformatie verbergen</string>
     <string name="hide">Verbergen</string>

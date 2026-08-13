@@ -13,6 +13,7 @@ import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.gt
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -83,8 +85,15 @@ class MusicService
         private val audioFormats by lazy { listOf(*supportedAudioCodecs) }
 
         val player: Player by lazy {
+            val disableAudioOffload =
+                runBlocking {
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.experimentalPreferences
+                        .get { disableAudioOffload } ?: false
+                }
             playerFactory
-                .createAudioPlayer()
+                .createAudioPlayer(disableAudioOffload = disableAudioOffload)
                 .also {
                     it.addListener(MusicPlayerListener(it, _state))
                 }

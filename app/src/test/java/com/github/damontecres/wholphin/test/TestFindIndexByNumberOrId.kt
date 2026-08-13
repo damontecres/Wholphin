@@ -11,6 +11,9 @@ import org.junit.Assert
 import org.junit.Test
 
 class TestFindIndexByNumberOrId {
+    val season0Id = UUID.randomUUID()
+    val season2Id = UUID.randomUUID()
+
     fun create(
         indexNumber: Int,
         parentIndexNumber: Int,
@@ -20,6 +23,12 @@ class TestFindIndexByNumberOrId {
             type = BaseItemKind.EPISODE,
             indexNumber = indexNumber,
             parentIndexNumber = parentIndexNumber,
+            parentId =
+                when (parentIndexNumber) {
+                    0 -> season0Id
+                    2 -> season2Id
+                    else -> null
+                },
         ),
     )
 
@@ -149,6 +158,41 @@ class TestFindIndexByNumberOrId {
             val list = listOf(epS02E01, epS00E02, epS02E02)
             findIndexByNumberOrId(targetNum = 2, targetId = epS02E02.id, list = BlockingList.of(list)).let { index ->
                 Assert.assertEquals(2, index)
+            }
+        }
+
+    @Test
+    fun `Test with special in middle`() =
+        runTest {
+            val episodes =
+                BlockingList.of<BaseItem?>(
+                    listOf(
+                        epS02E01,
+                        epS02E02,
+                        epS02E03,
+                        create(6, 0),
+                        epS02E04,
+                        epS02E05,
+                        epS02E06,
+                    ),
+                )
+
+            findIndexByNumberOrId(
+                targetNum = 3,
+                targetId = epS02E03.id,
+                list = episodes,
+                parentId = season2Id,
+            ).let { index ->
+                Assert.assertEquals(2, index)
+            }
+
+            findIndexByNumberOrId(
+                targetNum = 4,
+                targetId = epS02E04.id,
+                list = episodes,
+                parentId = season2Id,
+            ).let { index ->
+                Assert.assertEquals(4, index)
             }
         }
 }

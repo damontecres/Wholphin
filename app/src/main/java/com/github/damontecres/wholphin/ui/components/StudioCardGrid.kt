@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.alphabetSortName
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -97,7 +98,12 @@ class StudioViewModel
                                         imageType = ImageType.THUMB,
                                         fillWidth = cardWidthPx,
                                     )
-                                Studio(it.id, it.name ?: "", imageUrl)
+                                Studio(
+                                    id = it.id,
+                                    name = it.name ?: "",
+                                    imageUrl = imageUrl,
+                                    sortName = it.alphabetSortName,
+                                )
                             }
                     _state.update {
                         it.copy(
@@ -133,10 +139,10 @@ data class Studio(
     val id: UUID,
     val name: String,
     val imageUrl: String?,
+    override val sortName: String = name,
 ) : CardGridItem {
     override val gridId: String get() = id.toString()
     override val playable: Boolean = false
-    override val sortName: String get() = name
 }
 
 data class StudioGridState(
@@ -160,7 +166,7 @@ fun StudioCardGrid(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val cardWidthPx =
-        remember {
+        remember(density) {
             with(density) {
                 // Grid has 16dp padding on either side & 16dp spacing between 4 cards
                 // This isn't exact though because it doesn't account for nav drawer or letters, but it's close and the calculation is much faster

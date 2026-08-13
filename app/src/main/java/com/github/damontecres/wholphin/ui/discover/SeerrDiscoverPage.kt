@@ -30,7 +30,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
@@ -42,6 +41,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.components.Genre
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.discover.getDiscoverRating
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
@@ -262,13 +262,11 @@ class SeerrDiscoverViewModel
                     return@launchIO
                 }
                 val result =
-                    try {
+                    getDiscoverRating(id) {
                         when (type) {
                             SeerrItemType.MOVIE -> {
                                 DiscoverRating(
-                                    seerrService.api.moviesApi.movieMovieIdRatingsGet(
-                                        movieId = id,
-                                    ),
+                                    seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = id),
                                 )
                             }
 
@@ -284,18 +282,8 @@ class SeerrDiscoverViewModel
                                 DiscoverRating(null, null)
                             }
                         }
-                    } catch (ex: ClientException) {
-                        if (ex.statusCode == 404) {
-                            Timber.w("No rating found for %s", id)
-                            DiscoverRating(null, null)
-                        } else {
-                            Timber.e(ex, "Error getting rating for %s", id)
-                            return@launchIO
-                        }
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Error getting rating for %s", id)
-                        return@launchIO
-                    }
+                    } ?: DiscoverRating(null, null)
+
                 ratingCache.put(id, result)
                 rating.update {
                     ratingCache.asMap().toMap()

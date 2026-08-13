@@ -796,7 +796,7 @@ fun PlaylistItem(
     val focused by interactionSource.collectIsFocusedAsState()
     val imageWidth = 160.dp
     val density = LocalDensity.current
-    val imageWidthPx = remember(imageWidth) { with(density) { imageWidth.roundToPx() } }
+    val imageWidthPx = remember(imageWidth, density) { with(density) { imageWidth.roundToPx() } }
     ListItem(
         selected = false,
         onClick = onClick,

@@ -399,6 +399,7 @@ class CollectionFolderViewModel
                 GetArtistsRequest(
                     parentId = item?.id,
                     enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                    fields = SlimItemFields,
                 ),
             )
         }
@@ -477,6 +478,7 @@ class CollectionFolderViewModel
                         GetArtistsHandler.countMatching(
                             createGetArtistsRequest(filter).copy(
                                 enableImageTypes = null,
+                                fields = null,
                                 nameLessThan = letter.toString(),
                                 limit = 0,
                                 enableTotalRecordCount = true,

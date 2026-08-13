@@ -12,9 +12,8 @@ import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
-import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
@@ -62,6 +61,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.UserDto
@@ -280,7 +280,7 @@ class HomeSettingsService
                 libraries
                     .mapIndexed { index, it ->
                         val parentId = it.itemId
-                        val title = getRecentlyAddedTitle(it)
+                        val title = getRecentlyAddedTitle(it.name)
                         if (it.collectionType == CollectionType.LIVETV) {
                             HomeRowConfigDisplay(
                                 id = index,
@@ -766,13 +766,11 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyAdded -> {
-                    val library =
-                        libraries
-                            .firstOrNull { it.itemId == row.parentId }
-                    val title = getRecentlyAddedTitle(library)
+                    val library = libraries.firstOrNull { it.itemId == row.parentId }
+                    val title = getRecentlyAddedTitle(library?.name)
                     val request =
                         GetLatestMediaRequest(
-                            fields = SlimItemFields,
+                            fields = library.itemFields,
                             imageTypeLimit = 1,
                             parentId = row.parentId,
                             groupItems = true,
@@ -797,12 +795,9 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyReleased -> {
-                    val name =
-                        libraries
-                            .firstOrNull { it.itemId == row.parentId }
-                            ?.name
+                    val library = libraries.firstOrNull { it.itemId == row.parentId }
                     val title =
-                        name?.let {
+                        library?.name?.let {
                             ResArgStringProvider(R.string.recently_released_in, it)
                         } ?: ResStringProvider(R.string.recently_released)
                     val request =
@@ -821,7 +816,7 @@ class HomeSettingsService
                                     SortOrder.ASCENDING,
                                     SortOrder.DESCENDING,
                                 ),
-                            fields = DefaultItemFields,
+                            fields = library.itemFields,
                             recursive = true,
                             maxPremiereDate = LocalDateTime.now(),
                             isUnaired = false,
@@ -851,6 +846,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.ByParent -> {
+                    val library = libraries.firstOrNull { it.itemId == row.parentId }
                     val request =
                         GetItemsRequest(
                             userId = userDto.id,
@@ -859,23 +855,33 @@ class HomeSettingsService
                             sortBy =
                                 row.sort?.let {
                                     buildList {
-                                        add(it.sort)
-                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                        if (it.sort == ItemSortBy.RANDOM) {
                                             add(ItemSortBy.SORT_NAME)
+                                            add(ItemSortBy.RANDOM)
+                                        } else {
+                                            add(it.sort)
+                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                                add(ItemSortBy.SORT_NAME)
+                                            }
                                         }
                                     }
                                 },
                             sortOrder =
                                 row.sort?.let {
                                     buildList {
-                                        add(it.direction)
-                                        if (it.sort != ItemSortBy.SORT_NAME) {
+                                        if (it.sort == ItemSortBy.RANDOM) {
                                             add(SortOrder.ASCENDING)
+                                            add(it.direction)
+                                        } else {
+                                            add(it.direction)
+                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                                add(SortOrder.ASCENDING)
+                                            }
                                         }
                                     }
                                 },
                             limit = limit,
-                            fields = DefaultItemFields,
+                            fields = library.itemFields,
                         )
 
                     // Not using getItemName because we want to throw the 404
@@ -960,7 +966,7 @@ class HomeSettingsService
                             GetPersonsRequest(
                                 userId = userDto.id,
                                 limit = limit,
-                                fields = DefaultItemFields,
+                                fields = HomeItemFields,
                                 isFavorite = true,
                                 enableImages = true,
                                 enableImageTypes = listOf(ImageType.PRIMARY),
@@ -978,12 +984,18 @@ class HomeSettingsService
                                 )
                             }
                     } else {
+                        val fields =
+                            if (row.kind == BaseItemKind.BOX_SET) {
+                                HomeItemFieldsBoxSets
+                            } else {
+                                HomeItemFields
+                            }
                         val request =
                             GetItemsRequest(
                                 userId = userDto.id,
                                 recursive = true,
                                 limit = limit,
-                                fields = DefaultItemFields,
+                                fields = fields,
                                 includeItemTypes = listOf(row.kind),
                                 isFavorite = true,
                             )
@@ -1017,7 +1029,7 @@ class HomeSettingsService
                         GetRecordingsRequest(
                             userId = userDto.id,
                             isInProgress = true,
-                            fields = DefaultItemFields,
+                            fields = HomeItemFields,
                             limit = limit,
                             enableImages = true,
                             enableUserData = true,
@@ -1088,7 +1100,7 @@ class HomeSettingsService
                     val request =
                         GetLiveTvChannelsRequest(
                             userId = userDto.id,
-                            fields = DefaultItemFields,
+                            fields = HomeItemFields,
                             limit = limit,
                             enableImages = true,
                         )
@@ -1215,10 +1227,17 @@ class UnsupportedHomeSettingsVersionException(
     val maxSupportedVersion: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
 ) : Exception("Unsupported version $unsupportedVersion, max supported is $maxSupportedVersion")
 
-fun getRecentlyAddedTitle(library: Library?): StringProvider =
-    if (library?.isRecordingFolder == true) {
-        ResStringProvider(R.string.recently_recorded)
-    } else {
-        library?.name?.let { ResArgStringProvider(R.string.recently_added_in, it) }
-            ?: ResStringProvider(R.string.recently_added)
-    }
+fun getRecentlyAddedTitle(name: String?): StringProvider =
+    name?.let { ResArgStringProvider(R.string.recently_added_in, it) }
+        ?: ResStringProvider(R.string.recently_added)
+
+private val Library?.itemFields: List<ItemFields>
+    get() =
+        if (this?.type == BaseItemKind.COLLECTION_FOLDER && this.collectionType == CollectionType.BOXSETS) {
+            // Get child count to show in the header
+            HomeItemFieldsBoxSets
+        } else {
+            HomeItemFields
+        }
+
+private val HomeItemFieldsBoxSets get() = HomeItemFields + listOf(ItemFields.CHILD_COUNT)

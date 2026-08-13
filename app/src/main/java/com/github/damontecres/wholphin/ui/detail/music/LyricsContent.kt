@@ -121,7 +121,10 @@ fun LyricsContent(
                             ),
                         modifier =
                             Modifier
-                                .focusRequester(focusRequesters[index]),
+                                .focusRequester(focusRequesters[index])
+                                .onFocusChanged {
+                                    if (it.isFocused) onFocusLyrics.invoke(true)
+                                },
                     ) {
                         val text =
                             remember(lyric.text) { lyric.text.ifBlank { "                " } }

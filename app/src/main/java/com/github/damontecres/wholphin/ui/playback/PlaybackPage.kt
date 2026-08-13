@@ -165,6 +165,7 @@ fun PlaybackPageContent(
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    LaunchedEffect(density) { viewModel.updateDensity(density) }
     val userDto by viewModel.currentUserDto.collectAsState()
 
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -504,7 +505,9 @@ fun PlaybackPageContent(
             val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
             val isImageSubtitles =
                 remember(state.subtitleCues) { state.subtitleCues.firstOrNull()?.bitmap != null }
-            var cueCount by remember { mutableIntStateOf(0) }
+
+            // Reset cueCount when density changes to force re-applying subtitle style
+            var cueCount by remember(density) { mutableIntStateOf(0) }
 
             val subtitleVisible =
                 skipIndicatorDuration == 0L &&
@@ -540,6 +543,7 @@ fun PlaybackPageContent(
                     }
                     subtitleView.setCues(state.subtitleCues)
                     if (state.subtitleCues.size > cueCount) {
+                        Timber.i("Applying subtitle style to SubtitleView")
                         // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(subtitleView)

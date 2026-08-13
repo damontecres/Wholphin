@@ -60,6 +60,17 @@ object ExperimentalPreference {
                 }
             },
         )
+
+    val DisableAudioOffload =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.disable_audio_offload,
+            defaultValue = false,
+            getter = { it.experimentalPreferences.disableAudioOffload },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences { disableAudioOffload = value }
+            },
+            summary = R.string.disable_audio_offload_summary,
+        )
 }
 
 val experimentalPreferences =
@@ -71,6 +82,7 @@ val experimentalPreferences =
                     listOf(
                         ExperimentalPreference.VideoTunneling,
                         ExperimentalPreference.PreferAc3ForSurround,
+                        ExperimentalPreference.DisableAudioOffload,
                     ),
             ),
         )

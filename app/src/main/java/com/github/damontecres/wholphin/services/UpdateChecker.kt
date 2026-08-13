@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -60,8 +61,6 @@ class UpdateChecker
             const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
-
-            private const val PERMISSION_REQUEST_CODE = 123456
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
 
@@ -158,8 +157,8 @@ class UpdateChecker
 
         private fun getRelease(request: Request): Release? {
             return okHttpClient.newCall(request).execute().use {
-                if (it.isSuccessful && it.body != null) {
-                    val result = Json.parseToJsonElement(it.body!!.string())
+                if (it.isSuccessful) {
+                    val result = Json.parseToJsonElement(it.body.string())
                     val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
                     val version = Version.tryFromString(name)
                     val publishedAt =
@@ -195,6 +194,7 @@ class UpdateChecker
         /**
          * Download and install an update
          */
+        @SuppressLint("RequestInstallPackagesPolicy")
         suspend fun installRelease(
             release: Release,
             callback: DownloadCallback,
@@ -208,7 +208,7 @@ class UpdateChecker
                         .get()
                         .build()
                 okHttpClient.newCall(request).execute().use {
-                    if (it.isSuccessful && it.body != null) {
+                    if (it.isSuccessful) {
                         Timber.v("Request successful for ${release.downloadUrl}")
                         withContext(WholphinDispatchers.Main) {
                             callback.contentLength(it.body.contentLength())
@@ -230,7 +230,7 @@ class UpdateChecker
                                     contentValues,
                                 )
                             if (uri != null) {
-                                it.body!!.byteStream().use { input ->
+                                it.body.byteStream().use { input ->
                                     resolver.openOutputStream(uri).use { output ->
                                         copyTo(input, output!!, callback = callback)
                                     }
@@ -290,7 +290,7 @@ class UpdateChecker
             downloadDir.mkdirs()
             val targetFile = File(downloadDir, APK_NAME)
             targetFile.outputStream().use { output ->
-                response.body!!.byteStream().use { input ->
+                response.body.byteStream().use { input ->
                     copyTo(input, output, callback = callback)
                 }
             }
@@ -374,7 +374,7 @@ data class Release(
                 Regex("https://github.com/\\w*/\\w+/pull/(\\d+)"),
                 "#$1",
             )
-                // Remove the last line for full changelog since its just a link
+                // Remove the last line for full changelog since it's just a link
                 .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), "")
 }
 
@@ -387,29 +387,30 @@ interface DownloadCallback {
 suspend fun copyTo(
     input: InputStream,
     out: OutputStream,
-    bufferSize: Int = 16 * 1024,
+    bufferSize: Int = 64 * 1024,
     callback: DownloadCallback,
-): Long {
-    var bytesCopied: Long = 0
-    val buffer = ByteArray(bufferSize)
-    var bytes = input.read(buffer)
-    while (bytes >= 0) {
-        out.write(buffer, 0, bytes)
-        bytesCopied += bytes
-        withContext(WholphinDispatchers.Main) {
-            callback.bytesDownloaded(bytesCopied)
+): Long =
+    withContext(WholphinDispatchers.IO) {
+        var bytesCopied: Long = 0
+        val buffer = ByteArray(bufferSize)
+        var bytes = input.read(buffer)
+        while (bytes >= 0) {
+            out.write(buffer, 0, bytes)
+            bytesCopied += bytes
+            withContext(WholphinDispatchers.Main) {
+                callback.bytesDownloaded(bytesCopied)
+            }
+            bytes = input.read(buffer)
         }
-        bytes = input.read(buffer)
+        return@withContext bytesCopied
     }
-    return bytesCopied
-}
 
 fun getDownloadUrl(
     assets: JsonArray,
     debug: Boolean,
-    supportedAbis: List<String> = Build.SUPPORTED_ABIS.toList(),
+    supportedABIs: List<String> = Build.SUPPORTED_ABIS.toList(),
 ): String? {
-    val abiSuffix = supportedAbis.firstOrNull().let { if (it != null) "-$it" else "" }
+    val abiSuffix = supportedABIs.firstOrNull().let { if (it != null) "-$it" else "" }
     val releaseSuffix = if (debug) "-debug" else "-release"
     val preferredNames =
         buildList {

@@ -680,4 +680,6 @@
     <string name="dpad_seek_mode_none_summary">无进度条</string>
     <string name="server_version_not_supported">服务器版本不支持</string>
     <string name="appears_on">出现在</string>
+    <string name="disable_audio_offload">禁用音频硬件分流</string>
+    <string name="disable_audio_offload_summary">禁用分流音频解码可能会解决某些设备上的播放卡顿问题</string>
 </resources>

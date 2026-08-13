@@ -84,6 +84,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -184,6 +185,7 @@ class PlaybackViewModel
         internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
+        private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
 
         private val isPlaylist = destination is Destination.PlaybackList
@@ -213,6 +215,9 @@ class PlaybackViewModel
 
                 this@PlaybackViewModel.activityListener?.let {
                     it.release()
+                    player.removeListener(it)
+                }
+                this@PlaybackViewModel.trackChangeListener?.let {
                     player.removeListener(it)
                 }
                 player.release()
@@ -328,10 +333,17 @@ class PlaybackViewModel
                                 filter = destination.filter,
                             )
                         } else {
+                            val shuffled =
+                                if (destination is Destination.Playback) {
+                                    destination.shuffle
+                                } else {
+                                    false
+                                }
                             // Try to create a playlist
                             playlistCreator.createFrom(
                                 item = queriedItem,
                                 recursive = true,
+                                shuffled = shuffled,
                             )
                         }
                     when (val r = playlistResult) {
@@ -604,6 +616,9 @@ class PlaybackViewModel
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
 
+                trackChangeListener?.let { onMain { player.removeListener(it) } }
+                trackChangeListener = null
+
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
@@ -715,6 +730,7 @@ class PlaybackViewModel
 
                     val externalSubtitle =
                         source.findExternalSubtitle(subtitleIndex)?.let {
+                            Timber.v("Using externally delivered subtitle tracks %s", subtitleIndex)
                             it.deliveryUrl?.let { deliveryUrl ->
                                 var flags = 0
                                 if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
@@ -807,48 +823,51 @@ class PlaybackViewModel
                             mediaItem,
                             positionMs,
                         )
-                        if (transcodeType == PlayMethod.DIRECT_PLAY && (audioIndex != null || subtitleIndex != null)) {
-                            val onTracksChangedListener =
-                                object : Player.Listener {
-                                    override fun onTracksChanged(tracks: Tracks) {
-                                        Timber.v("onTracksChanged: $tracks")
-                                        if (tracks.groups.isNotEmpty()) {
-                                            val result =
-                                                TrackSelectionUtils.createTrackSelections(
-                                                    player.trackSelectionParameters,
-                                                    player.currentTracks,
-                                                    audioIndex,
-                                                    subtitleIndex,
-                                                    source,
-                                                )
-                                            Timber.v("onTracksChanged: %s", result)
-                                            player.removeListener(this)
-                                            if (result.bothSelected) {
-                                                player.trackSelectionParameters =
-                                                    result.trackSelectionParameters
-                                            } else {
-                                                // Fall back to transcoding
-                                                Timber.w(
-                                                    "Failed to select tracks, falling back to transcoding: %s",
-                                                    result,
-                                                )
-                                                viewModelScope.launchIO {
-                                                    changeStreams(
-                                                        item = item,
-                                                        sourceId = sourceId,
-                                                        audioIndex = audioIndex,
-                                                        subtitleIndex = subtitleIndex,
-                                                        positionMs = positionMs,
-                                                        enableDirectPlay = false,
-                                                        enableDirectStream = true,
-                                                    )
-                                                }
-                                            }
-                                            viewModelScope.launchIO { loadSubtitleDelay() }
-                                        }
-                                    }
+                        val onFailure: () -> Unit = {
+                            if (player is MpvPlayer && externalSubtitle != null) {
+                                // MpvPlayer may change tracks more than once to add external subtitles
+                                trackChangeListener?.let { player.addListener(it) }
+                            } else {
+                                viewModelScope.launchIO {
+                                    changeStreams(
+                                        item = item,
+                                        sourceId = sourceId,
+                                        audioIndex = audioIndex,
+                                        subtitleIndex = subtitleIndex,
+                                        positionMs = positionMs,
+                                        enableDirectPlay = false,
+                                        enableDirectStream = true,
+                                    )
                                 }
-                            player.addListener(onTracksChangedListener)
+                            }
+                        }
+                        val onTracksChangedListener =
+                            if (transcodeType == PlayMethod.DIRECT_PLAY && (audioIndex != null || subtitleIndex != null)) {
+                                TracksChangedListener(
+                                    player = player,
+                                    audioIndex = audioIndex,
+                                    subtitleIndex = subtitleIndex,
+                                    source = source,
+                                    onFailure = onFailure,
+                                )
+                            } else if (externalSubtitle != null) {
+                                TracksChangedListener(
+                                    player = player,
+                                    audioIndex = null, // Do not manually activate audio
+                                    subtitleIndex = subtitleIndex,
+                                    source = source,
+                                    onFailure = onFailure,
+                                )
+                            } else {
+                                null
+                            }
+                        onTracksChangedListener?.let {
+                            player.addListener(it)
+                            this@PlaybackViewModel.trackChangeListener = it
+                        }
+
+                        if (subtitleIndex != null) {
+                            viewModelScope.launchIO { loadSubtitleDelay() }
                         }
                     }
                 }
@@ -1452,6 +1471,8 @@ class PlaybackViewModel
                             }
                         }
                     }
+                }.catch { ex ->
+                    Timber.e(ex, "Error in websocket subscription")
                 }.launchIn(viewModelScope)
 
         /**
@@ -1610,6 +1631,21 @@ class PlaybackViewModel
                 viewModelScope.launchDefault {
                     val configuration = context.resources.configuration
                     val density = Density(context.resources.displayMetrics.density)
+                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                        configuration,
+                        density,
+                    )
+                }
+            }
+        }
+
+        fun updateDensity(density: Density) {
+            Timber.d("Density changed")
+            viewModelScope.launchDefault {
+                val availableCommands = onMain { player.availableCommands }
+                if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
+                    Timber.i("Applying density change for subtitle config to MPV")
+                    val configuration = context.resources.configuration
                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                         configuration,
                         density,

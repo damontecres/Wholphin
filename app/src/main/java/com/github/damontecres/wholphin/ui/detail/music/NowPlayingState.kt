@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
 import androidx.compose.runtime.Stable
+import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.MusicServiceState
 import org.jellyfin.sdk.model.api.LyricDto
@@ -8,6 +9,7 @@ import org.jellyfin.sdk.model.api.LyricDto
 @Stable
 data class NowPlayingState(
     val musicServiceState: MusicServiceState,
+    val currentMediaItem: AudioItem? = null,
     val lyrics: LyricDto? = null,
     val currentLyricIndex: Int? = null,
     val visualizerPermissions: Boolean = false,
