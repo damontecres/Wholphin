@@ -12,7 +12,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.data.model.AudioItem
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateMusicPreferences
@@ -23,40 +22,43 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.NowPlayingStatus
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.combinePair
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.lyricsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.LyricDto
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 @UnstableApi
 @HiltViewModel(assistedFactory = NowPlayingViewModel.Factory::class)
@@ -99,6 +101,9 @@ class NowPlayingViewModel
             }
 
         init {
+            state.update {
+                it.copy(currentMediaItem = player.currentMediaItem?.localConfiguration?.tag as? AudioItem)
+            }
             player.addListener(this)
             addCloseable {
                 player.removeListener(this)
@@ -126,62 +131,39 @@ class NowPlayingViewModel
                     }.join()
                 controllerViewState.pulseControls()
             }
-            viewModelScope.launchDefault {
-                backdropService.clearBackdrop()
-                updateBackdrop(getCurrent())
-            }
-            playbackLoop()
+            viewModelScope.launchDefault { backdropService.clearBackdrop() }
+            listenForBackdrop()
+            listenForLyrics()
         }
 
         fun reportInteraction() {
             controllerViewState.pulseControls()
         }
 
-        private suspend fun getCurrent(): AudioItem? {
-            val mediaItem =
-                onMain {
-                    player.currentMediaItemIndex
-                        .takeIf { it in 0..<player.mediaItemCount }
-                        ?.let { player.getMediaItemAt(it) }
-                }
-            return mediaItem?.localConfiguration?.tag as? AudioItem
-        }
-
-        private fun playbackLoop() {
+        private fun listenForLyrics() {
             viewModelScope.launchDefault {
-                while (isActive) {
-                    val position = onMain { player.currentPosition }.milliseconds
-//                    Timber.v("playbackLoop: %s", position)
-                    getCurrent()?.let { audio ->
-//                        Timber.v("Got current %s", audio.id)
-                        if (audio.hasLyrics) {
-                            val lyrics =
-                                lyricCache.getOrPut(audio.id) {
-                                    // TODO remote lyrics?
-                                    api.lyricsApi.getLyrics(audio.id).content
-                                }
+                state.map { it.currentMediaItem }.distinctUntilChanged().collectLatest { audio ->
+                    if (audio != null && audio.hasLyrics) {
+                        val lyrics = fetchAndUpdateLyrics(audio)
+                        Timber.d("Got lyrics for %s: %s", audio.id, lyrics != null)
+                        while (lyrics != null && isActive) {
+                            val position = onMain { player.currentPosition }.milliseconds
+                            val offset = lyrics.metadata.offset?.ticks ?: Duration.ZERO
+                            val lyricPosition = offset + position
                             val lyricIndex =
-                                if (lyrics != null) {
-                                    val offset = lyrics.metadata.offset?.ticks ?: Duration.ZERO
-                                    val lyricPosition = offset + position
-                                    lyrics.lyrics
-                                        .indexOfLast {
-                                            it.start?.ticks?.let { lyricPosition >= it } == true
-                                        }.takeIf { it >= 0 }
-                                } else {
-                                    null
-                                }
-//                            Timber.v("lyricIndex=$lyricIndex")
+                                lyrics.lyrics
+                                    .indexOfLast {
+                                        it.start?.ticks?.let { lyricPosition >= it } == true
+                                    }.takeIf { it >= 0 }
                             state.update {
                                 it.copy(
                                     lyrics = lyrics,
                                     currentLyricIndex = lyricIndex,
                                 )
                             }
+                            delay(150.milliseconds)
                         }
                     }
-
-                    delay(150)
                 }
             }
         }
@@ -192,100 +174,114 @@ class NowPlayingViewModel
         ) {
             val audio = mediaItem?.localConfiguration?.tag as? AudioItem
             Timber.v("onMediaItemTransition to %s", audio?.id)
-            updateBackdrop(audio)
-            viewModelScope.launchDefault {
-                state.update {
-                    it.copy(
-                        lyrics = null,
-                        currentLyricIndex = null,
-                    )
-                }
-                audio?.let { audio ->
-                    if (audio.hasLyrics) {
-                        val lyrics =
-                            lyricCache.getOrPut(audio.id) {
-                                // TODO remote lyrics?
-                                api.lyricsApi.getLyrics(audio.id).content
-                            }
-                        Timber.d("Got lyrics for %s: %s", audio.id, lyrics != null)
-                        state.update {
-                            it.copy(
-                                lyrics = lyrics,
-                            )
-                        }
-                    }
-                }
+            state.update {
+                it.copy(
+                    currentMediaItem = audio,
+                    lyrics = null,
+                    currentLyricIndex = null,
+                )
             }
         }
 
-        private var backDropJob: Job? = null
-
-        private fun updateBackdrop(audio: AudioItem?) {
-            backDropJob?.cancel()
-            backDropJob =
-                viewModelScope.launchDefault {
-                    val showBackdrop =
-                        userPreferencesService
-                            .getCurrent()
-                            .appPreferences.musicPreferences.showBackdrop
-                    if (showBackdrop) {
-                        var backdropItem: BaseItem? = null
+        private suspend fun fetchAndUpdateLyrics(audio: AudioItem?): LyricDto? =
+            audio?.let { audio ->
+                if (audio.hasLyrics) {
+                    lyricCache.getOrPut(audio.id) {
+                        // TODO remote lyrics?
                         try {
-                            if (audio?.artistId != null) {
-                                api.userLibraryApi.getItem(audio.artistId).content.let {
-                                    if (it.backdropImageTags?.isNotEmpty() == true) {
-                                        backdropItem = BaseItem(it, false)
-                                    }
-                                }
-                            }
-                            if (backdropItem == null && audio?.albumId != null) {
-                                api.userLibraryApi.getItem(audio.albumId).content.let {
-                                    backdropItem =
-                                        getBackdropItemForAlbum(api, BaseItem(it, false))
-                                }
-                            }
-                            if (backdropItem != null) {
-                                doUpdateBackdrop(backdropItem)
-                            } else {
-                                doUpdateBackdropRandom()
-                            }
+                            api.lyricsApi.getLyrics(audio.id).content
+                        } catch (ex: CancellationException) {
+                            throw ex
                         } catch (ex: Exception) {
-                            Timber.e(ex, "Error fetching backdrop")
-                            doUpdateBackdropRandom()
+                            Timber.e(ex, "Error fetching lyrics for %s", audio.id)
+                            null
                         }
-                        delay(60.seconds)
-                        doUpdateBackdropRandom()
                     }
+                } else {
+                    null
                 }
-        }
+            }
 
-        private suspend fun doUpdateBackdropRandom() {
-            val randomArtist =
-                api.itemsApi
-                    .getItems(
-                        recursive = true,
-                        imageTypes = listOf(ImageType.BACKDROP),
-                        includeItemTypes = listOf(BaseItemKind.MUSIC_ARTIST),
-                        sortBy = listOf(ItemSortBy.RANDOM),
-                        limit = 1,
-                    ).content.items
-                    .firstOrNull()
-            if (randomArtist != null) {
-                doUpdateBackdrop(BaseItem(randomArtist))
-            } else {
-                clearBackdrop()
+        private fun listenForBackdrop() {
+            viewModelScope.launchDefault {
+                userPreferencesService.flow
+                    .map { it.appPreferences.musicPreferences.showBackdrop }
+                    .combinePair(state.map { it.currentMediaItem })
+                    .distinctUntilChanged()
+                    .collectLatest { (showBackdrop, audio) ->
+                        if (showBackdrop && audio != null) {
+                            try {
+                                val song =
+                                    api.userLibraryApi
+                                        .getItem(audio.id)
+                                        .content
+                                val songBackdrops = song.backdropImageUrls()
+
+                                val artistIds = song.artistItems.orEmpty().map { it.id }
+                                val artists =
+                                    GetItemsRequestHandler
+                                        .execute(
+                                            api,
+                                            GetItemsRequest(
+                                                ids = artistIds,
+                                                imageTypes = listOf(ImageType.BACKDROP),
+                                                limit = 50,
+                                                enableImages = true,
+                                                enableImageTypes = listOf(ImageType.BACKDROP),
+                                            ),
+                                        ).content.items
+                                val artistBackdrops =
+                                    artists.flatMap { artist -> artist.backdropImageUrls() }
+
+                                val list = songBackdrops.shuffled() + artistBackdrops.shuffled()
+                                Timber.v("Got %s backdrops for %s", list.size, song.id)
+                                if (list.isNotEmpty()) {
+                                    val urls = generateSequence { list }.flatten()
+                                    urls.forEach {
+                                        val (position, duration) = onMain { player.currentPosition to player.duration }
+                                        if (duration - position >= 15_000 || state.value.backdropResult == BackdropResult.NONE) {
+                                            // Only change if there's backdrop currently, or at 15 seconds left to prevent quick changes
+                                            doUpdateBackdrop(audio.id, it)
+                                            delay(2.minutes)
+                                        }
+                                    }
+                                } else {
+                                    clearBackdrop()
+                                }
+                            } catch (ex: CancellationException) {
+                                throw ex
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Error fetching backdrops for %s", audio.id)
+                                clearBackdrop()
+                            }
+                        } else {
+                            clearBackdrop()
+                        }
+                    }
             }
         }
 
-        private suspend fun doUpdateBackdrop(item: BaseItem) {
-            val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+        private fun BaseItemDto.backdropImageUrls() =
+            backdropImageTags?.sorted().orEmpty().mapIndexedNotNull { index, tag ->
+                imageUrlService.getItemImageUrl(
+                    itemId = id,
+                    imageType = ImageType.BACKDROP,
+                    tag = tag,
+                    imageIndex = index,
+                )
+            }
+
+        private suspend fun doUpdateBackdrop(
+            itemId: UUID,
+            imageUrl: String,
+        ) {
             val (primaryColor, secondaryColor, tertiaryColor) =
                 backdropService.extractColorsFromBackdrop(
                     imageUrl,
                 )
             val backdropResult =
                 BackdropResult(
-                    itemId = item.id.toString(),
+                    itemId = itemId.toString(),
                     imageUrl = imageUrl,
                     primaryColor = primaryColor,
                     secondaryColor = secondaryColor,
@@ -343,18 +339,8 @@ class NowPlayingViewModel
 
         fun updatePreferences(prefs: AppPreferences) {
             viewModelScope.launchDefault {
-                var backdropChanged = false
                 preferencesDataStore.updateData {
-                    backdropChanged =
-                        it.musicPreferences.showBackdrop != prefs.musicPreferences.showBackdrop
                     prefs
-                }
-                if (backdropChanged) {
-                    if (prefs.musicPreferences.showBackdrop) {
-                        updateBackdrop(getCurrent())
-                    } else {
-                        clearBackdrop()
-                    }
                 }
             }
         }

@@ -724,4 +724,6 @@
     <string name="audio_books">Audiolibri</string>
     <string name="server_version_not_supported">Versione del server non supportata</string>
     <string name="appears_on">Appare in</string>
+    <string name="disable_audio_offload">Disabilita offload hardware audio</string>
+    <string name="disable_audio_offload_summary">Disabilitare l’offload della decodifica audio può risolvere i blocchi di riproduzione su alcuni dispositivi</string>
 </resources>
