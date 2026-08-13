@@ -702,4 +702,6 @@
     <string name="hash_matches">Räsivasted</string>
     <string name="subtitles_hearing_impaired">SDH</string>
     <string name="appears_on">On osalenud siin:</string>
+    <string name="disable_audio_offload">Lülita graafikaprotsessori kasutamine heli töötluseks välja</string>
+    <string name="disable_audio_offload_summary">Kui lülita graafikaprotsessori kasutamise heli töötluseks välja, siis see võib mõnede seadmete puhul parandada taasesituse hangumise vead</string>
 </resources>
