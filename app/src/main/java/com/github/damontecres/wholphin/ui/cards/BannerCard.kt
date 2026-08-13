@@ -73,7 +73,7 @@ fun BannerCard(
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val fillHeight =
-        remember(cardHeight) {
+        remember(cardHeight, density) {
             if (cardHeight.isSpecified) {
                 with(density) {
                     cardHeight.roundToPx()

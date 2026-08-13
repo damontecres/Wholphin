@@ -1636,6 +1636,21 @@ class PlaybackViewModel
             }
         }
 
+        fun updateDensity(density: Density) {
+            Timber.d("Density changed")
+            viewModelScope.launchDefault {
+                val availableCommands = onMain { player.availableCommands }
+                if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
+                    Timber.i("Applying density change for subtitle config to MPV")
+                    val configuration = context.resources.configuration
+                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                        configuration,
+                        density,
+                    )
+                }
+            }
+        }
+
         override fun onBandwidthEstimate(
             eventTime: AnalyticsListener.EventTime,
             totalLoadTimeMs: Int,
