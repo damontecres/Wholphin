@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.getRecentlyAddedTitle
 import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -399,7 +400,7 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.RECENTLY_RECORDED -> {
-                            val title = ResStringProvider(R.string.recently_recorded)
+                            val title = getRecentlyAddedTitle(library.name)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,

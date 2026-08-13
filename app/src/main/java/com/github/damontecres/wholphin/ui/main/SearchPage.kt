@@ -576,7 +576,7 @@ fun SearchPage(
         viewModel.navigationManager.navigateTo(dest)
     }
 
-    var showHeader by remember { mutableStateOf(true) }
+    var showHeader by rememberSaveable { mutableStateOf(true) }
     val positionCallback = { columns: Int, index: Int ->
         showHeader = index < columns
     }
