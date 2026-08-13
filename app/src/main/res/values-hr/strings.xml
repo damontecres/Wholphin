@@ -94,4 +94,19 @@
     <string name="preview">Pretpregled</string>
     <string name="profile_specific_settings">Postavke korisničkog profila</string>
     <string name="profile_specific_settings_from_server">Postavke korisničkog profila s poslužitelja</string>
+    <string name="queue">Red čekanja</string>
+    <string name="recap">Sažetak</string>
+    <string name="recently_added_in">Nedavno dodano u %1$s</string>
+    <string name="recently_added">Nedavno dodano</string>
+    <string name="recently_recorded">Nedavno snimljeno</string>
+    <string name="recently_released">Nedavno objavljeno</string>
+    <string name="recommended">Preporučeno</string>
+    <string name="record_program">Snimi program</string>
+    <string name="record_series">Snimi seriju</string>
+    <string name="remove_favorite">Ukloni iz favorita</string>
+    <string name="restart">Ponovno pokreni</string>
+    <string name="resume">Nastavi</string>
+    <string name="save">Spremi</string>
+    <string name="search_and_download"><![CDATA[Pretraži i preuzmi]]></string>
+    <string name="search">Pretraži</string>
 </resources>
