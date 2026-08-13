@@ -109,4 +109,164 @@
     <string name="save">Spremi</string>
     <string name="search_and_download"><![CDATA[Pretraži i preuzmi]]></string>
     <string name="search">Pretraži</string>
+    <string name="searching">Pretraživanje…</string>
+    <string name="voice_search">Glasovno pretraživanje</string>
+    <string name="voice_starting">Pokretanje</string>
+    <string name="voice_search_prompt">Govorite za pretraživanje</string>
+    <string name="processing">Obrada</string>
+    <string name="press_back_to_cancel">Pritisnite Natrag za odustajanje</string>
+    <string name="voice_error_audio">Greška pri snimanju zvuka</string>
+    <string name="voice_error_client">Greška pri prepoznavanju glasa</string>
+    <string name="voice_error_permissions">Potrebno je dopuštenje za mikrofon</string>
+    <string name="voice_error_network">Greška mreže</string>
+    <string name="voice_error_network_timeout">Isteklo vrijeme mreže</string>
+    <string name="voice_error_no_match">Govor nije prepoznat</string>
+    <string name="voice_error_busy">Prepoznavanje glasa zauzeto</string>
+    <string name="voice_error_server">Greška poslužitelja</string>
+    <string name="voice_error_speech_timeout">Govor nije otkriven</string>
+    <string name="voice_error_unknown">Nepoznata greška</string>
+    <string name="voice_error_start_failed">Pokretanje prepoznavanja glasa nije uspjelo</string>
+    <string name="voice_error_timeout">Isteklo vrijeme prepoznavanja glasa</string>
+    <string name="retry">Pokušaj ponovno</string>
+    <string name="select_server">Odaberite poslužitelj</string>
+    <string name="select_user">Odaberite korisnika</string>
+    <string name="show_debug_info">Prikaži informacije za otklanjanje grešaka</string>
+    <string name="show_next_up_when">Prikaži \"Slijedi\"</string>
+    <string name="show">Prikaži</string>
+    <string name="shuffle">Nasumično</string>
+    <string name="skip">Preskoči</string>
+    <string name="sort_by_date_added">Datum dodavanja</string>
+    <string name="sort_by_date_episode_added">Datum dodavanja epizode</string>
+    <string name="sort_by_date_played">Datum reprodukcije</string>
+    <string name="sort_by_date_released">Datum izdavanja</string>
+    <string name="sort_by_name">Ime</string>
+    <string name="sort_by_random">Nasumično</string>
+    <string name="studios">Studiji</string>
+    <string name="submit">Pošalji</string>
+    <string name="subtitle_download_too_long">Preuzimanje traje dugo, možda ćete morati ponovno pokrenuti reprodukciju</string>
+    <string name="subtitle">Titl</string>
+    <string name="subtitles">Titlovi</string>
+    <string name="suggestions">Prijedlozi</string>
+    <string name="switch_servers">Promijeni poslužitelja</string>
+    <string name="switch_user">Promijeni</string>
+    <string name="time_left">%1$s preostalo</string>
+    <string name="top_unwatched">Najbolje ocijenjeno nepogledano</string>
+    <string name="trailers_title">Najave</string>
+    <string name="tv_dvr_schedule">Raspored DVR-a</string>
+    <string name="tv_guide">Vodič</string>
+    <string name="tv_season">Sezona</string>
+    <string name="tv_seasons">Sezone</string>
+    <string name="tv_shows_title">TV serije</string>
+    <string name="ui_interface">Sučelje</string>
+    <string name="unknown">Nepoznato</string>
+    <string name="updates">Ažuriranja</string>
+    <string name="version">Verzija</string>
+    <string name="video_scale">Skaliranje videa</string>
+    <string name="video">Video</string>
+    <string name="videos">Videozapisi</string>
+    <string name="watch_live">Gledaj uživo</string>g
+    <plurals name="years_old">
+        <item quantity="one">%1$d godina</item>
+        <item quantity="few">%1$d godine</item>
+        <item quantity="other">%1$d godina</item>
+    </plurals>
+    <string name="play_with_transcoding">Reproduciraj s transkodiranjem</string>
+    <string name="media_information">Informacije o mediju</string>
+    <string name="show_clock">Prikaži sat</string>
+    <string name="aired_episode_order">Redoslijed emitiranja epizoda</string>
+    <string name="create_playlist">Stvori novi popis za reprodukciju</string>
+    <string name="add_to_playlist">Dodaj na popis za reprodukciju</string>
+    <string name="one_click_pause">Pauza jednim klikom</string>
+    <string name="one_click_pause_summary_on">Pritisnite sredinu D-Pada za pauzu/reprodukciju</string>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Izbrisana scena</item>
+        <item quantity="few">Izbrisane scene</item>
+        <item quantity="other">Izbrisanih scena</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">Intervju</item>
+        <item quantity="few">Intervjua</item>
+        <item quantity="other">Intervjua</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="one">Scena</item>
+        <item quantity="few">Scene</item>
+        <item quantity="other">Scena</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Isječak</item>
+        <item quantity="few">Isječaka</item>
+        <item quantity="other">Isječaka</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Prateći film</item>
+        <item quantity="few">Prateća filma</item>
+        <item quantity="other">Pratećih filmova</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Kratki film</item>
+        <item quantity="few">Kratka filma</item>
+        <item quantity="other">Kratkih filmova</item>
+    </plurals>
+    <plurals name="downloads">
+        <item quantity="one">%s preuzimanje</item>
+        <item quantity="few">%s preuzimanja</item>
+        <item quantity="other">%s preuzimanja</item>
+    </plurals>
+    <plurals name="hours">
+        <item quantity="one">%d sat</item>
+        <item quantity="few">%d sata</item>
+        <item quantity="other">%d sati</item>
+    </plurals>
+    <plurals name="days">
+        <item quantity="one">%s dan</item>
+        <item quantity="few">%s dana</item>
+        <item quantity="other">%s dana</item>
+    </plurals>
+    <plurals name="items">
+        <item quantity="one">%d stavka</item>
+        <item quantity="few">%d stavke</item>
+        <item quantity="other">%d stavki</item>
+    </plurals>
+    <plurals name="seconds">
+        <item quantity="one">%d sekunda</item>
+        <item quantity="few">%d sekunde</item>
+        <item quantity="other">%d sekundi</item>
+    </plurals>
+    <plurals name="minutes">
+        <item quantity="one">%s minuta</item>
+        <item quantity="few">%s minute</item>
+        <item quantity="other">%s minuta</item>
+    </plurals>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="few">Filma</item>
+        <item quantity="other">Filmova</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">TV serija</item>
+        <item quantity="few">TV serije</item>
+        <item quantity="other">TV serija</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Osoba</item>
+        <item quantity="few">Osobe</item>
+        <item quantity="other">Osoba</item>
+    </plurals>
+    <string name="ac3_supported">Uređaj podržava AC3/Dolby Digital</string>
+    <string name="advanced_settings">Napredne postavke</string>
+    <string name="advanced_ui">Napredno sučelje</string>
+    <string name="app_theme">Tema aplikacije</string>
+    <string name="auto_check_for_updates">Automatski provjeravaj ažuriranja</string>
+    <string name="auto_play_next_delay">Odgoda prije reprodukcije sljedećeg</string>
+    <string name="auto_play_next">Automatska reprodukcija sljedećeg</string>
+    <string name="check_for_updates">Provjeri ažuriranja</string>
+    <string name="combine_continue_next_summary">Primjenjuje se samo na TV serije</string>
+    <string name="combine_continue_next"><![CDATA[Spoji \"Nastavi gledanje\" i \"Slijedi\"]]></string>
+    <string name="direct_play_ass">Koristi libass za ASS titlove</string>
+    <string name="direct_play_pgs">Izravna reprodukcija PGS titlova</string>
+    <string name="downmix_stereo">Uvijek smiksaj na stereo</string>
+    <string name="ffmpeg_extension_pref">Koristi FFmpeg modul dekodera</string>
+    <string name="global_content_scale">Zadano skaliranje sadržaja</string>
+    <string name="install_update">Instaliraj ažuriranje</string>
 </resources>
