@@ -1304,6 +1304,12 @@ components:
           type: integer
           example: 0
           description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
+        seasons:
+          type: array
+          readOnly: true
+          nullable: true
+          items:
+            $ref: '#/components/schemas/Season'
         requests:
           type: array
           readOnly: true
