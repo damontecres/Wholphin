@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.google.protobuf.MessageLiteOrBuilder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
@@ -76,21 +77,18 @@ class MediaReportService
                 model=${Build.MODEL}
                 apiLevel=${Build.VERSION.SDK_INT}
 
-                playbackPrefs=${
-                    appPreferences.playbackPreferences.toString().replace("\n", ", ")
-                        .replace("\t", " ")
-                }
-                experimental=${
-                    appPreferences.experimentalPreferences.toString().replace("\n", ", ")
-                        .replace("\t", " ")
-                }
-
-                deviceProfile=$deviceProfileJson
+                playbackPrefs=${appPreferences.playbackPreferences.toStringOneLine()}
+                experimental=${appPreferences.experimentalPreferences.toStringOneLine()}
 
                 mediaSources=$sourcesJson
+
+                deviceProfile=$deviceProfileJson
                 """.trimIndent()
-            Timber.w(body)
+            body.chunked(2048).forEach { Timber.w(it) }
+            Timber.w("End send media info")
             val response by api.clientLogApi.logFile(body)
             showToast(context, "Sent! Filename=${response.fileName}")
         }
     }
+
+private fun MessageLiteOrBuilder.toStringOneLine(): String = toString().replace("\n", ", ").replace("\t", " ")

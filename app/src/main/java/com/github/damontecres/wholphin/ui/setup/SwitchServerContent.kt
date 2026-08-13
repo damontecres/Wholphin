@@ -278,188 +278,182 @@ private fun SwitchServerContentInternal(
         }
 
         if (showAddServer) {
-            var showEnterAddress by remember { mutableStateOf(false) }
+            AddServerDialog(
+                onDismissRequest = { showAddServer = false },
+                viewModel = viewModel,
+            )
+        }
+    }
+}
 
-            LaunchedEffect(Unit) {
-                viewModel.clearAddServerState()
-                if (!showEnterAddress) {
-                    viewModel.discoverServers()
-                }
-            }
+@Composable
+private fun AddServerDialog(
+    onDismissRequest: () -> Unit,
+    viewModel: SwitchServerViewModel,
+) {
+    val state by viewModel.state.collectAsState()
+    var showEnterAddress by remember { mutableStateOf(false) }
 
-            // Filter out duplicates within the discovered servers list (same URL appearing multiple times)
-            val filteredDiscoveredServers =
-                remember(state.discoveredServers) {
-                    val seenUrls = mutableSetOf<String>()
-                    state.discoveredServers.filter { server ->
-                        val normalizedUrl = server.url.lowercase().trim()
-                        if (normalizedUrl in seenUrls) {
-                            false // Duplicate, filter it out
-                        } else {
-                            seenUrls.add(normalizedUrl)
-                            true // First occurrence, keep it
+    LaunchedEffect(Unit) {
+        viewModel.clearAddServerState()
+        if (!showEnterAddress) {
+            viewModel.discoverServers()
+        }
+    }
+
+    val firstDiscoveredServerFocusRequester = remember { FocusRequester() }
+
+    // Default focus to first discovered server if available
+    LaunchedEffect(state.discoveredServers.isNotEmpty(), showEnterAddress) {
+        if (!showEnterAddress && state.discoveredServers.isNotEmpty()) {
+            firstDiscoveredServerFocusRequester.tryRequestFocus()
+        }
+    }
+
+    BasicDialog(
+        onDismissRequest = {
+            showEnterAddress = false
+            viewModel.clearAddServerState()
+            onDismissRequest.invoke()
+        },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        elevation = 10.dp,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(.4f),
+        ) {
+            if (!showEnterAddress) {
+                // Show discovered servers first
+                Text(
+                    text = stringResource(R.string.discovered_servers),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                if (state.discoveredServers.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.searching),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 300.dp),
+                    ) {
+                        items(
+                            state.discoveredServers.size,
+                            key = { state.discoveredServers[it].url },
+                        ) { index ->
+                            val server = state.discoveredServers[index]
+                            val focusRequester =
+                                if (index == 0) {
+                                    firstDiscoveredServerFocusRequester
+                                } else {
+                                    remember { FocusRequester() }
+                                }
+
+                            ListItem(
+                                enabled = true,
+                                selected = false,
+                                headlineContent = {
+                                    Text(
+                                        text =
+                                            server.name?.ifBlank { null }
+                                                ?: server.url,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                },
+                                supportingContent = {
+                                    Text(
+                                        text = server.url,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.addServer(server.url, showToast = true)
+                                },
+                                modifier = Modifier.focusRequester(focusRequester),
+                            )
                         }
                     }
                 }
 
-            val firstDiscoveredServerFocusRequester = remember { FocusRequester() }
-
-            // Default focus to first discovered server if available
-            LaunchedEffect(filteredDiscoveredServers.isNotEmpty(), showEnterAddress) {
-                if (!showEnterAddress && filteredDiscoveredServers.isNotEmpty()) {
-                    firstDiscoveredServerFocusRequester.tryRequestFocus()
+                TextButton(
+                    onClick = {
+                        showEnterAddress = true
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    Text(text = stringResource(R.string.enter_server_address))
                 }
-            }
+            } else {
+                // Show enter server address form
+                val addServerState = state.addServerState
+                var url by remember { mutableStateOf("") }
+                val submit = {
+                    viewModel.addServer(url, showToast = false)
+                }
+                val textBoxFocusRequester = remember { FocusRequester() }
 
-            BasicDialog(
-                onDismissRequest = {
-                    showAddServer = false
-                    showEnterAddress = false
+                LaunchedEffect(Unit) {
+                    textBoxFocusRequester.tryRequestFocus()
+                }
+                LaunchedEffect(url) {
                     viewModel.clearAddServerState()
-                },
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-                elevation = 10.dp,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                }
+
+                Text(
+                    text = stringResource(R.string.enter_server_url),
+                )
+                EditTextBox(
+                    value = url,
+                    onValueChange = { url = it },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Go,
+                        ),
+                    keyboardActions =
+                        KeyboardActions(
+                            onGo = { submit.invoke() },
+                        ),
                     modifier =
                         Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(.4f),
+                            .testTag("server_url_text")
+                            .focusRequester(textBoxFocusRequester)
+                            .fillMaxWidth(),
+                )
+                when (val st = addServerState) {
+                    is LoadingState.Error -> {
+                        Text(
+                            text =
+                                st.message ?: st.exception?.localizedMessage
+                                    ?: "An error occurred",
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    else -> {}
+                }
+                TextButton(
+                    onClick = { submit.invoke() },
+                    enabled = url.isNotNullOrBlank() && addServerState == LoadingState.Pending,
+                    modifier = Modifier,
                 ) {
-                    if (!showEnterAddress) {
-                        // Show discovered servers first
-                        Text(
-                            text = stringResource(R.string.discovered_servers),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-
-                        if (filteredDiscoveredServers.isEmpty() && state.discoveredServers.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.searching),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        } else if (filteredDiscoveredServers.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.no_servers_found),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        } else {
-                            LazyColumn(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(max = 300.dp),
-                            ) {
-                                items(
-                                    filteredDiscoveredServers.size,
-                                    key = { filteredDiscoveredServers[it].url },
-                                ) { index ->
-                                    val server = filteredDiscoveredServers[index]
-                                    val focusRequester =
-                                        if (index == 0) {
-                                            firstDiscoveredServerFocusRequester
-                                        } else {
-                                            remember { FocusRequester() }
-                                        }
-
-                                    ListItem(
-                                        enabled = true,
-                                        selected = false,
-                                        headlineContent = {
-                                            Text(
-                                                text =
-                                                    server.name?.ifBlank { null }
-                                                        ?: server.url,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                            )
-                                        },
-                                        supportingContent = {
-                                            Text(
-                                                text = server.url,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.addServer(server.url)
-                                        },
-                                        modifier = Modifier.focusRequester(focusRequester),
-                                    )
-                                }
-                            }
-                        }
-
-                        TextButton(
-                            onClick = {
-                                showEnterAddress = true
-                            },
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text(text = stringResource(R.string.enter_server_address))
-                        }
+                    if (addServerState == LoadingState.Loading) {
+                        CircularProgress(Modifier.size(32.dp))
                     } else {
-                        // Show enter server address form
-                        val addServerState = state.addServerState
-                        var url by remember { mutableStateOf("") }
-                        val submit = {
-                            viewModel.addServer(url)
-                        }
-                        val textBoxFocusRequester = remember { FocusRequester() }
-
-                        LaunchedEffect(Unit) {
-                            textBoxFocusRequester.tryRequestFocus()
-                        }
-
-                        Text(
-                            text = stringResource(R.string.enter_server_url),
-                        )
-                        EditTextBox(
-                            value = url,
-                            onValueChange = { url = it },
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.None,
-                                    autoCorrectEnabled = false,
-                                    keyboardType = KeyboardType.Uri,
-                                    imeAction = ImeAction.Go,
-                                ),
-                            keyboardActions =
-                                KeyboardActions(
-                                    onGo = { submit.invoke() },
-                                ),
-                            modifier =
-                                Modifier
-                                    .testTag("server_url_text")
-                                    .focusRequester(textBoxFocusRequester)
-                                    .fillMaxWidth(),
-                        )
-                        when (val st = addServerState) {
-                            is LoadingState.Error -> {
-                                Text(
-                                    text =
-                                        st.message ?: st.exception?.localizedMessage
-                                            ?: "An error occurred",
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-
-                            else -> {}
-                        }
-                        TextButton(
-                            onClick = { submit.invoke() },
-                            enabled = url.isNotNullOrBlank() && addServerState == LoadingState.Pending,
-                            modifier = Modifier,
-                        ) {
-                            if (addServerState == LoadingState.Loading) {
-                                CircularProgress(Modifier.size(32.dp))
-                            } else {
-                                Text(text = stringResource(R.string.submit))
-                            }
-                        }
+                        Text(text = stringResource(R.string.submit))
                     }
                 }
             }
