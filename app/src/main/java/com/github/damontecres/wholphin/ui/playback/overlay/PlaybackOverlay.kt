@@ -100,11 +100,11 @@ fun PlaybackOverlay(
     val density = LocalDensity.current
 
     val titleHeight =
-        remember(item?.title) {
+        remember(item?.title, density) {
             if (item?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
         }
     val subtitleHeight =
-        remember(item?.subtitleLong) {
+        remember(item?.subtitleLong, density) {
             if (item?.subtitleLong.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
         }
 
