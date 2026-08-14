@@ -343,7 +343,7 @@ class SeerrService
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(movie: MovieDetails): DiscoverItem =
@@ -360,7 +360,7 @@ class SeerrService
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvResult): DiscoverItem =
@@ -377,7 +377,7 @@ class SeerrService
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvDetails): DiscoverItem =
@@ -394,7 +394,7 @@ class SeerrService
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(search: SeerrSearchResult): DiscoverItem =
@@ -411,7 +411,7 @@ class SeerrService
                 posterUrl = createImageUrl(ImageType.PRIMARY, search.posterPath, search.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, search.backdropPath, search.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, search.mediaInfo),
-                jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = search.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCast): DiscoverItem =
@@ -438,7 +438,7 @@ class SeerrService
                         credit.mediaInfo,
                     ),
                 logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCrew): DiscoverItem =
@@ -465,9 +465,9 @@ class SeerrService
                         credit.mediaInfo,
                     ),
                 logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
     }
 
 val MediaInfo.jellyfinId: UUID?
-    get() = jellyfinMediaId?.toUUIDOrNull() ?: jellyfinMediaId4k?.toUUIDOrNull()
+    get() = jellyfinMediaId4k?.toUUIDOrNull() ?: jellyfinMediaId?.toUUIDOrNull()

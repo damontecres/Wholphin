@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.services.jellyfinId
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
@@ -65,7 +66,6 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 
 @Composable
 fun DiscoverMovieDetails(
@@ -139,7 +139,7 @@ fun DiscoverMovieDetails(
                         )
                 },
                 goToOnClick = {
-                    movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                    movie.mediaInfo?.jellyfinId?.let {
                         viewModel.navigateTo(
                             Destination.MediaItem(
                                 itemId = it,

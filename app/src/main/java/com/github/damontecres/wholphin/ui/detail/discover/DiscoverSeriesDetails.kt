@@ -72,7 +72,6 @@ import com.github.damontecres.wholphin.util.successValue
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration.Companion.minutes
 
 @Composable
@@ -127,7 +126,7 @@ fun DiscoverSeriesDetails(
                     viewModel.navigateTo(Destination.DiscoveredItem(it))
                 },
                 goToOnClick = {
-                    item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                    item.mediaInfo?.jellyfinId?.let {
                         viewModel.navigateTo(
                             Destination.MediaItem(
                                 itemId = it,
