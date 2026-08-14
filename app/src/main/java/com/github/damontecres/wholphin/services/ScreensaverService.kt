@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -295,10 +294,8 @@ class ScreensaverService
         }
 
         companion object {
-            val enterAnimation =
-                fadeIn(animationSpec = tween(durationMillis = 2000, easing = LinearEasing))
-            val exitAnimation =
-                fadeOut(animationSpec = tween(durationMillis = 2000, easing = LinearEasing))
+            val enterAnimation = fadeIn(animationSpec = tween(durationMillis = 1000))
+            val exitAnimation = fadeOut(animationSpec = tween(durationMillis = 500))
         }
     }
 
