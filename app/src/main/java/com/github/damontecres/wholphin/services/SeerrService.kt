@@ -184,21 +184,23 @@ class SeerrService
                     )
                 }
             }
-            val current = seerrServerRepository.current.firstOrNull() ?: return null
-            val cacheImages = current.serverConfig.cacheImages == true
-            val base =
-                if (cacheImages) {
-                    current.server.url.removeSuffix("/") + "/imageproxy/tmdb"
-                } else {
-                    "https://image.tmdb.org"
-                }
-            val prefix =
-                when (imageType) {
-                    ImageType.PRIMARY -> "/t/p/w500"
-                    ImageType.BACKDROP -> "/t/p/w${backdropWidth}_and_h${backdropHeight}_multi_faces"
-                    else -> throw IllegalArgumentException("Image type not supported: $imageType")
-                }
-            return "${base}${prefix}$path"
+            return path?.takeIf { it.isNotNullOrBlank() }?.let {
+                val current = seerrServerRepository.current.firstOrNull() ?: return null
+                val cacheImages = current.serverConfig.cacheImages == true
+                val base =
+                    if (cacheImages) {
+                        current.server.url.removeSuffix("/") + "/imageproxy/tmdb"
+                    } else {
+                        "https://image.tmdb.org"
+                    }
+                val prefix =
+                    when (imageType) {
+                        ImageType.PRIMARY -> "/t/p/w500"
+                        ImageType.BACKDROP -> "/t/p/w${backdropWidth}_and_h${backdropHeight}_multi_faces"
+                        else -> throw IllegalArgumentException("Image type not supported: $imageType")
+                    }
+                return "${base}${prefix}$path"
+            }
         }
 
         suspend fun getProfilesAndFolders(type: SeerrItemType): SeerrRequestData {

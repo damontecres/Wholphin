@@ -1,8 +1,5 @@
 # Intents
 
-> [!WARNING]
-> This feature is only available in the develop builds until the next release!
-
 > [!IMPORTANT]
 > This feature is experimental and the exact behaviors and/or parameters may change at any time
 
@@ -93,6 +90,7 @@ Shorthand action: `play`
 Parameters:
 - `itemId` - Required, the UUID of the media item
 - `position` - Optional, the start position for playback in milliseconds
+- `shuffle` - Optional, whether to shuffle the resulting items
 
 ### Examples
 
@@ -118,6 +116,17 @@ adb shell am start \
   --el position 270000
 
 adb shell am start -d 'wholphin://play?itemId=5cf8f8e7-2a5f-4aa9-8c12-ddf63d42ee6d\&position=270000'
+```
+
+Shuffle a series (`itemId` is the Series ID):
+```bash
+adb shell am start \
+  -a com.github.damontecres.wholphin.PLAYBACK \
+  -n 'com.github.damontecres.wholphin/.MainActivity' \
+  --es itemId "5cf8f8e7-2a5f-4aa9-8c12-ddf63d42ee6d" \
+  --ez shuffle true
+
+adb shell am start -d 'wholphin://play?itemId=5cf8f8e7-2a5f-4aa9-8c12-ddf63d42ee6d\&shuffle=true'
 ```
 
 ## More examples

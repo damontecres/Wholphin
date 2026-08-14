@@ -49,7 +49,7 @@ fun ChapterCard(
     val density = LocalDensity.current
     val imageUrlService = LocalImageUrlService.current
     val imageUrl =
-        remember(chapter, cardHeight) {
+        remember(chapter, cardHeight, density) {
             imageUrlService.getItemImageUrl(
                 itemId = chapter.itemId,
                 imageType = ImageType.CHAPTER,
