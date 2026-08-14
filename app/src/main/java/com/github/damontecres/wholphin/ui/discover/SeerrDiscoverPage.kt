@@ -6,9 +6,9 @@ import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -40,6 +40,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.components.Genre
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.discover.getDiscoverRating
 import com.github.damontecres.wholphin.ui.launchIO
@@ -438,7 +439,7 @@ fun SeerrDiscoverPage(
             title = focusedItem?.title?.getString(),
             subtitle = focusedItem?.subtitle,
             overview = focusedItem?.overview,
-            overviewTwoLines = true,
+            overviewTwoLines = false,
             quickDetails = details,
             timeRemaining = null,
             endsAt = null,
@@ -446,8 +447,12 @@ fun SeerrDiscoverPage(
             logoImageUrl = focusedItem?.logoUrl,
             modifier =
                 Modifier
-                    .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
-                    .fillMaxHeight(.25f),
+                    .padding(
+                        top = HeaderUtils.topPadding,
+                        // Intentionally no bottom padding because of tabs
+                        bottom = 0.dp,
+                        start = HeaderUtils.startPadding,
+                    ).height(HeaderUtils.height),
         )
 
         val density = LocalDensity.current
