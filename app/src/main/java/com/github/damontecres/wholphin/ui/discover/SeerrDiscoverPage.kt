@@ -443,7 +443,7 @@ fun SeerrDiscoverPage(
             timeRemaining = null,
             endsAt = null,
             showLogo = preferences.appPreferences.interfacePreferences.showLogos,
-            logoImageUrl = null, // TODO
+            logoImageUrl = focusedItem?.logoUrl,
             modifier =
                 Modifier
                     .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)

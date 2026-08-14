@@ -238,6 +238,7 @@ fun DiscoverMovieDetailsContent(
                         rating = rating,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
+                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

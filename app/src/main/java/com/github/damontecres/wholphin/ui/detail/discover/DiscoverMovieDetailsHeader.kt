@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -23,9 +22,12 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.jellyfinId
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
+import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -33,6 +35,7 @@ import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.ImageType
 import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 
@@ -43,21 +46,26 @@ fun DiscoverMovieDetailsHeader(
     rating: DiscoverRating?,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
+    showLogo: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val imageUrlService = LocalImageUrlService.current
+    val logoImageUrl =
+        remember(movie) {
+            movie.mediaInfo?.jellyfinId?.let {
+                imageUrlService.getItemImageUrl(it, ImageType.LOGO)
+            }
+        }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        // Title
-        Text(
-            text = movie.title ?: "",
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displaySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+        TitleOrLogo(
+            title = movie.title,
+            logoImageUrl = logoImageUrl,
+            showLogo = showLogo,
             modifier = Modifier.fillMaxWidth(.75f),
         )
 
