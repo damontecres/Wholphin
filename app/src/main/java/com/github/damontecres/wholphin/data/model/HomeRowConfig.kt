@@ -249,3 +249,32 @@ data class HomeRowViewOptions(
             )
     }
 }
+
+/**
+ * Listed exhaustively so that a new [HomeRowConfig] has to say whether it is scoped to an item
+ */
+val HomeRowConfig.parentItemId: UUID?
+    get() =
+        when (this) {
+            is HomeRowConfig.ByParent -> parentId
+
+            is HomeRowConfig.Genres -> parentId
+
+            is HomeRowConfig.RecentlyAdded -> parentId
+
+            is HomeRowConfig.RecentlyReleased -> parentId
+
+            is HomeRowConfig.Studios -> parentId
+
+            is HomeRowConfig.Suggestions -> parentId
+
+            is HomeRowConfig.ContinueWatching,
+            is HomeRowConfig.ContinueWatchingCombined,
+            is HomeRowConfig.Favorite,
+            is HomeRowConfig.GetItems,
+            is HomeRowConfig.NextUp,
+            is HomeRowConfig.Recordings,
+            is HomeRowConfig.TvChannels,
+            is HomeRowConfig.TvPrograms,
+            -> null
+        }
