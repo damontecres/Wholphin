@@ -129,7 +129,7 @@ fun DiscoverSeriesDetails(
                         viewModel.navigateTo(
                             Destination.MediaItem(
                                 itemId = it,
-                                type = BaseItemKind.MOVIE,
+                                type = BaseItemKind.SERIES,
                             ),
                         )
                     }
