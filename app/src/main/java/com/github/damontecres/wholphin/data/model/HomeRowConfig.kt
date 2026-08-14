@@ -11,15 +11,21 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Serializable
 sealed interface HomeRowConfig {
-    val viewOptions: HomeRowViewOptions
+    /**
+     * The view options the user explicitly chose, or null to follow the default
+     *
+     * Null is the normal state: a row nobody has sized deserializes to it.
+     */
+    val viewOptions: HomeRowViewOptions?
 
-    fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
+    fun updateViewOptions(viewOptions: HomeRowViewOptions?): HomeRowConfig
 
     /**
      * Continue watching media that the user has started but not finished
@@ -27,9 +33,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("ContinueWatching")
     data class ContinueWatching(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatching = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): ContinueWatching = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -38,9 +44,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("NextUp")
     data class NextUp(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): NextUp = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): NextUp = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -49,9 +55,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("ContinueWatchingCombined")
     data class ContinueWatchingCombined(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatchingCombined = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): ContinueWatchingCombined = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -61,9 +67,9 @@ sealed interface HomeRowConfig {
     @SerialName("RecentlyAdded")
     data class RecentlyAdded(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyAdded = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): RecentlyAdded = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -73,9 +79,9 @@ sealed interface HomeRowConfig {
     @SerialName("RecentlyReleased")
     data class RecentlyReleased(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyReleased = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): RecentlyReleased = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -85,9 +91,9 @@ sealed interface HomeRowConfig {
     @SerialName("Genres")
     data class Genres(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.genreDefault,
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Genres = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): Genres = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -97,9 +103,9 @@ sealed interface HomeRowConfig {
     @SerialName("Studios")
     data class Studios(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.genreDefault,
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Studios = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): Studios = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -109,17 +115,9 @@ sealed interface HomeRowConfig {
     @SerialName("Favorite")
     data class Favorite(
         val kind: BaseItemKind,
-        override val viewOptions: HomeRowViewOptions =
-            if (kind == BaseItemKind.EPISODE) {
-                HomeRowViewOptions(
-                    heightDp = Cards.HEIGHT_EPISODE,
-                    aspectRatio = AspectRatio.WIDE,
-                )
-            } else {
-                HomeRowViewOptions()
-            },
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Favorite = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): Favorite = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -128,9 +126,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("Recordings")
     data class Recordings(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Recordings = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): Recordings = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -139,9 +137,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("TvPrograms")
     data class TvPrograms(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.liveTvDefault,
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvPrograms = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): TvPrograms = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -150,9 +148,9 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("TvChannels")
     data class TvChannels(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.liveTvDefault,
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvChannels = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): TvChannels = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -162,9 +160,9 @@ sealed interface HomeRowConfig {
     @SerialName("Suggestions")
     data class Suggestions(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Suggestions = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): Suggestions = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -176,9 +174,9 @@ sealed interface HomeRowConfig {
         val parentId: UUID,
         val recursive: Boolean = false,
         val sort: SortAndDirection? = null,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ByParent = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): ByParent = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -189,9 +187,9 @@ sealed interface HomeRowConfig {
     data class GetItems(
         val name: String,
         val getItems: GetItemsRequest,
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions? = null,
     ) : HomeRowConfig {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions?): GetItems = this.copy(viewOptions = viewOptions)
     }
 }
 
@@ -247,6 +245,39 @@ data class HomeRowViewOptions(
                 aspectRatio = AspectRatio.WIDE,
                 contentScale = PrefContentScale.FIT,
             )
+
+        val musicDefault =
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.SQUARE,
+            )
+
+        val episodeDefault =
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.WIDE,
+            )
+
+        fun forCollectionType(collectionType: CollectionType?): HomeRowViewOptions =
+            when (collectionType) {
+                CollectionType.MUSIC -> {
+                    musicDefault
+                }
+
+                CollectionType.HOMEVIDEOS,
+                CollectionType.MUSICVIDEOS,
+                -> {
+                    HomeRowViewOptions(aspectRatio = AspectRatio.WIDE)
+                }
+
+                CollectionType.LIVETV -> {
+                    liveTvDefault
+                }
+
+                else -> {
+                    HomeRowViewOptions()
+                }
+            }
     }
 }
 
@@ -278,3 +309,51 @@ val HomeRowConfig.parentItemId: UUID?
             is HomeRowConfig.TvPrograms,
             -> null
         }
+
+/**
+ * [collectionType] is that of the row's [parentItemId], and is ignored by rows whose shape does
+ * not depend on what they are pointed at. Listed exhaustively so that a new [HomeRowConfig] has
+ * to say which it is.
+ */
+fun HomeRowConfig.defaultViewOptions(collectionType: CollectionType?): HomeRowViewOptions =
+    when (this) {
+        is HomeRowConfig.ByParent,
+        is HomeRowConfig.RecentlyAdded,
+        is HomeRowConfig.RecentlyReleased,
+        is HomeRowConfig.Suggestions,
+        -> {
+            HomeRowViewOptions.forCollectionType(collectionType)
+        }
+
+        is HomeRowConfig.Genres,
+        is HomeRowConfig.Studios,
+        -> {
+            HomeRowViewOptions.genreDefault
+        }
+
+        is HomeRowConfig.TvChannels,
+        is HomeRowConfig.TvPrograms,
+        -> {
+            HomeRowViewOptions.liveTvDefault
+        }
+
+        is HomeRowConfig.Favorite -> {
+            if (kind == BaseItemKind.EPISODE) {
+                HomeRowViewOptions.episodeDefault
+            } else {
+                HomeRowViewOptions()
+            }
+        }
+
+        is HomeRowConfig.ContinueWatching,
+        is HomeRowConfig.ContinueWatchingCombined,
+        is HomeRowConfig.GetItems,
+        is HomeRowConfig.NextUp,
+        is HomeRowConfig.Recordings,
+        -> {
+            HomeRowViewOptions()
+        }
+    }
+
+fun HomeRowConfig.resolveViewOptions(collectionType: CollectionType?): HomeRowViewOptions =
+    viewOptions ?: defaultViewOptions(collectionType)

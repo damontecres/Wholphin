@@ -66,9 +66,7 @@ fun CollectionRows(
                                     BaseItemKind.PLAYLIST,
                                     BaseItemKind.AUDIO,
                                     -> {
-                                        HomeRowViewOptions(
-                                            heightDp = Cards.HEIGHT_EPISODE,
-                                            aspectRatio = AspectRatio.SQUARE,
+                                        HomeRowViewOptions.musicDefault.copy(
                                             showTitles = cardViewOptions.showTitles,
                                         )
                                     }

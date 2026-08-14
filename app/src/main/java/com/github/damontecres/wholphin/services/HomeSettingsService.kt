@@ -7,10 +7,12 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.data.model.parentItemId
+import com.github.damontecres.wholphin.data.model.resolveViewOptions
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.HomeItemFields
@@ -290,10 +292,12 @@ class HomeSettingsService
                                 config = HomeRowConfig.TvPrograms(),
                             )
                         } else {
+                            val config = HomeRowConfig.RecentlyAdded(parentId)
                             HomeRowConfigDisplay(
                                 id = index,
                                 title = title,
-                                config = HomeRowConfig.RecentlyAdded(parentId),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(it.collectionType),
                             )
                         }
                     }
@@ -402,6 +406,7 @@ class HomeSettingsService
                                 }
                             if (sectionType == HomeSectionType.LATEST_MEDIA) {
                                 libraries.map {
+                                    val config = HomeRowConfig.RecentlyAdded(it.id)
                                     HomeRowConfigDisplay(
                                         id = id++,
                                         title =
@@ -409,7 +414,8 @@ class HomeSettingsService
                                                 R.string.recently_added_in,
                                                 it.name ?: "",
                                             ),
-                                        config = HomeRowConfig.RecentlyAdded(it.id),
+                                        config = config,
+                                        viewOptions = config.resolveViewOptions(it.collectionType),
                                     )
                                 }
                             } else if (config != null) {
@@ -497,6 +503,7 @@ class HomeSettingsService
                 id = id,
                 title = title,
                 config = config,
+                viewOptions = config.resolveViewOptions(parentItem?.collectionType),
             )
         }
 
@@ -542,7 +549,7 @@ class HomeSettingsService
             isRefresh: Boolean,
             usePaging: Boolean = false,
         ): HomeRowLoadingState {
-            val viewOptions = row.viewOptions
+            val viewOptions = row.resolveViewOptions(libraries)
             return when (row) {
                 is HomeRowConfig.ContinueWatching -> {
                     val resume =
@@ -1148,7 +1155,28 @@ data class HomeRowConfigDisplay(
     val id: Int,
     val title: StringProvider,
     val config: HomeRowConfig,
+    /**
+     * The default resolves without a parent, which is correct only for rows that have none.
+     * Anything with a [parentItemId] has to pass the parent's collection type.
+     */
+    val viewOptions: HomeRowViewOptions = config.resolveViewOptions(null),
 )
+
+fun HomeRowConfig.resolveViewOptions(libraries: List<Library>): HomeRowViewOptions =
+    resolveViewOptions(libraries.firstOrNull { it.itemId == parentItemId }?.collectionType)
+
+/**
+ * A null [viewOptions] clears the choice rather than storing one
+ *
+ * Updates the stored choice and the resolved value together so the two cannot drift apart.
+ */
+fun HomeRowConfigDisplay.withViewOptions(
+    viewOptions: HomeRowViewOptions?,
+    libraries: List<Library>,
+): HomeRowConfigDisplay {
+    val newConfig = config.updateViewOptions(viewOptions)
+    return copy(config = newConfig, viewOptions = newConfig.resolveViewOptions(libraries))
+}
 
 /**
  * List of resolved [HomeRowConfig]s as [HomeRowConfigDisplay]s
