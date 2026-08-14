@@ -419,7 +419,7 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("1.0.5-15-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("1.0.6-0-g0"))) {
                 appPreferences.updateData {
                     it.updateScreensaverPreferences {
                         dimPercent = ScreensaverPreference.DimPercentage.defaultValue.toInt()
