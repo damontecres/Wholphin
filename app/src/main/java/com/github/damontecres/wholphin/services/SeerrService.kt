@@ -471,3 +471,6 @@ class SeerrService
 
 val MediaInfo.jellyfinId: UUID?
     get() = jellyfinMediaId4k?.toUUIDOrNull() ?: jellyfinMediaId?.toUUIDOrNull()
+
+val MediaInfo.jellyfinIdAsString: String?
+    get() = jellyfinMediaId4k ?: jellyfinMediaId

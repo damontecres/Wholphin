@@ -126,14 +126,7 @@ fun DiscoverSeriesDetails(
                     viewModel.navigateTo(Destination.DiscoveredItem(it))
                 },
                 goToOnClick = {
-                    item.mediaInfo?.jellyfinId?.let {
-                        viewModel.navigateTo(
-                            Destination.MediaItem(
-                                itemId = it,
-                                type = BaseItemKind.SERIES,
-                            ),
-                        )
-                    }
+                    viewModel.goTo(item.mediaInfo, BaseItemKind.SERIES)
                 },
                 overviewOnClick = {
                     overviewDialog =

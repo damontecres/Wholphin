@@ -48,7 +48,6 @@ import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
-import com.github.damontecres.wholphin.services.jellyfinId
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
@@ -139,14 +138,7 @@ fun DiscoverMovieDetails(
                         )
                 },
                 goToOnClick = {
-                    movie.mediaInfo?.jellyfinId?.let {
-                        viewModel.navigateTo(
-                            Destination.MediaItem(
-                                itemId = it,
-                                type = BaseItemKind.MOVIE,
-                            ),
-                        )
-                    }
+                    viewModel.goTo(movie.mediaInfo, BaseItemKind.MOVIE)
                 },
                 moreOnClick = {},
                 onLongClickPerson = { index, person -> },
