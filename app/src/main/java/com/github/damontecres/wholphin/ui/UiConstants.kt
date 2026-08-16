@@ -49,7 +49,6 @@ const val DEFAULT_PAGE_SIZE = 100
  */
 val DefaultItemFields =
     listOf(
-        ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.TRICKPLAY,
         ItemFields.SORT_NAME,
@@ -57,6 +56,7 @@ val DefaultItemFields =
         ItemFields.MEDIA_SOURCES,
         ItemFields.MEDIA_SOURCE_COUNT,
         ItemFields.CAN_DELETE,
+        ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
     )
 
 /**
@@ -64,7 +64,6 @@ val DefaultItemFields =
  */
 val SlimItemFields =
     listOf(
-        ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
         ItemFields.MEDIA_SOURCE_COUNT,

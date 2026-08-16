@@ -54,7 +54,6 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -99,6 +98,7 @@ import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -157,7 +157,7 @@ class ArtistViewModel
                                 GetItemsRequest(
                                     albumArtistIds = listOf(itemId),
                                     recursive = true,
-                                    fields = DefaultItemFields,
+                                    fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
                                     sortBy =
                                         listOf(
@@ -174,7 +174,7 @@ class ArtistViewModel
                                 GetItemsRequest(
                                     contributingArtistIds = listOf(itemId),
                                     recursive = true,
-                                    fields = DefaultItemFields,
+                                    fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
                                     sortBy =
                                         listOf(
@@ -208,7 +208,7 @@ class ArtistViewModel
                         val request =
                             GetItemsRequest(
                                 artistIds = listOf(itemId),
-                                fields = DefaultItemFields,
+                                fields = SlimItemFields,
                                 recursive = true,
                                 includeItemTypes = listOf(BaseItemKind.AUDIO),
                                 minCommunityRating = 1.0,
@@ -266,7 +266,7 @@ class ArtistViewModel
                         userId = serverRepository.currentUser?.id,
                         artistIds = listOf(itemId),
                         parentId = null,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields + ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                         recursive = true,
                         includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
                     )
@@ -671,7 +671,7 @@ fun ArtistDetailsPage(
                                         item = item,
                                         onClick = onClick,
                                         onLongClick = onLongClick,
-                                        aspectRatio = AspectRatios.WIDE,
+                                        aspectRatio = item?.aspectRatio ?: AspectRatios.WIDE,
                                         played = item?.played ?: false,
                                         playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
                                         favorite = item?.favorite ?: false,
