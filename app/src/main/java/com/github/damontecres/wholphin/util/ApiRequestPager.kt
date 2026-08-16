@@ -131,6 +131,19 @@ sealed interface RequestHandler<T> {
         api: ApiClient,
         request: T,
     ): Response<BaseItemDtoQueryResult>
+
+    /**
+     * Count the total number of possible results for the request.
+     *
+     * [request] should be efficient and use `limit = 0` and `enableTotalRecordCount = true`
+     */
+    suspend fun countMatching(
+        api: ApiClient,
+        request: T,
+    ): Int {
+        val result by execute(api, request)
+        return result.totalRecordCount
+    }
 }
 
 @Serializable
