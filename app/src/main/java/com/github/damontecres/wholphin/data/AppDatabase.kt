@@ -49,7 +49,7 @@ import java.util.UUID
         SeerrUser::class,
         RememberedTab::class,
     ],
-    version = 35,
+    version = 40,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -68,6 +68,7 @@ import java.util.UUID
         AutoMigration(32, 33),
         AutoMigration(33, 34),
         AutoMigration(34, 35),
+        AutoMigration(35, 40),
     ],
 )
 @TypeConverters(Converters::class)
@@ -142,6 +143,12 @@ class Converters {
 
     @TypeConverter
     fun convertToLocalDateTime(dateTime: String): ZonedDateTime = ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+
+//    @TypeConverter
+//    fun convertToHomePageSettingsSource(str: String): HomePageSettingsSource = HomePageSettingsSource.valueOf(str)
+//
+//    @TypeConverter
+//    fun convertHomePageSettingsSource(value: HomePageSettingsSource): String = value.name
 }
 
 class ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {

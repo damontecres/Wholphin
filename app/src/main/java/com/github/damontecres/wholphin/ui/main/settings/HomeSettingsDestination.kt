@@ -34,5 +34,8 @@ sealed interface HomeSettingsDestination : NavKey {
     data object GlobalSettings : HomeSettingsDestination
 
     @Serializable
+    data object SourceSettings : HomeSettingsDestination
+
+    @Serializable
     data object Presets : HomeSettingsDestination
 }

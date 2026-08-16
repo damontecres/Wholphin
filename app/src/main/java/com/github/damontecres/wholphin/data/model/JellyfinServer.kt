@@ -13,6 +13,7 @@ import androidx.room.Relation
 import com.github.damontecres.wholphin.data.ZonedDateTimeSerializer
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserProfileSettings
+import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -68,6 +69,7 @@ data class JellyfinUser(
     val lastUsed: ZonedDateTime? = null,
     val uiLanguage: String? = null,
     @Embedded val appPreferences: JellyfinUserPreferences = JellyfinUserPreferences(),
+    @Embedded(prefix = "c_") val config: JellyfinUserConfig = JellyfinUserConfig(),
 ) {
     val hasPin: Boolean get() = pin.isNotNullOrBlank()
 
@@ -77,8 +79,16 @@ data class JellyfinUser(
         "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, lastUsed=$lastUsed, " +
             "accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()}), " +
             "requireLogin=$requireLogin, lastUsed=$lastUsed, uiLanguage=$uiLanguage, " +
-            "appPreferences=$appPreferences"
+            "appPreferences=$appPreferences, config=$config"
+
+    fun updateConfig(copy: (JellyfinUserConfig) -> JellyfinUserConfig): JellyfinUser = this.copy(config = copy.invoke(this.config))
 }
+
+@Serializable
+data class JellyfinUserConfig(
+    @ColumnInfo(defaultValue = "UNSET")
+    val homeSettingsSource: HomePageSettingsSource = HomePageSettingsSource.UNSET,
+)
 
 /**
  * Represents the relationship between [JellyfinServer] and its [JellyfinUser]
