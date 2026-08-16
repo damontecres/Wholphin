@@ -45,9 +45,9 @@ object AppColors {
 const val DEFAULT_PAGE_SIZE = 100
 
 /**
- * The default [ItemFields] to fetch for most queries
+ * The [ItemFields] to fetch for detailed paged and playback
  */
-val DefaultItemFields =
+val DetailItemFields =
     listOf(
         ItemFields.OVERVIEW,
         ItemFields.TRICKPLAY,
@@ -82,13 +82,13 @@ val HomeItemFields =
     )
 
 val PhotoItemFields =
-    DefaultItemFields +
+    DetailItemFields +
         listOf(
             ItemFields.WIDTH,
             ItemFields.HEIGHT,
         )
 
-val ProgramItemFields = DefaultItemFields + listOf(ItemFields.CHANNEL_INFO)
+val ProgramItemFields = DetailItemFields + listOf(ItemFields.CHANNEL_INFO)
 
 object Cards {
     const val HEIGHT_2X3_DP = 172
