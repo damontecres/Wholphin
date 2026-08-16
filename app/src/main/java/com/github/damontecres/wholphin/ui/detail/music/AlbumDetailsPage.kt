@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
@@ -103,7 +104,6 @@ import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
@@ -211,7 +211,7 @@ class AlbumViewModel
                                 userId = serverRepository.currentUser?.id,
                                 albumIds = listOf(itemId),
                                 parentId = null,
-                                fields = SlimItemFields + listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
+                                fields = ItemRowFields,
                                 recursive = true,
                                 includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
                             )

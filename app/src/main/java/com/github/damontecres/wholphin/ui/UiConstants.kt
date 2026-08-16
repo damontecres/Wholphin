@@ -70,6 +70,11 @@ val SlimItemFields =
         ItemFields.CAN_DELETE,
     )
 
+/**
+ * ItemFields for displaying items in rows such as in a [com.github.damontecres.wholphin.ui.cards.ItemRow] with [com.github.damontecres.wholphin.ui.cards.SeasonCard]
+ */
+val ItemRowFields = SlimItemFields + ItemFields.PRIMARY_IMAGE_ASPECT_RATIO
+
 val HomeItemFields =
     listOf(
         ItemFields.OVERVIEW,
