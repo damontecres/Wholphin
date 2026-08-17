@@ -99,7 +99,7 @@ class SearchViewModel
                     searchCombined(query)
                 } else {
                     searchableTypes.forEach { type ->
-                        searchInternal2(query, type)
+                        searchType(query, type)
                     }
                 }
                 searchSeerr(query)
@@ -108,42 +108,7 @@ class SearchViewModel
             }
         }
 
-        private fun searchInternal(
-            query: String,
-            type: BaseItemKind,
-            update: (SearchResult, SearchState) -> SearchState,
-        ) {
-            viewModelScope.launchIO {
-                try {
-                    val request =
-                        GetItemsRequest(
-                            searchTerm = query,
-                            recursive = true,
-                            includeItemTypes = listOf(type),
-                            fields = SlimItemFields,
-                            limit = 50,
-                        )
-                    val result = api.itemsApi.getItems(request).content
-                    val items =
-                        result.items.map {
-                            BaseItem(it, false)
-                        }
-                    val sorted =
-                        items.sortedWith(
-                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.sortName },
-                        )
-                    _state.update { update.invoke(SearchResult.Success(sorted), it) }
-                } catch (ex: CancellationException) {
-                    throw ex
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Exception searching for $type")
-                    _state.update { update.invoke(SearchResult.Error(ex), it) }
-                }
-            }
-        }
-
-        private fun searchInternal2(
+        private fun searchType(
             query: String,
             type: BaseItemKind,
         ) {
@@ -363,13 +328,6 @@ sealed interface SearchResult {
 }
 
 data class SearchState(
-    val movies: SearchResult = SearchResult.NoQuery,
-    val series: SearchResult = SearchResult.NoQuery,
-    val episodes: SearchResult = SearchResult.NoQuery,
-    val collections: SearchResult = SearchResult.NoQuery,
-    val albums: SearchResult = SearchResult.NoQuery,
-    val artists: SearchResult = SearchResult.NoQuery,
-    val songs: SearchResult = SearchResult.NoQuery,
     val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
@@ -378,13 +336,6 @@ data class SearchState(
         // TODO
         val searchingState =
             SearchState(
-                movies = SearchResult.Searching,
-                series = SearchResult.Searching,
-                episodes = SearchResult.Searching,
-                collections = SearchResult.Searching,
-                albums = SearchResult.Searching,
-                artists = SearchResult.Searching,
-                songs = SearchResult.Searching,
                 results =
                     SnapshotStateMap<BaseItemKind, SearchResult>().apply {
                         searchableTypes.forEach {
