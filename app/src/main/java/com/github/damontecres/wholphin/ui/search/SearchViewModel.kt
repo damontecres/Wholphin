@@ -91,21 +91,38 @@ class SearchViewModel
         private val _programDialogState = MutableStateFlow(ProgramDialogState())
         val programDialogState: StateFlow<ProgramDialogState> = _programDialogState
 
+        private var userLibraryTypes: Set<BaseItemKind> = emptySet()
+
         init {
             init()
         }
 
         private fun init() {
-            _state.update { SearchState() }
             viewModelScope.launchDefault {
+                val tvAccess = serverRepository.currentUserDto?.tvAccess == true
+                userLibraryTypes =
+                    serverRepository.currentUser
+                        ?.id
+                        ?.let { userId ->
+                            navDrawerService
+                                .getAllUserLibraries(userId, tvAccess)
+                                .flatMap { it.collectionType.baseItemKinds }
+                                .toSet()
+                        }.orEmpty()
+
                 val excludedSearchableTypes =
                     serverRepository.currentUser?.id?.let { userId ->
-                        keyValueService
-                            .get<List<BaseItemKind>>(
-                                userId,
-                                EXCLUDED_SEARCHABLE_TYPES_KEY,
-                                emptyList(),
-                            ).firstOrNull()
+                        try {
+                            keyValueService
+                                .get<List<BaseItemKind>>(
+                                    userId,
+                                    EXCLUDED_SEARCHABLE_TYPES_KEY,
+                                    emptyList(),
+                                ).firstOrNull()
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error occurred fetching excluded search types")
+                            emptyList()
+                        }
                     } ?: emptyList()
                 val searchableTypes = determineSearchableTypes(excludedSearchableTypes)
                 val possibleSearchableTypes = determineSearchableTypes(emptyList())
@@ -123,22 +140,13 @@ class SearchViewModel
             }
         }
 
-        private suspend fun determineSearchableTypes(excludedSearchableTypes: List<BaseItemKind>): List<BaseItemKind> {
+        private fun determineSearchableTypes(excludedSearchableTypes: List<BaseItemKind>): List<BaseItemKind> {
             val tvAccess = serverRepository.currentUserDto?.tvAccess == true
-            val libraryTypes =
-                serverRepository.currentUser
-                    ?.id
-                    ?.let { userId ->
-                        navDrawerService
-                            .getAllUserLibraries(userId, tvAccess)
-                            .flatMap { it.collectionType.baseItemKinds }
-                            .toSet()
-                    }.orEmpty()
             val searchableTypes =
                 allSearchableTypes.filter {
                     val excluded = excludedSearchableTypes.contains(it)
                     // Only include if there's a relevant, accessible library
-                    val hasLibrary = libraryTypes.contains(it)
+                    val hasLibrary = userLibraryTypes.contains(it)
                     when (it) {
                         // No library type for person
                         BaseItemKind.PERSON -> !excluded
@@ -172,12 +180,10 @@ class SearchViewModel
                         results =
                             SnapshotStateMap<BaseItemKind, SearchResult>().apply {
                                 it.includedSearchableTypes.forEach {
-                                    put(
-                                        it,
-                                        SearchResult.Searching,
-                                    )
+                                    put(it, SearchResult.Searching)
                                 }
                             },
+                        combinedResults = SearchResult.Searching,
                     )
                 }
                 if (combined) {
@@ -189,7 +195,17 @@ class SearchViewModel
                 }
                 searchSeerr(query)
             } else {
-                init()
+                _state.update {
+                    it.copy(
+                        results =
+                            SnapshotStateMap<BaseItemKind, SearchResult>().apply {
+                                it.includedSearchableTypes.forEach {
+                                    put(it, SearchResult.NoQuery)
+                                }
+                            },
+                        combinedResults = SearchResult.NoQuery,
+                    )
+                }
             }
         }
 
@@ -265,18 +281,14 @@ class SearchViewModel
         private fun searchCombined(query: String) {
             viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 try {
+                    Timber.v("Starting searchCombined")
                     val request =
                         GetItemsRequest(
                             searchTerm = query,
                             recursive = true,
-                            includeItemTypes =
-                                listOf(
-                                    BaseItemKind.MOVIE,
-                                    BaseItemKind.SERIES,
-                                    BaseItemKind.BOX_SET,
-                                ),
+                            includeItemTypes = state.value.includedSearchableTypes,
                             fields = SlimItemFields,
-                            limit = 50,
+                            limit = SEARCH_LIMIT,
                         )
 
                     val result = api.itemsApi.getItems(request).content
@@ -289,6 +301,7 @@ class SearchViewModel
                             compareBy<BaseItem> { SearchRelevance.score(it, query) }
                                 .thenBy { it.name ?: "" },
                         )
+                    Timber.v("searchCombined complete %s results", sorted.size)
                     _state.update { it.copy(combinedResults = SearchResult.Success(sorted)) }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception in combined search")
@@ -467,6 +480,7 @@ class SearchViewModel
                 try {
                     liveTvService.record(programId, series)
                     // TODO update program card?
+                    refreshItem(programId)
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
@@ -478,31 +492,40 @@ class SearchViewModel
 
         fun onClickExcludeSearchableType(type: BaseItemKind) {
             viewModelScope.launchIO {
-                val state = state.value
-                val updateSearch: Boolean
-                val newExcludes =
-                    state.excludedSearchableTypes.toMutableList().apply {
-                        if (type in this) {
-                            updateSearch = true
-                            remove(type)
-                        } else {
-                            updateSearch = false
-                            add(type)
+                try {
+                    val state = state.value
+                    val updateSearch: Boolean
+                    val newExcludes =
+                        state.excludedSearchableTypes.toMutableList().apply {
+                            if (type in this) {
+                                updateSearch = true
+                                remove(type)
+                            } else {
+                                // If combined, need to update, otherwise just hide the newly excluded results
+                                updateSearch = combinedMode
+                                add(type)
+                            }
                         }
+                    Timber.v("newExcludes=%s", newExcludes)
+                    serverRepository.currentUser?.id?.let { userId ->
+                        keyValueService.save(userId, EXCLUDED_SEARCHABLE_TYPES_KEY, newExcludes)
                     }
-                Timber.v("newExcludes=%s", newExcludes)
-                serverRepository.currentUser?.id?.let { userId ->
-                    keyValueService.save(userId, EXCLUDED_SEARCHABLE_TYPES_KEY, newExcludes)
-                }
-                val searchableTypes = determineSearchableTypes(newExcludes)
-                _state.update {
-                    it.copy(
-                        includedSearchableTypes = searchableTypes,
-                        excludedSearchableTypes = newExcludes,
-                    )
-                }
-                if (updateSearch && currentQuery.isNotNullOrBlank()) {
-                    search(currentQuery, combinedMode, true)
+                    val searchableTypes = determineSearchableTypes(newExcludes)
+                    _state.update {
+                        it.copy(
+                            includedSearchableTypes = searchableTypes,
+                            excludedSearchableTypes = newExcludes,
+                        )
+                    }
+                    if (updateSearch && currentQuery.isNotNullOrBlank()) {
+                        Timber.d("Need to update search")
+                        search(currentQuery, combinedMode, true)
+                    }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception toggling %s", type)
+                    showToast(context, "An error occurred: ${ex.localizedMessage}")
                 }
             }
         }
