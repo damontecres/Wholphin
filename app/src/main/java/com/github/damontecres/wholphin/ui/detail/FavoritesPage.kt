@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
@@ -16,6 +17,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.TabbedPage
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
+import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 
 @Composable
 fun FavoritesPage(
@@ -55,7 +57,7 @@ fun FavoritesPage(
                 initialFilter = CollectionFolderFilter(),
                 recursive = true,
                 actions = actions,
-                sortOptions = emptyList(),
+                sortOptions = rememberSortOptions(type),
                 // TODO playEnabled = true for movies & episodes
                 playEnabled = false,
                 defaultViewOptions = type.defaultViewOptions,
@@ -66,6 +68,7 @@ fun FavoritesPage(
                     showTabs = index < columns
                 },
                 focusRequesterOnEmpty = null,
+                filterOptions = DefaultForFavoritesFilterOptions,
             )
         } else {
             ErrorMessage("Invalid tab index $tabIndex", null)
