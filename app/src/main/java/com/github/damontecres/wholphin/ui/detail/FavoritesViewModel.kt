@@ -163,7 +163,7 @@ class FavoritesViewModel
                 it.copy(
                     tabs =
                         it.tabs
-                            .toMutableList()
+                            .toMutableSet()
                             .apply {
                                 if (pager.isNotEmpty()) {
                                     add(type)
@@ -468,8 +468,38 @@ class FavoritesViewModel
 
             override suspend fun positionOfLetter(letter: Char): Int? =
                 collectionStateFor(type)?.let { collectionState ->
-                    // TODO
-                    0
+                    when (type) {
+                        BaseItemKind.MUSIC_ARTIST -> {
+                            val request =
+                                createGetArtistsRequest(
+                                    collectionState.filter,
+                                    collectionState.sortAndDirection,
+                                ).copy(
+                                    enableUserData = false,
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                )
+                            GetArtistsHandler.execute(api, request).content.totalRecordCount
+                        }
+
+                        BaseItemKind.PERSON -> {
+                            null
+                        }
+
+                        else -> {
+                            val request =
+                                createGetItemsRequest(
+                                    type,
+                                    collectionState.filter,
+                                    collectionState.sortAndDirection,
+                                ).copy(
+                                    enableUserData = false,
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                )
+                            GetItemsRequestHandler.execute(api, request).content.totalRecordCount
+                        }
+                    }
                 }
 
             override fun saveViewOptions(viewOptions: ViewOptions) {
