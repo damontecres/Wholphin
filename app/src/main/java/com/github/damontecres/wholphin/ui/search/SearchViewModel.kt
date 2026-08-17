@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -25,6 +26,7 @@ import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
+import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialogState
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -74,6 +76,7 @@ class SearchViewModel
         private val mediaReportService: MediaReportService,
         private val liveTvService: LiveTvService,
         private val keyValueService: KeyValueService,
+        private val navDrawerService: NavDrawerService,
     ) : ViewModel(),
         ContextMenuProvider {
         val seerrActive = seerrService.active
@@ -120,12 +123,26 @@ class SearchViewModel
             }
         }
 
-        private fun determineSearchableTypes(excludedSearchableTypes: List<BaseItemKind>): List<BaseItemKind> {
+        private suspend fun determineSearchableTypes(excludedSearchableTypes: List<BaseItemKind>): List<BaseItemKind> {
             val tvAccess = serverRepository.currentUserDto?.tvAccess == true
+            val libraryTypes =
+                serverRepository.currentUser
+                    ?.id
+                    ?.let { userId ->
+                        navDrawerService
+                            .getAllUserLibraries(userId, tvAccess)
+                            .flatMap { it.collectionType.baseItemKinds }
+                            .toSet()
+                    }.orEmpty()
             val searchableTypes =
                 allSearchableTypes.filter {
                     val excluded = excludedSearchableTypes.contains(it)
+                    // Only include if there's a relevant, accessible library
+                    val hasLibrary = libraryTypes.contains(it)
                     when (it) {
+                        // No library type for person
+                        BaseItemKind.PERSON -> !excluded
+
                         // Remove live tv search if user doesn't have access
                         BaseItemKind.TV_CHANNEL,
                         BaseItemKind.LIVE_TV_PROGRAM,
@@ -133,7 +150,7 @@ class SearchViewModel
                         BaseItemKind.PROGRAM,
                         -> tvAccess && !excluded
 
-                        else -> !excluded
+                        else -> hasLibrary && !excluded
                     }
                 }
             return searchableTypes
