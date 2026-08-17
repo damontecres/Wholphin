@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.RememberedTabService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
@@ -34,6 +35,7 @@ import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -70,6 +72,7 @@ class FavoritesViewModel
         val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
         private val filterOptionCache: FilterOptionCache,
+        private val rememberedTabService: RememberedTabService,
     ) : ViewModel() {
         private val _state = MutableStateFlow(FavoritesPageState())
         val state: StateFlow<FavoritesPageState> = _state
@@ -79,9 +82,22 @@ class FavoritesViewModel
         }
 
         fun init() {
-            favoriteOptions.forEach { type ->
-                viewModelScope.launchIO {
-                    loadType(type)
+            viewModelScope.launchIO {
+                val rememberTabs =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.interfacePreferences.rememberSelectedTab
+                val tabIndex =
+                    if (rememberTabs) {
+                        rememberedTabService.getRememberedTab(NavDrawerItem.Favorites.id) ?: 0
+                    } else {
+                        0
+                    }
+                _state.update { it.copy(tabIndex = tabIndex) }
+                favoriteOptions.forEach { type ->
+                    viewModelScope.launchIO {
+                        loadType(type)
+                    }
                 }
             }
         }
@@ -157,7 +173,15 @@ class FavoritesViewModel
         private fun collectionStateFor(type: BaseItemKind): CollectionFolderState? = state.value.favorites[type]
 
         fun updateSelectedTabIndex(newIndex: Int) {
-            // TODO save to DB
+            viewModelScope.launchIO {
+                val rememberTabs =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.interfacePreferences.rememberSelectedTab
+                if (rememberTabs) {
+                    rememberedTabService.saveRememberedTab(NavDrawerItem.Favorites.id, newIndex)
+                }
+            }
             _state.update { it.copy(tabIndex = newIndex) }
         }
 
