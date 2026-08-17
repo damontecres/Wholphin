@@ -328,6 +328,11 @@ val BaseItemKind.defaultViewOptions: ViewOptions
             BaseItemKind.MUSIC_VIDEO,
             BaseItemKind.PHOTO,
             BaseItemKind.PHOTO_ALBUM,
+            BaseItemKind.TV_CHANNEL,
+            BaseItemKind.LIVE_TV_CHANNEL,
+            BaseItemKind.PROGRAM,
+            BaseItemKind.TV_PROGRAM,
+            BaseItemKind.LIVE_TV_PROGRAM,
             -> ViewOptionsWide
 
             else -> ViewOptionsPoster

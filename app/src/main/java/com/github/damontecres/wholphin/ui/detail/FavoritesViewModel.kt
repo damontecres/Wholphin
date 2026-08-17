@@ -40,7 +40,9 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,7 +53,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -118,22 +122,9 @@ class FavoritesViewModel
                 }
             val sortAndDirection = libraryDisplayInfo?.sortAndDirection ?: SortAndDirection.DEFAULT
             val filter = libraryDisplayInfo?.filter ?: GetItemsFilter(favorite = true)
-
-            val request =
-                filter.applyTo(
-                    GetItemsRequest(
-                        isFavorite = true,
-                        recursive = true,
-                        includeItemTypes = listOf(type),
-                        fields = SlimItemFields,
-                        sortBy = listOf(sortAndDirection.sort),
-                        sortOrder = listOf(sortAndDirection.direction),
-                    ),
-                    overwriteIncludeTypes = false,
-                )
-
-            val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope, pageSize = 50).init()
             val viewOptions = libraryDisplayInfo?.viewOptions ?: type.defaultViewOptions
+
+            val pager = createPager(type, filter, sortAndDirection)
 
             _state.value.favorites[type] =
                 collectionState.copy(
@@ -158,6 +149,66 @@ class FavoritesViewModel
                 }
             }
         }
+
+        private fun createGetItemsRequest(
+            type: BaseItemKind,
+            filter: GetItemsFilter,
+            sortAndDirection: SortAndDirection,
+        ): GetItemsRequest =
+            filter.applyTo(
+                GetItemsRequest(
+                    isFavorite = true,
+                    recursive = true,
+                    includeItemTypes = listOf(type),
+                    fields = SlimItemFields,
+                    sortBy = listOf(sortAndDirection.sort),
+                    sortOrder = listOf(sortAndDirection.direction),
+                ),
+                overwriteIncludeTypes = false,
+            )
+
+        private fun createGetArtistsRequest(
+            filter: GetItemsFilter,
+            sortAndDirection: SortAndDirection,
+        ): GetArtistsRequest =
+            filter.applyTo(
+                GetArtistsRequest(
+                    isFavorite = true,
+                    fields = SlimItemFields,
+                    sortBy = listOf(sortAndDirection.sort),
+                    sortOrder = listOf(sortAndDirection.direction),
+                ),
+            )
+
+        private fun createGetPersonsRequest(filter: GetItemsFilter): GetPersonsRequest =
+            filter.applyTo(
+                GetPersonsRequest(
+                    isFavorite = true,
+                    fields = SlimItemFields,
+                ),
+            )
+
+        private suspend fun createPager(
+            type: BaseItemKind,
+            filter: GetItemsFilter,
+            sortAndDirection: SortAndDirection,
+        ): ApiRequestPager<*> =
+            when (type) {
+                BaseItemKind.MUSIC_ARTIST -> {
+                    val request = createGetArtistsRequest(filter, sortAndDirection)
+                    ApiRequestPager(api, request, GetArtistsHandler, viewModelScope, pageSize = 50)
+                }
+
+                BaseItemKind.PERSON -> {
+                    val request = createGetPersonsRequest(filter)
+                    ApiRequestPager(api, request, GetPersonsHandler, viewModelScope, pageSize = 50)
+                }
+
+                else -> {
+                    val request = createGetItemsRequest(type, filter, sortAndDirection)
+                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope, pageSize = 50)
+                }
+            }.init()
 
         fun libraryDisplayItemId(type: BaseItemKind): String =
             when (type) {
@@ -350,6 +401,7 @@ class FavoritesViewModel
                                 sortAndDirection = sortAndDirection,
                             )
                     }
+                    loadType(type)
                 }
             }
 
@@ -370,6 +422,7 @@ class FavoritesViewModel
                                 filter = newFilter,
                             )
                     }
+                    loadType(type)
                 }
             }
 
@@ -406,7 +459,15 @@ val favoriteOptions =
         BaseItemKind.MOVIE,
         BaseItemKind.SERIES,
         BaseItemKind.EPISODE,
-        BaseItemKind.VIDEO,
-        BaseItemKind.PLAYLIST,
+        BaseItemKind.BOX_SET,
         BaseItemKind.PERSON,
+        BaseItemKind.TV_CHANNEL,
+        BaseItemKind.MUSIC_ALBUM,
+        BaseItemKind.MUSIC_ARTIST,
+        BaseItemKind.AUDIO,
+        BaseItemKind.MUSIC_VIDEO,
+        BaseItemKind.PLAYLIST,
+        BaseItemKind.VIDEO,
+        BaseItemKind.PHOTO,
+        BaseItemKind.PHOTO_ALBUM,
     )
