@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,12 +56,10 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
-import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.TabDetails
@@ -117,7 +114,7 @@ fun SearchPage(
         remember(state.includedSearchableTypes.size) { List(RESULTS_START + state.includedSearchableTypes.size) { FocusRequester() } }
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable(seerrActive, state.discoverEnabled) { mutableIntStateOf(0) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var showFilterTypeDialog by rememberSaveable { mutableStateOf(false) }
     var searchClicked by rememberSaveable(query) { mutableStateOf(false) }
@@ -194,7 +191,8 @@ fun SearchPage(
     val positionCallback = { columns: Int, index: Int ->
         showHeader = index < columns
     }
-    val showTabs = seerrActive && query.isNotBlank() && showHeader && combinedMode
+    val showTabs =
+        seerrActive && state.discoverEnabled && query.isNotBlank() && showHeader && combinedMode
     val isLibraryTab = selectedTab == 0
 
     LaunchedEffect(seerrActive, query) {
@@ -248,11 +246,13 @@ fun SearchPage(
     }
 
     val tabs =
-        remember {
-            listOf(
-                TabDetails(R.string.library),
-                TabDetails(R.string.discover),
-            )
+        remember(seerrActive, state.discoverEnabled) {
+            buildList {
+                add(TabDetails(R.string.library))
+                if (seerrActive && state.discoverEnabled) {
+                    add(TabDetails(R.string.discover))
+                }
+            }
         }
 
     Column(
@@ -445,18 +445,23 @@ fun SearchPage(
                             )
                         }
 
-                        searchResultRow(
-                            title = R.string.discover,
-                            result = state.seerrResults,
-                            rowIndex = SEERR_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[SEERR_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { _, _ -> },
-                            onClickDiscover = onClickDiscover,
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        if (seerrActive && state.discoverEnabled) {
+                            item {
+                                SearchRowResult(
+                                    title = R.string.discover,
+                                    result = state.seerrResults,
+                                    rowIndex = SEERR_ROW,
+                                    position = position,
+                                    focusRequester = focusRequesters[SEERR_ROW],
+                                    onClickItem = onClickItem,
+                                    onLongClickItem = { _, _ -> },
+                                    onClickDiscover = onClickDiscover,
+                                    onClickPosition = { setPosition(it) },
+                                    cardContent = { _, _, _, _, _ -> },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -480,7 +485,10 @@ fun SearchPage(
             onDismissRequest = { showFilterTypeDialog = false },
             searchableTypes = state.possibleSearchableTypes,
             excludedSearchableTypes = state.excludedSearchableTypes,
+            discoverAvailable = seerrActive,
+            discoverEnabled = state.discoverEnabled,
             onClick = viewModel::onClickExcludeSearchableType,
+            onClickDiscover = viewModel::onClickExcludeDiscover,
         )
     }
 
@@ -652,54 +660,6 @@ private fun <T : CardGridItem> SearchGrid(
             positionCallback = positionCallback,
             modifier = Modifier.fillMaxSize(),
             cardContent = cardContent,
-        )
-    }
-}
-
-fun LazyListScope.searchResultRow(
-    @StringRes title: Int,
-    result: SearchResult,
-    rowIndex: Int,
-    position: RowColumn,
-    focusRequester: FocusRequester,
-    onClickItem: (Int, BaseItem) -> Unit,
-    onLongClickItem: (Int, BaseItem) -> Unit,
-    onClickPosition: (RowColumn) -> Unit,
-    modifier: Modifier = Modifier,
-    onClickDiscover: ((Int, DiscoverItem) -> Unit)? = null,
-    cardContent: @Composable (
-        index: Int,
-        item: BaseItem?,
-        modifier: Modifier,
-        onClick: () -> Unit,
-        onLongClick: () -> Unit,
-    ) -> Unit = @Composable { index, item, mod, onClick, onLongClick ->
-        SeasonCard(
-            item = item,
-            onClick = {
-                onClickPosition.invoke(RowColumn(rowIndex, index))
-                onClick.invoke()
-            },
-            onLongClick = onLongClick,
-            imageHeight = Cards.height2x3,
-            showImageOverlay = true,
-            modifier = mod,
-        )
-    },
-) {
-    item {
-        SearchRowResult(
-            title = R.string.discover,
-            result = result,
-            rowIndex = SEERR_ROW,
-            position = position,
-            focusRequester = focusRequester,
-            onClickItem = onClickItem,
-            onLongClickItem = { _, _ -> },
-            onClickDiscover = onClickDiscover,
-            onClickPosition = onClickPosition,
-            cardContent = cardContent,
-            modifier = modifier,
         )
     }
 }

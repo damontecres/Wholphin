@@ -23,7 +23,10 @@ fun SearchTypeOptionsDialog(
     onDismissRequest: () -> Unit,
     searchableTypes: List<BaseItemKind>,
     excludedSearchableTypes: List<BaseItemKind>,
+    discoverAvailable: Boolean,
+    discoverEnabled: Boolean,
     onClick: (BaseItemKind) -> Unit,
+    onClickDiscover: () -> Unit,
 ) {
     BasicDialog(
         onDismissRequest = onDismissRequest,
@@ -32,7 +35,10 @@ fun SearchTypeOptionsDialog(
         SearchTypeOptionsDialogContent(
             searchableTypes = searchableTypes,
             excludedSearchableTypes = excludedSearchableTypes,
+            discoverAvailable = discoverAvailable,
+            discoverEnabled = discoverEnabled,
             onClick = onClick,
+            onClickDiscover = onClickDiscover,
             modifier = Modifier.padding(16.dp),
         )
     }
@@ -42,7 +48,10 @@ fun SearchTypeOptionsDialog(
 fun SearchTypeOptionsDialogContent(
     searchableTypes: List<BaseItemKind>,
     excludedSearchableTypes: List<BaseItemKind>,
+    discoverAvailable: Boolean,
+    discoverEnabled: Boolean,
     onClick: (BaseItemKind) -> Unit,
+    onClickDiscover: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
@@ -66,6 +75,25 @@ fun SearchTypeOptionsDialogContent(
                         )
                     },
                 )
+            }
+            if (discoverAvailable) {
+                item {
+                    ListItem(
+                        enabled = true,
+                        selected = false,
+                        onClick = onClickDiscover,
+                        headlineContent = {
+                            Text(stringResource(R.string.discover))
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = discoverEnabled,
+                                onCheckedChange = {},
+                                colors = SwitchColors(),
+                            )
+                        },
+                    )
+                }
             }
         }
     }

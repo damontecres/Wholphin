@@ -66,7 +66,7 @@ class SearchViewModel
         @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
-        private val appPreferences: DataStore<AppPreferences>,
+        val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
         val userPreferencesService: UserPreferencesService,
@@ -124,10 +124,25 @@ class SearchViewModel
                             emptyList()
                         }
                     } ?: emptyList()
+                val discoverEnabled =
+                    serverRepository.currentUser?.id?.let { userId ->
+                        try {
+                            keyValueService
+                                .get(
+                                    userId,
+                                    INCLUDE_DISCOVER_KEY,
+                                    true,
+                                ).firstOrNull()
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error occurred fetching excluded search types")
+                            true
+                        }
+                    } ?: true
                 val searchableTypes = determineSearchableTypes(excludedSearchableTypes)
                 val possibleSearchableTypes = determineSearchableTypes(emptyList())
                 _state.update {
                     it.copy(
+                        discoverEnabled = discoverEnabled,
                         includedSearchableTypes = searchableTypes,
                         possibleSearchableTypes = possibleSearchableTypes,
                         excludedSearchableTypes = excludedSearchableTypes,
@@ -332,7 +347,7 @@ class SearchViewModel
 
         private fun searchSeerr(query: String) {
             viewModelScope.launchIO {
-                if (seerrService.active.first()) {
+                if (seerrActive.first() && state.value.discoverEnabled) {
                     _state.update { it.copy(seerrResults = SearchResult.Searching) }
                     val results =
                         seerrService
@@ -530,8 +545,36 @@ class SearchViewModel
             }
         }
 
+        fun onClickExcludeDiscover() {
+            viewModelScope.launchIO {
+                try {
+                    val newIncludeDiscover = state.value.discoverEnabled.not()
+                    Timber.v("newIncludeDiscover=%s", newIncludeDiscover)
+                    serverRepository.currentUser?.id?.let { userId ->
+                        keyValueService.save(userId, INCLUDE_DISCOVER_KEY, newIncludeDiscover)
+                    }
+                    _state.update {
+                        it.copy(
+                            discoverEnabled = newIncludeDiscover,
+                        )
+                    }
+                    if (newIncludeDiscover) {
+                        currentQuery?.takeIf { it.isNotNullOrBlank() }?.let { query ->
+                            searchSeerr(query)
+                        }
+                    }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception discover")
+                    showToast(context, "An error occurred: ${ex.localizedMessage}")
+                }
+            }
+        }
+
         companion object {
             private const val EXCLUDED_SEARCHABLE_TYPES_KEY = "excludedSearchableTypes"
+            private const val INCLUDE_DISCOVER_KEY = "searchIncludeDiscover"
         }
     }
 
@@ -560,6 +603,7 @@ data class SearchState(
     val possibleSearchableTypes: List<BaseItemKind> = emptyList(),
     val includedSearchableTypes: List<BaseItemKind> = emptyList(),
     val excludedSearchableTypes: List<BaseItemKind> = emptyList(),
+    val discoverEnabled: Boolean = true,
 )
 
 private val allSearchableTypes =
