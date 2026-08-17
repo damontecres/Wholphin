@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
@@ -27,13 +28,14 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 
 @HiltViewModel(assistedFactory = TabViewModel.Factory::class)
 class TabViewModel
     @AssistedInject
     constructor(
-        private val userPreferencesService: UserPreferencesService,
+        val userPreferencesService: UserPreferencesService,
         private val rememberedTabService: RememberedTabService,
         private val backdropService: BackdropService,
         @param:Assisted private val itemId: String,
@@ -49,6 +51,9 @@ class TabViewModel
 
         private val _state = MutableStateFlow<Int>(UNSET)
         val state: StateFlow<Int> = _state
+
+        val isShowClock =
+            userPreferencesService.flow.map { it.appPreferences.interfacePreferences.showClock }
 
         init {
             viewModelScope.launchIO {
@@ -118,10 +123,12 @@ fun TabbedPage(
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
     val selectedTabIndex by viewModel.state.collectAsState()
+    val isShowClock by viewModel.isShowClock.collectAsState(true)
     TabbedPage(
         selectedTabIndex = selectedTabIndex,
         tabs = tabs,
         updateSelectedTabIndex = viewModel::updateSelectedTabIndex,
+        isShowClock = isShowClock,
         modifier = modifier,
         showTabs = showTabs,
         tabContent = tabContent,
@@ -133,10 +140,19 @@ fun TabbedPage(
     selectedTabIndex: Int,
     tabs: List<TabDetails>,
     updateSelectedTabIndex: (Int) -> Unit,
+    isShowClock: Boolean,
     modifier: Modifier = Modifier,
     showTabs: Boolean = true,
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
+    val endPadding =
+        remember(isShowClock) {
+            if (isShowClock) {
+                184.dp
+            } else {
+                0.dp
+            }
+        }
     Column(
         modifier = modifier,
     ) {
@@ -149,7 +165,7 @@ fun TabbedPage(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(vertical = 16.dp),
+                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
                 tabs = tabs,
                 onClick = updateSelectedTabIndex,
             )

@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.CollectionFolderState
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
@@ -49,6 +50,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -104,6 +106,11 @@ class FavoritesViewModel
                     }
                 }
             }
+            userPreferencesService.flow
+                .map { it.appPreferences.interfacePreferences.showClock }
+                .collectLatestIn(viewModelScope) { isShowClock ->
+                    _state.update { it.copy(isShowClock = isShowClock) }
+                }
         }
 
         private suspend fun loadType(type: BaseItemKind) {
@@ -448,8 +455,8 @@ class FavoritesViewModel
 data class FavoritesPageState(
     val favorites: SnapshotStateMap<BaseItemKind, CollectionFolderState> = SnapshotStateMap(),
     val tabs: List<BaseItemKind> = emptyList(),
-    // TODO
     val tabIndex: Int = 0,
+    val isShowClock: Boolean = true,
 ) {
     val tabDetails: List<TabDetails> get() = tabs.map { TabDetails(formatTypeName(it)) }
 }

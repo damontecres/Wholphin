@@ -42,6 +42,7 @@ fun FavoritesPage(
         updateSelectedTabIndex = viewModel::updateSelectedTabIndex,
         tabs = tabs,
         showTabs = showTabs,
+        isShowClock = state.isShowClock,
         modifier = modifier,
     ) { tabIndex, tabDetails ->
         val type = favoriteOptions.getOrNull(tabIndex)
