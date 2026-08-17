@@ -69,17 +69,12 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
-import com.github.damontecres.wholphin.ui.cards.PersonCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.cards.personRowCardWidth
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.TabDetails
@@ -100,7 +95,6 @@ import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -435,92 +429,6 @@ fun SearchPage(
                     ) {
                         itemsIndexed(searchableTypes) { index, type ->
                             val rowIndex = RESULTS_START + index
-                            val cardContent: @Composable (
-                                index: Int,
-                                item: BaseItem?,
-                                modifier: Modifier,
-                                onClick: () -> Unit,
-                                onLongClick: () -> Unit,
-                            ) -> Unit =
-                                when (type) {
-                                    BaseItemKind.EPISODE -> {
-                                        { index, item, mod, onClick, onLongClick ->
-                                            BannerCardWithTitle(
-                                                title = item?.title,
-                                                subtitle = item?.subtitle,
-                                                item = item,
-                                                onClick = {
-                                                    setPosition(RowColumn(rowIndex, index))
-                                                    onClick.invoke()
-                                                },
-                                                onLongClick = onLongClick,
-                                                modifier = mod.padding(horizontal = 8.dp),
-                                                cardHeight = Cards.heightEpisode,
-                                            )
-                                        }
-                                    }
-
-                                    BaseItemKind.MUSIC_ALBUM,
-                                    BaseItemKind.MUSIC_ARTIST,
-                                    BaseItemKind.AUDIO,
-                                    -> {
-                                        { index, item, mod, onClick, onLongClick ->
-                                            SeasonCard(
-                                                item = item,
-                                                onClick = {
-                                                    setPosition(RowColumn(rowIndex, index))
-                                                    onClick.invoke()
-                                                },
-                                                onLongClick = onLongClick,
-                                                imageHeight = Cards.heightEpisode,
-                                                aspectRatio = AspectRatios.SQUARE,
-                                                showImageOverlay = true,
-                                                modifier = mod,
-                                            )
-                                        }
-                                    }
-
-                                    BaseItemKind.PERSON -> {
-                                        { index, item, mod, onClick, onLongClick ->
-                                            val imageUrlService = LocalImageUrlService.current
-                                            val imageUrl =
-                                                remember(item) {
-                                                    imageUrlService.getItemImageUrl(
-                                                        item,
-                                                        ImageType.PRIMARY,
-                                                    )
-                                                }
-                                            PersonCard(
-                                                name = item?.name ?: "",
-                                                role = null,
-                                                imageUrl = imageUrl,
-                                                favorite = item?.favorite ?: false,
-                                                onClick = {
-                                                    setPosition(RowColumn(rowIndex, index))
-                                                    onClick.invoke()
-                                                },
-                                                onLongClick = onLongClick,
-                                                modifier = mod.width(personRowCardWidth),
-                                            )
-                                        }
-                                    }
-
-                                    else -> {
-                                        { index, item, mod, onClick, onLongClick ->
-                                            SeasonCard(
-                                                item = item,
-                                                onClick = {
-                                                    setPosition(RowColumn(rowIndex, index))
-                                                    onClick.invoke()
-                                                },
-                                                onLongClick = onLongClick,
-                                                imageHeight = Cards.height2x3,
-                                                showImageOverlay = true,
-                                                modifier = mod,
-                                            )
-                                        }
-                                    }
-                                }
                             val result = state.results.getOrDefault(type, SearchResult.Searching)
                             SearchRowResult(
                                 title = type.titleStringRes,
@@ -534,7 +442,18 @@ fun SearchPage(
                                 },
                                 onClickPosition = { setPosition(it) },
                                 modifier = Modifier.fillMaxWidth(),
-                                cardContent = cardContent,
+                                cardContent = { index, item, mod, onClick, onLongClick ->
+                                    SearchPageCard(
+                                        item = item,
+                                        type = type,
+                                        onClick = {
+                                            setPosition(RowColumn(rowIndex, index))
+                                            onClick.invoke()
+                                        },
+                                        onLongClick = onLongClick,
+                                        modifier = mod,
+                                    )
+                                },
                             )
                         }
 

@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
+import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
@@ -121,18 +122,37 @@ class SearchViewModel
         ) {
             viewModelScope.launchIO {
                 try {
-                    val request =
-                        GetItemsRequest(
-                            searchTerm = query,
-                            recursive = true,
-                            includeItemTypes = listOf(type),
-                            fields = SlimItemFields,
-                            limit = 50,
-                        )
-                    val result = api.itemsApi.getItems(request).content
-                    val items =
-                        result.items.map {
-                            BaseItem(it, false)
+                    val items: List<BaseItem> =
+                        when (type) {
+                            BaseItemKind.LIVE_TV_PROGRAM -> {
+                                val request =
+                                    GetItemsRequest(
+                                        searchTerm = query,
+                                        recursive = true,
+                                        includeItemTypes = listOf(type),
+                                        fields = ProgramItemFields,
+                                        limit = 50,
+                                        enableTotalRecordCount = false,
+                                    )
+                                api.itemsApi.getItems(request).content.items.map {
+                                    BaseItem(it, false)
+                                }
+                            }
+
+                            else -> {
+                                val request =
+                                    GetItemsRequest(
+                                        searchTerm = query,
+                                        recursive = true,
+                                        includeItemTypes = listOf(type),
+                                        fields = SlimItemFields,
+                                        limit = 50,
+                                        enableTotalRecordCount = false,
+                                    )
+                                api.itemsApi.getItems(request).content.items.map {
+                                    BaseItem(it, false)
+                                }
+                            }
                         }
                     val sorted =
                         items.sortedWith(
@@ -412,7 +432,7 @@ val searchableTypes =
         BaseItemKind.BOX_SET,
         BaseItemKind.PERSON,
         BaseItemKind.TV_CHANNEL,
-        BaseItemKind.TV_PROGRAM,
+        BaseItemKind.LIVE_TV_PROGRAM,
         BaseItemKind.MUSIC_ALBUM,
         BaseItemKind.MUSIC_ARTIST,
         BaseItemKind.AUDIO,
