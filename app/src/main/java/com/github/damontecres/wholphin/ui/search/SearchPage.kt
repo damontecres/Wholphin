@@ -99,16 +99,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal const val SEARCH_ROW = 0
 internal const val TAB_ROW = SEARCH_ROW + 1
-internal const val MOVIE_ROW = TAB_ROW + 1
-internal const val SERIES_ROW = MOVIE_ROW + 1
-internal const val EPISODE_ROW = SERIES_ROW + 1
-internal const val COLLECTION_ROW = EPISODE_ROW + 1
-internal const val ALBUM_ROW = COLLECTION_ROW + 1
-internal const val ARTIST_ROW = ALBUM_ROW + 1
-internal const val SONG_ROW = ARTIST_ROW + 1
-internal const val SEERR_ROW = SONG_ROW + 1
-
-internal const val COMBINED_ROW = TAB_ROW + 1
+internal const val SEERR_ROW = TAB_ROW + 1
+internal const val COMBINED_ROW = SEERR_ROW
+internal const val RESULTS_START = SEERR_ROW + 1
 
 @Composable
 fun SearchPage(
@@ -131,7 +124,8 @@ fun SearchPage(
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf(initialQuery) }
-    val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
+    val focusRequesters =
+        remember { List(RESULTS_START + searchableTypes.size) { FocusRequester() } }
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
@@ -252,13 +246,13 @@ fun SearchPage(
                             if (combinedMode) {
                                 COMBINED_ROW
                             } else {
-                                MOVIE_ROW + firstSuccess
+                                firstSuccess
                             }
                         } else {
                             SEERR_ROW
                         }
 //                    setPosition(RowColumn(targetRow, 0))
-                    onMain { focusRequesters[targetRow].tryRequestFocus() }
+                    onMain { focusRequesters.getOrNull(targetRow)?.tryRequestFocus() }
                 }
             }
         }
@@ -432,7 +426,8 @@ fun SearchPage(
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                         modifier = Modifier.focusGroup(),
                     ) {
-                        itemsIndexed(searchableTypes) { rowIndex, type ->
+                        itemsIndexed(searchableTypes) { index, type ->
+                            val rowIndex = RESULTS_START + index
                             val cardContent: @Composable (
                                 index: Int,
                                 item: BaseItem?,
@@ -448,7 +443,7 @@ fun SearchPage(
                                                 subtitle = item?.subtitle,
                                                 item = item,
                                                 onClick = {
-                                                    setPosition(RowColumn(EPISODE_ROW, index))
+                                                    setPosition(RowColumn(rowIndex, index))
                                                     onClick.invoke()
                                                 },
                                                 onLongClick = onLongClick,
@@ -466,7 +461,7 @@ fun SearchPage(
                                             SeasonCard(
                                                 item = item,
                                                 onClick = {
-                                                    setPosition(RowColumn(ALBUM_ROW, index))
+                                                    setPosition(RowColumn(rowIndex, index))
                                                     onClick.invoke()
                                                 },
                                                 onLongClick = onLongClick,
@@ -483,7 +478,7 @@ fun SearchPage(
                                             SeasonCard(
                                                 item = item,
                                                 onClick = {
-                                                    setPosition(RowColumn(ALBUM_ROW, index))
+                                                    setPosition(RowColumn(rowIndex, index))
                                                     onClick.invoke()
                                                 },
                                                 onLongClick = onLongClick,
@@ -498,12 +493,12 @@ fun SearchPage(
                             SearchRowResult(
                                 title = type.titleStringRes,
                                 result = result,
-                                rowIndex = MOVIE_ROW,
+                                rowIndex = rowIndex,
                                 position = position,
-                                focusRequester = focusRequesters[MOVIE_ROW],
+                                focusRequester = focusRequesters[rowIndex],
                                 onClickItem = onClickItem,
                                 onLongClickItem = { index, item ->
-                                    onLongClickItem(MOVIE_ROW, index, item)
+                                    onLongClickItem(rowIndex, index, item)
                                 },
                                 onClickPosition = { setPosition(it) },
                                 modifier = Modifier.fillMaxWidth(),

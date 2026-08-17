@@ -278,16 +278,8 @@ class SearchViewModel
                     if (combinedMode) {
                         state.value.combinedResults
                     } else {
-                        when (position.row) {
-                            MOVIE_ROW -> state.value.movies
-                            SERIES_ROW -> state.value.series
-                            EPISODE_ROW -> state.value.episodes
-                            COLLECTION_ROW -> state.value.collections
-                            ALBUM_ROW -> state.value.albums
-                            ARTIST_ROW -> state.value.artists
-                            SONG_ROW -> state.value.songs
-                            SEERR_ROW -> null
-                            else -> null
+                        searchableTypes.getOrNull(position.row)?.let {
+                            state.value.results[it]
                         }
                     } ?: return
                 val items = (searchResult as? SearchResult.Success)?.items ?: return
@@ -307,23 +299,15 @@ class SearchViewModel
                                 set(position.column, newItem)
                             },
                         )
-                    _state.update {
-                        if (combinedMode) {
+                    if (combinedMode) {
+                        _state.update {
                             it.copy(
                                 combinedResults = newList,
                             )
-                        } else {
-                            when (position.row) {
-                                MOVIE_ROW -> it.copy(movies = newList)
-                                SERIES_ROW -> it.copy(series = newList)
-                                EPISODE_ROW -> it.copy(episodes = newList)
-                                COLLECTION_ROW -> it.copy(collections = newList)
-                                ALBUM_ROW -> it.copy(albums = newList)
-                                ARTIST_ROW -> it.copy(artists = newList)
-                                SONG_ROW -> it.copy(songs = newList)
-                                SEERR_ROW -> it
-                                else -> it
-                            }
+                        }
+                    } else {
+                        searchableTypes.getOrNull(position.row)?.let { type ->
+                            state.value.results[type] = newList
                         }
                     }
                 }
@@ -386,11 +370,12 @@ data class SearchState(
     val albums: SearchResult = SearchResult.NoQuery,
     val artists: SearchResult = SearchResult.NoQuery,
     val songs: SearchResult = SearchResult.NoQuery,
+    val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
-    val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
 ) {
     companion object {
+        // TODO
         val searchingState =
             SearchState(
                 movies = SearchResult.Searching,
@@ -400,6 +385,12 @@ data class SearchState(
                 albums = SearchResult.Searching,
                 artists = SearchResult.Searching,
                 songs = SearchResult.Searching,
+                results =
+                    SnapshotStateMap<BaseItemKind, SearchResult>().apply {
+                        searchableTypes.forEach {
+                            this[it] = SearchResult.Searching
+                        }
+                    },
                 seerrResults = SearchResult.Searching,
                 combinedResults = SearchResult.Searching,
             )
