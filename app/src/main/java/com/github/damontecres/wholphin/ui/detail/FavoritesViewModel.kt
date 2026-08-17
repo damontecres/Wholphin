@@ -130,9 +130,25 @@ class FavoritesViewModel
             val sortAndDirection = libraryDisplayInfo?.sortAndDirection ?: SortAndDirection.DEFAULT
             val filter = libraryDisplayInfo?.filter ?: GetItemsFilter(favorite = true)
             val viewOptions = libraryDisplayInfo?.viewOptions ?: type.defaultViewOptions
+            loadType(type, sortAndDirection, filter, viewOptions)
+        }
+
+        private suspend fun loadType(
+            type: BaseItemKind,
+            sortAndDirection: SortAndDirection,
+            filter: GetItemsFilter,
+            viewOptions: ViewOptions,
+        ) {
+            val collectionState =
+                CollectionFolderState(
+                    item = DataLoadingState.Loading,
+                    items = DataLoadingState.Loading,
+                    backgroundLoading = LoadingState.Loading,
+                    viewOptions = ViewOptions(),
+                )
+            _state.value.favorites[type] = collectionState
 
             val pager = createPager(type, filter, sortAndDirection)
-
             _state.value.favorites[type] =
                 collectionState.copy(
                     item = DataLoadingState.Success(null),
@@ -143,17 +159,19 @@ class FavoritesViewModel
                     viewOptions = viewOptions,
                 )
             Timber.v("Got %s favorites for %s", pager.size, type)
-            if (pager.isNotEmpty()) {
-                _state.update {
-                    it.copy(
-                        tabs =
-                            it.tabs
-                                .toMutableList()
-                                .apply {
+            _state.update {
+                it.copy(
+                    tabs =
+                        it.tabs
+                            .toMutableList()
+                            .apply {
+                                if (pager.isNotEmpty()) {
                                     add(type)
-                                }.sortedBy { favoriteOptions.indexOf(it) },
-                    )
-                }
+                                } else {
+                                    remove(type)
+                                }
+                            }.sortedBy { favoriteOptions.indexOf(it) },
+                )
             }
         }
 
@@ -231,6 +249,7 @@ class FavoritesViewModel
         private fun collectionStateFor(type: BaseItemKind): CollectionFolderState? = state.value.favorites[type]
 
         fun updateSelectedTabIndex(newIndex: Int) {
+            viewModelScope.launchDefault { backdropService.clearBackdrop() }
             viewModelScope.launchIO {
                 val rememberTabs =
                     userPreferencesService
@@ -395,6 +414,7 @@ class FavoritesViewModel
                 filter: GetItemsFilter,
             ) {
                 viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+                    Timber.v("onSortChange: type=%s, sortAndDirection=%s", type, sortAndDirection)
                     collectionStateFor(type)?.let { collectionState ->
                         saveLibraryDisplayInfo(
                             type = type,
@@ -407,8 +427,8 @@ class FavoritesViewModel
                                 filter = filter,
                                 sortAndDirection = sortAndDirection,
                             )
+                        loadType(type, sortAndDirection, filter, collectionState.viewOptions)
                     }
-                    loadType(type)
                 }
             }
 
@@ -417,6 +437,7 @@ class FavoritesViewModel
                 recursive: Boolean,
             ) {
                 viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+                    Timber.v("onFilterChange: type=%s, newFilter=%s", type, newFilter)
                     collectionStateFor(type)?.let { collectionState ->
                         saveLibraryDisplayInfo(
                             type = type,
@@ -428,8 +449,13 @@ class FavoritesViewModel
                             collectionState.copy(
                                 filter = newFilter,
                             )
+                        loadType(
+                            type,
+                            collectionState.sortAndDirection,
+                            newFilter,
+                            collectionState.viewOptions,
+                        )
                     }
-                    loadType(type)
                 }
             }
 

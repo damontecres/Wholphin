@@ -321,6 +321,7 @@ val BaseItemKind.defaultViewOptions: ViewOptions
             BaseItemKind.AUDIO,
             BaseItemKind.MUSIC_ALBUM,
             BaseItemKind.MUSIC_ARTIST,
+            BaseItemKind.PLAYLIST,
             -> ViewOptionsSquare
 
             BaseItemKind.EPISODE,

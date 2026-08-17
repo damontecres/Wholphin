@@ -45,11 +45,11 @@ fun FavoritesPage(
         isShowClock = state.isShowClock,
         modifier = modifier,
     ) { tabIndex, tabDetails ->
-        val type = favoriteOptions.getOrNull(tabIndex)
+        val type = state.tabs.getOrNull(tabIndex)
         val collectionState = state.favorites[type]
 
         if (type != null && collectionState != null) {
-            val provider = remember { viewModel.createTypedProvider(type) }
+            val provider = remember(type) { viewModel.createTypedProvider(type) }
             CollectionFolderViewContent(
                 preferences = preferences,
                 state = collectionState,
