@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
@@ -43,7 +44,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.artistsApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.personsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -131,12 +134,29 @@ class SearchViewModel
                                         recursive = true,
                                         includeItemTypes = listOf(type),
                                         fields = ProgramItemFields,
-                                        limit = 50,
+                                        limit = SEARCH_LIMIT,
                                         enableTotalRecordCount = false,
                                     )
-                                api.itemsApi.getItems(request).content.items.map {
-                                    BaseItem(it, false)
-                                }
+                                api.itemsApi.getItems(request).toBaseItems(api, false)
+                            }
+
+                            BaseItemKind.MUSIC_ARTIST -> {
+                                api.artistsApi
+                                    .getArtists(
+                                        searchTerm = query,
+                                        fields = SlimItemFields,
+                                        limit = SEARCH_LIMIT,
+                                        enableTotalRecordCount = false,
+                                    ).toBaseItems(api, false)
+                            }
+
+                            BaseItemKind.PERSON -> {
+                                api.personsApi
+                                    .getPersons(
+                                        searchTerm = query,
+                                        fields = SlimItemFields,
+                                        limit = SEARCH_LIMIT,
+                                    ).toBaseItems(api, false)
                             }
 
                             else -> {
@@ -146,12 +166,10 @@ class SearchViewModel
                                         recursive = true,
                                         includeItemTypes = listOf(type),
                                         fields = SlimItemFields,
-                                        limit = 50,
+                                        limit = SEARCH_LIMIT,
                                         enableTotalRecordCount = false,
                                     )
-                                api.itemsApi.getItems(request).content.items.map {
-                                    BaseItem(it, false)
-                                }
+                                api.itemsApi.getItems(request).toBaseItems(api, false)
                             }
                         }
                     val sorted =
@@ -440,3 +458,5 @@ val searchableTypes =
         BaseItemKind.PLAYLIST,
         BaseItemKind.VIDEO,
     )
+
+private const val SEARCH_LIMIT = 50
