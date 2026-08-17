@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
@@ -42,6 +43,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -71,6 +73,7 @@ class SearchViewModel
         private val mediaManagementService: MediaManagementService,
         private val mediaReportService: MediaReportService,
         private val liveTvService: LiveTvService,
+        private val keyValueService: KeyValueService,
     ) : ViewModel(),
         ContextMenuProvider {
         val seerrActive = seerrService.active
@@ -92,23 +95,22 @@ class SearchViewModel
         private fun init() {
             _state.update { SearchState() }
             viewModelScope.launchDefault {
-                val tvAccess = serverRepository.currentUserDto?.tvAccess == true
-                val searchableTypes =
-                    allSearchableTypes.filter {
-                        when (it) {
-                            // Remove live tv search if user doesn't have access
-                            BaseItemKind.TV_CHANNEL,
-                            BaseItemKind.LIVE_TV_PROGRAM,
-                            BaseItemKind.TV_PROGRAM,
-                            BaseItemKind.PROGRAM,
-                            -> tvAccess
-
-                            else -> true
-                        }
-                    }
+                val excludedSearchableTypes =
+                    serverRepository.currentUser?.id?.let { userId ->
+                        keyValueService
+                            .get<List<BaseItemKind>>(
+                                userId,
+                                EXCLUDED_SEARCHABLE_TYPES_KEY,
+                                emptyList(),
+                            ).firstOrNull()
+                    } ?: emptyList()
+                val searchableTypes = determineSearchableTypes(excludedSearchableTypes)
+                val possibleSearchableTypes = determineSearchableTypes(emptyList())
                 _state.update {
                     it.copy(
-                        searchableTypes = searchableTypes,
+                        includedSearchableTypes = searchableTypes,
+                        possibleSearchableTypes = possibleSearchableTypes,
+                        excludedSearchableTypes = excludedSearchableTypes,
                         results =
                             SnapshotStateMap<BaseItemKind, SearchResult>().apply {
                                 searchableTypes.forEach { put(it, SearchResult.NoQuery) }
@@ -118,11 +120,31 @@ class SearchViewModel
             }
         }
 
+        private fun determineSearchableTypes(excludedSearchableTypes: List<BaseItemKind>): List<BaseItemKind> {
+            val tvAccess = serverRepository.currentUserDto?.tvAccess == true
+            val searchableTypes =
+                allSearchableTypes.filter {
+                    val excluded = excludedSearchableTypes.contains(it)
+                    when (it) {
+                        // Remove live tv search if user doesn't have access
+                        BaseItemKind.TV_CHANNEL,
+                        BaseItemKind.LIVE_TV_PROGRAM,
+                        BaseItemKind.TV_PROGRAM,
+                        BaseItemKind.PROGRAM,
+                        -> tvAccess && !excluded
+
+                        else -> !excluded
+                    }
+                }
+            return searchableTypes
+        }
+
         fun search(
             query: String?,
             combined: Boolean = false,
+            force: Boolean = false,
         ) {
-            if (currentQuery == query && combinedMode == combined) {
+            if (currentQuery == query && combinedMode == combined && !force) {
                 return
             }
             currentQuery = query
@@ -132,14 +154,19 @@ class SearchViewModel
                     it.copy(
                         results =
                             SnapshotStateMap<BaseItemKind, SearchResult>().apply {
-                                it.searchableTypes.forEach { put(it, SearchResult.NoQuery) }
+                                it.includedSearchableTypes.forEach {
+                                    put(
+                                        it,
+                                        SearchResult.Searching,
+                                    )
+                                }
                             },
                     )
                 }
                 if (combined) {
                     searchCombined(query)
                 } else {
-                    state.value.searchableTypes.forEach { type ->
+                    state.value.includedSearchableTypes.forEach { type ->
                         searchType(query, type)
                     }
                 }
@@ -318,7 +345,7 @@ class SearchViewModel
                     if (combinedMode) {
                         state.value.combinedResults
                     } else {
-                        state.value.searchableTypes.getOrNull(position.row)?.let {
+                        state.value.includedSearchableTypes.getOrNull(position.row)?.let {
                             state.value.results[it]
                         }
                     } ?: return
@@ -346,7 +373,7 @@ class SearchViewModel
                             )
                         }
                     } else {
-                        state.value.searchableTypes.getOrNull(position.row)?.let { type ->
+                        state.value.includedSearchableTypes.getOrNull(position.row)?.let { type ->
                             state.value.results[type] = newList
                         }
                     }
@@ -431,6 +458,41 @@ class SearchViewModel
                 }
             }
         }
+
+        fun onClickExcludeSearchableType(type: BaseItemKind) {
+            viewModelScope.launchIO {
+                val state = state.value
+                val updateSearch: Boolean
+                val newExcludes =
+                    state.excludedSearchableTypes.toMutableList().apply {
+                        if (type in this) {
+                            updateSearch = true
+                            remove(type)
+                        } else {
+                            updateSearch = false
+                            add(type)
+                        }
+                    }
+                Timber.v("newExcludes=%s", newExcludes)
+                serverRepository.currentUser?.id?.let { userId ->
+                    keyValueService.save(userId, EXCLUDED_SEARCHABLE_TYPES_KEY, newExcludes)
+                }
+                val searchableTypes = determineSearchableTypes(newExcludes)
+                _state.update {
+                    it.copy(
+                        includedSearchableTypes = searchableTypes,
+                        excludedSearchableTypes = newExcludes,
+                    )
+                }
+                if (updateSearch && currentQuery.isNotNullOrBlank()) {
+                    search(currentQuery, combinedMode, true)
+                }
+            }
+        }
+
+        companion object {
+            private const val EXCLUDED_SEARCHABLE_TYPES_KEY = "excludedSearchableTypes"
+        }
     }
 
 sealed interface SearchResult {
@@ -455,7 +517,9 @@ data class SearchState(
     val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
-    val searchableTypes: List<BaseItemKind> = emptyList(),
+    val possibleSearchableTypes: List<BaseItemKind> = emptyList(),
+    val includedSearchableTypes: List<BaseItemKind> = emptyList(),
+    val excludedSearchableTypes: List<BaseItemKind> = emptyList(),
 )
 
 private val allSearchableTypes =
