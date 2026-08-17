@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.search
 
 import android.view.Gravity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -48,6 +49,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
@@ -88,6 +90,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
+import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialog
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.preferences.SwitchColors
@@ -117,6 +120,7 @@ fun SearchPage(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val state by viewModel.state.collectAsState()
+    val programDialogState by viewModel.programDialogState.collectAsState()
 
     // Start with current preferences, but collect updates when view options change
     val prefs =
@@ -136,6 +140,7 @@ fun SearchPage(
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var searchClicked by rememberSaveable(query) { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
+    var showProgramDialog by remember { mutableStateOf(false) }
 
     val position by viewModel.position.collectAsState()
 
@@ -174,7 +179,13 @@ fun SearchPage(
         focusRequesters.getOrNull(position.row)?.tryRequestFocus()
     }
     val onClickItem = { _: Int, item: BaseItem ->
-        viewModel.navigationManager.navigateTo(item.destination())
+        Timber.v("Clicked %s, type=%s", item.id, item.type)
+        if (item.type == BaseItemKind.TV_PROGRAM || item.type == BaseItemKind.PROGRAM || item.type == BaseItemKind.LIVE_TV_PROGRAM) {
+            viewModel.fetchProgramForDialog(item.id)
+            showProgramDialog = true
+        } else {
+            viewModel.navigationManager.navigateTo(item.destination())
+        }
     }
     val onLongClickItem = { rowIndex: Int, index: Int, item: BaseItem ->
         setPosition(RowColumn(rowIndex, index))
@@ -555,6 +566,44 @@ fun SearchPage(
             onDismissRequest = { showViewOptions = false },
         )
     }
+
+    if (showProgramDialog) {
+        val context = LocalContext.current
+        val onDismissRequest = { showProgramDialog = false }
+        ProgramDialog(
+            state = programDialogState.loading,
+            canRecord = true,
+            onDismissRequest = onDismissRequest,
+            onWatch = {
+                onDismissRequest.invoke()
+                val channelId = it.data.channelId
+                if (channelId != null) {
+                    viewModel.navigationManager.navigateTo(
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        ),
+                    )
+                } else {
+                    Toast.makeText(context, "Program has no channel ID", Toast.LENGTH_LONG).show()
+                }
+            },
+            onRecord = { program, series ->
+                viewModel.record(
+                    programId = program.id,
+                    series = series,
+                )
+                onDismissRequest.invoke()
+            },
+            onCancelRecord = { program, series ->
+                viewModel.cancelRecording(
+                    series = series,
+                    timerId = if (series) program.data.seriesTimerId else program.data.timerId,
+                )
+                onDismissRequest.invoke()
+            },
+        )
+    }
 }
 
 @Composable
@@ -807,65 +856,19 @@ fun LazyListScope.searchResultRow(
     },
 ) {
     item {
-        when (val r = result) {
-            is SearchResult.Error -> {
-                SearchResultPlaceholder(
-                    title = stringResource(title),
-                    message = r.ex.localizedMessage ?: "Error occurred during search",
-                    messageColor = MaterialTheme.colorScheme.error,
-                    modifier = Modifier,
-                )
-            }
-
-            SearchResult.NoQuery -> {
-                // no-op
-            }
-
-            SearchResult.Searching -> {
-                SearchResultPlaceholder(
-                    title = stringResource(title),
-                    message = stringResource(R.string.searching),
-                    modifier = modifier,
-                )
-            }
-
-            is SearchResult.Success -> {
-                if (r.items.isNotEmpty()) {
-                    ItemRow(
-                        title = stringResource(title),
-                        items = r.items,
-                        onClickItem = onClickItem,
-                        onLongClickItem = onLongClickItem,
-                        modifier = modifier.focusRequester(focusRequester),
-                        cardContent = cardContent,
-                    )
-                }
-            }
-
-            is SearchResult.SuccessSeerr -> {
-                if (r.items.isNotEmpty()) {
-                    ItemRow(
-                        title = stringResource(title),
-                        items = r.items,
-                        onClickItem = { index, item ->
-                            onClickPosition.invoke(RowColumn(rowIndex, index))
-                            onClickDiscover?.invoke(index, item)
-                        },
-                        onLongClickItem = { _, _ -> },
-                        modifier = modifier.focusRequester(focusRequester),
-                        cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                            DiscoverItemCard(
-                                item = item,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                showOverlay = true,
-                                modifier = mod,
-                            )
-                        },
-                    )
-                }
-            }
-        }
+        SearchRowResult(
+            title = R.string.discover,
+            result = result,
+            rowIndex = SEERR_ROW,
+            position = position,
+            focusRequester = focusRequester,
+            onClickItem = onClickItem,
+            onLongClickItem = { _, _ -> },
+            onClickDiscover = onClickDiscover,
+            onClickPosition = onClickPosition,
+            cardContent = cardContent,
+            modifier = modifier,
+        )
     }
 }
 

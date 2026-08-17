@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -22,11 +23,13 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialogState
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
 import com.github.damontecres.wholphin.util.WholphinDispatchers
@@ -62,6 +65,7 @@ class SearchViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaManagementService: MediaManagementService,
         private val mediaReportService: MediaReportService,
+        private val liveTvService: LiveTvService,
     ) : ViewModel(),
         ContextMenuProvider {
         val seerrActive = seerrService.active
@@ -72,6 +76,9 @@ class SearchViewModel
 
         private var currentQuery: String? = null
         private var combinedMode = false
+
+        private val _programDialogState = MutableStateFlow(ProgramDialogState())
+        val programDialogState: StateFlow<ProgramDialogState> = _programDialogState
 
         init {
             init()
@@ -307,6 +314,55 @@ class SearchViewModel
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
 
         override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+
+        fun fetchProgramForDialog(programId: UUID) {
+            _programDialogState.update { it.copy(loading = DataLoadingState.Loading) }
+            viewModelScope.launchDefault {
+                try {
+                    val result = liveTvService.fetchProgramForDialog(programId)
+                    _programDialogState.update { it.copy(loading = DataLoadingState.Success(result)) }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching program $programId")
+                    _programDialogState.update { it.copy(loading = DataLoadingState.Error(ex)) }
+                }
+            }
+        }
+
+        fun cancelRecording(
+            series: Boolean,
+            timerId: String?,
+        ) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                try {
+                    val result = liveTvService.cancelRecording(series, timerId)
+                    // TODO update program card?
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error canceling timer %s, series=%s", timerId, series)
+                    showToast(context, "Error: ${ex.localizedMessage}")
+                }
+            }
+        }
+
+        fun record(
+            programId: UUID,
+            series: Boolean,
+        ) {
+            viewModelScope.launchIO {
+                try {
+                    liveTvService.record(programId, series)
+                    // TODO update program card?
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error recording %s, series=%s", programId, series)
+                    showToast(context, "Error: ${ex.localizedMessage}")
+                }
+            }
+        }
     }
 
 sealed interface SearchResult {
