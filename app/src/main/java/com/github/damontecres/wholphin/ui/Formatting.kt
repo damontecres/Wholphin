@@ -243,7 +243,7 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.MUSIC_GENRE -> R.string.genres
         BaseItemKind.MUSIC_VIDEO -> R.string.music_videos
         BaseItemKind.PHOTO -> R.string.photos
-        BaseItemKind.PHOTO_ALBUM -> R.string.photos
+        BaseItemKind.PHOTO_ALBUM -> R.string.photo_albums
         BaseItemKind.PROGRAM -> R.string.programs
         BaseItemKind.RECORDING -> R.string.recordings
         BaseItemKind.SEASON -> R.string.tv_seasons

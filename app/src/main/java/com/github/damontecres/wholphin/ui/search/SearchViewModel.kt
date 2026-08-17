@@ -473,6 +473,8 @@ private val allSearchableTypes =
         BaseItemKind.MUSIC_VIDEO,
         BaseItemKind.PLAYLIST,
         BaseItemKind.VIDEO,
+        BaseItemKind.PHOTO,
+        BaseItemKind.PHOTO_ALBUM,
     )
 
 private const val SEARCH_LIMIT = 50
