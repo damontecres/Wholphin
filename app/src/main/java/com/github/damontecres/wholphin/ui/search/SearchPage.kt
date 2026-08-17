@@ -127,7 +127,7 @@ fun SearchPage(
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf(initialQuery) }
     val focusRequesters =
-        remember { List(RESULTS_START + searchableTypes.size) { FocusRequester() } }
+        remember(state.searchableTypes.size) { List(RESULTS_START + state.searchableTypes.size) { FocusRequester() } }
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
@@ -231,7 +231,7 @@ fun SearchPage(
                     if (combinedMode) {
                         listOf(state.combinedResults)
                     } else {
-                        searchableTypes.map { state.results[it] }
+                        state.searchableTypes.map { state.results[it] }
                     }
                 } else {
                     listOf(state.seerrResults)
@@ -427,7 +427,7 @@ fun SearchPage(
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                         modifier = Modifier.focusGroup(),
                     ) {
-                        itemsIndexed(searchableTypes) { index, type ->
+                        itemsIndexed(state.searchableTypes) { index, type ->
                             val rowIndex = RESULTS_START + index
                             val result = state.results.getOrDefault(type, SearchResult.Searching)
                             SearchRowResult(

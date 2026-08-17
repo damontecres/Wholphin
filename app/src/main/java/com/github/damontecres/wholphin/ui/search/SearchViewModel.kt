@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
+import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
@@ -90,8 +91,30 @@ class SearchViewModel
 
         private fun init() {
             _state.update { SearchState() }
-            searchableTypes.forEach {
-                state.value.results[it] = SearchResult.NoQuery
+            viewModelScope.launchDefault {
+                val tvAccess = serverRepository.currentUserDto?.tvAccess == true
+                val searchableTypes =
+                    allSearchableTypes.filter {
+                        when (it) {
+                            // Remove live tv search if user doesn't have access
+                            BaseItemKind.TV_CHANNEL,
+                            BaseItemKind.LIVE_TV_PROGRAM,
+                            BaseItemKind.TV_PROGRAM,
+                            BaseItemKind.PROGRAM,
+                            -> tvAccess
+
+                            else -> true
+                        }
+                    }
+                _state.update {
+                    it.copy(
+                        searchableTypes = searchableTypes,
+                        results =
+                            SnapshotStateMap<BaseItemKind, SearchResult>().apply {
+                                searchableTypes.forEach { put(it, SearchResult.NoQuery) }
+                            },
+                    )
+                }
             }
         }
 
@@ -105,11 +128,18 @@ class SearchViewModel
             currentQuery = query
             combinedMode = combined
             if (query.isNotNullOrBlank()) {
-                _state.update { SearchState.searchingState }
+                _state.update {
+                    it.copy(
+                        results =
+                            SnapshotStateMap<BaseItemKind, SearchResult>().apply {
+                                it.searchableTypes.forEach { put(it, SearchResult.NoQuery) }
+                            },
+                    )
+                }
                 if (combined) {
                     searchCombined(query)
                 } else {
-                    searchableTypes.forEach { type ->
+                    state.value.searchableTypes.forEach { type ->
                         searchType(query, type)
                     }
                 }
@@ -288,7 +318,7 @@ class SearchViewModel
                     if (combinedMode) {
                         state.value.combinedResults
                     } else {
-                        searchableTypes.getOrNull(position.row)?.let {
+                        state.value.searchableTypes.getOrNull(position.row)?.let {
                             state.value.results[it]
                         }
                     } ?: return
@@ -316,7 +346,7 @@ class SearchViewModel
                             )
                         }
                     } else {
-                        searchableTypes.getOrNull(position.row)?.let { type ->
+                        state.value.searchableTypes.getOrNull(position.row)?.let { type ->
                             state.value.results[type] = newList
                         }
                     }
@@ -425,24 +455,10 @@ data class SearchState(
     val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
-) {
-    companion object {
-        // TODO
-        val searchingState =
-            SearchState(
-                results =
-                    SnapshotStateMap<BaseItemKind, SearchResult>().apply {
-                        searchableTypes.forEach {
-                            this[it] = SearchResult.Searching
-                        }
-                    },
-                seerrResults = SearchResult.Searching,
-                combinedResults = SearchResult.Searching,
-            )
-    }
-}
+    val searchableTypes: List<BaseItemKind> = emptyList(),
+)
 
-val searchableTypes =
+private val allSearchableTypes =
     listOf(
         BaseItemKind.MOVIE,
         BaseItemKind.SERIES,
