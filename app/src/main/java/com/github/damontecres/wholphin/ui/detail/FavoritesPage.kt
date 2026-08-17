@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.TabbedPage
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
+import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 
 @Composable
@@ -27,12 +28,6 @@ fun FavoritesPage(
 ) {
     val state by viewModel.state.collectAsState()
     val tabs = state.tabDetails
-    val actions =
-        remember {
-            GridClickActions(
-                onClickItem = { _, item -> viewModel.navigationManager.navigateTo(item.destination()) },
-            )
-        }
 
     var showTabs by rememberSaveable { mutableStateOf(true) }
 
@@ -50,6 +45,14 @@ fun FavoritesPage(
 
         if (type != null && collectionState != null) {
             val provider = remember(type) { viewModel.createTypedProvider(type) }
+            val contextMenu = rememberContextMenu(preferences, provider)
+            val actions =
+                remember(type) {
+                    GridClickActions(
+                        onClickItem = { _, item -> viewModel.navigationManager.navigateTo(item.destination()) },
+                        onLongClickItem = contextMenu::showContextMenu,
+                    )
+                }
             CollectionFolderViewContent(
                 preferences = preferences,
                 state = collectionState,
@@ -71,6 +74,8 @@ fun FavoritesPage(
                 focusRequesterOnEmpty = null,
                 filterOptions = DefaultForFavoritesFilterOptions,
             )
+
+            contextMenu.Compose()
         } else {
             ErrorMessage("Invalid tab index $tabIndex", null)
         }
