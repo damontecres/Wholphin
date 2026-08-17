@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,10 +88,12 @@ import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.preferences.SwitchColors
+import com.github.damontecres.wholphin.ui.titleStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -429,153 +432,85 @@ fun SearchPage(
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                         modifier = Modifier.focusGroup(),
                     ) {
-                        searchResultRow(
-                            title = R.string.movies_title,
-                            result = state.movies,
-                            rowIndex = MOVIE_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[MOVIE_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(MOVIE_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        searchResultRow(
-                            title = R.string.tv_shows_title,
-                            result = state.series,
-                            rowIndex = SERIES_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[SERIES_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(SERIES_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        searchResultRow(
-                            title = R.string.episodes,
-                            result = state.episodes,
-                            rowIndex = EPISODE_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[EPISODE_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(EPISODE_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                            cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                                BannerCardWithTitle(
-                                    title = item?.title,
-                                    subtitle = item?.subtitle,
-                                    item = item,
-                                    onClick = {
-                                        setPosition(RowColumn(EPISODE_ROW, index))
-                                        onClick.invoke()
-                                    },
-                                    onLongClick = onLongClick,
-                                    modifier = mod.padding(horizontal = 8.dp),
-                                    cardHeight = Cards.heightEpisode,
-                                )
-                            },
-                        )
-                        searchResultRow(
-                            title = R.string.collections,
-                            result = state.collections,
-                            rowIndex = COLLECTION_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[COLLECTION_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(COLLECTION_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        searchResultRow(
-                            title = R.string.albums,
-                            result = state.albums,
-                            rowIndex = ALBUM_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[ALBUM_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(ALBUM_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                            cardContent = { index, item, mod, onClick, onLongClick ->
-                                SeasonCard(
-                                    item = item,
-                                    onClick = {
-                                        setPosition(RowColumn(ALBUM_ROW, index))
-                                        onClick.invoke()
-                                    },
-                                    onLongClick = onLongClick,
-                                    imageHeight = Cards.heightEpisode,
-                                    aspectRatio = AspectRatios.SQUARE,
-                                    showImageOverlay = true,
-                                    modifier = mod,
-                                )
-                            },
-                        )
-                        searchResultRow(
-                            title = R.string.artists,
-                            result = state.artists,
-                            rowIndex = ARTIST_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[ARTIST_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(ARTIST_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                            cardContent = { index, item, mod, onClick, onLongClick ->
-                                SeasonCard(
-                                    item = item,
-                                    onClick = {
-                                        setPosition(RowColumn(ARTIST_ROW, index))
-                                        onClick.invoke()
-                                    },
-                                    onLongClick = onLongClick,
-                                    imageHeight = Cards.heightEpisode,
-                                    aspectRatio = AspectRatios.SQUARE,
-                                    showImageOverlay = true,
-                                    modifier = mod,
-                                )
-                            },
-                        )
-                        searchResultRow(
-                            title = R.string.songs,
-                            result = state.songs,
-                            rowIndex = SONG_ROW,
-                            position = position,
-                            focusRequester = focusRequesters[SONG_ROW],
-                            onClickItem = onClickItem,
-                            onLongClickItem = { index, item ->
-                                onLongClickItem(SONG_ROW, index, item)
-                            },
-                            onClickPosition = { setPosition(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                            cardContent = { index, item, mod, onClick, onLongClick ->
-                                SeasonCard(
-                                    item = item,
-                                    onClick = {
-                                        setPosition(RowColumn(SONG_ROW, index))
-                                        onClick.invoke()
-                                    },
-                                    onLongClick = onLongClick,
-                                    imageHeight = Cards.heightEpisode,
-                                    aspectRatio = AspectRatios.SQUARE,
-                                    showImageOverlay = true,
-                                    modifier = mod,
-                                )
-                            },
-                        )
+                        itemsIndexed(searchableTypes) { rowIndex, type ->
+                            val cardContent: @Composable (
+                                index: Int,
+                                item: BaseItem?,
+                                modifier: Modifier,
+                                onClick: () -> Unit,
+                                onLongClick: () -> Unit,
+                            ) -> Unit =
+                                when (type) {
+                                    BaseItemKind.EPISODE -> {
+                                        { index, item, mod, onClick, onLongClick ->
+                                            BannerCardWithTitle(
+                                                title = item?.title,
+                                                subtitle = item?.subtitle,
+                                                item = item,
+                                                onClick = {
+                                                    setPosition(RowColumn(EPISODE_ROW, index))
+                                                    onClick.invoke()
+                                                },
+                                                onLongClick = onLongClick,
+                                                modifier = mod.padding(horizontal = 8.dp),
+                                                cardHeight = Cards.heightEpisode,
+                                            )
+                                        }
+                                    }
+
+                                    BaseItemKind.MUSIC_ALBUM,
+                                    BaseItemKind.MUSIC_ARTIST,
+                                    BaseItemKind.AUDIO,
+                                    -> {
+                                        { index, item, mod, onClick, onLongClick ->
+                                            SeasonCard(
+                                                item = item,
+                                                onClick = {
+                                                    setPosition(RowColumn(ALBUM_ROW, index))
+                                                    onClick.invoke()
+                                                },
+                                                onLongClick = onLongClick,
+                                                imageHeight = Cards.heightEpisode,
+                                                aspectRatio = AspectRatios.SQUARE,
+                                                showImageOverlay = true,
+                                                modifier = mod,
+                                            )
+                                        }
+                                    }
+
+                                    else -> {
+                                        { index, item, mod, onClick, onLongClick ->
+                                            SeasonCard(
+                                                item = item,
+                                                onClick = {
+                                                    setPosition(RowColumn(ALBUM_ROW, index))
+                                                    onClick.invoke()
+                                                },
+                                                onLongClick = onLongClick,
+                                                imageHeight = Cards.height2x3,
+                                                showImageOverlay = true,
+                                                modifier = mod,
+                                            )
+                                        }
+                                    }
+                                }
+                            val result = state.results.getOrDefault(type, SearchResult.Searching)
+                            SearchRowResult(
+                                title = type.titleStringRes,
+                                result = result,
+                                rowIndex = MOVIE_ROW,
+                                position = position,
+                                focusRequester = focusRequesters[MOVIE_ROW],
+                                onClickItem = onClickItem,
+                                onLongClickItem = { index, item ->
+                                    onLongClickItem(MOVIE_ROW, index, item)
+                                },
+                                onClickPosition = { setPosition(it) },
+                                modifier = Modifier.fillMaxWidth(),
+                                cardContent = cardContent,
+                            )
+                        }
+
                         searchResultRow(
                             title = R.string.discover,
                             result = state.seerrResults,
@@ -913,6 +848,87 @@ fun LazyListScope.searchResultRow(
                         },
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchRowResult(
+    @StringRes title: Int,
+    result: SearchResult,
+    rowIndex: Int,
+    position: RowColumn,
+    focusRequester: FocusRequester,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
+    onClickPosition: (RowColumn) -> Unit,
+    modifier: Modifier = Modifier,
+    onClickDiscover: ((Int, DiscoverItem) -> Unit)? = null,
+    cardContent: @Composable (
+        index: Int,
+        item: BaseItem?,
+        modifier: Modifier,
+        onClick: () -> Unit,
+        onLongClick: () -> Unit,
+    ) -> Unit,
+) {
+    when (val r = result) {
+        is SearchResult.Error -> {
+            SearchResultPlaceholder(
+                title = stringResource(title),
+                message = r.ex.localizedMessage ?: "Error occurred during search",
+                messageColor = MaterialTheme.colorScheme.error,
+                modifier = Modifier,
+            )
+        }
+
+        SearchResult.NoQuery -> {
+            // no-op
+        }
+
+        SearchResult.Searching -> {
+            SearchResultPlaceholder(
+                title = stringResource(title),
+                message = stringResource(R.string.searching),
+                modifier = modifier,
+            )
+        }
+
+        is SearchResult.Success -> {
+            if (r.items.isNotEmpty()) {
+                ItemRow(
+                    title = stringResource(title),
+                    items = r.items,
+                    onClickItem = onClickItem,
+                    onLongClickItem = onLongClickItem,
+                    modifier = modifier.focusRequester(focusRequester),
+                    cardContent = cardContent,
+                )
+            }
+        }
+
+        is SearchResult.SuccessSeerr -> {
+            if (r.items.isNotEmpty()) {
+                ItemRow(
+                    title = stringResource(title),
+                    items = r.items,
+                    onClickItem = { index, item ->
+                        onClickPosition.invoke(RowColumn(rowIndex, index))
+                        onClickDiscover?.invoke(index, item)
+                    },
+                    onLongClickItem = { _, _ -> },
+                    modifier = modifier.focusRequester(focusRequester),
+                    cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                        DiscoverItemCard(
+                            item = item,
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                            showOverlay = true,
+                            modifier = mod,
+                        )
+                    },
+                )
             }
         }
     }

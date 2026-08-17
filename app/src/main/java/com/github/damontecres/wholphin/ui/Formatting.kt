@@ -220,6 +220,10 @@ fun listToDotString(
         }
     }
 
+@get:StringRes
+val BaseItemKind.titleStringRes: Int
+    get() = formatTypeName(this)
+
 @StringRes
 fun formatTypeName(type: BaseItemKind): Int =
     when (type) {

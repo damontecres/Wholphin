@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.search
 
 import android.content.Context
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -72,6 +73,17 @@ class SearchViewModel
         private var currentQuery: String? = null
         private var combinedMode = false
 
+        init {
+            init()
+        }
+
+        private fun init() {
+            _state.update { SearchState() }
+            searchableTypes.forEach {
+                state.value.results[it] = SearchResult.NoQuery
+            }
+        }
+
         fun search(
             query: String?,
             combined: Boolean = false,
@@ -86,42 +98,13 @@ class SearchViewModel
                 if (combined) {
                     searchCombined(query)
                 } else {
-                    searchInternal(
-                        query,
-                        BaseItemKind.MOVIE,
-                    ) { result, state -> state.copy(movies = result) }
-                    searchInternal(
-                        query,
-                        BaseItemKind.SERIES,
-                    ) { result, state -> state.copy(series = result) }
-                    searchInternal(query, BaseItemKind.EPISODE) { result, state ->
-                        state.copy(
-                            episodes = result,
-                        )
+                    searchableTypes.forEach { type ->
+                        searchInternal2(query, type)
                     }
-                    searchInternal(query, BaseItemKind.BOX_SET) { result, state ->
-                        state.copy(
-                            collections = result,
-                        )
-                    }
-                    searchInternal(query, BaseItemKind.MUSIC_ALBUM) { result, state ->
-                        state.copy(
-                            albums = result,
-                        )
-                    }
-                    searchInternal(query, BaseItemKind.MUSIC_ARTIST) { result, state ->
-                        state.copy(
-                            artists = result,
-                        )
-                    }
-                    searchInternal(
-                        query,
-                        BaseItemKind.AUDIO,
-                    ) { result, state -> state.copy(songs = result) }
                 }
                 searchSeerr(query)
             } else {
-                _state.update { SearchState() }
+                init()
             }
         }
 
@@ -156,6 +139,41 @@ class SearchViewModel
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception searching for $type")
                     _state.update { update.invoke(SearchResult.Error(ex), it) }
+                }
+            }
+        }
+
+        private fun searchInternal2(
+            query: String,
+            type: BaseItemKind,
+        ) {
+            viewModelScope.launchIO {
+                try {
+                    val request =
+                        GetItemsRequest(
+                            searchTerm = query,
+                            recursive = true,
+                            includeItemTypes = listOf(type),
+                            fields = SlimItemFields,
+                            limit = 50,
+                        )
+                    val result = api.itemsApi.getItems(request).content
+                    val items =
+                        result.items.map {
+                            BaseItem(it, false)
+                        }
+                    val sorted =
+                        items.sortedWith(
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
+                                .thenBy { it.sortName },
+                        )
+                    Timber.v("Search finished for %s, %s results", type, sorted.size)
+                    _state.value.results[type] = SearchResult.Success(sorted)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception searching for $type")
+                    _state.value.results[type] = SearchResult.Error(ex)
                 }
             }
         }
@@ -370,6 +388,7 @@ data class SearchState(
     val songs: SearchResult = SearchResult.NoQuery,
     val seerrResults: SearchResult = SearchResult.NoQuery,
     val combinedResults: SearchResult = SearchResult.NoQuery,
+    val results: SnapshotStateMap<BaseItemKind, SearchResult> = SnapshotStateMap(),
 ) {
     companion object {
         val searchingState =
@@ -386,3 +405,20 @@ data class SearchState(
             )
     }
 }
+
+val searchableTypes =
+    listOf(
+        BaseItemKind.MOVIE,
+        BaseItemKind.SERIES,
+        BaseItemKind.EPISODE,
+        BaseItemKind.BOX_SET,
+        BaseItemKind.PERSON,
+        BaseItemKind.TV_CHANNEL,
+        BaseItemKind.TV_PROGRAM,
+        BaseItemKind.MUSIC_ALBUM,
+        BaseItemKind.MUSIC_ARTIST,
+        BaseItemKind.AUDIO,
+        BaseItemKind.MUSIC_VIDEO,
+        BaseItemKind.PLAYLIST,
+        BaseItemKind.VIDEO,
+    )
