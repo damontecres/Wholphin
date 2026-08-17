@@ -118,7 +118,25 @@ fun TabbedPage(
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
     val selectedTabIndex by viewModel.state.collectAsState()
+    TabbedPage(
+        selectedTabIndex = selectedTabIndex,
+        tabs = tabs,
+        updateSelectedTabIndex = viewModel::updateSelectedTabIndex,
+        modifier = modifier,
+        showTabs = showTabs,
+        tabContent = tabContent,
+    )
+}
 
+@Composable
+fun TabbedPage(
+    selectedTabIndex: Int,
+    tabs: List<TabDetails>,
+    updateSelectedTabIndex: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    showTabs: Boolean = true,
+    tabContent: @Composable (Int, TabDetails) -> Unit,
+) {
     Column(
         modifier = modifier,
     ) {
@@ -133,11 +151,11 @@ fun TabbedPage(
                     Modifier
                         .padding(vertical = 16.dp),
                 tabs = tabs,
-                onClick = viewModel::updateSelectedTabIndex,
+                onClick = updateSelectedTabIndex,
             )
         }
         selectedTabIndex.let { tabIndex ->
-            if (tabIndex >= 0) {
+            if (tabIndex in tabs.indices) {
                 tabContent.invoke(tabIndex, tabs[tabIndex])
             } else {
                 DelayedLoadingPage(focusEnabled = false)
