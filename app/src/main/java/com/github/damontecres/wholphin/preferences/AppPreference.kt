@@ -1185,7 +1185,6 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
-        AppPreference.DoviDeviceCompatibilityPref,
         AppPreference.DecodeAv1,
     )
 
