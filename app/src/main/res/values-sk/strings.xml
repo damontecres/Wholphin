@@ -748,4 +748,7 @@
     <string name="appears_on">Objavuje sa v</string>
     <string name="disable_audio_offload">Zakázať hardvérové odovzdávanie zvuku</string>
     <string name="disable_audio_offload_summary">Zakázanie odovzdávania dekódovania zvuku môže vyriešiť zamŕzanie prehrávania na niektorých zariadeniach</string>
+    <string name="dim_after_delay">Stlmiť obrazovku po uplynutí času</string>
+    <string name="dim_percentage">Úroveň stlmenia</string>
+    <string name="dim_screen">Stlmenie obrazovky</string>
 </resources>
