@@ -11,6 +11,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -53,7 +55,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -69,15 +70,18 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
+import com.github.damontecres.wholphin.preferences.DpadSeekMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.overlay.DpadSeekOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.PauseIndicator
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
@@ -161,6 +165,7 @@ fun PlaybackPageContent(
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    LaunchedEffect(density) { viewModel.updateDensity(density) }
     val userDto by viewModel.currentUserDto.collectAsState()
 
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -221,6 +226,23 @@ fun PlaybackPageContent(
         skipIndicatorDuration += delta
         skipPosition = player.currentPosition
     }
+    val onDpadSeek: (Long) -> Unit = { deltaMs ->
+        if (skipIndicatorDuration == 0L) {
+            skipPosition = player.currentPosition
+        }
+        if ((skipIndicatorDuration > 0 && deltaMs < 0) ||
+            (skipIndicatorDuration < 0 && deltaMs > 0)
+        ) {
+            skipIndicatorDuration = 0L
+        }
+        skipIndicatorDuration += deltaMs
+        skipPosition =
+            (skipPosition + deltaMs).coerceIn(
+                minimumValue = 0L,
+                maximumValue = player.duration.coerceAtLeast(0L),
+            )
+        seekBarState.onValueChange(skipPosition)
+    }
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
         remember(isLtr, preferences) {
@@ -234,6 +256,7 @@ fun PlaybackPageContent(
                 getDurationMs = { player.duration.coerceAtLeast(0L) },
                 controllerViewState = controllerViewState,
                 updateSkipIndicator = updateSkipIndicator,
+                clearSkipIndicator = { skipIndicatorDuration = 0 },
                 skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                 onInteraction = viewModel::reportInteraction,
                 oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
@@ -242,6 +265,11 @@ fun PlaybackPageContent(
                     viewModel.navigationManager.goBack()
                 },
                 onPlaybackDialogTypeClick = { playbackDialog = it },
+                isDpadSeekVisible = {
+                    prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY && skipIndicatorDuration != 0L
+                },
+                onDpadSeek = onDpadSeek,
+                dpadSeekMode = prefs.dpadSeekMode,
             )
         }
 
@@ -351,8 +379,40 @@ fun PlaybackPageContent(
                 }
             }
 
+            AnimatedVisibility(
+                visible =
+                    !controllerViewState.controlsVisible &&
+                        skipIndicatorDuration != 0L &&
+                        prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it },
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter),
+            ) {
+                DpadSeekOverlay(
+                    player = player,
+                    seekPositionMs = skipPosition,
+                    trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                    trickplayUrlFor = viewModel::getTrickplayUrl,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                            .fillMaxWidth(.95f),
+                )
+                // Clear the overlay after a delay
+                LaunchedEffect(skipIndicatorDuration) {
+                    delay(1.5.seconds)
+                    skipIndicatorDuration = 0L
+                }
+            }
+
             // If D-pad skipping, show the amount skipped in an animation
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
+            if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L &&
+                prefs.dpadSeekMode != DpadSeekMode.SEEKBAR_TRICKPLAY
+            ) {
+                // Skip time mode: show seek distance indicator
                 SkipIndicator(
                     durationMs = skipIndicatorDuration,
                     onFinish = {
@@ -364,8 +424,7 @@ fun PlaybackPageContent(
                             .padding(bottom = 70.dp),
                 )
                 // Show a small progress bar along the bottom of the screen
-                val showSkipProgress = true // TODO get from preferences
-                if (showSkipProgress) {
+                if (prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_MINIMAL) {
                     val percent = skipPosition.toFloat() / player.duration.toFloat()
                     Box(
                         modifier =
@@ -379,7 +438,13 @@ fun PlaybackPageContent(
                 }
             }
 
-            if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L) {
+            val controlsVisible =
+                remember(controllerViewState.controlsVisible, playbackDialog, subtitleSearchState) {
+                    controllerViewState.controlsVisible ||
+                        playbackDialog != null ||
+                        subtitleSearchState.status != SubtitleSearchStatus.Inactive
+                }
+            if (!controlsVisible && skipIndicatorDuration == 0L) {
                 PauseIndicator(
                     player = player,
                     modifier =
@@ -440,11 +505,13 @@ fun PlaybackPageContent(
             val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
             val isImageSubtitles =
                 remember(state.subtitleCues) { state.subtitleCues.firstOrNull()?.bitmap != null }
-            var cueCount by remember { mutableIntStateOf(0) }
+
+            // Reset cueCount when density changes to force re-applying subtitle style
+            var cueCount by remember(density) { mutableIntStateOf(0) }
 
             val subtitleVisible =
                 skipIndicatorDuration == 0L &&
-                    state.currentItemPlayback?.subtitleIndexEnabled == true &&
+                    state.currentPlayback?.subtitleIndexEnabled == true &&
                     !presentationState.coverSurface
 
             AndroidView(
@@ -476,6 +543,7 @@ fun PlaybackPageContent(
                     }
                     subtitleView.setCues(state.subtitleCues)
                     if (state.subtitleCues.size > cueCount) {
+                        Timber.i("Applying subtitle style to SubtitleView")
                         // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
                         Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
                             .apply(subtitleView)
@@ -629,28 +697,29 @@ fun PlaybackPageContent(
             }
             viewModel.cancelSubtitleSearch()
         }
-        Dialog(
+        BasicDialog(
             onDismissRequest = onDismissRequest,
             properties =
                 DialogProperties(
                     usePlatformDefaultWidth = false,
                 ),
         ) {
-            DownloadSubtitlesContent(
-                state = subtitleSearchState.status,
-                language = subtitleSearchState.language,
-                onSearch = { lang ->
-                    viewModel.searchForSubtitles(lang)
-                },
-                onClickDownload = {
-                    viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
-                },
-                onDismissRequest = onDismissRequest,
-                modifier =
-                    Modifier
-                        .widthIn(max = 640.dp)
-                        .heightIn(max = 400.dp),
-            )
+            Box(modifier = Modifier.padding(24.dp)) {
+                DownloadSubtitlesContent(
+                    state = subtitleSearchState.status,
+                    language = subtitleSearchState.language,
+                    onSearch = { lang ->
+                        viewModel.searchForSubtitles(lang)
+                    },
+                    onClickDownload = {
+                        viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
+                    },
+                    modifier =
+                        Modifier
+                            .widthIn(max = 640.dp)
+                            .heightIn(max = 400.dp),
+                )
+            }
         }
     }
 
@@ -660,9 +729,9 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = state.currentItemPlayback?.audioIndex,
+                    audioIndex = state.currentPlayback?.audioIndex,
                     audioStreams = state.currentMediaInfo.audioStreams,
-                    subtitleIndex = state.currentItemPlayback?.subtitleIndex,
+                    subtitleIndex = state.currentPlayback?.subtitleIndex,
                     subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,

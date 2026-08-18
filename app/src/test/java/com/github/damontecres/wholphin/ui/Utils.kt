@@ -17,4 +17,7 @@ fun SemanticsNodeInteraction.performClickEnter() =
 
 fun <T> successResponse(content: T) = Response(content, 200, emptyMap())
 
-fun successQueryResult(items: List<BaseItemDto>) = successResponse(BaseItemDtoQueryResult(items, items.size, 0))
+fun successQueryResult(
+    items: List<BaseItemDto> = emptyList(),
+    totalRecordCount: Int = items.size,
+) = successResponse(BaseItemDtoQueryResult(items, totalRecordCount, 0))

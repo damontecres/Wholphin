@@ -94,6 +94,13 @@ message PlaybackPreferences {
   bool resolution_switching = 23;
   string external_player = 24;
   bool cinema_mode = 25;
+  DpadSeekMode dpad_seek_mode = 26;
+}
+
+enum DpadSeekMode {
+  SEEKBAR_MINIMAL = 0;
+  SEEKBAR_TRICKPLAY = 1;
+  SEEKBAR_NONE = 2;
 }
 
 message HomePagePreferences{
@@ -120,6 +127,8 @@ enum AppThemeColors {
   ORANGE = 3;
   BOLD_BLUE = 4;
   OLED_BLACK = 5;
+  RED = 6;
+  BROWN = 7;
 }
 
 enum EdgeStyle{
@@ -172,6 +181,8 @@ message ScreensaverPreferences{
   bool enabled = 5;
   repeated string item_types = 6;
   bool show_clock = 7;
+  bool dim_enabled = 8;
+  int32 dim_percent = 9;
 }
 
 message SearchPreferences {
@@ -223,6 +234,7 @@ message ExperimentalPreferences {
   bool enabled = 1;
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
+  bool disable_audio_offload = 4;
 }
 
 message AppPreferences {

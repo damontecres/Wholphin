@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -259,7 +260,7 @@ fun DiscoverRequestGrid(
 ) {
     val state by viewModel.state.collectAsState()
 
-    var showHeader by remember { mutableStateOf(state.startIndex < 6) }
+    var showHeader by rememberSaveable { mutableStateOf(state.startIndex < 6) }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -298,7 +299,7 @@ fun DiscoverRequestGrid(
                     initialPosition = state.startIndex,
                     pager = s.data,
                     onClickItem = { index, item ->
-                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                        viewModel.navigationManager.navigateTo(item.destination)
                     },
                     onLongClickItem = { index, item -> },
                     onClickPlay = { _, _ -> },

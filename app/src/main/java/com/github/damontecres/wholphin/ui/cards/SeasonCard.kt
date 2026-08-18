@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
@@ -36,15 +37,15 @@ import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
- * A Card for a TV Show Season, but can generically show most items
+ * A Card for a TV Show Season, but can generally show most items
  */
 @Composable
 fun SeasonCard(
     item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    imageHeight: Dp,
     modifier: Modifier = Modifier,
-    imageHeight: Dp = Dp.Unspecified,
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
@@ -56,7 +57,7 @@ fun SeasonCard(
         remember(item, imageHeight, imageWidth, density) {
             if (item != null) {
                 val fillHeight =
-                    if (imageHeight != Dp.Unspecified) {
+                    if (imageHeight.isSpecified) {
                         with(density) {
                             imageHeight.roundToPx()
                         }
@@ -64,7 +65,7 @@ fun SeasonCard(
                         null
                     }
                 val fillWidth =
-                    if (imageWidth != Dp.Unspecified) {
+                    if (imageWidth.isSpecified) {
                         with(density) {
                             imageWidth.roundToPx()
                         }

@@ -58,7 +58,7 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
@@ -124,11 +124,15 @@ class AlbumViewModel
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
         private val extrasService: ExtrasService,
-        @Assisted itemId: UUID,
+        @Assisted("itemId") itemId: UUID,
+        @Assisted("initialSongId") private val initialSongId: UUID?,
     ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
-            fun create(itemId: UUID): AlbumViewModel
+            fun create(
+                @Assisted("itemId") itemId: UUID,
+                @Assisted("initialSongId") initialSongId: UUID?,
+            ): AlbumViewModel
         }
 
         private val _state = MutableStateFlow(AlbumState.EMPTY)
@@ -158,6 +162,10 @@ class AlbumViewModel
                     val songsDeferred = async { getPagerForAlbum(api, itemId) }
                     val album = itemDeferred.await()
                     val songs = songsDeferred.await()
+                    val initialSongIndex =
+                        initialSongId?.let { id ->
+                            songs.indexOfBlocking { it?.id == id }.takeIf { it >= 0 }
+                        }
                     val imageUrl = imageUrlService.getItemImageUrl(album, ImageType.PRIMARY)
                     val allArtists =
                         album.data.artists.orEmpty() +
@@ -175,6 +183,7 @@ class AlbumViewModel
                             isVariousArtists = isVariousArtists,
                             imageUrl = imageUrl,
                             songs = songs,
+                            initialSongIndex = initialSongIndex,
                             loading = LoadingState.Success,
                         )
                     }
@@ -202,7 +211,7 @@ class AlbumViewModel
                                 userId = serverRepository.currentUser?.id,
                                 albumIds = listOf(itemId),
                                 parentId = null,
-                                fields = DefaultItemFields,
+                                fields = ItemRowFields,
                                 recursive = true,
                                 includeItemTypes = listOf(BaseItemKind.MUSIC_VIDEO),
                             )
@@ -289,6 +298,7 @@ data class AlbumState(
     val songs: List<BaseItem?>,
     val similar: List<BaseItem>,
     val loading: LoadingState,
+    val initialSongIndex: Int? = null,
     val musicVideos: List<BaseItem?> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
@@ -309,9 +319,10 @@ fun AlbumDetailsPage(
     itemId: UUID,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
+    initialSongId: UUID? = null,
     viewModel: AlbumViewModel =
         hiltViewModel<AlbumViewModel, AlbumViewModel.Factory>(
-            creationCallback = { it.create(itemId) },
+            creationCallback = { it.create(itemId, initialSongId) },
         ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
@@ -320,7 +331,6 @@ fun AlbumDetailsPage(
     val state by viewModel.state.collectAsState()
     val currentMusic by viewModel.currentMusic.collectAsState()
 
-    var position by rememberPosition(0, 0)
     val focusRequesters =
         remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val focusManager = LocalFocusManager.current
@@ -356,12 +366,20 @@ fun AlbumDetailsPage(
 
         LoadingState.Success -> {
             val album = state.album!!
+            val itemsBefore = 2
+            val initialSongIndex = state.initialSongIndex
+            var position by rememberPosition(
+                row = if (initialSongIndex != null) SONG_ROW else 0,
+                column = initialSongIndex ?: 0,
+            )
 
             val firstFocusRequester = remember { FocusRequester() }
             val firstBringIntoViewRequester = remember { BringIntoViewRequester() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
-            val listState = rememberLazyListState()
-            val itemsBefore = 2
+            val listState =
+                rememberLazyListState(
+                    initialFirstVisibleItemIndex = initialSongIndex?.let { itemsBefore + it } ?: 0,
+                )
 
             val songFocusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
@@ -545,7 +563,7 @@ fun AlbumDetailsPage(
                                         item = item,
                                         onClick = onClick,
                                         onLongClick = onLongClick,
-                                        aspectRatio = AspectRatios.WIDE,
+                                        aspectRatio = item?.aspectRatio ?: AspectRatios.WIDE,
                                         played = item?.played ?: false,
                                         playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
                                         favorite = item?.favorite ?: false,

@@ -6,8 +6,8 @@
     <string name="bitrate">Aktum</string>
     <string name="cancel">Semmet</string>
     <string name="chapters">Ixfawen</string>
-    <string name="collection">Tagrumma</string>
-    <string name="collections">Tigrummiwin</string>
+    <string name="collection">Talkensit</string>
+    <string name="collections">Tilkensa</string>
     <string name="confirm">Serggeg</string>
     <string name="default_track">Amezwer</string>
     <string name="delete">Kkes</string>
@@ -43,4 +43,14 @@
     <string name="hdr10_plus">HDR10+</string>
     <string name="hlg">HLG</string>
     <string name="choose_stream">Fren %1$s</string>
+    <string name="more">Ugar</string>
+    <string name="name">Isem</string>
+    <string name="none">Ula yiwen</string>
+    <string name="subtitle">Aduzwel</string>
+    <string name="subtitles">Iduzwilen</string>
+    <string name="suggestions">Isumar</string>
+    <string name="settings">Iɣewwaren</string>
+    <string name="reset">Wennez</string>
+    <string name="remove">Kkes</string>
+    <string name="subtitle_margin">Tama</string>
 </resources>

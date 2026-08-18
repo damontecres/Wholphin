@@ -76,7 +76,7 @@ fun CollectionMixedGrid(
                 columns = cardViewOptions.columns,
                 spacing = cardViewOptions.spacing.dp,
                 bringIntoViewSpec =
-                    remember(cardViewOptions) {
+                    remember(cardViewOptions, density) {
                         val spacingPx = with(density) { cardViewOptions.spacing.dp.toPx() }
                         if (cardViewOptions.showDetails) {
                             ScrollToTopBringIntoViewSpec(spacingPx)

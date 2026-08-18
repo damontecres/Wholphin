@@ -74,7 +74,9 @@ import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.Date
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
@@ -123,6 +125,7 @@ fun NowPlayingPage(
 //                seekBack = preferences.playbackPreferences.skipBackMs.milliseconds,
                 controllerViewState = controllerViewState,
                 updateSkipIndicator = {},
+                clearSkipIndicator = {},
                 skipBackOnResume = null,
 //                skipBackOnResume = preferences.playbackPreferences.skipBackOnResume,
                 onInteraction = viewModel::reportInteraction,
@@ -132,25 +135,29 @@ fun NowPlayingPage(
                 },
                 onPlaybackDialogTypeClick = { },
                 getDurationMs = { player.duration },
+                dpadSeekMode = preferences.playbackPreferences.dpadSeekMode,
             )
         }
 
     var showViewOptionsDialog by remember { mutableStateOf(false) }
     var showContextMenu by remember { mutableStateOf<ContextMenu.ForQueue?>(null) }
 
-    var lyricsHaveFocus by remember { mutableStateOf(false) }
+    var lyricsFocused by remember { mutableStateOf<Date?>(null) }
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     val lyricsFocusRequester = remember { FocusRequester() }
     val hasLyrics = musicPrefs.showLyrics && state.hasLyrics
 
-    LaunchedEffect(lyricsHaveFocus) {
-        if (lyricsHaveFocus) {
+    LaunchedEffect(lyricsFocused) {
+        if (lyricsFocused != null) {
             controllerViewState.hideControls()
         }
+        delay(5.seconds)
+        lyricsFocused = null
+        focusRequester.tryRequestFocus()
     }
-    BackHandler(lyricsHaveFocus) {
+    BackHandler(lyricsFocused != null) {
         focusRequester.tryRequestFocus()
     }
 
@@ -288,8 +295,10 @@ fun NowPlayingPage(
                     LyricsContent(
                         lyrics = state.lyrics,
                         currentLyricPosition = state.currentLyricIndex,
-                        lyricsHaveFocus = lyricsHaveFocus,
-                        onFocusLyrics = { lyricsHaveFocus = it },
+                        lyricsHaveFocus = lyricsFocused != null,
+                        onFocusLyrics = {
+                            lyricsFocused = Date()
+                        },
                         onClick = {
                             it.start
                                 ?.ticks

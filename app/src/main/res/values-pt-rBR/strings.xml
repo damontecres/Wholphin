@@ -166,7 +166,9 @@
     <string name="video">Vídeo</string>
     <string name="videos">Vídeos</string>
     <string name="watch_live">Assista ao vivo</string>
-    <string name="years_old">%1$d anos de idade</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d anos de idade</item>
+    </plurals>
     <string name="play_with_transcoding">Reproduzir com transcodificação</string>
     <string name="media_information">Informação de Mídia</string>
     <string name="show_clock">Mostrar Relógio</string>
@@ -561,18 +563,19 @@
     <string name="mixer">Mixagem</string>
     <plurals name="featurettes">
         <item quantity="one">Bastidores</item>
+        <item quantity="other">Bastidores</item>
     </plurals>
     <plurals name="minutes">
         <item quantity="one">%s minuto</item>
         <item quantity="many">%s minutos</item>
         <item quantity="other">%s minutos</item>
     </plurals>
-    <string name="enter_url_api_key"><![CDATA[Insira a URL e a chave de API]]></string>
-    <string name="search_and_download_subtitles"><![CDATA[Procurar e baixar legendas]]></string>
-    <string name="download_and_update"><![CDATA[Baixar e atualizar]]></string>
-    <string name="search_and_download"><![CDATA[Procurar e baixar]]></string>
-    <string name="combine_continue_next"><![CDATA[Combinar \"Continue Assistindo\" e \"A Seguir\"]]></string>
-    <string name="cast_and_crew"><![CDATA[Elenco e equipe]]></string>
+    <string name="enter_url_api_key">Insira a URL e a chave de API</string>
+    <string name="search_and_download_subtitles">Procurar e baixar legendas</string>
+    <string name="download_and_update">Baixar e atualizar</string>
+    <string name="search_and_download">Procurar e baixar</string>
+    <string name="combine_continue_next">Combinar \"Continue Assistindo\" e \"A Seguir\"</string>
+    <string name="cast_and_crew">Elenco e equipe</string>
     <string name="albums">Álbuns</string>
     <string name="artists">Artistas</string>
     <string name="songs">Músicas</string>
@@ -645,4 +648,11 @@
     <string name="view_options_type_list_compact">Lista Compacta</string>
     <string name="theme_videos_title">Vídeos Tema</string>
     <string name="clips_title">Clipes</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="profile_specific_settings_from_server">Configuração de Perfil de Usuário do servidor</string>
+    <string name="time_left">%1$s left</string>
 </resources>

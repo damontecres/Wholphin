@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -169,14 +170,7 @@ class SeerrService
             backdropWidth: Int = 1920,
         ): String? {
             if (mediaInfo != null) {
-                val itemId =
-                    if (mediaInfo.jellyfinMediaId.isNotNullOrBlank()) {
-                        mediaInfo.jellyfinMediaId.toUUIDOrNull()
-                    } else if (mediaInfo.jellyfinMediaId4k.isNotNullOrBlank()) {
-                        mediaInfo.jellyfinMediaId4k.toUUIDOrNull()
-                    } else {
-                        null
-                    }
+                val itemId = mediaInfo.jellyfinId
                 if (itemId != null) {
                     return imageUrlService.getItemImageUrl(
                         itemId = itemId,
@@ -184,21 +178,23 @@ class SeerrService
                     )
                 }
             }
-            val current = seerrServerRepository.current.firstOrNull() ?: return null
-            val cacheImages = current.serverConfig.cacheImages == true
-            val base =
-                if (cacheImages) {
-                    current.server.url.removeSuffix("/") + "/imageproxy/tmdb"
-                } else {
-                    "https://image.tmdb.org"
-                }
-            val prefix =
-                when (imageType) {
-                    ImageType.PRIMARY -> "/t/p/w500"
-                    ImageType.BACKDROP -> "/t/p/w${backdropWidth}_and_h${backdropHeight}_multi_faces"
-                    else -> throw IllegalArgumentException("Image type not supported: $imageType")
-                }
-            return "${base}${prefix}$path"
+            return path?.takeIf { it.isNotNullOrBlank() }?.let {
+                val current = seerrServerRepository.current.firstOrNull() ?: return null
+                val cacheImages = current.serverConfig.cacheImages == true
+                val base =
+                    if (cacheImages) {
+                        current.server.url.removeSuffix("/") + "/imageproxy/tmdb"
+                    } else {
+                        "https://image.tmdb.org"
+                    }
+                val prefix =
+                    when (imageType) {
+                        ImageType.PRIMARY -> "/t/p/w500"
+                        ImageType.BACKDROP -> "/t/p/w${backdropWidth}_and_h${backdropHeight}_multi_faces"
+                        else -> throw IllegalArgumentException("Image type not supported: $imageType")
+                    }
+                return "${base}${prefix}$path"
+            }
         }
 
         suspend fun getProfilesAndFolders(type: SeerrItemType): SeerrRequestData {
@@ -346,7 +342,8 @@ class SeerrService
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(movie: MovieDetails): DiscoverItem =
@@ -362,7 +359,8 @@ class SeerrService
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvResult): DiscoverItem =
@@ -378,7 +376,8 @@ class SeerrService
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvDetails): DiscoverItem =
@@ -394,7 +393,8 @@ class SeerrService
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(search: SeerrSearchResult): DiscoverItem =
@@ -410,7 +410,8 @@ class SeerrService
                 releaseDate = toLocalDate(search.releaseDate ?: search.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, search.posterPath, search.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, search.backdropPath, search.mediaInfo),
-                jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, search.mediaInfo),
+                jellyfinItemId = search.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCast): DiscoverItem =
@@ -436,7 +437,8 @@ class SeerrService
                         credit.backdropPath,
                         credit.mediaInfo,
                     ),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCrew): DiscoverItem =
@@ -462,6 +464,13 @@ class SeerrService
                         credit.backdropPath,
                         credit.mediaInfo,
                     ),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
     }
+
+val MediaInfo.jellyfinId: UUID?
+    get() = jellyfinMediaId4k?.toUUIDOrNull() ?: jellyfinMediaId?.toUUIDOrNull()
+
+val MediaInfo.jellyfinIdAsString: String?
+    get() = jellyfinMediaId4k ?: jellyfinMediaId

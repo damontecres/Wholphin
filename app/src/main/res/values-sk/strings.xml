@@ -167,7 +167,12 @@
     <string name="video">Video</string>
     <string name="videos">Videá</string>
     <string name="watch_live">Sledovať naživo</string>
-    <string name="years_old">%1$d rokov</string>
+    <plurals name="years_old">
+        <item quantity="one">vo veku %1$d roka</item>
+        <item quantity="few">vo veku %1$d rokov</item>
+        <item quantity="many">vo veku %1$d rokov</item>
+        <item quantity="other">vo veku %1$d rokov</item>
+    </plurals>
     <string name="play_with_transcoding">Prehrávať s prekódovaním</string>
     <string name="media_information">Informácie o médiu</string>
     <string name="show_clock">Zobraziť hodiny</string>
@@ -316,7 +321,7 @@
     </plurals>
     <string name="auto_play_next_delay">Oneskorenie pred prehrávaním nasledujúceho</string>
     <string name="auto_play_next">Automatické prehrávanie nasledujúceho</string>
-    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
+    <string name="combine_continue_next"><![CDATA[Spojiť sekcie Pokračovať v pozeraní a Nasleduje]]></string>
     <string name="playback_overrides">Prepísanie prehrávania</string>
     <string name="rewatch_next_up">Povoliť opätovné prehrávanie v nasledujúcich</string>
     <string name="skip_back_on_resume_preference">Pri obnovení prehrávania preskočiť späť</string>
@@ -634,7 +639,7 @@
         <item quantity="other">Osôb</item>
     </plurals>
     <string name="require_login">Vyžadovať prihlásenie pre profil</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Kombinované výsledky vyhľadávania</string>
     <string name="combined_search_results_on">Zobraziť všetky výsledky v jednom zozname</string>
     <string name="combined_search_results_off">Zobraziť výsledky podľa kategórie</string>
@@ -700,4 +705,47 @@
     <string name="confirm_enable_experimental_title">Povoliť experimentálne nastavenia?</string>
     <string name="confirm_enable_experimental_body">Experimentálne nastavenia môžu byť nestabilné!\n\n Môžu byť zmenené alebo odstránené v budúcich verziách.</string>
     <string name="video_tunneling">Video tunneling</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">zostáva %1$s</string>
+    <string name="blocklisted">Blokované</string>
+    <string name="unavailable">Nedostupné</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Prekódovať viackanálový zvuk na AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Použiť AC3 pre viackanálový zvuk</string>
+    <string name="profile_specific_settings_from_server">Nastavenia používateľského profilu zo servera</string>
+    <string name="subtitle_mode">Režim titulkov</string>
+    <string name="use_user_profile">Použiť nastavenie profilu</string>
+    <string name="subtitle_mode_default">Predvolené</string>
+    <string name="subtitle_mode_smart">Inteligentné</string>
+    <string name="subtitle_mode_only_forced">Len vynútené</string>
+    <string name="subtitle_mode_always">Vždy</string>
+    <string name="subtitle_mode_none">Žiadne</string>
+    <string name="preferred_subtitle_language">Preferovaný jazyk titulkov</string>
+    <string name="preferred_audio_language">Preferovaný jazyk zvuku</string>
+    <string name="override_user_profile_settings">Viac nastavení používateľského profilu</string>
+    <string name="override_user_profile_settings_summary">Prepísať nastavenia používateľského profilu zo servera</string>
+    <string name="any_language">Akýkoľvek jazyk</string>
+    <string name="d_pad_seek_mode_title">Režim panela pretáčania pomocou D-Padu</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string name="hash_matches">Hash zhody</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programy</string>
+    <string name="recordings">Nahrávky</string>
+    <string name="folders_title">Priečinky</string>
+    <string name="user_views">Používateľské zobrazenia</string>
+    <string name="books">Knihy</string>
+    <string name="audio_books">Audioknihy</string>
+    <string name="brown">Hnedá</string>
+    <string name="dpad_seek_mode_minimal">Minimálne</string>
+    <string name="dpad_seek_mode_minimal_summary">Malý panel pretáčania v dolnej časti obrazovky (predvolené)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Panel pretáčania s náhľadmi Trickplay</string>
+    <string name="dpad_seek_mode_none_summary">Bez panela pretáčania</string>
+    <string name="server_version_not_supported">Verzia servera nie je podporovaná</string>
+    <string name="appears_on">Objavuje sa v</string>
+    <string name="disable_audio_offload">Zakázať hardvérové odovzdávanie zvuku</string>
+    <string name="disable_audio_offload_summary">Zakázanie odovzdávania dekódovania zvuku môže vyriešiť zamŕzanie prehrávania na niektorých zariadeniach</string>
 </resources>

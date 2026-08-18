@@ -54,7 +54,7 @@ data class BaseItem(
         get() = type.playable
 
     override val sortName: String
-        get() = data.sortName ?: data.name ?: ""
+        get() = data.alphabetSortName
 
     val type get() = data.type
 
@@ -272,6 +272,16 @@ data class BaseItem(
                     }
                 }
 
+                BaseItemKind.AUDIO -> {
+                    data.albumId?.let { albumId ->
+                        Destination.MediaItem(
+                            itemId = albumId,
+                            type = BaseItemKind.MUSIC_ALBUM,
+                            initialSongId = id,
+                        )
+                    } ?: Destination.MediaItem(this)
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }
@@ -294,6 +304,9 @@ data class BaseItem(
 }
 
 val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }
+
+/** The server strips leading articles (eg "The ") from [BaseItemDto.sortName]. */
+val BaseItemDto.alphabetSortName: String get() = sortName ?: name ?: ""
 
 @Immutable
 data class BaseItemUi(

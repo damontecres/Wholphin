@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -92,6 +93,7 @@ import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -251,6 +253,7 @@ class CollectionFolderViewModel
         }
 
         fun saveViewOptions(viewOptions: ViewOptions) {
+            position = 0
             _state.update { it.copy(viewOptions = viewOptions) }
             viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
@@ -373,7 +376,32 @@ class CollectionFolderViewModel
                         )
                     newPager
                 }
+
+                GetItemsFilterOverride.ARTIST -> {
+                    ApiRequestPager(
+                        api,
+                        createGetArtistsRequest(filter),
+                        GetArtistsHandler,
+                        viewModelScope,
+                        useSeriesForPrimary = useSeriesForPrimary,
+                    )
+                }
             }
+
+        /**
+         * Shared with [positionOfLetter] so that the alphabet jump counts the same artists that are
+         * actually paged through
+         */
+        private fun createGetArtistsRequest(filter: GetItemsFilter): GetArtistsRequest {
+            val item = state.value.item.successValue
+            return filter.applyTo(
+                GetArtistsRequest(
+                    parentId = item?.id,
+                    enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                    fields = SlimItemFields,
+                ),
+            )
+        }
 
         private fun createGetItemsRequest(
             sortAndDirection: SortAndDirection,
@@ -437,24 +465,54 @@ class CollectionFolderViewModel
                 filterOption,
             )
 
+        /**
+         * The count must come from the same endpoint that [createPager] pages through, otherwise
+         * the index refers to a different result set and lands past the end of the list.
+         */
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(WholphinDispatchers.IO) {
-                val sort = state.value.sortAndDirection
                 val filter = state.value.filter
-                val request =
-                    createGetItemsRequest(
-                        sortAndDirection = sort,
-                        recursive = recursive,
-                        filter = filter,
-                    ).copy(
-                        enableImageTypes = null,
-                        fields = null,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                    )
-                val result by GetItemsRequestHandler.execute(api, request)
-                result.totalRecordCount
+                when (filter.override) {
+                    GetItemsFilterOverride.ARTIST -> {
+                        GetArtistsHandler.countMatching(
+                            api = api,
+                            request =
+                                createGetArtistsRequest(filter).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                    enableUserData = false,
+                                ),
+                        )
+                    }
+
+                    // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
+                    // counted up to a letter at all
+                    GetItemsFilterOverride.PERSON -> {
+                        null
+                    }
+
+                    GetItemsFilterOverride.NONE -> {
+                        GetItemsRequestHandler.countMatching(
+                            api = api,
+                            request =
+                                createGetItemsRequest(
+                                    sortAndDirection = state.value.sortAndDirection,
+                                    recursive = recursive,
+                                    filter = filter,
+                                ).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                    enableUserData = false,
+                                ),
+                        )
+                    }
+                }
             }
 
         override fun setWatched(

@@ -55,6 +55,7 @@ class AppPreferencesSerializer
                                     AppPreference.RefreshRateSwitching.defaultValue
                                 resolutionSwitching = AppPreference.ResolutionSwitching.defaultValue
                                 cinemaMode = AppPreference.CinemaMode.defaultValue
+                                dpadSeekMode = AppPreference.DpadSeekModePref.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
@@ -181,6 +182,8 @@ class AppPreferencesSerializer
                             .apply {
                                 enabled = false
                                 videoTunnelingEnabled = false
+                                preferAc3Surround = ExperimentalPreference.PreferAc3ForSurround.defaultValue
+                                disableAudioOffload = ExperimentalPreference.DisableAudioOffload.defaultValue
                             }.build()
                 }.build()
 

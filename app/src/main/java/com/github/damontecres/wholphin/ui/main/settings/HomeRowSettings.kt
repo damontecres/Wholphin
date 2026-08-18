@@ -69,11 +69,11 @@ fun HomeRowSettings(
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         TitleText(title)
-        LazyColumn {
+        HomeSettingsLazyColumn {
             preferenceOptions.forEachIndexed { groupIndex, prefGroup ->
                 if (preferenceOptions.size > 1) {
                     item {
-                        TitleText(stringResource(prefGroup.title))
+                        SubTitleText(stringResource(prefGroup.title))
                     }
                 }
                 itemsIndexed(prefGroup.preferences) { index, pref ->

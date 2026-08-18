@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
@@ -57,6 +60,7 @@ class ScreensaverService
         val keepScreenOn = MutableStateFlow(false)
 
         private var waitJob: Job? = null
+        private var dimJob: Job? = null
 
         init {
             userPreferencesService.flow
@@ -65,7 +69,14 @@ class ScreensaverService
                         val enabled =
                             prefs.appPreferences.interfacePreferences.screensaverPreference.enabled
                         keepScreenOnInternal(enabled)
-                        ScreensaverState(enabled, false, false, false)
+                        ScreensaverState(
+                            enabled = enabled,
+                            enabledTemp = false,
+                            active = false,
+                            paused = false,
+                            dimEnabled = prefs.appPreferences.interfacePreferences.screensaverPreference.dimEnabled,
+                            dimActive = false,
+                        )
                     }
                 }.launchIn(scope)
         }
@@ -74,12 +85,16 @@ class ScreensaverService
          * Reset the timer before showing the in-app screensaver
          */
         fun pulse() {
+            Timber.v("state=%s", _state.value)
             waitJob?.cancel()
             if (_state.value.enabled) {
 //                Timber.v("pulse")
                 _state.update {
                     if (!it.active) {
-                        it.copy(active = false)
+                        it.copy(
+                            active = false,
+                            dimActive = false,
+                        )
                     } else {
                         it
                     }
@@ -94,7 +109,30 @@ class ScreensaverService
                                     .appPreferences.interfacePreferences.screensaverPreference.startDelay.milliseconds
                             delay(startDelay)
                             _state.update {
-                                it.copy(active = true)
+                                it.copy(
+                                    active = true,
+                                    dimActive = it.dimEnabled,
+                                )
+                            }
+                        }
+                }
+            }
+            dimJob?.cancel()
+            if (_state.value.dimEnabled) {
+                _state.update {
+                    it.copy(dimActive = false)
+                }
+                if (!_state.value.paused) {
+                    dimJob =
+                        scope.launch(ExceptionHandler()) {
+                            val startDelay =
+                                userPreferencesService
+                                    .getCurrent()
+                                    .appPreferences.interfacePreferences.screensaverPreference.startDelay.milliseconds
+                            delay(startDelay)
+                            Timber.v("state dim=%s", _state.value)
+                            _state.update {
+                                it.copy(dimActive = !_state.value.paused)
                             }
                         }
                 }
@@ -109,6 +147,7 @@ class ScreensaverService
                 it.copy(
                     enabledTemp = true,
                     active = true,
+                    dimActive = true,
                 )
             }
         }
@@ -121,9 +160,13 @@ class ScreensaverService
                 it.copy(
                     enabledTemp = false,
                     active = false,
+                    dimActive = false,
                 )
             }
-            if (cancelJob) waitJob?.cancel()
+            if (cancelJob) {
+                waitJob?.cancel()
+                dimJob?.cancel()
+            }
         }
 
         /**
@@ -131,12 +174,16 @@ class ScreensaverService
          */
         fun keepScreenOn(keep: Boolean) {
             scope.launchDefault {
-                val screensaverEnabled = _state.value.enabled
+                val screensaverEnabled = _state.value.run { enabled || dimEnabled }
                 Timber.d("Keep screen on: %s, screensaverEnabled=%s", keep, screensaverEnabled)
                 if (screensaverEnabled) {
                     // Page is requesting to keep screen on, so we don't wait to show the screensaver
                     _state.update {
-                        it.copy(active = false, paused = keep)
+                        it.copy(
+                            active = false,
+                            dimActive = false,
+                            paused = keep,
+                        )
                     }
                     if (!keep) {
                         pulse()
@@ -245,6 +292,11 @@ class ScreensaverService
                 )
             return ApiRequestPager(api, request, GetItemsRequestHandler, scope).init()
         }
+
+        companion object {
+            val enterAnimation = fadeIn(animationSpec = tween(durationMillis = 1000))
+            val exitAnimation = fadeOut(animationSpec = tween(durationMillis = 500))
+        }
     }
 
 data class ScreensaverState(
@@ -252,6 +304,10 @@ data class ScreensaverState(
     val enabledTemp: Boolean,
     val active: Boolean,
     val paused: Boolean,
+    val dimEnabled: Boolean = false,
+    val dimActive: Boolean = false,
 ) {
     val show get() = (enabled || enabledTemp) && active && !paused
+
+    val showDim get() = dimEnabled && dimActive && !paused
 }
