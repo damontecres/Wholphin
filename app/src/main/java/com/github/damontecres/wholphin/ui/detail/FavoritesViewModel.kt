@@ -59,6 +59,8 @@ import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import timber.log.Timber
+import java.util.SortedMap
+import java.util.TreeMap
 import java.util.UUID
 import javax.inject.Inject
 
@@ -93,13 +95,15 @@ class FavoritesViewModel
                     userPreferencesService
                         .getCurrent()
                         .appPreferences.interfacePreferences.rememberSelectedTab
-                val tabIndex =
+                val tabKey =
                     if (rememberTabs) {
-                        rememberedTabService.getRememberedTab(NavDrawerItem.Favorites.id) ?: 0
+                        rememberedTabService.getRememberedTab(NavDrawerItem.Favorites.id)?.let {
+                            BaseItemKind.entries[it]
+                        } ?: favoriteOptions.first()
                     } else {
-                        0
+                        favoriteOptions.first()
                     }
-                _state.update { it.copy(tabIndex = tabIndex) }
+                _state.update { it.copy(tabKey = tabKey) }
                 favoriteOptions.forEach { type ->
                     viewModelScope.launchIO {
                         loadType(type)
@@ -160,17 +164,17 @@ class FavoritesViewModel
                 )
             Timber.v("Got %s favorites for %s", pager.size, type)
             _state.update {
+                val newTabs =
+                    TreeMap<BaseItemKind, TabDetails>(compareBy { favoriteOptions.indexOf(it) }).apply {
+                        putAll(it.tabs)
+                        if (pager.isNotEmpty()) {
+                            put(type, TabDetails(formatTypeName(type)))
+                        } else {
+                            remove(type)
+                        }
+                    }
                 it.copy(
-                    tabs =
-                        it.tabs
-                            .toMutableSet()
-                            .apply {
-                                if (pager.isNotEmpty()) {
-                                    add(type)
-                                } else {
-                                    remove(type)
-                                }
-                            }.sortedBy { favoriteOptions.indexOf(it) },
+                    tabs = newTabs,
                 )
             }
         }
@@ -248,7 +252,7 @@ class FavoritesViewModel
 
         private fun collectionStateFor(type: BaseItemKind): CollectionFolderState? = state.value.favorites[type]
 
-        fun updateSelectedTabIndex(newIndex: Int) {
+        fun updateSelectedTabKey(newKey: BaseItemKind) {
             viewModelScope.launchDefault { backdropService.clearBackdrop() }
             viewModelScope.launchIO {
                 val rememberTabs =
@@ -256,10 +260,13 @@ class FavoritesViewModel
                         .getCurrent()
                         .appPreferences.interfacePreferences.rememberSelectedTab
                 if (rememberTabs) {
-                    rememberedTabService.saveRememberedTab(NavDrawerItem.Favorites.id, newIndex)
+                    rememberedTabService.saveRememberedTab(
+                        NavDrawerItem.Favorites.id,
+                        newKey.ordinal,
+                    )
                 }
             }
-            _state.update { it.copy(tabIndex = newIndex) }
+            _state.update { it.copy(tabKey = newKey) }
         }
 
         private suspend fun refreshAfterMutate(
@@ -509,12 +516,38 @@ class FavoritesViewModel
     }
 
 data class FavoritesPageState(
+    val loadingState: LoadingState = LoadingState.Pending,
     val favorites: SnapshotStateMap<BaseItemKind, CollectionFolderState> = SnapshotStateMap(),
-    val tabs: List<BaseItemKind> = emptyList(),
-    val tabIndex: Int = 0,
+    val tabs: SortedMap<BaseItemKind, TabDetails> = TreeMap(compareBy { favoriteOptions.indexOf(it) }),
+    val tabKey: BaseItemKind = favoriteOptions.first(),
     val isShowClock: Boolean = true,
 ) {
-    val tabDetails: List<TabDetails> get() = tabs.map { TabDetails(formatTypeName(it)) }
+    val tabDetails: SortedMap<BaseItemKind, TabDetails>
+        get() =
+            favoriteOptions
+                .mapNotNull { type ->
+                    favorites[type]?.let { collectionState ->
+                        when (val s = collectionState.items) {
+                            is DataLoadingState.Error -> {
+                                null
+                            }
+
+                            DataLoadingState.Loading,
+                            DataLoadingState.Pending,
+                            -> {
+                                type to TabDetails(formatTypeName(type))
+                            }
+
+                            is DataLoadingState.Success<List<BaseItem?>> -> {
+                                if (s.data.isNotEmpty()) {
+                                    type to TabDetails(formatTypeName(type))
+                                } else {
+                                    null
+                                }
+                            }
+                        }
+                    }
+                }.toMap(TreeMap(compareBy { favoriteOptions.indexOf(it) }))
 }
 
 val favoriteOptions =

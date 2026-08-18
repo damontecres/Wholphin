@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +45,7 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import timber.log.Timber
+import java.util.SortedMap
 
 @Composable
 fun TabRow(
@@ -105,6 +108,79 @@ fun TabRow(
                 onClick = onTabClick,
                 modifier = Modifier.focusRequester(tab.tabFocusRequester),
             )
+        }
+    }
+}
+
+@Composable
+fun <T> KeyedTabRow(
+    selectedTabKey: T,
+    tabs: SortedMap<T, TabDetails>,
+    onClick: (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val state = rememberLazyListState()
+    LaunchedEffect(selectedTabKey) {
+        tabs[selectedTabKey]?.bringIntoViewRequester?.bringIntoView()
+    }
+    var rowHasFocus by remember { mutableStateOf(false) }
+    val currentSelectedTabKey by rememberUpdatedState(selectedTabKey)
+    val currentOnClick by rememberUpdatedState(onClick)
+
+    val tabKeyList = remember(tabs) { tabs.keys.filterNotNull().toList() }
+
+    LazyRow(
+        state = state,
+        modifier =
+            modifier
+                .onFocusChanged {
+                    rowHasFocus = it.hasFocus
+                }.focusGroup()
+                .focusProperties {
+                    onEnter = {
+                        // If entering from left or right, use last or first tab
+                        // Otherwise use the selected tab
+                        val currentKey = currentSelectedTabKey
+//                        val requesters = currentFocusRequesters
+                        Timber.v(
+                            "onEnter requestedFocusDirection=%s, currentSelectedTabKey=%s",
+                            requestedFocusDirection,
+                            currentSelectedTabKey,
+                        )
+                        val key =
+                            if (requestedFocusDirection == FocusDirection.Left) {
+                                tabs.lastKey()
+                            } else if (requestedFocusDirection == FocusDirection.Right) {
+                                tabs.firstKey()
+                            } else {
+                                currentKey
+                            }
+                        val tab = tabs[key]
+                        (tab?.tabFocusRequester ?: FocusRequester.Default).tryRequestFocus()
+                    }
+                },
+    ) {
+        items(tabKeyList, key = { it }) { tabKey ->
+            tabs[tabKey]?.let { tab ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val onTabClick =
+                    remember(tabKey) {
+                        {
+                            currentOnClick(tabKey)
+                        }
+                    }
+                Tab(
+                    title = tab.title.getString(),
+                    selected = tabKey == selectedTabKey,
+                    rowActive = rowHasFocus,
+                    interactionSource = interactionSource,
+                    onClick = onTabClick,
+                    modifier =
+                        Modifier
+                            .focusRequester(tab.tabFocusRequester)
+                            .bringIntoViewRequester(tab.bringIntoViewRequester),
+                )
+            }
         }
     }
 }

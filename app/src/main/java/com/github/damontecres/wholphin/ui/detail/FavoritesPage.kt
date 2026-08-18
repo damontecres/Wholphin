@@ -15,7 +15,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
-import com.github.damontecres.wholphin.ui.components.TabbedPage
+import com.github.damontecres.wholphin.ui.components.KeyedTabbedPage
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
 import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.data.rememberSortOptions
@@ -32,18 +32,16 @@ fun FavoritesPage(
     var showTabs by rememberSaveable { mutableStateOf(true) }
 
 //    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-    TabbedPage(
-        selectedTabIndex = state.tabIndex,
-        updateSelectedTabIndex = viewModel::updateSelectedTabIndex,
+    KeyedTabbedPage(
+        selectedTabKey = state.tabKey,
+        updateSelectedTabKey = viewModel::updateSelectedTabKey,
         tabs = tabs,
         showTabs = showTabs,
         isShowClock = state.isShowClock,
         modifier = modifier,
-    ) { tabIndex, tabDetails ->
-        val type = state.tabs.getOrNull(tabIndex)
+    ) { type, tabDetails ->
         val collectionState = state.favorites[type]
-
-        if (type != null && collectionState != null) {
+        if (collectionState != null) {
             val provider = remember(type) { viewModel.createTypedProvider(type) }
             val contextMenu = rememberContextMenu(preferences, provider)
             val actions =
@@ -77,7 +75,7 @@ fun FavoritesPage(
 
             contextMenu.Compose()
         } else {
-            ErrorMessage("Invalid tab index $tabIndex", null)
+            ErrorMessage("Invalid tab $type", null)
         }
     }
 }

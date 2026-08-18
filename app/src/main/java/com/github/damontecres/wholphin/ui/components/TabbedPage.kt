@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.util.SortedMap
 
 @HiltViewModel(assistedFactory = TabViewModel.Factory::class)
 class TabViewModel
@@ -96,6 +98,7 @@ data class TabDetails(
     val title: StringProvider,
     val tabFocusRequester: FocusRequester = FocusRequester(),
     val contentFocusRequester: FocusRequester = FocusRequester(),
+    val bringIntoViewRequester: BringIntoViewRequester = BringIntoViewRequester(),
 ) {
     constructor(
         @StringRes stringResId: Int,
@@ -173,6 +176,52 @@ fun TabbedPage(
         selectedTabIndex.let { tabIndex ->
             if (tabIndex in tabs.indices) {
                 tabContent.invoke(tabIndex, tabs[tabIndex])
+            } else {
+                DelayedLoadingPage(focusEnabled = false)
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> KeyedTabbedPage(
+    selectedTabKey: T,
+    tabs: SortedMap<T, TabDetails>,
+    updateSelectedTabKey: (T) -> Unit,
+    isShowClock: Boolean,
+    modifier: Modifier = Modifier,
+    showTabs: Boolean = true,
+    tabContent: @Composable (T, TabDetails) -> Unit,
+) {
+    val endPadding =
+        remember(isShowClock) {
+            if (isShowClock) {
+                184.dp
+            } else {
+                0.dp
+            }
+        }
+    Column(
+        modifier = modifier,
+    ) {
+        AnimatedVisibility(
+            showTabs,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            KeyedTabRow(
+                selectedTabKey = selectedTabKey,
+                modifier =
+                    Modifier
+                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
+                tabs = tabs,
+                onClick = updateSelectedTabKey,
+            )
+        }
+        selectedTabKey.let { tabKey ->
+            val tab = tabs[tabKey]
+            if (tab != null) {
+                tabContent.invoke(tabKey, tab)
             } else {
                 DelayedLoadingPage(focusEnabled = false)
             }
