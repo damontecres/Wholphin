@@ -15,8 +15,8 @@ import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.main.settings.Library
-import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
 import com.github.damontecres.wholphin.ui.playback.getTypeFor
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
@@ -507,7 +507,7 @@ class HomeSettingsService
                     val name =
                         ResProviderStringProvider(
                             R.string.favorite_items_title,
-                            ResStringProvider(favoriteOptions[config.kind]!!),
+                            ResStringProvider(formatTypeName(config.kind)),
                         )
                     HomeRowConfigDisplay(id, name, config)
                 }
@@ -959,7 +959,7 @@ class HomeSettingsService
                     val title =
                         ResProviderStringProvider(
                             R.string.favorite_items_title,
-                            ResStringProvider(favoriteOptions[row.kind]!!),
+                            ResStringProvider(formatTypeName(row.kind)),
                         )
                     if (row.kind == BaseItemKind.PERSON) {
                         val request =
