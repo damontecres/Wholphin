@@ -427,6 +427,9 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
     useSeriesForPrimary: Boolean,
 ) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
 
+fun Response<BaseItemDtoQueryResult>.toBaseItems(useSeriesForPrimary: Boolean = false) =
+    this.content.items.map { BaseItem(it, useSeriesForPrimary = useSeriesForPrimary) }
+
 /**
  * Check if this, coalescing nulls to zero, is greater than that
  */
