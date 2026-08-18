@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.ComposeView
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.Lifecycle
@@ -94,6 +95,14 @@ class WholphinDreamService :
                             preferencesDataStore.data.collectLatest { prefs = it }
                         }
                         prefs?.let { prefs ->
+                            val alpha =
+                                prefs.interfacePreferences.screensaverPreference.run {
+                                    if (dimEnabled) {
+                                        dimPercent / 100f
+                                    } else {
+                                        1f
+                                    }
+                                }
                             CoilConfig(
                                 prefs = prefs,
                                 okHttpClient = okHttpClient,
@@ -109,7 +118,10 @@ class WholphinDreamService :
                                         showClock = screensaverPrefs.showClock,
                                         duration = screensaverPrefs.duration.milliseconds,
                                         animate = screensaverPrefs.animate,
-                                        modifier = Modifier.fillMaxSize(),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .alpha(alpha = alpha),
                                     )
                                 }
                             }

@@ -71,7 +71,6 @@ import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.RequestHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import dagger.assisted.Assisted
@@ -477,13 +476,16 @@ class CollectionFolderViewModel
                 when (filter.override) {
                     GetItemsFilterOverride.ARTIST -> {
                         GetArtistsHandler.countMatching(
-                            createGetArtistsRequest(filter).copy(
-                                enableImageTypes = null,
-                                fields = null,
-                                nameLessThan = letter.toString(),
-                                limit = 0,
-                                enableTotalRecordCount = true,
-                            ),
+                            api = api,
+                            request =
+                                createGetArtistsRequest(filter).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                    enableUserData = false,
+                                ),
                         )
                     }
 
@@ -495,29 +497,24 @@ class CollectionFolderViewModel
 
                     GetItemsFilterOverride.NONE -> {
                         GetItemsRequestHandler.countMatching(
-                            createGetItemsRequest(
-                                sortAndDirection = state.value.sortAndDirection,
-                                recursive = recursive,
-                                filter = filter,
-                            ).copy(
-                                enableImageTypes = null,
-                                fields = null,
-                                nameLessThan = letter.toString(),
-                                limit = 0,
-                                enableTotalRecordCount = true,
-                            ),
+                            api = api,
+                            request =
+                                createGetItemsRequest(
+                                    sortAndDirection = state.value.sortAndDirection,
+                                    recursive = recursive,
+                                    filter = filter,
+                                ).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
+                                    limit = 0,
+                                    enableTotalRecordCount = true,
+                                    enableUserData = false,
+                                ),
                         )
                     }
                 }
             }
-
-        /**
-         * [request] must ask for the count, ie `limit = 0` and `enableTotalRecordCount = true`
-         */
-        private suspend fun <T> RequestHandler<T>.countMatching(request: T): Int {
-            val result by execute(api, request)
-            return result.totalRecordCount
-        }
 
         override fun setWatched(
             position: Int,
