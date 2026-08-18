@@ -20,6 +20,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
@@ -36,6 +37,7 @@ fun FavoritesPage(
     modifier: Modifier = Modifier,
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
+    OneTimeLaunchedEffect { viewModel.init() }
     val state by viewModel.state.collectAsState()
 
     var showTabs by rememberSaveable { mutableStateOf(true) }

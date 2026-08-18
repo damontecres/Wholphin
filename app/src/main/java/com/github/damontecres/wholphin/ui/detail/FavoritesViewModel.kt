@@ -88,10 +88,6 @@ class FavoritesViewModel
         private val _state = MutableStateFlow(FavoritesPageState())
         val state: StateFlow<FavoritesPageState> = _state
 
-        init {
-            init()
-        }
-
         fun init() {
             viewModelScope.launchIO {
                 val rememberTabs =
@@ -106,7 +102,8 @@ class FavoritesViewModel
                     } else {
                         favoriteOptions.first()
                     }
-                initialFetchAndWait(tabKey)
+                val jobs = favoriteOptions.associateWith { type -> initialFetchForType(type) }
+                initialFetchAndWait(tabKey, jobs)
             }
             userPreferencesService.flow
                 .map { it.appPreferences.interfacePreferences.showClock }
@@ -117,15 +114,16 @@ class FavoritesViewModel
 
         /**
          * Starts queries for favorites, waiting for [firstTabKey] to complete
+         *
+         * Exposed for testing
          */
-        private suspend fun initialFetchAndWait(firstTabKey: BaseItemKind) {
-            val deferred =
-                favoriteOptions.map { type ->
-                    type to initialFetchForType(type)
-                }
+        internal suspend fun initialFetchAndWait(
+            firstTabKey: BaseItemKind,
+            jobs: Map<BaseItemKind, Deferred<DataLoadingState<List<BaseItem?>>>>,
+        ) {
             val completed =
-                deferred.firstOrNull { it.first == firstTabKey }?.let {
-                    when (val result = it.second.await()) {
+                jobs[firstTabKey]?.let {
+                    when (val result = it.await()) {
                         DataLoadingState.Loading,
                         DataLoadingState.Pending,
                         -> false
@@ -147,7 +145,8 @@ class FavoritesViewModel
             } else {
                 // If the first key wasn't successful, wait in order until first successful & non-empty
                 val firstCompleted =
-                    deferred.firstOrNull { (type, job) ->
+                    favoriteOptions.firstOrNull { type ->
+                        val job = jobs[type] ?: return@firstOrNull false
                         val result = job.await()
                         result is DataLoadingState.Error ||
                             (result is DataLoadingState.Success<List<BaseItem?>> && result.data.isNotEmpty())
@@ -156,13 +155,13 @@ class FavoritesViewModel
                     if (firstCompleted != null) {
                         it.copy(
                             loadingState = FavoritesLoadingState.Success,
-                            tabKey = firstCompleted.first,
+                            tabKey = firstCompleted,
                         )
                     } else {
                         // None were error or successful & non-empty
                         // Check if they were all empty which means the user has no favorites at all
                         val allEmpty =
-                            deferred.all { (_, job) ->
+                            jobs.all { (_, job) ->
                                 val result = job.await()
                                 result is DataLoadingState.Success<List<BaseItem?>> && result.data.isEmpty()
                             }
@@ -173,13 +172,13 @@ class FavoritesViewModel
                         } else {
                             // This means a least one failed
                             val firstError =
-                                deferred.firstOrNull { (_, job) ->
+                                jobs.entries.firstOrNull { (_, job) ->
                                     job.await() is DataLoadingState.Error
                                 }
                             if (firstError != null) {
                                 it.copy(
                                     loadingState = FavoritesLoadingState.Success,
-                                    tabKey = firstError.first,
+                                    tabKey = firstError.key,
                                 )
                             } else {
                                 // This shouldn't happen
@@ -228,8 +227,10 @@ class FavoritesViewModel
 
         /**
          * Query for favorites of the specified [BaseItemKind] using the specified sort and filter
+         *
+         * Exposed for testing
          */
-        private suspend fun fetchType(
+        internal suspend fun fetchType(
             type: BaseItemKind,
             sortAndDirection: SortAndDirection,
             filter: GetItemsFilter,
@@ -363,7 +364,8 @@ class FavoritesViewModel
             }.init()
 
         fun libraryDisplayItemId(type: BaseItemKind): String {
-            // Some types used hardcoded keys before all types were supported
+            // Previous version used hardcoded keys before more types were supported
+            // So override those type names so that user's settings are maintained
             val typeKey =
                 when (type) {
                     BaseItemKind.MOVIE -> "movies"

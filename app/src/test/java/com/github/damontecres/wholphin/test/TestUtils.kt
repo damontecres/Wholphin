@@ -75,3 +75,20 @@ fun playlist(
         seriesId = null,
         genreItems = genres,
     )
+
+/**
+ * Create a simple [BaseItemDto] of the specified type
+ */
+fun item(
+    type: BaseItemKind,
+    id: UUID = UUID.randomUUID(),
+    name: String = "Test $type",
+    genres: List<NameGuidPair>? = null,
+): BaseItemDto =
+    BaseItemDto(
+        id = id,
+        type = type,
+        name = name,
+        seriesId = null,
+        genreItems = genres,
+    )
