@@ -48,6 +48,9 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -103,12 +106,7 @@ class FavoritesViewModel
                     } else {
                         favoriteOptions.first()
                     }
-                _state.update { it.copy(tabKey = tabKey) }
-                favoriteOptions.forEach { type ->
-                    viewModelScope.launchIO {
-                        loadType(type)
-                    }
-                }
+                initialFetchAndWait(tabKey)
             }
             userPreferencesService.flow
                 .map { it.appPreferences.interfacePreferences.showClock }
@@ -117,32 +115,106 @@ class FavoritesViewModel
                 }
         }
 
-        private suspend fun loadType(type: BaseItemKind) {
-            val collectionState =
-                CollectionFolderState(
-                    item = DataLoadingState.Loading,
-                    items = DataLoadingState.Loading,
-                    backgroundLoading = LoadingState.Loading,
-                    viewOptions = ViewOptions(),
-                )
-            _state.value.favorites[type] = collectionState
-
-            val libraryDisplayInfo =
-                serverRepository.currentUser?.let { user ->
-                    libraryDisplayInfoDao.getItem(user, libraryDisplayItemId(type))
+        /**
+         * Starts queries for favorites, waiting for [firstTabKey] to complete
+         */
+        private suspend fun initialFetchAndWait(firstTabKey: BaseItemKind) {
+            val deferred =
+                favoriteOptions.map { type ->
+                    type to initialFetchForType(type)
                 }
-            val sortAndDirection = libraryDisplayInfo?.sortAndDirection ?: SortAndDirection.DEFAULT
-            val filter = libraryDisplayInfo?.filter ?: GetItemsFilter(favorite = true)
-            val viewOptions = libraryDisplayInfo?.viewOptions ?: type.defaultViewOptions
-            loadType(type, sortAndDirection, filter, viewOptions)
+            val success =
+                deferred.firstOrNull { it.first == firstTabKey }?.let {
+                    when (val result = it.second.await()) {
+                        DataLoadingState.Loading,
+                        DataLoadingState.Pending,
+                        is DataLoadingState.Error,
+                        -> false
+
+                        is DataLoadingState.Success<List<BaseItem?>> -> result.data.isNotEmpty()
+                    }
+                } == true
+            if (success) {
+                Timber.v("Got success for %s", firstTabKey)
+                _state.update {
+                    it.copy(
+                        loadingState = LoadingState.Success,
+                        tabKey = firstTabKey,
+                    )
+                }
+            } else {
+                // If the first key wasn't successful, wait in order until first successful & non-empty
+                val firstSuccess =
+                    deferred.firstOrNull { (type, job) ->
+                        val result = job.await()
+                        result is DataLoadingState.Success<List<BaseItem?>> && result.data.isNotEmpty()
+                    }
+                _state.update {
+                    if (firstSuccess != null) {
+                        it.copy(
+                            loadingState = LoadingState.Success,
+                            tabKey = firstSuccess.first,
+                        )
+                    } else {
+                        // None were successful & non-empty
+                        // Check if they were all empty which means the user has no favorites at all
+                        val allEmpty =
+                            deferred.all { (type, job) ->
+                                val result = job.await()
+                                result is DataLoadingState.Success<List<BaseItem?>> && result.data.isEmpty()
+                            }
+                        if (allEmpty) {
+                            // TODO this isn't exactly an error state
+                            it.copy(
+                                loadingState = LoadingState.Error("No favorites found"),
+                            )
+                        } else {
+                            // This means some queries failed
+                            // TODO error messages?
+                            it.copy(
+                                loadingState = LoadingState.Error("Error occurred"),
+                            )
+                        }
+                    }
+                }
+            }
         }
 
-        private suspend fun loadType(
+        private fun initialFetchForType(type: BaseItemKind): Deferred<DataLoadingState<List<BaseItem?>>> =
+            viewModelScope.async(WholphinDispatchers.IO) {
+                try {
+                    val collectionState =
+                        CollectionFolderState(
+                            item = DataLoadingState.Loading,
+                            items = DataLoadingState.Loading,
+                            backgroundLoading = LoadingState.Loading,
+                            viewOptions = ViewOptions(),
+                        )
+                    _state.value.favorites[type] = collectionState
+
+                    val libraryDisplayInfo =
+                        serverRepository.currentUser?.let { user ->
+                            libraryDisplayInfoDao.getItem(user, libraryDisplayItemId(type))
+                        }
+                    val sortAndDirection =
+                        libraryDisplayInfo?.sortAndDirection ?: SortAndDirection.DEFAULT
+                    val filter = libraryDisplayInfo?.filter ?: GetItemsFilter(favorite = true)
+                    val viewOptions = libraryDisplayInfo?.viewOptions ?: type.defaultViewOptions
+                    fetchType(type, sortAndDirection, filter, viewOptions)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching favorites for %s", type)
+                    DataLoadingState.Error(ex)
+                }
+            }
+
+        private suspend fun fetchType(
             type: BaseItemKind,
             sortAndDirection: SortAndDirection,
             filter: GetItemsFilter,
             viewOptions: ViewOptions,
-        ) {
+        ): DataLoadingState<List<BaseItem?>> {
             val collectionState =
                 CollectionFolderState(
                     item = DataLoadingState.Loading,
@@ -177,6 +249,7 @@ class FavoritesViewModel
                     tabs = newTabs,
                 )
             }
+            return DataLoadingState.Success(pager)
         }
 
         private fun createGetItemsRequest(
@@ -239,16 +312,20 @@ class FavoritesViewModel
                 }
             }.init()
 
-        fun libraryDisplayItemId(type: BaseItemKind): String =
-            when (type) {
-                BaseItemKind.MOVIE -> "movies"
-                BaseItemKind.SERIES -> "series"
-                BaseItemKind.EPISODE -> "episodes"
-                BaseItemKind.VIDEO -> "videos"
-                BaseItemKind.PLAYLIST -> "playlists"
-                BaseItemKind.PERSON -> "people"
-                else -> type.serialName
-            }
+        fun libraryDisplayItemId(type: BaseItemKind): String {
+            // Some types used hardcoded keys before all types were supported
+            val typeKey =
+                when (type) {
+                    BaseItemKind.MOVIE -> "movies"
+                    BaseItemKind.SERIES -> "series"
+                    BaseItemKind.EPISODE -> "episodes"
+                    BaseItemKind.VIDEO -> "videos"
+                    BaseItemKind.PLAYLIST -> "playlists"
+                    BaseItemKind.PERSON -> "people"
+                    else -> type.serialName
+                }
+            return "${NavDrawerItem.Favorites.id}_$typeKey"
+        }
 
         private fun collectionStateFor(type: BaseItemKind): CollectionFolderState? = state.value.favorites[type]
 
@@ -402,8 +479,15 @@ class FavoritesViewModel
             ) {
                 viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                     favoriteWatchManager.setWatched(itemId, favorite)
-                    // TODO use pager.refreshPagesAfter ??
-                    loadType(type)
+                    collectionStateFor(type)?.let { collectionState ->
+                        // TODO use pager.refreshPagesAfter ??
+                        fetchType(
+                            type,
+                            collectionState.sortAndDirection,
+                            collectionState.filter,
+                            collectionState.viewOptions,
+                        )
+                    }
                 }
             }
 
@@ -434,7 +518,7 @@ class FavoritesViewModel
                                 filter = filter,
                                 sortAndDirection = sortAndDirection,
                             )
-                        loadType(type, sortAndDirection, filter, collectionState.viewOptions)
+                        fetchType(type, sortAndDirection, filter, collectionState.viewOptions)
                     }
                 }
             }
@@ -456,7 +540,7 @@ class FavoritesViewModel
                             collectionState.copy(
                                 filter = newFilter,
                             )
-                        loadType(
+                        fetchType(
                             type,
                             collectionState.sortAndDirection,
                             newFilter,
@@ -521,34 +605,7 @@ data class FavoritesPageState(
     val tabs: SortedMap<BaseItemKind, TabDetails> = TreeMap(compareBy { favoriteOptions.indexOf(it) }),
     val tabKey: BaseItemKind = favoriteOptions.first(),
     val isShowClock: Boolean = true,
-) {
-    val tabDetails: SortedMap<BaseItemKind, TabDetails>
-        get() =
-            favoriteOptions
-                .mapNotNull { type ->
-                    favorites[type]?.let { collectionState ->
-                        when (val s = collectionState.items) {
-                            is DataLoadingState.Error -> {
-                                null
-                            }
-
-                            DataLoadingState.Loading,
-                            DataLoadingState.Pending,
-                            -> {
-                                type to TabDetails(formatTypeName(type))
-                            }
-
-                            is DataLoadingState.Success<List<BaseItem?>> -> {
-                                if (s.data.isNotEmpty()) {
-                                    type to TabDetails(formatTypeName(type))
-                                } else {
-                                    null
-                                }
-                            }
-                        }
-                    }
-                }.toMap(TreeMap(compareBy { favoriteOptions.indexOf(it) }))
-}
+)
 
 val favoriteOptions =
     listOf(

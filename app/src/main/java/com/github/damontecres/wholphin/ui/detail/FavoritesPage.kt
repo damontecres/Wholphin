@@ -16,9 +16,11 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GridClickActions
 import com.github.damontecres.wholphin.ui.components.KeyedTabbedPage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
 import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.data.rememberSortOptions
+import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
 fun FavoritesPage(
@@ -27,55 +29,72 @@ fun FavoritesPage(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val tabs = state.tabDetails
 
     var showTabs by rememberSaveable { mutableStateOf(true) }
 
-//    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-    KeyedTabbedPage(
-        selectedTabKey = state.tabKey,
-        updateSelectedTabKey = viewModel::updateSelectedTabKey,
-        tabs = tabs,
-        showTabs = showTabs,
-        isShowClock = state.isShowClock,
-        modifier = modifier,
-    ) { type, tabDetails ->
-        val collectionState = state.favorites[type]
-        if (collectionState != null) {
-            val provider = remember(type) { viewModel.createTypedProvider(type) }
-            val contextMenu = rememberContextMenu(preferences, provider)
-            val actions =
-                remember(type) {
-                    GridClickActions(
-                        onClickItem = { _, item -> viewModel.navigationManager.navigateTo(item.destination()) },
-                        onLongClickItem = contextMenu::showContextMenu,
-                    )
-                }
-            CollectionFolderViewContent(
-                preferences = preferences,
-                state = collectionState,
-                savedPosition = 0,
-                itemId = remember { viewModel.libraryDisplayItemId(type) },
-                initialFilter = CollectionFolderFilter(),
-                recursive = true,
-                actions = actions,
-                sortOptions = rememberSortOptions(type),
-                // TODO playEnabled = true for movies & episodes
-                playEnabled = false,
-                defaultViewOptions = type.defaultViewOptions,
-                viewActions = provider,
-                provider = provider,
-                showTitle = false,
-                positionCallback = { columns, index ->
-                    showTabs = index < columns
-                },
-                focusRequesterOnEmpty = null,
-                filterOptions = DefaultForFavoritesFilterOptions,
-            )
+    when (val s = state.loadingState) {
+        is LoadingState.Error -> {
+            ErrorMessage(s, modifier)
+        }
 
-            contextMenu.Compose()
-        } else {
-            ErrorMessage("Invalid tab $type", null)
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> {
+            LoadingPage(modifier)
+        }
+
+        LoadingState.Success -> {
+//    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+            KeyedTabbedPage(
+                selectedTabKey = state.tabKey,
+                updateSelectedTabKey = viewModel::updateSelectedTabKey,
+                tabs = state.tabs,
+                showTabs = showTabs,
+                isShowClock = state.isShowClock,
+                modifier = modifier,
+            ) { type, tabDetails ->
+                val collectionState = state.favorites[type]
+                if (collectionState != null) {
+                    val provider = remember(type) { viewModel.createTypedProvider(type) }
+                    val contextMenu = rememberContextMenu(preferences, provider)
+                    val actions =
+                        remember(type) {
+                            GridClickActions(
+                                onClickItem = { _, item ->
+                                    viewModel.navigationManager.navigateTo(
+                                        item.destination(),
+                                    )
+                                },
+                                onLongClickItem = contextMenu::showContextMenu,
+                            )
+                        }
+                    CollectionFolderViewContent(
+                        preferences = preferences,
+                        state = collectionState,
+                        savedPosition = 0,
+                        itemId = remember { viewModel.libraryDisplayItemId(type) },
+                        initialFilter = CollectionFolderFilter(),
+                        recursive = true,
+                        actions = actions,
+                        sortOptions = rememberSortOptions(type),
+                        // TODO playEnabled = true for movies & episodes
+                        playEnabled = false,
+                        defaultViewOptions = type.defaultViewOptions,
+                        viewActions = provider,
+                        provider = provider,
+                        showTitle = false,
+                        positionCallback = { columns, index ->
+                            showTabs = index < columns
+                        },
+                        focusRequesterOnEmpty = null,
+                        filterOptions = DefaultForFavoritesFilterOptions,
+                    )
+
+                    contextMenu.Compose()
+                } else {
+                    ErrorMessage("Invalid tab $type", null)
+                }
+            }
         }
     }
 }
