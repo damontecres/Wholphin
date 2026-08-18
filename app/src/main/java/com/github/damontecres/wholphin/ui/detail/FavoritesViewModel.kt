@@ -123,63 +123,79 @@ class FavoritesViewModel
                 favoriteOptions.map { type ->
                     type to initialFetchForType(type)
                 }
-            val success =
+            val completed =
                 deferred.firstOrNull { it.first == firstTabKey }?.let {
                     when (val result = it.second.await()) {
                         DataLoadingState.Loading,
                         DataLoadingState.Pending,
-                        is DataLoadingState.Error,
                         -> false
+
+                        is DataLoadingState.Error,
+                        -> true
 
                         is DataLoadingState.Success<List<BaseItem?>> -> result.data.isNotEmpty()
                     }
                 } == true
-            if (success) {
-                Timber.v("Got success for %s", firstTabKey)
+            if (completed) {
+                Timber.v("Got completed for %s", firstTabKey)
                 _state.update {
                     it.copy(
-                        loadingState = LoadingState.Success,
+                        loadingState = FavoritesLoadingState.Success,
                         tabKey = firstTabKey,
                     )
                 }
             } else {
                 // If the first key wasn't successful, wait in order until first successful & non-empty
-                val firstSuccess =
+                val firstCompleted =
                     deferred.firstOrNull { (type, job) ->
                         val result = job.await()
-                        result is DataLoadingState.Success<List<BaseItem?>> && result.data.isNotEmpty()
+                        result is DataLoadingState.Error ||
+                            (result is DataLoadingState.Success<List<BaseItem?>> && result.data.isNotEmpty())
                     }
                 _state.update {
-                    if (firstSuccess != null) {
+                    if (firstCompleted != null) {
                         it.copy(
-                            loadingState = LoadingState.Success,
-                            tabKey = firstSuccess.first,
+                            loadingState = FavoritesLoadingState.Success,
+                            tabKey = firstCompleted.first,
                         )
                     } else {
-                        // None were successful & non-empty
+                        // None were error or successful & non-empty
                         // Check if they were all empty which means the user has no favorites at all
                         val allEmpty =
-                            deferred.all { (type, job) ->
+                            deferred.all { (_, job) ->
                                 val result = job.await()
                                 result is DataLoadingState.Success<List<BaseItem?>> && result.data.isEmpty()
                             }
                         if (allEmpty) {
-                            // TODO this isn't exactly an error state
                             it.copy(
-                                loadingState = LoadingState.Error("No favorites found"),
+                                loadingState = FavoritesLoadingState.NoFavorites,
                             )
                         } else {
-                            // This means some queries failed
-                            // TODO error messages?
-                            it.copy(
-                                loadingState = LoadingState.Error("Error occurred"),
-                            )
+                            // This means a least one failed
+                            val firstError =
+                                deferred.firstOrNull { (_, job) ->
+                                    job.await() is DataLoadingState.Error
+                                }
+                            if (firstError != null) {
+                                it.copy(
+                                    loadingState = FavoritesLoadingState.Success,
+                                    tabKey = firstError.first,
+                                )
+                            } else {
+                                // This shouldn't happen
+                                it.copy(
+                                    loadingState = FavoritesLoadingState.Error("An unknown error occurred"),
+                                )
+                            }
                         }
                     }
                 }
             }
         }
 
+        /**
+         * Do the initial fetch for a [BaseItemKind] which will look up any existing saved sort and filter
+         */
         private fun initialFetchForType(type: BaseItemKind): Deferred<DataLoadingState<List<BaseItem?>>> =
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
@@ -205,10 +221,14 @@ class FavoritesViewModel
                     throw ex
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error fetching favorites for %s", type)
+                    updateForException(type, ex)
                     DataLoadingState.Error(ex)
                 }
             }
 
+        /**
+         * Query for favorites of the specified [BaseItemKind] using the specified sort and filter
+         */
         private suspend fun fetchType(
             type: BaseItemKind,
             sortAndDirection: SortAndDirection,
@@ -223,33 +243,63 @@ class FavoritesViewModel
                     viewOptions = ViewOptions(),
                 )
             _state.value.favorites[type] = collectionState
-
-            val pager = createPager(type, filter, sortAndDirection)
-            _state.value.favorites[type] =
-                collectionState.copy(
-                    item = DataLoadingState.Success(null),
-                    items = DataLoadingState.Success(pager),
-                    backgroundLoading = LoadingState.Success,
-                    sortAndDirection = sortAndDirection,
-                    filter = filter,
-                    viewOptions = viewOptions,
-                )
-            Timber.v("Got %s favorites for %s", pager.size, type)
-            _state.update {
-                val newTabs =
-                    TreeMap<BaseItemKind, TabDetails>(compareBy { favoriteOptions.indexOf(it) }).apply {
-                        putAll(it.tabs)
-                        if (pager.isNotEmpty()) {
-                            put(type, TabDetails(formatTypeName(type)))
-                        } else {
-                            remove(type)
+            try {
+                val pager = createPager(type, filter, sortAndDirection)
+                _state.value.favorites[type] =
+                    collectionState.copy(
+                        item = DataLoadingState.Success(null),
+                        items = DataLoadingState.Success(pager),
+                        backgroundLoading = LoadingState.Success,
+                        sortAndDirection = sortAndDirection,
+                        filter = filter,
+                        viewOptions = viewOptions,
+                    )
+                Timber.v("Got %s favorites for %s", pager.size, type)
+                _state.update {
+                    val newTabs =
+                        it.createMap {
+                            if (pager.isNotEmpty()) {
+                                put(type, TabDetails(formatTypeName(type)))
+                            } else {
+                                remove(type)
+                            }
                         }
-                    }
-                it.copy(
-                    tabs = newTabs,
-                )
+                    it.copy(
+                        tabs = newTabs,
+                    )
+                }
+                return DataLoadingState.Success(pager)
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (ex: Exception) {
+                updateForException(type, ex)
+                return DataLoadingState.Error(ex)
             }
-            return DataLoadingState.Success(pager)
+        }
+
+        /**
+         * If fetching data for a type fails, this should be called to update the state with the error
+         */
+        private fun updateForException(
+            type: BaseItemKind,
+            ex: Exception,
+        ) {
+            _state.update {
+                // Want to store the error for the tab
+                _state.value.favorites[type] =
+                    CollectionFolderState(
+                        item = DataLoadingState.Success(null),
+                        items = DataLoadingState.Error(ex),
+                        backgroundLoading = LoadingState.Success,
+                        viewOptions = type.defaultViewOptions,
+                    )
+                // And make sure the tab is included
+                val newTabs =
+                    it.createMap {
+                        put(type, TabDetails(formatTypeName(type)))
+                    }
+                it.copy(tabs = newTabs)
+            }
         }
 
         private fun createGetItemsRequest(
@@ -437,6 +487,9 @@ class FavoritesViewModel
 
         fun createTypedProvider(type: BaseItemKind) = TypedProvider(type)
 
+        /**
+         * This provides context menu actions and other actions on a per [BaseItemKind] basis
+         */
         inner class TypedProvider(
             val type: BaseItemKind,
         ) : ContextMenuProvider,
@@ -600,12 +653,32 @@ class FavoritesViewModel
     }
 
 data class FavoritesPageState(
-    val loadingState: LoadingState = LoadingState.Pending,
+    val loadingState: FavoritesLoadingState = FavoritesLoadingState.Pending,
     val favorites: SnapshotStateMap<BaseItemKind, CollectionFolderState> = SnapshotStateMap(),
     val tabs: SortedMap<BaseItemKind, TabDetails> = TreeMap(compareBy { favoriteOptions.indexOf(it) }),
     val tabKey: BaseItemKind = favoriteOptions.first(),
     val isShowClock: Boolean = true,
 )
+
+sealed interface FavoritesLoadingState {
+    data object Pending : FavoritesLoadingState
+
+    data object Loading : FavoritesLoadingState
+
+    data object Success : FavoritesLoadingState
+
+    data object NoFavorites : FavoritesLoadingState
+
+    data class Error(
+        val message: String? = null,
+        val exception: Throwable? = null,
+    ) : FavoritesLoadingState {
+        constructor(exception: Throwable) : this(null, exception)
+
+        val localizedMessage: String =
+            listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
+    }
+}
 
 val favoriteOptions =
     listOf(
@@ -624,3 +697,13 @@ val favoriteOptions =
         BaseItemKind.PHOTO,
         BaseItemKind.PHOTO_ALBUM,
     )
+
+/**
+ * Creates a new tab map from the current state applying the supplied block which can contain mutations
+ */
+private inline fun FavoritesPageState.createMap(block: TreeMap<BaseItemKind, TabDetails>.() -> Unit) =
+    TreeMap<BaseItemKind, TabDetails>(compareBy { favoriteOptions.indexOf(it) })
+        .apply {
+            putAll(this@createMap.tabs)
+            block.invoke(this)
+        }
