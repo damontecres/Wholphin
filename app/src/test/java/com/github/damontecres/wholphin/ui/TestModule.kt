@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
+import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -259,6 +260,10 @@ object TestDatabaseModule {
         @Provides
         @Singleton
         fun rememberedTabDao(db: AppDatabase): RememberedTabDao = db.rememberedTabDao()
+
+        @Provides
+        @Singleton
+        fun seriesTrackChoiceTabDao(db: AppDatabase): SeriesTrackChoiceDao = db.seriesTrackChoiceDao()
 
         @Provides
         @Singleton
