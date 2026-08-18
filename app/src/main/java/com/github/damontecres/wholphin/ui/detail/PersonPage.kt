@@ -46,10 +46,11 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
-import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
@@ -180,7 +181,7 @@ class PersonViewModel
                         GetItemsRequest(
                             personIds = listOf(itemId),
                             includeItemTypes = listOf(type),
-                            fields = SlimItemFields,
+                            fields = ItemRowFields,
                             recursive = true,
                             sortBy = listOf(ItemSortBy.PREMIERE_DATE, ItemSortBy.PRODUCTION_YEAR, ItemSortBy.SORT_NAME),
                             sortOrder = listOf(SortOrder.DESCENDING, SortOrder.DESCENDING, SortOrder.ASCENDING),
@@ -409,6 +410,7 @@ fun PersonPageContent(
                         },
                         onLongClick = onLongClick,
                         imageHeight = Cards.heightEpisode,
+                        aspectRatio = item?.aspectRatio ?: AspectRatios.FOUR_THREE,
                         modifier =
                             mod
                                 .ifElse(
