@@ -726,4 +726,7 @@
     <string name="audio_books">Audioknjige</string>
     <string name="server_version_not_supported">Verzija poslužitelja nije podržana</string>
     <string name="appears_on">Pojavljuje se na</string>
+    <string name="dim_after_delay">Zatamni zaslon nakon odgode</string>
+    <string name="dim_percentage">Postotak zatamnjenja</string>
+    <string name="dim_screen">Zatamni zaslon</string>
 </resources>
