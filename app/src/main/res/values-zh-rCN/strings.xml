@@ -682,4 +682,7 @@
     <string name="appears_on">出现在</string>
     <string name="disable_audio_offload">禁用音频硬件分流</string>
     <string name="disable_audio_offload_summary">禁用分流音频解码可能会解决某些设备上的播放卡顿问题</string>
+    <string name="dim_after_delay">延迟后调暗屏幕</string>
+    <string name="dim_percentage">调暗百分比</string>
+    <string name="dim_screen">调暗屏幕</string>
 </resources>
