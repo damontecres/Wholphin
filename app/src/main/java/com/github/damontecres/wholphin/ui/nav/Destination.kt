@@ -91,8 +91,10 @@ sealed class Destination(
         val forceTranscoding: Boolean = false,
         val backend: PlayerBackend? = null,
         val shuffle: Boolean = false,
+        val startedViaPlayButton: Boolean = false,
     ) : Destination(true) {
-        constructor(item: BaseItem) : this(item.id, item.resumeMs)
+        constructor(item: BaseItem, startedViaPlayButton: Boolean = false) :
+            this(item.id, item.resumeMs, startedViaPlayButton = startedViaPlayButton)
     }
 
     @Serializable

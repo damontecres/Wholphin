@@ -560,7 +560,7 @@ fun SearchPage(
         contextMenu.showContextMenu(index, item)
     }
     val onPlayItem = { _: Int, item: BaseItem ->
-        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+        viewModel.navigationManager.navigateTo(Destination.Playback(item, startedViaPlayButton = true))
     }
 
     val onClickDiscover = { _: Int, item: DiscoverItem ->

@@ -228,7 +228,7 @@ fun ItemGrid(
                         position = index
                         contextMenu.showContextMenu(index, item)
                     },
-                    onClickPlay = { _, item -> viewModel.navigateTo(Destination.Playback(item)) },
+                    onClickPlay = { _, item -> viewModel.navigateTo(Destination.Playback(item, startedViaPlayButton = true)) },
                     letterPosition = { c: Char -> 0 },
                     gridFocusRequester = focusRequester,
                     showJumpButtons = false,

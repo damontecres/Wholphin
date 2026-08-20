@@ -426,7 +426,7 @@ fun RecommendedContent(
                         )
                 },
                 onClickPlay = { _, item ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item, startedViaPlayButton = true))
                 },
                 onFocusPosition = {
                     position = it

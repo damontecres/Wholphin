@@ -780,7 +780,7 @@ fun CollectionFolderView(
                                     startSlideshow = true,
                                 )
                             } else {
-                                Destination.Playback(item)
+                                Destination.Playback(item, startedViaPlayButton = true)
                             }
                         viewModel.navigateTo(destination)
                     },

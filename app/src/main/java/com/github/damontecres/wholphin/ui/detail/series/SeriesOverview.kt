@@ -222,16 +222,17 @@ fun SeriesOverview(
                         it.copy(episodeRowIndex = episodeIndex)
                     }
                 },
-                onClick = {
+                onClick = { ep, viaPlayButton ->
                     rowFocused = EPISODE_ROW
                     val resumePosition =
-                        it.data.userData
+                        ep.data.userData
                             ?.playbackPositionTicks
                             ?.ticks ?: Duration.ZERO
                     viewModel.navigateTo(
                         Destination.Playback(
-                            it.id,
+                            ep.id,
                             resumePosition.inWholeMilliseconds,
+                            startedViaPlayButton = viaPlayButton,
                         ),
                     )
                 },

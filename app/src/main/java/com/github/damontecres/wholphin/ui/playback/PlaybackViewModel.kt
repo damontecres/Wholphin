@@ -189,6 +189,7 @@ class PlaybackViewModel
         private val jobs = mutableListOf<Job>()
 
         private val isPlaylist = destination is Destination.PlaybackList
+        private val startedViaPlayButton = (destination as? Destination.Playback)?.startedViaPlayButton == true
 
         val subtitleSearchState = MutableStateFlow(SubtitleSearchState())
 
@@ -1270,14 +1271,15 @@ class PlaybackViewModel
         }
 
         fun shouldAutoPlayNextUp(): Boolean =
-            preferences.appPreferences.playbackPreferences.let {
-                it.autoPlayNext &&
-                    if (it.passOutProtectionMs > 0) {
-                        (Date().time - lastInteractionDate.time) < it.passOutProtectionMs
-                    } else {
-                        true
-                    }
-            }
+            !startedViaPlayButton &&
+                preferences.appPreferences.playbackPreferences.let {
+                    it.autoPlayNext &&
+                        if (it.passOutProtectionMs > 0) {
+                            (Date().time - lastInteractionDate.time) < it.passOutProtectionMs
+                        } else {
+                            true
+                        }
+                }
 
         fun playNextUp() {
             viewModelScope.launchDefault {

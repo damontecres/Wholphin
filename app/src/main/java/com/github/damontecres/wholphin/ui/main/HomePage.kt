@@ -201,7 +201,7 @@ fun HomePage(
             val onClickPlay =
                 remember {
                     { _: RowColumn, item: BaseItem ->
-                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item, startedViaPlayButton = true))
                     }
                 }
             val onClickViewMore =

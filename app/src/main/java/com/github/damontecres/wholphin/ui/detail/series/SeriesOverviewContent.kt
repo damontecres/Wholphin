@@ -89,7 +89,7 @@ fun SeriesOverviewContent(
     extrasRowFocusRequester: FocusRequester,
     onChangeSeason: (Int) -> Unit,
     onFocusEpisode: (Int) -> Unit,
-    onClick: (BaseItem) -> Unit,
+    onClick: (BaseItem, viaPlayButton: Boolean) -> Unit,
     onLongClick: (BaseItem) -> Unit,
     playOnClick: (Duration) -> Unit,
     watchOnClick: () -> Unit,
@@ -261,7 +261,7 @@ fun SeriesOverviewContent(
                                             ?: 0.0,
                                     onClick = {
                                         epPosition = episodeIndex
-                                        if (episode != null) onClick.invoke(episode)
+                                        if (episode != null) onClick.invoke(episode, false)
                                     },
                                     onLongClick = {
                                         epPosition = episodeIndex
@@ -298,7 +298,7 @@ fun SeriesOverviewContent(
                                                 }
                                             }.onKeyEvent {
                                                 if (episode != null && isPlayKeyUp(it)) {
-                                                    onClick.invoke(episode)
+                                                    onClick.invoke(episode, true)
                                                     return@onKeyEvent true
                                                 }
                                                 return@onKeyEvent false

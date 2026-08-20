@@ -138,7 +138,7 @@ fun CollectionDetails(
             { filter: GetItemsFilter -> viewModel.changeFilter(filter) }
         }
     val onClickPlay = { _: RowColumn, item: BaseItem ->
-        viewModel.navigateTo(Destination.Playback(item = item))
+        viewModel.navigateTo(Destination.Playback(item = item, startedViaPlayButton = true))
     }
     val onClickPlayAll =
         remember {
