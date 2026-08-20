@@ -154,7 +154,9 @@ fun MainContent(
                 val alpha =
                     userPreferences.appPreferences.interfacePreferences.screensaverPreference.dimPercent / 100f
                 Box(
-                    Modifier.background(Color.Black.copy(alpha = alpha)),
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = alpha)),
                 )
             }
         }
