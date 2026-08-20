@@ -15,7 +15,7 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.DetailItemFields
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.onMain
@@ -180,7 +180,7 @@ class MusicService
                             userId = serverRepository.currentUser?.id,
                             itemId = itemId,
                             limit = 200,
-                            fields = DefaultItemFields,
+                            fields = DetailItemFields,
                         ).content.items
                         .map { BaseItem(it, false) }
                 setQueue(items, false)
