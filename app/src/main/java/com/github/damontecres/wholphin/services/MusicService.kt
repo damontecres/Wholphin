@@ -13,6 +13,7 @@ import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.enabled
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.DetailItemFields
@@ -108,7 +109,8 @@ class MusicService
         private suspend fun preferAc3Surround() =
             userPreferencesService
                 .getCurrent()
-                .appPreferences.experimentalPreferences.preferAc3Surround
+                .appPreferences.experimentalPreferences
+                .enabled { preferAc3Surround }
 
         /**
          * Start music playback
