@@ -480,6 +480,8 @@
     <string name="dts">DTS</string>
     <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+    <string name="prefer_dovi_over_hdr10_plus">Prefer Dolby Vision over HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Removes HDR10+ metadata from Dolby Vision videos, for TVs that otherwise play them as HDR10+</string>
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
