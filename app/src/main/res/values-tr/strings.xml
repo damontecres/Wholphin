@@ -701,4 +701,9 @@
     <string name="dpad_seek_mode_none_summary">İlerleme çubuğu yok</string>
     <string name="brown">Kahverengi</string>
     <string name="server_version_not_supported">Sunucu sürümü desteklenmiyor</string>
+    <string name="disable_audio_offload">Ses Donanım Hızlandırmasını Devre Dışı Bırak</string>
+    <string name="disable_audio_offload_summary">Ses kod çözme işlemlerinin donanıma devredilmesini (offload) devre dışı bırakmak, bazı cihazlardaki oynatma donmalarını düzeltebilir</string>
+    <string name="dim_after_delay">Belirli bir süre sonra ekranı karart</string>
+    <string name="dim_percentage">Karartma yüzdesi</string>
+    <string name="dim_screen">Ekranı karart</string>
 </resources>
