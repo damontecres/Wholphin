@@ -85,7 +85,6 @@ class ScreensaverService
          * Reset the timer before showing the in-app screensaver
          */
         fun pulse() {
-            Timber.v("state=%s", _state.value)
             waitJob?.cancel()
             if (_state.value.enabled) {
 //                Timber.v("pulse")
