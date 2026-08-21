@@ -63,7 +63,6 @@ message PlaybackOverrides{
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
-  DoviDeviceCompatibilityMode dovi_device_compatibility_mode = 9;
 }
 
 message PlaybackPreferences {
@@ -235,6 +234,7 @@ message ExperimentalPreferences {
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
   bool disable_audio_offload = 4;
+  DoviDeviceCompatibilityMode dovi_device_compatibility_mode = 5;
 }
 
 message AppPreferences {

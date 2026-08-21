@@ -458,9 +458,9 @@ sealed interface AppPreference<Pref, T> {
             AppChoicePreference<AppPreferences, DoviDeviceCompatibilityMode>(
                 title = R.string.dovi_device_compatibility_mode,
                 defaultValue = DoviDeviceCompatibilityMode.DOVI_ALLOW,
-                getter = { it.playbackPreferences.overrides.doviDeviceCompatibilityMode },
+                getter = { it.experimentalPreferences.doviDeviceCompatibilityMode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { doviDeviceCompatibilityMode = value }
+                    prefs.updateExperimentalPreferences { doviDeviceCompatibilityMode = value }
                 },
                 displayValues = R.array.dovi_device_compatibility_modes,
                 subtitles = R.array.dovi_device_compatibility_mode_descriptions,
