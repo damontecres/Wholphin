@@ -107,11 +107,11 @@ class IntentService
             return IntentResult.Target(destinations)
         }
 
-        private suspend fun prepare(intent: Intent): IntentResult? {
+        internal suspend fun prepare(intent: Intent): IntentResult? {
             val appPrefs = userPreferencesService.flow.first().appPreferences
 
-            val userId = intent.getStringParam("userId")?.toUUIDOrNull()
-            val serverId = intent.getStringParam("serverId")?.toUUIDOrNull()
+            val userId = intent.getStringParam(INTENT_USER_ID)?.toUUIDOrNull()
+            val serverId = intent.getStringParam(INTENT_SERVER_ID)?.toUUIDOrNull()
             return if (userId != null && serverId != null) {
                 Timber.v("Intent switches user")
                 val user = serverRepository.serverDao.getUser(serverId, userId)
@@ -129,8 +129,8 @@ class IntentService
                         ?.isProtected == true
                 if (appPrefs.signInAutomatically && !profileProtected) {
                     Timber.v("No current user, so restoring last")
-                    val userId = appPrefs.currentUserId.toUUIDOrNull()
-                    val serverId = appPrefs.currentServerId.toUUIDOrNull()
+                    val userId = appPrefs.currentUserId?.toUUIDOrNull()
+                    val serverId = appPrefs.currentServerId?.toUUIDOrNull()
 
                     if (userId != null && serverId != null) {
                         val current =
@@ -193,6 +193,8 @@ class IntentService
             const val INTENT_EPISODE_NUMBER = "epNum"
             const val INTENT_SEASON_NUMBER = "seaNum"
             const val INTENT_SEASON_ID = "seaId"
+            const val INTENT_SERVER_ID = "serverId"
+            const val INTENT_USER_ID = "userId"
         }
     }
 
