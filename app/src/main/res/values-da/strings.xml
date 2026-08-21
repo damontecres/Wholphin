@@ -566,4 +566,5 @@
     <string name="background_style_wrap">Indpakning</string>
     <string name="background_style_boxed">Indrammet</string>
     <string name="prefer_mpv">Foretrækker MPV</string>
+    <string name="player_backend_options_subtitles_prefer_mpv">Brug ExoPlayer for HDR afspilning</string>
 </resources>
