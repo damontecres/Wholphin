@@ -12,6 +12,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.detail.favoriteOptions
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -33,10 +35,10 @@ fun HomeSettingsFavoriteList(
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
-            itemsIndexed(favoriteOptionsList) { index, type ->
+            itemsIndexed(favoriteOptions) { index, type ->
                 HomeSettingsListItem(
                     selected = false,
-                    headlineText = stringResource(favoriteOptions[type]!!),
+                    headlineText = stringResource(formatTypeName(type)),
                     onClick = { onClick.invoke(type) },
                     modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
@@ -44,17 +46,3 @@ fun HomeSettingsFavoriteList(
         }
     }
 }
-
-val favoriteOptions by lazy {
-    mapOf(
-        BaseItemKind.MOVIE to R.string.movies_title,
-        BaseItemKind.SERIES to R.string.tv_shows_title,
-        BaseItemKind.EPISODE to R.string.episodes,
-        BaseItemKind.VIDEO to R.string.videos,
-        BaseItemKind.PLAYLIST to R.string.playlists,
-        BaseItemKind.PERSON to R.string.people_title,
-        BaseItemKind.MUSIC_ARTIST to R.string.artists,
-        BaseItemKind.MUSIC_ALBUM to R.string.albums,
-    )
-}
-val favoriteOptionsList by lazy { favoriteOptions.keys.toList() }
