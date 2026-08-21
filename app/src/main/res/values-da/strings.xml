@@ -567,4 +567,9 @@
     <string name="background_style_boxed">Indrammet</string>
     <string name="prefer_mpv">Foretrækker MPV</string>
     <string name="player_backend_options_subtitles_prefer_mpv">Brug ExoPlayer for HDR afspilning</string>
+    <string name="aspect_ratios_poster">Plakat (2:3)</string>
+    <string name="aspect_ratios_16_9">16:9</string>
+    <string name="aspect_ratios_4_3">4:3</string>
+    <string name="aspect_ratios_square">Kvadrat (1:1)</string>
+    <string name="image_type_primary">Primære</string>
 </resources>
