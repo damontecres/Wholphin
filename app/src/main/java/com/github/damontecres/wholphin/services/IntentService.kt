@@ -29,49 +29,26 @@ class IntentService
             Timber.v("Intent data: %s", intent.data)
             val action = intent.action ?: intent.data?.host
             if (
-                intent.getStringParam("type") == null &&
+                intent.getStringParam(INTENT_ITEM_TYPE) == null &&
                 (action == Intent.ACTION_MAIN || action.isNullOrBlank())
             ) {
+                // Normal app launch
                 return IntentResult.NoOp
             }
 
-            val userId = intent.getStringParam("userId")?.toUUIDOrNull()
-            val serverId = intent.getStringParam("serverId")?.toUUIDOrNull()
-            if (userId != null && serverId != null) {
-                Timber.v("Intent switches user")
-                val user =
-                    serverRepository.serverDao.getUser(serverId, userId)
-                        ?: return IntentResult.Error("User not found")
-                if (!user.isProtected) {
-                    serverRepository.restoreSession(serverId, userId)
-                } else {
-                    return IntentResult.Error("Cannot switch to specified user")
-                }
-            } else if (serverRepository.currentUser == null) {
-                Timber.v("No current user, so restoring last")
-                val appPrefs = userPreferencesService.flow.first().appPreferences
-                if (appPrefs.signInAutomatically) {
-                    val userId = appPrefs.currentUserId.toUUIDOrNull()
-                    val serverId = appPrefs.currentServerId.toUUIDOrNull()
-                    if (userId != null && serverId != null) {
-                        serverRepository.restoreSession(serverId, userId)
-                            ?: return IntentResult.Error("Error restoring user")
-                    } else {
-                        return IntentResult.Error("Could not auto sign-in, specify a server & user")
-                    }
-                } else {
-                    return IntentResult.Error("Auto sign-in not enabled, specify a server & user")
-                }
+            val result = prepare(intent)
+            if (result != null) {
+                return result
             }
 
-            if (intent.getStringParam("type") != null) {
+            // Existence of this key implies launching from Play Next channel
+            if (intent.getStringParam(INTENT_ITEM_TYPE) != null) {
                 return getDestinationFromChannel(intent)?.let {
                     IntentResult.Target(
                         destinations = listOf(it),
                         addHomeToBackStack = false,
                     )
-                }
-                    ?: IntentResult.Error("Invalid parameters")
+                } ?: IntentResult.Error("Invalid parameters")
             }
 
             if (action == Intent.ACTION_SEARCH || action == "search") {
@@ -128,6 +105,49 @@ class IntentService
                 }
 
             return IntentResult.Target(destinations)
+        }
+
+        private suspend fun prepare(intent: Intent): IntentResult? {
+            val appPrefs = userPreferencesService.flow.first().appPreferences
+
+            val userId = intent.getStringParam("userId")?.toUUIDOrNull()
+            val serverId = intent.getStringParam("serverId")?.toUUIDOrNull()
+            return if (userId != null && serverId != null) {
+                Timber.v("Intent switches user")
+                val user = serverRepository.serverDao.getUser(serverId, userId)
+                if (user != null && !user.isProtected) {
+                    serverRepository.restoreSession(serverId, userId)
+                        ?: IntentResult.Error("Error restoring user")
+                    null
+                } else {
+                    IntentResult.Error("Cannot switch to specified user")
+                }
+            } else {
+                val profileProtected =
+                    serverRepository.current.value
+                        ?.user
+                        ?.isProtected == true
+                if (appPrefs.signInAutomatically && !profileProtected) {
+                    Timber.v("No current user, so restoring last")
+                    val userId = appPrefs.currentUserId.toUUIDOrNull()
+                    val serverId = appPrefs.currentServerId.toUUIDOrNull()
+
+                    if (userId != null && serverId != null) {
+                        val current =
+                            serverRepository.restoreSession(serverId, userId)
+                                ?: return IntentResult.Error("Error restoring user")
+                        if (current.user.isProtected) {
+                            IntentResult.Error("Could not auto sign-in, user is protected")
+                        } else {
+                            null
+                        }
+                    } else {
+                        IntentResult.Error("Could not auto sign-in, specify a server & user")
+                    }
+                } else {
+                    IntentResult.Error("Auto sign-in not enabled or user is protected")
+                }
+            }
         }
 
         private fun Intent.getStringParam(key: String) = getStringExtra(key) ?: data?.getQueryParameter(key)

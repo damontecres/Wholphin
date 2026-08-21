@@ -439,9 +439,16 @@ class MainActivityViewModel
                         val result = intent?.let { intentService.parseIntent(intent) }
                         when (result) {
                             is IntentResult.Error -> {
-                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                val current = serverRepository.current.value
+                                val destination =
+                                    if (current != null) {
+                                        SetupDestination.UserList(current.server)
+                                    } else {
+                                        SetupDestination.ServerList
+                                    }
+                                setupNavigationManager.navigateTo(destination)
                                 Timber.e("Error parsing intent: %s", result.message)
-                                showToast(context, "Invalid intent: ${result.message}")
+                                showToast(context, result.message)
                                 return@withLock
                             }
 
@@ -505,7 +512,7 @@ class MainActivityViewModel
                                     prefs.currentUserId?.toUUIDOrNull(),
                                 )
                             if (current != null) {
-                                if (current.user.hasPin || current.user.requireLogin) {
+                                if (current.user.isProtected) {
                                     setupNavigationManager.navigateTo(
                                         SetupDestination.UserList(
                                             current.server,
