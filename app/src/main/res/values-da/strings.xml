@@ -613,4 +613,9 @@
     <string name="ass_subtitle_mode_exoplayer">Direkte afspilning med indbygget ExoPlayer</string>
     <string name="ass_subtitle_playback">SSA/ASS undertekstafspilning</string>
     <string name="play_with">Afspil med</string>
+    <string name="backdrop_style_dynamic">Billede med dynamisk farve</string>
+    <string name="backdrop_style_image">Kun Billede</string>
+    <string name="seerr_login">Log ind på Seerr-serveren</string>
+    <string name="seerr_jellyfin_user">Jellyfin-bruger</string>
+    <string name="seerr_local_user">Lokal bruger</string>
 </resources>
