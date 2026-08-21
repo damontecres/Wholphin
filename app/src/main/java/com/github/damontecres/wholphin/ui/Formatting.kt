@@ -80,35 +80,60 @@ fun toLocalDate(date: String?): LocalDate? =
     }
 
 /**
- * If the item has season & episode info, format as `S# E#`
+ * Format season & episode numbers using localized string resources.
+ * Returns null if [season] or [episode] is missing.
+ */
+fun Resources.formatSeasonEpisode(
+    season: Int?,
+    episode: Int?,
+    episodeEnd: Int? = null,
+    padded: Boolean = false,
+): String? {
+    if (season == null || episode == null) return null
+    return if (episodeEnd != null) {
+        getString(
+            if (padded) R.string.season_episode_number_padded_range else R.string.season_episode_number_range,
+            season,
+            episode,
+            episodeEnd,
+        )
+    } else {
+        getString(
+            if (padded) R.string.season_episode_number_padded else R.string.season_episode_number,
+            season,
+            episode,
+        )
+    }
+}
+
+/** Compact episode-only label, e.g. `E3`. */
+fun Resources.formatEpisodeNumber(episode: Int): String = getString(R.string.episode_number_short, episode)
+
+/** Fallback season title when the library has no season name, e.g. `Season 2`. */
+fun Resources.formatSeasonNumber(season: Int): String = getString(R.string.season_number, season)
+
+/**
+ * If the item has season & episode info, format as localized `S# E#`
  */
 val BaseItemDto.seasonEpisode: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null && indexNumberEnd != null) {
-            "S$parentIndexNumber E$indexNumber-E$indexNumberEnd"
-        } else if (parentIndexNumber != null && indexNumber != null) {
-            "S$parentIndexNumber E$indexNumber"
-        } else {
-            null
-        }
+        WholphinApplication.instance.resources.formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+        )
 
 /**
- * If the item has season & episode info, format padded as `S## E##`
+ * If the item has season & episode info, format padded as localized `S##E##`
  */
 val BaseItemDto.seasonEpisodePadded: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null) {
-            val season = parentIndexNumber?.toString()?.padStart(2, '0')
-            val episode = indexNumber?.toString()?.padStart(2, '0')
-            val endEpisode = indexNumberEnd?.toString()?.padStart(2, '0')
-            if (endEpisode != null) {
-                "S${season}E$episode-E$endEpisode"
-            } else {
-                "S${season}E$episode"
-            }
-        } else {
-            null
-        }
+        WholphinApplication.instance.resources.formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+            padded = true,
+        )
 
 val BaseItemDto.seriesProductionYears: String?
     get() =
