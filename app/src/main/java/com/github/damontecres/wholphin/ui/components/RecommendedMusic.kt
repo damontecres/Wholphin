@@ -6,8 +6,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatio
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -90,12 +88,7 @@ fun RecommendedMusic(
                     parentId = parentId,
                     suggestionsType = BaseItemKind.MUSIC_ALBUM,
                     recommendedRows = getRecommendedRows(parentId),
-                    viewOptions =
-                        HomeRowViewOptions(
-                            aspectRatio = AspectRatio.SQUARE,
-                            heightDp = Cards.HEIGHT_EPISODE,
-                            showTitles = true,
-                        ),
+                    viewOptions = HomeRowViewOptions.musicDefault.copy(showTitles = true),
                 )
             },
         ),

@@ -58,12 +58,11 @@ fun HomeRowSettings(
     config: HomeRowConfig,
     preferenceOptions: List<PreferenceGroup<HomeRowViewOptions>>,
     viewOptions: HomeRowViewOptions,
-    onViewOptionsChange: (HomeRowViewOptions) -> Unit,
+    onViewOptionsChange: (HomeRowViewOptions?) -> Unit,
     onConfigChange: (HomeRowConfig) -> Unit,
     onConfigAction: (HomeRowConfigAction) -> Unit,
     onApplyApplyAll: () -> Unit,
     modifier: Modifier = Modifier,
-    defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
@@ -91,7 +90,9 @@ fun HomeRowSettings(
                         onClickPreference = { pref ->
                             when (pref) {
                                 Options.ViewOptionsReset -> {
-                                    onViewOptionsChange.invoke(defaultViewOptions)
+                                    // Reset means "no choice", not "the default value", so the
+                                    // row keeps following the default if it later changes
+                                    onViewOptionsChange.invoke(null)
                                 }
 
                                 Options.ViewOptionsApplyAll -> {

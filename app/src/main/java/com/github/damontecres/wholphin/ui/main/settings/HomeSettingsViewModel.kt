@@ -33,8 +33,9 @@ import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionEx
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.getRecentlyAddedTitle
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.services.resolveViewOptions
 import com.github.damontecres.wholphin.services.tvAccess
-import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.services.withViewOptions
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
@@ -274,24 +275,6 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
-                val viewOptions =
-                    when (library.collectionType) {
-                        CollectionType.MUSIC -> {
-                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
-                        }
-
-                        CollectionType.HOMEVIDEOS,
-                        CollectionType.MUSICVIDEOS,
-                        -> {
-                            HomeRowViewOptions(
-                                aspectRatio = AspectRatio.WIDE,
-                            )
-                        }
-
-                        else -> {
-                            HomeRowViewOptions()
-                        }
-                    }
                 val id = idCounter++
                 val newRow =
                     when (rowType) {
@@ -303,10 +286,12 @@ class HomeSettingsViewModel
                                         it,
                                     )
                                 }
+                            val config = RecentlyAdded(library.itemId)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyAdded(library.itemId, viewOptions),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(listOf(library)),
                             )
                         }
 
@@ -318,10 +303,12 @@ class HomeSettingsViewModel
                                         it,
                                     )
                                 }
+                            val config = RecentlyReleased(library.itemId)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyReleased(library.itemId, viewOptions),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(listOf(library)),
                             )
                         }
 
@@ -353,10 +340,12 @@ class HomeSettingsViewModel
                                         it,
                                     )
                                 }
+                            val config = Suggestions(library.itemId)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = Suggestions(library.itemId, viewOptions),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(listOf(library)),
                             )
                         }
 
@@ -365,10 +354,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config =
-                                    TvChannels(
-                                        viewOptions = HomeRowViewOptions.liveTvDefault,
-                                    ),
+                                config = TvChannels(),
                             )
                         }
 
@@ -383,10 +369,12 @@ class HomeSettingsViewModel
 
                         LibraryRowType.RECENTLY_RECORDED -> {
                             val title = getRecentlyAddedTitle(library.name)
+                            val config = RecentlyAdded(library.itemId)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = RecentlyAdded(library.itemId),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(listOf(library)),
                             )
                         }
 
@@ -455,16 +443,14 @@ class HomeSettingsViewModel
 
         fun updateViewOptions(
             rowId: Int,
-            viewOptions: HomeRowViewOptions,
+            viewOptions: HomeRowViewOptions?,
         ) {
             viewModelScope.launchIO {
                 var fetchData = false
                 updateState {
                     val index = it.rows.indexOfFirst { it.id == rowId }
-                    val config = it.rows[index].config
-                    val newRowConfig = config.updateViewOptions(viewOptions)
-                    val newRow = it.rows[index].copy(config = newRowConfig)
-                    if (config.viewOptions.useSeries != viewOptions.useSeries) {
+                    val newRow = it.rows[index].withViewOptions(viewOptions, it.libraries)
+                    if (it.rows[index].viewOptions.useSeries != newRow.viewOptions.useSeries) {
                         fetchData = true
                     }
                     it.copy(
@@ -477,7 +463,7 @@ class HomeSettingsViewModel
                                 val row = it.rowData[index]
                                 val newRow =
                                     if (row is HomeRowLoadingState.Success) {
-                                        row.copy(viewOptions = viewOptions)
+                                        row.copy(viewOptions = newRow.viewOptions)
                                     } else {
                                         row
                                     }
@@ -636,16 +622,16 @@ class HomeSettingsViewModel
                 updateState {
                     val newRows =
                         it.rows.toMutableList().map { row ->
-                            val vo = row.config.viewOptions
+                            val vo = row.viewOptions
                             val newVo = vo.copy(heightDp = vo.heightDp + (4 * relative))
-                            row.copy(config = row.config.updateViewOptions(newVo))
+                            row.withViewOptions(newVo, it.libraries)
                         }
                     it.copy(
                         rows = newRows,
                         rowData =
                             it.rowData.toMutableList().mapIndexed { index, row ->
                                 if (row is HomeRowLoadingState.Success) {
-                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                    row.copy(viewOptions = newRows[index].viewOptions)
                                 } else {
                                     row
                                 }
@@ -724,11 +710,11 @@ class HomeSettingsViewModel
                                 }
 
                                 is Genres -> {
-                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                    it.config.updateViewOptions(it.viewOptions.copy(heightDp = preset.genreSize))
                                 }
 
                                 is HomeRowConfig.Studios -> {
-                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                    it.config.updateViewOptions(it.viewOptions.copy(heightDp = preset.genreSize))
                                 }
 
                                 is HomeRowConfig.GetItems -> {
@@ -765,7 +751,10 @@ class HomeSettingsViewModel
                                     it.config.updateViewOptions(preset.liveTv)
                                 }
                             }
-                        it.copy(config = newConfig)
+                        it.copy(
+                            config = newConfig,
+                            viewOptions = newConfig.resolveViewOptions(state.libraries),
+                        )
                     }
 
                 _state.update {
@@ -775,7 +764,7 @@ class HomeSettingsViewModel
                         rowData =
                             it.rowData.toMutableList().mapIndexed { index, row ->
                                 if (row is HomeRowLoadingState.Success) {
-                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                    row.copy(viewOptions = newRows[index].viewOptions)
                                 } else {
                                     row
                                 }
@@ -811,6 +800,7 @@ class HomeSettingsViewModel
                                                 id = it.rows[index].id,
                                                 title = ResStringProvider(R.string.combine_continue_next),
                                                 config = ContinueWatchingCombined(row.config.viewOptions),
+                                                viewOptions = row.viewOptions,
                                             ),
                                         )
                                         removeAll(rowsToRemove)
@@ -836,6 +826,7 @@ class HomeSettingsViewModel
                                                 id = it.rows[index].id,
                                                 title = ResStringProvider(R.string.continue_watching),
                                                 config = ContinueWatching(row.config.viewOptions),
+                                                viewOptions = row.viewOptions,
                                             ),
                                         )
                                         add(
@@ -844,6 +835,7 @@ class HomeSettingsViewModel
                                                 id = idCounter++,
                                                 title = ResStringProvider(R.string.next_up),
                                                 config = NextUp(row.config.viewOptions),
+                                                viewOptions = row.viewOptions,
                                             ),
                                         )
                                     },

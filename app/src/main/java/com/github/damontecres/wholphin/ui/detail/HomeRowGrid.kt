@@ -20,6 +20,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.resolveViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
@@ -112,7 +113,8 @@ class HomeRowGridViewModel
                                     HomeRowLoadingState.Success(
                                         title,
                                         emptyList(),
-                                        rowConfig.viewOptions,
+                                        // Genres and studios do not take their shape from a parent
+                                        rowConfig.resolveViewOptions(null),
                                     ),
                             )
                         }
@@ -236,7 +238,6 @@ fun HomeRowGrid(
     val state by viewModel.state.collectAsState()
     val contextMenu = rememberContextMenu(preferences, viewModel)
     val gridFocusRequester = remember { FocusRequester() }
-    val viewOptions = destination.config.viewOptions
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -256,6 +257,8 @@ fun HomeRowGrid(
             }
 
             is HomeRowLoadingState.Success -> {
+                // Already resolved against the row's library when the data was fetched
+                val viewOptions = st.viewOptions
                 when (destination.config) {
                     is HomeRowConfig.Genres -> {
                         GenreCardGrid(

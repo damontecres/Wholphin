@@ -7,9 +7,12 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
+import com.github.damontecres.wholphin.data.model.parentItemId
+import com.github.damontecres.wholphin.data.model.resolveViewOptions
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.HomeItemFields
@@ -57,6 +60,7 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.GetProgramsDto
@@ -288,10 +292,12 @@ class HomeSettingsService
                                 config = HomeRowConfig.TvPrograms(),
                             )
                         } else {
+                            val config = HomeRowConfig.RecentlyAdded(parentId)
                             HomeRowConfigDisplay(
                                 id = index,
                                 title = title,
-                                config = HomeRowConfig.RecentlyAdded(parentId),
+                                config = config,
+                                viewOptions = config.resolveViewOptions(it.collectionType),
                             )
                         }
                     }
@@ -400,6 +406,7 @@ class HomeSettingsService
                                 }
                             if (sectionType == HomeSectionType.LATEST_MEDIA) {
                                 libraries.map {
+                                    val config = HomeRowConfig.RecentlyAdded(it.id)
                                     HomeRowConfigDisplay(
                                         id = id++,
                                         title =
@@ -407,7 +414,8 @@ class HomeSettingsService
                                                 R.string.recently_added_in,
                                                 it.name ?: "",
                                             ),
-                                        config = HomeRowConfig.RecentlyAdded(it.id),
+                                        config = config,
+                                        viewOptions = config.resolveViewOptions(it.collectionType),
                                     )
                                 }
                             } else if (config != null) {
@@ -428,146 +436,105 @@ class HomeSettingsService
         suspend fun resolve(
             id: Int,
             config: HomeRowConfig,
-        ): HomeRowConfigDisplay =
-            when (config) {
-                is HomeRowConfig.ByParent -> {
-                    val name = getItemName(null, config.parentId)
-                    HomeRowConfigDisplay(
-                        id,
-                        name,
-                        config,
-                    )
-                }
+        ): HomeRowConfigDisplay {
+            val parentItem = config.parentItemId?.let { getItem(it) }
+            val title =
+                when (config) {
+                    is HomeRowConfig.ByParent -> {
+                        nameOf(parentItem, null)
+                    }
 
-                is HomeRowConfig.ContinueWatching -> {
-                    HomeRowConfigDisplay(
-                        id,
-                        ResStringProvider(R.string.continue_watching),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.ContinueWatching -> {
+                        ResStringProvider(R.string.continue_watching)
+                    }
 
-                is HomeRowConfig.ContinueWatchingCombined -> {
-                    HomeRowConfigDisplay(
-                        id,
-                        ResStringProvider(R.string.combine_continue_next),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.ContinueWatchingCombined -> {
+                        ResStringProvider(R.string.combine_continue_next)
+                    }
 
-                is HomeRowConfig.Genres -> {
-                    val title = getItemName(R.string.genres_in, config.parentId)
-                    HomeRowConfigDisplay(
-                        id,
-                        title,
-                        config,
-                    )
-                }
+                    is HomeRowConfig.Genres -> {
+                        nameOf(parentItem, R.string.genres_in)
+                    }
 
-                is HomeRowConfig.Studios -> {
-                    val title = getItemName(R.string.studios_in, config.parentId)
-                    HomeRowConfigDisplay(
-                        id,
-                        title,
-                        config,
-                    )
-                }
+                    is HomeRowConfig.Studios -> {
+                        nameOf(parentItem, R.string.studios_in)
+                    }
 
-                is HomeRowConfig.GetItems -> {
-                    HomeRowConfigDisplay(id, StringStringProvider(config.name), config)
-                }
+                    is HomeRowConfig.GetItems -> {
+                        StringStringProvider(config.name)
+                    }
 
-                is HomeRowConfig.NextUp -> {
-                    HomeRowConfigDisplay(
-                        id,
-                        ResStringProvider(R.string.next_up),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.NextUp -> {
+                        ResStringProvider(R.string.next_up)
+                    }
 
-                is HomeRowConfig.RecentlyAdded -> {
-                    val title = getItemName(R.string.recently_added_in, config.parentId)
-                    HomeRowConfigDisplay(
-                        id,
-                        title,
-                        config,
-                    )
-                }
+                    is HomeRowConfig.RecentlyAdded -> {
+                        nameOf(parentItem, R.string.recently_added_in)
+                    }
 
-                is HomeRowConfig.RecentlyReleased -> {
-                    val title = getItemName(R.string.recently_released_in, config.parentId)
-                    HomeRowConfigDisplay(
-                        id,
-                        title,
-                        config,
-                    )
-                }
+                    is HomeRowConfig.RecentlyReleased -> {
+                        nameOf(parentItem, R.string.recently_released_in)
+                    }
 
-                is HomeRowConfig.Favorite -> {
-                    val name =
+                    is HomeRowConfig.Favorite -> {
                         ResProviderStringProvider(
                             R.string.favorite_items_title,
                             ResStringProvider(favoriteOptions[config.kind]!!),
                         )
-                    HomeRowConfigDisplay(id, name, config)
-                }
+                    }
 
-                is HomeRowConfig.Recordings -> {
-                    HomeRowConfigDisplay(
-                        id = id,
-                        title = ResStringProvider(R.string.active_recordings),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.Recordings -> {
+                        ResStringProvider(R.string.active_recordings)
+                    }
 
-                is HomeRowConfig.TvPrograms -> {
-                    HomeRowConfigDisplay(
-                        id = id,
-                        title = ResStringProvider(R.string.watch_live),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.TvPrograms -> {
+                        ResStringProvider(R.string.watch_live)
+                    }
 
-                is HomeRowConfig.TvChannels -> {
-                    HomeRowConfigDisplay(
-                        id = id,
-                        title = ResStringProvider(R.string.channels),
-                        config,
-                    )
-                }
+                    is HomeRowConfig.TvChannels -> {
+                        ResStringProvider(R.string.channels)
+                    }
 
-                is HomeRowConfig.Suggestions -> {
-                    val title = getItemName(R.string.suggestions_for, config.parentId)
-                    HomeRowConfigDisplay(
-                        id = id,
-                        title = title,
-                        config,
-                    )
+                    is HomeRowConfig.Suggestions -> {
+                        nameOf(parentItem, R.string.suggestions_for)
+                    }
                 }
-            }
+            return HomeRowConfigDisplay(
+                id = id,
+                title = title,
+                config = config,
+                viewOptions = config.resolveViewOptions(parentItem?.collectionType),
+            )
+        }
 
-        private suspend fun getItemName(
-            @StringRes stringRes: Int?,
-            itemId: UUID,
-            default: StringProvider = StringStringProvider(""),
-        ): StringProvider =
+        private suspend fun getItem(itemId: UUID): BaseItemDto? =
             try {
                 api.userLibraryApi
                     .getItem(
                         userId = serverRepository.currentUser?.id,
                         itemId = itemId,
-                    ).content.name
-                    ?.let {
-                        if (stringRes == null) {
-                            StringStringProvider(it)
-                        } else {
-                            ResArgStringProvider(stringRes, it)
-                        }
-                    } ?: default
+                    ).content
             } catch (ex: Exception) {
-                Timber.e(ex, "Could not get name for %s", itemId)
-                ResStringProvider(R.string.unknown)
+                Timber.e(ex, "Could not get item %s", itemId)
+                null
             }
+
+        private fun nameOf(
+            item: BaseItemDto?,
+            @StringRes stringRes: Int?,
+            default: StringProvider = StringStringProvider(""),
+        ): StringProvider {
+            if (item == null) {
+                return ResStringProvider(R.string.unknown)
+            }
+            return item.name?.let {
+                if (stringRes == null) {
+                    StringStringProvider(it)
+                } else {
+                    ResArgStringProvider(stringRes, it)
+                }
+            } ?: default
+        }
 
         /**
          * Fetch the data from the server for a given [HomeRowConfig]
@@ -581,21 +548,22 @@ class HomeSettingsService
             limit: Int = prefs.maxItemsPerRow,
             isRefresh: Boolean,
             usePaging: Boolean = false,
-        ): HomeRowLoadingState =
-            when (row) {
+        ): HomeRowLoadingState {
+            val viewOptions = row.resolveViewOptions(libraries)
+            return when (row) {
                 is HomeRowConfig.ContinueWatching -> {
                     val resume =
                         latestNextUpService.getResume(
                             userDto.id,
                             limit,
                             true,
-                            row.viewOptions.useSeries,
+                            viewOptions.useSeries,
                         )
 
                     Success(
                         title = ResStringProvider(R.string.continue_watching),
                         items = resume,
-                        viewOptions = row.viewOptions,
+                        viewOptions = viewOptions,
                         rowType = row,
                         showViewMore = resume.size >= limit,
                     )
@@ -609,13 +577,13 @@ class HomeSettingsService
                             prefs.enableRewatchingNextUp,
                             false,
                             prefs.maxDaysNextUp,
-                            row.viewOptions.useSeries,
+                            viewOptions.useSeries,
                         )
 
                     Success(
                         title = ResStringProvider(R.string.next_up),
                         items = nextUp,
-                        viewOptions = row.viewOptions,
+                        viewOptions = viewOptions,
                         rowType = row,
                         showViewMore = nextUp.size >= limit,
                     )
@@ -627,7 +595,7 @@ class HomeSettingsService
                             userDto.id,
                             limit,
                             true,
-                            row.viewOptions.useSeries,
+                            viewOptions.useSeries,
                         )
                     val nextUp =
                         latestNextUpService.getNextUp(
@@ -636,14 +604,14 @@ class HomeSettingsService
                             prefs.enableRewatchingNextUp,
                             false,
                             prefs.maxDaysNextUp,
-                            row.viewOptions.useSeries,
+                            viewOptions.useSeries,
                         )
                     val combined = latestNextUpService.buildCombined(resume, nextUp)
 
                     Success(
                         title = ResStringProvider(R.string.continue_watching),
                         items = combined.take(limit),
-                        viewOptions = row.viewOptions,
+                        viewOptions = viewOptions,
                         rowType = row,
                         showViewMore = combined.size >= limit,
                     )
@@ -707,7 +675,7 @@ class HomeSettingsService
                     Success(
                         title,
                         genres,
-                        viewOptions = row.viewOptions,
+                        viewOptions = viewOptions,
                         rowType = row,
                         showViewMore = genres.size >= limit,
                     )
@@ -760,7 +728,7 @@ class HomeSettingsService
                     Success(
                         title,
                         studios,
-                        viewOptions = row.viewOptions,
+                        viewOptions = viewOptions,
                         showViewMore = studios.size >= limit,
                     )
                 }
@@ -781,12 +749,12 @@ class HomeSettingsService
                         api.userLibraryApi
                             .getLatestMedia(request)
                             .content
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, viewOptions.useSeries) }
                             .let {
                                 Success(
                                     title,
                                     it,
-                                    row.viewOptions,
+                                    viewOptions,
                                     rowType = row,
                                     showViewMore = it.size >= limit,
                                 )
@@ -827,18 +795,18 @@ class HomeSettingsService
                             request,
                             GetItemsRequestHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem.from(it, api, row.viewOptions.useSeries) }
+                            .map { BaseItem.from(it, api, viewOptions.useSeries) }
                     }.let {
                         Success(
                             title,
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -884,7 +852,7 @@ class HomeSettingsService
                             fields = library.itemFields,
                         )
 
-                    // Not using getItemName because we want to throw the 404
+                    // Not using getItem because we want to throw the 404
                     val title =
                         api.userLibraryApi
                             .getItem(
@@ -899,18 +867,18 @@ class HomeSettingsService
                             request,
                             GetItemsRequestHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, viewOptions.useSeries) }
                     }.let {
                         Success(
                             title,
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -937,18 +905,18 @@ class HomeSettingsService
                             request,
                             GetItemsRequestHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, viewOptions.useSeries) }
                     }.let {
                         Success(
                             StringStringProvider(row.name),
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -979,7 +947,7 @@ class HomeSettingsService
                                 Success(
                                     title,
                                     it,
-                                    row.viewOptions,
+                                    viewOptions,
                                     showViewMore = it.size >= limit,
                                 )
                             }
@@ -1005,18 +973,18 @@ class HomeSettingsService
                                 request,
                                 GetItemsRequestHandler,
                                 scope,
-                                useSeriesForPrimary = row.viewOptions.useSeries,
+                                useSeriesForPrimary = viewOptions.useSeries,
                             ).init()
                         } else {
                             GetItemsRequestHandler
                                 .execute(api, request)
                                 .content.items
-                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                                .map { BaseItem(it, viewOptions.useSeries) }
                         }.let {
                             Success(
                                 title,
                                 it,
-                                row.viewOptions,
+                                viewOptions,
                                 rowType = row,
                                 showViewMore = it.size >= limit,
                             )
@@ -1041,18 +1009,18 @@ class HomeSettingsService
                             request,
                             GetRecordingsRequestHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         api.liveTvApi
                             .getRecordings(request)
                             .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, viewOptions.useSeries) }
                     }.let {
                         Success(
                             ResStringProvider(R.string.active_recordings),
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -1078,18 +1046,18 @@ class HomeSettingsService
                             request,
                             GetProgramsDtoHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         api.liveTvApi
                             .getPrograms(request)
                             .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
+                            .map { BaseItem(it, viewOptions.useSeries) }
                     }.let {
                         Success(
                             ResStringProvider(R.string.watch_live),
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -1110,17 +1078,17 @@ class HomeSettingsService
                             request,
                             GetLiveTvChannelsRequestHandler,
                             scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
+                            useSeriesForPrimary = viewOptions.useSeries,
                         ).init()
                     } else {
                         api.liveTvApi
                             .getLiveTvChannels(request)
-                            .toBaseItems(api, row.viewOptions.useSeries)
+                            .toBaseItems(api, viewOptions.useSeries)
                     }.let {
                         Success(
                             ResStringProvider(R.string.channels),
                             it,
-                            row.viewOptions,
+                            viewOptions,
                             rowType = row,
                             showViewMore = it.size >= limit,
                         )
@@ -1144,7 +1112,7 @@ class HomeSettingsService
                                 Success(
                                     title,
                                     listOf(),
-                                    row.viewOptions,
+                                    viewOptions,
                                     rowType = row,
                                 )
                             }
@@ -1153,7 +1121,7 @@ class HomeSettingsService
                                 Success(
                                     title,
                                     suggestions.items,
-                                    row.viewOptions,
+                                    viewOptions,
                                     rowType = row,
                                     showViewMore = suggestions.items.size >= limit,
                                 )
@@ -1173,6 +1141,7 @@ class HomeSettingsService
                     }
                 }
             }
+        }
 
         companion object {
             const val CUSTOM_PREF_ID = "home_settings"
@@ -1186,7 +1155,28 @@ data class HomeRowConfigDisplay(
     val id: Int,
     val title: StringProvider,
     val config: HomeRowConfig,
+    /**
+     * The default resolves without a parent, which is correct only for rows that have none.
+     * Anything with a [parentItemId] has to pass the parent's collection type.
+     */
+    val viewOptions: HomeRowViewOptions = config.resolveViewOptions(null),
 )
+
+fun HomeRowConfig.resolveViewOptions(libraries: List<Library>): HomeRowViewOptions =
+    resolveViewOptions(libraries.firstOrNull { it.itemId == parentItemId }?.collectionType)
+
+/**
+ * A null [viewOptions] clears the choice rather than storing one
+ *
+ * Updates the stored choice and the resolved value together so the two cannot drift apart.
+ */
+fun HomeRowConfigDisplay.withViewOptions(
+    viewOptions: HomeRowViewOptions?,
+    libraries: List<Library>,
+): HomeRowConfigDisplay {
+    val newConfig = config.updateViewOptions(viewOptions)
+    return copy(config = newConfig, viewOptions = newConfig.resolveViewOptions(libraries))
+}
 
 /**
  * List of resolved [HomeRowConfig]s as [HomeRowConfigDisplay]s
