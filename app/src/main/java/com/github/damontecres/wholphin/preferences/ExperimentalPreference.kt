@@ -40,7 +40,7 @@ object ExperimentalPreference {
     val PreferAc3ForSurround =
         AppSwitchPreference<AppPreferences>(
             title = R.string.prefer_ac3_for_surround,
-            defaultValue = true,
+            defaultValue = false,
             getter = { it.experimentalPreferences.preferAc3Surround },
             setter = { prefs, value ->
                 prefs.updateExperimentalPreferences {
