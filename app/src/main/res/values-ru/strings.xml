@@ -528,4 +528,6 @@
     <string name="hdr">HDR</string>
     <string name="blur">Размытие</string>
     <string name="layout">Расположение</string>
+    <string name="ffmpeg_never">Никогда не использовать FFmpeg</string>
+    <string name="ffmpeg_fallback">Использовать FFmpeg только, если не существует встроенных декодеров</string>
 </resources>
