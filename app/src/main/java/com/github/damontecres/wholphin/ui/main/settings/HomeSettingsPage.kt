@@ -30,7 +30,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.BasicDialog
@@ -213,23 +212,15 @@ fun HomeSettingsPage(
                                             else -> Options.OPTIONS
                                         }
                                     }
-                                val defaultViewOptions =
-                                    remember(row.config) {
-                                        when (row.config) {
-                                            is HomeRowConfig.Genres -> HomeRowViewOptions.genreDefault
-                                            else -> HomeRowViewOptions()
-                                        }
-                                    }
                                 HomeRowSettings(
                                     title = row.title.getString(),
                                     preferenceOptions = preferenceOptions,
-                                    viewOptions = row.config.viewOptions,
-                                    defaultViewOptions = defaultViewOptions,
+                                    viewOptions = row.viewOptions,
                                     onViewOptionsChange = {
                                         viewModel.updateViewOptions(dest.rowId, it)
                                     },
                                     onApplyApplyAll = {
-                                        viewModel.updateViewOptionsForAll(row.config.viewOptions)
+                                        viewModel.updateViewOptionsForAll(row.viewOptions)
                                     },
                                     modifier = destModifier,
                                     config = row.config,

@@ -74,10 +74,7 @@ data class HomeRowPresets(
                         aspectRatio = AspectRatio.WIDE,
                         contentScale = PrefContentScale.CROP,
                     ),
-                musicLibrary =
-                    HomeRowViewOptions(
-                        aspectRatio = AspectRatio.SQUARE,
-                    ),
+                musicLibrary = HomeRowViewOptions.musicDefault,
                 playlist =
                     HomeRowViewOptions(
                         aspectRatio = AspectRatio.SQUARE,
