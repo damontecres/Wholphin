@@ -564,6 +564,9 @@ class CollectionFolderViewModel
                         themeSongPlayer.playThemeFor(it.id)
                     }
                 }
+                val pager =
+                    ((state.value.items as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                pager?.refresh()
             }
         }
 
