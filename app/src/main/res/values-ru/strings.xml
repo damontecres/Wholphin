@@ -525,4 +525,7 @@
     <string name="play_videos_during_slideshow">Воспроизводить видео во время слайдшоу</string>
     <string name="send_media_info_log_to_server">Отправить лог информации о медиа на сервер</string>
     <string name="no_limit">Без ограничения</string>
+    <string name="hdr">HDR</string>
+    <string name="blur">Размытие</string>
+    <string name="layout">Расположение</string>
 </resources>
