@@ -1,5 +1,10 @@
+@file:OptIn(markerClass = [UnstableApi::class])
+
 package com.github.damontecres.wholphin.util
 
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.container.NalUnitUtil
 import java.nio.ByteBuffer
 
 /**
@@ -12,19 +17,27 @@ import java.nio.ByteBuffer
  * rewritten.
  */
 object Hdr10PlusSeiFilter {
-    private const val NAL_UNIT_TYPE_PREFIX_SEI = 39
-
-    /** Highest HEVC VCL NAL unit type; prefix SEI NAL units always precede the VCL NAL units. */
+    /**
+     * Highest VCL NAL unit type in H.265 Table 7-1. Prefix SEI NAL units always precede the VCL
+     * NAL units of an access unit, so the scan can stop at the first one.
+     */
     private const val MAX_VCL_NAL_UNIT_TYPE = 31
 
+    /** `user_data_registered_itu_t_t35`, the SEI payload type used by HDR10+ (H.265 D.2.1). */
     private const val PAYLOAD_TYPE_USER_DATA_REGISTERED_ITU_T_T35 = 4
 
-    /** Not a defined HEVC SEI payload type, so decoders skip the message. */
+    /**
+     * An SEI payload type H.265 does not define. H.265 D.3.1 requires a decoder to ignore SEI
+     * messages whose payload type it does not recognise, so writing this over the payload type
+     * makes the decoder skip the message without anything being removed or resized.
+     */
     private const val PAYLOAD_TYPE_MASKED = 254
 
     /**
-     * ITU-T T.35 header identifying an HDR10+ message: country code 0xB5 (United States),
-     * terminal provider code 0x003C, terminal provider oriented code 0x0001.
+     * ITU-T T.35 header identifying an HDR10+ message: `itu_t_t35_country_code` 0xB5 (United
+     * States), `itu_t_t35_terminal_provider_code` 0x003C (Samsung, which defined HDR10+) and
+     * `itu_t_t35_terminal_provider_oriented_code` 0x0001. FFmpeg declares the first two as
+     * `ITU_T_T35_COUNTRY_CODE_US` and `ITU_T_T35_PROVIDER_CODE_SAMSUNG` in `libavcodec/itut35.h`.
      */
     private val HDR10_PLUS_T35_HEADER = intArrayOf(0xB5, 0x00, 0x3C, 0x00, 0x01)
 
@@ -53,12 +66,13 @@ object Hdr10PlusSeiFilter {
                 break
             }
             val nalEnd = findNalUnitEnd(data, nalStart, end)
+            // nal_unit_type is the 6 bits after forbidden_zero_bit, H.265 section 7.3.1.2
             val nalUnitType = (data.get(nalStart).toInt() shr 1) and 0x3F
             if (nalUnitType <= MAX_VCL_NAL_UNIT_TYPE) {
                 // HDR10+ SEI messages precede the VCL NAL units, so stop scanning here
                 break
             }
-            if (nalUnitType == NAL_UNIT_TYPE_PREFIX_SEI) {
+            if (nalUnitType == NalUnitUtil.H265_NAL_UNIT_TYPE_PREFIX_SEI) {
                 masked += maskInSeiNalUnit(data, nalStart + 2, nalEnd)
             }
             searchFrom = nalEnd
@@ -82,7 +96,10 @@ object Hdr10PlusSeiFilter {
             )
     }
 
-    /** Returns the index of the first NAL unit byte after the next start code, or -1 if none. */
+    /**
+     * Returns the index of the first NAL unit byte after the next start code, or -1 if none.
+     * Start codes are the Annex B byte stream format.
+     */
     private fun findNalUnitStart(
         data: ByteBuffer,
         from: Int,
@@ -186,7 +203,10 @@ object Hdr10PlusSeiFilter {
         return masked
     }
 
-    /** Reads RBSP bytes from `[position, end)`, skipping emulation prevention bytes. */
+    /**
+     * Reads RBSP bytes from `[position, end)`, skipping the `emulation_prevention_three_byte`
+     * that H.265 section 7.4.2 inserts after two consecutive zero bytes.
+     */
     private class RbspReader(
         private val data: ByteBuffer,
         private var position: Int,

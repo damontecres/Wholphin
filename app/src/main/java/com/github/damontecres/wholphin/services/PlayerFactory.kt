@@ -90,7 +90,9 @@ class PlayerFactory
                         val useLibAss =
                             prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
                         val decodeAv1 = prefs.overrides.decodeAv1
-                        val preferDolbyVision = prefs.overrides.preferDolbyVisionOverHdr10Plus
+                        val preferDolbyVision =
+                            appPreferences.experimentalPreferences
+                                .get { preferDolbyVisionOverHdr10Plus } ?: false
                         Timber.v(
                             "extensions=%s, assPlaybackMode=%s",
                             extensions,
