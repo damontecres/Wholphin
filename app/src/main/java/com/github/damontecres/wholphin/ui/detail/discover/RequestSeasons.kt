@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,7 @@ import com.github.damontecres.wholphin.ui.cards.PendingIndicator
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.formatSeasonNumber
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
@@ -277,7 +279,10 @@ fun SeasonListItem(
             Text(
                 text =
                     season.season.name
-                        ?: (stringResource(R.string.tv_season) + " ${season.season.seasonNumber}"),
+                        ?: season.season.seasonNumber?.let {
+                            LocalContext.current.resources.formatSeasonNumber(it)
+                        }
+                        ?: "",
             )
         },
         supportingContent = {

@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +30,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.formatSeasonEpisode
 import java.time.LocalDateTime
 
 @Composable
@@ -109,10 +111,15 @@ fun Program(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier,
                 )
+                val seasonEpisodeLabel =
+                    LocalContext.current.resources.formatSeasonEpisode(
+                        program.seasonEpisode?.season,
+                        program.seasonEpisode?.episode,
+                    )
                 val subtitle =
-                    remember(program) {
+                    remember(program, seasonEpisodeLabel) {
                         listOfNotNull(
-                            program.seasonEpisode?.let { "S${it.season} E${it.episode}" },
+                            seasonEpisodeLabel,
                             program.subtitle,
                         ).joinToString(" - ").ifBlank { null }
                     }

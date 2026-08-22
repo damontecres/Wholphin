@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDuration
+import com.github.damontecres.wholphin.ui.formatSeasonEpisode
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -655,7 +656,7 @@ data class TvProgram(
                         .roundMinutes
                         .let { append(resources.getString(R.string.time_left, resources.formatDuration(it))) }
                 }
-                seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let {
+                resources.formatSeasonEpisode(seasonEpisode?.season, seasonEpisode?.episode)?.let {
                     dot()
                     append(it)
                 }

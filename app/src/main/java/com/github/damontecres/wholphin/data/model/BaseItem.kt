@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.formatDuration
+import com.github.damontecres.wholphin.ui.formatEpisodeNumber
 import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -111,7 +112,9 @@ data class BaseItem(
     val ui =
         BaseItemUi(
             episodeCornerText =
-                data.indexNumber?.let { "E$it" }
+                data.indexNumber?.let {
+                    WholphinApplication.instance.resources.formatEpisodeNumber(it)
+                }
                     ?: data.premiereDate?.let(::formatDateTime),
             episodeUnplayedCornerText =
                 if (type == BaseItemKind.SERIES ||
@@ -119,7 +122,9 @@ data class BaseItem(
                     type == BaseItemKind.EPISODE ||
                     type == BaseItemKind.BOX_SET
                 ) {
-                    data.indexNumber?.let { "E$it" }
+                    data.indexNumber?.let {
+                        WholphinApplication.instance.resources.formatEpisodeNumber(it)
+                    }
                         ?: data.userData
                             ?.unplayedItemCount
                             ?.takeIf { it > 0 }
