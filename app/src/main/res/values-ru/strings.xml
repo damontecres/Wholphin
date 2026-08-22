@@ -20,7 +20,7 @@
     <string name="confirm">Подтвердить</string>
     <string name="continue_watching">Продолжить просмотр</string>
     <string name="critic_rating">Оценка критиков</string>
-    <string name="decimal_seconds">%.1f секунда</string>
+    <string name="decimal_seconds">%.2f секунд</string>
     <string name="default_track">По умолчанию</string>
     <string name="delete">Удалить</string>
     <string name="died">Умер</string>
@@ -124,13 +124,15 @@
     <string name="runtime_sort">Продолжительность</string>
     <string name="extras_title">Дополнительно</string>
     <plurals name="other_extras">
-        <item quantity="one">Другое</item>
+        <item quantity="one">Другой</item>
         <item quantity="few">Других</item>
         <item quantity="many">Других</item>
         <item quantity="other">Других</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">За кадром</item>
+        <item quantity="few">За кадром</item>
+        <item quantity="many">За кадром</item>
         <item quantity="other">За кадром</item>
     </plurals>
     <plurals name="clips">
@@ -272,7 +274,7 @@
     <string name="auto_play_next">Автовоспроизведение следующей серии</string>
     <string name="combine_continue_next_summary">Применяется только к Телешоу</string>
     <string name="combine_continue_next">Объединить Продолжить просмотр и Далее</string>
-    <string name="direct_play_ass">Прямое воспроизведение ASS-субтитров</string>
+    <string name="direct_play_ass">Использовать libaas для ASS-субтитров</string>
     <string name="direct_play_pgs">Прямое воспроизведение PGS-субтитров</string>
     <string name="font_size">Размер шрифта</string>
     <string name="font_color">Цвет щрифта</string>
@@ -294,12 +296,16 @@
         <item quantity="other">%d объектов</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Отрывки</item>
-        <item quantity="other">Отрывки</item>
+        <item quantity="one">Образец</item>
+        <item quantity="few">Образца</item>
+        <item quantity="many">Образцов</item>
+        <item quantity="other">Образцов</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Дополнительные материалы</item>
-        <item quantity="other">Дополнительные материалы</item>
+        <item quantity="one">Дополнительный материал</item>
+        <item quantity="few">Дополнительных материала</item>
+        <item quantity="many">Дополнительных материалов</item>
+        <item quantity="other">Дополнительных материалов</item>
     </plurals>
     <string name="player_backend">Выбор плеера</string>
     <string name="edge_size">Толщина обводки</string>
@@ -307,12 +313,16 @@
     <string name="max_homepage_items">Максимальное количество элементов в ряду на домашней странице</string>
     <string name="forced_track">Форсированные</string>
     <plurals name="theme_songs">
-        <item quantity="one">Саундтреки</item>
-        <item quantity="other">Саундтреки</item>
+        <item quantity="one">Тематическая песня</item>
+        <item quantity="few">Тематические песни</item>
+        <item quantity="many">Тематических песен</item>
+        <item quantity="other">Тематических песен</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">Видеоролики</item>
-        <item quantity="other">Видеоролики</item>
+        <item quantity="one">Тематическое видео</item>
+        <item quantity="few">Тематических видео</item>
+        <item quantity="many">Тематических видео</item>
+        <item quantity="other">Тематических видео</item>
     </plurals>
     <string name="nav_drawer_pins">Настроить элементы боковой панели</string>
     <string name="nav_drawer_pins_summary">Выберите элементы для показа на панели, остальные элементы будут скрыты</string>
@@ -326,8 +336,10 @@
     <string name="nav_drawer_switch_on_focus">Смена страниц по выделению</string>
     <string name="pass_out_protection">Остановка воспроизведения при бездействии</string>
     <plurals name="shorts">
-        <item quantity="one">Короткометражки</item>
-        <item quantity="other">Короткометражки</item>
+        <item quantity="one">Короткометражка</item>
+        <item quantity="few">Короткометражки</item>
+        <item quantity="many">Короткометражек</item>
+        <item quantity="other">Короткометражек</item>
     </plurals>
     <string name="ends_at">Конец в %1$s</string>
     <string name="enter_server_address">Введите адрес сервера</string>
@@ -416,4 +428,101 @@
     <string name="light_gray">Светло-серый</string>
     <string name="dark_gray">Темно-серый</string>
     <string name="yellow">Желтый</string>
+    <plurals name="movies">
+        <item quantity="one">Фильм</item>
+        <item quantity="few">Фильма</item>
+        <item quantity="many">Фильмов</item>
+        <item quantity="other">Фильмов</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Сериал</item>
+        <item quantity="few">Сериала</item>
+        <item quantity="many">Сериалов</item>
+        <item quantity="other">Сериалов</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Человек</item>
+        <item quantity="few">Человека</item>
+        <item quantity="many">Человек</item>
+        <item quantity="other">Человек</item>
+    </plurals>
+    <plurals name="years_old">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d года</item>
+        <item quantity="many">%1$d лет</item>
+        <item quantity="other">%1$d лет</item>
+    </plurals>
+    <string name="profile_specific_settings_from_server">Использовать настройки профиля с сервера</string>
+    <string name="trailers_title">Трейлеры</string>
+    <string name="behind_the_scenes_title">За кадром</string>
+    <string name="theme_songs_title">Тематические Песни</string>
+    <string name="theme_videos_title">Тематические Видео</string>
+    <string name="clips_title">Клипы</string>
+    <string name="deleted_scenes_title">Удаленные Сцены</string>
+    <string name="interviews_title">Интервью</string>
+    <string name="scenes_title">Сцены</string>
+    <string name="require_login">Требуется логин для профиля</string>
+    <string name="pin_digits_hint">[0–9]</string>
+    <string name="avc">AVC</string>
+    <string name="sdr">SDR</string>
+    <string name="hdr10">HDR10</string>
+    <string name="hdr10_plus">HDR10+</string>
+    <string name="hlg">HLG</string>
+    <string name="sample_rate_unit">Hz</string>
+    <string name="combined_search_results_on">Показать все результаты в одном списке</string>
+    <string name="combined_search_results_off">Показать результаты по категориям</string>
+    <string name="show_voice_search_button">Показать кнопку голосового ввода</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="dts_hd_ma">DTS:HD MA</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">Прямое воспроизведение Dolby Vision Profile 7</string>
+    <string name="server_version_not_supported">Серверная версия не поддерживается</string>
+    <string name="favorite_items_title">Избранное %s</string>
+    <string name="disable_audio_offload_summary">Отключение выгрузки аудио-декодирования может исправить фризы воспроизведения на некоторых устройствах</string>
+    <string name="nal">NAL</string>
+    <string name="show_titles">Показывать названия</string>
+    <string name="live_tv_repeat">Повтор</string>
+    <string name="favorite_channels_at_beginning">Сначала показывать избранные каналы</string>
+    <string name="sort_channels_recently_watched">Сортировка каналов по недавно просмотренным</string>
+    <string name="backdrop_display">Стиль фона</string>
+    <string name="combined_search_results">Комбинированные результаты поиска</string>
+    <string name="visible_ui">Видимый</string>
+    <string name="hidden_ui">Скрытый</string>
+    <string name="results">Результаты</string>
+    <string name="resolution_switching">Переключение разрешения</string>
+    <string name="local">Локальный</string>
+    <string name="clear_track_choices">Очистить выбор дорожки</string>
+    <string name="force_dovi_profile_7_summary">Игнорировать проверки совместимости устройства</string>
+    <string name="discover">Обзор</string>
+    <string name="request">Запрос</string>
+    <string name="pending">В ожидании</string>
+    <string name="remove_seerr_server">Удалить сервер Seerr</string>
+    <string name="seerr_server_added">Сервер Seerr добавлен</string>
+    <string name="quick_connect">Быстрое Поключение</string>
+    <string name="quick_connect_summary">Авторизовать другое устройство для поключения к вашей учетной записи</string>
+    <string name="quick_connect_code">Ввести код Быстрого Подключения</string>
+    <string name="quick_connect_code_error">В коде должно быть 6 цифр</string>
+    <string name="quick_connect_success">Устройство авторизовано успешно</string>
+    <string name="url">URL</string>
+    <string name="trending">В тренде</string>
+    <string name="upcoming_tv">Ожидаемые сериалы</string>
+    <string name="upcoming_movies">Ожидаемые фильмы</string>
+    <string name="request_4k">Запросить в 4K</string>
+    <string name="software_decoding_av1">Программное декодирование AV1</string>
+    <string name="upgrade_mpv_toast">MPV сейчас плеер по умолчанию исключая HDR.\nВы можете изменить это в настройках.</string>
+    <string name="play_slideshow">Воспроизвести слайдшоу</string>
+    <string name="stop_slideshow">Остановить слайдшоу</string>
+    <string name="no_more_images">Больше нет фото</string>
+    <string name="rotate_left">Повернуть влево</string>
+    <string name="rotate_right">Повернуть вправо</string>
+    <string name="zoom_in">Приблизить</string>
+    <string name="zoom_out">Отдалить</string>
+    <string name="slideshow_duration">Продолжитьльность слайдшоу</string>
+    <string name="play_videos_during_slideshow">Воспроизводить видео во время слайдшоу</string>
+    <string name="send_media_info_log_to_server">Отправить лог информации о медиа на сервер</string>
+    <string name="no_limit">Без ограничения</string>
 </resources>
