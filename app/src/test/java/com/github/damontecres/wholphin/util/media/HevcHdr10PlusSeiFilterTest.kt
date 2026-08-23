@@ -7,26 +7,30 @@ import java.nio.ByteBuffer
 
 class HevcHdr10PlusSeiFilterTest {
     @Test
-    fun strip_exactHdr10PlusMessage_removesSeiNalAndPreservesAdjacentRpu() {
+    fun strip_exactHdr10PlusMessage_neutralizesPayloadTypeAndPreservesAdjacentRpu() {
         val vps = nal(32, byteArrayOf(0x01, 0x02))
         val hdr10Plus = seiNal(39, listOf(message(4, hdr10PlusPayload())))
         val rpu = nal(62, byteArrayOf(0x19, 0x08, 0x10))
         val sample = concat(vps, hdr10Plus, rpu)
+        val expected = concat(vps, seiNal(39, listOf(message(254, hdr10PlusPayload()))), rpu)
 
         val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
-        assertArrayEquals(concat(vps, rpu), filtered.bytes)
+        assertArrayEquals(expected, filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
-    fun strip_versionOne_removesHdr10PlusMessage() {
+    fun strip_versionOne_neutralizesHdr10PlusMessage() {
         val target = seiNal(39, listOf(message(4, hdr10PlusPayload(version = 1))))
+        val expected = seiNal(39, listOf(message(254, hdr10PlusPayload(version = 1))))
 
         val filtered = filter(target)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
-        assertArrayEquals(byteArrayOf(), filtered.bytes)
+        assertArrayEquals(expected, filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(target, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
@@ -48,23 +52,34 @@ class HevcHdr10PlusSeiFilterTest {
     }
 
     @Test
-    fun strip_mixedMessages_removesOnlyAllHdr10PlusMessages() {
+    fun strip_mixedMessages_neutralizesOnlyAllHdr10PlusMessages() {
         val unregistered = message(5, byteArrayOf(0x11, 0x22, 0x33))
         val otherT35 = message(4, byteArrayOf(0xB5.toByte(), 0x00, 0x31, 0x00, 0x01, 0x04, 0x00))
         val hdr10Plus0 = message(4, hdr10PlusPayload(version = 0, tail = byteArrayOf(0x40)))
         val hdr10Plus1 = message(4, hdr10PlusPayload(version = 1, tail = byteArrayOf(0x41)))
         val staticMasteringDisplay = message(137, byteArrayOf(0x01, 0x02, 0x03, 0x04))
         val sample = seiNal(39, listOf(unregistered, hdr10Plus0, otherT35, hdr10Plus1, staticMasteringDisplay))
-        val expected = seiNal(39, listOf(unregistered, otherT35, staticMasteringDisplay))
+        val expected =
+            seiNal(
+                39,
+                listOf(
+                    unregistered,
+                    message(254, hdr10PlusPayload(version = 0, tail = byteArrayOf(0x40))),
+                    otherT35,
+                    message(254, hdr10PlusPayload(version = 1, tail = byteArrayOf(0x41))),
+                    staticMasteringDisplay,
+                ),
+            )
 
         val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
         assertArrayEquals(expected, filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 2)
     }
 
     @Test
-    fun strip_suffixSei_removesHdr10PlusAndPreservesVcl() {
+    fun strip_suffixSei_neutralizesHdr10PlusAndPreservesVcl() {
         val vcl = nal(1, byteArrayOf(0x55, 0x66, 0x77))
         val suffix =
             seiNal(
@@ -74,26 +89,36 @@ class HevcHdr10PlusSeiFilterTest {
                     message(4, hdr10PlusPayload()),
                 ),
             )
-        val expectedSuffix = seiNal(40, listOf(message(144, byteArrayOf(0x00, 0x01))))
+        val expectedSuffix =
+            seiNal(
+                40,
+                listOf(
+                    message(144, byteArrayOf(0x00, 0x01)),
+                    message(254, hdr10PlusPayload()),
+                ),
+            )
+        val sample = concat(vcl, suffix)
 
-        val filtered = filter(concat(vcl, suffix))
+        val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
         assertArrayEquals(concat(vcl, expectedSuffix), filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
-    fun strip_rebuildsEmulationPreventionBytes() {
+    fun strip_preservesEmulationPreventionBytes() {
         val unrelatedPayload = byteArrayOf(0x10, 0x00, 0x00, 0x01, 0x00, 0x00, 0x02, 0x20)
         val unrelated = message(5, unrelatedPayload)
         val target = message(4, hdr10PlusPayload(tail = byteArrayOf(0x00, 0x00, 0x01)))
         val sample = seiNal(39, listOf(unrelated, target))
-        val expected = seiNal(39, listOf(unrelated))
+        val expected = seiNal(39, listOf(unrelated, message(254, hdr10PlusPayload(tail = byteArrayOf(0, 0, 1)))))
 
         val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
         assertArrayEquals(expected, filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
@@ -106,12 +131,18 @@ class HevcHdr10PlusSeiFilterTest {
         val largeTargetPayload = hdr10PlusPayload(tail = ByteArray(260) { 0x5A })
         val target = message(4, largeTargetPayload)
         val sample = seiNal(39, listOf(unrelated, target), startCodeSize = 3)
-        val expected = seiNal(39, listOf(unrelated), startCodeSize = 3)
+        val expected =
+            seiNal(
+                39,
+                listOf(unrelated, message(254, largeTargetPayload)),
+                startCodeSize = 3,
+            )
 
         val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
         assertArrayEquals(expected, filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
@@ -123,12 +154,23 @@ class HevcHdr10PlusSeiFilterTest {
                 startCodeSize = 3,
             )
         val suffix = seiNal(40, listOf(message(4, hdr10PlusPayload())), startCodeSize = 4)
-        val expectedPrefix = seiNal(39, listOf(message(5, byteArrayOf(0x01))), startCodeSize = 3)
+        val expectedPrefix =
+            seiNal(
+                39,
+                listOf(
+                    message(5, byteArrayOf(0x01)),
+                    message(254, hdr10PlusPayload()),
+                ),
+                startCodeSize = 3,
+            )
+        val expectedSuffix = seiNal(40, listOf(message(254, hdr10PlusPayload())), startCodeSize = 4)
+        val sample = concat(prefix, suffix)
 
-        val filtered = filter(concat(prefix, suffix))
+        val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
-        assertArrayEquals(expectedPrefix, filtered.bytes)
+        assertArrayEquals(concat(expectedPrefix, expectedSuffix), filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 2)
     }
 
     @Test
@@ -138,14 +180,16 @@ class HevcHdr10PlusSeiFilterTest {
         val pps = nal(34, byteArrayOf(0x03))
         val staticHdr = message(137, byteArrayOf(0x00, 0x01, 0x02, 0x03))
         val sei = seiNal(39, listOf(staticHdr, message(4, hdr10PlusPayload())))
-        val expectedSei = seiNal(39, listOf(staticHdr))
+        val expectedSei = seiNal(39, listOf(staticHdr, message(254, hdr10PlusPayload())))
         val vcl = nal(19, byteArrayOf(0x04, 0x05, 0x06))
         val rpu = nal(62, byteArrayOf(0x07, 0x08, 0x09))
 
-        val filtered = filter(concat(vps, sps, pps, sei, vcl, rpu))
+        val sample = concat(vps, sps, pps, sei, vcl, rpu)
+        val filtered = filter(sample)
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, filtered.result)
         assertArrayEquals(concat(vps, sps, pps, expectedSei, vcl, rpu), filtered.bytes)
+        assertOnlyPayloadTypesNeutralized(sample, filtered.bytes, expectedChanges = 1)
     }
 
     @Test
@@ -198,9 +242,10 @@ class HevcHdr10PlusSeiFilterTest {
     }
 
     @Test
-    fun strip_matchingDirectBuffer_compactsAtPositionAndUpdatesLimit() {
+    fun strip_matchingDirectBuffer_neutralizesInPlaceAndPreservesBounds() {
         val kept = nal(62, byteArrayOf(0x01, 0x02, 0x03))
         val sample = concat(seiNal(39, listOf(message(4, hdr10PlusPayload()))), kept)
+        val expected = concat(seiNal(39, listOf(message(254, hdr10PlusPayload()))), kept)
         val padding = 7
         val buffer = ByteBuffer.allocateDirect(sample.size + padding + 4)
         var index = 0
@@ -215,8 +260,23 @@ class HevcHdr10PlusSeiFilterTest {
 
         assertEquals(HevcHdr10PlusSeiFilter.Result.FILTERED, result)
         assertEquals(padding, buffer.position())
-        assertEquals(padding + kept.size, buffer.limit())
-        assertArrayEquals(kept, bytesBetweenPositionAndLimit(buffer))
+        assertEquals(padding + sample.size, buffer.limit())
+        val actual = bytesBetweenPositionAndLimit(buffer)
+        assertArrayEquals(expected, actual)
+        assertOnlyPayloadTypesNeutralized(sample, actual, expectedChanges = 1)
+    }
+
+    @Test
+    fun strip_matchingReadOnlyBuffer_reportsReadOnlyAndLeavesWholeSampleUnchanged() {
+        val sample = seiNal(39, listOf(message(4, hdr10PlusPayload())))
+        val buffer = ByteBuffer.wrap(sample.copyOf()).asReadOnlyBuffer()
+
+        val result = HevcHdr10PlusSeiFilter.strip(buffer)
+
+        assertEquals(HevcHdr10PlusSeiFilter.Result.READ_ONLY, result)
+        assertEquals(0, buffer.position())
+        assertEquals(sample.size, buffer.limit())
+        assertArrayEquals(sample, bytesBetweenPositionAndLimit(buffer))
     }
 
     private fun filter(sample: ByteArray): FilteredSample {
@@ -233,6 +293,23 @@ class HevcHdr10PlusSeiFilterTest {
             index++
         }
         return bytes
+    }
+
+    private fun assertOnlyPayloadTypesNeutralized(
+        original: ByteArray,
+        actual: ByteArray,
+        expectedChanges: Int,
+    ) {
+        assertEquals("sample size", original.size, actual.size)
+        var changes = 0
+        for (index in original.indices) {
+            if (original[index] != actual[index]) {
+                assertEquals("original byte at $index", 4, original[index].toInt() and 0xFF)
+                assertEquals("neutralized byte at $index", 254, actual[index].toInt() and 0xFF)
+                changes++
+            }
+        }
+        assertEquals("changed byte count", expectedChanges, changes)
     }
 
     private fun seiNal(
