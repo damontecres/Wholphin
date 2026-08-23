@@ -346,7 +346,7 @@
     <string name="refresh_rate_switching">Växling av uppdateringsfrekvens</string>
     <string name="ref_frames">Referensbilder</string>
     <string name="red">Röd</string>
-    <string name="resolution_switching">Växling av uppdateringsfrekvens</string>
+    <string name="resolution_switching">Växling av upplösning</string>
     <string name="retry">Försök igen</string>
     <string name="rewatch_next_up">Tillåt omvisning i “Nästa upp”</string>
     <string name="api_key">API nyckel</string>
