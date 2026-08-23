@@ -228,6 +228,7 @@ message ExperimentalPreferences {
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
   bool disable_audio_offload = 4;
+  bool fire_tv_hybrid_dolby_vision_workaround = 5;
 }
 
 message AppPreferences {

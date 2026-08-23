@@ -406,6 +406,8 @@
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="disable_audio_offload">Disable audio hardware offload</string>
     <string name="disable_audio_offload_summary">Disabling offloading audio decoding may fix playback freezes on some devices</string>
+    <string name="fire_tv_hybrid_dolby_vision_workaround">Fire TV hybrid Dolby Vision workaround</string>
+    <string name="fire_tv_hybrid_dolby_vision_workaround_summary">Prefer Dolby Vision by removing HDR10+ metadata from hybrid Dolby Vision video before decoding</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
     <string name="spacing">Spacing</string>

@@ -69,9 +69,11 @@ fun createDeviceProfile(
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
+    fireTvHybridDolbyVisionWorkaround: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
+    hevcDoviHdr10PlusDefect: Boolean = KnownDefects.hevcDoviHdr10PlusBug,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -490,14 +492,14 @@ fun createDeviceProfile(
                 if (!dolbyVisionELDirectPlay) {
                     if (jellyfinTenEleven) {
                         add("DOVIWithEL")
-                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                        if (!supportsHevcHDR10Plus && !hevcDoviHdr10PlusDefect) add("DOVIWithELHDR10Plus")
                     }
                 }
 
                 if (!supportsHevcDolbyVision) {
                     add(VideoRangeType.DOVI.serialName)
                     if (!supportsHevcHDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
-                    if (jellyfinTenEleven && !supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
+                    if (jellyfinTenEleven && !supportsHevcHDR10Plus && !hevcDoviHdr10PlusDefect) {
                         add(
                             "DOVIWithHDR10Plus",
                         )
@@ -510,8 +512,10 @@ fun createDeviceProfile(
                 if (!supportsHevcHDR10) add(VideoRangeType.HDR10.serialName)
             }
 
-            if (jellyfinTenEleven && KnownDefects.hevcDoviHdr10PlusBug) {
-                add("DOVIWithHDR10Plus")
+            if (jellyfinTenEleven && hevcDoviHdr10PlusDefect) {
+                if (!fireTvHybridDolbyVisionWorkaround || !supportsHevcDolbyVision) {
+                    add("DOVIWithHDR10Plus")
+                }
                 add("DOVIWithELHDR10Plus")
             }
         }

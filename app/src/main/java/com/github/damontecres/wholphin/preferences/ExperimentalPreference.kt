@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
+import com.github.damontecres.wholphin.util.profile.KnownDefects
 
 object ExperimentalPreference {
     val Enable =
@@ -71,6 +72,17 @@ object ExperimentalPreference {
             },
             summary = R.string.disable_audio_offload_summary,
         )
+
+    val FireTvHybridDolbyVisionWorkaround =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.fire_tv_hybrid_dolby_vision_workaround,
+            defaultValue = false,
+            getter = { it.experimentalPreferences.fireTvHybridDolbyVisionWorkaround },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences { fireTvHybridDolbyVisionWorkaround = value }
+            },
+            summary = R.string.fire_tv_hybrid_dolby_vision_workaround_summary,
+        )
 }
 
 val experimentalPreferences =
@@ -82,6 +94,7 @@ val experimentalPreferences =
                     listOf(
                         ExperimentalPreference.VideoTunneling,
                         ExperimentalPreference.PreferAc3ForSurround,
+                        ExperimentalPreference.FireTvHybridDolbyVisionWorkaround,
                         ExperimentalPreference.DisableAudioOffload,
                     ),
             ),
@@ -94,3 +107,8 @@ val experimentalPreferences =
 fun <T> ExperimentalPreferences.get(block: ExperimentalPreferences.() -> T): T? = if (enabled) block.invoke(this) else null
 
 fun ExperimentalPreferences.enabled(block: ExperimentalPreferences.() -> Boolean): Boolean = enabled && block.invoke(this)
+
+/** Whether the client-side workaround for devices with the hybrid DoVi/HDR10+ defect is active. */
+internal fun ExperimentalPreferences.isFireTvHybridDolbyVisionWorkaroundActive(
+    hasKnownDefect: Boolean = KnownDefects.hevcDoviHdr10PlusBug,
+): Boolean = enabled && fireTvHybridDolbyVisionWorkaround && hasKnownDefect

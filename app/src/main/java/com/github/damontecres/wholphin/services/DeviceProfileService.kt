@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackOverrides
 import com.github.damontecres.wholphin.preferences.enabled
+import com.github.damontecres.wholphin.preferences.isFireTvHybridDolbyVisionWorkaroundActive
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -62,6 +63,8 @@ class DeviceProfileService
                                 assDirectPlay = newConfig.overrides.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.overrides.directPlayPgs,
                                 dolbyVisionELDirectPlay = newConfig.overrides.directPlayDolbyVisionEL,
+                                fireTvHybridDolbyVisionWorkaround =
+                                    newConfig.experimental.isFireTvHybridDolbyVisionWorkaroundActive(),
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 preferAc3ForSurround = appPrefs.experimentalPreferences.enabled { preferAc3Surround },
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,

@@ -184,6 +184,8 @@ class AppPreferencesSerializer
                                 videoTunnelingEnabled = false
                                 preferAc3Surround = ExperimentalPreference.PreferAc3ForSurround.defaultValue
                                 disableAudioOffload = ExperimentalPreference.DisableAudioOffload.defaultValue
+                                fireTvHybridDolbyVisionWorkaround =
+                                    ExperimentalPreference.FireTvHybridDolbyVisionWorkaround.defaultValue
                             }.build()
                 }.build()
 

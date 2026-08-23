@@ -5,15 +5,18 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import android.os.Build
 import android.os.Handler
+import androidx.annotation.CallSuper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
@@ -31,8 +34,11 @@ import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
+import com.github.damontecres.wholphin.preferences.isFireTvHybridDolbyVisionWorkaroundActive
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.media.HevcHdr10PlusSeiFilter
+import com.github.damontecres.wholphin.util.media.isHevcDolbyVision
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
@@ -103,8 +109,14 @@ class PlayerFactory
                             }
                         val dataSourceFactory = DefaultDataSource.Factory(context)
                         val extractorsFactory = createExtractorsFactory()
+                        val fireTvHybridDolbyVisionWorkaround =
+                            appPreferences.experimentalPreferences.isFireTvHybridDolbyVisionWorkaroundActive()
                         var renderersFactory: RenderersFactory =
-                            WholphinRenderersFactory(context, decodeAv1)
+                            WholphinRenderersFactory(
+                                context,
+                                decodeAv1,
+                                fireTvHybridDolbyVisionWorkaround,
+                            )
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
@@ -183,7 +195,11 @@ class PlayerFactory
                 }
             val extractorsFactory = createExtractorsFactory()
             val renderersFactory: RenderersFactory =
-                WholphinRenderersFactory(context, false)
+                WholphinRenderersFactory(
+                    context,
+                    av1Enabled = false,
+                    fireTvHybridDolbyVisionWorkaround = false,
+                )
                     .setEnableDecoderFallback(true)
                     .setExtensionRendererMode(rendererMode)
             val mediaSourceFactory =
@@ -262,6 +278,7 @@ data class PlayerCreation(
 class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
+    private val fireTvHybridDolbyVisionWorkaround: Boolean,
 ) : DefaultRenderersFactory(context) {
     @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
@@ -292,7 +309,13 @@ class WholphinRenderersFactory(
                     false,
                 )
         }
-        out.add(videoRendererBuilder.build())
+        out.add(
+            if (fireTvHybridDolbyVisionWorkaround) {
+                FireTvHybridDolbyVisionVideoRenderer(videoRendererBuilder)
+            } else {
+                videoRendererBuilder.build()
+            },
+        )
 
         if (extensionRendererMode == EXTENSION_RENDERER_MODE_OFF) {
             return
@@ -325,6 +348,60 @@ class WholphinRenderersFactory(
                 // The extension is present, but instantiation failed.
                 throw java.lang.IllegalStateException("Error instantiating AV1 extension", e)
             }
+        }
+    }
+}
+
+private class FireTvHybridDolbyVisionVideoRenderer(
+    builder: MediaCodecVideoRenderer.Builder,
+) : MediaCodecVideoRenderer(builder) {
+    private var loggedFiltered = false
+    private var loggedMalformed = false
+    private var loggedReadOnly = false
+    private var lastCodecInputFormat: Format? = null
+    private var lastCodecInputFormatIsHevcDolbyVision = false
+
+    @CallSuper
+    override fun onQueueInputBuffer(buffer: DecoderInputBuffer) {
+        super.onQueueInputBuffer(buffer)
+
+        val data = buffer.data ?: return
+        if (buffer.isEncrypted) return
+        val codecInputFormat = getCodecInputFormat()
+        if (codecInputFormat !== lastCodecInputFormat) {
+            lastCodecInputFormat = codecInputFormat
+            lastCodecInputFormatIsHevcDolbyVision = codecInputFormat?.isHevcDolbyVision() == true
+        }
+        if (!lastCodecInputFormatIsHevcDolbyVision) return
+        if (data.isReadOnly) {
+            logReadOnlyOnce()
+            return
+        }
+
+        when (HevcHdr10PlusSeiFilter.strip(data)) {
+            HevcHdr10PlusSeiFilter.Result.FILTERED -> {
+                if (!loggedFiltered) {
+                    loggedFiltered = true
+                    Timber.i("Fire TV hybrid Dolby Vision workaround neutralized HDR10+ metadata")
+                }
+            }
+
+            HevcHdr10PlusSeiFilter.Result.MALFORMED -> {
+                if (!loggedMalformed) {
+                    loggedMalformed = true
+                    Timber.w("Malformed HEVC SEI; hybrid Dolby Vision sample was left unchanged")
+                }
+            }
+
+            HevcHdr10PlusSeiFilter.Result.READ_ONLY -> logReadOnlyOnce()
+            HevcHdr10PlusSeiFilter.Result.UNCHANGED -> Unit
+        }
+    }
+
+    private fun logReadOnlyOnce() {
+        if (!loggedReadOnly) {
+            loggedReadOnly = true
+            Timber.w("Read-only hybrid Dolby Vision sample could not be filtered")
         }
     }
 }
