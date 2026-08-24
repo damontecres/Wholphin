@@ -704,4 +704,7 @@
     <string name="appears_on">On osalenud siin:</string>
     <string name="disable_audio_offload">Lülita graafikaprotsessori kasutamine heli töötluseks välja</string>
     <string name="disable_audio_offload_summary">Kui lülita graafikaprotsessori kasutamise heli töötluseks välja, siis see võib mõnede seadmete puhul parandada taasesituse hangumise vead</string>
+    <string name="dim_after_delay">Hämarda ekraani peale viivitust</string>
+    <string name="dim_percentage">Hämardamise protsent</string>
+    <string name="dim_screen">Hämarda ekraani</string>
 </resources>
