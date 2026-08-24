@@ -726,4 +726,7 @@
     <string name="appears_on">מופיע ב־</string>
     <string name="disable_audio_offload_summary">השבתת פענוח אודיו בהורדה עשויה לתקן קפיאות בניגון במכשירים מסוימים</string>
     <string name="disable_audio_offload">השבתת פענוח אודיו בהורדה</string>
+    <string name="dim_after_delay">עמעם תצוגה אחרי השהייה</string>
+    <string name="dim_percentage">עוצמת העמעום</string>
+    <string name="dim_screen">עמעם תצוגה</string>
 </resources>
