@@ -98,7 +98,7 @@ class AppPreferencesSerializer
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
                                 backdropStyle = AppPreference.BackdropStylePref.defaultValue
-                                showLogos = AppPreference.ShowLogos.defaultValue
+                                titleLogoDisplay = AppPreference.ShowLogos.defaultValue
                                 clearDisplayToggles()
                                 addAllDisplayToggles(AppPreference.DisplayTogglesPref.defaultValue)
 

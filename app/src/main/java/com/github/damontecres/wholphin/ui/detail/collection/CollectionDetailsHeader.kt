@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -28,7 +29,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CollectionDetailsHeader(
     collection: BaseItem,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     logoImageUrl: String?,
     overviewOnClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester,
@@ -43,11 +44,15 @@ fun CollectionDetailsHeader(
     ) {
         TitleOrLogo(
             title = collection.name,
-            showLogo = showLogo,
+            titleLogoDisplay = titleLogoDisplay,
             logoImageUrl = logoImageUrl,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
+                    .padding(start = HeaderUtils.startPadding),
+            bothModifier =
+                Modifier
+                    .fillMaxWidth()
                     .padding(start = HeaderUtils.startPadding),
         )
 

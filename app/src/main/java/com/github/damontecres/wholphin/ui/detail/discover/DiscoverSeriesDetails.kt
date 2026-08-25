@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
@@ -267,7 +268,7 @@ fun DiscoverSeriesDetailsContent(
                             series = series,
                             rating = rating,
                             overviewOnClick = overviewOnClick,
-                            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                            titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -424,7 +425,7 @@ fun DiscoverSeriesDetailsHeader(
     series: TvDetails,
     rating: DiscoverRating?,
     overviewOnClick: () -> Unit,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     modifier: Modifier = Modifier,
 ) {
     val imageUrlService = LocalImageUrlService.current
@@ -441,10 +442,14 @@ fun DiscoverSeriesDetailsHeader(
         TitleOrLogo(
             title = series.name,
             logoImageUrl = logoImageUrl,
-            showLogo = showLogo,
+            titleLogoDisplay = titleLogoDisplay,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
+                    .padding(start = HeaderUtils.startPadding),
+            bothModifier =
+                Modifier
+                    .fillMaxWidth()
                     .padding(start = HeaderUtils.startPadding),
         )
         Column(

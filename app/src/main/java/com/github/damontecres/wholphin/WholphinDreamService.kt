@@ -113,6 +113,7 @@ class WholphinDreamService :
                                             showClock = screensaverPrefs.showClock,
                                             duration = screensaverPrefs.duration.milliseconds,
                                             animate = screensaverPrefs.animate,
+                                            titleLogoDisplay = prefs.interfacePreferences.titleLogoDisplay,
                                             modifier = Modifier.fillMaxSize(),
                                         )
                                         if (screensaverPrefs.dimEnabled) {

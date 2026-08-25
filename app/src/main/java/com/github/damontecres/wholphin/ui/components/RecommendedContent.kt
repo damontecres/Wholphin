@@ -445,7 +445,7 @@ fun RecommendedContent(
                 },
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
-                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                 showViewMore = true,
                 onClickViewMore = viewModel::onClickViewMore,
                 modifier = modifier,

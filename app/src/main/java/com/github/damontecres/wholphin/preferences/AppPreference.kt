@@ -504,15 +504,19 @@ sealed interface AppPreference<Pref, T> {
             )
 
         val ShowLogos =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.prefer_logos,
-                defaultValue = true,
-                getter = { it.interfacePreferences.showLogos },
+            AppChoicePreference<AppPreferences, TitleLogoDisplay>(
+                title = R.string.title_display,
+                defaultValue = TitleLogoDisplay.PREFER_LOGO_ONLY,
+                getter = { it.interfacePreferences.titleLogoDisplay },
                 setter = { prefs, value ->
-                    prefs.updateInterfacePreferences { showLogos = value }
+                    prefs.updateInterfacePreferences { titleLogoDisplay = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.title_display_options,
+                indexToValue = { TitleLogoDisplay.forNumber(it) },
+                valueToIndex = {
+                    if (it != TitleLogoDisplay.UNRECOGNIZED) it.number else TitleLogoDisplay.PREFER_LOGO_ONLY.number
+                },
+                subtitles = R.array.title_display_summaries,
             )
 
         val DisplayTogglesPref =

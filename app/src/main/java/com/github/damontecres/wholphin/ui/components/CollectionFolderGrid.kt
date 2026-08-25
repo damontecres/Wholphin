@@ -78,7 +78,7 @@ fun CollectionFolderGrid(
             AnimatedVisibility(viewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
-                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                     modifier =
                         Modifier
                             .fillMaxWidth()

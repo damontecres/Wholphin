@@ -191,8 +191,12 @@ fun SeriesOverviewContent(
                 )
                 TitleOrLogo(
                     item = series,
-                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                     modifier = Modifier.padding(start = HeaderUtils.startPadding),
+                    bothModifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = HeaderUtils.startPadding),
                 )
                 FocusedEpisodeHeader(
                     preferences = preferences,

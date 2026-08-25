@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
@@ -223,7 +224,7 @@ fun HomePage(
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
-                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                 showViewMore = true,
                 onClickViewMore = onClickViewMore,
                 modifier = modifier,
@@ -284,7 +285,7 @@ fun HomePageContent(
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     showViewMore: Boolean,
     modifier: Modifier = Modifier,
     loadingState: LoadingState? = null,
@@ -294,7 +295,7 @@ fun HomePageContent(
     headerComposable: @Composable (focusedItem: BaseItem?) -> Unit = { focusedItem ->
         HomePageHeader(
             item = focusedItem,
-            showLogo = showLogo,
+            titleLogoDisplay = titleLogoDisplay,
             modifier = HeaderUtils.modifier,
         )
     },
@@ -541,7 +542,7 @@ fun HomePageContent(
 @Composable
 fun HomePageHeader(
     item: BaseItem?,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     modifier: Modifier = Modifier,
 ) {
     val isEpisode = item?.type == BaseItemKind.EPISODE
@@ -554,7 +555,7 @@ fun HomePageHeader(
         quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
         endsAt = item?.data?.endDate,
-        showLogo = showLogo,
+        titleLogoDisplay = titleLogoDisplay,
         logoImageUrl = rememberLogoUrl(item),
         modifier = modifier,
     )
@@ -569,7 +570,7 @@ fun HomePageHeader(
     quickDetails: QuickDetailsData?,
     timeRemaining: Duration?,
     endsAt: DateTime?,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     logoImageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
@@ -580,8 +581,9 @@ fun HomePageHeader(
         TitleOrLogo(
             title = title,
             logoImageUrl = logoImageUrl,
-            showLogo = showLogo,
+            titleLogoDisplay = titleLogoDisplay,
             modifier = Modifier.fillMaxWidth(.75f),
+            bothModifier = Modifier.fillMaxWidth(),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

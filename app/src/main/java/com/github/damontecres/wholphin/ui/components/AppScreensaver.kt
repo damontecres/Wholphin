@@ -13,7 +13,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,6 +53,7 @@ import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
@@ -102,6 +102,7 @@ fun AppScreensaver(
         showClock = prefs.interfacePreferences.screensaverPreference.showClock,
         duration = prefs.interfacePreferences.screensaverPreference.duration.milliseconds,
         animate = prefs.interfacePreferences.screensaverPreference.animate,
+        titleLogoDisplay = prefs.interfacePreferences.titleLogoDisplay,
         modifier = modifier,
     )
 }
@@ -113,6 +114,7 @@ fun AppScreensaverContent(
     showClock: Boolean,
     duration: Duration,
     animate: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -171,7 +173,13 @@ fun AppScreensaverContent(
                 )
 
                 var logoError by remember(currentItem) { mutableStateOf(false) }
-                if (!logoError) {
+                val visibility =
+                    titleLogoDisplay.visibility(!currentItem?.logoUrl.isNullOrBlank() && !logoError)
+                val showLogo = visibility.showLogo
+                val showTitle = visibility.showTitle
+                val logoOnTop = visibility.showBoth
+
+                if (showLogo) {
                     AsyncImage(
                         model =
                             ImageRequest
@@ -185,28 +193,24 @@ fun AppScreensaverContent(
                         },
                         modifier =
                             Modifier
-                                .align(Alignment.BottomStart)
+                                .align(if (logoOnTop) Alignment.TopStart else Alignment.BottomStart)
                                 .size(width = 240.dp, height = 120.dp)
                                 .padding(16.dp),
                     )
-                } else {
-                    Box(
+                }
+                if (showTitle) {
+                    Text(
+                        text = currentItem?.title ?: "",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.displaySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier =
                             Modifier
                                 .align(Alignment.BottomStart)
                                 .padding(16.dp)
-                                .fillMaxWidth(.5f)
-                                .fillMaxHeight(.3f),
-                    ) {
-                        Text(
-                            text = currentItem?.title ?: "",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.displaySmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.align(Alignment.BottomStart),
-                        )
-                    }
+                                .fillMaxWidth(),
+                    )
                 }
             }
         }

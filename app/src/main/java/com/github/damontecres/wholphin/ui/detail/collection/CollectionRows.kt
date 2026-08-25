@@ -110,7 +110,7 @@ fun CollectionRows(
                 onUpdateBackdrop = {},
                 headerComposable = {},
                 takeFocus = false,
-                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                 showViewMore = false,
                 modifier = Modifier,
             )

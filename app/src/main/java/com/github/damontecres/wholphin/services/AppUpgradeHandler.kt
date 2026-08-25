@@ -329,7 +329,7 @@ class AppUpgradeHandler
             if (previous.isEqualOrBefore(Version.fromString("0.5.4-15-g0"))) {
                 appPreferences.updateData {
                     it.updateInterfacePreferences {
-                        showLogos = AppPreference.ShowLogos.defaultValue
+                        titleLogoDisplay = AppPreference.ShowLogos.defaultValue
                     }
                 }
             }

@@ -189,6 +189,12 @@ enum DisplayToggle{
   COMMUNITY_RATING = 2;
 }
 
+enum TitleLogoDisplay {
+  TITLE_ONLY = 0;
+  PREFER_LOGO_ONLY = 1;
+  PREFER_BOTH = 2;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -202,7 +208,7 @@ message InterfacePreferences {
   SubtitlePreferences hdr_subtitles_preferences = 10;
   ScreensaverPreferences screensaver_preference = 11;
   bool enable_media_management = 12;
-  bool show_logos = 13;
+  TitleLogoDisplay title_logo_display = 13;
   SearchPreferences search_preferences = 14;
   repeated DisplayToggle display_toggles = 15;
 }

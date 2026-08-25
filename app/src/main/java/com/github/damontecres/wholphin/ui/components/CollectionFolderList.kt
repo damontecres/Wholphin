@@ -38,9 +38,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
@@ -53,6 +55,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
@@ -63,6 +66,7 @@ import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.logCoilError
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -142,7 +146,7 @@ fun CollectionFolderList(
             ) {
                 CollectionFolderListDetails(
                     item = focusedItem,
-                    showLogo = true,
+                    titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
                     modifier =
                         Modifier
                             .fillMaxWidth(.33f)
@@ -213,7 +217,7 @@ fun CollectionFolderList(
 @Composable
 fun CollectionFolderListDetails(
     item: BaseItem?,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     modifier: Modifier,
 ) {
     val imageUrlService = LocalImageUrlService.current
@@ -221,18 +225,39 @@ fun CollectionFolderListDetails(
         remember(item) {
             item?.imageUrlOverride ?: imageUrlService.getItemImageUrl(item, ImageType.PRIMARY, useSeriesForPrimary = true)
         }
+    val logoImageUrl = rememberLogoUrl(item)
+    var logoError by remember(item?.id) { mutableStateOf(false) }
+    val visibility = titleLogoDisplay.visibility(logoImageUrl != null && !logoError)
+    val showLogo = visibility.showLogo
+    val showTitle = visibility.showTitle
+    val titleBelowImage = visibility.showBoth
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier,
     ) {
-        SimpleTitleOrLogo(
-            item,
-            showLogo,
-            Modifier
-                .height(HeaderUtils.logoHeight)
-                .fillMaxWidth(),
-        )
+        if (showLogo) {
+            AsyncImage(
+                model = logoImageUrl,
+                contentDescription = item?.title,
+                contentScale = ContentScale.Fit,
+                onError = {
+                    logCoilError(logoImageUrl, it.result)
+                    logoError = true
+                },
+                modifier =
+                    Modifier
+                        .height(HeaderUtils.logoHeight)
+                        .fillMaxWidth(),
+            )
+        } else if (showTitle) {
+            Title(
+                item?.title,
+                Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+        }
 
         AsyncImage(
             model =
@@ -248,6 +273,15 @@ fun CollectionFolderListDetails(
                     .clip(shape = RoundedCornerShape(8.dp))
                     .weight(1f),
         )
+
+        if (titleBelowImage) {
+            Title(
+                item?.title,
+                Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
 
         item?.let {
             QuickDetails(item.ui.quickDetails, null)

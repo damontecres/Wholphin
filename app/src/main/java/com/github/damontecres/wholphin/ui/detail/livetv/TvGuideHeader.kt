@@ -17,6 +17,7 @@ import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -43,7 +44,7 @@ fun TvGuideHeader(
             TitleOrLogo(
                 title = program?.name ?: program?.id.toString(),
                 logoImageUrl = null,
-                showLogo = false,
+                titleLogoDisplay = TitleLogoDisplay.TITLE_ONLY,
                 modifier =
                     Modifier
                         .padding(start = HeaderUtils.startPadding)

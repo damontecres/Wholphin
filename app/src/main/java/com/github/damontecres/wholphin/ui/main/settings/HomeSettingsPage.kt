@@ -333,7 +333,7 @@ fun HomeSettingsPage(
             listState = listState,
             takeFocus = false,
             showEmptyRows = true,
-            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+            titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
             showViewMore = false,
             modifier =
                 Modifier

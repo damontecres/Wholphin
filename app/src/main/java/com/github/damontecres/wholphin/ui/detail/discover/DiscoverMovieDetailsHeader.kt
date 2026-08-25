@@ -21,6 +21,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.preferences.TitleLogoDisplay
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.jellyfinId
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
@@ -47,7 +48,7 @@ fun DiscoverMovieDetailsHeader(
     rating: DiscoverRating?,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
-    showLogo: Boolean,
+    titleLogoDisplay: TitleLogoDisplay,
     modifier: Modifier = Modifier,
 ) {
     val imageUrlService = LocalImageUrlService.current
@@ -66,10 +67,14 @@ fun DiscoverMovieDetailsHeader(
         TitleOrLogo(
             title = movie.title,
             logoImageUrl = logoImageUrl,
-            showLogo = showLogo,
+            titleLogoDisplay = titleLogoDisplay,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)
+                    .padding(start = HeaderUtils.startPadding),
+            bothModifier =
+                Modifier
+                    .fillMaxWidth()
                     .padding(start = HeaderUtils.startPadding),
         )
 

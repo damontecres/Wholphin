@@ -443,7 +443,7 @@ fun SeerrDiscoverPage(
             quickDetails = details,
             timeRemaining = null,
             endsAt = null,
-            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+            titleLogoDisplay = preferences.appPreferences.interfacePreferences.titleLogoDisplay,
             logoImageUrl = focusedItem?.logoUrl,
             modifier =
                 Modifier
