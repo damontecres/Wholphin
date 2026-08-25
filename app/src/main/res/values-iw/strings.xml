@@ -724,4 +724,6 @@
     <string name="audio_books">ספרי שמע</string>
     <string name="hash_matches">התאמות של פונקציית־גיבוב</string>
     <string name="appears_on">מופיע ב־</string>
+    <string name="disable_audio_offload_summary">השבתת פענוח אודיו בהורדה עשויה לתקן קפיאות בניגון במכשירים מסוימים</string>
+    <string name="disable_audio_offload">השבתת פענוח אודיו בהורדה</string>
 </resources>

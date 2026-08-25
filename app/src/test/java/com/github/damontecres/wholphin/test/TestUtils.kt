@@ -1,11 +1,15 @@
 package com.github.damontecres.wholphin.test
 
+import com.github.damontecres.wholphin.data.CurrentUser
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import io.mockk.MockKMatcherScope
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.NameGuidPair
+import org.jellyfin.sdk.model.api.UserDto
 
 fun MockKMatcherScope.nonBlankString() = match<String> { it.isNotNullOrBlank() }
 
@@ -75,3 +79,35 @@ fun playlist(
         seriesId = null,
         genreItems = genres,
     )
+
+fun server(serverId: UUID = UUID.randomUUID()) = JellyfinServer(serverId, "test server", "http://localhost:8096", "10.11.11")
+
+fun user(
+    serverId: UUID,
+    userId: UUID = UUID.randomUUID(),
+) = JellyfinUser(
+    rowId = 1,
+    id = userId,
+    serverId = serverId,
+    name = "test-user",
+    accessToken = "token",
+    pin = null,
+)
+
+fun userDto(userId: UUID) =
+    UserDto(
+        id = userId,
+        name = "test-user",
+        serverName = "test server",
+        hasPassword = true,
+        hasConfiguredPassword = true,
+        hasConfiguredEasyPassword = false,
+    )
+
+fun currentUser(
+    serverId: UUID = UUID.randomUUID(),
+    userId: UUID = UUID.randomUUID(),
+) = CurrentUser(
+    server(serverId),
+    user(userId),
+)
