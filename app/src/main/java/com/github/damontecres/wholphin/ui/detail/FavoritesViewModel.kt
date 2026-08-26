@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -524,6 +525,7 @@ class FavoritesViewModel
         /**
          * This provides context menu actions and other actions on a per [BaseItemKind] basis
          */
+        @Immutable
         inner class TypedProvider(
             val type: BaseItemKind,
         ) : ContextMenuProvider,
