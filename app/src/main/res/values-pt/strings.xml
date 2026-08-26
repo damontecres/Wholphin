@@ -723,4 +723,7 @@
     <string name="books">Livros</string>
     <string name="audio_books">Audiolivros</string>
     <string name="server_version_not_supported">Versão do servidor não suportada</string>
+    <string name="appears_on">Aparece em</string>
+    <string name="disable_audio_offload">Desativar a processamento de áudio por hardware</string>
+    <string name="disable_audio_offload_summary">Desativar o processamento de áudio por hardware pode resolver os bloqueios de reprodução em alguns dispositivos</string>
 </resources>

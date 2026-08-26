@@ -70,7 +70,7 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
@@ -225,7 +225,7 @@ class PlaylistViewModel
                         GetItemsRequest(
                             parentId = itemId,
                             userId = user.id,
-                            fields = DefaultItemFields,
+                            fields = SlimItemFields,
                             sortBy = listOf(sortAndDirection.sort),
                             sortOrder = listOf(sortAndDirection.direction),
                         ),
@@ -796,7 +796,7 @@ fun PlaylistItem(
     val focused by interactionSource.collectIsFocusedAsState()
     val imageWidth = 160.dp
     val density = LocalDensity.current
-    val imageWidthPx = remember(imageWidth) { with(density) { imageWidth.roundToPx() } }
+    val imageWidthPx = remember(imageWidth, density) { with(density) { imageWidth.roundToPx() } }
     ListItem(
         selected = false,
         onClick = onClick,

@@ -114,7 +114,7 @@ fun CollectionFolderGrid(
                 columns = viewOptions.columns,
                 spacing = viewOptions.spacing.dp,
                 bringIntoViewSpec =
-                    remember(viewOptions) {
+                    remember(viewOptions, density) {
                         val spacingPx = with(density) { viewOptions.spacing.dp.toPx() }
                         if (viewOptions.showDetails) {
                             ScrollToTopBringIntoViewSpec(spacingPx)
@@ -206,7 +206,7 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
             }
 
             CollectionType.TVSHOWS -> {
-                listOf(BaseItemKind.SERIES)
+                listOf(BaseItemKind.SERIES, BaseItemKind.SEASON, BaseItemKind.EPISODE)
             }
 
             CollectionType.HOMEVIDEOS -> {
@@ -221,12 +221,20 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 )
             }
 
+            CollectionType.MUSICVIDEOS -> {
+                listOf(BaseItemKind.MUSIC_VIDEO)
+            }
+
             CollectionType.BOXSETS -> {
                 listOf(BaseItemKind.BOX_SET)
             }
 
             CollectionType.PLAYLISTS -> {
                 listOf(BaseItemKind.PLAYLIST)
+            }
+
+            CollectionType.PHOTOS -> {
+                listOf(BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
             }
 
             else -> {

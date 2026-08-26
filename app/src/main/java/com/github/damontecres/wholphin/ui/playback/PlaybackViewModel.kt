@@ -84,6 +84,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -1470,6 +1471,8 @@ class PlaybackViewModel
                             }
                         }
                     }
+                }.catch { ex ->
+                    Timber.e(ex, "Error in websocket subscription")
                 }.launchIn(viewModelScope)
 
         /**
@@ -1628,6 +1631,21 @@ class PlaybackViewModel
                 viewModelScope.launchDefault {
                     val configuration = context.resources.configuration
                     val density = Density(context.resources.displayMetrics.density)
+                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                        configuration,
+                        density,
+                    )
+                }
+            }
+        }
+
+        fun updateDensity(density: Density) {
+            Timber.d("Density changed")
+            viewModelScope.launchDefault {
+                val availableCommands = onMain { player.availableCommands }
+                if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
+                    Timber.i("Applying density change for subtitle config to MPV")
+                    val configuration = context.resources.configuration
                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                         configuration,
                         density,

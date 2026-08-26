@@ -149,16 +149,17 @@ class GenreViewModel
 
         suspend fun positionOfLetter(letter: Char): Int =
             withContext(WholphinDispatchers.IO) {
-                val request =
-                    GetGenresRequest(
-                        parentId = itemId,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                        includeItemTypes = includeItemTypes,
-                    )
-                val result by GetGenresRequestHandler.execute(api, request)
-                return@withContext result.totalRecordCount
+                GetGenresRequestHandler.countMatching(
+                    api = api,
+                    request =
+                        GetGenresRequest(
+                            parentId = itemId,
+                            nameLessThan = letter.toString(),
+                            limit = 0,
+                            enableTotalRecordCount = true,
+                            includeItemTypes = includeItemTypes,
+                        ),
+                )
             }
     }
 
@@ -275,7 +276,7 @@ fun GenreCardGrid(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val cardWidthPx =
-        remember {
+        remember(density) {
             with(density) {
                 // Grid has 16dp padding on either side & 16dp spacing between 4 cards
                 // This isn't exact though because it doesn't account for nav drawer or letters, but it's close and the calculation is much faster

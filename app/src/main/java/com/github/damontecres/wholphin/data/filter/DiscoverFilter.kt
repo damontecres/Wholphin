@@ -17,10 +17,11 @@ private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-M-d")
 
 enum class DiscoverSort(
     val key: String,
-    @StringRes val stringRes: Int,
+    @param:StringRes val stringRes: Int,
+    val tvKey: String = key,
 ) {
     POPULARITY("popularity", R.string.popularity),
-    RELEASE_DATE("release_date", R.string.sort_by_date_released),
+    RELEASE_DATE("release_date", R.string.sort_by_date_released, "first_air_date"),
     TMDB_VOTE("vote_average", R.string.community_rating),
     ALPHABETICAL("original_title", R.string.sort_by_name),
 }
@@ -36,7 +37,7 @@ data class DiscoverSortAndDirection(
     val sort: DiscoverSort = DiscoverSort.POPULARITY,
     val direction: SortOrder = SortOrder.DESCENDING,
 ) {
-    val key = "${sort.key}.${direction.key}"
+    fun key(isTv: Boolean) = if (isTv) "${sort.tvKey}.${direction.key}" else "${sort.key}.${direction.key}"
 
     fun flip() = copy(direction = direction.flip())
 }
@@ -103,7 +104,7 @@ data class DiscoverFilter(
             network = null,
             keywords = keywordIds?.joinToString(",") { it.toString() },
             excludeKeywords = excludeKeywordIds?.joinToString(",") { it.toString() },
-            sortBy = sortBy?.key,
+            sortBy = sortBy?.key(true),
 //            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
 //            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
             withRuntimeGte = withRuntimeGte?.inWholeMinutes?.toInt(),
@@ -135,7 +136,7 @@ data class DiscoverFilter(
 //            network = null,
             keywords = keywordIds?.joinToString(",") { it.toString() },
             excludeKeywords = excludeKeywordIds?.joinToString(",") { it.toString() },
-            sortBy = sortBy?.key,
+            sortBy = sortBy?.key(false),
 //            firstAirDateGte = firstAirDateGte?.let { dateFormatter.format(it) },
 //            firstAirDateLte = firstAirDateLte?.let { dateFormatter.format(it) },
             withRuntimeGte = withRuntimeGte?.inWholeMinutes?.toInt(),

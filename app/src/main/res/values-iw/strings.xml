@@ -140,7 +140,7 @@
     <string name="mark_watched">סמן כנצפה</string>
     <string name="max_bitrate">מקסימום קצב נתונים</string>
     <string name="more_like_this">עוד דומים</string>
-    <string name="download_and_update"><![CDATA[הורד &amp; עדכן]]></string>
+    <string name="download_and_update"><![CDATA[הורדה ועדכון]]></string>
     <string name="forced_track">כפוי</string>
     <string name="only_forced_subtitles">כתוביות כפויות בלבד</string>
     <string name="hide_controller_timeout">הסתר בקרי ניגון</string>
@@ -171,7 +171,7 @@
     <string name="restart">התחל מחדש</string>
     <string name="resume">המשך ניגון</string>
     <string name="save">שמור</string>
-    <string name="search_and_download"><![CDATA[חיפוש &amp; הורדה]]></string>
+    <string name="search_and_download"><![CDATA[חיפוש והורדה]]></string>
     <string name="voice_search">חיפוש קולי</string>
     <string name="voice_search_prompt">חפש בקולך</string>
     <string name="processing">מעבד</string>
@@ -723,4 +723,7 @@
     <string name="subtitles_hearing_impaired">כתוביות לכבדי שמיעה</string>
     <string name="audio_books">ספרי שמע</string>
     <string name="hash_matches">התאמות של פונקציית־גיבוב</string>
+    <string name="appears_on">מופיע ב־</string>
+    <string name="disable_audio_offload_summary">השבתת פענוח אודיו בהורדה עשויה לתקן קפיאות בניגון במכשירים מסוימים</string>
+    <string name="disable_audio_offload">השבתת פענוח אודיו בהורדה</string>
 </resources>

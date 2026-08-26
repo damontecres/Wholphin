@@ -729,8 +729,8 @@
     <string name="override_user_profile_settings">Viac nastavení používateľského profilu</string>
     <string name="override_user_profile_settings_summary">Prepísať nastavenia používateľského profilu zo servera</string>
     <string name="any_language">Akýkoľvek jazyk</string>
-    <string name="d_pad_seek_mode_title">Režim pretáčania pomocou D-Padu</string>
-    <string name="dpad_seek_mode_trickplay">Trickplay náhľady</string>
+    <string name="d_pad_seek_mode_title">Režim panela pretáčania pomocou D-Padu</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
     <string name="hash_matches">Hash zhody</string>
     <string name="subtitles_hearing_impaired">SDH</string>
     <string name="programs">TV programy</string>
@@ -740,4 +740,15 @@
     <string name="books">Knihy</string>
     <string name="audio_books">Audioknihy</string>
     <string name="brown">Hnedá</string>
+    <string name="dpad_seek_mode_minimal">Minimálne</string>
+    <string name="dpad_seek_mode_minimal_summary">Malý panel pretáčania v dolnej časti obrazovky (predvolené)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Panel pretáčania s náhľadmi Trickplay</string>
+    <string name="dpad_seek_mode_none_summary">Bez panela pretáčania</string>
+    <string name="server_version_not_supported">Verzia servera nie je podporovaná</string>
+    <string name="appears_on">Objavuje sa v</string>
+    <string name="disable_audio_offload">Zakázať hardvérové odovzdávanie zvuku</string>
+    <string name="disable_audio_offload_summary">Zakázanie odovzdávania dekódovania zvuku môže vyriešiť zamŕzanie prehrávania na niektorých zariadeniach</string>
+    <string name="dim_after_delay">Stlmiť obrazovku po uplynutí času</string>
+    <string name="dim_percentage">Úroveň stlmenia</string>
+    <string name="dim_screen">Stlmenie obrazovky</string>
 </resources>

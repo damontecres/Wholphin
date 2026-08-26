@@ -3,7 +3,7 @@ package com.github.damontecres.wholphin.ui.detail
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -24,7 +24,7 @@ fun CollectionFolderRecordings(
     filter: CollectionFolderFilter = CollectionFolderFilter(),
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
-    var showHeader by remember { mutableStateOf(true) }
+    var showHeader by rememberSaveable { mutableStateOf(true) }
     CollectionFolderView(
         preferences = preferences,
         onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
