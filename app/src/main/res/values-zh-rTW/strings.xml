@@ -682,4 +682,7 @@
     <string name="appears_on">出現於</string>
     <string name="disable_audio_offload">停用音訊硬體卸載</string>
     <string name="disable_audio_offload_summary">停用音訊解碼卸載或許可以解決某些裝置的播放卡住問題</string>
+    <string name="dim_after_delay">閒置後調暗螢幕</string>
+    <string name="dim_percentage">調暗程度</string>
+    <string name="dim_screen">螢幕調暗</string>
 </resources>

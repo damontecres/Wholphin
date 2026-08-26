@@ -51,37 +51,7 @@ fun SeasonCard(
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
 ) {
-    val imageUrlService = LocalImageUrlService.current
-    val density = LocalDensity.current
-    val imageUrl =
-        remember(item, imageHeight, imageWidth, density) {
-            if (item != null) {
-                val fillHeight =
-                    if (imageHeight.isSpecified) {
-                        with(density) {
-                            imageHeight.roundToPx()
-                        }
-                    } else {
-                        null
-                    }
-                val fillWidth =
-                    if (imageWidth.isSpecified) {
-                        with(density) {
-                            imageWidth.roundToPx()
-                        }
-                    } else {
-                        null
-                    }
-                imageUrlService.getItemImageUrl(
-                    item,
-                    ImageType.PRIMARY,
-                    fillWidth = fillWidth,
-                    fillHeight = fillHeight,
-                )
-            } else {
-                null
-            }
-        }
+    val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
         title = item?.title,
         subtitle = item?.subtitle,
@@ -101,6 +71,44 @@ fun SeasonCard(
         showImageOverlay = showImageOverlay,
         aspectRatio = aspectRatio,
     )
+}
+
+@Composable
+fun rememberImageUrl(
+    item: BaseItem?,
+    imageHeight: Dp,
+    imageWidth: Dp = Dp.Unspecified,
+): String? {
+    val density = LocalDensity.current
+    val imageUrlService = LocalImageUrlService.current
+    return remember(item, imageHeight, imageWidth, density) {
+        if (item != null) {
+            val fillHeight =
+                if (imageHeight.isSpecified) {
+                    with(density) {
+                        imageHeight.roundToPx()
+                    }
+                } else {
+                    null
+                }
+            val fillWidth =
+                if (imageWidth.isSpecified) {
+                    with(density) {
+                        imageWidth.roundToPx()
+                    }
+                } else {
+                    null
+                }
+            imageUrlService.getItemImageUrl(
+                item,
+                ImageType.PRIMARY,
+                fillWidth = fillWidth,
+                fillHeight = fillHeight,
+            )
+        } else {
+            null
+        }
+    }
 }
 
 private val spaceBetweenFocused = 4.dp

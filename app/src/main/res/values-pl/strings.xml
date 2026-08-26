@@ -746,4 +746,7 @@
     <string name="audio_books">Audiobooki</string>
     <string name="server_version_not_supported">Wersja serwera nie jest wspierana</string>
     <string name="appears_on">Wystąpił w</string>
+    <string name="dim_screen">Przyciemnienie ekranu</string>
+    <string name="dim_after_delay">Opóźnienie przyciemniana ekranu</string>
+    <string name="dim_percentage">Procent przyciemniane</string>
 </resources>
