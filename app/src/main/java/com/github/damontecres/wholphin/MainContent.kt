@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -136,11 +137,27 @@ fun MainContent(
             val screenSaverState by screensaverService.state.collectAsState()
             if (screenSaverState.enabled || screenSaverState.enabledTemp) {
                 AnimatedVisibility(
-                    screenSaverState.show,
-                    Modifier.fillMaxSize(),
+                    visible = screenSaverState.show,
+                    enter = ScreensaverService.enterAnimation,
+                    exit = ScreensaverService.exitAnimation,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     AppScreensaver(userPreferences.appPreferences, Modifier.fillMaxSize())
                 }
+            }
+            AnimatedVisibility(
+                visible = screenSaverState.showDim || (screenSaverState.dimEnabled && screenSaverState.show),
+                enter = ScreensaverService.enterAnimation,
+                exit = ScreensaverService.exitAnimation,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                val alpha =
+                    userPreferences.appPreferences.interfacePreferences.screensaverPreference.dimPercent / 100f
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = alpha)),
+                )
             }
         }
     }

@@ -910,4 +910,8 @@
     <string name="audio_books">Audio books</string>
     <string name="server_version_not_supported">Server version not supported</string>
     <string name="appears_on">Appears on</string>
+    <string name="dim_after_delay">Dim screen after delay</string>
+    <string name="dim_percentage">Dim percentage</string>
+    <string name="dim_screen">Dim screen</string>
+    <string name="photo_albums">Photo albums</string>
 </resources>
