@@ -16,9 +16,11 @@ import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
+import com.github.damontecres.wholphin.preferences.updateExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
@@ -424,7 +426,29 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isLessThan(Version.fromString("1.0.6-0-g0"))) {
+            if (previous.isEqualOrBefore(Version.fromString("1.0.6-0-g0"))) {
+                appPreferences.updateData {
+                    it.updateScreensaverPreferences {
+                        dimPercent = ScreensaverPreference.DimPercentage.defaultValue.toInt()
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.6-7-g0"))) {
+                // preferAc3Surround was mistaken enabled by default, reset it only if the user hasn't enabled experimental settings
+                appPreferences.updateData {
+                    if (!it.experimentalPreferences.enabled) {
+                        it.updateExperimentalPreferences {
+                            preferAc3Surround =
+                                ExperimentalPreference.PreferAc3ForSurround.defaultValue
+                        }
+                    } else {
+                        it
+                    }
+                }
+            }
+
+            if (previous.isLessThan(Version.fromString("1.0.7-14-g0"))) {
                 val count = seriesTrackChoiceDao.count()
                 if (count == 0) {
                     var offset = 0

@@ -26,7 +26,7 @@ import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
-import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -168,7 +168,7 @@ class MovieViewModel
                                 GetSimilarItemsRequest(
                                     userId = serverRepository.currentUser?.id,
                                     itemId = itemId,
-                                    fields = SlimItemFields,
+                                    fields = ItemRowFields,
                                     limit = 25,
                                 ),
                             ).content.items

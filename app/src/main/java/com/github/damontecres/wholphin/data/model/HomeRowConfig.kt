@@ -243,7 +243,7 @@ data class HomeRowViewOptions(
 
         val liveTvDefault =
             HomeRowViewOptions(
-                heightDp = 96,
+                heightDp = Cards.HEIGHT_LIVE_TV,
                 aspectRatio = AspectRatio.WIDE,
                 contentScale = PrefContentScale.FIT,
             )
