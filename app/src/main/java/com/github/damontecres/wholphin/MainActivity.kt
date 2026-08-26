@@ -9,6 +9,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -483,10 +484,9 @@ class MainActivityViewModel
         /**
          * Handle an [Intent], navigating if needed
          *
-         * Exposed for testing
-         *
          * @return true if the intent was handled, false if normal app start should proceed
          */
+        @VisibleForTesting
         internal suspend fun handleIntent(intent: Intent?): Boolean {
             val result = intent?.let { intentService.parseIntent(intent) }
             when (result) {
@@ -554,9 +554,8 @@ class MainActivityViewModel
 
         /**
          * Handle starting the app including auto sign in and navigating to the right starting page
-         *
-         * Exposed for testing
          */
+        @VisibleForTesting
         internal suspend fun handleAppStart() {
             val signInAutomatically = preferences.data.first().signInAutomatically
             val currentUser = serverRepository.current.value

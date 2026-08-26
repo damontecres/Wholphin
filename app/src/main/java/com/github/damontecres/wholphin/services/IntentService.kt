@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.app.SearchManager
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -108,6 +109,7 @@ class IntentService
             return IntentResult.Target(destinations)
         }
 
+        @VisibleForTesting
         internal suspend fun prepare(intent: Intent): IntentResult? {
             val appPrefs = userPreferencesService.flow.first().appPreferences
 

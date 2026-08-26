@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.hilt.work.HiltWorker
 import androidx.lifecycle.lifecycleScope
@@ -88,7 +89,7 @@ class LatestNextUpSchedulerService
                     "SuggestionsSchedulerService requires an AppCompatActivity context, but received: ${context::class.java.name}",
                 )
 
-        // Exposed for testing
+        @VisibleForTesting
         internal var dispatcher: CoroutineDispatcher = WholphinDispatchers.IO
 
         init {
