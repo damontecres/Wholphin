@@ -115,7 +115,7 @@ class IntentService
             val serverId = intent.getStringParam(INTENT_SERVER_ID)?.toUUIDOrNull()
             return if (userId != null && serverId != null) {
                 Timber.v("Intent switches user")
-                val user = serverRepository.tryRestoreSession(serverId, userId)
+                val user = serverRepository.tryChangeUser(serverId, userId)
                 if (user != null) {
                     null
                 } else {

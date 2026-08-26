@@ -79,6 +79,7 @@ class ServerRepository
             }
             apiClient.update(baseUrl = server.url, accessToken = null)
             _current.value = null
+            mostRecentServerProvider.clearUser()
         }
 
         /**
@@ -142,7 +143,7 @@ class ServerRepository
                     }
 
                     is MostRecentServer.ServerAndUser -> {
-                        val currentUser = tryRestoreSession(recentServer.serverId, recentServer.userId)
+                        val currentUser = tryChangeUser(recentServer.serverId, recentServer.userId)
                         if (currentUser != null) {
                             if (currentUser.user.isProtected) {
                                 RestoredSession.ServerOnly(currentUser.server)
@@ -150,7 +151,7 @@ class ServerRepository
                                 RestoredSession.Success(currentUser)
                             }
                         } else {
-                            getMostRecentServer(recentServer)
+                            getMostRecentServerInternal(recentServer)
                         }
                     }
                 }
@@ -160,7 +161,10 @@ class ServerRepository
         /**
          * Get the most recently used server, if any
          */
-        suspend fun getMostRecentServer(recentServer: MostRecentServer = mostRecentServerProvider.get()): RestoredSession {
+        suspend fun getMostRecentServer(): RestoredSession = getMostRecentServerInternal(mostRecentServerProvider.get())
+
+        suspend fun getMostRecentServerInternal(recentServer: MostRecentServer): RestoredSession {
+            val recentServer = recentServer ?: mostRecentServerProvider.get()
             val serverId =
                 when (recentServer) {
                     MostRecentServer.None -> null
@@ -176,11 +180,11 @@ class ServerRepository
         }
 
         /**
-         * Try to restore a session for the given server & user. If the user's profile is protected, returns null
+         * Try to change to the given server & user. If the user's profile is protected, returns null
          *
          * @return the server/user or null if the session could not be restored
          */
-        suspend fun tryRestoreSession(
+        suspend fun tryChangeUser(
             serverId: UUID?,
             userId: UUID?,
         ): CurrentUser? =

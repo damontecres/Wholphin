@@ -19,13 +19,22 @@ import java.util.UUID
  * This can be read/written to shared preferences
  */
 sealed interface MostRecentServer {
+    /**
+     * There is no recently used server
+     */
     data object None : MostRecentServer
 
+    /**
+     * The most recently used server without a recent user
+     */
     data class Server(
         val serverId: UUID,
         val serverUrl: String,
     ) : MostRecentServer
 
+    /**
+     * Most recently used server and user
+     */
     data class ServerAndUser(
         val serverId: UUID,
         val serverUrl: String,
@@ -58,8 +67,14 @@ interface MostRecentServerProvider {
      */
     suspend fun save(current: CurrentUser)
 
+    /**
+     * Clear the most recent server and user
+     */
     suspend fun clear()
 
+    /**
+     * CLear the most recent user, leaving the server
+     */
     suspend fun clearUser()
 }
 

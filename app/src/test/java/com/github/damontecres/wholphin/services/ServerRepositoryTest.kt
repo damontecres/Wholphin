@@ -216,7 +216,7 @@ class ServerRepositoryTest {
 
             val serverRepository = create()
             Assert.assertNull(serverRepository.currentUser)
-            val result = serverRepository.tryRestoreSession(server.id, user.id)
+            val result = serverRepository.tryChangeUser(server.id, user.id)
             assertTrue(result != null)
             assertEquals(serverId, result?.server?.id)
             assertEquals(user.id, result?.user?.id)
