@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,7 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.RememberedTabService
 import com.github.damontecres.wholphin.services.StreamChoiceService
@@ -29,12 +31,14 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderViewActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.TabDetails
 import com.github.damontecres.wholphin.ui.components.ViewOptions
+import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
@@ -75,6 +79,7 @@ class FavoritesViewModel
         private val api: ApiClient,
         val navigationManager: NavigationManager,
         private val serverRepository: ServerRepository,
+        private val navDrawerService: NavDrawerService,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
@@ -94,22 +99,49 @@ class FavoritesViewModel
                     userPreferencesService
                         .getCurrent()
                         .appPreferences.interfacePreferences.rememberSelectedTab
-                val tabKey =
-                    if (rememberTabs) {
-                        rememberedTabService.getRememberedTab(NavDrawerItem.Favorites.id)?.let {
-                            BaseItemKind.entries[it]
-                        } ?: favoriteOptions.first()
-                    } else {
-                        favoriteOptions.first()
-                    }
-                val jobs = favoriteOptions.associateWith { type -> initialFetchForType(type) }
-                initialFetchAndWait(tabKey, jobs)
-            }
-            userPreferencesService.flow
-                .map { it.appPreferences.interfacePreferences.showClock }
-                .collectLatestIn(viewModelScope) { isShowClock ->
-                    _state.update { it.copy(isShowClock = isShowClock) }
+                val availableTypes =
+                    navDrawerService.state.value.allLibraries
+                        .possibleFavoriteTypes(false)
+                        .toSet()
+                val favoriteTypeOptions = favoriteOptions.filter { it in availableTypes }
+                _state.update {
+                    it.copy(
+                        favoriteTypeOptions = favoriteTypeOptions,
+                    )
                 }
+                if (favoriteTypeOptions.isNotEmpty()) {
+                    val tabKey =
+                        if (rememberTabs) {
+                            val rememberedTab =
+                                rememberedTabService
+                                    .getRememberedTab(NavDrawerItem.Favorites.id)
+                                    ?.let {
+                                        BaseItemKind.entries[it]
+                                    }
+                            if (rememberedTab != null && rememberedTab in favoriteTypeOptions) {
+                                rememberedTab
+                            } else {
+                                favoriteTypeOptions.first()
+                            }
+                        } else {
+                            favoriteTypeOptions.first()
+                        }
+                    val jobs =
+                        favoriteTypeOptions.associateWith { type -> initialFetchForType(type) }
+                    initialFetchAndWait(tabKey, jobs)
+                } else {
+                    Timber.w("No available types to check for favorites!")
+                    _state.update {
+                        it.copy(loadingState = FavoritesLoadingState.NoFavorites)
+                    }
+                }
+
+                userPreferencesService.flow
+                    .map { it.appPreferences.interfacePreferences.showClock }
+                    .collectLatestIn(viewModelScope) { isShowClock ->
+                        _state.update { it.copy(isShowClock = isShowClock) }
+                    }
+            }
         }
 
         /**
@@ -144,8 +176,9 @@ class FavoritesViewModel
                 }
             } else {
                 // If the first key wasn't successful, wait in order until first successful & non-empty
+                val favoriteTypeOptions = state.value.favoriteTypeOptions
                 val firstCompleted =
-                    favoriteOptions.firstOrNull { type ->
+                    favoriteTypeOptions.firstOrNull { type ->
                         val job = jobs[type] ?: return@firstOrNull false
                         val result = job.await()
                         result is DataLoadingState.Error ||
@@ -227,9 +260,8 @@ class FavoritesViewModel
 
         /**
          * Query for favorites of the specified [BaseItemKind] using the specified sort and filter
-         *
-         * Exposed for testing
          */
+        @VisibleForTesting
         internal suspend fun fetchType(
             type: BaseItemKind,
             sortAndDirection: SortAndDirection,
@@ -656,6 +688,7 @@ class FavoritesViewModel
 
 data class FavoritesPageState(
     val loadingState: FavoritesLoadingState = FavoritesLoadingState.Pending,
+    val favoriteTypeOptions: List<BaseItemKind> = emptyList(),
     val favorites: SnapshotStateMap<BaseItemKind, CollectionFolderState> = SnapshotStateMap(),
     val tabs: SortedMap<BaseItemKind, TabDetails> = TreeMap(compareBy { favoriteOptions.indexOf(it) }),
     val tabKey: BaseItemKind = favoriteOptions.first(),
@@ -682,6 +715,11 @@ sealed interface FavoritesLoadingState {
     }
 }
 
+/**
+ * List of supported favorite types
+ *
+ * This is also the order they will appear in the UI
+ */
 val favoriteOptions =
     listOf(
         BaseItemKind.MOVIE,
@@ -708,4 +746,19 @@ private inline fun FavoritesPageState.createMap(block: TreeMap<BaseItemKind, Tab
         .apply {
             putAll(this@createMap.tabs)
             block.invoke(this)
+        }
+
+/**
+ * Given the list of libraries, return the possible favorite types
+ */
+fun List<Library>.possibleFavoriteTypes(sort: Boolean) =
+    flatMap { it.collectionType.baseItemKinds }
+        .distinct()
+        .filter { it in favoriteOptions }
+        .let { list ->
+            if (sort) {
+                list.sortedWith(compareBy { favoriteOptions.indexOf(it) })
+            } else {
+                list
+            }
         }

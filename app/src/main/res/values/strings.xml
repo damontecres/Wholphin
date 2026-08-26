@@ -914,4 +914,5 @@
     <string name="dim_percentage">Dim percentage</string>
     <string name="dim_screen">Dim screen</string>
     <string name="photo_albums">Photo albums</string>
+    <string name="no_favorites_found">No favorites found!</string>
 </resources>

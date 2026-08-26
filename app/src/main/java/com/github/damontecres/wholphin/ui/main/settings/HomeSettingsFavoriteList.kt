@@ -12,7 +12,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.detail.favoriteOptions
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -20,6 +19,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
 fun HomeSettingsFavoriteList(
+    favoriteTypeOptions: List<BaseItemKind>,
     onClick: (BaseItemKind) -> Unit,
     modifier: Modifier = Modifier,
     firstFocus: FocusRequester = remember { FocusRequester() },
@@ -35,7 +35,7 @@ fun HomeSettingsFavoriteList(
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
-            itemsIndexed(favoriteOptions) { index, type ->
+            itemsIndexed(favoriteTypeOptions) { index, type ->
                 HomeSettingsListItem(
                     selected = false,
                     headlineText = stringResource(formatTypeName(type)),

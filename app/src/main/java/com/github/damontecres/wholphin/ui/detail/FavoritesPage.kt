@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -64,7 +66,7 @@ fun FavoritesPage(
                         .focusable(),
             ) {
                 Text(
-                    text = "No favorites found!",
+                    text = stringResource(R.string.no_favorites_found),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier,
                 )

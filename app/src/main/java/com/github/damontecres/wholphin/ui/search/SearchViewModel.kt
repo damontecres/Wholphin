@@ -99,16 +99,10 @@ class SearchViewModel
 
         private fun init() {
             viewModelScope.launchDefault {
-                val tvAccess = serverRepository.currentUserDto?.tvAccess == true
                 userLibraryTypes =
-                    serverRepository.currentUser
-                        ?.id
-                        ?.let { userId ->
-                            navDrawerService
-                                .getAllUserLibraries(userId, tvAccess)
-                                .flatMap { it.collectionType.baseItemKinds }
-                                .toSet()
-                        }.orEmpty()
+                    navDrawerService.state.value.allLibraries
+                        .flatMap { it.collectionType.baseItemKinds }
+                        .toSet()
 
                 val excludedSearchableTypes =
                     serverRepository.currentUser?.id?.let { userId ->

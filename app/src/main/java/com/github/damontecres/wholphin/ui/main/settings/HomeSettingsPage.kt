@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.possibleFavoriteTypes
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
@@ -256,7 +257,10 @@ fun HomeSettingsPage(
                             }
 
                             HomeSettingsDestination.ChooseFavorite -> {
+                                val favoriteTypeOptions =
+                                    remember { state.libraries.possibleFavoriteTypes(true) }
                                 HomeSettingsFavoriteList(
+                                    favoriteTypeOptions = favoriteTypeOptions,
                                     onClick = { type ->
                                         addRow { viewModel.addFavoriteRow(type) }
                                     },
