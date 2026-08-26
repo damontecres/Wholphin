@@ -100,16 +100,10 @@ class FavoritesViewModel
                     userPreferencesService
                         .getCurrent()
                         .appPreferences.interfacePreferences.rememberSelectedTab
-                val availableTypes =
-                    navDrawerService.state.value.allLibraries
-                        .possibleFavoriteTypes(false)
-                        .toSet()
-                val favoriteTypeOptions = favoriteOptions.filter { it in availableTypes }
-                _state.update {
-                    it.copy(
-                        favoriteTypeOptions = favoriteTypeOptions,
-                    )
-                }
+
+                setupPossibleTypes()
+
+                val favoriteTypeOptions = state.value.favoriteTypeOptions
                 if (favoriteTypeOptions.isNotEmpty()) {
                     val tabKey =
                         if (rememberTabs) {
@@ -142,6 +136,20 @@ class FavoritesViewModel
                     .collectLatestIn(viewModelScope) { isShowClock ->
                         _state.update { it.copy(isShowClock = isShowClock) }
                     }
+            }
+        }
+
+        @VisibleForTesting
+        internal fun setupPossibleTypes() {
+            val availableTypes =
+                navDrawerService.state.value.allLibraries
+                    .possibleFavoriteTypes(false)
+                    .toSet()
+            val favoriteTypeOptions = favoriteOptions.filter { it in availableTypes }
+            _state.update {
+                it.copy(
+                    favoriteTypeOptions = favoriteTypeOptions,
+                )
             }
         }
 

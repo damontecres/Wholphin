@@ -10,6 +10,8 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.NavDrawerItemState
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.RememberedTabService
 import com.github.damontecres.wholphin.services.StreamChoiceService
@@ -18,6 +20,7 @@ import com.github.damontecres.wholphin.test.item
 import com.github.damontecres.wholphin.test.movie
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.util.DataLoadingState
 import io.mockk.coEvery
@@ -26,6 +29,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.artistsApi
@@ -34,7 +38,9 @@ import org.jellyfin.sdk.api.client.extensions.personsApi
 import org.jellyfin.sdk.api.operations.ArtistsApi
 import org.jellyfin.sdk.api.operations.ItemsApi
 import org.jellyfin.sdk.api.operations.PersonsApi
+import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
@@ -58,6 +64,7 @@ class TestFavoritesViewModel {
     private val mediaReportService: MediaReportService = mockk()
     private val filterOptionCache: FilterOptionCache = mockk()
     private val rememberedTabService: RememberedTabService = mockk()
+    private val navDrawerService: NavDrawerService = mockk()
 
     private val itemsApi: ItemsApi = mockk()
     private val artistsApi: ArtistsApi = mockk()
@@ -68,6 +75,17 @@ class TestFavoritesViewModel {
         every { api.itemsApi } returns itemsApi
         every { api.artistsApi } returns artistsApi
         every { api.personsApi } returns personsApi
+        every { navDrawerService.state } returns
+            MutableStateFlow(
+                NavDrawerItemState(
+                    allLibraries =
+                        listOf(
+                            library(CollectionType.MOVIES),
+                            library(CollectionType.TVSHOWS),
+                            library(CollectionType.BOXSETS),
+                        ),
+                ),
+            )
     }
 
     private fun createViewModel(): FavoritesViewModel =
@@ -85,7 +103,10 @@ class TestFavoritesViewModel {
             mediaReportService = mediaReportService,
             filterOptionCache = filterOptionCache,
             rememberedTabService = rememberedTabService,
-        )
+            navDrawerService = navDrawerService,
+        ).apply {
+            setupPossibleTypes()
+        }
 
     private val items = listOf(BaseItem(movie()))
 
@@ -395,3 +416,12 @@ class TestFavoritesViewModel {
             coVerify(exactly = 0) { artistsApi.getArtists(any<GetArtistsRequest>()) }
         }
 }
+
+private fun library(type: CollectionType) =
+    Library(
+        itemId = UUID.randomUUID(),
+        name = "name-${type.serialName}",
+        type = BaseItemKind.COLLECTION_FOLDER,
+        collectionType = type,
+        isRecordingFolder = false,
+    )
