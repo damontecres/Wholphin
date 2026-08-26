@@ -1,9 +1,14 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -218,7 +223,13 @@ fun <T> KeyedTabbedPage(
                 onClick = updateSelectedTabKey,
             )
         }
-        selectedTabKey.let { tabKey ->
+        AnimatedContent(
+            targetState = selectedTabKey,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(300, delayMillis = 100)))
+                    .togetherWith(fadeOut(animationSpec = tween(200)))
+            },
+        ) { tabKey ->
             val tab = tabs[tabKey]
             if (tab != null) {
                 tabContent.invoke(tabKey, tab)
