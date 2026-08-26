@@ -6,9 +6,8 @@ import android.widget.Toast
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.MainActivityViewModel
 import com.github.damontecres.wholphin.data.CurrentUser
-import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
@@ -20,7 +19,6 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.configure
 import com.github.damontecres.wholphin.util.reset
@@ -58,7 +56,6 @@ class TestMainActivityViewModel {
     private val backdropService: BackdropService = mockk(relaxed = true)
     private val appUpgradeHandler: AppUpgradeHandler = mockk()
     private val intentService: IntentService = mockk()
-    private val serverDao: JellyfinServerDao = mockk()
 
     val viewModel =
         MainActivityViewModel(
@@ -74,6 +71,7 @@ class TestMainActivityViewModel {
         )
 
     private val serverId = UUID.randomUUID()
+    private val server = server(serverId)
     private val userId = UUID.randomUUID()
     private val currentUser = currentUser(serverId, userId)
 
@@ -88,13 +86,6 @@ class TestMainActivityViewModel {
         WholphinDispatchers.configure(testDispatcher)
         every { appUpgradeHandler.needUpgrade() } returns false
         every { appUpgradeHandler.copySubfont(any()) } returns Unit
-        every { serverRepository.serverDao } returns serverDao
-        coEvery { serverDao.getServer(serverId) } returns
-            JellyfinServerUsers(
-                currentUser.server,
-                // User list is unused
-                emptyList(),
-            )
         mockkStatic(Toast::class)
         val mockToast = mockk<Toast>()
         every { Toast.makeText(any(), any<CharSequence>(), any()) } returns mockToast
@@ -121,11 +112,11 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+//            coEvery { serverRepository.tryRestoreSession(serverId, userId) } returns currentUser
+//            coEvery { serverRepository.restoreLastSession() } returns
+//                RestoredSession.Success(currentUser)
 
             viewModel.appStart(null)
             advanceUntilIdle()
@@ -137,6 +128,8 @@ class TestMainActivityViewModel {
                 destination as SetupDestination.AppContent
                 assertEquals(currentUser, destination.current)
             }
+            coVerify(exactly = 0) { serverRepository.restoreLastSession() }
+            coVerify(exactly = 0) { serverRepository.getMostRecentServer() }
         }
 
     @Test
@@ -144,24 +137,22 @@ class TestMainActivityViewModel {
         runTest {
             setupPreferences {
                 signInAutomatically = false
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
 //            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            coEvery { serverRepository.getMostRecentServer() } returns
+                RestoredSession.ServerOnly(server)
 
             viewModel.appStart(null)
             advanceUntilIdle()
 
-            verify(exactly = 1) { serverDao.getServer(serverId) }
-            coVerify(exactly = 0) { serverRepository.restoreSession(any(), any()) }
+            coVerify(exactly = 0) { serverRepository.tryRestoreSession(any(), any()) }
+            coVerify(exactly = 0) { serverRepository.restoreLastSession() }
+            coVerify(exactly = 1) { serverRepository.getMostRecentServer() }
             val args = mutableListOf<SetupDestination>()
             verify { setupNavigationManager.navigateTo(capture(args)) }
-            assertEquals(2, args.size)
+            assertEquals(1, args.size)
             args[0].let { destination ->
-                assertTrue("destination is ${destination::class}", destination is SetupDestination.Loading)
-            }
-            args[1].let { destination ->
                 assertTrue("destination is ${destination::class}", destination is SetupDestination.UserList)
                 destination as SetupDestination.UserList
                 assertEquals(currentUser.server, destination.server)
@@ -173,24 +164,22 @@ class TestMainActivityViewModel {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(protectedCurrentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
+            coEvery {
+                serverRepository.tryRestoreSession(serverId, userId)
+            } returns null
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.ServerOnly(server)
 
             viewModel.appStart(null)
             advanceUntilIdle()
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
-            verify { serverDao.getServer(serverId) }
+            coVerify(exactly = 0) { serverRepository.tryRestoreSession(serverId, userId) }
             val args = mutableListOf<SetupDestination>()
             verify { setupNavigationManager.navigateTo(capture(args)) }
-            assertEquals(2, args.size)
+            assertEquals(1, args.size)
             args[0].let { destination ->
-                assertTrue("destination is ${destination::class}", destination is SetupDestination.Loading)
-            }
-            args[1].let { destination ->
                 assertTrue("destination is ${destination::class}", destination is SetupDestination.UserList)
                 destination as SetupDestination.UserList
                 assertEquals(currentUser.server, destination.server)
@@ -202,16 +191,18 @@ class TestMainActivityViewModel {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.ServerOnly(server)
+            coEvery {
+                serverRepository.tryRestoreSession(serverId, userId)
+            } returns null
 
             viewModel.appStart(null)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 1) { serverRepository.restoreLastSession() }
             val slot = slot<SetupDestination>()
             verify { setupNavigationManager.navigateTo(capture(slot)) }
             slot.captured.let { destination ->
@@ -226,16 +217,14 @@ class TestMainActivityViewModel {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = ""
-                currentUserId = ""
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
-            coEvery { serverRepository.restoreSession(null, null) } returns null
+            coEvery { serverRepository.restoreLastSession() } returns RestoredSession.None
 
             viewModel.appStart(null)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { serverRepository.restoreSession(null, null) }
+            coVerify(exactly = 1) { serverRepository.restoreLastSession() }
             val slot = slot<SetupDestination>()
             verify { setupNavigationManager.navigateTo(capture(slot)) }
             slot.captured.let { destination ->
@@ -244,15 +233,14 @@ class TestMainActivityViewModel {
         }
 
     @Test
-    fun `Test intent result is noop`() =
+    fun `Test intent result is noop, hot reload`() =
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.Success(currentUser)
             coEvery { intentService.parseIntent(any()) } returns IntentResult.NoOp
 
             viewModel.appStart(Intent())
@@ -265,6 +253,8 @@ class TestMainActivityViewModel {
                 destination as SetupDestination.AppContent
                 assertEquals(currentUser, destination.current)
             }
+            coVerify(exactly = 0) { serverRepository.restoreLastSession() }
+            coVerify(exactly = 0) { serverRepository.getMostRecentServer() }
         }
 
     @Test
@@ -272,11 +262,8 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
             coEvery { intentService.parseIntent(any()) } returns IntentResult.Error("Error")
 
             viewModel.appStart(Intent())
@@ -296,11 +283,8 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(null)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
             coEvery { intentService.parseIntent(any()) } returns IntentResult.Error("Error")
 
             viewModel.appStart(Intent())
@@ -318,11 +302,9 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+//            coEvery { serverRepository.tryRestoreSession(serverId, userId) } returns currentUser
             coEvery { intentService.parseIntent(any()) } returns
                 IntentResult.Target(
                     destinations = listOf(Destination.Favorites),
@@ -354,11 +336,9 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+//            coEvery { serverRepository.tryRestoreSession(serverId, userId) } returns currentUser
             coEvery { intentService.parseIntent(any()) } returns
                 IntentResult.Target(
                     destinations = listOf(Destination.Favorites),
@@ -389,11 +369,9 @@ class TestMainActivityViewModel {
         runTest(testDispatcher) {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow(null)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+//            coEvery { serverRepository.tryRestoreSession(serverId, userId) } returns currentUser
             coEvery { intentService.parseIntent(any()) } returns
                 IntentResult.Target(
                     destinations = listOf(Destination.Favorites),

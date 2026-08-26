@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.app.SearchManager
 import android.content.Intent
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -114,39 +115,33 @@ class IntentService
             val serverId = intent.getStringParam(INTENT_SERVER_ID)?.toUUIDOrNull()
             return if (userId != null && serverId != null) {
                 Timber.v("Intent switches user")
-                val user = serverRepository.serverDao.getUser(serverId, userId)
-                if (user != null && !user.isProtected) {
-                    serverRepository.restoreSession(serverId, userId)
-                        ?: IntentResult.Error("Error restoring user")
+                val user = serverRepository.tryRestoreSession(serverId, userId)
+                if (user != null) {
                     null
                 } else {
-                    IntentResult.Error("Cannot switch to specified user")
+                    IntentResult.Error("Error restoring user")
                 }
-            } else {
-                val profileProtected =
-                    serverRepository.current.value
-                        ?.user
-                        ?.isProtected == true
-                if (appPrefs.signInAutomatically && !profileProtected) {
-                    Timber.v("No current user, so restoring last")
-                    val userId = appPrefs.currentUserId?.toUUIDOrNull()
-                    val serverId = appPrefs.currentServerId?.toUUIDOrNull()
+            } else if (appPrefs.signInAutomatically) {
+                Timber.v("No current user, so restoring last")
+                val result = serverRepository.restoreLastSession()
+                Timber.v("Restored result=%s", result)
+                when (result) {
+                    RestoredSession.None,
+                    is RestoredSession.ServerOnly,
+                    -> {
+                        IntentResult.Error("Could not auto sign-in, specify a server & user")
+                    }
 
-                    if (userId != null && serverId != null) {
-                        val current =
-                            serverRepository.restoreSession(serverId, userId)
-                                ?: return IntentResult.Error("Error restoring user")
-                        if (current.user.isProtected) {
+                    is RestoredSession.Success -> {
+                        if (result.currentUser.user.isProtected) {
                             IntentResult.Error("Could not auto sign-in, user is protected")
                         } else {
                             null
                         }
-                    } else {
-                        IntentResult.Error("Could not auto sign-in, specify a server & user")
                     }
-                } else {
-                    IntentResult.Error("Auto sign-in not enabled or user is protected")
                 }
+            } else {
+                IntentResult.Error("Auto sign-in not enabled")
             }
         }
 

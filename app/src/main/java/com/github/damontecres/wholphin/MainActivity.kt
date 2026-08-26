@@ -73,7 +73,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -82,7 +81,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
@@ -499,56 +497,24 @@ class MainActivityViewModel
                             appUpgradeHandler.run()
                         }
                         appUpgradeHandler.copySubfont(false)
-                        val prefs =
-                            preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                        val profileProtected =
-                            serverRepository.current.value
-                                ?.user
-                                ?.isProtected == true
-                        if (prefs.signInAutomatically && !profileProtected) {
-                            val current =
-                                serverRepository.restoreSession(
-                                    prefs.currentServerId?.toUUIDOrNull(),
-                                    prefs.currentUserId?.toUUIDOrNull(),
-                                )
-                            if (current != null) {
-                                if (current.user.isProtected) {
-                                    setupNavigationManager.navigateTo(
-                                        SetupDestination.UserList(
-                                            current.server,
-                                        ),
-                                    )
-                                } else {
-                                    // Restored
-                                    setupNavigationManager.navigateTo(
-                                        SetupDestination.AppContent(
-                                            current,
-                                        ),
-                                    )
-                                }
-                            } else {
-                                // Did not restore
-                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
-                            }
+                        val signInAutomatically = preferences.data.first().signInAutomatically
+                        val currentUser = serverRepository.current.value
+                        if (signInAutomatically && currentUser != null && !currentUser.user.isProtected) {
+                            // Hot reload
+                            Timber.v("Hot reload restoring state")
+                            setupNavigationManager.navigateTo(
+                                SetupDestination.AppContent(currentUser),
+                            )
                         } else {
-                            setupNavigationManager.navigateTo(SetupDestination.Loading)
-                            backdropService.clearBackdrop()
-                            val currentServerId = prefs.currentServerId?.toUUIDOrNull()
-                            if (currentServerId != null) {
-                                val currentServer =
-                                    serverRepository.serverDao.getServer(currentServerId)?.server
-                                if (currentServer != null) {
-                                    setupNavigationManager.navigateTo(
-                                        SetupDestination.UserList(
-                                            currentServer,
-                                        ),
-                                    )
+                            val restoredSession =
+                                if (signInAutomatically) {
+                                    Timber.v("Sign in automatically")
+                                    serverRepository.restoreLastSession()
                                 } else {
-                                    setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                    serverRepository.getMostRecentServer()
                                 }
-                            } else {
-                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
-                            }
+                            Timber.d("Restore last session result=%s", restoredSession)
+                            setupNavigationManager.navigateTo(restoredSession.destination)
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error during appStart")

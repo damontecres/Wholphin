@@ -442,5 +442,14 @@ class AppUpgradeHandler
                     }
                 }
             }
+
+            if (current.isEqualOrBefore(Version.fromString("1.0.8-0-g0"))) {
+                appPreferences.updateData {
+                    it.update {
+                        currentServerId = ""
+                        currentUserId = ""
+                    }
+                }
+            }
         }
     }

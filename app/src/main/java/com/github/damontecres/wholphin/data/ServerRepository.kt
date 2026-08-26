@@ -1,14 +1,9 @@
 package com.github.damontecres.wholphin.data
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
-import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
-import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -47,8 +42,8 @@ class ServerRepository
         val jellyfin: Jellyfin,
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
-        val userPreferencesDataStore: DataStore<AppPreferences>,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        private val mostRecentServerProvider: MostRecentServerProvider,
     ) {
         private var _current = MutableStateFlow<CurrentUser?>(null)
         val current: StateFlow<CurrentUser?> = _current
@@ -87,7 +82,7 @@ class ServerRepository
         }
 
         /**
-         * Saves the server & User to the app database and updates the [ApiClient] to use this server & user
+         * Saves the server & user to the app database and updates the [ApiClient] to use this server & user
          */
         suspend fun changeUser(
             server: JellyfinServer,
@@ -115,70 +110,98 @@ class ServerRepository
                     )
                 serverDao.addOrUpdateServer(updatedServer)
                 updatedUser = serverDao.addOrUpdateUser(updatedUser)
-                userPreferencesDataStore.updateData {
-                    it
-                        .toBuilder()
-                        .apply {
-                            currentServerId = updatedServer.id.toServerString()
-                            currentUserId = updatedUser.id.toServerString()
-                        }.build()
-                }
+
                 val currentUser = CurrentUser(updatedServer, updatedUser)
-                withContext(WholphinDispatchers.Main) {
-                    _current.value = currentUser
-                    _currentUserDto.value = userDto
-                }
-                getServerSharedPreferences(context).edit(true) {
-                    putString(SERVER_URL_KEY, updatedServer.url)
-                    putString(ACCESS_TOKEN_KEY, updatedUser.accessToken)
-                }
+                mostRecentServerProvider.save(currentUser)
+                _current.value = currentUser
+                _currentUserDto.value = userDto
                 return@withContext currentUser
             }
 
         /**
-         * Restores a session for the given server & user such as when the app reopens
+         * Try to restore the most recent session
          *
-         * If user has a PIN, this returns false
+         * Does not check if auto sign-in is enabled, but does check if the user profile is protected
          */
-        suspend fun restoreSession(
+        suspend fun restoreLastSession(): RestoredSession {
+            val recentServer = mostRecentServerProvider.get()
+            Timber.d("restoreLastSession: recentServer=%s", recentServer)
+            val result =
+                when (recentServer) {
+                    MostRecentServer.None -> {
+                        RestoredSession.None
+                    }
+
+                    is MostRecentServer.Server -> {
+                        val server = serverDao.getServer(recentServer.serverId)
+                        if (server != null) {
+                            RestoredSession.ServerOnly(server.server)
+                        } else {
+                            RestoredSession.None
+                        }
+                    }
+
+                    is MostRecentServer.ServerAndUser -> {
+                        val currentUser = tryRestoreSession(recentServer.serverId, recentServer.userId)
+                        if (currentUser != null) {
+                            if (currentUser.user.isProtected) {
+                                RestoredSession.ServerOnly(currentUser.server)
+                            } else {
+                                RestoredSession.Success(currentUser)
+                            }
+                        } else {
+                            getMostRecentServer(recentServer)
+                        }
+                    }
+                }
+            return result
+        }
+
+        /**
+         * Get the most recently used server, if any
+         */
+        suspend fun getMostRecentServer(recentServer: MostRecentServer = mostRecentServerProvider.get()): RestoredSession {
+            val serverId =
+                when (recentServer) {
+                    MostRecentServer.None -> null
+                    is MostRecentServer.Server -> recentServer.serverId
+                    is MostRecentServer.ServerAndUser -> recentServer.serverId
+                }
+            val server = serverId?.let { serverDao.getServer(serverId)?.server }
+            return if (server != null) {
+                RestoredSession.ServerOnly(server)
+            } else {
+                RestoredSession.None
+            }
+        }
+
+        /**
+         * Try to restore a session for the given server & user. If the user's profile is protected, returns null
+         *
+         * @return the server/user or null if the session could not be restored
+         */
+        suspend fun tryRestoreSession(
             serverId: UUID?,
             userId: UUID?,
-        ): CurrentUser? {
-            if (serverId == null || userId == null) {
-                _current.value = null
-                return null
-            }
-            val serverAndUsers =
-                withContext(ioDispatcher) {
-                    serverDao.getServer(serverId)
-                }
-            if (serverAndUsers != null) {
-                val current = _current.value
-                if (current != null && current.server.id == serverId && current.user.id == userId) {
-                    Timber.v("Restoring session for current user, so shortcut")
-                    apiClient.update(
-                        baseUrl = current.server.url,
-                        accessToken = current.user.accessToken,
-                    )
-                    return current
+        ): CurrentUser? =
+            withContext(ioDispatcher) {
+                return@withContext if (serverId == null || userId == null) {
+                    _current.value = null
+                    null
                 } else {
-                    val user = serverAndUsers.users.firstOrNull { it.id == userId }
-                    if (user != null) {
-                        return changeUser(serverAndUsers.server, user)
+                    val serverAndUsers = serverDao.getServer(serverId)
+                    if (serverAndUsers != null) {
+                        val user = serverAndUsers.users.firstOrNull { it.id == userId }
+                        if (user != null && !user.isProtected) {
+                            changeUser(serverAndUsers.server, user)
+                        } else {
+                            null
+                        }
+                    } else {
+                        null
                     }
                 }
             }
-            return null
-        }
-
-        suspend fun fetchLastUsedServer(serverId: UUID?): JellyfinServer? =
-            withContext(ioDispatcher) {
-                serverId?.let { serverDao.getServer(serverId)?.server }
-            }
-
-        fun closeSession() {
-            _current.value = null
-        }
 
         /**
          * Given a successful [AuthenticationResult], switch to the user that just authenticated
@@ -240,13 +263,7 @@ class ServerRepository
                 withContext(WholphinDispatchers.Main) {
                     _current.value = null
                 }
-                userPreferencesDataStore.updateData {
-                    it
-                        .toBuilder()
-                        .apply {
-                            currentUserId = ""
-                        }.build()
-                }
+                mostRecentServerProvider.clearUser()
                 apiClient.update(accessToken = null)
             }
             withContext(ioDispatcher) {
@@ -259,14 +276,7 @@ class ServerRepository
                 withContext(WholphinDispatchers.Main) {
                     _current.value = null
                 }
-                userPreferencesDataStore.updateData {
-                    it
-                        .toBuilder()
-                        .apply {
-                            currentServerId = ""
-                            currentUserId = ""
-                        }.build()
-                }
+                mostRecentServerProvider.clear()
                 apiClient.update(baseUrl = null, accessToken = null)
             }
             withContext(ioDispatcher) {
@@ -275,14 +285,7 @@ class ServerRepository
         }
 
         suspend fun switchServerOrUser() {
-            userPreferencesDataStore.updateData {
-                it
-                    .toBuilder()
-                    .apply {
-                        currentServerId = ""
-                        currentUserId = ""
-                    }.build()
-            }
+            mostRecentServerProvider.clear()
         }
 
         suspend fun updateUserAuth(
@@ -321,17 +324,6 @@ class ServerRepository
             _currentUserDto.update {
                 if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
             }
-        }
-
-        companion object {
-            fun getServerSharedPreferences(context: Context): SharedPreferences =
-                context.getSharedPreferences(
-                    "${context.packageName}_server",
-                    Context.MODE_PRIVATE,
-                )
-
-            const val SERVER_URL_KEY = "current.server"
-            const val ACCESS_TOKEN_KEY = "current.accessToken"
         }
     }
 

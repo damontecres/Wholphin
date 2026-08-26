@@ -1,11 +1,13 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import android.content.SharedPreferences
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.MostRecentServer
+import com.github.damontecres.wholphin.data.MostRecentServerProvider
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
@@ -13,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.test.nonBlankString
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.WholphinDispatchers
@@ -20,6 +23,7 @@ import com.github.damontecres.wholphin.util.configure
 import com.github.damontecres.wholphin.util.reset
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -28,7 +32,6 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -47,6 +50,8 @@ import org.jellyfin.sdk.model.api.PublicSystemInfo
 import org.jellyfin.sdk.model.api.UserDto
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -79,14 +84,13 @@ class ServerRepositoryTest {
 
     private val mockUserApi = mockk<UserApi>()
     private val mockSystemApi = mockk<SystemApi>()
-    private val mockSharedPreferences = mockk<SharedPreferences>(relaxed = true)
+    private val mockMostRecentServerProvider = mockk<MostRecentServerProvider>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
         WholphinDispatchers.configure(testDispatcher)
 
-        every { mockContext.getSharedPreferences(any(), any()) } returns mockSharedPreferences
         every { mockApiClient.userApi } returns mockUserApi
         every { mockApiClient.systemApi } returns mockSystemApi
         coEvery { mockUserApi.getCurrentUser() } returns successResponse(userDto)
@@ -101,9 +105,15 @@ class ServerRepositoryTest {
                 emptyMap(),
             )
         coEvery { mockJellyfinServerDao.addOrUpdateUser(user) } returns user
+        coEvery { mockJellyfinServerDao.getServer(serverId) } returns
+            JellyfinServerUsers(server, listOf(user))
+        coEvery { mockJellyfinServerDao.addOrUpdateServer(server) } just Runs
         every { mockApiClient.clientInfo } returns ClientInfo("Wholphin test", "0.0.1")
         every { mockApiClient.deviceInfo } returns DeviceInfo("Wholphin test ID", "Wholphin test device")
         every { mockApiClient.update(any(), any(), any(), any()) } just Runs
+        coEvery { mockMostRecentServerProvider.save(any()) } just Runs
+        coEvery { mockMostRecentServerProvider.clear() } just Runs
+        coEvery { mockMostRecentServerProvider.clearUser() } just Runs
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -118,8 +128,8 @@ class ServerRepositoryTest {
             mockJellyfin,
             mockJellyfinServerDao,
             mockApiClient,
-            dataStore,
             testDispatcher,
+            mockMostRecentServerProvider,
         )
 
     private val serverId = UUID.randomUUID()
@@ -192,24 +202,24 @@ class ServerRepositoryTest {
             Assert.assertEquals(user, serverRepository.currentUser)
             Assert.assertEquals(userDto, serverRepository.currentUserDto)
 
-            val appPreferences = dataStore.data.first()
-            Assert.assertEquals(serverId.toServerString(), appPreferences.currentServerId)
-            Assert.assertEquals(userId.toServerString(), appPreferences.currentUserId)
-
-            verify(exactly = 1) { mockSharedPreferences.edit() }
+            coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
             verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateUser(user) }
         }
 
     @Test
     fun `Test restoreUser via changeUser`() =
         runTest {
+            val user = user.copy(pin = null)
             every { mockJellyfinServerDao.addOrUpdateServer(any()) } just Runs
             every { mockJellyfinServerDao.addOrUpdateUser(user) } returns user
             every { mockJellyfinServerDao.getServer(serverId) } returns JellyfinServerUsers(server, listOf(user))
 
             val serverRepository = create()
             Assert.assertNull(serverRepository.currentUser)
-            serverRepository.restoreSession(server.id, user.id)
+            val result = serverRepository.tryRestoreSession(server.id, user.id)
+            assertTrue(result != null)
+            assertEquals(serverId, result?.server?.id)
+            assertEquals(user.id, result?.user?.id)
 
             verify(exactly = 1) {
                 mockApiClient.update(
@@ -222,34 +232,6 @@ class ServerRepositoryTest {
             Assert.assertEquals(server, serverRepository.currentServer)
             Assert.assertEquals(user, serverRepository.currentUser)
             Assert.assertEquals(userDto, serverRepository.currentUserDto)
-        }
-
-    @Test
-    fun `Test restoreUser via shortcut`() =
-        runTest {
-            every { mockJellyfinServerDao.getServer(serverId) } returns JellyfinServerUsers(server, listOf(user))
-
-            val serverRepository = create()
-            setUpCurrentUser(serverRepository)
-
-            serverRepository.restoreSession(server.id, user.id)
-
-            verify(exactly = 1) {
-                mockApiClient.update(
-                    baseUrl = server.url,
-                    accessToken = user.accessToken,
-                    clientInfo = any(),
-                    deviceInfo = any(),
-                )
-            }
-            verify(exactly = 0) { mockJellyfinServerDao.addOrUpdateServer(any()) }
-            verify(exactly = 0) { mockJellyfinServerDao.addOrUpdateUser(any()) }
-
-            Assert.assertEquals(server, serverRepository.currentServer)
-            Assert.assertEquals(user, serverRepository.currentUser)
-
-            // TODO fix this, need to check userDto too
-//            Assert.assertEquals(userDto, serverRepository.currentUserDto)
         }
 
     @Test
@@ -306,6 +288,7 @@ class ServerRepositoryTest {
                 )
             }
             verify(exactly = 1) { mockJellyfinServerDao.deleteUser(serverId, userId) }
+            coVerify { mockMostRecentServerProvider.clearUser() }
         }
 
     @Test
@@ -349,6 +332,7 @@ class ServerRepositoryTest {
                 )
             }
             verify(exactly = 1) { mockJellyfinServerDao.deleteServer(serverId) }
+            coVerify { mockMostRecentServerProvider.clear() }
         }
 
     @Test
@@ -385,11 +369,7 @@ class ServerRepositoryTest {
             Assert.assertEquals(user, serverRepository.currentUser)
             Assert.assertEquals(userDto, serverRepository.currentUserDto)
 
-            val appPreferences = dataStore.data.first()
-            Assert.assertEquals(serverId.toServerString(), appPreferences.currentServerId)
-            Assert.assertEquals(userId.toServerString(), appPreferences.currentUserId)
-
-            verify(exactly = 1) { mockSharedPreferences.edit() }
+            coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
         }
 
     @Test
@@ -428,11 +408,7 @@ class ServerRepositoryTest {
             Assert.assertEquals(user, serverRepository.currentUser)
             Assert.assertEquals(userDto, serverRepository.currentUserDto)
 
-            val appPreferences = dataStore.data.first()
-            Assert.assertEquals(serverId.toServerString(), appPreferences.currentServerId)
-            Assert.assertEquals(userId.toServerString(), appPreferences.currentUserId)
-
-            verify(exactly = 1) { mockSharedPreferences.edit() }
+            coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
         }
 
     @Test
@@ -480,6 +456,101 @@ class ServerRepositoryTest {
                     )
                 create().changeUser(server.url, authResult, user)
             }
+        }
+    }
+
+    @Test
+    fun `Test restoreLastSession, success`() =
+        runTest {
+            val user = user.copy(pin = null)
+            coEvery { mockJellyfinServerDao.addOrUpdateUser(user) } returns user
+            coEvery { mockJellyfinServerDao.getServer(serverId) } returns
+                JellyfinServerUsers(server, listOf(user))
+            every { mockMostRecentServerProvider.get() } returns
+                MostRecentServer.from(CurrentUser(server, user))
+
+            val result = create().restoreLastSession()
+            assertTrue(result is RestoredSession.Success)
+            val current = (result as RestoredSession.Success).currentUser
+            assertEquals(server, current.server)
+            assertEquals(user, current.user)
+
+            verify(exactly = 1) {
+                mockApiClient.update(
+                    baseUrl = server.url,
+                    accessToken = user.accessToken,
+                    clientInfo = any(),
+                    deviceInfo = any(),
+                )
+            }
+            coVerify { mockMostRecentServerProvider.save(any()) }
+        }
+
+    @Test
+    fun `Test restoreLastSession, user protected`() =
+        runTest {
+            every { mockMostRecentServerProvider.get() } returns
+                MostRecentServer.ServerAndUser(serverId, server.url, userId, "token")
+
+            val result = create().restoreLastSession()
+            assertTrue(result is RestoredSession.ServerOnly)
+            val current = (result as RestoredSession.ServerOnly)
+            assertEquals(server, current.server)
+        }
+
+    @Test
+    fun `Test restoreLastSession, server only`() =
+        runTest {
+            every { mockMostRecentServerProvider.get() } returns
+                MostRecentServer.Server(server.id, server.url)
+
+            val result = create().restoreLastSession()
+            assertTrue(result is RestoredSession.ServerOnly)
+            val current = (result as RestoredSession.ServerOnly)
+            assertEquals(server, current.server)
+        }
+
+    @Test
+    fun `Test restoreLastSession, nothing to restore`() =
+        runTest {
+            every { mockMostRecentServerProvider.get() } returns MostRecentServer.None
+
+            val result = create().restoreLastSession()
+            assertTrue(result is RestoredSession.None)
+        }
+}
+
+class TestMostRecentServerProvider : MostRecentServerProvider {
+    var mostRecentServer: MostRecentServer = MostRecentServer.None
+
+    override fun get(): MostRecentServer = mostRecentServer
+
+    override suspend fun save(current: CurrentUser) {
+        mostRecentServer =
+            if (current.user.accessToken.isNotNullOrBlank()) {
+                MostRecentServer.ServerAndUser(
+                    current.server.id,
+                    current.server.url,
+                    current.user.id,
+                    current.user.accessToken,
+                )
+            } else {
+                MostRecentServer.Server(
+                    current.server.id,
+                    current.server.url,
+                )
+            }
+    }
+
+    override suspend fun clear() {
+        mostRecentServer = MostRecentServer.None
+    }
+
+    override suspend fun clearUser() {
+        when (val s = mostRecentServer) {
+            MostRecentServer.None -> Unit
+            is MostRecentServer.Server -> Unit
+            is MostRecentServer.ServerAndUser -> MostRecentServer.Server(s.serverId, s.serverUrl)
         }
     }
 }
