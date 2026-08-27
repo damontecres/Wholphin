@@ -80,6 +80,7 @@ fun NowPlayingOverlay(
 ) {
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+    val currentItemFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
 
     var queueHasFocus by remember { mutableStateOf(false) }
@@ -91,13 +92,16 @@ fun NowPlayingOverlay(
         },
         animationSpec = tween(durationMillis = 500),
     )
-    val listState = rememberLazyListState()
+    val listState =
+        rememberLazyListState(
+            initialFirstVisibleItemIndex = state.musicServiceState.currentIndex,
+        )
     var showButtons by remember { mutableStateOf(true) }
 
     val firstFocusRequester = remember { FocusRequester() }
     BackHandler(!showButtons) {
         scope.launch {
-            listState.animateScrollToItem(0)
+            listState.scrollToItem(0)
             firstFocusRequester.tryRequestFocus()
         }
     }
@@ -166,6 +170,9 @@ fun NowPlayingOverlay(
                         .onFocusChanged {
                             queueHasFocus = it.hasFocus
                         }.focusProperties {
+                            onEnter = {
+                                currentItemFocusRequester.tryRequestFocus()
+                            }
                             onExit = {
                                 if (requestedFocusDirection == FocusDirection.Up) focusRequester.requestFocus()
                             }
@@ -203,6 +210,9 @@ fun NowPlayingOverlay(
                                     .ifElse(
                                         index == 0,
                                         Modifier.focusRequester(firstFocusRequester),
+                                    ).ifElse(
+                                        index == state.musicServiceState.currentIndex,
+                                        Modifier.focusRequester(currentItemFocusRequester),
                                     ),
                         )
                         Row(
