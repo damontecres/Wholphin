@@ -152,10 +152,12 @@ fun NowPlayingPage(
     LaunchedEffect(lyricsFocused) {
         if (lyricsFocused != null) {
             controllerViewState.hideControls()
+            delay(5.seconds)
+            if (!controllerViewState.controlsVisible) {
+                focusRequester.tryRequestFocus()
+            }
+            lyricsFocused = null
         }
-        delay(5.seconds)
-        lyricsFocused = null
-        focusRequester.tryRequestFocus()
     }
     BackHandler(lyricsFocused != null) {
         focusRequester.tryRequestFocus()
