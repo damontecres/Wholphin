@@ -48,6 +48,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.AudioItem
+import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
@@ -65,7 +66,6 @@ fun NowPlayingOverlay(
     state: NowPlayingState,
     player: Player,
     current: AudioItem?,
-    queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
     onClickSong: (Int, AudioItem) -> Unit,
     onLongClickSong: (Int, AudioItem) -> Unit,
@@ -141,6 +141,12 @@ fun NowPlayingOverlay(
                         .align(Alignment.CenterHorizontally),
             )
         }
+        val queue =
+            rememberQueue(
+                player,
+                state.musicServiceState.queueVersion,
+                state.musicServiceState.queueSize,
+            )
         if (queue.isEmpty()) {
             Text("No items")
         } else {
