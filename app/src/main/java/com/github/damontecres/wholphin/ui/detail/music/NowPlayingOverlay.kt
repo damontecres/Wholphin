@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -170,6 +172,7 @@ fun NowPlayingOverlay(
                         },
             ) {
                 itemsIndexed(queue, key = { _, song -> song.key }) { index, song ->
+                    val bringIntoViewRequester = remember { BringIntoViewRequester() }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
@@ -182,7 +185,8 @@ fun NowPlayingOverlay(
                                 .onFocusChanged {
                                     if (it.hasFocus) showButtons = index < 3
                                     controllerViewState.pulseControls()
-                                }.animateItem(),
+                                }.animateItem()
+                                .bringIntoViewRequester(bringIntoViewRequester),
                     ) {
                         SongListItem(
                             title = song.title,
@@ -209,12 +213,22 @@ fun NowPlayingOverlay(
                             MoveButton(
                                 icon = R.string.fa_caret_up,
                                 enabled = index > 0,
-                                onClick = { onMoveQueue.invoke(index, MoveDirection.UP) },
+                                onClick = {
+                                    onMoveQueue.invoke(index, MoveDirection.UP)
+                                    scope.launch {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
+                                },
                             )
                             MoveButton(
                                 icon = R.string.fa_caret_down,
                                 enabled = index < queue.lastIndex,
-                                onClick = { onMoveQueue.invoke(index, MoveDirection.DOWN) },
+                                onClick = {
+                                    onMoveQueue.invoke(index, MoveDirection.DOWN)
+                                    scope.launch {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
+                                },
                             )
                             Button(
                                 onClick = { onClickMoreItem.invoke(index, song) },
