@@ -707,4 +707,6 @@
     <string name="dim_after_delay">Hämarda ekraani peale viivitust</string>
     <string name="dim_percentage">Hämardamise protsent</string>
     <string name="dim_screen">Hämarda ekraani</string>
+    <string name="photo_albums">Fotoalbumid</string>
+    <string name="no_favorites_found">Ühtegi lemmikut ei leidu!</string>
 </resources>
