@@ -685,4 +685,6 @@
     <string name="dim_after_delay">閒置後調暗螢幕</string>
     <string name="dim_percentage">調暗程度</string>
     <string name="dim_screen">螢幕調暗</string>
+    <string name="no_favorites_found">未添加任何最愛項目！</string>
+    <string name="photo_albums">相簿</string>
 </resources>
