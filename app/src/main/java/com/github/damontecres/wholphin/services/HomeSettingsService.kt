@@ -15,8 +15,8 @@ import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.main.settings.Library
-import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
 import com.github.damontecres.wholphin.ui.playback.getTypeFor
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
@@ -26,6 +26,7 @@ import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetLiveTvChannelsRequestHandler
@@ -65,6 +66,7 @@ import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.UserDto
+import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
@@ -507,7 +509,7 @@ class HomeSettingsService
                     val name =
                         ResProviderStringProvider(
                             R.string.favorite_items_title,
-                            ResStringProvider(favoriteOptions[config.kind]!!),
+                            ResStringProvider(formatTypeName(config.kind)),
                         )
                     HomeRowConfigDisplay(id, name, config)
                 }
@@ -959,68 +961,86 @@ class HomeSettingsService
                     val title =
                         ResProviderStringProvider(
                             R.string.favorite_items_title,
-                            ResStringProvider(favoriteOptions[row.kind]!!),
+                            ResStringProvider(formatTypeName(row.kind)),
                         )
-                    if (row.kind == BaseItemKind.PERSON) {
-                        val request =
-                            GetPersonsRequest(
-                                userId = userDto.id,
-                                limit = limit,
-                                fields = HomeItemFields,
-                                isFavorite = true,
-                                enableImages = true,
-                                enableImageTypes = listOf(ImageType.PRIMARY),
-                            )
-                        GetPersonsHandler
-                            .execute(api, request)
-                            .content.items
-                            .map { BaseItem(it, true) }
-                            .let {
-                                Success(
-                                    title,
-                                    it,
-                                    row.viewOptions,
-                                    showViewMore = it.size >= limit,
-                                )
+                    val resultList =
+                        when (row.kind) {
+                            BaseItemKind.PERSON -> {
+                                val request =
+                                    GetPersonsRequest(
+                                        userId = userDto.id,
+                                        limit = limit,
+                                        fields = HomeItemFields,
+                                        isFavorite = true,
+                                        enableImages = true,
+                                        enableImageTypes = listOf(ImageType.PRIMARY),
+                                    )
+
+                                GetPersonsHandler.execute(api, request).toBaseItems()
                             }
-                    } else {
-                        val fields =
-                            if (row.kind == BaseItemKind.BOX_SET) {
-                                HomeItemFieldsBoxSets
-                            } else {
-                                HomeItemFields
+
+                            BaseItemKind.MUSIC_ARTIST -> {
+                                val request =
+                                    GetArtistsRequest(
+                                        userId = userDto.id,
+                                        limit = limit,
+                                        fields = HomeItemFields,
+                                        isFavorite = true,
+                                    )
+                                if (usePaging) {
+                                    ApiRequestPager(
+                                        api,
+                                        request,
+                                        GetArtistsHandler,
+                                        scope,
+                                        useSeriesForPrimary = row.viewOptions.useSeries,
+                                    ).init()
+                                } else {
+                                    GetArtistsHandler
+                                        .execute(api, request)
+                                        .toBaseItems(row.viewOptions.useSeries)
+                                }
                             }
-                        val request =
-                            GetItemsRequest(
-                                userId = userDto.id,
-                                recursive = true,
-                                limit = limit,
-                                fields = fields,
-                                includeItemTypes = listOf(row.kind),
-                                isFavorite = true,
-                            )
-                        if (usePaging) {
-                            ApiRequestPager(
-                                api,
-                                request,
-                                GetItemsRequestHandler,
-                                scope,
-                                useSeriesForPrimary = row.viewOptions.useSeries,
-                            ).init()
-                        } else {
-                            GetItemsRequestHandler
-                                .execute(api, request)
-                                .content.items
-                                .map { BaseItem(it, row.viewOptions.useSeries) }
-                        }.let {
-                            Success(
-                                title,
-                                it,
-                                row.viewOptions,
-                                rowType = row,
-                                showViewMore = it.size >= limit,
-                            )
+
+                            else -> {
+                                val fields =
+                                    if (row.kind == BaseItemKind.BOX_SET) {
+                                        HomeItemFieldsBoxSets
+                                    } else {
+                                        HomeItemFields
+                                    }
+                                val request =
+                                    GetItemsRequest(
+                                        userId = userDto.id,
+                                        recursive = true,
+                                        limit = limit,
+                                        fields = fields,
+                                        includeItemTypes = listOf(row.kind),
+                                        isFavorite = true,
+                                    )
+                                if (usePaging) {
+                                    ApiRequestPager(
+                                        api,
+                                        request,
+                                        GetItemsRequestHandler,
+                                        scope,
+                                        useSeriesForPrimary = row.viewOptions.useSeries,
+                                    ).init()
+                                } else {
+                                    GetItemsRequestHandler
+                                        .execute(api, request)
+                                        .toBaseItems(row.viewOptions.useSeries)
+                                }
+                            }
                         }
+                    resultList.let {
+                        Success(
+                            title,
+                            it,
+                            row.viewOptions,
+                            rowType = row,
+                            showViewMore = it.size >= limit,
+                        )
                     }
                 }
 
