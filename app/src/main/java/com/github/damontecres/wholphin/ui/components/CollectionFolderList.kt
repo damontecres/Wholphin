@@ -38,7 +38,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -66,7 +65,6 @@ import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.logCoilError
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -225,39 +223,20 @@ fun CollectionFolderListDetails(
         remember(item) {
             item?.imageUrlOverride ?: imageUrlService.getItemImageUrl(item, ImageType.PRIMARY, useSeriesForPrimary = true)
         }
-    val logoImageUrl = rememberLogoUrl(item)
-    var logoError by remember(item?.id) { mutableStateOf(false) }
-    val visibility = titleLogoDisplay.visibility(logoImageUrl != null && !logoError)
-    val showLogo = visibility.showLogo
-    val showTitle = visibility.showTitle
-    val titleBelowImage = visibility.showBoth
+    val visibility = titleLogoDisplay.visibility(rememberLogoUrl(item) != null)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier,
     ) {
-        if (showLogo) {
-            AsyncImage(
-                model = logoImageUrl,
-                contentDescription = item?.title,
-                contentScale = ContentScale.Fit,
-                onError = {
-                    logCoilError(logoImageUrl, it.result)
-                    logoError = true
-                },
-                modifier =
-                    Modifier
-                        .height(HeaderUtils.logoHeight)
-                        .fillMaxWidth(),
-            )
-        } else if (showTitle) {
-            Title(
-                item?.title,
-                Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-        }
+        SimpleTitleOrLogo(
+            item,
+            visibility.showLogo,
+            Modifier
+                .height(HeaderUtils.logoHeight)
+                .fillMaxWidth(),
+        )
 
         AsyncImage(
             model =
@@ -274,7 +253,7 @@ fun CollectionFolderListDetails(
                     .weight(1f),
         )
 
-        if (titleBelowImage) {
+        if (visibility.showBoth) {
             Title(
                 item?.title,
                 Modifier.fillMaxWidth(),
