@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.formatTypeName
+import com.github.damontecres.wholphin.ui.main.settings.HomeRowPresets
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.playback.getTypeFor
 import com.github.damontecres.wholphin.ui.toBaseItems
@@ -293,7 +294,11 @@ class HomeSettingsService
                             HomeRowConfigDisplay(
                                 id = index,
                                 title = title,
-                                config = HomeRowConfig.RecentlyAdded(parentId),
+                                config =
+                                    HomeRowConfig.RecentlyAdded(
+                                        parentId,
+                                        HomeRowPresets.WholphinDefault.getByCollectionType(it.collectionType),
+                                    ),
                             )
                         }
                     }
@@ -409,7 +414,13 @@ class HomeSettingsService
                                                 R.string.recently_added_in,
                                                 it.name ?: "",
                                             ),
-                                        config = HomeRowConfig.RecentlyAdded(it.id),
+                                        config =
+                                            HomeRowConfig.RecentlyAdded(
+                                                it.id,
+                                                HomeRowPresets.WholphinDefault.getByCollectionType(
+                                                    it.collectionType ?: CollectionType.UNKNOWN,
+                                                ),
+                                            ),
                                     )
                                 }
                             } else if (config != null) {

@@ -241,3 +241,35 @@ data class HomeRowViewOptions(
             )
     }
 }
+
+/**
+ * The library, collection, or playlist a row is scoped to, or null if it is not scoped to one.
+ *
+ * The `when` is deliberately exhaustive so that a new [HomeRowConfig] carrying a parent cannot be
+ * added without deciding whether it belongs here.
+ */
+val HomeRowConfig.parentIdOrNull: UUID?
+    get() =
+        when (this) {
+            is HomeRowConfig.ByParent -> parentId
+
+            is HomeRowConfig.Genres -> parentId
+
+            is HomeRowConfig.RecentlyAdded -> parentId
+
+            is HomeRowConfig.RecentlyReleased -> parentId
+
+            is HomeRowConfig.Studios -> parentId
+
+            is HomeRowConfig.Suggestions -> parentId
+
+            is HomeRowConfig.ContinueWatching,
+            is HomeRowConfig.ContinueWatchingCombined,
+            is HomeRowConfig.Favorite,
+            is HomeRowConfig.GetItems,
+            is HomeRowConfig.NextUp,
+            is HomeRowConfig.Recordings,
+            is HomeRowConfig.TvChannels,
+            is HomeRowConfig.TvPrograms,
+            -> null
+        }
