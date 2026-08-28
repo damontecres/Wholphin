@@ -729,4 +729,6 @@
     <string name="dim_after_delay">Scurisci lo schermo dopo un ritardo</string>
     <string name="dim_percentage">Percentuale di oscuramento</string>
     <string name="dim_screen">Scurisci schermo</string>
+    <string name="photo_albums">Album fotografici</string>
+    <string name="no_favorites_found">Nessun preferito trovato!</string>
 </resources>
