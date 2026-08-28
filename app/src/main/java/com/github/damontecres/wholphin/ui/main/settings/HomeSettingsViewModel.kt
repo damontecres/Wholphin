@@ -34,7 +34,6 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.getRecentlyAddedTitle
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
-import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -276,23 +275,7 @@ class HomeSettingsViewModel
         ): Job =
             viewModelScope.launchIO {
                 val viewOptions =
-                    when (library.collectionType) {
-                        CollectionType.MUSIC -> {
-                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
-                        }
-
-                        CollectionType.HOMEVIDEOS,
-                        CollectionType.MUSICVIDEOS,
-                        -> {
-                            HomeRowViewOptions(
-                                aspectRatio = AspectRatio.WIDE,
-                            )
-                        }
-
-                        else -> {
-                            HomeRowViewOptions()
-                        }
-                    }
+                    HomeRowPresets.WholphinDefault.getByCollectionType(library.collectionType)
                 val id = idCounter++
                 val newRow =
                     when (rowType) {

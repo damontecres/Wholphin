@@ -233,6 +233,12 @@ data class HomeRowViewOptions(
                 aspectRatio = AspectRatio.WIDE,
             )
 
+        val musicDefault =
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.SQUARE,
+            )
+
         val liveTvDefault =
             HomeRowViewOptions(
                 heightDp = Cards.HEIGHT_LIVE_TV,
