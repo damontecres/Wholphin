@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -199,18 +200,23 @@ fun AppScreensaverContent(
                     )
                 }
                 if (showTitle) {
-                    Text(
-                        text = currentItem?.title ?: "",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.displaySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    Box(
                         modifier =
                             Modifier
                                 .align(Alignment.BottomStart)
                                 .padding(16.dp)
-                                .fillMaxWidth(),
-                    )
+                                .fillMaxWidth(.5f)
+                                .fillMaxHeight(.3f),
+                    ) {
+                        Text(
+                            text = currentItem?.title ?: "",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.displaySmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.BottomStart),
+                        )
+                    }
                 }
             }
         }
