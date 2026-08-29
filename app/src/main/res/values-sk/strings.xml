@@ -751,4 +751,6 @@
     <string name="dim_after_delay">Stlmiť obrazovku po uplynutí času</string>
     <string name="dim_percentage">Úroveň stlmenia</string>
     <string name="dim_screen">Stlmenie obrazovky</string>
+    <string name="photo_albums">Fotoalbumy</string>
+    <string name="no_favorites_found">Nenašli sa žiadne obľúbené položky!</string>
 </resources>
