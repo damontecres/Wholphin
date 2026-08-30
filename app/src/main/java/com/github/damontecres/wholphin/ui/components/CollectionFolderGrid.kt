@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
@@ -315,6 +316,7 @@ fun CollectionFolderHeader(
         exit = shrinkVertically(),
         modifier = modifier,
     ) {
+        val focusRequester = remember { FocusRequester() }
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth(),
@@ -330,14 +332,13 @@ fun CollectionFolderHeader(
                 modifier =
                     Modifier
                         .padding(end = endPadding)
-                        .focusRestorer()
                         .fillMaxWidth(),
             ) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier.focusRestorer(),
+                    modifier = Modifier.focusRestorer(focusRequester),
                 ) {
                     if (sortOptions.isNotEmpty()) {
                         item {
@@ -345,7 +346,7 @@ fun CollectionFolderHeader(
                                 sortOptions = sortOptions,
                                 current = sortAndDirection,
                                 onSortChange = onSortChange,
-                                modifier = Modifier,
+                                modifier = Modifier.focusRequester(focusRequester),
                             )
                         }
                     }
@@ -356,7 +357,13 @@ fun CollectionFolderHeader(
                                 current = currentFilter,
                                 onFilterChange = onFilterChange,
                                 getPossibleValues = getPossibleFilterValues,
-                                modifier = Modifier.focusRequester(filterButtonFocusRequester),
+                                modifier =
+                                    Modifier
+                                        .focusRequester(filterButtonFocusRequester)
+                                        .ifElse(
+                                            sortOptions.isEmpty(),
+                                            Modifier.focusRequester(focusRequester),
+                                        ),
                                 onShow = onShowFilterDropdown,
                             )
                         }
@@ -366,7 +373,11 @@ fun CollectionFolderHeader(
                             title = R.string.view_options,
                             iconStringRes = R.string.fa_sliders,
                             onClick = onClickShowViewOptions,
-                            modifier = Modifier,
+                            modifier =
+                                Modifier.ifElse(
+                                    sortOptions.isEmpty() && filterOptions.isEmpty(),
+                                    Modifier.focusRequester(focusRequester),
+                                ),
                         )
                     }
                     item {
