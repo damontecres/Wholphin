@@ -77,6 +77,7 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.discover.RequestSeasonsDialog
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -115,6 +116,8 @@ fun SeriesDetails(
 
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    var requestSeasonNumber by remember { mutableStateOf<Int?>(null) }
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState()
 
     val contextActions =
         remember {
@@ -186,7 +189,7 @@ fun SeriesDetails(
             SeriesDetailsContent(
                 preferences = preferences,
                 series = series,
-                seasons = state.seasons,
+                seasons = state.detailsSeasons,
                 trailers = state.trailers,
                 extras = state.extras,
                 people = state.people,
@@ -219,6 +222,10 @@ fun SeriesDetails(
                             canRemoveNextUp = false,
                             actions = contextActions,
                         )
+                },
+                onClickMissingSeason = { seasonNumber ->
+                    viewModel.requestOnClick()
+                    requestSeasonNumber = seasonNumber
                 },
                 overviewOnClick = {
                     overviewDialog = ItemDetailsDialogInfo(series)
@@ -261,6 +268,23 @@ fun SeriesDetails(
                 },
                 actions = contextActions,
             )
+            requestSeasonNumber?.let { seasonNumber ->
+                RequestSeasonsDialog(
+                    id = state.seerrTvDetails?.id ?: -1,
+                    title = state.seerrTvDetails?.name ?: series.title.orEmpty(),
+                    seasons = state.requestSeasons,
+                    seasons4k = state.requestSeasons4k,
+                    request4kEnabled = request4kEnabled,
+                    initialSeasonNumber = seasonNumber,
+                    loading = state.profileLoading,
+                    data = state.requestData,
+                    onSubmit = {
+                        requestSeasonNumber = null
+                        viewModel.request(it)
+                    },
+                    onDismissRequest = { requestSeasonNumber = null },
+                )
+            }
             if (showWatchConfirmation) {
                 ConfirmDialog(
                     title = series.name ?: "",
@@ -324,7 +348,7 @@ private const val DISCOVER_ROW = SIMILAR_ROW + 1
 fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
-    seasons: List<BaseItem?>,
+    seasons: List<SeriesDetailsSeason>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
@@ -336,6 +360,7 @@ fun SeriesDetailsContent(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
+    onClickMissingSeason: (Int) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: (Boolean) -> Unit,
     watchOnClick: () -> Unit,
@@ -512,26 +537,54 @@ fun SeriesDetailsContent(
                         items = seasons,
                         onClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onClickItem.invoke(index, item)
+                            item.jellyfinItem?.let { onClickItem.invoke(index, it) }
+                                ?: onClickMissingSeason(item.seasonNumber)
                         },
                         onLongClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onLongClickItem.invoke(index, item)
+                            item.jellyfinItem?.let { onLongClickItem.invoke(index, it) }
                         },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters[SEASONS_ROW]),
                         cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                            SeasonCard(
-                                item = item,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                imageHeight = Cards.height2x3,
-                                imageWidth = Dp.Unspecified,
-                                showImageOverlay = true,
-                                modifier = mod,
-                            )
+                            if (item?.jellyfinItem != null) {
+                                SeasonCard(
+                                    item = item.jellyfinItem,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                    showImageOverlay = true,
+                                    modifier = mod,
+                                )
+                            } else if (item != null) {
+                                val title =
+                                    if (item.seasonNumber == 0) {
+                                        stringResource(R.string.specials)
+                                    } else {
+                                        stringResource(R.string.tv_season) + " ${item.seasonNumber}"
+                                    }
+                                SeasonCard(
+                                    title = title,
+                                    subtitle = item.seerrSeason?.season?.airDate?.take(4),
+                                    name = title,
+                                    imageUrl = item.imageUrl,
+                                    isFavorite = false,
+                                    isPlayed = false,
+                                    unplayedItemCount = 0,
+                                    playedPercentage = 0.0,
+                                    numberOfVersions = 0,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                    showImageOverlay = true,
+                                    imageAlpha = .45f,
+                                    modifier = mod,
+                                )
+                            }
                         },
                     )
                 }

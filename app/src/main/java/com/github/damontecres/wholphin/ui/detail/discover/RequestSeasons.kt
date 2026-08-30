@@ -66,6 +66,7 @@ fun RequestSeasons(
     data: SeerrRequestData,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
+    initialSeasonNumber: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     var is4k by remember { mutableStateOf(request4kEnabled) }
@@ -95,10 +96,13 @@ fun RequestSeasons(
             )
         }
     val selectedSeasons =
-        remember(seasons) {
+        remember(seasons, initialSeasonNumber) {
             mutableStateSetOf<Int>(
                 *seasons
-                    .filter { season -> season.status == RequestStatus.PENDING }
+                    .filter { season ->
+                        season.status == RequestStatus.PENDING ||
+                            (season.editable && season.season.seasonNumber == initialSeasonNumber)
+                    }
                     .mapNotNull { season -> season.season.seasonNumber }
                     .toTypedArray(),
             )
@@ -390,6 +394,7 @@ fun RequestSeasonsDialog(
     seasons: List<RequestSeason>,
     seasons4k: List<RequestSeason>,
     request4kEnabled: Boolean,
+    initialSeasonNumber: Int? = null,
     onSubmit: (TvRequest) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
@@ -417,6 +422,7 @@ fun RequestSeasonsDialog(
                     seasons = seasons,
                     seasons4k = seasons4k,
                     request4kEnabled = request4kEnabled,
+                    initialSeasonNumber = initialSeasonNumber,
                     onSubmit = onSubmit,
                     modifier =
                         Modifier

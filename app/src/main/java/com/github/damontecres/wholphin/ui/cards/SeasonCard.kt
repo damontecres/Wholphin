@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -50,6 +51,7 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
+    imageAlpha: Float = 1f,
 ) {
     val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
@@ -70,6 +72,7 @@ fun SeasonCard(
         interactionSource = interactionSource,
         showImageOverlay = showImageOverlay,
         aspectRatio = aspectRatio,
+        imageAlpha = imageAlpha,
     )
 }
 
@@ -136,6 +139,7 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = AspectRatios.TALL,
+    imageAlpha: Float = 1f,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     // Do not use `by` here, this way we are Defer reads and recompositions to only when modifier calculates
@@ -170,7 +174,8 @@ fun SeasonCard(
             Box(
                 modifier =
                     Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .alpha(imageAlpha),
             ) {
                 ItemCardImage(
                     imageUrl = imageUrl,
