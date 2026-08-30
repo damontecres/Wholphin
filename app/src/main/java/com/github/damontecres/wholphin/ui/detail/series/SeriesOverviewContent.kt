@@ -42,7 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -122,7 +122,7 @@ fun SeriesOverviewContent(
     val scrollConnection = rememberDelayedNestedScroll()
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
 
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     val tabFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val contentFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val tabs =
