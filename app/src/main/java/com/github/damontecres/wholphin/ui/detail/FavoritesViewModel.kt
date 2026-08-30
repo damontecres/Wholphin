@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetArtistsHandler
@@ -51,6 +52,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.successValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -692,6 +694,26 @@ class FavoritesViewModel
 
             override fun saveViewOptions(viewOptions: ViewOptions) {
                 saveViewOptions(type, viewOptions)
+            }
+
+            override fun onClickRandom() {
+                viewModelScope.launchIO {
+                    try {
+                        collectionStateFor(type)?.let { collectionState ->
+                            val random =
+                                (collectionState.items.successValue as? BlockingList<BaseItem?>)?.randomBlocking()
+                            Timber.d("Got random item: %s", random?.id)
+                            random?.destination()?.let {
+                                navigateTo(random.destination())
+                            }
+                        }
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error getting random")
+                        showToast(context, "Error: ${ex.localizedMessage}}")
+                    }
+                }
             }
         }
     }

@@ -298,6 +298,7 @@ fun CollectionFolderHeader(
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     onClickShowViewOptions: () -> Unit,
     onClickPlayAll: (Boolean) -> Unit,
+    onClickRandom: () -> Unit,
     modifier: Modifier = Modifier,
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
@@ -329,38 +330,43 @@ fun CollectionFolderHeader(
                         .focusRestorer()
                         .fillMaxWidth(),
             ) {
-                if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.focusRestorer(),
-                    ) {
-                        if (sortOptions.isNotEmpty()) {
-                            SortByButton(
-                                sortOptions = sortOptions,
-                                current = sortAndDirection,
-                                onSortChange = onSortChange,
-                                modifier = Modifier,
-                            )
-                        }
-                        if (filterOptions.isNotEmpty()) {
-                            FilterByButton(
-                                filterOptions = filterOptions,
-                                current = currentFilter,
-                                onFilterChange = onFilterChange,
-                                getPossibleValues = getPossibleFilterValues,
-                                modifier = Modifier.focusRequester(filterButtonFocusRequester),
-                                onShow = onShowFilterDropdown,
-                            )
-                        }
-                        ExpandableFaButton(
-                            title = R.string.view_options,
-                            iconStringRes = R.string.fa_sliders,
-                            onClick = onClickShowViewOptions,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.focusRestorer(),
+                ) {
+                    if (sortOptions.isNotEmpty()) {
+                        SortByButton(
+                            sortOptions = sortOptions,
+                            current = sortAndDirection,
+                            onSortChange = onSortChange,
                             modifier = Modifier,
                         )
                     }
+                    if (filterOptions.isNotEmpty()) {
+                        FilterByButton(
+                            filterOptions = filterOptions,
+                            current = currentFilter,
+                            onFilterChange = onFilterChange,
+                            getPossibleValues = getPossibleFilterValues,
+                            modifier = Modifier.focusRequester(filterButtonFocusRequester),
+                            onShow = onShowFilterDropdown,
+                        )
+                    }
+                    ExpandableFaButton(
+                        title = R.string.view_options,
+                        iconStringRes = R.string.fa_sliders,
+                        onClick = onClickShowViewOptions,
+                        modifier = Modifier,
+                    )
+                    ExpandableFaButton(
+                        title = R.string.sort_by_random,
+                        iconStringRes = R.string.fa_dice,
+                        onClick = onClickRandom,
+                        modifier = Modifier,
+                    )
                 }
+
                 if (playEnabled) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
