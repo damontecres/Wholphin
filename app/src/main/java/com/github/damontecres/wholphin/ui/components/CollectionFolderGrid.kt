@@ -8,11 +8,13 @@ import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -326,45 +328,54 @@ fun CollectionFolderHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .padding(start = 16.dp, end = endPadding)
+                        .padding(end = endPadding)
                         .focusRestorer()
                         .fillMaxWidth(),
             ) {
-                Row(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                     modifier = Modifier.focusRestorer(),
                 ) {
                     if (sortOptions.isNotEmpty()) {
-                        SortByButton(
-                            sortOptions = sortOptions,
-                            current = sortAndDirection,
-                            onSortChange = onSortChange,
+                        item {
+                            SortByButton(
+                                sortOptions = sortOptions,
+                                current = sortAndDirection,
+                                onSortChange = onSortChange,
+                                modifier = Modifier,
+                            )
+                        }
+                    }
+                    if (filterOptions.isNotEmpty()) {
+                        item {
+                            FilterByButton(
+                                filterOptions = filterOptions,
+                                current = currentFilter,
+                                onFilterChange = onFilterChange,
+                                getPossibleValues = getPossibleFilterValues,
+                                modifier = Modifier.focusRequester(filterButtonFocusRequester),
+                                onShow = onShowFilterDropdown,
+                            )
+                        }
+                    }
+                    item {
+                        ExpandableFaButton(
+                            title = R.string.view_options,
+                            iconStringRes = R.string.fa_sliders,
+                            onClick = onClickShowViewOptions,
                             modifier = Modifier,
                         )
                     }
-                    if (filterOptions.isNotEmpty()) {
-                        FilterByButton(
-                            filterOptions = filterOptions,
-                            current = currentFilter,
-                            onFilterChange = onFilterChange,
-                            getPossibleValues = getPossibleFilterValues,
-                            modifier = Modifier.focusRequester(filterButtonFocusRequester),
-                            onShow = onShowFilterDropdown,
+                    item {
+                        ExpandableFaButton(
+                            title = R.string.sort_by_random,
+                            iconStringRes = R.string.fa_dice,
+                            onClick = onClickRandom,
+                            modifier = Modifier,
                         )
                     }
-                    ExpandableFaButton(
-                        title = R.string.view_options,
-                        iconStringRes = R.string.fa_sliders,
-                        onClick = onClickShowViewOptions,
-                        modifier = Modifier,
-                    )
-                    ExpandableFaButton(
-                        title = R.string.sort_by_random,
-                        iconStringRes = R.string.fa_dice,
-                        onClick = onClickRandom,
-                        modifier = Modifier,
-                    )
                 }
 
                 if (playEnabled) {

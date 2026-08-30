@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -815,6 +816,7 @@ fun CollectionFolderViewContent(
     focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     var position by rememberInt(savedPosition)
+    var headerHasFocus by rememberSaveable { mutableStateOf(false) }
 
     val contextMenu = rememberContextMenu(preferences, provider)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
@@ -934,7 +936,12 @@ fun CollectionFolderViewContent(
                         onClickPlayAll = gridActions.onClickPlayAll!!,
                         onClickShowViewOptions = { showViewOptions = true },
                         onClickRandom = viewActions::onClickRandom,
-                        modifier = Modifier.focusRequester(headerRowFocusRequester),
+                        modifier =
+                            Modifier
+                                .focusRequester(headerRowFocusRequester)
+                                .onFocusChanged {
+                                    if (it.hasFocus) headerHasFocus = true
+                                },
                         onShowFilterDropdown = { filterDropdownShowing = it },
                         filterButtonFocusRequester = filterButtonFocusRequester,
                     )
@@ -955,16 +962,24 @@ fun CollectionFolderViewContent(
 
                         is DataLoadingState.Success<List<BaseItem?>> -> {
                             LaunchedEffect(Unit) {
+                                Timber.v("headerHasFocus=%s", headerHasFocus)
                                 val focusRequester =
                                     when {
                                         contextMenu.isShowing -> null
                                         filterDropdownShowing -> filterButtonFocusRequester
+                                        headerHasFocus -> headerRowFocusRequester
                                         pager.data.isNotEmpty() -> gridFocusRequester
                                         else -> focusRequesterOnEmpty ?: headerRowFocusRequester
                                     }
                                 focusRequester?.tryRequestFocus()
                             }
-                            Box(Modifier.fillMaxSize()) {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .onFocusChanged {
+                                        if (it.hasFocus) headerHasFocus = false
+                                    },
+                            ) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {
                                     CollectionFolderGrid(
                                         preferences = preferences,
