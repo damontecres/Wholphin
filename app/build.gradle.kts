@@ -65,14 +65,16 @@ kotlin {
     }
 }
 
+private fun Provider<String>.getInt() = get().toInt()
+
 configure<ApplicationExtension> {
     namespace = "com.github.damontecres.wholphin"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.getInt()
 
     defaultConfig {
         applicationId = "com.github.damontecres.wholphin"
-        minSdk = 23
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.getInt()
+        targetSdk = libs.versions.targetSdk.getInt()
         versionCode = gitTags.trim().lines().size
         versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
