@@ -573,7 +573,7 @@ fun SeriesDetailsContent(
                                     imageUrl = item.imageUrl,
                                     isFavorite = false,
                                     isPlayed = false,
-                                    unplayedItemCount = 0,
+                                    unplayedItemCount = item.seerrSeason?.season?.episodeCount ?: 0,
                                     playedPercentage = 0.0,
                                     numberOfVersions = 0,
                                     onClick = onClick,
