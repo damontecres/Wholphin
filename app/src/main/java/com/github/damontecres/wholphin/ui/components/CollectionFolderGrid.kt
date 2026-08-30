@@ -8,13 +8,12 @@ import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -24,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -309,6 +307,7 @@ fun CollectionFolderHeader(
     onFilterChange: (GetItemsFilter) -> Unit = {},
     onShowFilterDropdown: ((Boolean) -> Unit)? = null,
     filterButtonFocusRequester: FocusRequester = remember { FocusRequester() },
+    randomButtonFocusRequester: FocusRequester = remember { FocusRequester() },
 ) {
     AnimatedVisibility(
         showHeader,
@@ -326,77 +325,72 @@ fun CollectionFolderHeader(
             }
             val endPadding =
                 16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
+
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .padding(end = endPadding)
+                        .padding(start = 16.dp, end = endPadding)
                         .fillMaxWidth(),
             ) {
-                LazyRow(
+                Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier.focusRestorer(focusRequester),
+                    modifier = Modifier,
                 ) {
                     if (sortOptions.isNotEmpty()) {
-                        item {
-                            SortByButton(
-                                sortOptions = sortOptions,
-                                current = sortAndDirection,
-                                onSortChange = onSortChange,
-                                modifier = Modifier.focusRequester(focusRequester),
-                            )
-                        }
+                        SortByButton(
+                            sortOptions = sortOptions,
+                            current = sortAndDirection,
+                            onSortChange = onSortChange,
+                            modifier = Modifier.focusRequester(focusRequester),
+                        )
                     }
                     if (filterOptions.isNotEmpty()) {
-                        item {
-                            FilterByButton(
-                                filterOptions = filterOptions,
-                                current = currentFilter,
-                                onFilterChange = onFilterChange,
-                                getPossibleValues = getPossibleFilterValues,
-                                modifier =
-                                    Modifier
-                                        .focusRequester(filterButtonFocusRequester)
-                                        .ifElse(
-                                            sortOptions.isEmpty(),
-                                            Modifier.focusRequester(focusRequester),
-                                        ),
-                                onShow = onShowFilterDropdown,
-                            )
-                        }
-                    }
-                    item {
-                        ExpandableFaButton(
-                            title = R.string.view_options,
-                            iconStringRes = R.string.fa_sliders,
-                            onClick = onClickShowViewOptions,
+                        FilterByButton(
+                            filterOptions = filterOptions,
+                            current = currentFilter,
+                            onFilterChange = onFilterChange,
+                            getPossibleValues = getPossibleFilterValues,
                             modifier =
-                                Modifier.ifElse(
-                                    sortOptions.isEmpty() && filterOptions.isEmpty(),
-                                    Modifier.focusRequester(focusRequester),
-                                ),
+                                Modifier
+                                    .focusRequester(filterButtonFocusRequester)
+                                    .ifElse(
+                                        sortOptions.isEmpty(),
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
+                            onShow = onShowFilterDropdown,
                         )
                     }
-                    item {
-                        ExpandableFaButton(
-                            title = R.string.sort_by_random,
-                            iconStringRes = R.string.fa_dice,
-                            onClick = onClickRandom,
-                            modifier = Modifier,
-                            enabled = listIsNotEmpty,
-                        )
-                    }
+                    ExpandableFaButton(
+                        title = R.string.view_options,
+                        iconStringRes = R.string.fa_sliders,
+                        onClick = onClickShowViewOptions,
+                        modifier =
+                            Modifier.ifElse(
+                                sortOptions.isEmpty() && filterOptions.isEmpty(),
+                                Modifier.focusRequester(focusRequester),
+                            ),
+                    )
                 }
 
-                if (playEnabled) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.focusRestorer(),
-                    ) {
+                Spacer(Modifier.weight(1f))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier,
+                ) {
+                    ExpandableFaButton(
+                        title = R.string.sort_by_random,
+                        iconStringRes = R.string.fa_dice,
+                        onClick = onClickRandom,
+                        modifier = Modifier.focusRequester(randomButtonFocusRequester),
+                        enabled = listIsNotEmpty,
+                    )
+
+                    if (playEnabled) {
                         ExpandablePlayButton(
                             title = R.string.play,
                             resume = Duration.ZERO,

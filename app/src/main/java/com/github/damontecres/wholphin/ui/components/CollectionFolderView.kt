@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -816,13 +815,16 @@ fun CollectionFolderViewContent(
     focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     var position by rememberInt(savedPosition)
-    var headerHasFocus by rememberSaveable { mutableStateOf(false) }
+
+    // Track if leaving page due to clicking the random button so focus can be restored there
+    var clickedRandom by rememberSaveable { mutableStateOf(false) }
 
     val contextMenu = rememberContextMenu(preferences, provider)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var filterDropdownShowing by remember { mutableStateOf(false) }
     val headerRowFocusRequester = remember { FocusRequester() }
     val filterButtonFocusRequester = remember { FocusRequester() }
+    val randomButtonFocusRequester = remember { FocusRequester() }
 
     val gridActions =
         remember(actions) {
@@ -936,17 +938,14 @@ fun CollectionFolderViewContent(
                         filterOptions = filterOptions,
                         onClickPlayAll = gridActions.onClickPlayAll!!,
                         onClickShowViewOptions = { showViewOptions = true },
-                        onClickRandom = viewActions::onClickRandom,
-                        modifier =
-                            Modifier
-                                .focusRequester(headerRowFocusRequester)
-                                .onFocusChanged {
-                                    // Since we want to remember when coming back to the page, only store
-                                    // when it gains focus, the grid's onFocusChanged will clear it
-                                    if (it.hasFocus) headerHasFocus = true
-                                },
+                        onClickRandom = {
+                            clickedRandom = true
+                            viewActions.onClickRandom()
+                        },
+                        modifier = Modifier.focusRequester(headerRowFocusRequester),
                         onShowFilterDropdown = { filterDropdownShowing = it },
                         filterButtonFocusRequester = filterButtonFocusRequester,
+                        randomButtonFocusRequester = randomButtonFocusRequester,
                     )
 
                     when (val pager = state.items) {
@@ -965,24 +964,18 @@ fun CollectionFolderViewContent(
 
                         is DataLoadingState.Success<List<BaseItem?>> -> {
                             LaunchedEffect(Unit) {
-                                Timber.v("headerHasFocus=%s", headerHasFocus)
                                 val focusRequester =
                                     when {
                                         contextMenu.isShowing -> null
                                         filterDropdownShowing -> filterButtonFocusRequester
-                                        headerHasFocus -> headerRowFocusRequester
+                                        clickedRandom -> randomButtonFocusRequester
                                         pager.data.isNotEmpty() -> gridFocusRequester
                                         else -> focusRequesterOnEmpty ?: headerRowFocusRequester
                                     }
                                 focusRequester?.tryRequestFocus()
+                                clickedRandom = false
                             }
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .onFocusChanged {
-                                        if (it.hasFocus) headerHasFocus = false
-                                    },
-                            ) {
+                            Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {
                                     CollectionFolderGrid(
                                         preferences = preferences,
