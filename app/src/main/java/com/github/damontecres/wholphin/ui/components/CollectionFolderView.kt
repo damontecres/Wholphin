@@ -916,9 +916,10 @@ fun CollectionFolderViewContent(
                         }
                     }
                     CollectionFolderHeader(
+                        listIsNotEmpty = state.items.successValue?.isNotEmpty() == true,
                         showHeader = showHeader || state.items !is DataLoadingState.Success,
                         showTitle = showTitle,
-                        playEnabled = playEnabled && state.items.successValue?.isNotEmpty() == true,
+                        playEnabled = playEnabled,
                         title = title,
                         sortAndDirection = state.sortAndDirection,
                         onSortChange = {
@@ -940,6 +941,8 @@ fun CollectionFolderViewContent(
                             Modifier
                                 .focusRequester(headerRowFocusRequester)
                                 .onFocusChanged {
+                                    // Since we want to remember when coming back to the page, only store
+                                    // when it gains focus, the grid's onFocusChanged will clear it
                                     if (it.hasFocus) headerHasFocus = true
                                 },
                         onShowFilterDropdown = { filterDropdownShowing = it },

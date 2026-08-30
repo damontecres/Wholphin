@@ -290,6 +290,7 @@ data class GridClickActions(
 
 @Composable
 fun CollectionFolderHeader(
+    listIsNotEmpty: Boolean,
     showHeader: Boolean,
     showTitle: Boolean,
     playEnabled: Boolean,
@@ -374,6 +375,7 @@ fun CollectionFolderHeader(
                             iconStringRes = R.string.fa_dice,
                             onClick = onClickRandom,
                             modifier = Modifier,
+                            enabled = listIsNotEmpty,
                         )
                     }
                 }
@@ -389,11 +391,13 @@ fun CollectionFolderHeader(
                             resume = Duration.ZERO,
                             icon = Icons.Default.PlayArrow,
                             onClick = { onClickPlayAll.invoke(false) },
+                            enabled = listIsNotEmpty,
                         )
                         ExpandableFaButton(
                             title = R.string.shuffle,
                             iconStringRes = R.string.fa_shuffle,
                             onClick = { onClickPlayAll.invoke(true) },
+                            enabled = listIsNotEmpty,
                         )
                     }
                 }
