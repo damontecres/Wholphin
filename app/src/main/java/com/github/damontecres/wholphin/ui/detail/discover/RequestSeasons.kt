@@ -67,6 +67,13 @@ data class RequestSeason(
     val editable: Boolean,
 )
 
+private fun RequestSeason.isRelevantToRequest(): Boolean =
+    editable ||
+        status == RequestStatus.PENDING ||
+        status == RequestStatus.APPROVED ||
+        availability == SeerrAvailability.PENDING ||
+        availability == SeerrAvailability.PROCESSING
+
 @Composable
 fun RequestSeasons(
     id: Int,
@@ -82,13 +89,6 @@ fun RequestSeasons(
     var is4k by remember { mutableStateOf(request4kEnabled) }
     val seasons = remember(is4k, seasons, seasons4k) { if (is4k) seasons4k else seasons }
 
-    val allSeasonNumbers =
-        remember(seasons) {
-            seasons
-                .filter { it.editable }
-                .mapNotNull { it.season.seasonNumber }
-                .toSet()
-        }
     val availableSeasons =
         remember(seasons) {
             mutableStateSetOf(
@@ -144,7 +144,16 @@ fun RequestSeasons(
         }
     val remainingSeasons =
         remember(seasons, initialSeasonNumber) {
-            seasons.filterNot { it.season.seasonNumber == initialSeasonNumber }
+            seasons.filter {
+                it.season.seasonNumber != initialSeasonNumber && it.isRelevantToRequest()
+            }
+        }
+    val allSeasonNumbers =
+        remember(remainingSeasons) {
+            remainingSeasons
+                .filter { it.editable }
+                .mapNotNull { it.season.seasonNumber }
+                .toSet()
         }
     var moreSeasonsExpanded by rememberSaveable(initialSeasonNumber) {
         mutableStateOf(initialSeasonNumber == null)
@@ -223,69 +232,71 @@ fun RequestSeasons(
                     )
                 }
             }
-            item {
-                RequestSectionHeader(
-                    title =
-                        stringResource(
-                            if (initialSeasonNumber == null) {
-                                R.string.tv_seasons
-                            } else {
-                                R.string.more_seasons
-                            },
-                        ),
-                    expanded = moreSeasonsExpanded,
-                    onClick = {
-                        moreSeasonsExpanded = !moreSeasonsExpanded
-                        if (moreSeasonsExpanded) {
-                            scope.launch {
-                                yield()
-                                seasonsContentBringIntoViewRequester.bringIntoView()
-                            }
-                        }
-                    },
-                )
-            }
-            if (moreSeasonsExpanded) {
+            if (remainingSeasons.isNotEmpty()) {
                 item {
-                    val isSelected = selectedSeasons.containsAll(allSeasonNumbers)
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .bringIntoViewRequester(seasonsContentBringIntoViewRequester),
-                    ) {
-                        ClickSwitch(
-                            label = stringResource(R.string.select_all),
-                            checked = isSelected,
-                            onClick = {
-                                if (isSelected) {
-                                    selectedSeasons.removeAll(allSeasonNumbers)
+                    RequestSectionHeader(
+                        title =
+                            stringResource(
+                                if (initialSeasonNumber == null) {
+                                    R.string.tv_seasons
                                 } else {
-                                    selectedSeasons.addAll(allSeasonNumbers)
+                                    R.string.more_seasons
+                                },
+                            ),
+                        expanded = moreSeasonsExpanded,
+                        onClick = {
+                            moreSeasonsExpanded = !moreSeasonsExpanded
+                            if (moreSeasonsExpanded) {
+                                scope.launch {
+                                    yield()
+                                    seasonsContentBringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
+                    )
+                }
+                if (moreSeasonsExpanded) {
+                    item {
+                        val isSelected = selectedSeasons.containsAll(allSeasonNumbers)
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .bringIntoViewRequester(seasonsContentBringIntoViewRequester),
+                        ) {
+                            ClickSwitch(
+                                label = stringResource(R.string.select_all),
+                                checked = isSelected,
+                                onClick = {
+                                    if (isSelected) {
+                                        selectedSeasons.removeAll(allSeasonNumbers)
+                                    } else {
+                                        selectedSeasons.addAll(allSeasonNumbers)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    itemsIndexed(
+                        items = remainingSeasons,
+                        key = { _, season ->
+                            season.season.seasonNumber ?: season.season.id ?: season.hashCode()
+                        },
+                    ) { _, season ->
+                        val seasonNumber = season.season.seasonNumber
+                        val checked = seasonNumber in selectedSeasons || seasonNumber in availableSeasons
+                        SeasonListItem(
+                            season = season,
+                            checked = checked,
+                            onClick = {
+                                if (checked) {
+                                    selectedSeasons.remove(seasonNumber)
+                                } else {
+                                    seasonNumber?.let { selectedSeasons.add(it) }
                                 }
                             },
                         )
                     }
-                }
-                itemsIndexed(
-                    items = remainingSeasons,
-                    key = { _, season ->
-                        season.season.seasonNumber ?: season.season.id ?: season.hashCode()
-                    },
-                ) { _, season ->
-                    val seasonNumber = season.season.seasonNumber
-                    val checked = seasonNumber in selectedSeasons || seasonNumber in availableSeasons
-                    SeasonListItem(
-                        season = season,
-                        checked = checked,
-                        onClick = {
-                            if (checked) {
-                                selectedSeasons.remove(seasonNumber)
-                            } else {
-                                seasonNumber?.let { selectedSeasons.add(it) }
-                            }
-                        },
-                    )
                 }
             }
             item {
