@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
+import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
@@ -403,6 +404,7 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        availability = discoverSeries?.availability,
                         showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
                         bringIntoViewRequester = bringIntoViewRequester,
@@ -719,6 +721,7 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    availability: SeerrAvailability?,
     showLogo: Boolean,
     overviewOnClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester,
@@ -742,11 +745,20 @@ fun SeriesDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(
-                series.ui.quickDetails,
-                null,
-                Modifier.padding(start = HeaderUtils.startPadding),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = HeaderUtils.startPadding),
+            ) {
+                QuickDetails(
+                    series.ui.quickDetails,
+                    null,
+                )
+                when (availability) {
+                    SeerrAvailability.AVAILABLE -> AvailableIndicator()
+                    SeerrAvailability.PARTIALLY_AVAILABLE -> PartiallyAvailableIndicator()
+                    else -> Unit
+                }
+            }
             dto.studios?.let {
                 val studios = remember { series.studioNames }
                 GenreText(
