@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,7 @@ fun SeasonCard(
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
     imageAlpha: Float = 1f,
+    artworkOverlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
@@ -73,6 +75,7 @@ fun SeasonCard(
         showImageOverlay = showImageOverlay,
         aspectRatio = aspectRatio,
         imageAlpha = imageAlpha,
+        artworkOverlay = artworkOverlay,
     )
 }
 
@@ -140,6 +143,7 @@ fun SeasonCard(
     showImageOverlay: Boolean = false,
     aspectRatio: Float = AspectRatios.TALL,
     imageAlpha: Float = 1f,
+    artworkOverlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     // Do not use `by` here, this way we are Defer reads and recompositions to only when modifier calculates
@@ -171,12 +175,7 @@ fun SeasonCard(
                     containerColor = Color.Transparent,
                 ),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .alpha(imageAlpha),
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 ItemCardImage(
                     imageUrl = imageUrl,
                     name = name,
@@ -189,8 +188,10 @@ fun SeasonCard(
                     useFallbackText = false,
                     modifier =
                         Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .alpha(imageAlpha),
                 )
+                artworkOverlay()
             }
         }
         Column(
