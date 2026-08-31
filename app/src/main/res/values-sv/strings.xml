@@ -648,4 +648,5 @@
     <string name="brown">Brun</string>
     <string name="show_visualizer">Visa visualizer</string>
     <string name="show_backdrop">Visa bakgrund</string>
+    <string name="player_backend">Uppspelning backend</string>
 </resources>
