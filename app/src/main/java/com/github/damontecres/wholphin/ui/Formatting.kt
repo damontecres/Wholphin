@@ -308,6 +308,7 @@ fun Resources.formatDuration(duration: Duration): String =
         when {
             hours > 0 && minutes > 0 && seconds > 0 -> getString(R.string.duration_hours_minutes_seconds, hours.toInt(), minutes, seconds)
             hours > 0 && minutes > 0 -> getString(R.string.duration_hours_minutes, hours.toInt(), minutes)
+            hours > 0 && seconds > 0 -> getString(R.string.duration_hours_seconds, hours.toInt(), seconds)
             hours > 0 -> getString(R.string.duration_hours, hours.toInt())
             minutes > 0 && seconds > 0 -> getString(R.string.duration_minutes_seconds, minutes, seconds)
             minutes > 0 -> getString(R.string.duration_minutes, minutes)

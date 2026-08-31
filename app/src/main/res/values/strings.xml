@@ -28,6 +28,7 @@
     <string name="decimal_seconds">%.2f seconds</string>
     <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
     <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
     <string name="duration_minutes_seconds">%1$dm %2$ds</string>
     <string name="duration_hours">%1$dh</string>
     <string name="duration_minutes">%1$dm</string>
