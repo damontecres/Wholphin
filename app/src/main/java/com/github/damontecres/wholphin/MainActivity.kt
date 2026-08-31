@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -62,6 +63,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.theme.colors.PurpleThemeColors
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -228,56 +230,54 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.appStart(intent)
         setContent {
-            Surface(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black),
-            ) {
-                val userPreferences by userPreferencesService.flow.collectAsState(null)
-                if (userPreferences == null) {
-                    // Show loading page if it is taking a while to get app preferences
-                    var showLoading by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(500.milliseconds)
-                        Timber.i("Showing loading page")
-                        showLoading = true
-                    }
-                    if (showLoading) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black),
-                        ) {
-                            LoadingPage()
+            MaterialTheme(colorScheme = PurpleThemeColors.darkScheme) {
+                Surface(Modifier.fillMaxSize()) {
+                    val userPreferences by userPreferencesService.flow.collectAsState(null)
+                    if (userPreferences == null) {
+                        // Show loading page if it is taking a while to get app preferences
+                        var showLoading by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(500.milliseconds)
+                            Timber.i("Showing loading page")
+                            showLoading = true
                         }
-                    }
-                } else {
-                    userPreferences?.let { userPreferences ->
-                        val appPreferences = userPreferences.appPreferences
-                        CoilConfig(
-                            prefs = appPreferences,
-                            okHttpClient = okHttpClient,
-                            debugLogging = false,
-                            enableCache = true,
-                        )
-                        LaunchedEffect(appPreferences.debugLogging) {
-                            DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
-                        }
-                        CompositionLocalProvider(LocalImageUrlService provides imageUrlService) {
-                            WholphinTheme(
-                                true,
-                                appThemeColors = appPreferences.interfacePreferences.appThemeColors,
+                        if (showLoading) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black),
                             ) {
-                                ProvideLocalClock {
-                                    MainContent(
-                                        backStack = setupNavigationManager.backStack,
-                                        navigationManager = navigationManager,
-                                        userPreferences = userPreferences,
-                                        backdropService = backdropService,
-                                        screensaverService = screensaverService,
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
+                                LoadingPage()
+                            }
+                        }
+                    } else {
+                        userPreferences?.let { userPreferences ->
+                            val appPreferences = userPreferences.appPreferences
+                            CoilConfig(
+                                prefs = appPreferences,
+                                okHttpClient = okHttpClient,
+                                debugLogging = false,
+                                enableCache = true,
+                            )
+                            LaunchedEffect(appPreferences.debugLogging) {
+                                DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
+                            }
+                            CompositionLocalProvider(LocalImageUrlService provides imageUrlService) {
+                                WholphinTheme(
+                                    true,
+                                    appThemeColors = appPreferences.interfacePreferences.appThemeColors,
+                                ) {
+                                    ProvideLocalClock {
+                                        MainContent(
+                                            backStack = setupNavigationManager.backStack,
+                                            navigationManager = navigationManager,
+                                            userPreferences = userPreferences,
+                                            backdropService = backdropService,
+                                            screensaverService = screensaverService,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -439,9 +439,16 @@ class MainActivityViewModel
                         val result = intent?.let { intentService.parseIntent(intent) }
                         when (result) {
                             is IntentResult.Error -> {
-                                setupNavigationManager.navigateTo(SetupDestination.ServerList)
+                                val current = serverRepository.current.value
+                                val destination =
+                                    if (current != null) {
+                                        SetupDestination.UserList(current.server)
+                                    } else {
+                                        SetupDestination.ServerList
+                                    }
+                                setupNavigationManager.navigateTo(destination)
                                 Timber.e("Error parsing intent: %s", result.message)
-                                showToast(context, "Invalid intent: ${result.message}")
+                                showToast(context, result.message)
                                 return@withLock
                             }
 
@@ -505,7 +512,7 @@ class MainActivityViewModel
                                     prefs.currentUserId?.toUUIDOrNull(),
                                 )
                             if (current != null) {
-                                if (current.user.hasPin || current.user.requireLogin) {
+                                if (current.user.isProtected) {
                                     setupNavigationManager.navigateTo(
                                         SetupDestination.UserList(
                                             current.server,

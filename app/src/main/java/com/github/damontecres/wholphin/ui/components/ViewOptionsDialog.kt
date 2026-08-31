@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -313,3 +314,27 @@ enum class ViewOptionsType {
     LIST,
     DENSE_LIST,
 }
+
+val BaseItemKind.defaultViewOptions: ViewOptions
+    get() =
+        when (this) {
+            BaseItemKind.AUDIO,
+            BaseItemKind.MUSIC_ALBUM,
+            BaseItemKind.MUSIC_ARTIST,
+            BaseItemKind.PLAYLIST,
+            -> ViewOptionsSquare
+
+            BaseItemKind.EPISODE,
+            BaseItemKind.VIDEO,
+            BaseItemKind.MUSIC_VIDEO,
+            BaseItemKind.PHOTO,
+            BaseItemKind.PHOTO_ALBUM,
+            BaseItemKind.TV_CHANNEL,
+            BaseItemKind.LIVE_TV_CHANNEL,
+            BaseItemKind.PROGRAM,
+            BaseItemKind.TV_PROGRAM,
+            BaseItemKind.LIVE_TV_PROGRAM,
+            -> ViewOptionsWide
+
+            else -> ViewOptionsPoster
+        }

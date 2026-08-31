@@ -206,7 +206,7 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
             }
 
             CollectionType.TVSHOWS -> {
-                listOf(BaseItemKind.SERIES)
+                listOf(BaseItemKind.SERIES, BaseItemKind.SEASON, BaseItemKind.EPISODE)
             }
 
             CollectionType.HOMEVIDEOS -> {
@@ -221,6 +221,10 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 )
             }
 
+            CollectionType.MUSICVIDEOS -> {
+                listOf(BaseItemKind.MUSIC_VIDEO)
+            }
+
             CollectionType.BOXSETS -> {
                 listOf(BaseItemKind.BOX_SET)
             }
@@ -229,7 +233,33 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 listOf(BaseItemKind.PLAYLIST)
             }
 
-            else -> {
+            CollectionType.PHOTOS -> {
+                listOf(BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
+            }
+
+            CollectionType.LIVETV -> {
+                listOf(
+                    BaseItemKind.TV_CHANNEL,
+                    BaseItemKind.LIVE_TV_CHANNEL,
+                    BaseItemKind.PROGRAM,
+                    BaseItemKind.TV_PROGRAM,
+                    BaseItemKind.LIVE_TV_PROGRAM,
+                )
+            }
+
+            CollectionType.TRAILERS -> {
+                listOf(BaseItemKind.TRAILER)
+            }
+
+            CollectionType.BOOKS -> {
+                listOf(BaseItemKind.BOOK)
+            }
+
+            CollectionType.FOLDERS -> {
+                listOf(BaseItemKind.FOLDER)
+            }
+
+            CollectionType.UNKNOWN -> {
                 listOf()
             }
         }

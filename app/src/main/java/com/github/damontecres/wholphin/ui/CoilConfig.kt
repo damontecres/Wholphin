@@ -9,6 +9,7 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.CacheStrategy
+import coil3.network.ConnectivityChecker
 import coil3.network.NetworkRequest
 import coil3.network.NetworkResponse
 import coil3.network.cachecontrol.CacheControlCacheStrategy
@@ -95,6 +96,8 @@ fun CoilConfig(
                     OkHttpNetworkFetcherFactory(
                         cacheStrategy = { WholphinCacheStrategy(CacheControlCacheStrategy()) },
                         callFactory = { client },
+                        // Disable connectivity checker which may be unreliable for VPNs and/or some versions of Android
+                        connectivityChecker = { ConnectivityChecker { true } },
                     ),
                 )
             }.build()

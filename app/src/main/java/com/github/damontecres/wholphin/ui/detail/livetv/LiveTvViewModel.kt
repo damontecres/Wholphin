@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -26,7 +27,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.roundMinutes
-import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -52,7 +53,6 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
-import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -82,6 +82,7 @@ class LiveTvViewModel
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val liveTvService: LiveTvService,
     ) : ViewModel() {
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
@@ -431,12 +432,10 @@ class LiveTvViewModel
             _programDialogState.update { it.copy(loading = DataLoadingState.Loading) }
             viewModelScope.launchDefault {
                 try {
-                    val result =
-                        api.liveTvApi
-                            .getProgram(programId.toServerString())
-                            .content
-                            .let { BaseItem(it) }
+                    val result = liveTvService.fetchProgramForDialog(programId)
                     _programDialogState.update { it.copy(loading = DataLoadingState.Success(result)) }
+                } catch (ex: CancellationException) {
+                    throw ex
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error fetching program $programId")
                     _programDialogState.update { it.copy(loading = DataLoadingState.Error(ex)) }
@@ -448,16 +447,19 @@ class LiveTvViewModel
             series: Boolean,
             timerId: String?,
         ) {
-            if (timerId != null) {
-                viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                    if (series) {
-                        api.liveTvApi.cancelSeriesTimer(timerId)
-                    } else {
-                        api.liveTvApi.cancelTimer(timerId)
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                try {
+                    val result = liveTvService.cancelRecording(series, timerId)
+                    if (result) {
+                        state.value.let {
+                            refreshPrograms(it.channels, it.programs.range)
+                        }
                     }
-                    state.value.let {
-                        refreshPrograms(it.channels, it.programs.range)
-                    }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error canceling timer %s, series=%s", timerId, series)
+                    showToast(context, "Error: ${ex.localizedMessage}")
                 }
             }
         }
@@ -467,37 +469,16 @@ class LiveTvViewModel
             series: Boolean,
         ) {
             viewModelScope.launchIO {
-                val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
-                if (series) {
-                    api.liveTvApi.createSeriesTimer(d)
-                } else {
-                    val payload =
-                        TimerInfoDto(
-                            id = d.id,
-                            type = d.type,
-                            serverId = d.serverId,
-                            externalId = d.externalId,
-                            channelId = d.channelId,
-                            externalChannelId = d.externalChannelId,
-                            channelName = d.channelName,
-                            programId = d.programId,
-                            externalProgramId = d.externalProgramId,
-                            name = d.name,
-                            overview = d.overview,
-                            startDate = d.startDate,
-                            endDate = d.endDate,
-                            serviceName = d.serviceName,
-                            priority = d.priority,
-                            prePaddingSeconds = d.prePaddingSeconds,
-                            postPaddingSeconds = d.postPaddingSeconds,
-                            isPrePaddingRequired = d.isPrePaddingRequired,
-                            isPostPaddingRequired = d.isPostPaddingRequired,
-                            keepUntil = d.keepUntil,
-                        )
-                    api.liveTvApi.createTimer(payload)
-                }
-                state.value.let {
-                    refreshPrograms(it.channels, it.programs.range)
+                try {
+                    liveTvService.record(programId, series)
+                    state.value.let {
+                        refreshPrograms(it.channels, it.programs.range)
+                    }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error recording %s, series=%s", programId, series)
+                    showToast(context, "Error: ${ex.localizedMessage}")
                 }
             }
         }
