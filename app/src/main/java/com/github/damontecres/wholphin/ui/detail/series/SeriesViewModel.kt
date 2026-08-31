@@ -535,6 +535,7 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val seasons = getSeasons(series, null).await()
                         _state.update { it.copy(seasons = seasons) }
+                        updateSeerrDetails(seasons, state.value.seerrTvDetails)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error updating series")
