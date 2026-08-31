@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -122,7 +121,6 @@ fun SeriesOverviewContent(
     val scrollConnection = rememberDelayedNestedScroll()
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
 
-    val resources = LocalResources.current
     val tabFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val contentFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val tabs =
@@ -131,7 +129,7 @@ fun SeriesOverviewContent(
                 title =
                     StringStringProvider(
                         season?.name
-                            ?: season?.data?.indexNumber?.let { resources.formatSeasonNumber(it) }
+                            ?: season?.data?.indexNumber?.let { formatSeasonNumber(it) }
                             ?: "",
                     ),
                 tabFocusRequester = tabFocusRequesters[index],

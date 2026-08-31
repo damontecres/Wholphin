@@ -79,11 +79,27 @@ fun toLocalDate(date: String?): LocalDate? =
         }
     }
 
+// Falls back to the default format if the application is not initialized (e.g. unit tests)
+private fun formatStringWithFallback(
+    @StringRes resId: Int,
+    defaultFormat: String,
+    vararg args: Any,
+): String {
+    val resources =
+        try {
+            WholphinApplication.instance.resources
+        } catch (_: UninitializedPropertyAccessException) {
+            null
+        }
+    return resources?.getString(resId, *args)
+        ?: String.format(Locale.getDefault(), defaultFormat, *args)
+}
+
 /**
  * Format season & episode numbers using localized string resources.
  * Returns null if [season] or [episode] is missing.
  */
-fun Resources.formatSeasonEpisode(
+fun formatSeasonEpisode(
     season: Int?,
     episode: Int?,
     episodeEnd: Int? = null,
@@ -91,33 +107,30 @@ fun Resources.formatSeasonEpisode(
 ): String? {
     if (season == null || episode == null) return null
     return if (episodeEnd != null) {
-        getString(
-            if (padded) R.string.season_episode_number_padded_range else R.string.season_episode_number_range,
-            season,
-            episode,
-            episodeEnd,
-        )
+        if (padded) {
+            formatStringWithFallback(R.string.season_episode_number_padded_range, "S%1\$02dE%2\$02d-E%3\$02d", season, episode, episodeEnd)
+        } else {
+            formatStringWithFallback(R.string.season_episode_number_range, "S%1\$d E%2\$d-E%3\$d", season, episode, episodeEnd)
+        }
+    } else if (padded) {
+        formatStringWithFallback(R.string.season_episode_number_padded, "S%1\$02dE%2\$02d", season, episode)
     } else {
-        getString(
-            if (padded) R.string.season_episode_number_padded else R.string.season_episode_number,
-            season,
-            episode,
-        )
+        formatStringWithFallback(R.string.season_episode_number, "S%1\$d E%2\$d", season, episode)
     }
 }
 
 /** Compact episode-only label, e.g. `E3`. */
-fun Resources.formatEpisodeNumber(episode: Int): String = getString(R.string.episode_number_short, episode)
+fun formatEpisodeNumber(episode: Int): String = formatStringWithFallback(R.string.episode_number_short, "E%1\$d", episode)
 
 /** Fallback season title when the library has no season name, e.g. `Season 2`. */
-fun Resources.formatSeasonNumber(season: Int): String = getString(R.string.season_number, season)
+fun formatSeasonNumber(season: Int): String = formatStringWithFallback(R.string.season_number, "Season %1\$d", season)
 
 /**
  * If the item has season & episode info, format as localized `S# E#`
  */
 val BaseItemDto.seasonEpisode: String?
     get() =
-        WholphinApplication.instance.resources.formatSeasonEpisode(
+        formatSeasonEpisode(
             parentIndexNumber,
             indexNumber,
             indexNumberEnd,
@@ -128,7 +141,7 @@ val BaseItemDto.seasonEpisode: String?
  */
 val BaseItemDto.seasonEpisodePadded: String?
     get() =
-        WholphinApplication.instance.resources.formatSeasonEpisode(
+        formatSeasonEpisode(
             parentIndexNumber,
             indexNumber,
             indexNumberEnd,

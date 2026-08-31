@@ -656,7 +656,7 @@ data class TvProgram(
                         .roundMinutes
                         .let { append(resources.getString(R.string.time_left, resources.formatDuration(it))) }
                 }
-                resources.formatSeasonEpisode(seasonEpisode?.season, seasonEpisode?.episode)?.let {
+                formatSeasonEpisode(seasonEpisode?.season, seasonEpisode?.episode)?.let {
                     dot()
                     append(it)
                 }

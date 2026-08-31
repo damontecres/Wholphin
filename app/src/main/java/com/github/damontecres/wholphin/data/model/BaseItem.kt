@@ -112,9 +112,7 @@ data class BaseItem(
     val ui =
         BaseItemUi(
             episodeCornerText =
-                data.indexNumber?.let {
-                    WholphinApplication.instance.resources.formatEpisodeNumber(it)
-                }
+                data.indexNumber?.let { formatEpisodeNumber(it) }
                     ?: data.premiereDate?.let(::formatDateTime),
             episodeUnplayedCornerText =
                 if (type == BaseItemKind.SERIES ||
@@ -122,9 +120,7 @@ data class BaseItem(
                     type == BaseItemKind.EPISODE ||
                     type == BaseItemKind.BOX_SET
                 ) {
-                    data.indexNumber?.let {
-                        WholphinApplication.instance.resources.formatEpisodeNumber(it)
-                    }
+                    data.indexNumber?.let { formatEpisodeNumber(it) }
                         ?: data.userData
                             ?.unplayedItemCount
                             ?.takeIf { it > 0 }
