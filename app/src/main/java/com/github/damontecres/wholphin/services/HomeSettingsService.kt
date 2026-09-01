@@ -38,7 +38,6 @@ import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
-import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,7 +56,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -330,12 +328,10 @@ class HomeSettingsService
             val userDto by api.userApi.getUserById(userId)
             val config = userDto.configuration ?: DefaultUserConfiguration
             val libraries =
-                api.userViewsApi
-                    .getUserViews(userId = userId)
-                    .content.items
-                    .filter {
-                        it.collectionType in supportedHomeCollectionTypes &&
-                            it.id !in config.latestItemsExcludes
+                navDrawerService
+                    .getAllUserLibraries(userId, userDto.tvAccess)
+                    .filterNot {
+                        it.itemId in config.latestItemsExcludes
                     }
 
             return if (customPrefs.isNotEmpty()) {
@@ -420,7 +416,7 @@ class HomeSettingsService
                                             ),
                                         config =
                                             HomeRowConfig.RecentlyAdded(
-                                                parentId = library.id,
+                                                parentId = library.itemId,
                                                 viewOptions = viewOptions,
                                             ),
                                     )

@@ -33,14 +33,7 @@ val supportedCollectionTypes =
         CollectionType.MUSICVIDEOS,
         CollectionType.FOLDERS,
         CollectionType.MUSIC,
-        null, // Mixed
-    )
-
-val supportedHomeCollectionTypes =
-    setOf(
-        CollectionType.MOVIES,
-        CollectionType.TVSHOWS,
-        CollectionType.HOMEVIDEOS,
+        CollectionType.PHOTOS,
         null, // Mixed
     )
 
