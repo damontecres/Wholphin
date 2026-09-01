@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -41,6 +44,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -71,9 +75,11 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -101,6 +107,7 @@ import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.roundSeconds
@@ -402,6 +409,22 @@ class PlaylistViewModel
                 }
             }
         }
+
+        fun onMoveItem(
+            index: Int,
+            itemId: UUID,
+            direction: MoveDirection,
+        ) {
+            viewModelScope.launchIO {
+                val newIndex = index + if (direction == MoveDirection.UP) -1 else 1
+                api.playlistsApi.moveItem(
+                    playlistId = this@PlaylistViewModel.itemId.toServerString(),
+                    itemId = itemId.toServerString(),
+                    newIndex = newIndex,
+                )
+                (state.value.items as? ApiRequestPager<*>)?.refreshPagesAfter(index - 1)
+            }
+        }
     }
 
 @Immutable
@@ -527,11 +550,11 @@ fun PlaylistDetails(
                 play(0, it, shuffle)
             }
         },
-        onLongClickIndex = { index, item ->
+        onShowContextMenu = { index, item, fromLongClick ->
             showContextMenu =
                 if (item.type == BaseItemKind.AUDIO) {
                     ContextMenu.ForMusic(
-                        fromLongClick = true,
+                        fromLongClick = fromLongClick,
                         item = item,
                         index = index,
                         canDelete = viewModel.canDelete(item, preferences.appPreferences),
@@ -541,7 +564,7 @@ fun PlaylistDetails(
                     )
                 } else {
                     ContextMenu.ForBaseItem(
-                        fromLongClick = true,
+                        fromLongClick = fromLongClick,
                         item = item,
                         index = index,
                         chosenStreams = null,
@@ -558,6 +581,8 @@ fun PlaylistDetails(
         filterAndSort = state.filterAndSort,
         onFilterAndSortChange = viewModel::loadItems,
         getPossibleFilterValues = viewModel::getFilterOptionValues,
+        canEdit = state.canEdit,
+        onMoveItem = viewModel::onMoveItem,
         modifier = modifier,
     )
     showContextMenu?.let { contextMenu ->
@@ -600,13 +625,15 @@ fun PlaylistDetailsContent(
     items: List<BaseItem?>,
     musicState: MusicServiceState,
     onClickIndex: (Int, BaseItem) -> Unit,
-    onLongClickIndex: (Int, BaseItem) -> Unit,
+    onShowContextMenu: (Int, BaseItem, Boolean) -> Unit,
     onClickPlay: (shuffle: Boolean) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    onMoveItem: (Int, UUID, MoveDirection) -> Unit,
     filterAndSort: FilterAndSort,
     onFilterAndSortChange: (GetItemsFilter, SortAndDirection) -> Unit,
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     loadingState: LoadingState,
+    canEdit: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var savedIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -671,13 +698,15 @@ fun PlaylistDetailsContent(
                         savedIndex = index
                         item?.let { onClickIndex.invoke(index, item) }
                     },
-                    onLongClickItem = { index, item ->
+                    onShowContextMenu = { index, item, fromLongClick ->
                         savedIndex = index
-                        item?.let { onLongClickIndex.invoke(index, item) }
+                        item?.let { onShowContextMenu.invoke(index, item, fromLongClick) }
                     },
+                    canMove = canEdit && filterAndSort.sortAndDirection.sort == ItemSortBy.DEFAULT,
+                    onMoveItem = onMoveItem,
                     modifier =
                         Modifier
-                            .padding(horizontal = 16.dp)
+                            .padding(start = 16.dp)
                             .weight(1f)
                             .focusRequester(focusRequester),
                 )
@@ -772,11 +801,14 @@ fun PlaylistItems(
     items: List<BaseItem?>,
     musicState: MusicServiceState,
     playButtonFocusRequester: FocusRequester,
+    canMove: Boolean,
+    onMoveItem: (Int, UUID, MoveDirection) -> Unit,
     onFocusItem: (Int, BaseItem?) -> Unit,
     onClickItem: (Int, BaseItem?) -> Unit,
-    onLongClickItem: (Int, BaseItem?) -> Unit,
+    onShowContextMenu: (Int, BaseItem?, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     when (loadingState) {
         is LoadingState.Error -> {
             ErrorMessage(loadingState, modifier)
@@ -813,7 +845,7 @@ fun PlaylistItems(
                                 onClickItem.invoke(index, item)
                             },
                             onLongClick = {
-                                onLongClickItem.invoke(index, item)
+                                onShowContextMenu.invoke(index, item, true)
                             },
                             isPlaying =
                                 equalsNotNull(
@@ -821,19 +853,32 @@ fun PlaylistItems(
                                     item?.id,
                                 ),
                             isQueued = item?.id in musicState.queuedIds,
+                            canMove = canMove,
+                            moveUpAllowed = index > 0,
+                            moveDownAllowed = index < items.lastIndex,
+                            onClickMove = { direction ->
+                                item?.let { onMoveItem.invoke(index, item.id, direction) }
+                                when (direction) {
+                                    MoveDirection.UP -> focusManager.moveFocus(FocusDirection.Up)
+                                    MoveDirection.DOWN -> focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            },
+                            onClickMore = { onShowContextMenu.invoke(index, item, false) },
                             modifier =
                                 Modifier
+                                    .animateItem()
                                     .ifElse(
                                         item?.type != BaseItemKind.AUDIO,
                                         Modifier.height(80.dp),
                                     ).onFocusChanged {
-                                        if (it.isFocused) {
+                                        if (it.hasFocus) {
                                             onFocusItem(index, item)
                                         }
-                                    }.focusProperties {
-                                        left = playButtonFocusRequester
-                                        previous = playButtonFocusRequester
                                     },
+//                                    .focusProperties {
+//                                        left = playButtonFocusRequester
+//                                        previous = playButtonFocusRequester
+//                                    },
                         )
                     }
                 }
@@ -863,6 +908,11 @@ fun PlaylistItem(
     index: Int,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    canMove: Boolean,
+    moveUpAllowed: Boolean,
+    moveDownAllowed: Boolean,
+    onClickMove: (MoveDirection) -> Unit,
+    onClickMore: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     isPlaying: Boolean = false,
@@ -872,97 +922,145 @@ fun PlaylistItem(
     val imageWidth = 160.dp
     val density = LocalDensity.current
     val imageWidthPx = remember(imageWidth, density) { with(density) { imageWidth.roundToPx() } }
-    ListItem(
-        selected = false,
-        onClick = onClick,
-        onLongClick = onLongClick,
-        interactionSource = interactionSource,
-        headlineContent = {
-            Text(
-                text = item?.title ?: "",
-                modifier = Modifier.enableMarquee(focused),
-            )
-        },
-        supportingContent = {
-            Text(
-                text = item?.subtitle ?: "",
-                modifier = Modifier.enableMarquee(focused),
-            )
-        },
-        trailingContent = {
-            val duration =
-                when (item?.type) {
-                    BaseItemKind.AUDIO -> {
-                        item.data.runTimeTicks
-                            ?.ticks
-                            ?.roundSeconds
-                    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = 40.dp, max = 88.dp),
+    ) {
+        ListItem(
+            selected = false,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
+            headlineContent = {
+                Text(
+                    text = item?.title ?: "",
+                    modifier = Modifier.enableMarquee(focused),
+                )
+            },
+            supportingContent = {
+                Text(
+                    text = item?.subtitle ?: "",
+                    modifier = Modifier.enableMarquee(focused),
+                )
+            },
+            trailingContent = {
+                val duration =
+                    when (item?.type) {
+                        BaseItemKind.AUDIO -> {
+                            item.data.runTimeTicks
+                                ?.ticks
+                                ?.roundSeconds
+                        }
 
-                    else -> {
-                        item
-                            ?.data
-                            ?.runTimeTicks
-                            ?.ticks
-                            ?.roundMinutes
+                        else -> {
+                            item
+                                ?.data
+                                ?.runTimeTicks
+                                ?.ticks
+                                ?.roundMinutes
+                        }
+                    }
+                duration?.let { duration ->
+                    val now by LocalClock.current.now
+                    val context = LocalContext.current
+                    val endTimeStr =
+                        remember(item, now, context) {
+                            val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
+                            formatTime(context, endTime)
+                        }
+                    val resources = LocalResources.current
+                    val durationText =
+                        remember(resources, duration) { resources.formatDuration(duration) }
+                    Column {
+                        Text(
+                            text = durationText,
+                        )
+                        if (item?.type != BaseItemKind.AUDIO) {
+                            Text(
+                                text = stringResource(R.string.ends_at, endTimeStr),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
-            duration?.let { duration ->
-                val now by LocalClock.current.now
-                val context = LocalContext.current
-                val endTimeStr =
-                    remember(item, now, context) {
-                        val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
-                        formatTime(context, endTime)
-                    }
-                val resources = LocalResources.current
-                val durationText =
-                    remember(resources, duration) { resources.formatDuration(duration) }
-                Column {
+            },
+            leadingContent = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
                     Text(
-                        text = durationText,
+                        text = "${index + 1}.",
+                        style = MaterialTheme.typography.labelLarge,
                     )
-                    if (item?.type != BaseItemKind.AUDIO) {
-                        Text(
-                            text = stringResource(R.string.ends_at, endTimeStr),
-                            style = MaterialTheme.typography.bodySmall,
+                    if (item?.type == BaseItemKind.AUDIO) {
+                        MusicQueueMarker(
+                            isPlaying = isPlaying,
+                            isQueued = isQueued,
+                        )
+                    } else {
+                        ItemCardImage(
+                            item = item,
+                            name = item?.name,
+                            showOverlay = true,
+                            favorite = item?.data?.userData?.isFavorite ?: false,
+                            watched = item?.data?.userData?.played ?: false,
+                            unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
+                            watchedPercent = 0.0,
+                            numberOfVersions = item?.data?.mediaSourceCount ?: 0,
+                            modifier = Modifier.width(imageWidth),
+                            useFallbackText = false,
+                            fillWidth = imageWidthPx,
                         )
                     }
                 }
-            }
-        },
-        leadingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Text(
-                    text = "${index + 1}.",
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                if (item?.type == BaseItemKind.AUDIO) {
-                    MusicQueueMarker(
-                        isPlaying = isPlaying,
-                        isQueued = isQueued,
+            },
+            modifier = Modifier.weight(1f),
+        )
+        val contentHeight = 24.dp
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.wrapContentWidth(),
+        ) {
+            if (canMove) {
+                Button(
+                    onClick = { onClickMove.invoke(MoveDirection.UP) },
+                    enabled = moveUpAllowed,
+                    contentHeight = contentHeight,
+                ) {
+                    Text(
+                        text = stringResource(R.string.fa_caret_up),
+                        fontFamily = FontAwesome,
                     )
-                } else {
-                    ItemCardImage(
-                        item = item,
-                        name = item?.name,
-                        showOverlay = true,
-                        favorite = item?.data?.userData?.isFavorite ?: false,
-                        watched = item?.data?.userData?.played ?: false,
-                        unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
-                        watchedPercent = 0.0,
-                        numberOfVersions = item?.data?.mediaSourceCount ?: 0,
-                        modifier = Modifier.width(imageWidth),
-                        useFallbackText = false,
-                        fillWidth = imageWidthPx,
+                }
+                Button(
+                    onClick = { onClickMove.invoke(MoveDirection.DOWN) },
+                    enabled = moveDownAllowed,
+                    contentHeight = contentHeight,
+                ) {
+                    Text(
+                        text = stringResource(R.string.fa_caret_down),
+                        fontFamily = FontAwesome,
                     )
                 }
             }
-        },
-        modifier = modifier,
-    )
+            Button(
+                onClick = onClickMore,
+                enabled = true,
+                contentHeight = contentHeight,
+            ) {
+                Text(
+                    text = stringResource(R.string.fa_ellipsis_vertical),
+                    fontFamily = FontAwesome,
+                )
+            }
+        }
+    }
 }
 
 @Composable
