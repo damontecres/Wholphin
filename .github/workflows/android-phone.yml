@@ -1,0 +1,31 @@
+name: Android phone APK
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx8g -XX:MaxMetaspaceSize=512m'"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0 # Need the tags to build
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Build ARM64 phone APK
+        run: ./gradlew assembleDefaultDebug --no-daemon
+      - name: Upload ARM64 phone APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Wholphin-phone-arm64-v8a
+          path: app/build/outputs/apk/default/debug/*-arm64-v8a.apk
+          if-no-files-found: error
+          compression-level: 0
