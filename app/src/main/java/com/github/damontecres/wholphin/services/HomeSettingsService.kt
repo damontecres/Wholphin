@@ -7,11 +7,13 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
+import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
@@ -280,20 +282,25 @@ class HomeSettingsService
 
             val includedIds =
                 libraries
-                    .mapIndexed { index, it ->
-                        val parentId = it.itemId
-                        val title = getRecentlyAddedTitle(it.name)
-                        if (it.collectionType == CollectionType.LIVETV) {
+                    .mapIndexed { index, library ->
+                        val parentId = library.itemId
+                        val title = getRecentlyAddedTitle(library.name)
+                        if (library.collectionType == CollectionType.LIVETV) {
                             HomeRowConfigDisplay(
                                 id = index,
                                 title = ResStringProvider(R.string.watch_live),
                                 config = HomeRowConfig.TvPrograms(),
                             )
                         } else {
+                            val viewOptions = viewOptionsForCollectionType(library.collectionType)
                             HomeRowConfigDisplay(
                                 id = index,
                                 title = title,
-                                config = HomeRowConfig.RecentlyAdded(parentId),
+                                config =
+                                    HomeRowConfig.RecentlyAdded(
+                                        parentId = parentId,
+                                        viewOptions = viewOptions,
+                                    ),
                             )
                         }
                     }
@@ -401,15 +408,21 @@ class HomeSettingsService
                                     }
                                 }
                             if (sectionType == HomeSectionType.LATEST_MEDIA) {
-                                libraries.map {
+                                libraries.map { library ->
+                                    val viewOptions =
+                                        viewOptionsForCollectionType(library.collectionType)
                                     HomeRowConfigDisplay(
                                         id = id++,
                                         title =
                                             ResArgStringProvider(
                                                 R.string.recently_added_in,
-                                                it.name ?: "",
+                                                library.name ?: "",
                                             ),
-                                        config = HomeRowConfig.RecentlyAdded(it.id),
+                                        config =
+                                            HomeRowConfig.RecentlyAdded(
+                                                parentId = library.id,
+                                                viewOptions = viewOptions,
+                                            ),
                                     )
                                 }
                             } else if (config != null) {
@@ -1261,3 +1274,28 @@ private val Library?.itemFields: List<ItemFields>
         }
 
 private val HomeItemFieldsBoxSets get() = HomeItemFields + listOf(ItemFields.CHILD_COUNT)
+
+fun viewOptionsForCollectionType(collectionType: CollectionType?): HomeRowViewOptions =
+    when (collectionType) {
+        CollectionType.MUSIC,
+        -> HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
+
+        CollectionType.PHOTOS,
+        CollectionType.HOMEVIDEOS,
+        CollectionType.MUSICVIDEOS,
+        CollectionType.TRAILERS,
+        -> HomeRowViewOptions(aspectRatio = AspectRatio.WIDE)
+
+        CollectionType.LIVETV,
+        -> HomeRowViewOptions.liveTvDefault
+
+        CollectionType.MOVIES,
+        CollectionType.TVSHOWS,
+        CollectionType.BOXSETS,
+        CollectionType.BOOKS,
+        CollectionType.PLAYLISTS,
+        CollectionType.FOLDERS,
+        CollectionType.UNKNOWN,
+        null,
+        -> HomeRowViewOptions()
+    }
