@@ -123,6 +123,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
+import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -173,9 +175,47 @@ class PlaylistViewModel
                             .getItem(itemId)
                             .content
                             .let { BaseItem(it, false) }
-                    state.update { it.copy(playlist = playlist) }
+                    val user = serverRepository.currentUser
+                    val canEdit =
+                        user?.let { user ->
+                            try {
+                                val permission by api.playlistsApi.getPlaylistUser(itemId, user.id)
+                                permission.canEdit
+                            } catch (ex: CancellationException) {
+                                throw ex
+                            } catch (ex: InvalidStatusException) {
+                                if (ex.status == 404) {
+                                    // Server will return this if no permission exists
+                                    Timber.w(
+                                        "User doesn't have permission to edit playlist %s",
+                                        itemId,
+                                    )
+                                } else {
+                                    Timber.e(
+                                        ex,
+                                        "Error checking user permission for playlist %s",
+                                        itemId,
+                                    )
+                                }
+                                false
+                            } catch (ex: Exception) {
+                                Timber.e(
+                                    ex,
+                                    "Error checking user permission for playlist %s",
+                                    itemId,
+                                )
+                                false
+                            }
+                        } ?: false
+                    state.update {
+                        it.copy(
+                            playlist = playlist,
+                            canEdit = canEdit,
+                        )
+                    }
+
                     val libraryDisplayInfo =
-                        serverRepository.currentUser?.let { user ->
+                        user?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)
                         }
                     val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
@@ -384,6 +424,7 @@ data class PlaylistDetailsState(
                 ),
         ),
     val loading: LoadingState = LoadingState.Pending,
+    val canEdit: Boolean = false,
 )
 
 @Composable
@@ -496,7 +537,7 @@ fun PlaylistDetails(
                         canDelete = viewModel.canDelete(item, preferences.appPreferences),
                         canRemoveFromQueue = false,
                         actions = musicContextActions,
-                        showRemoveFromPlaylist = true,
+                        showRemoveFromPlaylist = state.canEdit,
                     )
                 } else {
                     ContextMenu.ForBaseItem(
@@ -510,7 +551,7 @@ fun PlaylistDetails(
                         canRemoveContinueWatching = false,
                         canRemoveNextUp = false,
                         actions = contextActions,
-                        showRemoveFromPlaylist = true,
+                        showRemoveFromPlaylist = state.canEdit,
                     )
                 }
         },
