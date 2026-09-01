@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Names should be prefixed with 'fa_' and use the icon name from FontAwesome -->
+    <!-- Uses v6 of FontAwesome: https://fontawesome.com/v6/icons/classic/solid/<name> -->
+    <!-- Value is '&#x' then the unicode value, then semicolon -->
     <string name="fa_tag" translatable="false">&#xf02b;</string>
     <string name="fa_user" translatable="false">&#xf007;</string>
     <string name="fa_location_dot" translatable="false">&#xf3c5;</string>
@@ -57,4 +60,5 @@
     <string name="fa_repeat" translatable="false">&#xf363;</string>
     <string name="fa_compact_disc" translatable="false">&#xf51f;</string>
     <string name="fa_xmark" translatable="false">&#xf00d;</string>
+    <string name="fa_dice" translatable="false">&#xf522;</string>
 </resources>

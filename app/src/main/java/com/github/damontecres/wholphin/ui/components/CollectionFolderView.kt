@@ -65,6 +65,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetArtistsHandler
@@ -78,6 +79,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -260,6 +262,24 @@ class CollectionFolderViewModel
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
                 if (!viewOptions.showBackdrop) {
                     backdropService.clearBackdrop()
+                }
+            }
+        }
+
+        override fun onClickRandom() {
+            viewModelScope.launchIO {
+                try {
+                    val random =
+                        (state.value.items.successValue as? BlockingList<BaseItem?>)?.randomBlocking()
+                    Timber.d("Got random item: %s", random?.id)
+                    random?.destination()?.let {
+                        navigateTo(random.destination())
+                    }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting random")
+                    showToast(context, "Error: ${ex.localizedMessage}}")
                 }
             }
         }
@@ -767,6 +787,11 @@ interface CollectionFolderViewActions {
     suspend fun positionOfLetter(letter: Char): Int?
 
     fun saveViewOptions(viewOptions: ViewOptions)
+
+    /**
+     * Navigate to a random item
+     */
+    fun onClickRandom()
 }
 
 @Composable
@@ -791,11 +816,15 @@ fun CollectionFolderViewContent(
 ) {
     var position by rememberInt(savedPosition)
 
+    // Track if leaving page due to clicking the random button so focus can be restored there
+    var clickedRandom by rememberSaveable { mutableStateOf(false) }
+
     val contextMenu = rememberContextMenu(preferences, provider)
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var filterDropdownShowing by remember { mutableStateOf(false) }
     val headerRowFocusRequester = remember { FocusRequester() }
     val filterButtonFocusRequester = remember { FocusRequester() }
+    val randomButtonFocusRequester = remember { FocusRequester() }
 
     val gridActions =
         remember(actions) {
@@ -889,9 +918,10 @@ fun CollectionFolderViewContent(
                         }
                     }
                     CollectionFolderHeader(
+                        listIsNotEmpty = state.items.successValue?.isNotEmpty() == true,
                         showHeader = showHeader || state.items !is DataLoadingState.Success,
                         showTitle = showTitle,
-                        playEnabled = playEnabled && state.items.successValue?.isNotEmpty() == true,
+                        playEnabled = playEnabled,
                         title = title,
                         sortAndDirection = state.sortAndDirection,
                         onSortChange = {
@@ -908,9 +938,14 @@ fun CollectionFolderViewContent(
                         filterOptions = filterOptions,
                         onClickPlayAll = gridActions.onClickPlayAll!!,
                         onClickShowViewOptions = { showViewOptions = true },
+                        onClickRandom = {
+                            clickedRandom = true
+                            viewActions.onClickRandom()
+                        },
                         modifier = Modifier.focusRequester(headerRowFocusRequester),
                         onShowFilterDropdown = { filterDropdownShowing = it },
                         filterButtonFocusRequester = filterButtonFocusRequester,
+                        randomButtonFocusRequester = randomButtonFocusRequester,
                     )
 
                     when (val pager = state.items) {
@@ -933,10 +968,12 @@ fun CollectionFolderViewContent(
                                     when {
                                         contextMenu.isShowing -> null
                                         filterDropdownShowing -> filterButtonFocusRequester
+                                        clickedRandom -> randomButtonFocusRequester
                                         pager.data.isNotEmpty() -> gridFocusRequester
                                         else -> focusRequesterOnEmpty ?: headerRowFocusRequester
                                     }
                                 focusRequester?.tryRequestFocus()
+                                clickedRandom = false
                             }
                             Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {
