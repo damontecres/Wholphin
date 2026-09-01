@@ -48,6 +48,7 @@ sealed interface ContextMenu {
         val canRemoveContinueWatching: Boolean,
         val canRemoveNextUp: Boolean,
         val actions: ContextMenuActions,
+        val showRemoveFromPlaylist: Boolean = false,
     ) : ContextMenu
 
     data class ForPerson(
@@ -63,6 +64,7 @@ sealed interface ContextMenu {
         val canDelete: Boolean,
         val canRemoveFromQueue: Boolean,
         val actions: MusicContextActions,
+        val showRemoveFromPlaylist: Boolean = false,
     ) : ContextMenu
 
     data class ForQueue(
@@ -87,6 +89,7 @@ data class ContextMenuActions(
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
     val onClickAddToQueue: (BaseItem) -> Unit = {},
+    val onRemoveFromPlaylist: (UUID) -> Unit = {},
 )
 
 data class PersonContextActions(
@@ -109,6 +112,7 @@ data class MusicContextActions(
     val onClickGoToArtist: (UUID) -> Unit = {
         navigateTo.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
     },
+    val onRemoveFromPlaylist: (UUID) -> Unit = {},
 )
 
 data class QueueContextActions(
@@ -205,6 +209,7 @@ fun ContextMenu(
                 canDelete = contextMenu.canDelete,
                 canRemoveContinueWatching = contextMenu.canRemoveContinueWatching,
                 canRemoveNextUp = contextMenu.canRemoveNextUp,
+                showRemoveFromPlaylist = contextMenu.showRemoveFromPlaylist,
                 actions = actions,
                 onChooseVersion = {
                     chooseVersion =
@@ -330,6 +335,7 @@ private fun buildContextMenuItems(
     canDelete: Boolean,
     canRemoveContinueWatching: Boolean,
     canRemoveNextUp: Boolean,
+    showRemoveFromPlaylist: Boolean,
     actions: ContextMenuActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
@@ -475,6 +481,17 @@ private fun buildContextMenuItems(
                     dismissOnClick = true,
                 ) {
                     actions.onClickAddToQueue(item)
+                },
+            )
+        }
+        if (showRemoveFromPlaylist) {
+            add(
+                DialogItem(
+                    text = R.string.remove_from_playlist,
+                    iconStringRes = R.string.fa_circle_xmark,
+                    dismissOnClick = true,
+                ) {
+                    actions.onRemoveFromPlaylist.invoke(item.id)
                 },
             )
         }
@@ -782,6 +799,17 @@ fun buildContextForMusic(
                     dismissOnClick = true,
                 ) {
                     actions.onClickAddToQueue(item)
+                },
+            )
+        }
+        if (music.showRemoveFromPlaylist) {
+            add(
+                DialogItem(
+                    text = R.string.remove_from_playlist,
+                    iconStringRes = R.string.fa_circle_xmark,
+                    dismissOnClick = true,
+                ) {
+                    actions.onRemoveFromPlaylist.invoke(item.id)
                 },
             )
         }

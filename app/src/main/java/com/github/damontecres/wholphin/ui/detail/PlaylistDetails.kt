@@ -70,6 +70,7 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.BasicDialog
@@ -146,6 +147,7 @@ class PlaylistViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaReportService: MediaReportService,
         private val filterOptionCache: FilterOptionCache,
+        private val playlistCreator: PlaylistCreator,
         @Assisted itemId: UUID,
     ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
@@ -333,6 +335,15 @@ class PlaylistViewModel
         fun sendMediaReport(itemId: UUID) {
             viewModelScope.launchDefault { mediaReportService.sendReportFor(itemId) }
         }
+
+        fun removeFromPlaylist(itemId: UUID) {
+            viewModelScope.launchIO {
+                playlistCreator.removeFromServerPlaylist(
+                    playlistId = this@PlaylistViewModel.itemId,
+                    itemId = itemId,
+                )
+            }
+        }
     }
 
 @Immutable
@@ -418,6 +429,7 @@ fun PlaylistDetails(
                 },
                 onClickRemoveFromQueue = { _, _ -> },
                 onDeleteItem = viewModel::deleteItem,
+                onRemoveFromPlaylist = viewModel::removeFromPlaylist,
             )
         }
     val contextActions =
@@ -438,6 +450,7 @@ fun PlaylistDetails(
                 onChooseTracks = {},
                 onClearChosenStreams = {},
                 onClickRemoveFromNextUp = {},
+                onRemoveFromPlaylist = viewModel::removeFromPlaylist,
             )
         }
 
@@ -465,6 +478,7 @@ fun PlaylistDetails(
                         canDelete = viewModel.canDelete(item, preferences.appPreferences),
                         canRemoveFromQueue = false,
                         actions = musicContextActions,
+                        showRemoveFromPlaylist = true,
                     )
                 } else {
                     ContextMenu.ForBaseItem(
@@ -477,6 +491,7 @@ fun PlaylistDetails(
                         canRemoveContinueWatching = false,
                         canRemoveNextUp = false,
                         actions = contextActions,
+                        showRemoveFromPlaylist = true,
                     )
                 }
         },
