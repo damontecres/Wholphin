@@ -41,6 +41,7 @@ sealed interface ContextMenu {
     data class ForBaseItem(
         val fromLongClick: Boolean,
         val item: BaseItem,
+        val index: Int = UNSPECIFIED_INDEX,
         val chosenStreams: ChosenStreams?,
         val showGoTo: Boolean,
         val showStreamChoices: Boolean,
@@ -73,6 +74,10 @@ sealed interface ContextMenu {
         val index: Int,
         val actions: QueueContextActions,
     ) : ContextMenu
+
+    companion object {
+        const val UNSPECIFIED_INDEX = -12
+    }
 }
 
 data class ContextMenuActions(
@@ -89,7 +94,7 @@ data class ContextMenuActions(
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
     val onClickAddToQueue: (BaseItem) -> Unit = {},
-    val onRemoveFromPlaylist: (UUID) -> Unit = {},
+    val onRemoveFromPlaylist: (Int, UUID) -> Unit = { _, _ -> },
 )
 
 data class PersonContextActions(
@@ -112,7 +117,7 @@ data class MusicContextActions(
     val onClickGoToArtist: (UUID) -> Unit = {
         navigateTo.invoke(Destination.MediaItem(itemId = it, type = BaseItemKind.MUSIC_ARTIST))
     },
-    val onRemoveFromPlaylist: (UUID) -> Unit = {},
+    val onRemoveFromPlaylist: (Int, UUID) -> Unit = { _, _ -> },
 )
 
 data class QueueContextActions(
@@ -204,12 +209,7 @@ fun ContextMenu(
                 seriesId = item.data.seriesId,
                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                 canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
-                showGoTo = contextMenu.showGoTo,
-                showStreamChoices = contextMenu.showStreamChoices,
-                canDelete = contextMenu.canDelete,
-                canRemoveContinueWatching = contextMenu.canRemoveContinueWatching,
-                canRemoveNextUp = contextMenu.canRemoveNextUp,
-                showRemoveFromPlaylist = contextMenu.showRemoveFromPlaylist,
+                contextMenu = contextMenu,
                 actions = actions,
                 onChooseVersion = {
                     chooseVersion =
@@ -324,18 +324,13 @@ fun ContextMenu(
 
 private fun buildContextMenuItems(
     resources: Resources,
+    contextMenu: ContextMenu.ForBaseItem,
     item: BaseItem,
     seriesId: UUID?,
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
     canClearChosenStreams: Boolean,
-    showGoTo: Boolean,
-    showStreamChoices: Boolean,
-    canDelete: Boolean,
-    canRemoveContinueWatching: Boolean,
-    canRemoveNextUp: Boolean,
-    showRemoveFromPlaylist: Boolean,
     actions: ContextMenuActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
@@ -346,7 +341,7 @@ private fun buildContextMenuItems(
 ): List<DialogItem> =
     buildList {
         // Songs should not show Go to
-        if (showGoTo && item.type != BaseItemKind.AUDIO) {
+        if (contextMenu.showGoTo && item.type != BaseItemKind.AUDIO) {
             add(
                 DialogItem(
                     resources.getString(R.string.go_to),
@@ -420,7 +415,7 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (showStreamChoices) {
+        if (contextMenu.showStreamChoices) {
             item.data.mediaSources?.letNotEmpty { sources ->
                 val source =
                     sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
@@ -484,14 +479,14 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (showRemoveFromPlaylist) {
+        if (contextMenu.showRemoveFromPlaylist) {
             add(
                 DialogItem(
                     text = R.string.remove_from_playlist,
                     iconStringRes = R.string.fa_circle_xmark,
                     dismissOnClick = true,
                 ) {
-                    actions.onRemoveFromPlaylist.invoke(item.id)
+                    actions.onRemoveFromPlaylist.invoke(contextMenu.index, item.id)
                 },
             )
         }
@@ -504,7 +499,7 @@ private fun buildContextMenuItems(
                 actions.onClickAddPlaylist.invoke(item.id)
             },
         )
-        if (canDelete) {
+        if (contextMenu.canDelete) {
             add(
                 DialogItem(
                     resources.getString(R.string.delete),
@@ -516,7 +511,7 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (canRemoveContinueWatching && !watched && item.playbackPosition > Duration.ZERO) {
+        if (contextMenu.canRemoveContinueWatching && !watched && item.playbackPosition > Duration.ZERO) {
             add(
                 DialogItem(
                     text = R.string.remove_continue_watching,
@@ -527,7 +522,7 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (canRemoveNextUp && item.type == BaseItemKind.EPISODE && item.data.seriesId != null) {
+        if (contextMenu.canRemoveNextUp && item.type == BaseItemKind.EPISODE && item.data.seriesId != null) {
             add(
                 DialogItem(
                     text = R.string.remove_next_up,
@@ -619,7 +614,7 @@ private fun buildContextMenuItems(
                 },
             )
         }
-        if (showStreamChoices && canClearChosenStreams) {
+        if (contextMenu.showStreamChoices && canClearChosenStreams) {
             add(
                 DialogItem(
                     resources.getString(R.string.clear_track_choices),
@@ -809,7 +804,7 @@ fun buildContextForMusic(
                     iconStringRes = R.string.fa_circle_xmark,
                     dismissOnClick = true,
                 ) {
-                    actions.onRemoveFromPlaylist.invoke(item.id)
+                    actions.onRemoveFromPlaylist.invoke(index, item.id)
                 },
             )
         }

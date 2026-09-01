@@ -104,6 +104,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.roundSeconds
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.LocalClock
@@ -117,6 +118,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -336,12 +338,28 @@ class PlaylistViewModel
             viewModelScope.launchDefault { mediaReportService.sendReportFor(itemId) }
         }
 
-        fun removeFromPlaylist(itemId: UUID) {
+        fun removeFromPlaylist(
+            index: Int,
+            itemId: UUID,
+        ) {
             viewModelScope.launchIO {
-                playlistCreator.removeFromServerPlaylist(
-                    playlistId = this@PlaylistViewModel.itemId,
-                    itemId = itemId,
-                )
+                try {
+                    playlistCreator.removeFromServerPlaylist(
+                        playlistId = this@PlaylistViewModel.itemId,
+                        itemId = itemId,
+                    )
+                    (state.value.items as? ApiRequestPager<*>)?.refreshPagesAfter(index)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(
+                        ex,
+                        "Error removing %s from playlist %s",
+                        itemId,
+                        this@PlaylistViewModel.itemId,
+                    )
+                    showToast(context, "Error: ${ex.localizedMessage}")
+                }
             }
         }
     }
@@ -484,6 +502,7 @@ fun PlaylistDetails(
                     ContextMenu.ForBaseItem(
                         fromLongClick = true,
                         item = item,
+                        index = index,
                         chosenStreams = null,
                         showGoTo = true,
                         showStreamChoices = false,
