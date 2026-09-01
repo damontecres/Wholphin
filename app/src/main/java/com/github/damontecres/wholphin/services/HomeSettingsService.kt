@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
@@ -1274,16 +1275,28 @@ private val HomeItemFieldsBoxSets get() = HomeItemFields + listOf(ItemFields.CHI
 fun viewOptionsForCollectionType(collectionType: CollectionType?): HomeRowViewOptions =
     when (collectionType) {
         CollectionType.MUSIC,
-        -> HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
+        -> {
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.SQUARE,
+            )
+        }
 
         CollectionType.PHOTOS,
         CollectionType.HOMEVIDEOS,
         CollectionType.MUSICVIDEOS,
         CollectionType.TRAILERS,
-        -> HomeRowViewOptions(aspectRatio = AspectRatio.WIDE)
+        -> {
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.WIDE,
+            )
+        }
 
         CollectionType.LIVETV,
-        -> HomeRowViewOptions.liveTvDefault
+        -> {
+            HomeRowViewOptions.liveTvDefault
+        }
 
         CollectionType.MOVIES,
         CollectionType.TVSHOWS,
@@ -1293,5 +1306,7 @@ fun viewOptionsForCollectionType(collectionType: CollectionType?): HomeRowViewOp
         CollectionType.FOLDERS,
         CollectionType.UNKNOWN,
         null,
-        -> HomeRowViewOptions()
+        -> {
+            HomeRowViewOptions()
+        }
     }
