@@ -134,6 +134,7 @@ import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
@@ -1003,9 +1004,18 @@ fun PlaylistItem(
                             isQueued = isQueued,
                         )
                     } else {
+                        val imageType =
+                            remember(item) {
+                                if (item != null && ImageType.THUMB in item.data.imageTags.orEmpty()) {
+                                    ImageType.THUMB
+                                } else {
+                                    ImageType.PRIMARY
+                                }
+                            }
                         ItemCardImage(
                             item = item,
                             name = item?.name,
+                            imageType = imageType,
                             showOverlay = true,
                             favorite = item?.data?.userData?.isFavorite ?: false,
                             watched = item?.data?.userData?.played ?: false,
