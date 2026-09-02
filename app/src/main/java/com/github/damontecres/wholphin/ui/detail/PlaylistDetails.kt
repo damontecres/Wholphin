@@ -682,11 +682,16 @@ fun PlaylistDetailsContent(
                     filterAndSort = filterAndSort,
                     onFilterAndSortChange = onFilterAndSortChange,
                     getPossibleFilterValues = getPossibleFilterValues,
+                    filterOptions = DefaultPlaylistItemsOptions,
                     modifier =
                         Modifier
                             .padding(top = 80.dp)
                             .fillMaxWidth(.25f),
                 )
+                val filterCount =
+                    remember(filterAndSort) {
+                        filterAndSort.filter.countFilters(DefaultPlaylistItemsOptions)
+                    }
                 PlaylistItems(
                     loadingState = loadingState,
                     items = items,
@@ -703,7 +708,7 @@ fun PlaylistDetailsContent(
                         savedIndex = index
                         item?.let { onShowContextMenu.invoke(index, item, fromLongClick) }
                     },
-                    canMove = canEdit && filterAndSort.sortAndDirection.sort == ItemSortBy.DEFAULT,
+                    canMove = canEdit && filterAndSort.sortAndDirection.sort == ItemSortBy.DEFAULT && filterCount == 0,
                     onMoveItem = onMoveItem,
                     modifier =
                         Modifier
@@ -724,6 +729,7 @@ fun PlaylistDetailsContent(
 @Composable
 fun PlaylistDetailsHeader(
     focusedItem: BaseItem?,
+    filterOptions: List<ItemFilterBy<*>>,
     onClickPlay: (shuffle: Boolean) -> Unit,
     playButtonFocusRequester: FocusRequester,
     focusRequester: FocusRequester,
@@ -758,7 +764,7 @@ fun PlaylistDetailsHeader(
             modifier = Modifier,
         ) {
             FilterByButton(
-                filterOptions = DefaultPlaylistItemsOptions,
+                filterOptions = filterOptions,
                 current = filterAndSort.filter,
                 onFilterChange = {
                     onFilterAndSortChange.invoke(
