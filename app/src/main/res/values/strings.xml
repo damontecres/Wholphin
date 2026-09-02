@@ -158,6 +158,10 @@
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
+    <string name="specials">Specials</string>
+    <string name="more_seasons">More Seasons</string>
+    <string name="advanced_options">Advanced Options</string>
+    <string name="submit_request">Submit Request</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>

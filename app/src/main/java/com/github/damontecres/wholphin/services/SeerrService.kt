@@ -4,9 +4,12 @@ import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.CreditCast
 import com.github.damontecres.wholphin.api.seerr.model.CreditCrew
 import com.github.damontecres.wholphin.api.seerr.model.MediaInfo
+import com.github.damontecres.wholphin.api.seerr.model.MediaRequest
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.RootFolder
+import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
+import com.github.damontecres.wholphin.api.seerr.model.RequestRequestIdPutRequest
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
 import com.github.damontecres.wholphin.api.seerr.model.ServiceProfile
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
@@ -16,10 +19,12 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
+import com.github.damontecres.wholphin.data.model.RequestStatus
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrProfile
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRequestData
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRootFolder
+import com.github.damontecres.wholphin.ui.detail.discover.TvRequest
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.toLocalDate
@@ -161,6 +166,51 @@ class SeerrService
             } else {
                 null
             }
+
+        suspend fun requestTv(
+            tv: TvDetails,
+            request: TvRequest,
+        ): MediaRequest {
+            val currentUserId = seerrServerRepository.currentUserId.first()
+            val currentRequest =
+                tv.mediaInfo?.requests?.firstOrNull {
+                    it.status == RequestStatus.PENDING.status &&
+                        it.requestedBy?.id == currentUserId
+                }
+            val serverId =
+                when {
+                    request.profileId == null && request.folder == null -> null
+                    request.is4k -> request.data.server4kId
+                    else -> request.data.serverId
+                }
+            return if (currentRequest != null) {
+                api.requestApi.requestRequestIdPut(
+                    requestId = currentRequest.id.toString(),
+                    requestRequestIdPutRequest =
+                        RequestRequestIdPutRequest(
+                            is4k = request.is4k,
+                            mediaType = RequestRequestIdPutRequest.MediaType.TV,
+                            seasons = request.seasons,
+                            serverId = serverId,
+                            profileId = request.profileId,
+                            rootFolder = request.folder,
+                        ),
+                )
+            } else {
+                api.requestApi.requestPost(
+                    RequestPostRequest(
+                        is4k = request.is4k,
+                        mediaId = request.tvId,
+                        mediaType = RequestPostRequest.MediaType.TV,
+                        seasons = request.seasons,
+                        serverId = serverId,
+                        profileId = request.profileId,
+                        rootFolder = request.folder,
+                        tags = emptyList(),
+                    ),
+                )
+            }
+        }
 
         suspend fun createImageUrl(
             imageType: ImageType,
