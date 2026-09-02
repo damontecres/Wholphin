@@ -15,10 +15,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions.Companion.genreDefault
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 
 data class HomeRowPresets(
@@ -57,6 +59,48 @@ data class HomeRowPresets(
             CollectionType.PLAYLISTS,
             CollectionType.FOLDERS,
             -> HomeRowViewOptions()
+        }
+
+    fun getByItemType(type: BaseItemKind): HomeRowViewOptions =
+        when (type) {
+            BaseItemKind.MOVIE,
+            BaseItemKind.BOX_SET,
+            -> movieLibrary
+
+            BaseItemKind.SERIES,
+            BaseItemKind.SEASON,
+            -> tvLibrary
+
+            BaseItemKind.EPISODE -> continueWatching
+
+            BaseItemKind.VIDEO,
+            BaseItemKind.MUSIC_VIDEO,
+            BaseItemKind.PHOTO,
+            BaseItemKind.PHOTO_ALBUM,
+            -> videoLibrary
+
+            BaseItemKind.PLAYLIST -> playlist
+
+            BaseItemKind.PERSON -> movieLibrary
+
+            BaseItemKind.MUSIC_ARTIST,
+            BaseItemKind.MUSIC_ALBUM,
+            BaseItemKind.AUDIO,
+            -> musicLibrary
+
+            BaseItemKind.TV_CHANNEL,
+            BaseItemKind.LIVE_TV_CHANNEL,
+            BaseItemKind.PROGRAM,
+            BaseItemKind.TV_PROGRAM,
+            BaseItemKind.LIVE_TV_PROGRAM,
+            -> liveTv
+
+            BaseItemKind.GENRE,
+            BaseItemKind.MUSIC_GENRE,
+            BaseItemKind.STUDIO,
+            -> genreDefault.copy(heightDp = genreSize)
+
+            else -> movieLibrary
         }
 
     companion object {

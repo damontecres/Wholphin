@@ -1,6 +1,10 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.Manifest
 import android.content.res.Resources
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -67,6 +71,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import timber.log.Timber
 
 @Composable
 fun SwitchServerContent(
@@ -294,10 +299,31 @@ private fun AddServerDialog(
     val state by viewModel.state.collectAsState()
     var showEnterAddress by remember { mutableStateOf(false) }
 
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            if (isGranted) {
+                viewModel.discoverServers()
+            } else {
+                showEnterAddress = true
+            }
+        }
+
     LaunchedEffect(Unit) {
         viewModel.clearAddServerState()
         if (!showEnterAddress) {
-            viewModel.discoverServers()
+            if (viewModel.hasPermission) {
+                viewModel.discoverServers()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                permissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+            } else {
+                Timber.w(
+                    "No ACCESS_LOCAL_NETWORK permission, but API <%s: %s",
+                    Build.VERSION_CODES.CINNAMON_BUN,
+                    Build.VERSION.SDK_INT,
+                )
+            }
         }
     }
 
