@@ -709,7 +709,12 @@ fun PlaylistDetailsContent(
                         Modifier
                             .padding(start = 16.dp)
                             .weight(1f)
-                            .focusRequester(focusRequester),
+                            .focusRequester(focusRequester)
+                            .focusProperties {
+                                onExit = {
+                                    playButtonFocusRequester.tryRequestFocus()
+                                }
+                            },
                 )
             }
         }
@@ -832,10 +837,7 @@ fun PlaylistItems(
                                     .surfaceColorAtElevation(1.dp)
                                     .copy(alpha = .75f),
                                 shape = RoundedCornerShape(16.dp),
-                            ).focusProperties {
-                                left = playButtonFocusRequester
-                                previous = playButtonFocusRequester
-                            }.focusGroup()
+                            ).focusGroup()
                             .focusRestorer(),
                 ) {
                     itemsIndexed(items) { index, item ->
@@ -876,10 +878,6 @@ fun PlaylistItems(
                                             onFocusItem(index, item)
                                         }
                                     },
-//                                    .focusProperties {
-//                                        left = playButtonFocusRequester
-//                                        previous = playButtonFocusRequester
-//                                    },
                         )
                     }
                 }
