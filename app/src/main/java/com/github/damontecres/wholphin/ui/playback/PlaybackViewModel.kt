@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.gt
@@ -152,6 +153,7 @@ class PlaybackViewModel
         private val imageUrlService: ImageUrlService,
         private val screensaverService: ScreensaverService,
         private val musicService: MusicService,
+        private val strmFileHandler: StrmFileHandler,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -436,9 +438,19 @@ class PlaybackViewModel
         ): Boolean =
             withContext(WholphinDispatchers.IO) {
                 val item =
-                    when (playlistItem) {
-                        is PlaylistItem.Intro -> playlistItem.item
-                        is PlaylistItem.Media -> playlistItem.item
+                    playlistItem.let {
+                        var item =
+                            when (playlistItem) {
+                                is PlaylistItem.Intro -> playlistItem.item
+                                is PlaylistItem.Media -> playlistItem.item
+                            }
+                        try {
+                            item = strmFileHandler.resolveStrm(item)
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "strm file error playing %s", item.id)
+                            return@withContext false
+                        }
+                        item
                     }
 
                 Timber.i("Playing ${item.id}")
