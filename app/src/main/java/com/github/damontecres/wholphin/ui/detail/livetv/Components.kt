@@ -29,6 +29,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.formatSeasonEpisode
 import java.time.LocalDateTime
 
 @Composable
@@ -109,10 +110,15 @@ fun Program(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier,
                 )
+                val seasonEpisodeLabel =
+                    formatSeasonEpisode(
+                        program.seasonEpisode?.season,
+                        program.seasonEpisode?.episode,
+                    )
                 val subtitle =
-                    remember(program) {
+                    remember(program, seasonEpisodeLabel) {
                         listOfNotNull(
-                            program.seasonEpisode?.let { "S${it.season} E${it.episode}" },
+                            seasonEpisodeLabel,
                             program.subtitle,
                         ).joinToString(" - ").ifBlank { null }
                     }
