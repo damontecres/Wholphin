@@ -922,4 +922,5 @@
     <string name="dim_screen">Dim screen</string>
     <string name="photo_albums">Photo albums</string>
     <string name="no_favorites_found">No favorites found!</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
 </resources>
