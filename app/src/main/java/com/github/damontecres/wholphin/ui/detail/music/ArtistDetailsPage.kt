@@ -49,9 +49,9 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.ItemRowFields
@@ -115,7 +115,7 @@ class ArtistViewModel
         navigationManager: NavigationManager,
         mediaManagementService: MediaManagementService,
         val serverRepository: ServerRepository,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
@@ -656,7 +656,7 @@ fun ArtistDetailsPage(
                                                         playlistViewModel.loadPlaylists()
                                                         showPlaylistDialog.makePresent(itemId)
                                                     },
-                                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                                    onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                                                     onDeleteItem = viewModel::deleteItem,
                                                     onChooseVersion = { _, _ -> },
                                                     onChooseTracks = { },
