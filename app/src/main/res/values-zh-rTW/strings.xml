@@ -687,4 +687,11 @@
     <string name="dim_screen">螢幕調暗</string>
     <string name="no_favorites_found">未添加任何最愛項目！</string>
     <string name="photo_albums">相簿</string>
+    <string name="duration_hours_seconds">%1$d小時%2$d分</string>
+    <string name="season_episode_number">第%1$d季 第%2$d集</string>
+    <string name="season_episode_number_range">第%1$d季 第%2$d-%3$d集</string>
+    <string name="season_episode_number_padded">第%1$02d季 第%2$02d集</string>
+    <string name="season_episode_number_padded_range">第%1$02d季 第%2$02d-%3$02d集</string>
+    <string name="episode_number_short">第 %1$d 集</string>
+    <string name="season_number">第 %1$d 季</string>
 </resources>
