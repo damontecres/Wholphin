@@ -26,10 +26,10 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -83,7 +83,7 @@ class HomeRowGridViewModel
         private val mediaManagementService: MediaManagementService,
         private val musicService: MusicService,
         val streamChoiceService: StreamChoiceService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         @Assisted private val title: StringProvider,
         @Assisted private val rowConfig: HomeRowConfig,
     ) : ViewModel(),
@@ -187,7 +187,7 @@ class HomeRowGridViewModel
             }
         }
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {

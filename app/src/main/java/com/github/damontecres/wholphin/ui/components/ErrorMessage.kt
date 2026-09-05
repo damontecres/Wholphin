@@ -13,7 +13,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -24,10 +24,10 @@ import javax.inject.Inject
 class ErrorViewModel
     @Inject
     constructor(
-        private val mediaReportService: MediaReportService,
+        private val serverReportService: ServerReportService,
     ) : ViewModel() {
         fun sendLogs() {
-            viewModelScope.launchIO { mediaReportService.sendAppLogs() }
+            viewModelScope.launchIO { serverReportService.sendAppLogs() }
         }
     }
 

@@ -25,10 +25,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Send media info to the server
+ * Send reports to the server such as media info or app logs
  */
 @Singleton
-class MediaReportService
+class ServerReportService
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -48,17 +48,17 @@ class MediaReportService
         /**
          * Fetch the media info and send it to the server
          */
-        fun sendReportFor(itemId: UUID) {
+        fun sendMediaReportFor(itemId: UUID) {
             ioScope.launchIO(ExceptionHandler(autoToast = true)) {
                 val item = api.userLibraryApi.getItem(itemId = itemId).content
-                sendReportFor(item)
+                sendMediaReportFor(item)
             }
         }
 
         /**
          * Send the media report for the given item
          */
-        suspend fun sendReportFor(item: BaseItemDto) {
+        suspend fun sendMediaReportFor(item: BaseItemDto) {
             val sources =
                 item.mediaSources ?: api.userLibraryApi
                     .getItem(itemId = item.id)

@@ -18,11 +18,11 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -52,7 +52,7 @@ class PreferencesViewModel
         private val serverRepository: ServerRepository,
         private val seerrServerRepository: SeerrServerRepository,
         private val updateChecker: UpdateChecker,
-        private val mediaReportService: MediaReportService,
+        private val serverReportService: ServerReportService,
     ) : ViewModel() {
         val currentUser =
             serverRepository.currentUserFlow.stateIn(
@@ -94,7 +94,7 @@ class PreferencesViewModel
         }
 
         fun sendAppLogs() {
-            viewModelScope.launchIO { mediaReportService.sendAppLogs() }
+            viewModelScope.launchIO { serverReportService.sendAppLogs() }
         }
 
         fun resetSubtitleSettings() {
