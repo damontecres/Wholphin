@@ -43,7 +43,7 @@
     <string name="forced_track">Geforceerd</string>
     <string name="genres">Genres</string>
     <string name="go_to_series">Naar seizoenen</string>
-    <string name="go_to">Naar afspelen</string>
+    <string name="go_to">Naar inhoud</string>
     <string name="hide_controller_timeout">Afspeelbediening verbergen</string>
     <string name="hide_debug_info">Foutopsporingsinformatie verbergen</string>
     <string name="hide">Verbergen</string>
