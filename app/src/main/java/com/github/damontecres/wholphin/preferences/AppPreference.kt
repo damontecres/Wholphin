@@ -454,6 +454,20 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val DoviDeviceCompatibilityPref =
+            AppChoicePreference<AppPreferences, DoviDeviceCompatibilityMode>(
+                title = R.string.dovi_device_compatibility_mode,
+                defaultValue = DoviDeviceCompatibilityMode.DOVI_ALLOW,
+                getter = { it.experimentalPreferences.doviDeviceCompatibilityMode },
+                setter = { prefs, value ->
+                    prefs.updateExperimentalPreferences { doviDeviceCompatibilityMode = value }
+                },
+                displayValues = R.array.dovi_device_compatibility_modes,
+                subtitles = R.array.dovi_device_compatibility_mode_descriptions,
+                indexToValue = { DoviDeviceCompatibilityMode.forNumber(it) ?: DoviDeviceCompatibilityMode.DOVI_ALLOW },
+                valueToIndex = { if (it != DoviDeviceCompatibilityMode.UNRECOGNIZED) it.number else 0 },
+            )
+
         val DecodeAv1 =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.software_decoding_av1,
