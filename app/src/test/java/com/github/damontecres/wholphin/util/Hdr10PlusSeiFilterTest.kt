@@ -185,6 +185,17 @@ class Hdr10PlusSeiFilterTest {
         assertArrayEquals(expected, result)
     }
 
+    @Test
+    fun maskingFilterKeepsTheAccessUnitSize() {
+        val accessUnit = annexB(seiNal(seiMessage(4, HDR10_PLUS_PAYLOAD)), vclNal())
+        val buffer = ByteBuffer.wrap(accessUnit.copyOf())
+
+        val size = Hdr10PlusMaskingFilter().filter(buffer, 0, accessUnit.size)
+
+        assertEquals(accessUnit.size, size)
+        assertArrayEquals(maskTypeByte(accessUnit, START_CODE.size + 2), buffer.array())
+    }
+
     companion object {
         private val START_CODE = byteArrayOf(0, 0, 0, 1)
         private val SHORT_START_CODE = byteArrayOf(0, 0, 1)

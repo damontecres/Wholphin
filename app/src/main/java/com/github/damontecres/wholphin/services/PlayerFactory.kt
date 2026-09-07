@@ -32,7 +32,8 @@ import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
-import com.github.damontecres.wholphin.util.Hdr10PlusMaskingCodecAdapterFactory
+import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
+import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
@@ -281,7 +282,10 @@ class WholphinRenderersFactory(
     ) {
         val videoCodecAdapterFactory =
             if (preferDolbyVisionOverHdr10Plus) {
-                Hdr10PlusMaskingCodecAdapterFactory(codecAdapterFactory)
+                BitstreamFilteringCodecAdapterFactory(
+                    codecAdapterFactory,
+                    listOf(Hdr10PlusMaskingFilter()),
+                )
             } else {
                 codecAdapterFactory
             }

@@ -244,3 +244,23 @@ object Hdr10PlusSeiFilter {
         }
     }
 }
+
+/**
+ * The [BitstreamFilter] form of [Hdr10PlusSeiFilter]. Masking overwrites one byte per message, so
+ * the access unit keeps the size it was handed. Instances count what they masked, which is what
+ * the adapter logs when it is released.
+ */
+class Hdr10PlusMaskingFilter : BitstreamFilter {
+    private var maskedCount = 0
+
+    override fun filter(
+        data: ByteBuffer,
+        offset: Int,
+        size: Int,
+    ): Int {
+        maskedCount += Hdr10PlusSeiFilter.maskHdr10PlusSeiMessages(data, offset, size)
+        return size
+    }
+
+    override fun toString(): String = "HDR10+ SEI masking ($maskedCount messages masked)"
+}
