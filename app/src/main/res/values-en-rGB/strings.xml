@@ -46,4 +46,10 @@
     <string name="born">Born</string>
     <string name="cancel_recording">Cancel Recording</string>
     <string name="cancel_series_recording">Cancel Series Recording</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="cancel">Cancel</string>
+    <string name="chapters">Chapters</string>
+    <string name="choose_stream">Choose %1$s</string>
 </resources>
