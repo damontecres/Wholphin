@@ -649,4 +649,10 @@
     <string name="show_visualizer">Visa visualizer</string>
     <string name="show_backdrop">Visa bakgrund</string>
     <string name="player_backend">Uppspelning backend</string>
+    <string name="season_number">Säsong %1$d</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="duration_hours_seconds">%1$dt %2$ds</string>
+    <string name="blur">Oskärpa</string>
 </resources>
