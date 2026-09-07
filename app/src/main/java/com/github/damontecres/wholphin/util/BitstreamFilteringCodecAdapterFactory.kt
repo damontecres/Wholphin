@@ -18,6 +18,12 @@ import java.nio.ByteBuffer
  * was, removing bytes does not: a filter which drops part of an access unit has to move the bytes
  * it keeps so that they stay contiguous from `offset`, and report the shorter length. The buffer's
  * position and limit are not to be modified.
+ *
+ * The buffer is the decoder's input buffer, so it is direct: `hasArray()` is false and `array()`
+ * throws. Read and write it with the absolute `get(int)` and `put(int, Byte)`, or through a
+ * [ByteBuffer.duplicate] for bulk moves, never through a backing array. The absolute bulk
+ * `put(int, ByteBuffer, int, int)` is API 34 and `minSdk` is 23, so moving bytes means absolute
+ * puts or a duplicate.
  */
 fun interface BitstreamFilter {
     /**
@@ -95,7 +101,7 @@ internal fun applyBitstreamFilters(
  * Filters each input buffer before it is queued. Encrypted samples go through
  * [MediaCodecAdapter.queueSecureInputBuffer] and are forwarded untouched.
  */
-private class BitstreamFilteringCodecAdapter(
+internal class BitstreamFilteringCodecAdapter(
     delegate: MediaCodecAdapter,
     private val filters: List<BitstreamFilter>,
 ) : ForwardingMediaCodecAdapter(delegate) {

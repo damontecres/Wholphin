@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.util
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.ByteBuffer
@@ -30,10 +31,23 @@ class BitstreamFilterChainTest {
     @Test
     fun reportsTheShorterSizeOfAFilterWhichDropsBytes() {
         // What a Dolby Vision profile 7 to 8.1 conversion does: it removes the enhancement layer,
-        // compacts what it keeps and comes out shorter than it went in
-        val dropLastTwo = BitstreamFilter { _, _, size -> size - 2 }
+        // compacts what it keeps and comes out shorter than it went in. The buffer is direct,
+        // like the decoder input buffer a filter is handed on a device: it has no backing array,
+        // so the bytes are moved with absolute gets and puts.
+        val dropsTheThirdAndFourthBytes =
+            BitstreamFilter { data, offset, size ->
+                for (i in 2 until size - 2) {
+                    data.put(offset + i, data.get(offset + i + 2))
+                }
+                size - 2
+            }
+        val target = directBuffer()
 
-        assertEquals(DATA.size - 2, applyBitstreamFilters(listOf(dropLastTwo), buffer(), 0, DATA.size))
+        val size = applyBitstreamFilters(listOf(dropsTheThirdAndFourthBytes), target, 0, DATA.size)
+
+        assertFalse("the test should exercise a buffer without a backing array", target.hasArray())
+        assertEquals(DATA.size - 2, size)
+        assertEquals(listOf<Byte>(1, 2, 5, 6, 7, 8), (0 until size).map { target.get(it) })
     }
 
     @Test
@@ -113,5 +127,10 @@ class BitstreamFilterChainTest {
         private val DATA = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8)
 
         private fun buffer() = ByteBuffer.wrap(DATA.copyOf())
+
+        private fun directBuffer() =
+            ByteBuffer.allocateDirect(DATA.size).also { buffer ->
+                DATA.forEachIndexed { index, byte -> buffer.put(index, byte) }
+            }
     }
 }
