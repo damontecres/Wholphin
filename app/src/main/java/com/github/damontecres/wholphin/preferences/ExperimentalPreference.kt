@@ -83,6 +83,7 @@ val experimentalPreferences =
                         ExperimentalPreference.VideoTunneling,
                         ExperimentalPreference.PreferAc3ForSurround,
                         ExperimentalPreference.DisableAudioOffload,
+                        AppPreference.DoviDeviceCompatibilityPref,
                     ),
             ),
         )
