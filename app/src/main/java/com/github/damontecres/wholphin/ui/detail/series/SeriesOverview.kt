@@ -92,7 +92,7 @@ fun SeriesOverview(
     LaunchedEffect(Unit) {
         if (state.seasons.isNotEmpty()) {
             state.seasons.getOrNull(position.seasonTabIndex)?.let {
-                viewModel.loadEpisodes(it.id)
+                viewModel.loadEpisodes(it.id, it.indexNumber)
             }
         }
     }
@@ -210,7 +210,7 @@ fun SeriesOverview(
                 onChangeSeason = { index ->
                     if (index != position.seasonTabIndex) {
                         state.seasons.getOrNull(index)?.let { season ->
-                            viewModel.loadEpisodes(season.id)
+                            viewModel.loadEpisodes(season.id, season.indexNumber)
                             viewModel.position.update {
                                 SeriesOverviewPosition(index, 0)
                             }
