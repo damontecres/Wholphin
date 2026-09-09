@@ -61,20 +61,7 @@ class DiscoverPersonViewModel
             viewModelScope.launchIO {
                 backdropService.clearBackdrop()
 
-                val credits =
-                    seerrService.api.personApi
-                        .personPersonIdCombinedCreditsGet(personId = item.id)
-                        .let { credits ->
-                            val cast =
-                                credits.cast
-                                    ?.map { seerrService.createDiscoverItem(it) }
-                                    .orEmpty()
-                            val crew =
-                                credits.crew
-                                    ?.map { seerrService.createDiscoverItem(it) }
-                                    .orEmpty()
-                            cast + crew
-                        }
+                val credits = seerrService.personCredits(item.id)
                 this@DiscoverPersonViewModel.credits.update {
                     DataLoadingState.Success(credits)
                 }

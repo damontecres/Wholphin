@@ -124,21 +124,7 @@ class SeerrService
                             }
 
                             BaseItemKind.PERSON -> {
-                                api.personApi
-                                    .personPersonIdCombinedCreditsGet(personId = it)
-                                    .let { credits ->
-                                        val cast =
-                                            credits.cast
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        val crew =
-                                            credits.crew
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        cast + crew
-                                    }
+                                personCredits(it)
                             }
 
                             else -> {
@@ -149,6 +135,24 @@ class SeerrService
             } else {
                 null
             }
+
+        /**
+         * Get the combined movie & TV credits of a person as [DiscoverItem]s
+         *
+         * The two lists returned by the API are merged, de-duplicated by id since a person can be
+         * both cast and crew on the same title, and sorted by release date descending with undated
+         * entries last
+         */
+        suspend fun personCredits(personId: Int): List<DiscoverItem> =
+            api.personApi
+                .personPersonIdCombinedCreditsGet(personId = personId)
+                .let { credits ->
+                    val cast = credits.cast?.map { createDiscoverItem(it) }.orEmpty()
+                    val crew = credits.crew?.map { createDiscoverItem(it) }.orEmpty()
+                    (cast + crew)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.releaseDate }
+                }
 
         suspend fun getTvSeries(item: BaseItem): TvDetails? =
             if (active.first()) {
@@ -424,7 +428,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,
@@ -451,7 +455,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,
