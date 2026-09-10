@@ -61,4 +61,5 @@
     <string name="fa_compact_disc" translatable="false">&#xf51f;</string>
     <string name="fa_xmark" translatable="false">&#xf00d;</string>
     <string name="fa_dice" translatable="false">&#xf522;</string>
+    <string name="fa_circle_xmark" translatable="false">&#xf057;</string>
 </resources>
