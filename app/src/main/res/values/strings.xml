@@ -28,6 +28,7 @@
     <string name="decimal_seconds">%.2f seconds</string>
     <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
     <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
     <string name="duration_minutes_seconds">%1$dm %2$ds</string>
     <string name="duration_hours">%1$dh</string>
     <string name="duration_minutes">%1$dm</string>
@@ -158,6 +159,12 @@
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Season %1$d</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>

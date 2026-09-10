@@ -14,9 +14,9 @@ import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
@@ -55,7 +55,7 @@ class HomeViewModel
         @param:ApplicationContext private val context: Context,
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val navDrawerService: NavDrawerService,
         private val homeSettingsService: HomeSettingsService,
         private val favoriteWatchManager: FavoriteWatchManager,

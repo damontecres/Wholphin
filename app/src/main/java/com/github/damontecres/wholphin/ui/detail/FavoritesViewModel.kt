@@ -18,10 +18,10 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.RememberedTabService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
@@ -89,7 +89,7 @@ class FavoritesViewModel
         private val userPreferencesService: UserPreferencesService,
         private val mediaManagementService: MediaManagementService,
         val streamChoiceService: StreamChoiceService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val filterOptionCache: FilterOptionCache,
         private val rememberedTabService: RememberedTabService,
     ) : ViewModel() {
@@ -590,7 +590,7 @@ class FavoritesViewModel
                 }
             }
 
-            override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+            override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
             override fun updateBackdrop(item: BaseItem) {
                 viewModelScope.launchIO {

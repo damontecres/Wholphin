@@ -9,11 +9,11 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerItemState
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.RememberedTabService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.item
@@ -61,7 +61,7 @@ class TestFavoritesViewModel {
     private val userPreferencesService: UserPreferencesService = mockk()
     private val mediaManagementService: MediaManagementService = mockk()
     private val streamChoiceService: StreamChoiceService = mockk()
-    private val mediaReportService: MediaReportService = mockk()
+    private val serverReportService: ServerReportService = mockk()
     private val filterOptionCache: FilterOptionCache = mockk()
     private val rememberedTabService: RememberedTabService = mockk()
     private val navDrawerService: NavDrawerService = mockk()
@@ -100,7 +100,7 @@ class TestFavoritesViewModel {
             userPreferencesService = userPreferencesService,
             mediaManagementService = mediaManagementService,
             streamChoiceService = streamChoiceService,
-            mediaReportService = mediaReportService,
+            serverReportService = serverReportService,
             filterOptionCache = filterOptionCache,
             rememberedTabService = rememberedTabService,
             navDrawerService = navDrawerService,

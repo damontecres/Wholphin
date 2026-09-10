@@ -46,9 +46,9 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -120,7 +120,7 @@ class CollectionFolderViewModel
         private val mediaManagementService: MediaManagementService,
         private val musicService: MusicService,
         val streamChoiceService: StreamChoiceService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val filterOptionCache: FilterOptionCache,
         @Assisted val itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
@@ -609,7 +609,7 @@ class CollectionFolderViewModel
             index: Int,
         ) = addToQueue(api, musicService, item, index)
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
     }

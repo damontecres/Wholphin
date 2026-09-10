@@ -15,10 +15,10 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
@@ -73,7 +73,7 @@ class SearchViewModel
         private val serverRepository: ServerRepository,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaManagementService: MediaManagementService,
-        private val mediaReportService: MediaReportService,
+        private val serverReportService: ServerReportService,
         private val liveTvService: LiveTvService,
         private val keyValueService: KeyValueService,
         private val navDrawerService: NavDrawerService,
@@ -447,7 +447,7 @@ class SearchViewModel
 
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
         fun fetchProgramForDialog(programId: UUID) {
             _programDialogState.update { it.copy(loading = DataLoadingState.Loading) }

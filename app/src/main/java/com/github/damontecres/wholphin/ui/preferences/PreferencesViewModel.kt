@@ -22,8 +22,8 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UpdateChecker
-import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -36,8 +36,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.ClientInfo
-import org.jellyfin.sdk.model.DeviceInfo
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -53,9 +51,8 @@ class PreferencesViewModel
         val screensaverService: ScreensaverService,
         private val serverRepository: ServerRepository,
         private val seerrServerRepository: SeerrServerRepository,
-        private val deviceInfo: DeviceInfo,
-        private val clientInfo: ClientInfo,
         private val updateChecker: UpdateChecker,
+        private val serverReportService: ServerReportService,
     ) : ViewModel() {
         val currentUser =
             serverRepository.currentUserFlow.stateIn(
@@ -97,7 +94,7 @@ class PreferencesViewModel
         }
 
         fun sendAppLogs() {
-            sendAppLogs(context, api, clientInfo, deviceInfo)
+            viewModelScope.launchIO { serverReportService.sendAppLogs() }
         }
 
         fun resetSubtitleSettings() {

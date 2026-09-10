@@ -79,36 +79,74 @@ fun toLocalDate(date: String?): LocalDate? =
         }
     }
 
+// Falls back to the default format if the application is not initialized (e.g. unit tests)
+private fun formatStringWithFallback(
+    @StringRes resId: Int,
+    defaultFormat: String,
+    vararg args: Any,
+): String {
+    val resources =
+        try {
+            WholphinApplication.instance.resources
+        } catch (_: UninitializedPropertyAccessException) {
+            null
+        }
+    return resources?.getString(resId, *args)
+        ?: String.format(Locale.getDefault(), defaultFormat, *args)
+}
+
 /**
- * If the item has season & episode info, format as `S# E#`
+ * Format season & episode numbers using localized string resources.
+ * Returns null if [season] or [episode] is missing.
+ */
+fun formatSeasonEpisode(
+    season: Int?,
+    episode: Int?,
+    episodeEnd: Int? = null,
+    padded: Boolean = false,
+): String? {
+    if (season == null || episode == null) return null
+    return if (episodeEnd != null) {
+        if (padded) {
+            formatStringWithFallback(R.string.season_episode_number_padded_range, "S%1\$02dE%2\$02d-E%3\$02d", season, episode, episodeEnd)
+        } else {
+            formatStringWithFallback(R.string.season_episode_number_range, "S%1\$d E%2\$d-E%3\$d", season, episode, episodeEnd)
+        }
+    } else if (padded) {
+        formatStringWithFallback(R.string.season_episode_number_padded, "S%1\$02dE%2\$02d", season, episode)
+    } else {
+        formatStringWithFallback(R.string.season_episode_number, "S%1\$d E%2\$d", season, episode)
+    }
+}
+
+/** Compact episode-only label, e.g. `E3`. */
+fun formatEpisodeNumber(episode: Int): String = formatStringWithFallback(R.string.episode_number_short, "E%1\$d", episode)
+
+/** Fallback season title when the library has no season name, e.g. `Season 2`. */
+fun formatSeasonNumber(season: Int): String = formatStringWithFallback(R.string.season_number, "Season %1\$d", season)
+
+/**
+ * If the item has season & episode info, format as localized `S# E#`
  */
 val BaseItemDto.seasonEpisode: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null && indexNumberEnd != null) {
-            "S$parentIndexNumber E$indexNumber-E$indexNumberEnd"
-        } else if (parentIndexNumber != null && indexNumber != null) {
-            "S$parentIndexNumber E$indexNumber"
-        } else {
-            null
-        }
+        formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+        )
 
 /**
- * If the item has season & episode info, format padded as `S## E##`
+ * If the item has season & episode info, format padded as localized `S##E##`
  */
 val BaseItemDto.seasonEpisodePadded: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null) {
-            val season = parentIndexNumber?.toString()?.padStart(2, '0')
-            val episode = indexNumber?.toString()?.padStart(2, '0')
-            val endEpisode = indexNumberEnd?.toString()?.padStart(2, '0')
-            if (endEpisode != null) {
-                "S${season}E$episode-E$endEpisode"
-            } else {
-                "S${season}E$episode"
-            }
-        } else {
-            null
-        }
+        formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+            padded = true,
+        )
 
 val BaseItemDto.seriesProductionYears: String?
     get() =
@@ -274,6 +312,7 @@ fun Resources.formatDuration(duration: Duration): String =
         when {
             hours > 0 && minutes > 0 && seconds > 0 -> getString(R.string.duration_hours_minutes_seconds, hours.toInt(), minutes, seconds)
             hours > 0 && minutes > 0 -> getString(R.string.duration_hours_minutes, hours.toInt(), minutes)
+            hours > 0 && seconds > 0 -> getString(R.string.duration_hours_seconds, hours.toInt(), seconds)
             hours > 0 -> getString(R.string.duration_hours, hours.toInt())
             minutes > 0 && seconds > 0 -> getString(R.string.duration_minutes_seconds, minutes, seconds)
             minutes > 0 -> getString(R.string.duration_minutes, minutes)

@@ -16,7 +16,6 @@ import kotlin.time.Duration
  * Handles [KeyEvent]s during playback on [PlaybackPage]
  */
 class PlaybackKeyHandler(
-    private val isLtr: Boolean,
     private val player: Player,
     private val controlsEnabled: Boolean,
     private val skipWithLeftRight: Boolean,
@@ -53,17 +52,9 @@ class PlaybackKeyHandler(
         if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
-                    if (isLtr) {
-                        seekBy(-seekBack)
-                    } else {
-                        seekBy(seekForward)
-                    }
+                    seekBy(-seekBack)
                 } else if (skipWithLeftRight && isSkipForward(it)) {
-                    if (isLtr) {
-                        seekBy(seekForward)
-                    } else {
-                        seekBy(-seekBack)
-                    }
+                    seekBy(seekForward)
                 } else if (isEnterKey(it) && isDpadSeekVisible()) {
                     // If d-pad seek bar is visible, hide it
                     clearSkipIndicator.invoke()
@@ -142,7 +133,7 @@ class PlaybackKeyHandler(
             return false
         }
 
-        val isBack = if (isLtr) isSkipBack(event) else isSkipForward(event)
+        val isBack = isSkipBack(event)
         return when (event.type) {
             KeyEventType.KeyDown -> {
                 val repeatCount = event.nativeKeyEvent.repeatCount

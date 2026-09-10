@@ -70,11 +70,11 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
@@ -157,7 +157,7 @@ class PlaylistViewModel
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
-        private val mediaReportService: MediaReportService,
+        private val serverReportService: ServerReportService,
         private val filterOptionCache: FilterOptionCache,
         private val playlistCreator: PlaylistCreator,
         @Assisted itemId: UUID,
@@ -383,7 +383,7 @@ class PlaylistViewModel
         }
 
         fun sendMediaReport(itemId: UUID) {
-            viewModelScope.launchDefault { mediaReportService.sendReportFor(itemId) }
+            viewModelScope.launchDefault { serverReportService.sendMediaReportFor(itemId) }
         }
 
         fun removeFromPlaylist(
