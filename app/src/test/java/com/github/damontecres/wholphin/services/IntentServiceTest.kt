@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Intent
 import com.github.damontecres.wholphin.data.CurrentUser
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -68,17 +69,17 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.Success(currentUser)
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns currentUser
 
             val intent = Intent()
             val result = intentService.prepare(intent)
             assertNull(result)
 
-            coVerify { serverRepository.restoreSession(serverId, userId) }
+            coVerify { serverRepository.restoreLastSession() }
         }
 
     @Test
@@ -86,17 +87,17 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = false
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.Success(currentUser)
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns currentUser
 
             val intent = Intent()
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 0) { serverRepository.tryChangeUser(serverId, userId) }
         }
 
     @Test
@@ -104,17 +105,17 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(protectedCurrentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns null
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.ServerOnly(protectedCurrentUser.server)
 
             val intent = Intent()
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 0) { serverRepository.tryChangeUser(serverId, userId) }
         }
 
     @Test
@@ -122,17 +123,17 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns null
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.ServerOnly(protectedCurrentUser.server)
 
             val intent = Intent()
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 1) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 1) { serverRepository.restoreLastSession() }
         }
 
     @Test
@@ -140,17 +141,16 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = ""
-                currentUserId = ""
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
+            coEvery { serverRepository.restoreLastSession() } returns RestoredSession.None
 //            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
 
             val intent = Intent()
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 0) { serverRepository.tryChangeUser(serverId, userId) }
         }
 
     @Test
@@ -158,12 +158,12 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = ""
-                currentUserId = ""
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
             coEvery { serverRepository.serverDao.getUser(serverId, userId) } returns currentUser.user
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns currentUser
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.Success(currentUser)
 
             val intent =
                 Intent().apply {
@@ -173,7 +173,7 @@ class IntentServiceTest {
             val result = intentService.prepare(intent)
             assertNull(result)
 
-            coVerify(exactly = 1) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 1) { serverRepository.tryChangeUser(serverId, userId) }
         }
 
     @Test
@@ -181,12 +181,12 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = ""
-                currentUserId = ""
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
             coEvery { serverRepository.serverDao.getUser(serverId, userId) } returns protectedCurrentUser.user
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns protectedCurrentUser
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns null
+//            coEvery { serverRepository.restoreLastSession() } returns
+//                RestoredSession.ServerOnly(protectedCurrentUser.server)
 
             val intent =
                 Intent().apply {
@@ -196,7 +196,7 @@ class IntentServiceTest {
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 1) { serverRepository.tryChangeUser(serverId, userId) }
         }
 
     @Test
@@ -204,12 +204,10 @@ class IntentServiceTest {
         runTest {
             setupPreferences {
                 signInAutomatically = true
-                currentServerId = ""
-                currentUserId = ""
             }
             every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
             coEvery { serverRepository.serverDao.getUser(serverId, userId) } returns null
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns null
+            coEvery { serverRepository.tryChangeUser(serverId, userId) } returns null
 
             val intent =
                 Intent().apply {
@@ -219,6 +217,6 @@ class IntentServiceTest {
             val result = intentService.prepare(intent)
             assertTrue(result is IntentResult.Error)
 
-            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            coVerify(exactly = 1) { serverRepository.tryChangeUser(serverId, userId) }
         }
 }

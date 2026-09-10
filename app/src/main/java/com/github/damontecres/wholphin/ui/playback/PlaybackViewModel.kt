@@ -5,6 +5,7 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.unit.Density
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -194,7 +195,7 @@ class PlaybackViewModel
 
         val currentUserDto = serverRepository.currentUserDtoFlow
 
-        // Exposed for testing
+        @VisibleForTesting
         val initJob: Job
 
         init {
@@ -1106,7 +1107,7 @@ class PlaybackViewModel
         }
 
         // Variables for tracking segment state
-        // Exposed for testing
+        @VisibleForTesting
         internal var segmentJob: Job? = null
         private val autoSkippedSegments = mutableSetOf<UUID>()
         private val outroShownSegments = mutableSetOf<UUID>()

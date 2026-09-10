@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.Migrations
+import com.github.damontecres.wholphin.data.MostRecentServerProvider
 import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.RememberedTabDao
@@ -26,6 +27,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.services.SeerrApi
+import com.github.damontecres.wholphin.services.TestMostRecentServerProvider
 import com.github.damontecres.wholphin.services.hilt.AppModule
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.hilt.DatabaseModule
@@ -201,6 +203,10 @@ object TestModule {
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ): SeerrApi = mockk()
+
+    @Provides
+    @Singleton
+    fun mostRecentServerProvider(): MostRecentServerProvider = TestMostRecentServerProvider()
 }
 
 @Module
