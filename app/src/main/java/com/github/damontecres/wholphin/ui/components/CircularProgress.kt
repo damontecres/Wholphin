@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -100,5 +102,21 @@ fun DelayedLoadingPage(
                         .size(48.dp),
             )
         }
+    }
+}
+
+@Composable
+fun BoxScope.CornerLoadingIndicator(
+    showClock: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .padding(top = if (showClock) 40.dp else 20.dp, start = 20.dp)
+                .size(48.dp)
+                .align(Alignment.TopEnd),
+    ) {
+        CircularProgress(Modifier.fillMaxSize())
     }
 }
