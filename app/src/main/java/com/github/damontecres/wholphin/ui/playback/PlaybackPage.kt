@@ -269,6 +269,9 @@ fun PlaybackPageContent(
                 },
                 onDpadSeek = onDpadSeek,
                 dpadSeekMode = prefs.dpadSeekMode,
+                // Read the flow directly so this isn't stale when the handler is remembered
+                channelKeysEnabled = { viewModel.state.value.isLiveTv },
+                onChangeChannel = viewModel::changeChannel,
             )
         }
 

@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LiveTvChannelService
 import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
@@ -82,6 +83,7 @@ class LiveTvViewModel
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val liveTvChannelService: LiveTvChannelService,
         private val liveTvService: LiveTvService,
     ) : ViewModel() {
         private lateinit var channelsIdToIndex: Map<UUID, Int>
@@ -121,28 +123,13 @@ class LiveTvViewModel
                     val guideTimes = buildGuideTimes()
                     _state.update { it.copy(guideTimes = guideTimes) }
                     val guideStart = guideTimes.first()
-                    val channelData by api.liveTvApi.getLiveTvChannels(
-                        GetLiveTvChannelsRequest(
-                            startIndex = 0,
-                            userId = serverRepository.currentUser?.id,
-                            enableFavoriteSorting = favoriteChannelsAtBeginning,
-                            sortBy =
-                                if (sortByRecentlyWatched) {
-                                    listOf(ItemSortBy.DATE_PLAYED)
-                                } else {
-                                    null
-                                },
-                            sortOrder =
-                                if (sortByRecentlyWatched) {
-                                    SortOrder.DESCENDING
-                                } else {
-                                    null
-                                },
-                            addCurrentProgram = false,
-                        ),
-                    )
+                    val channelItems =
+                        liveTvChannelService.getChannels(
+                            sortByRecentlyWatched = sortByRecentlyWatched,
+                            favoriteChannelsAtBeginning = favoriteChannelsAtBeginning,
+                        )
                     val channels =
-                        channelData.items
+                        channelItems
                             .map {
                                 TvChannel(
                                     id = it.id,

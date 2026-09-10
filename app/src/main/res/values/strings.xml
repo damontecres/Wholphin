@@ -922,4 +922,5 @@
     <string name="dim_screen">Dim screen</string>
     <string name="photo_albums">Photo albums</string>
     <string name="no_favorites_found">No favorites found!</string>
+    <string name="live_tv_stream_ended">Live TV stream ended</string>
 </resources>
