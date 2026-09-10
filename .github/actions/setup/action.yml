@@ -10,7 +10,7 @@ runs:
       with:
         python-version: '3.14'
     - name: Setup JDK
-      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
       with:
         distribution: zulu
         java-version: '21'
