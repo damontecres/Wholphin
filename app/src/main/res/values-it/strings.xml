@@ -731,4 +731,14 @@
     <string name="dim_screen">Scurisci schermo</string>
     <string name="photo_albums">Album fotografici</string>
     <string name="no_favorites_found">Nessun preferito trovato!</string>
+    <string name="duration_hours_seconds">%1$do %2$ds</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Stagione %1$d</string>
+    <string name="remove_from_playlist">Rimuovi dalla playlist</string>
+    <string name="login_credentials_expired">Credenziali scadute, effettua di nuovo l’accesso</string>
+    <string name="login_not_authorized">Non sei autorizzato ad accedere al server in questo momento</string>
 </resources>
