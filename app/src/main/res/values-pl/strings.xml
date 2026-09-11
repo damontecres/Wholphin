@@ -751,4 +751,5 @@
     <string name="dim_percentage">Procent przyciemniane</string>
     <string name="photo_albums">Albumy zdjęć</string>
     <string name="no_favorites_found">Nic jeszcze nie polubiono!</string>
+    <string name="season_number">Sezon %1$d</string>
 </resources>
