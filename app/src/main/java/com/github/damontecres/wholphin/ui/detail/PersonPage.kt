@@ -259,6 +259,12 @@ fun PersonPage(
                         imageType = ImageType.PRIMARY,
                     )
                 }
+            // A long filmography is hard to navigate as a row, so it is cut at the same
+            // limit as the home page rows and the rest is left to the full grid
+            val maxItems = preferences.appPreferences.homePagePreferences.maxItemsPerRow
+            val discovered =
+                remember(state.discovered, maxItems) { state.discovered.take(maxItems) }
+
             PersonPageContent(
                 preferences = preferences,
                 name = name,
@@ -278,15 +284,18 @@ fun PersonPage(
                 favoriteOnClick = {
                     viewModel.setFavorite(!person.favorite)
                 },
-                discovered = state.discovered,
+                discovered = discovered,
                 onClickDiscover = { index, item ->
                     viewModel.navigationManager.navigateTo(item.destination)
                 },
-                onClickViewMore = {
+                onClickViewMoreDiscover = {
                     state.discoverPerson?.let {
-                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(it))
+                        viewModel.navigationManager.navigateTo(
+                            Destination.DiscoveredItem(it, maxItems),
+                        )
                     }
                 },
+                enableViewMoreDiscover = state.discovered.size > discovered.size,
                 modifier = modifier,
             )
             AnimatedVisibility(showOverviewDialog) {
@@ -330,7 +339,8 @@ fun PersonPageContent(
     overviewOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
-    onClickViewMore: () -> Unit,
+    onClickViewMoreDiscover: () -> Unit,
+    enableViewMoreDiscover: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -431,15 +441,11 @@ fun PersonPageContent(
         }
         if (discovered.isNotEmpty()) {
             item {
-                // A long filmography is hard to navigate as a row, so it is cut at the same
-                // limit as the home page rows and the rest is left to the full grid
-                val maxItems = preferences.appPreferences.homePagePreferences.maxItemsPerRow
-                val shown = remember(discovered, maxItems) { discovered.take(maxItems) }
                 DiscoverRow(
                     row =
                         DiscoverRowData(
                             ResStringProvider(R.string.discover),
-                            DataLoadingState.Success(shown),
+                            DataLoadingState.Success(discovered),
                             DiscoverRequestType.UNKNOWN,
                         ),
                     onClickItem = { index: Int, item: DiscoverItem ->
@@ -449,10 +455,10 @@ fun PersonPageContent(
                     onLongClickItem = { _, _ -> },
                     onCardFocus = {},
                     focusRequester = focusRequester,
-                    enableViewMore = discovered.size > shown.size,
+                    enableViewMore = enableViewMoreDiscover,
                     onClickViewMore = {
-                        position = RowColumn(DISCOVER_ROW, shown.size)
-                        onClickViewMore.invoke()
+                        position = RowColumn(DISCOVER_ROW, discovered.size)
+                        onClickViewMoreDiscover.invoke()
                     },
                 )
             }

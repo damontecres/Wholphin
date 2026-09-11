@@ -72,6 +72,7 @@ class DiscoverPersonViewModel
 @Composable
 fun DiscoverPersonPage(
     person: DiscoverItem,
+    startIndex: Int,
     modifier: Modifier = Modifier,
     viewModel: DiscoverPersonViewModel =
         hiltViewModel<DiscoverPersonViewModel, DiscoverPersonViewModel.Factory>(
@@ -124,6 +125,7 @@ fun DiscoverPersonPage(
                         },
                         onClickPlay = { _, item ->
                         },
+                        initialPosition = startIndex,
                         letterPosition = { c: Char -> 0 },
                         gridFocusRequester = focusRequester,
                         showJumpButtons = false,
