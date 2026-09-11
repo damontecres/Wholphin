@@ -50,7 +50,9 @@ fun ExpandableDiscoverButtons(
     ) {
         val text =
             when (availability) {
-                SeerrAvailability.UNKNOWN -> R.string.request
+                SeerrAvailability.UNKNOWN,
+                SeerrAvailability.DELETED,
+                -> R.string.request
 
                 SeerrAvailability.PENDING,
                 SeerrAvailability.PROCESSING,
@@ -60,15 +62,14 @@ fun ExpandableDiscoverButtons(
                 SeerrAvailability.AVAILABLE,
                 -> R.string.go_to
 
-                // TODO
-                SeerrAvailability.DELETED -> R.string.delete
-
                 // TODO Blocklist
                 SeerrAvailability.BLOCKLISTED -> R.string.unavailable
             }
         val icon =
             when (availability) {
-                SeerrAvailability.UNKNOWN -> R.string.fa_download
+                SeerrAvailability.UNKNOWN,
+                SeerrAvailability.DELETED,
+                -> R.string.fa_download
 
                 SeerrAvailability.PENDING,
                 SeerrAvailability.PROCESSING,
@@ -78,9 +79,6 @@ fun ExpandableDiscoverButtons(
                 SeerrAvailability.AVAILABLE,
                 -> R.string.fa_play
 
-                SeerrAvailability.DELETED -> R.string.fa_video
-
-                // TODO
                 SeerrAvailability.BLOCKLISTED -> R.string.fa_xmark
             }
         item("first") {
@@ -89,7 +87,9 @@ fun ExpandableDiscoverButtons(
                 iconStringRes = icon,
                 enabled =
                     when (availability) {
-                        SeerrAvailability.UNKNOWN -> canRequest
+                        SeerrAvailability.UNKNOWN,
+                        SeerrAvailability.DELETED,
+                        -> canRequest
 
                         SeerrAvailability.PENDING,
                         SeerrAvailability.PROCESSING,
@@ -98,12 +98,13 @@ fun ExpandableDiscoverButtons(
                         -> true
 
                         SeerrAvailability.BLOCKLISTED,
-                        SeerrAvailability.DELETED,
                         -> false
                     },
                 onClick = {
                     when (availability) {
-                        SeerrAvailability.UNKNOWN -> {
+                        SeerrAvailability.UNKNOWN,
+                        SeerrAvailability.DELETED,
+                        -> {
                             requestOnClick.invoke()
                         }
 
@@ -119,7 +120,6 @@ fun ExpandableDiscoverButtons(
                             goToOnClick.invoke()
                         }
 
-                        SeerrAvailability.DELETED,
                         SeerrAvailability.BLOCKLISTED,
                         -> {
                             // TODO
