@@ -137,71 +137,43 @@ fun createDeviceProfile(
 
     // / Transcoding profiles
     // Video
-    if (preferAc3ForSurround) {
-        transcodingProfile {
-            type = DlnaProfileType.VIDEO
-            context = EncodingContext.STREAMING
+    transcodingProfile {
+        type = DlnaProfileType.VIDEO
+        context = EncodingContext.STREAMING
 
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
+        container = Codec.Container.TS
+        protocol = MediaStreamProtocol.HLS
 
-            if (supportsHevc) videoCodec(Codec.Video.HEVC)
-            videoCodec(Codec.Video.H264)
+        if (supportsHevc) videoCodec(Codec.Video.HEVC)
+        videoCodec(Codec.Video.H264)
 
-            audioCodec(Codec.Audio.AC3)
-
-            copyTimestamps = false
-            enableSubtitlesInManifest = true
-
-            if (maxResolution > 0) {
-                conditions {
-                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
-                }
-            }
-        }
-    } else {
-        transcodingProfile {
-            type = DlnaProfileType.VIDEO
-            context = EncodingContext.STREAMING
-
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
-
-            if (supportsHevc) videoCodec(Codec.Video.HEVC)
-            videoCodec(Codec.Video.H264)
-
+        if (preferAc3ForSurround) {
             audioCodec(*allowedAudioCodecs)
+        } else {
+            audioCodec(Codec.Audio.AC3)
+        }
 
-            copyTimestamps = false
-            enableSubtitlesInManifest = true
+        copyTimestamps = false
+        enableSubtitlesInManifest = true
 
-            if (maxResolution > 0) {
-                conditions {
-                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
-                }
+        if (maxResolution > 0) {
+            conditions {
+                ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
             }
         }
     }
 
     // Audio
-    if (preferAc3ForSurround) {
-        transcodingProfile {
-            type = DlnaProfileType.AUDIO
-            context = EncodingContext.STREAMING
+    transcodingProfile {
+        type = DlnaProfileType.AUDIO
+        context = EncodingContext.STREAMING
 
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
+        container = Codec.Container.TS
+        protocol = MediaStreamProtocol.HLS
 
+        if (preferAc3ForSurround) {
             audioCodec(Codec.Audio.AC3)
-        }
-    } else {
-        transcodingProfile {
-            type = DlnaProfileType.AUDIO
-            context = EncodingContext.STREAMING
-
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
-
+        } else {
             audioCodec(Codec.Audio.AAC)
         }
     }
