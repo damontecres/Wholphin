@@ -694,4 +694,5 @@
     <string name="season_episode_number_padded_range">第%1$02d季 第%2$02d-%3$02d集</string>
     <string name="episode_number_short">第 %1$d 集</string>
     <string name="season_number">第 %1$d 季</string>
+    <string name="remove_from_playlist">從播放清單中移除</string>
 </resources>
