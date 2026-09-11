@@ -925,4 +925,6 @@
     <string name="photo_albums">Photo albums</string>
     <string name="no_favorites_found">No favorites found!</string>
     <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="login_credentials_expired">Credentials expired, please login in again</string>
+    <string name="login_not_authorized">You are not authorized to access the server at this time</string>
 </resources>

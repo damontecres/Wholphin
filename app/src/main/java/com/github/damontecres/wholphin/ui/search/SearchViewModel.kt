@@ -273,8 +273,7 @@ class SearchViewModel
                         }
                     val sorted =
                         items.sortedWith(
-                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.sortName },
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) },
                         )
                     Timber.v("Search finished for %s, %s results", type, sorted.size)
                     _state.value.results[type] = SearchResult.Success(sorted)
@@ -307,8 +306,7 @@ class SearchViewModel
                         }
                     val sorted =
                         items.sortedWith(
-                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.name ?: "" },
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) },
                         )
                     Timber.v("searchCombined complete %s results", sorted.size)
                     _state.update { it.copy(combinedResults = SearchResult.Success(sorted)) }
