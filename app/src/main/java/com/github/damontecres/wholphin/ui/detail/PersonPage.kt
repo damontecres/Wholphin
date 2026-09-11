@@ -157,6 +157,7 @@ class PersonViewModel
                         _state.update {
                             it.copy(
                                 discovered = results,
+                                discoverPerson = seerrService.discoverPerson(person),
                             )
                         }
                     }
@@ -221,6 +222,7 @@ data class PersonState(
     val series: RowLoadingState = RowLoadingState.Pending,
     val episodes: RowLoadingState = RowLoadingState.Pending,
     val discovered: List<DiscoverItem> = emptyList(),
+    val discoverPerson: DiscoverItem? = null,
 )
 
 @Composable
@@ -280,6 +282,11 @@ fun PersonPage(
                 onClickDiscover = { index, item ->
                     viewModel.navigationManager.navigateTo(item.destination)
                 },
+                onClickViewMore = {
+                    state.discoverPerson?.let {
+                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(it))
+                    }
+                },
                 modifier = modifier,
             )
             AnimatedVisibility(showOverviewDialog) {
@@ -323,6 +330,7 @@ fun PersonPageContent(
     overviewOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    onClickViewMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -423,11 +431,15 @@ fun PersonPageContent(
         }
         if (discovered.isNotEmpty()) {
             item {
+                // A long filmography is hard to navigate as a row, so it is cut at the same
+                // limit as the home page rows and the rest is left to the full grid
+                val maxItems = preferences.appPreferences.homePagePreferences.maxItemsPerRow
+                val shown = remember(discovered, maxItems) { discovered.take(maxItems) }
                 DiscoverRow(
                     row =
                         DiscoverRowData(
                             ResStringProvider(R.string.discover),
-                            DataLoadingState.Success(discovered),
+                            DataLoadingState.Success(shown),
                             DiscoverRequestType.UNKNOWN,
                         ),
                     onClickItem = { index: Int, item: DiscoverItem ->
@@ -437,6 +449,11 @@ fun PersonPageContent(
                     onLongClickItem = { _, _ -> },
                     onCardFocus = {},
                     focusRequester = focusRequester,
+                    enableViewMore = discovered.size > shown.size,
+                    onClickViewMore = {
+                        position = RowColumn(DISCOVER_ROW, shown.size)
+                        onClickViewMore.invoke()
+                    },
                 )
             }
         }

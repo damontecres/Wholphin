@@ -154,6 +154,32 @@ class SeerrService
                         .sortedByDescending { it.releaseDate }
                 }
 
+        /**
+         * Create a [DiscoverItem] for a person in the library so that the full grid of their
+         * credits can be opened from their page
+         *
+         * @return the item or null if the person has no TMDB id
+         */
+        fun discoverPerson(item: BaseItem): DiscoverItem? =
+            item.data.providerIds
+                ?.get("Tmdb")
+                ?.toIntOrNull()
+                ?.let {
+                    DiscoverItem(
+                        id = it,
+                        type = SeerrItemType.PERSON,
+                        title = item.name,
+                        subtitle = null,
+                        overview = item.data.overview,
+                        availability = SeerrAvailability.UNKNOWN,
+                        releaseDate = null,
+                        posterUrl = null,
+                        backDropUrl = null,
+                        logoUrl = null,
+                        jellyfinItemId = null,
+                    )
+                }
+
         suspend fun getTvSeries(item: BaseItem): TvDetails? =
             if (active.first()) {
                 item.data.providerIds
