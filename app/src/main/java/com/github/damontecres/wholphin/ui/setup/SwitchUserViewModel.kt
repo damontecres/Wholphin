@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -19,6 +21,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -46,6 +49,7 @@ import kotlin.time.Duration.Companion.seconds
 class SwitchUserViewModel
     @AssistedInject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val jellyfin: Jellyfin,
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
@@ -124,21 +128,38 @@ class SwitchUserViewModel
             }
         }
 
-        fun trySwitchUser(user: JellyfinUser): Deferred<String?> =
+        fun trySwitchUser(user: JellyfinUser): Deferred<SwitchUserResult> =
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val current = serverRepository.changeUser(server, user)
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
-                    null
+                    SwitchUserResult.Success
                 } catch (ex: InvalidStatusException) {
-                    if (ex.status == 401) {
-                        "Credentials expired, please login in again"
-                    } else {
-                        ex.localizedMessage
+                    when (ex.status) {
+                        401 -> {
+                            Timber.w(ex, "Error switching user 401")
+                            SwitchUserResult.Error(
+                                context.getString(R.string.login_credentials_expired),
+                                true,
+                            )
+                        }
+
+                        403 -> {
+                            Timber.w(ex, "Error switching user 403")
+                            SwitchUserResult.Error(
+                                context.getString(R.string.login_not_authorized),
+                                false,
+                            )
+                        }
+
+                        else -> {
+                            Timber.e(ex, "Error switching user")
+                            SwitchUserResult.Error(ex.localizedMessage, true)
+                        }
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error switching user")
-                    ex.localizedMessage
+                    SwitchUserResult.Error(ex.localizedMessage, true)
                 }
             }
 
@@ -322,3 +343,15 @@ data class SwitchUserState(
     val serverVersion: String? = null,
     val serverVersionSupported: ServerVersionSupported = ServerVersionSupported.UNKNOWN,
 )
+
+/**
+ * Result of trying to switch users via [SwitchUserViewModel.trySwitchUser]
+ */
+sealed interface SwitchUserResult {
+    data object Success : SwitchUserResult
+
+    data class Error(
+        val errorMessage: String?,
+        val showLogin: Boolean,
+    ) : SwitchUserResult
+}

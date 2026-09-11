@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (screensaverService.state.value.show) {
+        if (screensaverService.state.value.run { show || showDim }) {
             screensaverService.stop(false)
             screensaverService.pulse()
             return true
