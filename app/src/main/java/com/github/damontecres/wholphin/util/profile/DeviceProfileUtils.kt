@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.util.profile
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt
 
 import android.media.MediaCodecInfo
+import android.util.Size
 import androidx.media3.common.MimeTypes
 import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
@@ -61,6 +62,8 @@ val supportedAudioCodecs =
 //    )
 // }
 
+private fun Size.min(min: Int) = if (min > 0 && height > min) Size(width, min) else this
+
 fun createDeviceProfile(
     mediaTest: MediaCodecCapabilitiesTest,
     maxBitrate: Int,
@@ -72,6 +75,7 @@ fun createDeviceProfile(
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
+    maxResolution: Int,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -106,10 +110,10 @@ fun createDeviceProfile(
     val supportsAV1 = mediaTest.supportsAV1()
     val supportsAV1Main10 = mediaTest.supportsAV1Main10()
     val supportsVC1 = mediaTest.supportsVc1()
-    val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264)
-    val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265)
-    val maxResolutionAV1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_AV1)
-    val maxResolutionVC1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_VC1)
+    val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264).min(maxResolution)
+    val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265).min(maxResolution)
+    val maxResolutionAV1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_AV1).min(maxResolution)
+    val maxResolutionVC1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_VC1).min(maxResolution)
 
     // / HDR capabilities
 
@@ -148,6 +152,12 @@ fun createDeviceProfile(
 
             copyTimestamps = false
             enableSubtitlesInManifest = true
+
+            if (maxResolution > 0) {
+                conditions {
+                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
+                }
+            }
         }
     } else {
         transcodingProfile {
@@ -164,6 +174,12 @@ fun createDeviceProfile(
 
             copyTimestamps = false
             enableSubtitlesInManifest = true
+
+            if (maxResolution > 0) {
+                conditions {
+                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
+                }
+            }
         }
     }
 
@@ -456,6 +472,24 @@ fun createDeviceProfile(
         conditions {
             ProfileConditionValue.WIDTH lowerThanOrEquals maxResolutionVC1.width
             ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolutionVC1.height
+        }
+    }
+
+    if (maxResolution > 0) {
+        listOf(
+            Codec.Video.MPEG,
+            Codec.Video.MPEG2VIDEO,
+            Codec.Video.VP8,
+            Codec.Video.VP9,
+        ).forEach { codecName ->
+            codecProfile {
+                type = CodecType.VIDEO
+                codec = codecName
+
+                conditions {
+                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
+                }
+            }
         }
     }
 
