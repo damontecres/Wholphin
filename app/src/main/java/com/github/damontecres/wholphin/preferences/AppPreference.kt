@@ -454,6 +454,17 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val DirectPlayHdr10Plus =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.direct_play_hdr10_plus,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.directPlayHdr10Plus },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayHdr10Plus = value }
+                },
+                summary = R.string.direct_play_hdr10_plus_summary,
+            )
+
         val DecodeAv1 =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.software_decoding_av1,
@@ -1171,6 +1182,7 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
+        AppPreference.DirectPlayHdr10Plus,
         AppPreference.DecodeAv1,
     )
 
