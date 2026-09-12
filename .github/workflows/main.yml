@@ -16,7 +16,7 @@ concurrency:
 
 env:
   BRANCH_NAME: ${{ github.ref_name }}
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx8g -XX:MaxMetaspaceSize=512m'"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=1024m'"
 
 jobs:
   build:
@@ -54,7 +54,8 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleDefaultRelease assembleDefaultDebug --no-daemon
+          ./gradlew clean assembleDefaultDebug
+          ./gradlew assembleDefaultRelease
 
       - name: Verify signatures
         run: |
