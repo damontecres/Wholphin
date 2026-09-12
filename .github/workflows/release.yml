@@ -11,7 +11,7 @@ defaults:
 
 env:
   APK_SHORT_NAME: Wholphin.apk
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=512m'"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=1024m'"
   TAG_NAME: ${{ github.ref_name }}
 
 jobs:
