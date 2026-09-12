@@ -749,4 +749,16 @@
     <string name="dim_screen">Przyciemnienie ekranu</string>
     <string name="dim_after_delay">Opóźnienie przyciemniana ekranu</string>
     <string name="dim_percentage">Procent przyciemniane</string>
+    <string name="photo_albums">Albumy zdjęć</string>
+    <string name="no_favorites_found">Nic jeszcze nie polubiono!</string>
+    <string name="season_number">Sezon %1$d</string>
+    <string name="remove_from_playlist">Usuń z listy odtwarzania</string>
+    <string name="login_credentials_expired">Sesja wygasła, zaloguj się ponownie</string>
+    <string name="login_not_authorized">Nie jesteś upoważniony do dostępu do serwera w tym momencie</string>
+    <string name="episode_number_short">O%1$d</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
+    <string name="season_episode_number">S%1$d O%2$d</string>
+    <string name="season_episode_number_range">S%1$d O%2$d-%3$d</string>
+    <string name="season_episode_number_padded">S%1$02d O%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02d O%2$02d-%3$02d</string>
 </resources>
