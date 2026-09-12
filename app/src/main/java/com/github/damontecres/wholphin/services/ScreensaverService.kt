@@ -173,9 +173,10 @@ class ScreensaverService
          */
         fun keepScreenOn(keep: Boolean) {
             scope.launchDefault {
-                val screensaverEnabled = _state.value.run { enabled || dimEnabled }
+                val screensaverEnabled = state.value.enabled
+                val dimEnabled = state.value.dimEnabled
                 Timber.d("Keep screen on: %s, screensaverEnabled=%s", keep, screensaverEnabled)
-                if (screensaverEnabled) {
+                if (screensaverEnabled || dimEnabled) {
                     // Page is requesting to keep screen on, so we don't wait to show the screensaver
                     _state.update {
                         it.copy(
@@ -187,7 +188,9 @@ class ScreensaverService
                     if (!keep) {
                         pulse()
                     }
-                } else {
+                }
+                if (!screensaverEnabled) {
+                    // If in-app screensaver is not enabled, send keep screen on to the OS
                     keepScreenOnInternal(keep)
                 }
             }
