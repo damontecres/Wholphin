@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -36,6 +37,7 @@ fun SliderPreference(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     summaryBelow: Boolean = false,
     additionalSummary: @Composable (ColumnScope.() -> Unit)? = null,
+    labelWidth: Dp = Dp.Unspecified,
 ) {
     val focused = interactionSource.collectIsFocusedAsState().value
     val background =
@@ -80,7 +82,11 @@ fun SliderPreference(
             )
 
             if (!summaryBelow) {
-                PreferenceSummary(summary, color = contentColor)
+                PreferenceSummary(
+                    summary,
+                    color = contentColor,
+                    modifier = Modifier.width(labelWidth),
+                )
             }
         }
         if (summaryBelow) {
