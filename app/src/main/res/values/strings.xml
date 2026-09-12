@@ -925,4 +925,23 @@
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="login_credentials_expired">Credentials expired, please login in again</string>
     <string name="login_not_authorized">You are not authorized to access the server at this time</string>
+    <string name="max_resolution">Max resolution before transcoding</string>
+
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <string-array name="max_resolution_options">
+        <item>@string/no_limit</item>
+        <item>@string/resolution_8k</item>
+        <item>@string/resolution_4k</item>
+        <item>@string/resolution_1080</item>
+        <item>@string/resolution_720</item>
+        <item>@string/resolution_576</item>
+        <item>@string/resolution_480</item>
+        <item>@string/resolution_360</item>
+    </string-array>
 </resources>
