@@ -346,7 +346,7 @@
     <string name="refresh_rate_switching">Växling av uppdateringsfrekvens</string>
     <string name="ref_frames">Referensbilder</string>
     <string name="red">Röd</string>
-    <string name="resolution_switching">Växling av uppdateringsfrekvens</string>
+    <string name="resolution_switching">Växling av upplösning</string>
     <string name="retry">Försök igen</string>
     <string name="rewatch_next_up">Tillåt omvisning i “Nästa upp”</string>
     <string name="api_key">API nyckel</string>
@@ -648,4 +648,26 @@
     <string name="brown">Brun</string>
     <string name="show_visualizer">Visa visualizer</string>
     <string name="show_backdrop">Visa bakgrund</string>
+    <string name="player_backend">Uppspelning backend</string>
+    <string name="season_number">Säsong %1$d</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="duration_hours_seconds">%1$dt %2$ds</string>
+    <string name="blur">Oskärpa</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="show_more">Visa %1$s till</string>
+    <string name="is_default">Standard</string>
+    <string name="preferred_audio_language">Föredraget ljudspråk</string>
+    <string name="override_user_profile_settings">Fler profilinställningar</string>
+    <string name="use_user_profile">Använd profilinställningar</string>
+    <string name="override_user_profile_settings_summary">Ignorera serverns profilinställningar</string>
+    <string name="server_version_not_supported">Serverns version stöds inte</string>
+    <string name="appears_on">Medverkar i</string>
+    <string name="photo_albums">Fotoalbum</string>
+    <string name="no_favorites_found">Inga favoriter hittades!</string>
+    <string name="confirm_enable_experimental_body">Experimentella inställningar kan vara instabila!\n\n Dessa kan tas bort eller ändras i framtida versioner.</string>
+    <string name="remove_from_playlist">Ta bort från spellista</string>
+    <string name="trailers_title">Trailers</string>
 </resources>

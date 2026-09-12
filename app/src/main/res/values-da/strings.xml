@@ -707,4 +707,6 @@
     <string name="dim_after_delay">Dæmp skærmen efter ventetid</string>
     <string name="dim_percentage">Dæmpning (%)</string>
     <string name="dim_screen">Dæmp skærmen</string>
+    <string name="photo_albums">Fotoalbummer</string>
+    <string name="no_favorites_found">Ingen favoritter fundet!</string>
 </resources>
