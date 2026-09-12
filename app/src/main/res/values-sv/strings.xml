@@ -657,4 +657,17 @@
     <string name="blur">Oskärpa</string>
     <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
     <string name="episode_number_short">E%1$d</string>
+    <string name="show_more">Visa %1$s till</string>
+    <string name="is_default">Standard</string>
+    <string name="preferred_audio_language">Föredraget ljudspråk</string>
+    <string name="override_user_profile_settings">Fler profilinställningar</string>
+    <string name="use_user_profile">Använd profilinställningar</string>
+    <string name="override_user_profile_settings_summary">Ignorera serverns profilinställningar</string>
+    <string name="server_version_not_supported">Serverns version stöds inte</string>
+    <string name="appears_on">Medverkar i</string>
+    <string name="photo_albums">Fotoalbum</string>
+    <string name="no_favorites_found">Inga favoriter hittades!</string>
+    <string name="confirm_enable_experimental_body">Experimentella inställningar kan vara instabila!\n\n Dessa kan tas bort eller ändras i framtida versioner.</string>
+    <string name="remove_from_playlist">Ta bort från spellista</string>
+    <string name="trailers_title">Trailers</string>
 </resources>
