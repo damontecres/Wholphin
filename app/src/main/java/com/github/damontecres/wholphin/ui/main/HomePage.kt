@@ -545,11 +545,25 @@ fun HomePageHeader(
     modifier: Modifier = Modifier,
 ) {
     val isEpisode = item?.type == BaseItemKind.EPISODE
-    val dto = item?.data
+    val title =
+        remember(item) {
+            when (item?.type) {
+                BaseItemKind.SEASON -> item.data.seriesName ?: item?.title
+                else -> item?.title
+            }
+        }
+    val subtitle =
+        remember(item) {
+            when (item?.type) {
+                BaseItemKind.SEASON -> item.title
+                BaseItemKind.EPISODE -> item.data.name
+                else -> item?.title
+            }
+        }
     HomePageHeader(
-        title = item?.title,
-        subtitle = if (isEpisode) dto?.name else null,
-        overview = dto?.overview,
+        title = title,
+        subtitle = subtitle,
+        overview = item?.data?.overview,
         overviewTwoLines = isEpisode,
         quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,
