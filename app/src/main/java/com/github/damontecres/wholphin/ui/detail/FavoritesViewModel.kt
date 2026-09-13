@@ -787,7 +787,9 @@ fun List<Library>.possibleFavoriteTypes(sort: Boolean) =
     flatMap { it.collectionType.baseItemKinds }
         .distinct()
         .filter { it in favoriteOptions }
-        .let { list ->
+        .let {
+            // No library for persons, so always include it
+            val list = it + listOf(BaseItemKind.PERSON)
             if (sort) {
                 list.sortedWith(compareBy { favoriteOptions.indexOf(it) })
             } else {
