@@ -726,4 +726,16 @@
     <string name="appears_on">Aparece em</string>
     <string name="disable_audio_offload">Desativar a processamento de áudio por hardware</string>
     <string name="disable_audio_offload_summary">Desativar o processamento de áudio por hardware pode resolver os bloqueios de reprodução em alguns dispositivos</string>
+    <string name="dim_after_delay">Escurecimento do ecrã após tempo de inatividade</string>
+    <string name="dim_percentage">Percentagem do escurecimento</string>
+    <string name="dim_screen">Escurecer ecrã</string>
+    <string name="photo_albums">Álbum de fotos</string>
+    <string name="no_favorites_found">Não foram encontrados favoritos!</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
+    <string name="season_episode_number">T%1$d E%2$d</string>
+    <string name="season_episode_number_range">T%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">T%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">T%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Temporada %1$d</string>
 </resources>

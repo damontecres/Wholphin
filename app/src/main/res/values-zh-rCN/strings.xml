@@ -685,4 +685,6 @@
     <string name="dim_after_delay">延迟后调暗屏幕</string>
     <string name="dim_percentage">调暗百分比</string>
     <string name="dim_screen">调暗屏幕</string>
+    <string name="photo_albums">相册</string>
+    <string name="no_favorites_found">未找到收藏！</string>
 </resources>
