@@ -717,4 +717,6 @@
     <string name="episode_number_short">E%1$d</string>
     <string name="season_number">%1$d. hooaeg</string>
     <string name="remove_from_playlist">Eemalda esitusloendist</string>
+    <string name="login_credentials_expired">Autentimiseandmed on aegunud, palun logi uuesti sisse</string>
+    <string name="login_not_authorized">Sul pole hetkel õigusi ligipääsuks sellele serverile</string>
 </resources>
