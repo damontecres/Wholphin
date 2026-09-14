@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.detail.search
+package com.github.damontecres.wholphin.ui.search
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
@@ -51,7 +51,6 @@ import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
-import com.github.damontecres.wholphin.ui.main.SearchResult
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 

@@ -17,10 +17,10 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
@@ -62,7 +62,7 @@ class MovieViewModel
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
         val streamChoiceService: StreamChoiceService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val peopleFavorites: PeopleFavorites,

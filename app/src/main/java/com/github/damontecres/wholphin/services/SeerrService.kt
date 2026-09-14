@@ -124,21 +124,7 @@ class SeerrService
                             }
 
                             BaseItemKind.PERSON -> {
-                                api.personApi
-                                    .personPersonIdCombinedCreditsGet(personId = it)
-                                    .let { credits ->
-                                        val cast =
-                                            credits.cast
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        val crew =
-                                            credits.crew
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        cast + crew
-                                    }
+                                personCredits(it)
                             }
 
                             else -> {
@@ -149,6 +135,50 @@ class SeerrService
             } else {
                 null
             }
+
+        /**
+         * Get the combined movie & TV credits of a person as [DiscoverItem]s
+         *
+         * The two lists returned by the API are merged, de-duplicated by id since a person can be
+         * both cast and crew on the same title, and sorted by release date descending with undated
+         * entries last
+         */
+        suspend fun personCredits(personId: Int): List<DiscoverItem> =
+            api.personApi
+                .personPersonIdCombinedCreditsGet(personId = personId)
+                .let { credits ->
+                    val cast = credits.cast?.map { createDiscoverItem(it) }.orEmpty()
+                    val crew = credits.crew?.map { createDiscoverItem(it) }.orEmpty()
+                    (cast + crew)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.releaseDate }
+                }
+
+        /**
+         * Create a [DiscoverItem] for a person in the library so that the full grid of their
+         * credits can be opened from their page
+         *
+         * @return the item or null if the person has no TMDB id
+         */
+        fun discoverPerson(item: BaseItem): DiscoverItem? =
+            item.data.providerIds
+                ?.get("Tmdb")
+                ?.toIntOrNull()
+                ?.let {
+                    DiscoverItem(
+                        id = it,
+                        type = SeerrItemType.PERSON,
+                        title = item.name,
+                        subtitle = null,
+                        overview = item.data.overview,
+                        availability = SeerrAvailability.UNKNOWN,
+                        releaseDate = null,
+                        posterUrl = null,
+                        backDropUrl = null,
+                        logoUrl = null,
+                        jellyfinItemId = null,
+                    )
+                }
 
         suspend fun getTvSeries(item: BaseItem): TvDetails? =
             if (active.first()) {
@@ -424,7 +454,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,
@@ -451,7 +481,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.detail.search
+package com.github.damontecres.wholphin.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,7 +7,6 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.main.SearchResult
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
