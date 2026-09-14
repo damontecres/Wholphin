@@ -706,4 +706,13 @@
     <string name="dim_after_delay">Belirli bir süre sonra ekranı karart</string>
     <string name="dim_percentage">Karartma yüzdesi</string>
     <string name="dim_screen">Ekranı karart</string>
+    <string name="duration_hours_seconds">%1$dsa %2$dsn</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Sezon %1$d</string>
+    <string name="photo_albums">Fotoğraf Albümleri</string>
+    <string name="no_favorites_found">Favori bulunamadı!</string>
 </resources>

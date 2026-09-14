@@ -245,6 +245,7 @@ class NavDrawerService
                 it.copy(
                     items = items,
                     moreItems = moreItems,
+                    allLibraries = allLibraries,
                 )
             }
         }
@@ -255,6 +256,7 @@ data class NavDrawerItemState(
     val moreItems: List<NavDrawerItem> = emptyList(),
     val nowPlayingEnabled: Boolean = false,
     val nowPlayingTitle: String? = null,
+    val allLibraries: List<Library> = emptyList(),
 )
 
 val UserDto.tvAccess: Boolean get() = policy?.enableLiveTvAccess == true

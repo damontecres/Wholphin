@@ -21,8 +21,8 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -63,7 +63,7 @@ class ItemGridViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaManagementService: MediaManagementService,
         val serverRepository: ServerRepository,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         @Assisted private val destination: Destination.ItemGrid<*>,
     ) : ViewModel(),
         ContextMenuProvider {
@@ -173,7 +173,7 @@ class ItemGridViewModel
 
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
     }
 
 data class ItemGridState(
