@@ -254,6 +254,24 @@ data class BaseItem(
                     )
                 }
 
+                BaseItemKind.RECORDING -> {
+                    // A DVR recording's own type is always RECORDING regardless of whether the
+                    // underlying content is a movie or a series episode; DestinationContent has
+                    // no page for RECORDING itself, so redirect based on the underlying content,
+                    // same as the EPISODE case above.
+                    data.seasonId?.let { seasonId ->
+                        Destination.SeriesOverview(
+                            data.seriesId!!,
+                            BaseItemKind.SERIES,
+                            SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
+                        )
+                    } ?: Destination.MediaItem(
+                        itemId = id,
+                        type = BaseItemKind.MOVIE,
+                        collectionType = data.collectionType,
+                    )
+                }
+
                 BaseItemKind.TV_CHANNEL -> {
                     Destination.Playback(
                         itemId = id,
