@@ -491,12 +491,15 @@ fun createDeviceProfile(
                     add(VideoRangeType.DOVI_WITH_SDR.serialName)
                     if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
                 }
+
                 DoviDeviceCompatibilityMode.DISABLE_DOVI_WITH_HDR10 -> {
                     add(VideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
                 }
+
                 DoviDeviceCompatibilityMode.DOVI_ALLOW,
-                DoviDeviceCompatibilityMode.UNRECOGNIZED -> {}
+                DoviDeviceCompatibilityMode.UNRECOGNIZED,
+                -> {}
             }
         }
 
@@ -535,6 +538,7 @@ fun createDeviceProfile(
                         add("DOVIWithELHDR10Plus")
                     }
                 }
+
                 DoviDeviceCompatibilityMode.DISABLE_DOVI_WITH_HDR10 -> {
                     add(VideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven) {
@@ -542,8 +546,10 @@ fun createDeviceProfile(
                         add("DOVIWithELHDR10Plus")
                     }
                 }
+
                 DoviDeviceCompatibilityMode.DOVI_ALLOW,
-                DoviDeviceCompatibilityMode.UNRECOGNIZED -> {}
+                DoviDeviceCompatibilityMode.UNRECOGNIZED,
+                -> {}
             }
 
             if (!supportsHevcHDR10Plus) {

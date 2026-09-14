@@ -64,7 +64,8 @@ class DeviceProfileService
                                 assDirectPlay = newConfig.overrides.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.overrides.directPlayPgs,
                                 dolbyVisionELDirectPlay = newConfig.overrides.directPlayDolbyVisionEL,
-                                doviDeviceCompatibilityMode = newConfig.experimental.get { doviDeviceCompatibilityMode } ?: DoviDeviceCompatibilityMode.DOVI_ALLOW,
+                                doviDeviceCompatibilityMode =
+                                    newConfig.experimental.get { doviDeviceCompatibilityMode } ?: DoviDeviceCompatibilityMode.DOVI_ALLOW,
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 preferAc3ForSurround = newConfig.experimental.enabled { preferAc3Surround },
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
