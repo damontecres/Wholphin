@@ -5,8 +5,10 @@ import androidx.work.Data
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.github.damontecres.wholphin.data.CurrentUser
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.test.currentUser
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -113,16 +115,16 @@ class SuggestionsWorkerTest {
             val mockUser = mockk<CurrentUser>()
             var restored = false
             every { mockServerRepository.current } answers { MutableStateFlow(if (restored) mockUser else null) }
-            coEvery { mockServerRepository.restoreSession(testServerId, testUserId) } coAnswers {
+            coEvery { mockServerRepository.restoreLastSession() } coAnswers {
                 restored = true
-                mockUser
+                RestoredSession.Success(currentUser())
             }
             every { mockPreferences.data } returns flowOf(mockPrefs())
             coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult()
 
             val result = createWorker().doWork()
 
-            coVerify { mockServerRepository.restoreSession(testServerId, testUserId) }
+            coVerify { mockServerRepository.restoreLastSession() }
             assertEquals(ListenableWorker.Result.success(), result)
         }
 

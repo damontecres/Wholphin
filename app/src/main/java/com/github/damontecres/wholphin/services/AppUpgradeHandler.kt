@@ -6,7 +6,9 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.MostRecentServerProvider
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -36,6 +38,7 @@ import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -56,6 +59,7 @@ class AppUpgradeHandler
         private val seerrServerDao: SeerrServerDao,
         private val serverDao: JellyfinServerDao,
         private val rememberedTabDao: RememberedTabDao,
+        private val mostRecentServerProvider: MostRecentServerProvider,
     ) {
         val pkgInfo: PackageInfo get() = context.packageManager.getPackageInfo(context.packageName, 0)
         val currentVersion: Version get() = Version.fromString(pkgInfo.versionName!!)
@@ -439,6 +443,30 @@ class AppUpgradeHandler
                         }
                     } else {
                         it
+                    }
+                }
+            }
+
+            if (current.isEqualOrBefore(Version.fromString("1.0.8-0-g0"))) {
+                try {
+                    val prefs = appPreferences.data.firstOrNull()
+                    val serverId = prefs?.currentServerId?.toUUIDOrNull()
+                    val userId = prefs?.currentUserId?.toUUIDOrNull()
+                    if (serverId != null && userId != null) {
+                        val server = serverDao.getServer(serverId)
+                        val user = server?.users?.firstOrNull { it.id == userId }
+                        if (server != null && user != null) {
+                            Timber.i("Migrating most recent server")
+                            mostRecentServerProvider.save(CurrentUser(server.server, user))
+                        }
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during migration for most recent server")
+                }
+                appPreferences.updateData {
+                    it.update {
+                        currentServerId = ""
+                        currentUserId = ""
                     }
                 }
             }

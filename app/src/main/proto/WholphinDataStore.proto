@@ -231,9 +231,8 @@ message ExperimentalPreferences {
 }
 
 message AppPreferences {
-  // The currently signed in server and user IDs, mostly for restoring a session
-  string current_server_id = 1;
-  string current_user_id = 2;
+  string current_server_id = 1 [deprecated = true];
+  string current_user_id = 2 [deprecated = true];
 
   PlaybackPreferences playback_preferences = 3;
   HomePagePreferences home_page_preferences = 4;

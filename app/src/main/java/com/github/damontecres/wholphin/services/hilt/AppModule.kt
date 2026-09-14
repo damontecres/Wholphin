@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.MostRecentServerProvider
+import com.github.damontecres.wholphin.data.MostRecentServerSharedPreferences
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.util.CoroutineContextApiClientFactory
@@ -188,6 +190,12 @@ object AppModule {
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
+
+    @Provides
+    @Singleton
+    fun mostRecentServerProvider(
+        @ApplicationContext context: Context,
+    ): MostRecentServerProvider = MostRecentServerSharedPreferences(context)
 }
 
 @Module
