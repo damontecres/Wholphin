@@ -113,7 +113,7 @@ fun SearchPage(
     val focusRequesters =
         remember(state.includedSearchableTypes.size) { List(RESULTS_START + state.includedSearchableTypes.size) { FocusRequester() } }
 
-    val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
+    val seerrActive by viewModel.seerrActive.collectAsState()
     var selectedTab by rememberSaveable(seerrActive, state.discoverEnabled) { mutableIntStateOf(0) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var showFilterTypeDialog by rememberSaveable { mutableStateOf(false) }
