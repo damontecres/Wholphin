@@ -157,6 +157,7 @@ class PersonViewModel
                         _state.update {
                             it.copy(
                                 discovered = results,
+                                discoverPerson = seerrService.discoverPerson(person),
                             )
                         }
                     }
@@ -221,6 +222,7 @@ data class PersonState(
     val series: RowLoadingState = RowLoadingState.Pending,
     val episodes: RowLoadingState = RowLoadingState.Pending,
     val discovered: List<DiscoverItem> = emptyList(),
+    val discoverPerson: DiscoverItem? = null,
 )
 
 @Composable
@@ -257,6 +259,12 @@ fun PersonPage(
                         imageType = ImageType.PRIMARY,
                     )
                 }
+            // A long filmography is hard to navigate as a row, so it is cut at the same
+            // limit as the home page rows and the rest is left to the full grid
+            val maxItems = preferences.appPreferences.homePagePreferences.maxItemsPerRow
+            val discovered =
+                remember(state.discovered, maxItems) { state.discovered.take(maxItems) }
+
             PersonPageContent(
                 preferences = preferences,
                 name = name,
@@ -276,10 +284,18 @@ fun PersonPage(
                 favoriteOnClick = {
                     viewModel.setFavorite(!person.favorite)
                 },
-                discovered = state.discovered,
+                discovered = discovered,
                 onClickDiscover = { index, item ->
                     viewModel.navigationManager.navigateTo(item.destination)
                 },
+                onClickViewMoreDiscover = {
+                    state.discoverPerson?.let {
+                        viewModel.navigationManager.navigateTo(
+                            Destination.DiscoveredItem(it, maxItems),
+                        )
+                    }
+                },
+                enableViewMoreDiscover = state.discovered.size > discovered.size,
                 modifier = modifier,
             )
             AnimatedVisibility(showOverviewDialog) {
@@ -323,6 +339,8 @@ fun PersonPageContent(
     overviewOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
+    onClickViewMoreDiscover: () -> Unit,
+    enableViewMoreDiscover: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -437,6 +455,11 @@ fun PersonPageContent(
                     onLongClickItem = { _, _ -> },
                     onCardFocus = {},
                     focusRequester = focusRequester,
+                    enableViewMore = enableViewMoreDiscover,
+                    onClickViewMore = {
+                        position = RowColumn(DISCOVER_ROW, discovered.size)
+                        onClickViewMoreDiscover.invoke()
+                    },
                 )
             }
         }

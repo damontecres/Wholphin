@@ -151,6 +151,8 @@ sealed class Destination(
     @Serializable
     data class DiscoveredItem(
         val item: DiscoverItem,
+        // Index to scroll to on the person page grid
+        val startIndex: Int = 0,
     ) : Destination(false)
 
     @Serializable

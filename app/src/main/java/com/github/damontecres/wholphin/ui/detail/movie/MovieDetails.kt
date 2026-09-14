@@ -110,7 +110,7 @@ fun MovieDetails(
                     playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
-                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                 onDeleteItem = viewModel::deleteItem,
                 onChooseVersion = { item, source ->
                     viewModel.savePlayVersion(

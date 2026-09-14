@@ -2,14 +2,16 @@ plugins {
     alias(libs.plugins.android.library)
 }
 
+private fun Provider<String>.getInt() = get().toInt()
+
 android {
     namespace = "com.github.damontecres.wholphin.mpv"
     compileSdk {
-        version = release(36)
+        version = release(libs.versions.compileSdk.getInt())
     }
 
     defaultConfig {
-        minSdk = 23
+        minSdk = libs.versions.minSdk.getInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

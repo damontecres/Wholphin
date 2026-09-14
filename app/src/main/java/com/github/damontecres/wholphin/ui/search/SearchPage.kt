@@ -113,7 +113,7 @@ fun SearchPage(
     val focusRequesters =
         remember(state.includedSearchableTypes.size) { List(RESULTS_START + state.includedSearchableTypes.size) { FocusRequester() } }
 
-    val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
+    val seerrActive by viewModel.seerrActive.collectAsState()
     var selectedTab by rememberSaveable(seerrActive, state.discoverEnabled) { mutableIntStateOf(0) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var showFilterTypeDialog by rememberSaveable { mutableStateOf(false) }
@@ -418,12 +418,16 @@ fun SearchPage(
                         itemsIndexed(state.includedSearchableTypes) { index, type ->
                             val rowIndex = RESULTS_START + index
                             val result = state.results.getOrDefault(type, SearchResult.Searching)
+                            val focusRequester =
+                                remember(state.includedSearchableTypes.size) {
+                                    focusRequesters.getOrNull(rowIndex) ?: FocusRequester()
+                                }
                             SearchRowResult(
                                 title = type.titleStringRes,
                                 result = result,
                                 rowIndex = rowIndex,
                                 position = position,
-                                focusRequester = focusRequesters[rowIndex],
+                                focusRequester = focusRequester,
                                 onClickItem = onClickItem,
                                 onLongClickItem = { index, item ->
                                     onLongClickItem(rowIndex, index, item)

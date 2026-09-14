@@ -40,6 +40,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
@@ -64,6 +65,8 @@ fun SubtitlePreferencesContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+    val firstFocusRequester = remember { FocusRequester() }
+    val lastFocusRequester = remember { FocusRequester() }
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
 
@@ -123,6 +126,9 @@ fun SubtitlePreferencesContent(
                     groupPreferences.forEachIndexed { prefIndex, pref ->
                         pref as AppPreference<SubtitlePreferences, Any>
                         item {
+                            val isFirst = groupIndex == 0 && prefIndex == 0
+                            val isLast =
+                                groupIndex == prefList.lastIndex && prefIndex == groupPreferences.lastIndex
                             val interactionSource = remember { MutableInteractionSource() }
                             val bringIntoViewRequester = remember { BringIntoViewRequester() }
                             val focused = interactionSource.collectIsFocusedAsState().value
@@ -137,6 +143,21 @@ fun SubtitlePreferencesContent(
                                     bringIntoViewRequester.bringIntoView()
                                 }
                             }
+                            val focusModifier =
+                                Modifier
+                                    .ifElse(
+                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).bringIntoViewRequester(bringIntoViewRequester)
+                                    .lazyListWrapScrolling(
+                                        state,
+                                        focused,
+                                        isFirst,
+                                        isLast,
+                                        firstFocusRequester,
+                                        lastFocusRequester,
+                                    )
+
                             when (pref) {
                                 SubtitleSettings.Reset -> {
                                     ClickPreference(
@@ -152,6 +173,7 @@ fun SubtitlePreferencesContent(
                                             }
                                         },
                                         interactionSource = interactionSource,
+                                        modifier = focusModifier,
                                     )
                                 }
 
@@ -187,12 +209,7 @@ fun SubtitlePreferencesContent(
                                             }
                                         },
                                         interactionSource = interactionSource,
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                    Modifier.focusRequester(focusRequester),
-                                                ).bringIntoViewRequester(bringIntoViewRequester),
+                                        modifier = focusModifier,
                                     )
                                 }
                             }

@@ -109,15 +109,7 @@ sealed interface HomeRowConfig {
     @SerialName("Favorite")
     data class Favorite(
         val kind: BaseItemKind,
-        override val viewOptions: HomeRowViewOptions =
-            if (kind == BaseItemKind.EPISODE) {
-                HomeRowViewOptions(
-                    heightDp = Cards.HEIGHT_EPISODE,
-                    aspectRatio = AspectRatio.WIDE,
-                )
-            } else {
-                HomeRowViewOptions()
-            },
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): Favorite = this.copy(viewOptions = viewOptions)
     }

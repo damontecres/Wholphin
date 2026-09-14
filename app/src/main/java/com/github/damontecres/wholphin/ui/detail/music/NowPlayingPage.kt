@@ -45,12 +45,11 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.compose.state.rememberCurrentMediaItemState
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -60,7 +59,6 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
@@ -91,13 +89,8 @@ fun NowPlayingPage(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val player = viewModel.player
-    val queue =
-        rememberQueue(
-            player,
-            state.musicServiceState.queueVersion,
-            state.musicServiceState.queueSize,
-        )
-    val current = queue.getOrNull(state.musicServiceState.currentIndex)
+    val currentMediaItem = rememberCurrentMediaItemState(player)
+    val current = (currentMediaItem.mediaItem?.localConfiguration?.tag as? AudioItem)
     val viz by viewModel.viz.collectAsState()
 
     val controllerViewState = viewModel.controllerViewState
@@ -111,11 +104,9 @@ fun NowPlayingPage(
             ).value.appPreferences
     val musicPrefs = preferences.musicPreferences
 
-    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
-        remember(isLtr, preferences) {
+        remember(preferences) {
             PlaybackKeyHandler(
-                isLtr = isLtr,
                 player = player,
                 controlsEnabled = true,
                 skipWithLeftRight = false,
@@ -152,10 +143,12 @@ fun NowPlayingPage(
     LaunchedEffect(lyricsFocused) {
         if (lyricsFocused != null) {
             controllerViewState.hideControls()
+            delay(5.seconds)
+            if (!controllerViewState.controlsVisible) {
+                focusRequester.tryRequestFocus()
+            }
+            lyricsFocused = null
         }
-        delay(5.seconds)
-        lyricsFocused = null
-        focusRequester.tryRequestFocus()
     }
     BackHandler(lyricsFocused != null) {
         focusRequester.tryRequestFocus()
@@ -351,7 +344,6 @@ fun NowPlayingPage(
                 state = state,
                 player = player,
                 current = current,
-                queue = queue,
                 controllerViewState = controllerViewState,
                 onMoveQueue = { index, direction -> viewModel.moveQueue(index, direction) },
                 onClickMore = { showViewOptionsDialog = true },

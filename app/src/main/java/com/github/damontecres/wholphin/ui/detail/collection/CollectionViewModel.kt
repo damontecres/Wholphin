@@ -18,9 +18,9 @@ import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
@@ -90,7 +90,7 @@ class CollectionViewModel
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val imageUrlService: ImageUrlService,
         private val musicService: MusicService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         private val filterOptionCache: FilterOptionCache,
         @Assisted private val itemId: UUID,
     ) : ViewModel() {

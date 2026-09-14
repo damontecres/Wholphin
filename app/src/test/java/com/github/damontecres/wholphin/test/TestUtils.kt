@@ -80,6 +80,23 @@ fun playlist(
         genreItems = genres,
     )
 
+/**
+ * Create a simple [BaseItemDto] of the specified type
+ */
+fun item(
+    type: BaseItemKind,
+    id: UUID = UUID.randomUUID(),
+    name: String = "Test $type",
+    genres: List<NameGuidPair>? = null,
+): BaseItemDto =
+    BaseItemDto(
+        id = id,
+        type = type,
+        name = name,
+        seriesId = null,
+        genreItems = genres,
+    )
+
 fun server(serverId: UUID = UUID.randomUUID()) = JellyfinServer(serverId, "test server", "http://localhost:8096", "10.11.11")
 
 fun user(

@@ -15,10 +15,10 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.services.LiveTvService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.services.tvAccess
@@ -43,9 +43,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -73,13 +75,18 @@ class SearchViewModel
         private val serverRepository: ServerRepository,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaManagementService: MediaManagementService,
-        private val mediaReportService: MediaReportService,
+        private val serverReportService: ServerReportService,
         private val liveTvService: LiveTvService,
         private val keyValueService: KeyValueService,
         private val navDrawerService: NavDrawerService,
     ) : ViewModel(),
         ContextMenuProvider {
-        val seerrActive = seerrService.active
+        val seerrActive =
+            seerrService.active.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = false,
+            )
 
         private val _state = MutableStateFlow(SearchState())
         val state: StateFlow<SearchState> = _state
@@ -99,16 +106,10 @@ class SearchViewModel
 
         private fun init() {
             viewModelScope.launchDefault {
-                val tvAccess = serverRepository.currentUserDto?.tvAccess == true
                 userLibraryTypes =
-                    serverRepository.currentUser
-                        ?.id
-                        ?.let { userId ->
-                            navDrawerService
-                                .getAllUserLibraries(userId, tvAccess)
-                                .flatMap { it.collectionType.baseItemKinds }
-                                .toSet()
-                        }.orEmpty()
+                    navDrawerService.state.value.allLibraries
+                        .flatMap { it.collectionType.baseItemKinds }
+                        .toSet()
 
                 val excludedSearchableTypes =
                     serverRepository.currentUser?.id?.let { userId ->
@@ -279,8 +280,7 @@ class SearchViewModel
                         }
                     val sorted =
                         items.sortedWith(
-                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.sortName },
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) },
                         )
                     Timber.v("Search finished for %s, %s results", type, sorted.size)
                     _state.value.results[type] = SearchResult.Success(sorted)
@@ -313,8 +313,7 @@ class SearchViewModel
                         }
                     val sorted =
                         items.sortedWith(
-                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
-                                .thenBy { it.name ?: "" },
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) },
                         )
                     Timber.v("searchCombined complete %s results", sorted.size)
                     _state.update { it.copy(combinedResults = SearchResult.Success(sorted)) }
@@ -453,7 +452,7 @@ class SearchViewModel
 
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
         fun fetchProgramForDialog(programId: UUID) {
             _programDialogState.update { it.copy(loading = DataLoadingState.Loading) }

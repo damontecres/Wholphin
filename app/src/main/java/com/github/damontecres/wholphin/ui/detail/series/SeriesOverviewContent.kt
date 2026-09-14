@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -61,6 +60,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TabDetails
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
+import com.github.damontecres.wholphin.ui.formatSeasonNumber
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -123,7 +123,6 @@ fun SeriesOverviewContent(
     val scrollConnection = rememberDelayedNestedScroll()
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
 
-    val seasonStr = stringResource(R.string.tv_season)
     val tabFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val contentFocusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
     val tabs =
@@ -132,7 +131,7 @@ fun SeriesOverviewContent(
                 title =
                     StringStringProvider(
                         season?.name
-                            ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
+                            ?: season?.data?.indexNumber?.let { formatSeasonNumber(it) }
                             ?: "",
                     ),
                 tabFocusRequester = tabFocusRequesters[index],
