@@ -111,6 +111,8 @@ fun <T : CardGridItem> CardGrid(
     showJumpButtons: Boolean,
     showLetterButtons: Boolean,
     modifier: Modifier = Modifier,
+    // The letters of the alphabet bar; null shows every letter of the UI language
+    jumpLetters: String? = null,
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     cardContent: @Composable (GridItemDetails<T>) -> Unit,
@@ -426,22 +428,15 @@ fun <T : CardGridItem> CardGrid(
                     }
                 }
             }
-            val letters = stringResource(R.string.jump_letters)
+            val letters = jumpLetters ?: stringResource(R.string.jump_letters)
             // Letters
             val currentLetter =
-                remember(focusedIndex) {
+                remember(focusedIndex, letters) {
                     pager
                         .getOrNull(focusedIndex)
                         ?.sortName
                         ?.firstOrNull()
-                        ?.uppercaseChar()
-                        ?.let {
-                            when (it) {
-                                in '0'..'9' -> '#'
-                                in 'A'..'Z' -> it
-                                else -> null
-                            }
-                        }
+                        ?.let { first -> letters.firstOrNull { it.equals(first, ignoreCase = true) } }
                         ?: letters[0]
                 }
             if (showLetterButtons && pager.isNotEmpty()) {
@@ -529,8 +524,8 @@ fun AlphabetButtons(
         }
     }
     // Focus & interaction states for each letter button
-    val focusRequesters = remember { List(letters.length) { FocusRequester() } }
-    val interactionSources = remember { List(letters.length) { MutableInteractionSource() } }
+    val focusRequesters = remember(letters) { List(letters.length) { FocusRequester() } }
+    val interactionSources = remember(letters) { List(letters.length) { MutableInteractionSource() } }
 
     // Track if the entire alphabet picker component has focus
     var alphabetPickerFocused by remember { mutableStateOf(false) }
@@ -617,4 +612,27 @@ fun AlphabetButtons(
             }
         }
     }
+}
+
+/**
+ * The letters for [AlphabetButtons]: every letter of the UI language, narrowed by
+ * [presentLetters] to the ones that have items. [key] identifies the result set, so the
+ * narrowing is redone when it changes. Until it completes, and whenever it yields null, the bar
+ * keeps every letter.
+ */
+@Composable
+fun rememberJumpLetters(
+    enabled: Boolean,
+    key: Any?,
+    presentLetters: suspend (String) -> String?,
+): String {
+    val allLetters = stringResource(R.string.jump_letters)
+    var letters by remember(allLetters) { mutableStateOf(allLetters) }
+    val currentPresentLetters by rememberUpdatedState(presentLetters)
+    LaunchedEffect(allLetters, enabled, key) {
+        if (enabled) {
+            letters = currentPresentLetters.invoke(allLetters) ?: allLetters
+        }
+    }
+    return letters
 }
