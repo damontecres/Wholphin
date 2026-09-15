@@ -63,7 +63,7 @@ Action: `android.intent.action.VIEW`
 Shorthand action: `view`
 
 Parameters:
-- `itemId` - Required, the UUID of the media item
+- `itemId` - Optional, the UUID of the media item, if not set, goes to home screen
 
 
 ### Examples
@@ -135,10 +135,18 @@ adb shell am start -d 'wholphin://play?itemId=5cf8f8e7-2a5f-4aa9-8c12-ddf63d42ee
 
 Full format
 ```bash
+# Switch user, go to item
 adb shell am start \
   -a android.intent.action.VIEW \
   -n 'com.github.damontecres.wholphin/.MainActivity' \
   --es itemId "5cf8f8e7-2a5f-4aa9-8c12-ddf63d42ee6d" \
+  --es serverId "341880f9-ca88-4038-8718-f6b2407950b1" \
+  --es userId "5c8575e0-468d-44fb-8c70-00aa79160587"
+
+# Switch user, go to home screen
+adb shell am start \
+  -a android.intent.action.VIEW \
+  -n 'com.github.damontecres.wholphin/.MainActivity' \
   --es serverId "341880f9-ca88-4038-8718-f6b2407950b1" \
   --es userId "5c8575e0-468d-44fb-8c70-00aa79160587"
 ```
