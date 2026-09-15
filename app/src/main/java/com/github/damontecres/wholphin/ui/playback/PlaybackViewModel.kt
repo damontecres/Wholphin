@@ -465,6 +465,23 @@ class PlaybackViewModel
 
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
                 val base = item.data
+                // A DVR recording that's still being actively written has no stable
+                // MediaSource id: the item's cached/static MediaSources (from a plain item
+                // GET, via MediaSourceManager.GetStaticMediaSources server-side) carry the
+                // item's own id, but the server resolves in-progress-recording playback
+                // dynamically (MediaSourceManager.GetRecordingStreamMediaSources) with a
+                // DIFFERENT id (the active recording's own id, not the item's). If we send
+                // that stale static id as an explicit mediaSourceId in the PlaybackInfo
+                // request, the server's own id-filter matches nothing and returns
+                // ErrorCode=NoCompatibleStream instantly -- even though a perfectly good
+                // source exists. Confirmed by reproducing against a live 12.0.0 server and
+                // reading the exact server-side filter in Jellyfin.Api.Helpers
+                // .MediaInfoHelper.ResolvePlaybackMediaSources. Treat this exactly like a
+                // live TV channel: skip static source selection and let the server resolve
+                // the current source itself (sourceId = null).
+                val isInProgressRecording =
+                    item.type == BaseItemKind.RECORDING && base.status == "InProgress"
+                val skipStaticSourceSelection = isLiveTv || isInProgressRecording
 
                 // Use the provided playback parameters or else check if the database has some
                 val itemPlayback =
@@ -479,7 +496,7 @@ class PlaybackViewModel
                         }
                     }
                 val mediaSource =
-                    if (!isLiveTv) {
+                    if (!skipStaticSourceSelection) {
                         streamChoiceService.chooseSource(base, itemPlayback)
                     } else {
                         null
@@ -487,7 +504,7 @@ class PlaybackViewModel
 
                 val plc = streamChoiceService.getPlaybackLanguageChoice(base)
 
-                if (mediaSource == null && !isLiveTv) {
+                if (mediaSource == null && !skipStaticSourceSelection) {
                     showToast(
                         context,
                         "Item has no media sources, skipping...",
