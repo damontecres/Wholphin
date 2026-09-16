@@ -229,6 +229,7 @@ message ExperimentalPreferences {
   bool prefer_ac3_surround = 3;
   bool disable_audio_offload = 4;
   bool prefer_dolby_vision_over_hdr10_plus = 5;
+  bool convert_dolby_vision_profile_7 = 6;
 }
 
 message AppPreferences {
