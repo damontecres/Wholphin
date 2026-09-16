@@ -52,4 +52,9 @@
     <string name="cancel">Cancel</string>
     <string name="chapters">Chapters</string>
     <string name="choose_stream">Choose %1$s</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="login_credentials_expired">Credentials expired, please login in again</string>
+    <string name="login_not_authorized">You are not authorised to access the server at this time</string>
+    <string name="clear_image_cache">Clear image cache</string>
+    <string name="collection">Collection</string>
 </resources>
