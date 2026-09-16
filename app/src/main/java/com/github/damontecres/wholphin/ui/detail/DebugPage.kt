@@ -40,6 +40,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
+import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -56,6 +57,7 @@ import kotlinx.coroutines.withContext
 import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
+import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Date
@@ -68,6 +70,7 @@ class DebugViewModel
         @param:ApplicationContext private val context: Context,
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
+        val seriesTrackChoiceDao: SeriesTrackChoiceDao,
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
     ) : ViewModel() {
@@ -167,6 +170,13 @@ class DebugViewModel
                 serverRepository.currentUser?.rowId?.let {
                     val results = itemPlaybackDao.getItems(it)
                     itemPlaybacks.value = results
+                }
+            }
+            viewModelScope.launchIO {
+                serverRepository.currentUser?.rowId?.let {
+                    val results = seriesTrackChoiceDao.getAll(it)
+                    Timber.v("Got %s SeriesTrackChoice", results.size)
+                    results.forEach { Timber.v("%s", it) }
                 }
             }
             viewModelScope.launchIO {
