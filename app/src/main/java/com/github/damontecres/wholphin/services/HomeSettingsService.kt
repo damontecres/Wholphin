@@ -245,7 +245,7 @@ class HomeSettingsService
                         settings.rows.mapIndexed { index, config ->
                             resolve(index, config)
                         }
-                    HomePageResolvedSettings(resolvedRows)
+                    HomePageResolvedSettings(userId, resolvedRows)
                 } else {
                     createDefault(userId)
                 }
@@ -256,12 +256,15 @@ class HomeSettingsService
         /**
          * Resolve the settings and set them to be the current settings
          */
-        suspend fun updateCurrent(settings: HomePageSettings) {
+        suspend fun updateCurrent(
+            userId: UUID,
+            settings: HomePageSettings,
+        ) {
             val resolvedRows =
                 settings.rows.mapIndexed { index, config ->
                     resolve(index, config)
                 }
-            val resolvedSettings = HomePageResolvedSettings(resolvedRows)
+            val resolvedSettings = HomePageResolvedSettings(userId, resolvedRows)
             currentSettings.update { resolvedSettings }
         }
 
@@ -312,7 +315,7 @@ class HomeSettingsService
                     ),
                 )
             val rowConfig = continueWatchingRow + includedIds
-            return HomePageResolvedSettings(rowConfig)
+            return HomePageResolvedSettings(userId, rowConfig)
         }
 
         /**
@@ -428,7 +431,7 @@ class HomeSettingsService
                                 null
                             }
                         }.flatten()
-                HomePageResolvedSettings(rowConfigs)
+                HomePageResolvedSettings(userId, rowConfigs)
             } else {
                 null
             }
@@ -1224,10 +1227,11 @@ data class HomeRowConfigDisplay(
  * @see HomePageSettings
  */
 data class HomePageResolvedSettings(
+    val userId: UUID,
     val rows: List<HomeRowConfigDisplay>,
 ) {
     companion object {
-        val EMPTY = HomePageResolvedSettings(listOf())
+        val EMPTY = HomePageResolvedSettings(UUID.randomUUID(), emptyList())
     }
 }
 
