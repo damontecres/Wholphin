@@ -10,7 +10,7 @@ runs:
       with:
         python-version: '3.14'
     - name: Setup JDK
-      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
       with:
         distribution: zulu
         java-version: '21'
@@ -23,7 +23,7 @@ runs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
       with:
-        packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
+        packages: "platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
     - name: Add NDK to path
       shell: bash
       run: |

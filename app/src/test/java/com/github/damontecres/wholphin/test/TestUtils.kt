@@ -4,12 +4,16 @@ import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.ibm.icu.impl.Assert
 import io.mockk.MockKMatcherScope
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.NameGuidPair
 import org.jellyfin.sdk.model.api.UserDto
+import org.junit.Assert.assertNotNull
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 fun MockKMatcherScope.nonBlankString() = match<String> { it.isNotNullOrBlank() }
 
@@ -128,3 +132,20 @@ fun currentUser(
     server(serverId),
     user(userId),
 )
+
+/**
+ * Asserts that the object is not null and is type `T`
+ *
+ * Includes a [contract] to smart-cast the object to T
+ */
+@OptIn(ExperimentalContracts::class)
+inline fun <reified T : Any> assertIs(obj: Any?) {
+    contract {
+        returns() implies (obj is T)
+    }
+    assertNotNull(obj)
+    val result = T::class.isInstance(obj)
+    if (!result) {
+        Assert.fail("Expected type=${T::class.qualifiedName}, actual type= ${obj!!::class.qualifiedName} ")
+    }
+}
