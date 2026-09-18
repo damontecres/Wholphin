@@ -237,21 +237,30 @@ data class BaseItem(
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    data.seasonId?.let { seasonId ->
+                    val seasonId = data.seasonId
+                    val seriesId = data.seriesId
+                    if (seasonId != null && seriesId != null) {
                         Destination.SeriesOverview(
-                            data.seriesId!!,
+                            seriesId,
                             BaseItemKind.SERIES,
                             SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
                         )
-                    } ?: Destination.MediaItem(this)
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.SEASON -> {
-                    Destination.SeriesOverview(
-                        data.seriesId!!,
-                        BaseItemKind.SERIES,
-                        SeasonEpisodeIds(id, indexNumber, null, null),
-                    )
+                    val seriesId = data.seriesId
+                    if (seriesId != null) {
+                        Destination.SeriesOverview(
+                            seriesId,
+                            BaseItemKind.SERIES,
+                            SeasonEpisodeIds(id, indexNumber, null, null),
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.TV_CHANNEL -> {
