@@ -149,7 +149,7 @@
         <item quantity="other">Specialinslag</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Kortfilmer</item>
+        <item quantity="one">Kortfilm</item>
         <item quantity="other">Kortfilmer</item>
     </plurals>
     <plurals name="downloads">
@@ -200,7 +200,7 @@
     <string name="mark_watched">Markera som spelad</string>
     <string name="max_bitrate">Maximal bithastighet</string>
     <string name="more_like_this">Liknande titlar</string>
-    <string name="next_up">Näst på tur</string>
+    <string name="next_up">Nästa på tur</string>
     <string name="no_data">Ingen data</string>
     <string name="no_scheduled_recordings">Inga schemalagda inspelningar</string>
     <string name="no_update_available">Ingen uppdatering tillgänglig</string>
@@ -670,4 +670,6 @@
     <string name="confirm_enable_experimental_body">Experimentella inställningar kan vara instabila!\n\n Dessa kan tas bort eller ändras i framtida versioner.</string>
     <string name="remove_from_playlist">Ta bort från spellista</string>
     <string name="trailers_title">Trailers</string>
+    <string name="visualizer_rationale">Visualisering av ljuduppspelning kräver behörighet att spela in ljud.</string>
+    <string name="login_credentials_expired">Inloggningsuppgifter har löpt ut. Vänligen logga in på nytt.</string>
 </resources>
