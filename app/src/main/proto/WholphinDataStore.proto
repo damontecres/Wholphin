@@ -48,6 +48,12 @@ enum AssPlaybackMode{
   ASS_TRANSCODE = 2;
 }
 
+enum DoviDeviceCompatibilityMode{
+  DOVI_ALLOW = 0;
+  DISABLE_DOVI_ALL = 1;
+  DISABLE_DOVI_WITH_HDR10 = 2;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -228,6 +234,7 @@ message ExperimentalPreferences {
   bool video_tunneling_enabled = 2;
   bool prefer_ac3_surround = 3;
   bool disable_audio_offload = 4;
+  DoviDeviceCompatibilityMode dovi_device_compatibility_mode = 5;
 }
 
 message AppPreferences {
