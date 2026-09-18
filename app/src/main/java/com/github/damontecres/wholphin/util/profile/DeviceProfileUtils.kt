@@ -69,6 +69,7 @@ fun createDeviceProfile(
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
+    hdr10PlusDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
@@ -123,7 +124,12 @@ fun createDeviceProfile(
     val supportsHevcDolbyVision = mediaTest.supportsHevcDolbyVision()
     val supportsHevcDolbyVisionEL = mediaTest.supportsHevcDolbyVisionEL()
     val supportsHevcHDR10 = mediaTest.supportsHevcHDR10()
-    val supportsHevcHDR10Plus = mediaTest.supportsHevcHDR10Plus()
+    // Some Android TV decoders can play HDR10+ HEVC as HDR10 but do not expose
+    // the HDR10+ codec profile through MediaCodec. Keep this opt-in so devices
+    // with known HDR10+ issues retain the safe default.
+    val supportsHevcHDR10Plus =
+        mediaTest.supportsHevcHDR10Plus() ||
+            (hdr10PlusDirectPlay && mediaTest.supportsHevcHDR10())
 
     name = "AndroidTV-Default"
 
