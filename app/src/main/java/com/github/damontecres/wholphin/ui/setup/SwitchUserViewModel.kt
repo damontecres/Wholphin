@@ -132,6 +132,7 @@ class SwitchUserViewModel
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val current = serverRepository.changeUser(server, user)
+                    navigationManager.reloadHome()
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                     SwitchUserResult.Success
                 } catch (ex: InvalidStatusException) {
