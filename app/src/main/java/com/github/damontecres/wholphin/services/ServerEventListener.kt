@@ -73,12 +73,12 @@ class ServerEventListener
                             ),
                         supportsMediaControl = true,
                     )
-                    setupListeners()
+                    subscribeToWebSocket()
                 }
             }
         }
 
-        fun setupListeners() {
+        fun subscribeToWebSocket() {
             Timber.v("Subscribing to WebSocket")
             listenJob?.cancel()
             listenJob =
@@ -89,30 +89,42 @@ class ServerEventListener
                             api.webSocket
                                 .subscribe<GeneralCommandMessage>()
                                 .onEach { message ->
-                                    if (message.data?.name in
-                                        setOf(
-                                            GeneralCommandType.DISPLAY_MESSAGE,
-                                            GeneralCommandType.SEND_STRING,
-                                        )
-                                    ) {
-                                        val header = message.data?.arguments["Header"]
-                                        val text =
-                                            message.data?.arguments["Text"]
-                                                ?: message.data?.arguments["String"]
-                                        val toast =
-                                            listOfNotNull(header, text)
-                                                .joinToString("\n")
-                                        showToast(context, toast, Toast.LENGTH_LONG)
+                                    Timber.v(
+                                        "Got GeneralCommandMessage: %s",
+                                        message.data?.name,
+                                    )
+                                    when (message.data?.name) {
+                                        GeneralCommandType.DISPLAY_MESSAGE,
+                                        GeneralCommandType.SEND_STRING,
+                                        -> {
+                                            val header = message.data?.arguments["Header"]
+                                            val text =
+                                                message.data?.arguments["Text"]
+                                                    ?: message.data?.arguments["String"]
+                                            val toast =
+                                                listOfNotNull(header, text)
+                                                    .joinToString("\n")
+                                            if (toast.isNotBlank()) {
+                                                showToast(context, toast, Toast.LENGTH_LONG)
+                                            }
+                                        }
+
+                                        else -> {
+                                            Timber.v(
+                                                "Ignoring GeneralCommandMessage: %s",
+                                                message.data?.name,
+                                            )
+                                        }
                                     }
                                 }.catch { ex ->
                                     Timber.e(ex, "Error in general message websocket subscription")
-                                }.launchIn(this)
+                                }.launchIn(this@coroutineScope)
 
                             api.webSocket
                                 .subscribe<UserUpdatedMessage>()
                                 .catch { ex ->
                                     Timber.e(ex, "Error in user updated websocket subscription")
-                                }.collectLatestIn(this) { msg ->
+                                }.collectLatestIn(this@coroutineScope) { msg ->
                                     Timber.v("Got updated user: %s", msg.data?.id)
                                     msg.data?.let { serverRepository.updateUserDto(it) }
                                 }
@@ -122,7 +134,7 @@ class ServerEventListener
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error in websocket connection")
                         if (activity.lifecycleScope.isActive) {
-                            setupListeners()
+                            subscribeToWebSocket()
                         }
                     }
                 }

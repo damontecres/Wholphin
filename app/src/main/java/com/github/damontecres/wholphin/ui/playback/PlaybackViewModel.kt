@@ -275,7 +275,7 @@ class PlaybackViewModel
         private fun configurePlayer() {
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
-            subscribe()
+            subscribeToWebSocket()
             jobs.add(listenForTranscodeReason())
             val sessionPlayer =
                 MediaSessionPlayer(
@@ -1421,7 +1421,7 @@ class PlaybackViewModel
             activityListener = null
         }
 
-        fun subscribe() {
+        fun subscribeToWebSocket() {
             subscribeJob?.cancel()
             try {
                 subscribeJob =
@@ -1431,6 +1431,7 @@ class PlaybackViewModel
                                 .subscribe<PlaystateMessage>()
                                 .onEach { message ->
                                     message.data?.let { request ->
+                                        Timber.v("Received playstate request: %s", request)
                                         withContext(WholphinDispatchers.Main) {
                                             handlePlaystateRequest(request)
                                         }
@@ -1445,7 +1446,7 @@ class PlaybackViewModel
             } catch (ex: Exception) {
                 Timber.e(ex, "Error in playback websocket subscription")
                 if (viewModelScope.isActive) {
-                    subscribe()
+                    subscribeToWebSocket()
                 }
             }
         }
