@@ -318,8 +318,17 @@ class ServerRepository
          */
         suspend fun updateUserDto() {
             val userDto by apiClient.userApi.getCurrentUser()
+            updateUserDto(userDto)
+        }
+
+        /**
+         * Update [currentUserDto] with the specified [UserDto]
+         *
+         * This will only update if the [UserDto] is for the [currentUser]
+         */
+        fun updateUserDto(userDto: UserDto) {
             _currentUserDto.update {
-                if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
+                if (currentUser?.id == userDto.id) userDto else it
             }
         }
 
