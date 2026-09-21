@@ -91,7 +91,7 @@
     <string name="studios">Студии</string>
     <string name="subtitle">Субтитры</string>
     <string name="subtitles">Субтитры</string>
-    <string name="suggestions">Рекомендации</string>
+    <string name="suggestions">Предложения</string>
     <string name="switch_servers">Сменить сервер</string>
     <string name="switch_user">Сменить</string>
     <string name="top_unwatched">Лучшие из непросмотренных</string>
@@ -728,7 +728,7 @@
     <string name="video_tunneling">Туннелирование видео</string>
     <string name="d_pad_seek_mode_title">Вид полосы перемотки при нажатии кнопок пульта</string>
     <string name="dpad_seek_mode_minimal">Минимальный</string>
-    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string name="dpad_seek_mode_trickplay">Превью при перемотке</string>
     <string name="dpad_seek_mode_minimal_summary">Небольшая полоса перемотки внизу экрана (по умолчанию)</string>
     <string name="dpad_seek_mode_trickplay_summary">Полоса перемотки с миниатюрами кадров (Trickplay)</string>
     <string name="dpad_seek_mode_none_summary">Без полосы перемотки</string>
@@ -759,8 +759,8 @@
     <string name="dim_percentage">Процент затемнения</string>
     <string name="dim_screen">Затемнение экрана</string>
     <string name="photo_albums">Фотоальбомы</string>
-    <string name="no_favorites_found">В избранном пока ничего нет</string>
+    <string name="no_favorites_found">В избранном пока ничего нет!</string>
     <string name="remove_from_playlist">Убрать из плейлиста</string>
-    <string name="login_credentials_expired">Срок действия учётных данных истёк. Пожалуйста, войдите снова.</string>
+    <string name="login_credentials_expired">Срок действия учётных данных истёк. Пожалуйста, войдите снова</string>
     <string name="login_not_authorized">У вас нет доступа к серверу в данный момент</string>
 </resources>
