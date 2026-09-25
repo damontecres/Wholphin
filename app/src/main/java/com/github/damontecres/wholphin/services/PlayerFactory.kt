@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactor
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Conversion
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
+import com.github.damontecres.wholphin.util.EqualBitrateVariantTrackSelectionFactory
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.google.common.util.concurrent.Futures
@@ -248,7 +249,7 @@ class PlayerFactory
         private fun createTrackSelector(
             tunneling: Boolean? = null,
             disableAudioOffload: Boolean = false,
-        ) = DefaultTrackSelector(context).apply {
+        ) = DefaultTrackSelector(context, EqualBitrateVariantTrackSelectionFactory()).apply {
             val offloadMode =
                 if (disableAudioOffload) {
                     AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
