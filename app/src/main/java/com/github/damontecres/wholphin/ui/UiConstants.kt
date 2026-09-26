@@ -18,6 +18,8 @@ val FontAwesome = FontFamily(Font(resId = R.font.fa_solid_900))
 val LocalImageUrlService =
     staticCompositionLocalOf<ImageUrlService> { throw IllegalStateException("LocalImageUrlService not set") }
 
+val LocalInterfacePreferences = staticCompositionLocalOf { InterfacePreferences() }
+
 /**
  * Colors not associated with the theme
  */

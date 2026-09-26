@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.LocalInterfacePreferences
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
@@ -203,6 +204,7 @@ fun ItemCardImageOverlay(
     numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) {
+    val prefs = LocalInterfacePreferences.current
     Box(modifier = modifier.fillMaxSize()) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -212,7 +214,7 @@ fun ItemCardImageOverlay(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
         ) {
-            if (numberOfVersions > 1) {
+            if (numberOfVersions > 1 && prefs.versionIndicator) {
                 Box(
                     modifier =
                         Modifier
@@ -230,7 +232,7 @@ fun ItemCardImageOverlay(
                     )
                 }
             }
-            if (favorite) {
+            if (favorite && prefs.favoriteIndicator) {
                 FavoriteIndicator()
             }
         }
@@ -242,10 +244,10 @@ fun ItemCardImageOverlay(
                     .padding(4.dp)
                     .align(Alignment.TopEnd),
         ) {
-            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
+            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) && prefs.watchedIndicator) {
                 WatchedIcon(Modifier.size(24.dp))
             }
-            if (unwatchedCount > 0) {
+            if (unwatchedCount > 0 && prefs.unwatchedCount) {
                 Box(
                     modifier =
                         Modifier
@@ -265,7 +267,7 @@ fun ItemCardImageOverlay(
             }
         }
 
-        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100) {
+        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && prefs.watchProgress) {
             Box(
                 modifier =
                     Modifier

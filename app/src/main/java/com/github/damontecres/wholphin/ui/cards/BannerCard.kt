@@ -46,7 +46,9 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.LocalInterfacePreferences
 import com.github.damontecres.wholphin.ui.enableMarquee
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -70,6 +72,7 @@ fun BannerCard(
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = true,
 ) {
+    val prefs = LocalInterfacePreferences.current
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val fillHeight =
@@ -148,10 +151,10 @@ fun BannerCard(
                             .align(Alignment.TopEnd)
                             .padding(4.dp),
                 ) {
-                    if (played && (playPercent <= 0 || playPercent >= 100)) {
+                    if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
-                    if (cornerText != null) {
+                    if (cornerText != null && prefs.upperRightEpisodeNumber) {
                         Box(
                             modifier =
                                 Modifier
@@ -170,7 +173,7 @@ fun BannerCard(
                     }
                 }
             }
-            if (favorite) {
+            if (favorite && prefs.favoriteIndicator) {
                 Text(
                     modifier =
                         Modifier
@@ -182,7 +185,17 @@ fun BannerCard(
                     fontFamily = FontAwesome,
                 )
             }
-            if (playPercent > 0 && playPercent < 100) {
+            val showProgress =
+                remember(playPercent, prefs) {
+                    val enabled =
+                        when (item?.type) {
+                            BaseItemKind.SEASON -> prefs.seasonProgress
+                            BaseItemKind.SERIES -> prefs.seriesProgress
+                            else -> true
+                        }
+                    prefs.watchProgress && enabled && playPercent > 0 && playPercent < 100
+                }
+            if (showProgress) {
                 Box(
                     modifier =
                         Modifier
