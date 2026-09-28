@@ -68,10 +68,11 @@ fun createDeviceProfile(
     downMixAudio: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
-    dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
+    forceEnabledHdr: Set<String>,
+    forceDisabledHdr: Set<String>,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -479,7 +480,7 @@ fun createDeviceProfile(
                     if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
                 }
             }
-        }
+        } - forceEnabledHdr + forceDisabledHdr
 
     // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
     val unsupportedRangeTypesHevc =
@@ -487,11 +488,9 @@ fun createDeviceProfile(
             if (jellyfinTenEleven) add("DOVIInvalid")
 
             if (!supportsHevcDolbyVisionEL) {
-                if (!dolbyVisionELDirectPlay) {
-                    if (jellyfinTenEleven) {
-                        add("DOVIWithEL")
-                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
-                    }
+                if (jellyfinTenEleven) {
+                    add("DOVIWithEL")
+                    if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
                 }
 
                 if (!supportsHevcDolbyVision) {
@@ -514,7 +513,7 @@ fun createDeviceProfile(
                 add("DOVIWithHDR10Plus")
                 add("DOVIWithELHDR10Plus")
             }
-        }
+        } - forceEnabledHdr + forceDisabledHdr
 
     // Display
     // Note: The codec profiles use a workaround to create correct behavior

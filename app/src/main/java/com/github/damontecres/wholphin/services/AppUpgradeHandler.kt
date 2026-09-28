@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
+import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
@@ -436,6 +437,20 @@ class AppUpgradeHandler
                         it.updateExperimentalPreferences {
                             preferAc3Surround =
                                 ExperimentalPreference.PreferAc3ForSurround.defaultValue
+                        }
+                    } else {
+                        it
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.7"))) {
+                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
+                appPreferences.updateData {
+                    if (it.playbackPreferences.overrides.directPlayDolbyVisionEL) {
+                        it.updatePlaybackOverrides {
+                            doviProfile7Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE
+                            directPlayDolbyVisionEL = false
                         }
                     } else {
                         it
