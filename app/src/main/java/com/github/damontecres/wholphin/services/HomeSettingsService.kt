@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -591,7 +592,7 @@ class HomeSettingsService
             row: HomeRowConfig,
             scope: CoroutineScope,
             prefs: HomePagePreferences,
-            userDto: UserDto,
+            userDto: ServerUserConfig,
             libraries: List<Library>,
             limit: Int = prefs.maxItemsPerRow,
             isRefresh: Boolean,
