@@ -101,6 +101,10 @@ class HomeViewModel
                         _state.update { HomeState.EMPTY }
                         return@collectLatestIn
                     }
+                    if (state.value.settings.userId != settings.userId) {
+                        Timber.d("User changed")
+                        _state.update { HomeState.EMPTY }
+                    }
                     dataLoadingJob =
                         viewModelScope.launchIO {
                             loadHomeRows(userDto, settings)
