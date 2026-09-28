@@ -11,10 +11,10 @@ import java.util.UUID
  */
 data class ServerUserConfig(
     val id: UUID,
-    val name: String?,
-    val serverId: UUID?,
-    val configuration: UserConfiguration?,
-    val policy: UserPolicy?,
+    val name: String? = null,
+    val serverId: UUID? = null,
+    val configuration: UserConfiguration? = null,
+    val policy: UserPolicy? = null,
 ) {
     constructor(userDto: UserDto) : this(
         id = userDto.id,
