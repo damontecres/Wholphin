@@ -43,9 +43,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -79,7 +81,12 @@ class SearchViewModel
         private val navDrawerService: NavDrawerService,
     ) : ViewModel(),
         ContextMenuProvider {
-        val seerrActive = seerrService.active
+        val seerrActive =
+            seerrService.active.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = false,
+            )
 
         private val _state = MutableStateFlow(SearchState())
         val state: StateFlow<SearchState> = _state

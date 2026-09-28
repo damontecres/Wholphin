@@ -1,24 +1,34 @@
 package com.github.damontecres.wholphin.services
 
+import android.app.SearchManager
 import android.content.Intent
 import com.github.damontecres.wholphin.data.CurrentUser
+import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.update
+import com.github.damontecres.wholphin.test.assertIs
 import com.github.damontecres.wholphin.test.currentUser
+import com.github.damontecres.wholphin.test.movie
 import com.github.damontecres.wholphin.test.server
 import com.github.damontecres.wholphin.test.user
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.ui.toServerString
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.model.UUID
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -32,13 +42,16 @@ import org.robolectric.annotation.Config
 class IntentServiceTest {
     private val api: ApiClient = mockk()
     private val serverRepository: ServerRepository = mockk()
+    private val serverDao: JellyfinServerDao = mockk()
     private val userPreferencesService: UserPreferencesService = mockk()
+    private val userLibraryApi: UserLibraryApi = mockk()
 
     lateinit var intentService: IntentService
 
     private val serverId = UUID.randomUUID()
     private val userId = UUID.randomUUID()
     private val currentUser = currentUser(serverId, userId)
+    private val itemId = UUID.randomUUID()
 
     private val protectedCurrentUser =
         CurrentUser(
@@ -49,6 +62,9 @@ class IntentServiceTest {
     @Before
     fun setup() {
         intentService = IntentService(api, serverRepository, userPreferencesService)
+        every { api.userLibraryApi } returns userLibraryApi
+        coEvery { userLibraryApi.getItem(itemId) } returns successResponse(movie(itemId))
+        every { serverRepository.serverDao } returns serverDao
     }
 
     private fun setupPreferences(block: AppPreferences.Builder.() -> Unit) {
@@ -63,16 +79,20 @@ class IntentServiceTest {
             }
     }
 
+    private fun setupAutoSignInUnprotected() {
+        setupPreferences {
+            signInAutomatically = true
+            currentServerId = serverId.toServerString()
+            currentUserId = userId.toServerString()
+        }
+        every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
+        coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+    }
+
     @Test
     fun `Test auto sign in with unprotected profile`() =
         runTest {
-            setupPreferences {
-                signInAutomatically = true
-                currentServerId = serverId.toServerString()
-                currentUserId = userId.toServerString()
-            }
-            every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
-            coEvery { serverRepository.restoreSession(serverId, userId) } returns currentUser
+            setupAutoSignInUnprotected()
 
             val intent = Intent()
             val result = intentService.prepare(intent)
@@ -220,5 +240,244 @@ class IntentServiceTest {
             assertTrue(result is IntentResult.Error)
 
             coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+        }
+
+    @Test
+    fun `Test parseIntent with view item`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra("itemId", itemId.toString())
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(1, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            assertIs<Destination.MediaItem>(first)
+
+            assertEquals(itemId, first.itemId)
+
+            coVerify { userLibraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test parseIntent with view and no itemId`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_VIEW
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(0, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+
+            coVerify(exactly = 0) { userLibraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test parseIntent with view and switch user`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val newUserId = UUID.randomUUID()
+            val newServerId = UUID.randomUUID()
+            val newCurrentUser = currentUser(newServerId, newUserId)
+
+            every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
+            coEvery {
+                serverRepository.restoreSession(
+                    newServerId,
+                    newUserId,
+                )
+            } returns newCurrentUser
+            every { serverDao.getUser(newServerId, newUserId) } returns newCurrentUser.user
+
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra("userId", newUserId.toString())
+                    putExtra("serverId", newServerId.toString())
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(0, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+
+            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            verify { serverDao.getUser(newServerId, newUserId) }
+            coVerify { serverRepository.restoreSession(newServerId, newUserId) }
+            coVerify(exactly = 0) { userLibraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test parseIntent with view, itemId, and switch user`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val newUserId = UUID.randomUUID()
+            val newServerId = UUID.randomUUID()
+            val newCurrentUser = currentUser(newServerId, newUserId)
+
+            every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(currentUser)
+            coEvery {
+                serverRepository.restoreSession(
+                    newServerId,
+                    newUserId,
+                )
+            } returns newCurrentUser
+            every { serverDao.getUser(newServerId, newUserId) } returns newCurrentUser.user
+
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra("userId", newUserId.toString())
+                    putExtra("serverId", newServerId.toString())
+                    putExtra("itemId", itemId.toString())
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(1, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            assertIs<Destination.MediaItem>(first)
+
+            assertEquals(itemId, first.itemId)
+
+            coVerify(exactly = 0) { serverRepository.restoreSession(serverId, userId) }
+            verify { serverDao.getUser(newServerId, newUserId) }
+            coVerify { serverRepository.restoreSession(newServerId, newUserId) }
+            coVerify { userLibraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test parseIntent with search`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_SEARCH
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(1, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            assertIs<Destination.Search>(first)
+
+            assertEquals("", first.query)
+        }
+
+    @Test
+    fun `Test parseIntent with search query`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val query = "query123"
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_SEARCH
+                    putExtra(SearchManager.QUERY, query)
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(1, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            assertIs<Destination.Search>(first)
+
+            assertEquals(query, first.query)
+        }
+
+    @Test
+    fun `Test parseIntent with play but no itemId`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val intent =
+                Intent().apply {
+                    action = IntentService.ACTION_PLAYBACK
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Error>(result)
+        }
+
+    @Test
+    fun `Test parseIntent with play itemId`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val intent =
+                Intent().apply {
+                    action = IntentService.ACTION_PLAYBACK
+                    putExtra("itemId", itemId.toString())
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(2, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            val second = destinations[1]
+            assertIs<Destination.MediaItem>(first)
+            assertIs<Destination.Playback>(second)
+
+            assertEquals(itemId, first.itemId)
+            assertEquals(itemId, second.itemId)
+
+            coVerify { userLibraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test parseIntent with play itemId and params`() =
+        runTest {
+            setupAutoSignInUnprotected()
+
+            val position = 4_000L
+            val shuffle = true
+            val intent =
+                Intent().apply {
+                    action = IntentService.ACTION_PLAYBACK
+                    putExtra("itemId", itemId.toString())
+                    putExtra("position", position)
+                    putExtra("shuffle", shuffle)
+                }
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.Target>(result)
+
+            val destinations = result.destinations
+            assertEquals(2, destinations.size)
+            assertTrue(result.addHomeToBackStack)
+            val first = destinations.first()
+            val second = destinations[1]
+            assertIs<Destination.MediaItem>(first)
+            assertIs<Destination.Playback>(second)
+
+            assertEquals(itemId, first.itemId)
+            assertEquals(itemId, second.itemId)
+            assertEquals(shuffle, second.shuffle)
+            assertEquals(position, second.positionMs)
+
+            coVerify { userLibraryApi.getItem(itemId) }
         }
 }
