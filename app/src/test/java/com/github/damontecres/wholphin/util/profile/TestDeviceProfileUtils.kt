@@ -72,7 +72,11 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 jellyfinTenEleven = true,
-                forceEnabledHdr = setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName),
+                forceEnabledHdr =
+                    setOf(
+                        WholphinVideoRangeType.DOVI_WITH_EL.serialName,
+                        WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName,
+                    ),
             )
         Assert.assertFalse(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_WITH_EL.serialName))
     }
@@ -88,7 +92,11 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 jellyfinTenEleven = true,
-                forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName),
+                forceDisabledHdr =
+                    setOf(
+                        WholphinVideoRangeType.DOVI_WITH_EL.serialName,
+                        WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName,
+                    ),
             )
         Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_WITH_EL.serialName))
     }
