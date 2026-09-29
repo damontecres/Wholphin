@@ -13,7 +13,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 
 /**
  * The watch progress along the bottom of a card.
@@ -45,7 +47,32 @@ fun PlayedPercentBar(
                     .fillMaxHeight()
                     .fillMaxWidth(fraction)
                     .clip(shape)
-                    .background(MaterialTheme.colorScheme.tertiary),
+                    .background(PlayedPercentColor()),
         )
     }
 }
+
+/**
+ * The fill colour: the same colour as the watched badge, so both marks on a card agree
+ * and follow the theme. Where that colour is too dark to read on the black track, the
+ * theme's own light accent is used instead.
+ */
+@Composable
+fun PlayedPercentColor(): Color =
+    when (LocalTheme.current) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        AppThemeColors.BLUE,
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        AppThemeColors.RED,
+        -> WatchedIconBackground()
+
+        // The badge colour is dark brown here, almost invisible on black
+        AppThemeColors.BROWN -> MaterialTheme.colorScheme.primary
+
+        // The badge colour is dark navy / dark grey here; tertiary already matches the theme
+        AppThemeColors.BOLD_BLUE,
+        AppThemeColors.OLED_BLACK,
+        -> MaterialTheme.colorScheme.tertiary
+    }
