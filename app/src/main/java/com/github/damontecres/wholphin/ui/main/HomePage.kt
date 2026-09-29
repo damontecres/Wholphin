@@ -546,18 +546,23 @@ fun HomePageHeader(
 ) {
     val isEpisode = item?.type == BaseItemKind.EPISODE
     val title =
-        remember(item) {
+        remember(item?.id) {
             when (item?.type) {
-                BaseItemKind.SEASON -> item.data.seriesName ?: item?.title
+                BaseItemKind.EPISODE,
+                BaseItemKind.SEASON,
+                -> item.data.seriesName
+
                 else -> item?.title
             }
         }
     val subtitle =
-        remember(item) {
+        remember(item?.id) {
             when (item?.type) {
-                BaseItemKind.SEASON -> item.title
-                BaseItemKind.EPISODE -> item.data.name
-                else -> item?.title
+                BaseItemKind.SEASON,
+                BaseItemKind.EPISODE,
+                -> item.name
+
+                else -> null
             }
         }
     HomePageHeader(
