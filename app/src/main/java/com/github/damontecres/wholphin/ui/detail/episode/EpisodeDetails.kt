@@ -90,7 +90,7 @@ fun EpisodeDetails(
                     playlistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
-                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                 onDeleteItem = viewModel::deleteItem,
                 onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
                 onChooseVersion = { item, source ->

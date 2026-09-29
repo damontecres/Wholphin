@@ -54,7 +54,12 @@ fun SongListItem(
     isQueued: Boolean = false,
 ) = SongListItem(
     title = song?.title,
-    artist = if (showArtist) song?.data?.albumArtist else null,
+    artist =
+        if (showArtist) {
+            remember(song) { song?.data?.artists?.joinToString(", ") }
+        } else {
+            null
+        },
     indexNumber = song?.data?.indexNumber,
     runtime =
         remember(song) {

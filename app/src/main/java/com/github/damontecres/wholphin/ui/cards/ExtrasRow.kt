@@ -38,7 +38,7 @@ fun ExtrasRow(
                 unplayedItemCount = -1,
                 playedPercentage = item?.playedPercentage ?: 0.0,
                 numberOfVersions = -1,
-                aspectRatio = AspectRatios.FOUR_THREE, // TODO
+                aspectRatio = item?.aspectRatio ?: AspectRatios.WIDE,
             )
         },
         modifier = modifier,

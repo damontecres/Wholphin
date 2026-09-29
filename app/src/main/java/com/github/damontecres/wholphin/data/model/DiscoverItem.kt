@@ -103,6 +103,7 @@ data class DiscoverItem(
     @Serializable(LocalDateSerializer::class) val releaseDate: LocalDate?,
     val posterUrl: String?,
     val backDropUrl: String?,
+    val logoUrl: String?,
     val jellyfinItemId: UUID?,
 ) : CardGridItem {
     override val gridId: String get() = id.toString()

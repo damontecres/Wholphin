@@ -76,9 +76,9 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -146,7 +146,7 @@ class SearchViewModel
         private val serverRepository: ServerRepository,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val mediaManagementService: MediaManagementService,
-        private val mediaReportService: MediaReportService,
+        private val mediaReportService: ServerReportService,
     ) : ViewModel(),
         ContextMenuProvider {
         val seerrActive = seerrService.active
@@ -425,7 +425,7 @@ class SearchViewModel
 
         override fun isAdministrator(): Boolean = serverRepository.currentUserDto?.policy?.isAdministrator == true
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = mediaReportService.sendMediaReportFor(itemId)
     }
 
 sealed interface SearchResult {

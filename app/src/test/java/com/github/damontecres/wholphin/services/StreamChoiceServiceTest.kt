@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -17,7 +18,6 @@ import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
-import org.jellyfin.sdk.model.api.UserDto
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -902,11 +902,8 @@ private fun serverRepo(
 ): ServerRepository {
     val mocked = mockk<ServerRepository>()
     every { mocked.currentUserDto } returns
-        UserDto(
+        ServerUserConfig(
             id = UUID.randomUUID(),
-            hasPassword = true,
-            hasConfiguredPassword = true,
-            hasConfiguredEasyPassword = true,
             configuration =
                 DefaultUserConfiguration.copy(
                     audioLanguagePreference = audioLang,

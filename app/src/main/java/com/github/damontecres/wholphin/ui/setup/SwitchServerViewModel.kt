@@ -1,7 +1,11 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
@@ -45,6 +49,17 @@ class SwitchServerViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow(SwitchServerState())
         val state: StateFlow<SwitchServerState> = _state
+
+        val hasPermission: Boolean
+            get() =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_LOCAL_NETWORK,
+                    ) == PackageManager.PERMISSION_GRANTED
+                } else {
+                    true
+                }
 
         fun clearAddServerState() {
             _state.update { it.copy(addServerState = LoadingState.Pending) }

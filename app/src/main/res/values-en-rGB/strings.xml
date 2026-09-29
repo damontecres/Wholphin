@@ -36,4 +36,20 @@
     <string name="skip_behavior">Skip behaviour</string>
     <string name="display_toggles_summary">Customise which to display</string>
     <string name="continue_watching_click_behavior">Continue watching/Next up click behaviour</string>
+    <string name="about">About</string>
+    <string name="active_recordings">Active Recordings</string>
+    <string name="add_server">Add Server</string>
+    <string name="add_user">Add User</string>
+    <string name="audio">Audio</string>
+    <string name="birthplace">Birthplace</string>
+    <string name="bitrate">Bitrate</string>
+    <string name="born">Born</string>
+    <string name="cancel_recording">Cancel Recording</string>
+    <string name="cancel_series_recording">Cancel Series Recording</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="cancel">Cancel</string>
+    <string name="chapters">Chapters</string>
+    <string name="choose_stream">Choose %1$s</string>
 </resources>

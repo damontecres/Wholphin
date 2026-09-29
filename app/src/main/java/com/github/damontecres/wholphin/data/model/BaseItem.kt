@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.formatDuration
+import com.github.damontecres.wholphin.ui.formatEpisodeNumber
 import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -111,7 +112,7 @@ data class BaseItem(
     val ui =
         BaseItemUi(
             episodeCornerText =
-                data.indexNumber?.let { "E$it" }
+                data.indexNumber?.let { formatEpisodeNumber(it) }
                     ?: data.premiereDate?.let(::formatDateTime),
             episodeUnplayedCornerText =
                 if (type == BaseItemKind.SERIES ||
@@ -119,7 +120,7 @@ data class BaseItem(
                     type == BaseItemKind.EPISODE ||
                     type == BaseItemKind.BOX_SET
                 ) {
-                    data.indexNumber?.let { "E$it" }
+                    data.indexNumber?.let { formatEpisodeNumber(it) }
                         ?: data.userData
                             ?.unplayedItemCount
                             ?.takeIf { it > 0 }
@@ -236,21 +237,30 @@ data class BaseItem(
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    data.seasonId?.let { seasonId ->
+                    val seasonId = data.seasonId
+                    val seriesId = data.seriesId
+                    if (seasonId != null && seriesId != null) {
                         Destination.SeriesOverview(
-                            data.seriesId!!,
+                            seriesId,
                             BaseItemKind.SERIES,
                             SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
                         )
-                    } ?: Destination.MediaItem(this)
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.SEASON -> {
-                    Destination.SeriesOverview(
-                        data.seriesId!!,
-                        BaseItemKind.SERIES,
-                        SeasonEpisodeIds(id, indexNumber, null, null),
-                    )
+                    val seriesId = data.seriesId
+                    if (seriesId != null) {
+                        Destination.SeriesOverview(
+                            seriesId,
+                            BaseItemKind.SERIES,
+                            SeasonEpisodeIds(id, indexNumber, null, null),
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.TV_CHANNEL -> {

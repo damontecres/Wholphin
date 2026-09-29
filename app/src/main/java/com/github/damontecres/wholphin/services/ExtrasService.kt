@@ -74,6 +74,7 @@ class ExtrasService
                                     items.size,
                                     items.size,
                                 )
+                            val itemForImage = items.random()
                             ExtrasItem.Group(
                                 parentId = itemId,
                                 type = type,
@@ -83,9 +84,10 @@ class ExtrasService
                                 isPlayed = items.all { it.played },
                                 imageUrl =
                                     imageUrlService.getItemImageUrl(
-                                        items.random(),
+                                        itemForImage,
                                         ImageType.PRIMARY,
                                     ),
+                                aspectRatio = itemForImage.aspectRatio,
                             )
                         } else {
                             null

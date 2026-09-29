@@ -1,14 +1,21 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
@@ -27,13 +34,15 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.util.SortedMap
 
 @HiltViewModel(assistedFactory = TabViewModel.Factory::class)
 class TabViewModel
     @AssistedInject
     constructor(
-        private val userPreferencesService: UserPreferencesService,
+        val userPreferencesService: UserPreferencesService,
         private val rememberedTabService: RememberedTabService,
         private val backdropService: BackdropService,
         @param:Assisted private val itemId: String,
@@ -49,6 +58,9 @@ class TabViewModel
 
         private val _state = MutableStateFlow<Int>(UNSET)
         val state: StateFlow<Int> = _state
+
+        val isShowClock =
+            userPreferencesService.flow.map { it.appPreferences.interfacePreferences.showClock }
 
         init {
             viewModelScope.launchIO {
@@ -91,6 +103,7 @@ data class TabDetails(
     val title: StringProvider,
     val tabFocusRequester: FocusRequester = FocusRequester(),
     val contentFocusRequester: FocusRequester = FocusRequester(),
+    val bringIntoViewRequester: BringIntoViewRequester = BringIntoViewRequester(),
 ) {
     constructor(
         @StringRes stringResId: Int,
@@ -118,7 +131,36 @@ fun TabbedPage(
     tabContent: @Composable (Int, TabDetails) -> Unit,
 ) {
     val selectedTabIndex by viewModel.state.collectAsState()
+    val isShowClock by viewModel.isShowClock.collectAsState(true)
+    TabbedPage(
+        selectedTabIndex = selectedTabIndex,
+        tabs = tabs,
+        updateSelectedTabIndex = viewModel::updateSelectedTabIndex,
+        isShowClock = isShowClock,
+        modifier = modifier,
+        showTabs = showTabs,
+        tabContent = tabContent,
+    )
+}
 
+@Composable
+fun TabbedPage(
+    selectedTabIndex: Int,
+    tabs: List<TabDetails>,
+    updateSelectedTabIndex: (Int) -> Unit,
+    isShowClock: Boolean,
+    modifier: Modifier = Modifier,
+    showTabs: Boolean = true,
+    tabContent: @Composable (Int, TabDetails) -> Unit,
+) {
+    val endPadding =
+        remember(isShowClock) {
+            if (isShowClock) {
+                184.dp
+            } else {
+                0.dp
+            }
+        }
     Column(
         modifier = modifier,
     ) {
@@ -131,14 +173,66 @@ fun TabbedPage(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(vertical = 16.dp),
+                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
                 tabs = tabs,
-                onClick = viewModel::updateSelectedTabIndex,
+                onClick = updateSelectedTabIndex,
             )
         }
         selectedTabIndex.let { tabIndex ->
-            if (tabIndex >= 0) {
+            if (tabIndex in tabs.indices) {
                 tabContent.invoke(tabIndex, tabs[tabIndex])
+            } else {
+                DelayedLoadingPage(focusEnabled = false)
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> KeyedTabbedPage(
+    selectedTabKey: T,
+    tabs: SortedMap<T, TabDetails>,
+    updateSelectedTabKey: (T) -> Unit,
+    isShowClock: Boolean,
+    modifier: Modifier = Modifier,
+    showTabs: Boolean = true,
+    tabContent: @Composable (T, TabDetails) -> Unit,
+) {
+    val endPadding =
+        remember(isShowClock) {
+            if (isShowClock) {
+                184.dp
+            } else {
+                0.dp
+            }
+        }
+    Column(
+        modifier = modifier,
+    ) {
+        AnimatedVisibility(
+            showTabs,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            KeyedTabRow(
+                selectedTabKey = selectedTabKey,
+                modifier =
+                    Modifier
+                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
+                tabs = tabs,
+                onClick = updateSelectedTabKey,
+            )
+        }
+        AnimatedContent(
+            targetState = selectedTabKey,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(300, delayMillis = 100)))
+                    .togetherWith(fadeOut(animationSpec = tween(200)))
+            },
+        ) { tabKey ->
+            val tab = tabs[tabKey]
+            if (tab != null) {
+                tabContent.invoke(tabKey, tab)
             } else {
                 DelayedLoadingPage(focusEnabled = false)
             }

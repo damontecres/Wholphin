@@ -37,10 +37,21 @@ object ExperimentalPreference {
             summaryOff = R.string.disabled,
         )
 
+    val PreferDolbyVisionOverHdr10Plus =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.prefer_dovi_over_hdr10_plus,
+            defaultValue = false,
+            getter = { it.experimentalPreferences.preferDolbyVisionOverHdr10Plus },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences { preferDolbyVisionOverHdr10Plus = value }
+            },
+            summary = R.string.prefer_dovi_over_hdr10_plus_summary,
+        )
+
     val PreferAc3ForSurround =
         AppSwitchPreference<AppPreferences>(
             title = R.string.prefer_ac3_for_surround,
-            defaultValue = true,
+            defaultValue = false,
             getter = { it.experimentalPreferences.preferAc3Surround },
             setter = { prefs, value ->
                 prefs.updateExperimentalPreferences {
@@ -81,6 +92,7 @@ val experimentalPreferences =
                 preferences =
                     listOf(
                         ExperimentalPreference.VideoTunneling,
+                        ExperimentalPreference.PreferDolbyVisionOverHdr10Plus,
                         ExperimentalPreference.PreferAc3ForSurround,
                         ExperimentalPreference.DisableAudioOffload,
                     ),

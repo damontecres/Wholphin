@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -188,7 +189,7 @@ class NavDrawerService
          */
         suspend fun updateNavDrawer(
             user: JellyfinUser,
-            userDto: UserDto,
+            userDto: ServerUserConfig,
             discoverActive: Boolean,
         ) {
             val builtins =
@@ -245,6 +246,7 @@ class NavDrawerService
                 it.copy(
                     items = items,
                     moreItems = moreItems,
+                    allLibraries = allLibraries,
                 )
             }
         }
@@ -255,6 +257,7 @@ data class NavDrawerItemState(
     val moreItems: List<NavDrawerItem> = emptyList(),
     val nowPlayingEnabled: Boolean = false,
     val nowPlayingTitle: String? = null,
+    val allLibraries: List<Library> = emptyList(),
 )
 
 val UserDto.tvAccess: Boolean get() = policy?.enableLiveTvAccess == true

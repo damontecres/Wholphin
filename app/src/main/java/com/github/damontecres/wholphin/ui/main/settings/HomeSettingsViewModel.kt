@@ -34,7 +34,8 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.getRecentlyAddedTitle
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.services.tvAccess
-import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.services.viewOptionsForCollectionType
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
@@ -274,24 +275,7 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
-                val viewOptions =
-                    when (library.collectionType) {
-                        CollectionType.MUSIC -> {
-                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
-                        }
-
-                        CollectionType.HOMEVIDEOS,
-                        CollectionType.MUSICVIDEOS,
-                        -> {
-                            HomeRowViewOptions(
-                                aspectRatio = AspectRatio.WIDE,
-                            )
-                        }
-
-                        else -> {
-                            HomeRowViewOptions()
-                        }
-                    }
+                val viewOptions = viewOptionsForCollectionType(library.collectionType)
                 val id = idCounter++
                 val newRow =
                     when (rowType) {
@@ -415,9 +399,13 @@ class HomeSettingsViewModel
                         title =
                             ResProviderStringProvider(
                                 R.string.favorite_items_title,
-                                ResStringProvider(favoriteOptions[type]!!),
+                                ResStringProvider(formatTypeName(type)),
                             ),
-                        config = HomeRowConfig.Favorite(type),
+                        config =
+                            HomeRowConfig.Favorite(
+                                kind = type,
+                                viewOptions = HomeRowPresets.WholphinDefault.getByItemType(type),
+                            ),
                     )
                 updateState {
                     it.copy(
@@ -607,7 +595,7 @@ class HomeSettingsViewModel
                             }
                         if (shouldSave) {
                             homeSettingsService.saveToLocal(user.id, settings)
-                            homeSettingsService.updateCurrent(settings)
+                            homeSettingsService.updateCurrent(user.id, settings)
                             showSaveToast()
                         } else {
                             Timber.d("No changes")
@@ -628,7 +616,11 @@ class HomeSettingsViewModel
             _state.update {
                 update.invoke(it)
             }
-            homeSettingsService.currentSettings.update { HomePageResolvedSettings(state.value.rows) }
+            serverRepository.currentUser?.id?.let { userId ->
+                homeSettingsService.currentSettings.update {
+                    HomePageResolvedSettings(userId, state.value.rows)
+                }
+            }
         }
 
         fun resizeCards(relative: Int) {
@@ -709,17 +701,7 @@ class HomeSettingsViewModel
                                 }
 
                                 is HomeRowConfig.Favorite -> {
-                                    val viewOptions =
-                                        when (it.config.kind) {
-                                            BaseItemKind.MOVIE -> preset.movieLibrary
-                                            BaseItemKind.SERIES -> preset.tvLibrary
-                                            BaseItemKind.EPISODE -> preset.continueWatching
-                                            BaseItemKind.VIDEO -> preset.videoLibrary
-                                            BaseItemKind.PLAYLIST -> preset.playlist
-                                            BaseItemKind.PERSON -> preset.movieLibrary
-                                            BaseItemKind.MUSIC_ARTIST, BaseItemKind.MUSIC_ALBUM -> preset.musicLibrary
-                                            else -> preset.movieLibrary
-                                        }
+                                    val viewOptions = preset.getByItemType(it.config.kind)
                                     it.config.updateViewOptions(viewOptions)
                                 }
 

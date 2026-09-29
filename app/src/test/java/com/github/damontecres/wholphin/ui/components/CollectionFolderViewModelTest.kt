@@ -115,7 +115,7 @@ class CollectionFolderViewModelTest {
             mediaManagementService = mockMediaManagementService,
             musicService = mockk(relaxed = true),
             streamChoiceService = mockk(relaxed = true),
-            mediaReportService = mockk(relaxed = true),
+            serverReportService = mockk(relaxed = true),
             filterOptionCache = mockk(relaxed = true),
             itemId = libraryId.toString(),
             initialSortAndDirection = null,

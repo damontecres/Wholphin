@@ -299,7 +299,7 @@ fun DiscoverRequestGrid(
                     initialPosition = state.startIndex,
                     pager = s.data,
                     onClickItem = { index, item ->
-                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                        viewModel.navigationManager.navigateTo(item.destination)
                     },
                     onLongClickItem = { index, item -> },
                     onClickPlay = { _, _ -> },

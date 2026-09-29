@@ -176,6 +176,37 @@ object ScreensaverPreference {
             },
         )
 
+    val DimToggle =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.dim_after_delay,
+            defaultValue = AppPreference.ShowClock.defaultValue,
+            getter = { it.interfacePreferences.screensaverPreference.dimEnabled },
+            setter = { prefs, value ->
+                prefs.updateScreensaverPreferences { dimEnabled = value }
+            },
+            summaryOn = R.string.yes,
+            summaryOff = R.string.no,
+        )
+
+    val DimPercentage =
+        AppSliderPreference<AppPreferences>(
+            title = R.string.dim_percentage,
+            defaultValue = 75,
+            min = 0,
+            max = 95,
+            interval = 5,
+            getter = {
+                it.interfacePreferences.screensaverPreference.dimPercent
+                    .toLong()
+            },
+            setter = { prefs, value ->
+                prefs.updateScreensaverPreferences { dimPercent = value.toInt() }
+            },
+            summarizer = { value ->
+                value?.let { "$value%" }
+            },
+        )
+
     val Start =
         AppClickablePreference<AppPreferences>(
             title = R.string.start_screensaver,

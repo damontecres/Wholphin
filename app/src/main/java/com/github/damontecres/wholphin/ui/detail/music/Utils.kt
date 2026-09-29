@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.ui.detail.music
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.DetailItemFields
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import org.jellyfin.sdk.api.client.ApiClient
@@ -19,7 +19,7 @@ suspend fun ViewModel.getPagerForAlbum(
         GetItemsRequest(
             parentId = albumId,
             includeItemTypes = listOf(BaseItemKind.AUDIO),
-            fields = DefaultItemFields,
+            fields = DetailItemFields,
             sortBy =
                 listOf(
                     ItemSortBy.PARENT_INDEX_NUMBER,
@@ -39,7 +39,7 @@ suspend fun ViewModel.getPagerForArtist(
             artistIds = listOf(artistId),
             recursive = true,
             includeItemTypes = listOf(BaseItemKind.AUDIO),
-            fields = DefaultItemFields,
+            fields = DetailItemFields,
             // TODO better sort
             sortBy =
                 listOf(
@@ -60,7 +60,7 @@ suspend fun ViewModel.getPagerForPlaylist(
             parentId = playlistId,
             recursive = true,
             includeItemTypes = listOf(BaseItemKind.AUDIO),
-            fields = DefaultItemFields,
+            fields = DetailItemFields,
             sortBy =
                 listOf(
                     ItemSortBy.DEFAULT,

@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.util
 
 import java.util.function.IntFunction
 import java.util.function.Predicate
+import kotlin.random.Random
 
 /**
  * A [List] which has function that will wait for a result
@@ -16,6 +17,11 @@ interface BlockingList<T> : List<T> {
      * Get first index that matches the given predicate, possibly blocking while searching
      */
     suspend fun indexOfBlocking(predicate: Predicate<T>): Int
+
+    suspend fun randomBlocking(): T {
+        val index = Random.nextInt(size)
+        return getBlocking(index)
+    }
 
     companion object {
         /**

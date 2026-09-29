@@ -13,6 +13,7 @@ sealed interface DiscoverFocusedItem {
     val subtitle: String?
     val overview: String?
     val backDropUrl: String?
+    val logoUrl: String?
 
     data class Item(
         val item: DiscoverItem,
@@ -26,6 +27,8 @@ sealed interface DiscoverFocusedItem {
             get() = item.overview
         override val backDropUrl: String?
             get() = item.backDropUrl
+        override val logoUrl: String?
+            get() = item.logoUrl
     }
 
     data class Genre(
@@ -38,6 +41,8 @@ sealed interface DiscoverFocusedItem {
         override val subtitle: String?
             get() = null
         override val overview: String?
+            get() = null
+        override val logoUrl: String?
             get() = null
     }
 }

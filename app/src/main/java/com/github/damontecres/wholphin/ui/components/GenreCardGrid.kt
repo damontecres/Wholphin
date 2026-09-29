@@ -149,16 +149,17 @@ class GenreViewModel
 
         suspend fun positionOfLetter(letter: Char): Int =
             withContext(WholphinDispatchers.IO) {
-                val request =
-                    GetGenresRequest(
-                        parentId = itemId,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                        includeItemTypes = includeItemTypes,
-                    )
-                val result by GetGenresRequestHandler.execute(api, request)
-                return@withContext result.totalRecordCount
+                GetGenresRequestHandler.countMatching(
+                    api = api,
+                    request =
+                        GetGenresRequest(
+                            parentId = itemId,
+                            nameLessThan = letter.toString(),
+                            limit = 0,
+                            enableTotalRecordCount = true,
+                            includeItemTypes = includeItemTypes,
+                        ),
+                )
             }
     }
 

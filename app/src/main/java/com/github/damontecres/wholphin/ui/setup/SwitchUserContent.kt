@@ -86,6 +86,24 @@ fun SwitchUserContent(
         showAddUser = false
     }
 
+    fun trySwitchUser(user: JellyfinUser) {
+        val result = viewModel.trySwitchUser(user)
+        scope.launch {
+            when (val r = result.await()) {
+                is SwitchUserResult.Error -> {
+                    Toast.makeText(context, r.errorMessage, Toast.LENGTH_LONG).show()
+                    if (r.showLogin) {
+                        showAddUserDialog(user)
+                    }
+                }
+
+                SwitchUserResult.Success -> {
+                    // no-op, view model will navigate
+                }
+            }
+        }
+    }
+
     LaunchedEffect(state.switchUserState) {
         if (!showAddUser) {
             when (val s = state.switchUserState) {
@@ -148,13 +166,7 @@ fun SwitchUserContent(
                             } else if (user.hasPin) {
                                 switchUserWithPin = user
                             } else {
-                                val result = viewModel.trySwitchUser(user)
-                                scope.launch {
-                                    result.await()?.let {
-                                        Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-                                        showAddUserDialog(user)
-                                    }
-                                }
+                                trySwitchUser(user)
                             }
                         },
                         onAddUser = {
@@ -396,14 +408,7 @@ fun SwitchUserContent(
             },
             onTextChange = {
                 if (it == user.pin) {
-                    val result = viewModel.trySwitchUser(user)
-                    scope.launch {
-                        result.await()?.let {
-                            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-                            showAddUserDialog(user)
-                            switchUserWithPin = null
-                        }
-                    }
+                    trySwitchUser(user)
                 }
             },
         )

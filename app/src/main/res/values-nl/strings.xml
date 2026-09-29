@@ -42,8 +42,8 @@
     <string name="file_size">Grootte</string>
     <string name="forced_track">Geforceerd</string>
     <string name="genres">Genres</string>
-    <string name="go_to_series">Ga naar serie</string>
-    <string name="go_to">Ga naar item</string>
+    <string name="go_to_series">Naar seizoenen</string>
+    <string name="go_to">Naar inhoud</string>
     <string name="hide_controller_timeout">Afspeelbediening verbergen</string>
     <string name="hide_debug_info">Foutopsporingsinformatie verbergen</string>
     <string name="hide">Verbergen</string>
@@ -660,4 +660,6 @@
     <string name="scenes_title">Scenes</string>
     <string name="pin_digits_hint">[0-9]</string>
     <string name="dts_x">DTS:X</string>
+    <string name="override_user_profile_settings">Meer instellingen gebruikersprofiel</string>
+    <string name="d_pad_seek_mode_title">"D-pad  zoekbalk"</string>
 </resources>
