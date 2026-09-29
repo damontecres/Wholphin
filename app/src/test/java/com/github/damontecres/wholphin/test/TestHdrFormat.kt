@@ -5,7 +5,7 @@ import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.PlaybackOverrides
 import com.github.damontecres.wholphin.preferences.getHdrRangeTypesFor
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
-import org.jellyfin.sdk.model.api.VideoRangeType
+import com.github.damontecres.wholphin.util.profile.WholphinVideoRangeType
 import org.junit.Assert
 import org.junit.Test
 
@@ -24,7 +24,7 @@ class TestHdrFormat {
     fun `Test HDR10 override`() {
         val prefs = appPreferences { hdr10Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE }
         Assert.assertEquals(
-            setOf(VideoRangeType.HDR10.serialName),
+            setOf(WholphinVideoRangeType.HDR10.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, jellyfinTenEleven = true),
         )
         Assert.assertEquals(emptySet<String>(), prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, jellyfinTenEleven = true))
@@ -34,7 +34,7 @@ class TestHdrFormat {
     fun `Test Dolby Vision Profile 5 override`() {
         val prefs = appPreferences { doviProfile5Override = HdrOverrideMode.HDR_OVERRIDE_DISABLE }
         Assert.assertEquals(
-            setOf(VideoRangeType.DOVI.serialName),
+            setOf(WholphinVideoRangeType.DOVI.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, jellyfinTenEleven = true),
         )
     }
@@ -47,7 +47,7 @@ class TestHdrFormat {
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, jellyfinTenEleven = false),
         )
         Assert.assertEquals(
-            setOf("DOVIWithEL", "DOVIWithELHDR10Plus"),
+            setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, jellyfinTenEleven = true),
         )
     }
@@ -56,11 +56,11 @@ class TestHdrFormat {
     fun `Test Dolby Vision Profile 8 override`() {
         val prefs = appPreferences { doviProfile8Override = HdrOverrideMode.HDR_OVERRIDE_DISABLE }
         Assert.assertEquals(
-            setOf(VideoRangeType.DOVI_WITH_HDR10.serialName),
+            setOf(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, jellyfinTenEleven = false),
         )
         Assert.assertEquals(
-            setOf(VideoRangeType.DOVI_WITH_HDR10.serialName, "DOVIWithHDR10Plus"),
+            setOf(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName, WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, jellyfinTenEleven = true),
         )
     }
@@ -74,11 +74,11 @@ class TestHdrFormat {
                 doviProfile5Override = HdrOverrideMode.HDR_OVERRIDE_DISABLE
             }
         Assert.assertEquals(
-            setOf(VideoRangeType.HDR10.serialName, VideoRangeType.HDR10_PLUS.serialName),
+            setOf(WholphinVideoRangeType.HDR10.serialName, WholphinVideoRangeType.HDR10_PLUS.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, jellyfinTenEleven = true),
         )
         Assert.assertEquals(
-            setOf(VideoRangeType.DOVI.serialName),
+            setOf(WholphinVideoRangeType.DOVI.serialName),
             prefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, jellyfinTenEleven = true),
         )
     }

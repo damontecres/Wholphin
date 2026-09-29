@@ -5,7 +5,6 @@ import io.mockk.mockk
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.ProfileConditionValue
-import org.jellyfin.sdk.model.api.VideoRangeType
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,11 +23,10 @@ class TestDeviceProfileUtils {
         codec: String,
     ): Set<String> =
         profile.codecProfiles
-            .first { it.type == CodecType.VIDEO && it.codec == codec }
-            .applyConditions
-            .first { it.property == ProfileConditionValue.VIDEO_RANGE_TYPE }
-            .value!!
-            .split("|")
+            .filter { it.type == CodecType.VIDEO && it.codec == codec }
+            .firstNotNullOf { codecProfile ->
+                codecProfile.applyConditions.firstOrNull { it.property == ProfileConditionValue.VIDEO_RANGE_TYPE }?.value
+            }.split("|")
             .toSet()
 
     private fun buildProfile(
@@ -60,7 +58,7 @@ class TestDeviceProfileUtils {
         every { mediaTest.supportsHevcHDR10Plus() } returns true
 
         val profile = buildProfile(mediaTest, jellyfinTenEleven = true)
-        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains("DOVIWithEL"))
+        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_WITH_EL.serialName))
     }
 
     @Test
@@ -74,9 +72,9 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 jellyfinTenEleven = true,
-                forceEnabledHdr = setOf("DOVIWithEL", "DOVIWithELHDR10Plus"),
+                forceEnabledHdr = setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName),
             )
-        Assert.assertFalse(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains("DOVIWithEL"))
+        Assert.assertFalse(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_WITH_EL.serialName))
     }
 
     @Test
@@ -90,9 +88,9 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 jellyfinTenEleven = true,
-                forceDisabledHdr = setOf("DOVIWithEL", "DOVIWithELHDR10Plus"),
+                forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName),
             )
-        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains("DOVIWithEL"))
+        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_WITH_EL.serialName))
     }
 
     @Test
@@ -101,7 +99,7 @@ class TestDeviceProfileUtils {
         every { mediaTest.supportsAV1DolbyVision() } returns false
 
         val profile = buildProfile(mediaTest, decodeAv1 = false)
-        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(VideoRangeType.DOVI.serialName))
+        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
     }
 
     @Test
@@ -113,9 +111,9 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 decodeAv1 = false,
-                forceEnabledHdr = setOf(VideoRangeType.DOVI.serialName),
+                forceEnabledHdr = setOf(WholphinVideoRangeType.DOVI.serialName),
             )
-        Assert.assertFalse(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(VideoRangeType.DOVI.serialName))
+        Assert.assertFalse(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
     }
 
     @Test
@@ -127,8 +125,8 @@ class TestDeviceProfileUtils {
             buildProfile(
                 mediaTest,
                 decodeAv1 = false,
-                forceDisabledHdr = setOf(VideoRangeType.DOVI.serialName),
+                forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI.serialName),
             )
-        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(VideoRangeType.DOVI.serialName))
+        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
     }
 }

@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.preferences
 
-import org.jellyfin.sdk.model.api.VideoRangeType
+import com.github.damontecres.wholphin.util.profile.WholphinVideoRangeType
 
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/master/app/src/main/java/org/jellyfin/androidtv/preference/constant/HdrFormat.kt
 
@@ -13,30 +13,32 @@ enum class HdrFormat(
 ) {
     HDR10(
         getter = { it.playbackPreferences.overrides.hdr10Override },
-        rangeTypeNames = { setOf(VideoRangeType.HDR10.serialName) },
+        rangeTypeNames = { setOf(WholphinVideoRangeType.HDR10.serialName) },
     ),
     HDR10_PLUS(
         getter = { it.playbackPreferences.overrides.hdr10PlusOverride },
-        rangeTypeNames = { setOf(VideoRangeType.HDR10_PLUS.serialName) },
+        rangeTypeNames = { setOf(WholphinVideoRangeType.HDR10_PLUS.serialName) },
     ),
     DOVI_PROFILE_5(
         getter = { it.playbackPreferences.overrides.doviProfile5Override },
-        rangeTypeNames = { setOf(VideoRangeType.DOVI.serialName) },
+        rangeTypeNames = { setOf(WholphinVideoRangeType.DOVI.serialName) },
     ),
     DOVI_PROFILE_7(
         getter = { it.playbackPreferences.overrides.doviProfile7Override },
-        // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
         rangeTypeNames = { jellyfinTenEleven ->
-            if (jellyfinTenEleven) setOf("DOVIWithEL", "DOVIWithELHDR10Plus") else emptySet()
+            if (jellyfinTenEleven) {
+                setOf(WholphinVideoRangeType.DOVI_WITH_EL.serialName, WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName)
+            } else {
+                emptySet()
+            }
         },
     ),
     DOVI_PROFILE_8(
         getter = { it.playbackPreferences.overrides.doviProfile8Override },
         rangeTypeNames = { jellyfinTenEleven ->
             buildSet {
-                add(VideoRangeType.DOVI_WITH_HDR10.serialName)
-                // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
-                if (jellyfinTenEleven) add("DOVIWithHDR10Plus")
+                add(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName)
+                if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
             }
         },
     ),
