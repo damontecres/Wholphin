@@ -91,7 +91,10 @@ fun TitleOrLogo(
 fun rememberLogoUrl(item: BaseItem?): String? {
     val imageUrlService = LocalImageUrlService.current
     return remember(item?.id) {
-        if (item?.type == BaseItemKind.EPISODE && item.data.seriesId != null && item.data.parentLogoImageTag != null) {
+        if ((item?.type == BaseItemKind.EPISODE || item?.type == BaseItemKind.SEASON) &&
+            item.data.seriesId != null &&
+            item.data.parentLogoImageTag != null
+        ) {
             imageUrlService.getItemImageUrl(item.data.seriesId!!, ImageType.LOGO)
         } else if (ImageType.LOGO in item?.data?.imageTags.orEmpty()) {
             imageUrlService.getItemImageUrl(item, ImageType.LOGO)
