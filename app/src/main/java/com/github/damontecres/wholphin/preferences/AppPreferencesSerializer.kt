@@ -184,6 +184,8 @@ class AppPreferencesSerializer
                                 videoTunnelingEnabled = false
                                 preferAc3Surround = ExperimentalPreference.PreferAc3ForSurround.defaultValue
                                 disableAudioOffload = ExperimentalPreference.DisableAudioOffload.defaultValue
+                                preferDolbyVisionOverHdr10Plus =
+                                    ExperimentalPreference.PreferDolbyVisionOverHdr10Plus.defaultValue
                             }.build()
                 }.build()
 
