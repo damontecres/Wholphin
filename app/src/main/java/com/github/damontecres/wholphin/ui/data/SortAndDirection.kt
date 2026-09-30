@@ -28,6 +28,12 @@ data class SortAndDirection(
 
 fun SortOrder.flip() = if (this == SortOrder.ASCENDING) SortOrder.DESCENDING else SortOrder.ASCENDING
 
+/** Convert the count preceding a letter in ascending order to a descending list index. */
+fun descendingLetterPosition(
+    before: Int,
+    total: Int,
+): Int = (total - before).coerceIn(0, (total - 1).coerceAtLeast(0))
+
 val MovieSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,

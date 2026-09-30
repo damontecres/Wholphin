@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.services.DeletedItem
 import com.github.damontecres.wholphin.services.MediaManagementService
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.util.GetArtistsHandler
@@ -34,6 +35,8 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemFields
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.junit.After
@@ -60,6 +63,7 @@ class CollectionFolderViewModelTest {
     private val itemsRequest = slot<GetItemsRequest>()
 
     private val libraryId = UUID.randomUUID()
+    private var sortAndDirection: SortAndDirection? = null
 
     private val library =
         BaseItemDto(
@@ -94,6 +98,7 @@ class CollectionFolderViewModelTest {
 
     @After
     fun tearDown() {
+        sortAndDirection = null
         WholphinDispatchers.reset()
         unmockkObject(GetItemsRequestHandler)
         unmockkObject(GetArtistsHandler)
@@ -118,7 +123,7 @@ class CollectionFolderViewModelTest {
             serverReportService = mockk(relaxed = true),
             filterOptionCache = mockk(relaxed = true),
             itemId = libraryId.toString(),
-            initialSortAndDirection = null,
+            initialSortAndDirection = sortAndDirection,
             recursive = true,
             collectionFilter = CollectionFolderFilter(filter = filter),
             useSeriesForPrimary = false,
@@ -192,6 +197,54 @@ class CollectionFolderViewModelTest {
             assertEquals("K", itemsRequest.captured.nameLessThan)
             assertEquals(libraryId, itemsRequest.captured.parentId)
             assertEquals(0, itemsRequest.captured.limit)
+        }
+
+    @Test
+    fun `positionOfLetter reverses items offset for descending sort`() =
+        runTest(testDispatcher) {
+            sortAndDirection = SortAndDirection(ItemSortBy.SORT_NAME, SortOrder.DESCENDING)
+            val requests = mutableListOf<GetItemsRequest>()
+            coEvery { GetItemsRequestHandler.execute(mockApi, capture(requests)) } coAnswers {
+                successQueryResult(totalRecordCount = if (requests.last().nameLessThan == null) 100 else 40)
+            }
+            val viewModel = createViewModel(GetItemsFilter(override = GetItemsFilterOverride.NONE))
+            advanceUntilIdle()
+            requests.clear()
+
+            assertEquals(60, viewModel.positionOfLetter('K'))
+            assertEquals("K", requests[0].nameLessThan)
+            assertEquals(null, requests[1].nameLessThan)
+        }
+
+    @Test
+    fun `positionOfLetter reverses artist offset for descending sort`() =
+        runTest(testDispatcher) {
+            sortAndDirection = SortAndDirection(ItemSortBy.SORT_NAME, SortOrder.DESCENDING)
+            val requests = mutableListOf<GetArtistsRequest>()
+            coEvery { GetArtistsHandler.execute(mockApi, capture(requests)) } coAnswers {
+                successQueryResult(totalRecordCount = if (requests.last().nameLessThan == null) 10 else 3)
+            }
+            val viewModel = createViewModel(GetItemsFilter(override = GetItemsFilterOverride.ARTIST))
+            advanceUntilIdle()
+            requests.clear()
+
+            assertEquals(7, viewModel.positionOfLetter('K'))
+            assertEquals("K", requests[0].nameLessThan)
+            assertEquals(null, requests[1].nameLessThan)
+        }
+
+    @Test
+    fun `descending position stays in bounds when the letter has no earlier titles`() =
+        runTest(testDispatcher) {
+            sortAndDirection = SortAndDirection(ItemSortBy.SORT_NAME, SortOrder.DESCENDING)
+            val requests = mutableListOf<GetItemsRequest>()
+            coEvery { GetItemsRequestHandler.execute(mockApi, capture(requests)) } coAnswers {
+                successQueryResult(totalRecordCount = if (requests.last().nameLessThan == null) 12 else 0)
+            }
+            val viewModel = createViewModel(GetItemsFilter(override = GetItemsFilterOverride.NONE))
+            advanceUntilIdle()
+
+            assertEquals(11, viewModel.positionOfLetter('A'))
         }
 
     companion object {
