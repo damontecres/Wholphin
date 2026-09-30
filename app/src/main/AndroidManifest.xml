@@ -81,7 +81,33 @@
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            tools:node="remove" />
+            android:exported="false"
+            tools:node="merge">
+            <!--
+                This provider used to be removed entirely, which also disabled
+                androidx.profileinstaller so the bundled baseline profile was never installed.
+                Each initializer that was previously disabled is still disabled individually,
+                so profileinstaller is the only one that now runs.
+            -->
+            <!-- WorkManager is configured on demand via Configuration.Provider -->
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+            <!-- OkHttp is initialized explicitly in WholphinApplication -->
+            <meta-data
+                android:name="okhttp3.internal.platform.PlatformInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <service
             android:name=".WholphinDreamService"
