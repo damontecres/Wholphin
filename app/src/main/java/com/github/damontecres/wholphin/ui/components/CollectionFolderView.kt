@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
+import com.github.damontecres.wholphin.ui.detail.rememberJumpLetters
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -80,6 +81,9 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -87,6 +91,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -102,6 +108,7 @@ import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @HiltViewModel(assistedFactory = CollectionFolderViewModel.Factory::class)
 class CollectionFolderViewModel
@@ -490,9 +497,69 @@ class CollectionFolderViewModel
          * The count must come from the same endpoint that [createPager] pages through, otherwise
          * the index refers to a different result set and lands past the end of the list.
          */
-        override suspend fun positionOfLetter(letter: Char): Int? =
+        override suspend fun positionOfLetter(letter: Char): Int? = countItems(state.value.filter, nameLessThan = letter.toString())
+
+        /**
+         * One `limit=0` request per letter, so the server answers each with a COUNT and no rows.
+         * The first letter is the `#` bucket: everything sorting before the first real letter,
+         * which is also where jumping to it lands.
+         *
+         * Presence is checked with `nameStartsWith` rather than derived from `nameLessThan`
+         * offsets, so it does not depend on the order of [letters] matching the server's
+         * collation (`Ё` sorts after `Я` in binary order, for example).
+         *
+         * Results are cached per filter: reopening the library or changing the sort does not
+         * count again.
+         */
+        override suspend fun presentLetters(letters: String): String? {
+            if (letters.length < 2) return null
+            val filter = state.value.filter
+            val key = filter to letters
+            presentLettersCache[key]?.let { return it }
+            return withContext(WholphinDispatchers.IO) {
+                try {
+                    // Doubles as the probe for filters that cannot be counted at all
+                    val hashCount =
+                        countItems(filter, nameLessThan = letters[1].toString())
+                            ?: return@withContext null
+                    val letterCounts =
+                        coroutineScope {
+                            val semaphore = Semaphore(LETTER_COUNT_CONCURRENCY)
+                            letters
+                                .drop(1)
+                                .map { letter ->
+                                    async {
+                                        semaphore.withPermit {
+                                            countItems(filter, nameStartsWith = letter.toString())
+                                        }
+                                    }
+                                }.awaitAll()
+                        }
+                    if (letterCounts.any { it == null }) return@withContext null
+                    letters
+                        .filterPresent(listOf(hashCount) + letterCounts.filterNotNull())
+                        .also { presentLettersCache[key] = it }
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Error counting items per letter")
+                    null
+                }
+            }
+        }
+
+        private val presentLettersCache = ConcurrentHashMap<Pair<GetItemsFilter, String>, String>()
+
+        /**
+         * Counts the items matching [filter], optionally narrowed to a name range, or null when
+         * the filter cannot be counted
+         */
+        private suspend fun countItems(
+            filter: GetItemsFilter,
+            nameLessThan: String? = null,
+            nameStartsWith: String? = null,
+        ): Int? =
             withContext(WholphinDispatchers.IO) {
-                val filter = state.value.filter
                 when (filter.override) {
                     GetItemsFilterOverride.ARTIST -> {
                         GetArtistsHandler.countMatching(
@@ -501,7 +568,8 @@ class CollectionFolderViewModel
                                 createGetArtistsRequest(filter).copy(
                                     enableImageTypes = null,
                                     fields = null,
-                                    nameLessThan = letter.toString(),
+                                    nameLessThan = nameLessThan,
+                                    nameStartsWith = nameStartsWith,
                                     limit = 0,
                                     enableTotalRecordCount = true,
                                     enableUserData = false,
@@ -526,7 +594,8 @@ class CollectionFolderViewModel
                                 ).copy(
                                     enableImageTypes = null,
                                     fields = null,
-                                    nameLessThan = letter.toString(),
+                                    nameLessThan = nameLessThan,
+                                    nameStartsWith = nameStartsWith,
                                     limit = 0,
                                     enableTotalRecordCount = true,
                                     enableUserData = false,
@@ -786,6 +855,12 @@ interface CollectionFolderViewActions {
 
     suspend fun positionOfLetter(letter: Char): Int?
 
+    /**
+     * Narrows [letters] to the ones that have items under the current filter, or null to keep
+     * every letter
+     */
+    suspend fun presentLetters(letters: String): String?
+
     fun saveViewOptions(viewOptions: ViewOptions)
 
     /**
@@ -910,6 +985,11 @@ fun CollectionFolderViewContent(
                     var showHeader by rememberSaveable { mutableStateOf(true) }
                     val gridFocusRequester = remember { FocusRequester() }
                     val pager = remember(state.items) { state.items.successValue }
+                    val jumpLetters =
+                        rememberJumpLetters(
+                            enabled = state.sortAndDirection.sort == ItemSortBy.SORT_NAME,
+                            key = state.filter,
+                        ) { viewActions.presentLetters(it) }
 
                     val focusedItem = pager?.getOrNull(position)
                     if (state.viewOptions.showBackdrop) {
@@ -993,6 +1073,7 @@ fun CollectionFolderViewContent(
                                             positionCallback?.invoke(columns, pos)
                                         },
                                         letterPosition = { viewActions.positionOfLetter(it) ?: -1 },
+                                        jumpLetters = jumpLetters,
                                         viewOptions = state.viewOptions,
                                         onClickPlay = gridActions.onClickPlayRemoteButton!!,
                                         focusedItem = focusedItem,
@@ -1014,6 +1095,7 @@ fun CollectionFolderViewContent(
                                             positionCallback?.invoke(columns, pos)
                                         },
                                         letterPosition = { viewActions.positionOfLetter(it) ?: -1 },
+                                        jumpLetters = jumpLetters,
                                         viewOptions = state.viewOptions,
                                         onClickPlay = gridActions.onClickPlayRemoteButton!!,
                                         focusedItem = focusedItem,
@@ -1055,3 +1137,12 @@ fun CollectionFolderViewContent(
         )
     }
 }
+
+/**
+ * Keeps the letters whose bucket in [counts] has items. Falls back to every letter when none
+ * has, so the bar never collapses to nothing.
+ */
+internal fun String.filterPresent(counts: List<Int>): String = filterIndexed { index, _ -> counts[index] > 0 }.ifEmpty { this }
+
+/** How many per-letter counts run at once; OkHttp allows 5 requests per host by default */
+private const val LETTER_COUNT_CONCURRENCY = 5
