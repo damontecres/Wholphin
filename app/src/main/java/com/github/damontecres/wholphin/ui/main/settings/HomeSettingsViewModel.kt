@@ -630,12 +630,6 @@ class HomeSettingsViewModel
             _state.update {
                 update.invoke(it)
             }
-            homeSettingsService.currentSettings.update {
-                HomePageResolvedSettings(
-                    userId = currentUser.value.id,
-                    rows = state.value.rows,
-                )
-            }
         }
 
         fun resizeCards(relative: Int) {
@@ -936,9 +930,7 @@ class HomeSettingsViewModel
             }
         }
 
-        fun discardChanges(): Job {
-            TODO("Not yet implemented")
-        }
+        fun discardChanges(): Job = Job().apply { complete() }
     }
 
 data class HomePageSettingsState(
