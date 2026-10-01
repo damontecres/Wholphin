@@ -54,9 +54,14 @@ message PlaybackOverrides{
   bool direct_play_ass = 3 [deprecated = true];
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
-  bool direct_play_dolby_vision_e_l = 6;
+  bool direct_play_dolby_vision_e_l = 6 [deprecated = true];
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
+  HdrOverrideMode dovi_profile_5_override = 9;
+  HdrOverrideMode dovi_profile_7_override = 10;
+  HdrOverrideMode dovi_profile_8_override = 11;
+  HdrOverrideMode hdr10_override = 12;
+  HdrOverrideMode hdr10_plus_override = 13;
 }
 
 message PlaybackPreferences {
@@ -221,6 +226,12 @@ message MusicPreferences {
   bool show_visualizer = 2;
   bool show_album_Art = 3;
   bool show_backdrop = 4;
+}
+
+enum HdrOverrideMode{
+  HDR_OVERRIDE_AUTO = 0;
+  HDR_OVERRIDE_ENABLE = 1;
+  HDR_OVERRIDE_DISABLE = 2;
 }
 
 message ExperimentalPreferences {
