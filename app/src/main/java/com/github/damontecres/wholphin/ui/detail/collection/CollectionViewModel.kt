@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.data.letterPosition
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -370,8 +371,9 @@ class CollectionViewModel
 
         suspend fun letterPosition(letter: Char): Int =
             withContext(WholphinDispatchers.IO) {
-                val sort = state.value.sortAndDirection
-                val filter = state.value.itemFilter
+                val currentState = state.value
+                val sort = currentState.sortAndDirection
+                val filter = currentState.itemFilter
                 val request =
                     createGetItemsRequest(
                         sort = sort,
@@ -384,8 +386,8 @@ class CollectionViewModel
                         limit = 0,
                         enableTotalRecordCount = true,
                     )
-                val result by GetItemsRequestHandler.execute(api, request)
-                result.totalRecordCount
+                val before = GetItemsRequestHandler.countMatching(api, request)
+                sort.letterPosition(before, currentState.items.size)
             }
 
         fun navigateTo(destination: Destination) {
