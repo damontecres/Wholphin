@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -50,6 +52,8 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
+    imageAlpha: Float = 1f,
+    artworkOverlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
@@ -70,6 +74,8 @@ fun SeasonCard(
         interactionSource = interactionSource,
         showImageOverlay = showImageOverlay,
         aspectRatio = aspectRatio,
+        imageAlpha = imageAlpha,
+        artworkOverlay = artworkOverlay,
     )
 }
 
@@ -136,6 +142,8 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = AspectRatios.TALL,
+    imageAlpha: Float = 1f,
+    artworkOverlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     // Do not use `by` here, this way we are Defer reads and recompositions to only when modifier calculates
@@ -167,11 +175,7 @@ fun SeasonCard(
                     containerColor = Color.Transparent,
                 ),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize(),
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 ItemCardImage(
                     imageUrl = imageUrl,
                     name = name,
@@ -184,8 +188,10 @@ fun SeasonCard(
                     useFallbackText = false,
                     modifier =
                         Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .alpha(imageAlpha),
                 )
+                artworkOverlay()
             }
         }
         Column(

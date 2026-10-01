@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -20,6 +21,7 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
@@ -28,6 +30,11 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.ItemRowFields
+import com.github.damontecres.wholphin.ui.detail.discover.RequestSeason
+import com.github.damontecres.wholphin.ui.detail.discover.SeerrRequestData
+import com.github.damontecres.wholphin.ui.detail.discover.TvRequest
+import com.github.damontecres.wholphin.ui.detail.discover.isRequestable
+import com.github.damontecres.wholphin.ui.detail.discover.toRequestSeasons
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -42,6 +49,7 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
 import com.google.common.cache.CacheBuilder
@@ -57,12 +65,16 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -100,6 +112,7 @@ class SeriesViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
+        private val seerrServerRepository: SeerrServerRepository,
         private val mediaManagementService: MediaManagementService,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
@@ -118,6 +131,11 @@ class SeriesViewModel
         val state: StateFlow<SeriesState> = _state
 
         val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
+
+        val request4kEnabled =
+            seerrServerRepository.current
+                .map { it?.request4kTvEnabled ?: false }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         init {
             viewModelScope.launchIO {
@@ -214,6 +232,7 @@ class SeriesViewModel
                 }
 
                 if (seriesPageType == SeriesPageType.DETAILS) {
+                    updateSeerrDetails(seasons, null)
                     viewModelScope.launchIO {
                         trailerService.getLocalTrailers(series).letNotEmpty { localTrailers ->
                             _state.update { it.copy(trailers = localTrailers + remoteTrailers) }
@@ -250,19 +269,19 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         seerrService.active.collectLatest { active ->
                             val tv =
-                                if (active) {
-                                    try {
-                                        seerrService
-                                            .getTvSeries(series)
-                                            ?.let { seerrService.createDiscoverItem(it) }
-                                    } catch (ex: Exception) {
-                                        Timber.e(ex)
-                                        null
-                                    }
-                                } else {
+                                try {
+                                    loadSeerrWhenActive(active) { seerrService.getTvSeries(series) }
+                                } catch (ex: CancellationException) {
+                                    throw ex
+                                } catch (ex: Exception) {
+                                    Timber.e(ex)
                                     null
                                 }
-                            _state.update { it.copy(discoverSeries = tv) }
+                            if (active) {
+                                updateSeerrDetails(state.value.seasons, tv)
+                            } else {
+                                publishJellyfinOnlySeasons(state.value.seasons)
+                            }
                         }
                     }
                 }
@@ -276,10 +295,108 @@ class SeriesViewModel
                             )
                             val seasons = getSeasons(series, seasonEpisodeIds?.seasonNumber).await()
                             _state.update { it.copy(seasons = seasons) }
+                            updateSeerrDetails(seasons, state.value.seerrTvDetails)
                         }
                     }.catch { ex ->
                         Timber.e(ex, "Error refreshing after deleted item")
                     }.launchIn(viewModelScope)
+            }
+        }
+
+        private suspend fun updateSeerrDetails(
+            seasons: List<BaseItem?>,
+            tv: TvDetails?,
+        ) {
+            if (!seerrService.active.first()) {
+                publishJellyfinOnlySeasons(seasons)
+                return
+            }
+            val localSeasons =
+                if (seasons is ApiRequestPager<*>) {
+                    List(seasons.size) { seasons.getBlocking(it) }
+                } else {
+                    seasons
+                }.filterNotNull()
+            val currentUserId = seerrServerRepository.currentUserId.first()
+            val requestSeasons = tv?.toRequestSeasons(currentUserId, false).orEmpty()
+            val requestSeasons4k =
+                if (request4kEnabled.value) tv?.toRequestSeasons(currentUserId, true).orEmpty() else emptyList()
+            val localByNumber = localSeasons.associateBy { it.data.indexNumber }
+            val seerrByNumber = requestSeasons.associateBy { it.season.seasonNumber }
+            val allNumbers = mergedSeasonRowIdentities(localByNumber.keys, seerrByNumber.keys)
+            val detailsSeasons =
+                allNumbers.map { row ->
+                    val number = row.seasonNumber
+                    val seerrSeason = seerrByNumber[number]
+                    SeriesDetailsSeason(
+                        seasonNumber = number,
+                        jellyfinItem = localByNumber[number],
+                        seerrSeason = seerrSeason,
+                        imageUrl =
+                            if (localByNumber[number] == null) {
+                                seerrService.createImageUrl(
+                                    org.jellyfin.sdk.model.api.ImageType.PRIMARY,
+                                    seerrSeason?.season?.posterPath,
+                                    null,
+                                )
+                            } else {
+                                null
+                            },
+                    )
+                }
+            _state.update {
+                it.copy(
+                    detailsSeasons = detailsSeasons,
+                    seerrTvDetails = tv,
+                    requestSeasons = requestSeasons,
+                    requestSeasons4k = requestSeasons4k,
+                    discoverSeries = tv?.let { details -> seerrService.createDiscoverItem(details) },
+                )
+            }
+        }
+
+        private suspend fun publishJellyfinOnlySeasons(seasons: List<BaseItem?>) {
+            val localSeasons =
+                if (seasons is ApiRequestPager<*>) {
+                    List(seasons.size) { seasons.getBlocking(it) }
+                } else {
+                    seasons
+                }.filterNotNull()
+            _state.update { it.withJellyfinOnlySeasons(localSeasons) }
+        }
+
+        fun requestOnClick() {
+            viewModelScope.launchIO {
+                if (!seerrService.active.first()) return@launchIO
+                _state.update { it.copy(profileLoading = LoadingState.Loading) }
+                try {
+                    val data =
+                        seerrService.getProfilesAndFolders(
+                            com.github.damontecres.wholphin.data.model.SeerrItemType.TV,
+                        )
+                    _state.update { it.copy(profileLoading = LoadingState.Success, requestData = data) }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error getting profiles & folders")
+                    showToast(context, "Error getting profiles & folders: ${ex.localizedMessage}")
+                    _state.update { it.copy(profileLoading = LoadingState.Error(ex)) }
+                }
+            }
+        }
+
+        fun request(request: TvRequest) {
+            viewModelScope.launchIO {
+                if (!seerrService.active.first()) return@launchIO
+                val tv = state.value.seerrTvDetails ?: return@launchIO
+                try {
+                    seerrService.requestTv(tv, request)
+                    val refreshed = seerrService.api.tvApi.tvTvIdGet(request.tvId)
+                    updateSeerrDetails(state.value.seasons, refreshed)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error requesting %s", request.tvId)
+                    showToast(context, "An error occurred")
+                }
             }
         }
 
@@ -447,6 +564,7 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val seasons = getSeasons(series, null).await()
                         _state.update { it.copy(seasons = seasons) }
+                        updateSeerrDetails(seasons, state.value.seerrTvDetails)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error updating series")
@@ -887,5 +1005,58 @@ data class SeriesState(
     val peopleInEpisode: PeopleInItem = PeopleInItem(),
     val discovered: List<DiscoverItem> = emptyList(),
     val discoverSeries: DiscoverItem? = null,
+    val detailsSeasons: List<SeriesDetailsSeason> = emptyList(),
+    val seerrTvDetails: TvDetails? = null,
+    val requestSeasons: List<RequestSeason> = emptyList(),
+    val requestSeasons4k: List<RequestSeason> = emptyList(),
+    val profileLoading: LoadingState = LoadingState.Pending,
+    val requestData: SeerrRequestData = SeerrRequestData(),
     val chosenStreams: ChosenStreams? = null,
 )
+
+data class SeriesDetailsSeason(
+    val seasonNumber: Int,
+    val jellyfinItem: BaseItem?,
+    val seerrSeason: RequestSeason?,
+    val imageUrl: String?,
+) {
+    fun canRequest(): Boolean = jellyfinItem == null && seerrSeason?.isRequestable() == true
+}
+
+internal data class SeasonRowIdentity(
+    val seasonNumber: Int,
+    val hasJellyfinSeason: Boolean,
+    val hasSeerrSeason: Boolean,
+)
+
+internal fun mergedSeasonRowIdentities(
+    jellyfinNumbers: Collection<Int?>,
+    seerrNumbers: Collection<Int?>,
+): List<SeasonRowIdentity> {
+    val local = jellyfinNumbers.filterNotNull().toSet()
+    val seerr = seerrNumbers.filterNotNull().toSet()
+    return (local + seerr).sorted().map { number ->
+        SeasonRowIdentity(number, number in local, number in seerr)
+    }
+}
+
+internal suspend fun <T> loadSeerrWhenActive(
+    active: Boolean,
+    load: suspend () -> T,
+): T? = if (active) load() else null
+
+internal fun SeriesState.withJellyfinOnlySeasons(localSeasons: List<BaseItem>): SeriesState {
+    val localByNumber = localSeasons.associateBy { it.data.indexNumber }
+    return copy(
+        detailsSeasons =
+            mergedSeasonRowIdentities(localByNumber.keys, emptyList()).map { row ->
+                SeriesDetailsSeason(row.seasonNumber, localByNumber[row.seasonNumber], null, null)
+            },
+        seerrTvDetails = null,
+        requestSeasons = emptyList(),
+        requestSeasons4k = emptyList(),
+        requestData = SeerrRequestData(),
+        profileLoading = LoadingState.Pending,
+        discoverSeries = null,
+    )
+}
