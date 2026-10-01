@@ -55,7 +55,7 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
-import com.github.damontecres.wholphin.ui.data.descendingLetterPosition
+import com.github.damontecres.wholphin.ui.data.letterPosition
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -493,13 +493,11 @@ class CollectionFolderViewModel
          */
         override suspend fun positionOfLetter(letter: Char): Int? =
             withContext(WholphinDispatchers.IO) {
-                val filter = state.value.filter
-                val descending = state.value.sortAndDirection.sort == ItemSortBy.SORT_NAME &&
-                    state.value.sortAndDirection.direction == SortOrder.DESCENDING
-                when (filter.override) {
+                val currentState = state.value
+                val before = when (currentState.filter.override) {
                     GetItemsFilterOverride.ARTIST -> {
                         val request =
-                            createGetArtistsRequest(filter).copy(
+                            createGetArtistsRequest(currentState.filter).copy(
                                 enableImageTypes = null,
                                 fields = null,
                                 nameLessThan = letter.toString(),
@@ -507,13 +505,7 @@ class CollectionFolderViewModel
                                 enableTotalRecordCount = true,
                                 enableUserData = false,
                             )
-                        val before = GetArtistsHandler.countMatching(api, request)
-                        if (descending) {
-                            val total = GetArtistsHandler.countMatching(api, request.copy(nameLessThan = null))
-                            descendingLetterPosition(before, total)
-                        } else {
-                            before
-                        }
+                        GetArtistsHandler.countMatching(api, request)
                     }
 
                     // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
@@ -525,9 +517,9 @@ class CollectionFolderViewModel
                     GetItemsFilterOverride.NONE -> {
                         val request =
                             createGetItemsRequest(
-                                sortAndDirection = state.value.sortAndDirection,
+                                sortAndDirection = currentState.sortAndDirection,
                                 recursive = recursive,
-                                filter = filter,
+                                filter = currentState.filter,
                             ).copy(
                                 enableImageTypes = null,
                                 fields = null,
@@ -536,13 +528,12 @@ class CollectionFolderViewModel
                                 enableTotalRecordCount = true,
                                 enableUserData = false,
                             )
-                        val before = GetItemsRequestHandler.countMatching(api, request)
-                        if (descending) {
-                            val total = GetItemsRequestHandler.countMatching(api, request.copy(nameLessThan = null))
-                            descendingLetterPosition(before, total)
-                        } else {
-                            before
-                        }
+                        GetItemsRequestHandler.countMatching(api, request)
+                    }
+                }
+                before?.let { count ->
+                    currentState.items.successValue?.let { items ->
+                        currentState.sortAndDirection.letterPosition(count, items.size)
                     }
                 }
             }

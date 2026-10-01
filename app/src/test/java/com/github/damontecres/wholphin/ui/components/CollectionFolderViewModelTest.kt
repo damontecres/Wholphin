@@ -212,8 +212,8 @@ class CollectionFolderViewModelTest {
             requests.clear()
 
             assertEquals(60, viewModel.positionOfLetter('K'))
+            assertEquals(1, requests.size)
             assertEquals("K", requests[0].nameLessThan)
-            assertEquals(null, requests[1].nameLessThan)
         }
 
     @Test
@@ -229,8 +229,8 @@ class CollectionFolderViewModelTest {
             requests.clear()
 
             assertEquals(7, viewModel.positionOfLetter('K'))
+            assertEquals(1, requests.size)
             assertEquals("K", requests[0].nameLessThan)
-            assertEquals(null, requests[1].nameLessThan)
         }
 
     @Test

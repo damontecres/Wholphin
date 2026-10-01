@@ -18,15 +18,20 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.item
 import com.github.damontecres.wholphin.test.movie
+import com.github.damontecres.wholphin.ui.components.CollectionFolderState
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.unmockkObject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +46,8 @@ import org.jellyfin.sdk.api.operations.PersonsApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
@@ -111,6 +118,30 @@ class TestFavoritesViewModel {
     private val items = listOf(BaseItem(movie()))
 
     private val empty = emptyList<BaseItem>()
+
+    @Test
+    fun `letter jump counts matching favorites and uses loaded total for descending sort`() =
+        runTest {
+            val request = slot<GetItemsRequest>()
+            mockkObject(GetItemsRequestHandler)
+            try {
+                coEvery { GetItemsRequestHandler.execute(api, capture(request)) } returns
+                    successQueryResult(totalRecordCount = 3)
+                val viewModel = createViewModel()
+                viewModel.state.value.favorites[BaseItemKind.MOVIE] =
+                    CollectionFolderState(
+                        items = DataLoadingState.Success(List(10) { null }),
+                        sortAndDirection = SortAndDirection(ItemSortBy.SORT_NAME, SortOrder.DESCENDING),
+                        viewOptions = ViewOptions(),
+                    )
+
+                assertEquals(7, viewModel.createTypedProvider(BaseItemKind.MOVIE).positionOfLetter('K'))
+                assertEquals("K", request.captured.nameLessThan)
+                coVerify(exactly = 1) { GetItemsRequestHandler.execute(api, any<GetItemsRequest>()) }
+            } finally {
+                unmockkObject(GetItemsRequestHandler)
+            }
+        }
 
     private fun successJob(items: List<BaseItem>) = CompletableDeferred(DataLoadingState.Success(items))
 

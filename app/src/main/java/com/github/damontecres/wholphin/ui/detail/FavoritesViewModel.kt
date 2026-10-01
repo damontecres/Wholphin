@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.data.letterPosition
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -658,18 +659,21 @@ class FavoritesViewModel
 
             override suspend fun positionOfLetter(letter: Char): Int? =
                 collectionStateFor(type)?.let { collectionState ->
-                    when (type) {
+                    val before = when (type) {
                         BaseItemKind.MUSIC_ARTIST -> {
                             val request =
                                 createGetArtistsRequest(
                                     collectionState.filter,
                                     collectionState.sortAndDirection,
                                 ).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
                                     enableUserData = false,
                                     limit = 0,
                                     enableTotalRecordCount = true,
                                 )
-                            GetArtistsHandler.execute(api, request).content.totalRecordCount
+                            GetArtistsHandler.countMatching(api, request)
                         }
 
                         BaseItemKind.PERSON -> {
@@ -683,11 +687,19 @@ class FavoritesViewModel
                                     collectionState.filter,
                                     collectionState.sortAndDirection,
                                 ).copy(
+                                    enableImageTypes = null,
+                                    fields = null,
+                                    nameLessThan = letter.toString(),
                                     enableUserData = false,
                                     limit = 0,
                                     enableTotalRecordCount = true,
                                 )
-                            GetItemsRequestHandler.execute(api, request).content.totalRecordCount
+                            GetItemsRequestHandler.countMatching(api, request)
+                        }
+                    }
+                    before?.let { count ->
+                        collectionState.items.successValue?.let { items ->
+                            collectionState.sortAndDirection.letterPosition(count, items.size)
                         }
                     }
                 }
