@@ -34,6 +34,17 @@ fun descendingLetterPosition(
     total: Int,
 ): Int = (total - before).coerceIn(0, (total - 1).coerceAtLeast(0))
 
+/** Resolve a letter count against the displayed sort order and item count. */
+fun SortAndDirection.letterPosition(
+    before: Int,
+    total: Int,
+): Int =
+    if (sort == ItemSortBy.SORT_NAME && direction == SortOrder.DESCENDING) {
+        descendingLetterPosition(before, total)
+    } else {
+        before
+    }
+
 val MovieSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
