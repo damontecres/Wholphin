@@ -21,6 +21,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.logCoilError
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
@@ -40,6 +41,10 @@ fun TitleOrLogo(
                 model = logoImageUrl,
                 contentDescription = title,
                 contentScale = ContentScale.Fit,
+                onError = {
+                    logCoilError(logoImageUrl, it.result)
+                    imageError = true
+                },
                 modifier =
                     Modifier
                         .height(HeaderUtils.logoHeight)
@@ -86,7 +91,10 @@ fun TitleOrLogo(
 fun rememberLogoUrl(item: BaseItem?): String? {
     val imageUrlService = LocalImageUrlService.current
     return remember(item?.id) {
-        if (item?.type == BaseItemKind.EPISODE && item.data.seriesId != null && item.data.parentLogoImageTag != null) {
+        if ((item?.type == BaseItemKind.EPISODE || item?.type == BaseItemKind.SEASON) &&
+            item.data.seriesId != null &&
+            item.data.parentLogoImageTag != null
+        ) {
             imageUrlService.getItemImageUrl(item.data.seriesId!!, ImageType.LOGO)
         } else if (ImageType.LOGO in item?.data?.imageTags.orEmpty()) {
             imageUrlService.getItemImageUrl(item, ImageType.LOGO)
@@ -113,6 +121,10 @@ fun SimpleTitleOrLogo(
                 model = logoImageUrl,
                 contentDescription = item?.title,
                 contentScale = ContentScale.Fit,
+                onError = {
+                    logCoilError(logoImageUrl, it.result)
+                    imageError = true
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         } else {

@@ -8,7 +8,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistInfo
 import com.github.damontecres.wholphin.data.model.PlaylistItem
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.DetailItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.gt
@@ -65,7 +65,7 @@ class PlaylistCreator
                 GetEpisodesRequest(
                     seriesId = seriesId,
                     seasonId = seasonId,
-                    fields = DefaultItemFields,
+                    fields = DetailItemFields,
                     startItemId = episodeId,
                     sortBy = if (shuffled) ItemSortBy.RANDOM else null,
                     limit = Playlist.MAX_SIZE,
@@ -94,7 +94,7 @@ class PlaylistCreator
                     GetItemsRequest(
                         userId = serverRepository.currentUser?.id,
                         parentId = playlistId,
-                        fields = DefaultItemFields,
+                        fields = DetailItemFields,
                         startIndex = startIndex,
                         limit = Playlist.MAX_SIZE,
                         sortBy = listOf(sortAndDirection.sort),
@@ -135,7 +135,7 @@ class PlaylistCreator
                             excludeItemIds = listOf(item.id),
                             sortBy = sortAndDirection?.let { listOf(sortAndDirection.sort) },
                             sortOrder = sortAndDirection?.let { listOf(sortAndDirection.direction) },
-                            fields = DefaultItemFields,
+                            fields = DetailItemFields,
                             startIndex = startIndex,
                             limit = Playlist.MAX_SIZE,
                             excludeLocationTypes = listOf(LocationType.VIRTUAL),
@@ -208,7 +208,7 @@ class PlaylistCreator
                                     seasonId = item.id,
                                     limit = Playlist.MAX_SIZE,
                                     sortBy = ItemSortBy.RANDOM,
-                                    fields = DefaultItemFields,
+                                    fields = DetailItemFields,
                                 ).content.items
                                 .convertAndAddParts()
                                 .let {
@@ -236,7 +236,7 @@ class PlaylistCreator
                                 seriesId = item.id,
                                 limit = Playlist.MAX_SIZE,
                                 sortBy = ItemSortBy.RANDOM,
-                                fields = DefaultItemFields,
+                                fields = DetailItemFields,
                             ).content.items
                             .convertAndAddParts()
                             .let {

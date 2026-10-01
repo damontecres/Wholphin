@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -243,11 +244,9 @@ fun PlaybackPageContent(
             )
         seekBarState.onValueChange(skipPosition)
     }
-    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val keyHandler =
-        remember(isLtr, preferences) {
+        remember(preferences) {
             PlaybackKeyHandler(
-                isLtr = isLtr,
                 player = player,
                 controlsEnabled = state.nextUp == null,
                 skipWithLeftRight = true,
@@ -390,17 +389,19 @@ fun PlaybackPageContent(
                     Modifier
                         .align(Alignment.BottomCenter),
             ) {
-                DpadSeekOverlay(
-                    player = player,
-                    seekPositionMs = skipPosition,
-                    trickplayInfo = state.currentMediaInfo.trickPlayInfo,
-                    trickplayUrlFor = viewModel::getTrickplayUrl,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 16.dp)
-                            .fillMaxWidth(.95f),
-                )
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    DpadSeekOverlay(
+                        player = player,
+                        seekPositionMs = skipPosition,
+                        trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                        trickplayUrlFor = viewModel::getTrickplayUrl,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 16.dp)
+                                .fillMaxWidth(.95f),
+                    )
+                }
                 // Clear the overlay after a delay
                 LaunchedEffect(skipIndicatorDuration) {
                     delay(1.5.seconds)
@@ -426,15 +427,23 @@ fun PlaybackPageContent(
                 // Show a small progress bar along the bottom of the screen
                 if (prefs.dpadSeekMode == DpadSeekMode.SEEKBAR_MINIMAL) {
                     val percent = skipPosition.toFloat() / player.duration.toFloat()
-                    Box(
-                        modifier =
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        Box(
                             Modifier
-                                .align(Alignment.BottomStart)
-                                .background(MaterialTheme.colorScheme.border)
-                                .clip(RectangleShape)
-                                .height(3.dp)
-                                .fillMaxWidth(percent),
-                    )
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter),
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomStart)
+                                        .background(MaterialTheme.colorScheme.border)
+                                        .clip(RectangleShape)
+                                        .height(3.dp)
+                                        .fillMaxWidth(percent),
+                            )
+                        }
+                    }
                 }
             }
 

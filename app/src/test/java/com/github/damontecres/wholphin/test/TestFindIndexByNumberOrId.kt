@@ -156,7 +156,12 @@ class TestFindIndexByNumberOrId {
     fun `Test with special matching number`() =
         runTest {
             val list = listOf(epS02E01, epS00E02, epS02E02)
-            findIndexByNumberOrId(targetNum = 2, targetId = epS02E02.id, list = BlockingList.of(list)).let { index ->
+            findIndexByNumberOrId(
+                targetNum = 2,
+                targetId = epS02E02.id,
+                list = BlockingList.of(list),
+                parentIndex = 2,
+            ).let { index ->
                 Assert.assertEquals(2, index)
             }
         }
@@ -193,6 +198,25 @@ class TestFindIndexByNumberOrId {
                 parentId = season2Id,
             ).let { index ->
                 Assert.assertEquals(4, index)
+            }
+        }
+
+    @Test
+    fun `Test with non-matching parent ID`() =
+        runTest {
+            val altSeason2Id = UUID.randomUUID()
+            Assert.assertNotEquals(altSeason2Id, season2Id)
+            Assert.assertNotEquals(altSeason2Id, epS02E02.data.parentId)
+
+            val list = listOf(epS02E01, epS02E02)
+            findIndexByNumberOrId(
+                targetNum = 2,
+                targetId = epS02E02.id,
+                list = BlockingList.of(list),
+                parentId = altSeason2Id,
+                parentIndex = 2,
+            ).let { index ->
+                Assert.assertEquals(1, index)
             }
         }
 }

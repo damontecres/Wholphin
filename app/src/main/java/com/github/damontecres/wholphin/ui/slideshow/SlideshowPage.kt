@@ -408,8 +408,11 @@ fun SlideshowPage(
                                     ImageRequest
                                         .Builder(LocalContext.current)
                                         .data(imageState.url)
-                                        .size(Size.ORIGINAL)
-                                        .transitionFactory(CrossFadeFactory(750.milliseconds))
+                                        .apply {
+                                            // Fixes images noting being full size when resolutions change
+                                            // See: https://github.com/damontecres/Wholphin/pull/1089
+                                            if (isZoomed) size(Size.ORIGINAL)
+                                        }.transitionFactory(CrossFadeFactory(750.milliseconds))
                                         .useExistingImageAsPlaceholder(true)
                                         .build(),
                                 contentDescription = null,

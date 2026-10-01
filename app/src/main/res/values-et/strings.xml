@@ -704,4 +704,17 @@
     <string name="appears_on">On osalenud siin:</string>
     <string name="disable_audio_offload">Lülita graafikaprotsessori kasutamine heli töötluseks välja</string>
     <string name="disable_audio_offload_summary">Kui lülita graafikaprotsessori kasutamise heli töötluseks välja, siis see võib mõnede seadmete puhul parandada taasesituse hangumise vead</string>
+    <string name="dim_after_delay">Hämarda ekraani peale viivitust</string>
+    <string name="dim_percentage">Hämardamise protsent</string>
+    <string name="dim_screen">Hämarda ekraani</string>
+    <string name="photo_albums">Fotoalbumid</string>
+    <string name="no_favorites_found">Ühtegi lemmikut ei leidu!</string>
+    <string name="duration_hours_seconds">%1$d t %2$d sek</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">%1$d. hooaeg</string>
+    <string name="remove_from_playlist">Eemalda esitusloendist</string>
 </resources>

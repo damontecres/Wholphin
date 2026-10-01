@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail.discover
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.api.seerr.model.MediaInfo
 import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
 import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
 import com.github.damontecres.wholphin.api.seerr.model.RequestRequestIdPutRequest
@@ -20,6 +21,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
@@ -45,6 +47,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 
 @HiltViewModel(assistedFactory = DiscoverSeriesViewModel.Factory::class)
@@ -160,6 +163,15 @@ class DiscoverSeriesViewModel
 
         fun navigateTo(destination: Destination) {
             navigationManager.navigateTo(destination)
+        }
+
+        fun goTo(
+            mediaInfo: MediaInfo?,
+            type: BaseItemKind,
+        ) {
+            viewModelScope.launchDefault {
+                goToButtonDiscover(mediaInfo, type, context, navigationManager)
+            }
         }
 
         private suspend fun updateSeasonStatus(tv: TvDetails) {

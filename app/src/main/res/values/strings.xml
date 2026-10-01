@@ -28,6 +28,7 @@
     <string name="decimal_seconds">%.2f seconds</string>
     <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
     <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
     <string name="duration_minutes_seconds">%1$dm %2$ds</string>
     <string name="duration_hours">%1$dh</string>
     <string name="duration_minutes">%1$dm</string>
@@ -158,6 +159,12 @@
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Season %1$d</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
@@ -480,6 +487,8 @@
     <string name="dts">DTS</string>
     <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+    <string name="prefer_dovi_over_hdr10_plus">Prefer Dolby Vision over HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Removes HDR10+ metadata from Dolby Vision videos, for TVs that otherwise play them as HDR10+</string>
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
@@ -910,6 +919,19 @@
     <string name="audio_books">Audio books</string>
     <string name="server_version_not_supported">Server version not supported</string>
     <string name="appears_on">Appears on</string>
+    <string name="dim_after_delay">Dim screen after delay</string>
+    <string name="dim_percentage">Dim percentage</string>
+    <string name="dim_screen">Dim screen</string>
+    <string name="photo_albums">Photo albums</string>
+    <string name="no_favorites_found">No favorites found!</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="login_credentials_expired">Credentials expired, please login in again</string>
+    <string name="login_not_authorized">You are not authorized to access the server at this time</string>
+    <plurals name="episodes_count">
+        <item quantity="zero">%1$d Episodes</item>
+        <item quantity="one">%1$d Episode</item>
+        <item quantity="other">%1$d Episodes</item>
+    </plurals>
     <string name="load_from_server_plugin">Load default from server</string>
     <string name="save_to_local">Save only locally</string>
     <string name="home_settings_source_unset">Default</string>

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -40,8 +41,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import coil3.compose.AsyncImage
@@ -254,39 +257,41 @@ fun PlaybackOverlay(
             }
         }
 
-        // Trickplay
-        AnimatedVisibility(
-            visible = controllerViewState.controlsVisible && seekProgressPercent >= 0 && seekBarFocused,
-            enter =
-                expandVertically(
-                    spring(
-                        stiffness = Spring.StiffnessMedium,
-                        visibilityThreshold = IntSize.VisibilityThreshold,
-                    ),
-                ) + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth(.95f),
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            // Trickplay
+            AnimatedVisibility(
+                visible = controllerViewState.controlsVisible && seekProgressPercent >= 0 && seekBarFocused,
+                enter =
+                    expandVertically(
+                        spring(
+                            stiffness = Spring.StiffnessMedium,
+                            visibilityThreshold = IntSize.VisibilityThreshold,
+                        ),
+                    ) + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Box(
                     modifier =
                         Modifier
-                            .align(Alignment.BottomStart)
-                            .offsetByPercent(
-                                xPercentage = seekProgressPercent.coerceIn(0f, 1f),
-                            ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
+                            .align(Alignment.Center)
+                            .fillMaxWidth(.95f),
                 ) {
-                    TrickplayPreview(
-                        seekProgressMs = seekProgressMs,
-                        trickplayInfo = trickplayInfo,
-                        trickplayUrlFor = trickplayUrlFor,
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .offsetByPercent(
+                                    xPercentage = seekProgressPercent.coerceIn(0f, 1f),
+                                ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
+                    ) {
+                        TrickplayPreview(
+                            seekProgressMs = seekProgressMs,
+                            trickplayInfo = trickplayInfo,
+                            trickplayUrlFor = trickplayUrlFor,
+                        )
+                    }
                 }
             }
         }

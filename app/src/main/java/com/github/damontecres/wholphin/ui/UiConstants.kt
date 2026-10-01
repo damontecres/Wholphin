@@ -45,11 +45,10 @@ object AppColors {
 const val DEFAULT_PAGE_SIZE = 100
 
 /**
- * The default [ItemFields] to fetch for most queries
+ * The [ItemFields] to fetch for detailed paged and playback
  */
-val DefaultItemFields =
+val DetailItemFields =
     listOf(
-        ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.TRICKPLAY,
         ItemFields.SORT_NAME,
@@ -57,6 +56,7 @@ val DefaultItemFields =
         ItemFields.MEDIA_SOURCES,
         ItemFields.MEDIA_SOURCE_COUNT,
         ItemFields.CAN_DELETE,
+        ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
     )
 
 /**
@@ -64,12 +64,16 @@ val DefaultItemFields =
  */
 val SlimItemFields =
     listOf(
-        ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
         ItemFields.MEDIA_SOURCE_COUNT,
         ItemFields.CAN_DELETE,
     )
+
+/**
+ * ItemFields for displaying items in rows such as in a [com.github.damontecres.wholphin.ui.cards.ItemRow] with [com.github.damontecres.wholphin.ui.cards.SeasonCard]
+ */
+val ItemRowFields = SlimItemFields + ItemFields.PRIMARY_IMAGE_ASPECT_RATIO
 
 val HomeItemFields =
     listOf(
@@ -78,18 +82,19 @@ val HomeItemFields =
     )
 
 val PhotoItemFields =
-    DefaultItemFields +
+    DetailItemFields +
         listOf(
             ItemFields.WIDTH,
             ItemFields.HEIGHT,
         )
 
-val ProgramItemFields = DefaultItemFields + listOf(ItemFields.CHANNEL_INFO)
+val ProgramItemFields = DetailItemFields + listOf(ItemFields.CHANNEL_INFO)
 
 object Cards {
     const val HEIGHT_2X3_DP = 172
     val height2x3 = HEIGHT_2X3_DP.dp
     const val HEIGHT_EPISODE = 128
+    const val HEIGHT_LIVE_TV = 96
     val heightEpisode = HEIGHT_EPISODE.dp
     val playedPercentHeight = 6.dp
     val serverUserCircle = height2x3 * .75f

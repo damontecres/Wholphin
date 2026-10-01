@@ -400,7 +400,7 @@
     <string name="commercial">Komerční</string>
     <string name="download_and_update">Download &amp; Update</string>
     <string name="immediate">Bezprostředně</string>
-    <string name="search_and_download">Search &amp; Download</string>
+    <string name="search_and_download"><![CDATA[Najít &amp; Stáhnout]]></string>
     <string name="runtime_sort">Trvání</string>
     <plurals name="samples">
         <item quantity="one">Vzorky</item>
@@ -417,7 +417,7 @@
         <item quantity="other">%s Stažení</item>
     </plurals>
     <string name="combine_continue_next">Combine Continue Watching &amp; Next Up</string>
-    <string name="direct_play_ass">Direct play ASS titulky</string>
+    <string name="direct_play_ass">Použít libass pro ASS titulky</string>
     <string name="direct_play_pgs">Direct play PGS titulky</string>
     <string name="player_backend">Přehrávání Backendu</string>
     <string name="cast_and_crew">Cast &amp; Crew</string>
@@ -538,4 +538,49 @@
     <string name="search_and_download_subtitles">Hledat a stáhnout titulky</string>
     <string name="no_subtitles_found">Nenalezeny žádné vzdálené titulky</string>
     <string name="series_continueing">Současnost</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="movies_title">Filmy</string>
+    <string name="people_title">Osoby</string>
+    <string name="profile_specific_settings_from_server">Nastavení uživatelského profilu ze serveru</string>
+    <string name="time_left">%1$s zbývá</string>
+    <string name="trailers_title">Ukázky</string>
+    <string name="tv_shows_title">TV Seriály</string>
+    <string name="other_extras_title">Jiné</string>
+    <string name="behind_the_scenes_title">Ze zákulisí</string>
+    <string name="clips_title">Klipy</string>
+    <string name="deleted_scenes_title">Vystřižené scény</string>
+    <string name="interviews_title">Rozhovory</string>
+    <string name="scenes_title">Scény</string>
+    <string name="samples_title">Ukázky</string>
+    <string name="featurettes_title">Film o filmu</string>
+    <string name="shorts_title">Krátké filmy</string>
+    <plurals name="minutes">
+        <item quantity="one">%s minuta</item>
+        <item quantity="few">%s minut</item>
+        <item quantity="many">%s minut</item>
+        <item quantity="other">%s minut</item>
+    </plurals>
+    <string name="require_login">Požaduje přihlášení pro profil</string>
+    <string name="pin_digits_hint">[0–9]</string>
+    <string name="disable_audio_offload">Vypnout hardwarové zpracování zvuku</string>
+    <string name="disable_audio_offload_summary">Vypnutí hardwarového dekódování zvuku může u některých zařízení vyřešit zamrzání přehrávání</string>
+    <string name="combined_search_results">Společné výsledky vyhledávání</string>
+    <string name="combined_search_results_on">Zobraz všechny výsledky v jednom seznamu</string>
+    <string name="combined_search_results_off">Zobraz výsledky podle kategorie</string>
+    <string name="show_voice_search_button">Zobraz tlačítko pro hlasové vyhledávání</string>
+    <string name="visible_ui">Viditelné</string>
+    <string name="hidden_ui">Skryté</string>
+    <string name="results">Výsledky</string>
+    <string name="albums">Alba</string>
+    <string name="artists">Tvůrci</string>
+    <string name="songs">Skladby</string>
+    <string name="go_to_artist">Přejdi na tvůrce</string>
+    <string name="now_playing">Právě hraje</string>
+    <string name="go_to_album">Jdi do alba</string>
+    <string name="add_to_queue">Přidat do fronty</string>
 </resources>

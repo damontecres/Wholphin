@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -123,21 +124,7 @@ class SeerrService
                             }
 
                             BaseItemKind.PERSON -> {
-                                api.personApi
-                                    .personPersonIdCombinedCreditsGet(personId = it)
-                                    .let { credits ->
-                                        val cast =
-                                            credits.cast
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        val crew =
-                                            credits.crew
-                                                ?.take(25)
-                                                ?.map { createDiscoverItem(it) }
-                                                .orEmpty()
-                                        cast + crew
-                                    }
+                                personCredits(it)
                             }
 
                             else -> {
@@ -148,6 +135,50 @@ class SeerrService
             } else {
                 null
             }
+
+        /**
+         * Get the combined movie & TV credits of a person as [DiscoverItem]s
+         *
+         * The two lists returned by the API are merged, de-duplicated by id since a person can be
+         * both cast and crew on the same title, and sorted by release date descending with undated
+         * entries last
+         */
+        suspend fun personCredits(personId: Int): List<DiscoverItem> =
+            api.personApi
+                .personPersonIdCombinedCreditsGet(personId = personId)
+                .let { credits ->
+                    val cast = credits.cast?.map { createDiscoverItem(it) }.orEmpty()
+                    val crew = credits.crew?.map { createDiscoverItem(it) }.orEmpty()
+                    (cast + crew)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.releaseDate }
+                }
+
+        /**
+         * Create a [DiscoverItem] for a person in the library so that the full grid of their
+         * credits can be opened from their page
+         *
+         * @return the item or null if the person has no TMDB id
+         */
+        fun discoverPerson(item: BaseItem): DiscoverItem? =
+            item.data.providerIds
+                ?.get("Tmdb")
+                ?.toIntOrNull()
+                ?.let {
+                    DiscoverItem(
+                        id = it,
+                        type = SeerrItemType.PERSON,
+                        title = item.name,
+                        subtitle = null,
+                        overview = item.data.overview,
+                        availability = SeerrAvailability.UNKNOWN,
+                        releaseDate = null,
+                        posterUrl = null,
+                        backDropUrl = null,
+                        logoUrl = null,
+                        jellyfinItemId = null,
+                    )
+                }
 
         suspend fun getTvSeries(item: BaseItem): TvDetails? =
             if (active.first()) {
@@ -169,14 +200,7 @@ class SeerrService
             backdropWidth: Int = 1920,
         ): String? {
             if (mediaInfo != null) {
-                val itemId =
-                    if (mediaInfo.jellyfinMediaId.isNotNullOrBlank()) {
-                        mediaInfo.jellyfinMediaId.toUUIDOrNull()
-                    } else if (mediaInfo.jellyfinMediaId4k.isNotNullOrBlank()) {
-                        mediaInfo.jellyfinMediaId4k.toUUIDOrNull()
-                    } else {
-                        null
-                    }
+                val itemId = mediaInfo.jellyfinId
                 if (itemId != null) {
                     return imageUrlService.getItemImageUrl(
                         itemId = itemId,
@@ -348,7 +372,8 @@ class SeerrService
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(movie: MovieDetails): DiscoverItem =
@@ -364,7 +389,8 @@ class SeerrService
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
-                jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
+                jellyfinItemId = movie.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvResult): DiscoverItem =
@@ -380,7 +406,8 @@ class SeerrService
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(tv: TvDetails): DiscoverItem =
@@ -396,7 +423,8 @@ class SeerrService
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
-                jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
+                jellyfinItemId = tv.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(search: SeerrSearchResult): DiscoverItem =
@@ -412,7 +440,8 @@ class SeerrService
                 releaseDate = toLocalDate(search.releaseDate ?: search.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, search.posterPath, search.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, search.backdropPath, search.mediaInfo),
-                jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, search.mediaInfo),
+                jellyfinItemId = search.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCast): DiscoverItem =
@@ -425,7 +454,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,
@@ -438,7 +467,8 @@ class SeerrService
                         credit.backdropPath,
                         credit.mediaInfo,
                     ),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
 
         suspend fun createDiscoverItem(credit: CreditCrew): DiscoverItem =
@@ -451,7 +481,7 @@ class SeerrService
                 availability =
                     SeerrAvailability.from(credit.mediaInfo?.status)
                         ?: SeerrAvailability.UNKNOWN,
-                releaseDate = toLocalDate(credit.firstAirDate),
+                releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
                         ImageType.PRIMARY,
@@ -464,6 +494,13 @@ class SeerrService
                         credit.backdropPath,
                         credit.mediaInfo,
                     ),
-                jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+                logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
+                jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
     }
+
+val MediaInfo.jellyfinId: UUID?
+    get() = jellyfinMediaId4k?.toUUIDOrNull() ?: jellyfinMediaId?.toUUIDOrNull()
+
+val MediaInfo.jellyfinIdAsString: String?
+    get() = jellyfinMediaId4k ?: jellyfinMediaId
