@@ -55,7 +55,7 @@
     <string name="select_server">Seleccionar servidor</string>
     <string name="select_user">Seleccionar Usuario</string>
     <string name="sort_by_name">Nombre</string>
-    <string name="sort_by_random">Aleatorio</string>
+    <string name="sort_by_random">Selección aleatoria</string>
     <string name="studios">Estudios</string>
     <string name="submit">Enviar</string>
     <string name="subtitle">Subtítulo</string>
@@ -105,7 +105,7 @@
     <string name="remove_favorite">Quitar de favoritos</string>
     <string name="show_debug_info">Mostrar información de depuración</string>
     <string name="show">Mostrar</string>
-    <string name="shuffle">Aleatorio</string>
+    <string name="shuffle">Reproducción aleatoria</string>
     <string name="skip">Saltar</string>
     <string name="sort_by_date_episode_added">Ordenar por fecha de inclusión del episodio</string>
     <string name="about">Acerca de</string>
