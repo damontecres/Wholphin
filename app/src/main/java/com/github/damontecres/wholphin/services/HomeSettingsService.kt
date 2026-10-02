@@ -227,19 +227,27 @@ class HomeSettingsService
             userId: UUID,
             source: HomePageSettingsSource,
         ): HomePageResolvedSettings? {
-            val settings =
+            val (resolvedSource, settings) =
                 when (source) {
                     HomePageSettingsSource.UNSET -> loadInOrder(userId)
-                    HomePageSettingsSource.LOCAL -> loadFromLocal(userId)
-                    HomePageSettingsSource.SERVER_PROFILE -> loadFromServer(userId)
-                    HomePageSettingsSource.PLUGIN -> serverPluginApi.fetchHomePageSettings()
+                    HomePageSettingsSource.LOCAL -> source to loadFromLocal(userId)
+                    HomePageSettingsSource.SERVER_PROFILE -> source to loadFromServer(userId)
+                    HomePageSettingsSource.PLUGIN -> source to serverPluginApi.fetchHomePageSettings()
+                    HomePageSettingsSource.DEFAULT -> source to createDefault(userId).asHomePageSettings()
+                    HomePageSettingsSource.WEB_CONFIG -> source to parseFromWebConfig(userId)?.asHomePageSettings()
                 }
+            Timber.i(
+                "fetch home settings: resolvedSource=%s, userId=%s, found=%s",
+                resolvedSource,
+                userId,
+                settings != null,
+            )
             return settings?.let {
                 val resolvedRows =
                     settings.rows.mapIndexed { index, config ->
                         resolve(index, config)
                     }
-                HomePageResolvedSettings(userId, resolvedRows)
+                HomePageResolvedSettings(userId, resolvedSource, resolvedRows)
             }
         }
 
@@ -263,9 +271,7 @@ class HomeSettingsService
                     Timber.e(ex, "Error loading settings for %s", user.config.homeSettingsSource)
                     null
                 }
-            if (settings != null) {
-                Timber.v("Found settings")
-            }
+            Timber.v("Found settings: %s", settings != null)
             val resolvedSettings = settings ?: createDefault(user.id)
             currentSettings.update { resolvedSettings }
         }
@@ -273,21 +279,26 @@ class HomeSettingsService
         /**
          * Tries to load settings from local->server->plugin
          */
-        private suspend fun loadInOrder(userId: UUID): HomePageSettings? {
+        private suspend fun loadInOrder(userId: UUID): Pair<HomePageSettingsSource, HomePageSettings?> {
+            Timber.v("loadInOrder: local")
             var settings =
-                tryLoad {
-                    loadFromLocal(userId)
-                }
+                HomePageSettingsSource.LOCAL to
+                    tryLoad {
+                        loadFromLocal(userId)
+                    }
 
-            if (settings == null) {
+            if (settings.second == null) {
+                Timber.v("loadInOrder: server")
                 settings =
+                    HomePageSettingsSource.SERVER_PROFILE to
                     tryLoad {
                         loadFromServer(userId)
                     }
             }
 
-            if (settings == null) {
-                settings =
+            if (settings.second == null && serverRepository.serverPluginInstalled.value) {
+                Timber.v("loadInOrder: plugin")
+                settings = HomePageSettingsSource.PLUGIN to
                     tryLoad {
                         serverPluginApi.fetchHomePageSettings()
                     }
@@ -360,7 +371,7 @@ class HomeSettingsService
                     ),
                 )
             val rowConfig = continueWatchingRow + includedIds
-            return HomePageResolvedSettings(userId, rowConfig)
+            return HomePageResolvedSettings(userId, HomePageSettingsSource.DEFAULT, rowConfig)
         }
 
         /**
@@ -476,7 +487,7 @@ class HomeSettingsService
                                 null
                             }
                         }.flatten()
-                HomePageResolvedSettings(userId, rowConfigs)
+                HomePageResolvedSettings(userId, HomePageSettingsSource.WEB_CONFIG, rowConfigs)
             } else {
                 null
             }
@@ -1273,12 +1284,14 @@ data class HomeRowConfigDisplay(
  */
 data class HomePageResolvedSettings(
     val userId: UUID,
+    val source: HomePageSettingsSource,
     val rows: List<HomeRowConfigDisplay>,
 ) {
     fun asHomePageSettings(): HomePageSettings = HomePageSettings(rows.map { it.config }, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
 
     companion object {
-        val EMPTY = HomePageResolvedSettings(UUID.randomUUID(), emptyList())
+        val EMPTY =
+            HomePageResolvedSettings(UUID.randomUUID(), HomePageSettingsSource.UNSET, emptyList())
     }
 }
 
@@ -1365,8 +1378,10 @@ fun viewOptionsForCollectionType(collectionType: CollectionType?): HomeRowViewOp
 enum class HomePageSettingsSource(
     @param:StringRes val stringResId: Int,
 ) {
-    UNSET(R.string.home_settings_source_unset),
+    UNSET(R.string.unknown),
     LOCAL(R.string.home_settings_source_local),
     SERVER_PROFILE(R.string.home_settings_source_server_profile),
     PLUGIN(R.string.home_settings_source_plugin),
+    DEFAULT(R.string.home_settings_source_unset),
+    WEB_CONFIG(R.string.load_from_web_client),
 }

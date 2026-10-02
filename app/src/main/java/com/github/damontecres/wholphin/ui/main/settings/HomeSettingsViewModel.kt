@@ -103,10 +103,10 @@ class HomeSettingsViewModel
         val settingsChanged =
             state
                 .map {
-                    HomePageResolvedSettings(
-                        currentUser.value.id,
-                        it.rows,
-                    ).asHomePageSettings() != originalSettings
+                    HomePageSettings(
+                        rows = it.rows.map { it.config },
+                        version = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
+                    ) != originalSettings
                 }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         private var idCounter by Delegates.notNull<Int>()
@@ -127,7 +127,7 @@ class HomeSettingsViewModel
                 idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
-                        source = user.config.homeSettingsSource,
+                        source = currentSettings.source,
                         libraries = libraries,
                         rows = currentSettings.rows,
                     )
