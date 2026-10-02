@@ -235,6 +235,33 @@ data class TrackSelectionResult(
     val bothSelected: Boolean get() = audioSelected && subtitleSelected
 }
 
+/**
+ * Maps a stream index from this source to the same type-relative stream in [updatedSource].
+ * Jellyfin can renumber every embedded stream when an external subtitle is added.
+ */
+internal fun MediaSourceInfo.remapStreamIndex(
+    updatedSource: MediaSourceInfo,
+    streamIndex: Int?,
+    type: MediaStreamType,
+): Int? {
+    if (streamIndex == null || streamIndex < 0) return streamIndex
+
+    val selectedStream = mediaStreams.orEmpty().firstOrNull { it.type == type && it.index == streamIndex } ?: return streamIndex
+    val external = selectedStream.isExternal
+    val position =
+        mediaStreams
+            .orEmpty()
+            .filter { it.type == type && (type != MediaStreamType.SUBTITLE || it.isExternal == external) }
+            .indexOf(selectedStream)
+
+    return updatedSource.mediaStreams
+        .orEmpty()
+        .filter { it.type == type && (type != MediaStreamType.SUBTITLE || it.isExternal == external) }
+        .getOrNull(position)
+        ?.index
+        ?: streamIndex
+}
+
 enum class TrackSelected {
     SELECTED,
     NOT_FOUND,
