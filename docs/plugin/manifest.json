@@ -9,7 +9,7 @@
     "category": "General",
     "versions": [
       {
-        "version": "v0.1.0.0",
+        "version": "0.1.0.0",
         "changelog": "",
         "targetAbi": "12.1",
         "sourceUrl": "https://github.com/damontecres/jellyfin-plugin-wholphin/releases/download/v0.1.0.0/Jellyfin.Plugin.Wholphin.zip",
