@@ -1,4 +1,7 @@
-@file:UseSerializers(UUIDSerializer::class)
+@file:UseSerializers(
+    UUIDSerializer::class,
+    DateTimeSerializer::class,
+)
 
 package com.github.damontecres.wholphin.data.model
 
@@ -10,8 +13,12 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.serializer.DateTimeSerializer
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -174,13 +181,13 @@ sealed interface HomeRowConfig {
     }
 
     /**
-     * An arbitrary [GetItemsRequest] allowing to query for anything
+     * An arbitrary [HomeGetItemsFilter] allowing to query for most anything
      */
     @Serializable
     @SerialName("GetItems")
     data class GetItems(
         val name: String,
-        val getItems: GetItemsRequest,
+        val filter: HomeGetItemsFilter,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
@@ -240,4 +247,55 @@ data class HomeRowViewOptions(
                 contentScale = PrefContentScale.FIT,
             )
     }
+}
+
+/**
+ * Subset of [GetItemsFilter]
+ */
+@Serializable
+data class HomeGetItemsFilter(
+    val sortBy: List<ItemSortBy>? = null,
+    val sortOrder: List<SortOrder>? = null,
+    val ids: List<UUID>? = null,
+    val minCommunityRating: Double? = null,
+    val minCriticRating: Double? = null,
+    val recursive: Boolean? = null,
+    val searchTerm: String? = null,
+    val parentId: UUID? = null,
+    val includeItemTypes: List<BaseItemKind>? = null,
+    val isFavorite: Boolean? = null,
+    val isPlayed: Boolean? = null,
+    val officialRatings: Collection<String>? = null,
+    val tags: List<String>? = null,
+    val years: List<Int>? = null,
+    val personIds: List<UUID>? = null,
+    val minOfficialRating: String? = null,
+    val hasOfficialRating: Boolean? = null,
+    val studioIds: List<UUID>? = null,
+    val genreIds: List<UUID>? = null,
+    val minPremiereDate: DateTime? = null,
+    val maxPremiereDate: DateTime? = null,
+) {
+    fun asGetItemsRequest() =
+        GetItemsRequest(
+            sortBy = sortBy,
+            sortOrder = sortOrder,
+            ids = ids,
+            minCommunityRating = minCommunityRating,
+            minCriticRating = minCriticRating,
+            recursive = recursive,
+            searchTerm = searchTerm,
+            parentId = parentId,
+            includeItemTypes = includeItemTypes,
+            isFavorite = isFavorite,
+            isPlayed = isPlayed,
+            officialRatings = officialRatings,
+            tags = tags,
+            years = years,
+            personIds = personIds,
+            minOfficialRating = minOfficialRating,
+            hasOfficialRating = hasOfficialRating,
+            studioIds = studioIds,
+            genreIds = genreIds,
+        )
 }
