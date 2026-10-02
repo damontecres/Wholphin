@@ -990,18 +990,11 @@ class HomeSettingsService
 
                 is HomeRowConfig.GetItems -> {
                     val request =
-                        row.getItems.let {
-                            if (it.limit == null) {
-                                it.copy(
-                                    userId = userDto.id,
-                                    limit = limit,
-                                )
-                            } else {
-                                it.copy(
-                                    userId = userDto.id,
-                                )
-                            }
-                        }
+                        row.filter.asGetItemsRequest().copy(
+                            userId = userDto.id,
+                            limit = limit,
+                            fields = HomeItemFieldsBoxSets,
+                        )
                     if (usePaging) {
                         ApiRequestPager(
                             api,

@@ -65,7 +65,7 @@ class UserSwitchListener
                 launchIO {
                     val serverPluginInstalled =
                         try {
-                            serverPluginApi.public()
+                            serverPluginApi.checkInstalled()
                         } catch (ex: Exception) {
                             Timber.e(ex, "Error checking for server plugin")
                             false
