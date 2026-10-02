@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "00E68C90-8840-48D0-AD65-0A5D58249652",
+    "name": "Wholphin Companion",
+    "description": "Provides additional functionality to Wholphin",
+    "overview": "",
+    "owner": "damontecres",
+    "imageUrl": "https://raw.githubusercontent.com/damontecres/Wholphin/refs/heads/main/app/src/main/ic_launcher-playstore.png",
+    "category": "General",
+    "versions": [
+      {
+        "version": "v0.1.0.0",
+        "changelog": "",
+        "targetAbi": "12.1",
+        "sourceUrl": "https://github.com/damontecres/jellyfin-plugin-wholphin/releases/download/v0.1.0.0/Jellyfin.Plugin.Wholphin.zip",
+        "checksum": "f01ac8949620a0349df1f63333507a91",
+        "timestamp": "2026-10-02T18:32:40.500543"
+      }
+    ]
+  }
+]
