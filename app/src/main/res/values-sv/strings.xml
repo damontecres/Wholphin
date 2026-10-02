@@ -684,4 +684,5 @@
     <string name="recordings">Inspelningar</string>
     <string name="folders_title">Mappar</string>
     <string name="user_views">Användarvisningar</string>
+    <string name="genre_movies">%1$sfilmer</string>
 </resources>
