@@ -32,6 +32,8 @@ import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
+import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
@@ -89,6 +91,9 @@ class PlayerFactory
                         val useLibAss =
                             prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
                         val decodeAv1 = prefs.overrides.decodeAv1
+                        val preferDolbyVision =
+                            appPreferences.experimentalPreferences
+                                .get { preferDolbyVisionOverHdr10Plus } ?: false
                         Timber.v(
                             "extensions=%s, assPlaybackMode=%s",
                             extensions,
@@ -104,7 +109,7 @@ class PlayerFactory
                         val dataSourceFactory = DefaultDataSource.Factory(context)
                         val extractorsFactory = createExtractorsFactory()
                         var renderersFactory: RenderersFactory =
-                            WholphinRenderersFactory(context, decodeAv1)
+                            WholphinRenderersFactory(context, decodeAv1, preferDolbyVision)
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
@@ -262,6 +267,7 @@ data class PlayerCreation(
 class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
+    private val preferDolbyVisionOverHdr10Plus: Boolean = false,
 ) : DefaultRenderersFactory(context) {
     @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
@@ -274,10 +280,19 @@ class WholphinRenderersFactory(
         allowedVideoJoiningTimeMs: Long,
         out: ArrayList<Renderer>,
     ) {
+        val videoCodecAdapterFactory =
+            if (preferDolbyVisionOverHdr10Plus) {
+                BitstreamFilteringCodecAdapterFactory(
+                    codecAdapterFactory,
+                    listOf(Hdr10PlusMaskingFilter()),
+                )
+            } else {
+                codecAdapterFactory
+            }
         var videoRendererBuilder =
             MediaCodecVideoRenderer
                 .Builder(context)
-                .setCodecAdapterFactory(codecAdapterFactory)
+                .setCodecAdapterFactory(videoCodecAdapterFactory)
                 .setMediaCodecSelector(mediaCodecSelector)
                 .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
                 .setEnableDecoderFallback(enableDecoderFallback)
