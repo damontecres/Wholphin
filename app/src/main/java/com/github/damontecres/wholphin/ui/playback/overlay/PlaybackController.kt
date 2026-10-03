@@ -204,13 +204,20 @@ fun Controller(
                 var endTimeStr by remember { mutableStateOf("...") }
                 LaunchedEffect(player, context) {
                     while (isActive) {
-                        val remaining =
-                            (player.duration - player.currentPosition)
-                                .div(player.playbackParameters.speed)
-                                .toLong()
-                                .milliseconds
-                        val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                        endTimeStr = formatTime(context, endTime)
+                        val duration = player.duration
+                        val position = player.currentPosition
+
+                        endTimeStr =
+                            if (duration > 0 && position >= 0) {
+                                val remaining =
+                                    (duration - position)
+                                        .div(player.playbackParameters.speed)
+                                        .toLong()
+                                        .milliseconds
+                                formatTime(context, LocalTime.now().plusSeconds(remaining.inWholeSeconds))
+                            } else {
+                                "..."
+                            }
                         delay(1.seconds)
                     }
                 }

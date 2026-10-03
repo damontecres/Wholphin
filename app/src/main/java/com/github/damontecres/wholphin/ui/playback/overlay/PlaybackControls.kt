@@ -296,12 +296,14 @@ fun SeekTimecodes(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             val resources = LocalResources.current
-            val positionSec = positionMs / 1000
-            val remainingSec = (durationMs - positionMs) / 1000
+            val positionSec = positionMs.coerceAtLeast(0) / 1000
+            val remainingSec = if (durationMs > 0 && positionMs >= 0) (durationMs - positionMs) / 1000 else null
             val positionText =
                 remember(positionSec) { resources.formatDuration(positionSec.seconds) }
             val remainingText =
-                remember(remainingSec) { "-${resources.formatDuration(remainingSec.seconds)}" }
+                remember(remainingSec) {
+                    remainingSec?.let { "-${resources.formatDuration(it.seconds)}" } ?: "..."
+                }
             CompositionLocalProvider(LocalLayoutDirection provides currentLayoutDirection) {
                 Text(
                     text = positionText,
