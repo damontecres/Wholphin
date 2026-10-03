@@ -1,8 +1,13 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.content.Context
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlaybackException
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -68,6 +73,7 @@ import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaybackInfoResponse
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
@@ -78,6 +84,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -851,6 +858,78 @@ class PlaybackViewModelTests {
                 verify(exactly = 0) { mockPlayer.seekTo(any()) }
             } finally {
                 viewModel.segmentJob?.cancel()
+            }
+        }
+
+    @Test
+    fun `Retry network errors without falling back to transcoding`() =
+        runTest(testDispatcher) {
+            setupPreferences { }
+            
+            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            
+            val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
+            val error = ExoPlaybackException.createForSource(IOException(), PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED)
+
+            repeat(2) {
+                viewModel.onPlayerError(error)
+                testScheduler.advanceUntilIdle()
+            }
+            
+            verify(exactly = 3) { mockPlayer.prepare() }
+            coVerify(exactly = 1) { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) }
+
+            viewModel.onPlayerError(error)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 3) { mockPlayer.prepare() }
+            coVerify(exactly = 1) { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) }
+
+            Assert.assertTrue(viewModel.state.value.loading is LoadingState.Error)
+        }
+
+    @Test
+    fun `Fallback only transcodes the failing stream`() =
+        runTest(testDispatcher) {
+            setupPreferences { }
+
+            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+
+            val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
+
+            fun decoderError(mimeType: String) =
+                ExoPlaybackException.createForRenderer(
+                    RuntimeException(),
+                    "renderer",
+                    0,
+                    Format.Builder().setSampleMimeType(mimeType).build(),
+                    C.FORMAT_HANDLED,
+                    null,
+                    false,
+                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+                )
+
+            val cases =
+                listOf(
+                    PlaybackException("", null, PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED) to (true to true),
+                    decoderError(MimeTypes.AUDIO_E_AC3) to (true to false),
+                    decoderError(MimeTypes.VIDEO_H265) to (false to true),
+                    PlaybackException("", null, PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED) to (true to false),
+                )
+
+            cases.forEach { (error, _) ->
+                viewModel.onPlayerError(error)
+                testScheduler.advanceUntilIdle()
+            }
+
+            val dtos = mutableListOf<PlaybackInfoDto>()
+           
+            coVerify { mockMediaInfoApi.getPostedPlaybackInfo(any(), capture(dtos)) }
+           
+            Assert.assertEquals(cases.size + 1, dtos.size)
+           
+            cases.forEachIndexed { i, (_, expected) ->
+                Assert.assertEquals(expected, dtos[i + 1].allowVideoStreamCopy to dtos[i + 1].allowAudioStreamCopy)
             }
         }
 }

@@ -21,6 +21,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.DecoderReuseEvaluation
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
@@ -189,6 +190,8 @@ class PlaybackViewModel
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
+        private var playbackErrorRetries = 0
+        private var fallbackKeptStreamCopy = false
         private val jobs = mutableListOf<Job>()
         private var subscribeJob: Job? = null
 
@@ -616,9 +619,13 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            allowVideoStreamCopy: Boolean = enableDirectStream,
+            allowAudioStreamCopy: Boolean = enableDirectStream,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
+                playbackErrorRetries = 0
+                fallbackKeptStreamCopy = false
 
                 trackChangeListener?.let { onMain { player.removeListener(it) } }
                 trackChangeListener = null
@@ -674,8 +681,8 @@ class PlaybackViewModel
                                 maxStreamingBitrate = maxBitrate.toInt(),
                                 enableDirectPlay = enableDirectPlay,
                                 enableDirectStream = enableDirectStream,
-                                allowVideoStreamCopy = enableDirectStream,
-                                allowAudioStreamCopy = enableDirectStream,
+                                allowVideoStreamCopy = allowVideoStreamCopy,
+                                allowAudioStreamCopy = allowAudioStreamCopy,
                                 enableTranscoding = true,
                                 autoOpenLiveStream = true,
                             ),
@@ -1374,11 +1381,26 @@ class PlaybackViewModel
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            Timber.e(error, "Playback error")
+            Timber.e(error, "Playback error: %s", error.errorCodeName)
             viewModelScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
                 state.value.currentPlayback?.let {
-                    when (it.playMethod) {
-                        PlayMethod.TRANSCODE -> {
+                    // Parsing (3xxx), decoding (4xxx) & audio output (5xxx) errors mean the media can't be played as-is.
+                    // Others (eg the server is slow to respond) won't be fixed by transcoding, so only retry them.
+                    val isFormatError = error.errorCode in 3000..5999
+                    val canRetry = error is ExoPlaybackException && !isFormatError
+                  
+                    if (canRetry && playbackErrorRetries < 2) {
+                        playbackErrorRetries++
+                        Timber.w("Retrying playback after error, attempt %s", playbackErrorRetries)
+                        delay(3.seconds)
+                        if (state.value.currentPlayback?.itemId == it.itemId) {
+                            player.prepare()
+                        }
+                        return@launch
+                    }
+
+                    when {
+                        canRetry || (it.playMethod == PlayMethod.TRANSCODE && !fallbackKeptStreamCopy) -> {
                             _state.update {
                                 it.copy(
                                     loading =
@@ -1390,28 +1412,71 @@ class PlaybackViewModel
                             }
                         }
 
-                        PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
-                            Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
-                            val currentPlayback = state.value.currentPlayback
-                            if (currentPlayback == null) {
-                                Timber.w("Playback error, currentPlayback is null")
-                            }
-                            changeStreams(
-                                item = currentItem.item,
-                                sourceId = currentPlayback?.mediaSourceInfo?.id,
-                                audioIndex = currentPlayback?.audioIndex,
-                                subtitleIndex = currentPlayback?.subtitleIndex,
-                                positionMs = player.currentPosition,
-                                enableDirectPlay = false,
-                                enableDirectStream = false,
-                            )
-                            withContext(WholphinDispatchers.Main) {
-                                player.prepare()
-                                player.play()
-                            }
+                        it.playMethod == PlayMethod.TRANSCODE -> {
+                            fallBackToTranscoding(it, allowVideoStreamCopy = false, allowAudioStreamCopy = false)
+                        }
+
+                        else -> {
+                            val (allowVideoStreamCopy, allowAudioStreamCopy) =
+                                when (error.errorCode) {
+                                    in 3000..3999 -> {
+                                        true to true
+                                    }
+
+                                    in 4000..4999 -> {
+                                        val format = (error as? ExoPlaybackException)?.rendererFormat
+                                        when (MimeTypes.getTrackType(format?.sampleMimeType)) {
+                                            C.TRACK_TYPE_AUDIO -> true to false
+                                            C.TRACK_TYPE_VIDEO -> false to true
+                                            else -> false to false
+                                        }
+                                    }
+
+                                    in 5000..5999 -> {
+                                        true to false
+                                    }
+
+                                    else -> {
+                                        false to false
+                                    }
+                                }
+
+                            fallBackToTranscoding(it, allowVideoStreamCopy, allowAudioStreamCopy)
                         }
                     }
                 }
+            }
+        }
+
+        private suspend fun fallBackToTranscoding(
+            currentPlayback: CurrentPlayback,
+            allowVideoStreamCopy: Boolean,
+            allowAudioStreamCopy: Boolean,
+        ) {
+            Timber.w(
+                "Playback error during %s, falling back to transcoding (copy video=%s, audio=%s)",
+                currentPlayback.playMethod,
+                allowVideoStreamCopy,
+                allowAudioStreamCopy,
+            )
+
+            changeStreams(
+                item = currentItem.item,
+                sourceId = currentPlayback.mediaSourceInfo.id,
+                audioIndex = currentPlayback.audioIndex,
+                subtitleIndex = currentPlayback.subtitleIndex,
+                positionMs = player.currentPosition,
+                enableDirectPlay = false,
+                enableDirectStream = false,
+                allowVideoStreamCopy = allowVideoStreamCopy,
+                allowAudioStreamCopy = allowAudioStreamCopy,
+            )
+
+            fallbackKeptStreamCopy = allowVideoStreamCopy || allowAudioStreamCopy
+
+            withContext(WholphinDispatchers.Main) {
+                player.prepare()
+                player.play()
             }
         }
 
