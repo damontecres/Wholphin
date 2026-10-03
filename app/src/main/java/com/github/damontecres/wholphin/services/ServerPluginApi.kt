@@ -5,10 +5,10 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.IOException
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
 import timber.log.Timber
@@ -28,10 +28,7 @@ class ServerPluginApi
         private fun createUrl(path: String): String? =
             api.baseUrl?.let { if (it.endsWith("/")) "${it}wholphin/$path" else "$it/wholphin/$path" }
 
-        private val json =
-            Json {
-                ignoreUnknownKeys = false
-            }
+        private val json get() = HomeSettingsService.jsonParser
 
         companion object {
             private const val HOME_CONFIG_PATH = "homesettings"
@@ -49,7 +46,15 @@ class ServerPluginApi
                         .url(url)
                         .get()
                         .build()
-                return@withContext okHttpClient.newCall(request).execute().isSuccessful
+                try {
+                    return@withContext okHttpClient
+                        .newCall(request)
+                        .execute()
+                        .use { it.isSuccessful }
+                } catch (ex: IOException) {
+                    Timber.w("Could not connect to server plugin: %s", ex.message)
+                    return@withContext false
+                }
             }
 
         /**

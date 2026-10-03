@@ -10,10 +10,10 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -273,8 +273,8 @@ data class HomeGetItemsFilter(
     val hasOfficialRating: Boolean? = null,
     val studioIds: List<UUID>? = null,
     val genreIds: List<UUID>? = null,
-    val minPremiereDate: DateTime? = null,
-    val maxPremiereDate: DateTime? = null,
+    val minPremiereDate: LocalDateTime? = null,
+    val maxPremiereDate: LocalDateTime? = null,
 ) {
     fun asGetItemsRequest() =
         GetItemsRequest(

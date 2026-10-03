@@ -103,14 +103,6 @@ class HomeSettingsService
         private val serverPluginApi: ServerPluginApi,
         private val serverDao: JellyfinServerDao,
     ) {
-        @OptIn(ExperimentalSerializationApi::class)
-        val jsonParser =
-            Json {
-                isLenient = true
-                ignoreUnknownKeys = true
-                allowTrailingComma = true
-            }
-
         /**
          * The current home page settings
          */
@@ -1258,6 +1250,14 @@ class HomeSettingsService
 
         companion object {
             const val CUSTOM_PREF_ID = "home_settings"
+
+            @OptIn(ExperimentalSerializationApi::class)
+            val jsonParser =
+                Json {
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                    allowTrailingComma = true
+                }
         }
     }
 
@@ -1376,5 +1376,5 @@ enum class HomePageSettingsSource(
     SERVER_PROFILE(R.string.home_settings_source_server_profile),
     PLUGIN(R.string.home_settings_source_plugin),
     DEFAULT(R.string.home_settings_source_unset),
-    WEB_CONFIG(R.string.load_from_web_client),
+    WEB_CONFIG(R.string.home_settings_source_web),
 }

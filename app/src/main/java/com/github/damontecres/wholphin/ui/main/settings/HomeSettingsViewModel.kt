@@ -660,7 +660,6 @@ class HomeSettingsViewModel
             viewModelScope.launchIO {
                 val user = serverRepository.currentUser ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
-                var source = HomePageSettingsSource.UNSET
                 val result =
                     if (serverPluginActive.value) {
                         try {
@@ -669,7 +668,6 @@ class HomeSettingsViewModel
                                     user.id,
                                     HomePageSettingsSource.PLUGIN,
                                 )
-                            source = HomePageSettingsSource.PLUGIN
                             settings
                         } catch (ex: Exception) {
                             Timber.e(ex, "Plugin is active, but error fetching home settings")
@@ -682,7 +680,7 @@ class HomeSettingsViewModel
                 idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
-                        source = source,
+                        source = result.source,
                         rows = result.rows,
                         rowData = emptyList(),
                     )
