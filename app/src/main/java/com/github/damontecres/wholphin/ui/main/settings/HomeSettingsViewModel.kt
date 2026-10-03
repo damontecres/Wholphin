@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.HomeDataService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
@@ -80,6 +81,7 @@ class HomeSettingsViewModel
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val homeSettingsService: HomeSettingsService,
+        private val homeDataService: HomeDataService,
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
@@ -155,7 +157,7 @@ class HomeSettingsViewModel
                                     viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             try {
-                                                homeSettingsService.fetchDataForRow(
+                                                homeDataService.fetchDataForRow(
                                                     row = row.config,
                                                     scope = viewModelScope,
                                                     prefs = prefs,

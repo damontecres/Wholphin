@@ -143,12 +143,6 @@ class Converters {
 
     @TypeConverter
     fun convertToLocalDateTime(dateTime: String): ZonedDateTime = ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME)
-
-//    @TypeConverter
-//    fun convertToHomePageSettingsSource(str: String): HomePageSettingsSource = HomePageSettingsSource.valueOf(str)
-//
-//    @TypeConverter
-//    fun convertHomePageSettingsSource(value: HomePageSettingsSource): String = value.name
 }
 
 class ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
