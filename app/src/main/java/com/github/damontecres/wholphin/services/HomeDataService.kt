@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -33,7 +34,9 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.firstOrNull
-import okhttp3.HttpUrl.Companion.toHttpUrl
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.decodeFromStream
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
@@ -63,6 +66,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalSerializationApi::class)
 @Singleton
 class HomeDataService
     @Inject
@@ -695,16 +699,12 @@ class HomeDataService
 
         private suspend fun fetchCustomEndpointItems(row: HomeRowConfig.CustomEndpoint): List<BaseItemDto> {
             val base =
-                api.baseUrl
+                api.baseUrl?.toHttpUrlOrNull()
                     ?: throw IllegalStateException("Jellyfin baseUrl not set")
-            if (!row.endpoint.startsWith("/") || row.endpoint.startsWith("//")) {
-                throw IllegalArgumentException("Custom endpoint must be an absolute path relative to Jellyfin baseUrl: ${row.endpoint}")
+            val endpointUri = row.endpoint.toUri()
+            if (!endpointUri.isRelative) {
+                throw IllegalArgumentException("Custom endpoint must be an path relative to Jellyfin baseUrl: ${row.endpoint}")
             }
-            val resolved =
-                base
-                    .toHttpUrl()
-                    .resolve(row.endpoint)
-                    ?: throw IllegalStateException("Could not resolve endpoint ${row.endpoint} against $base")
             val params =
                 buildMap {
                     serverRepository.currentUser
@@ -713,19 +713,34 @@ class HomeDataService
                         ?.let { put("userId", it) }
                     row.query?.forEach { put(it.key, it.value) }
                 }
-            val urlBuilder = resolved.newBuilder()
-            params.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v) }
-            val requestBuilder = Request.Builder().url(urlBuilder.build()).get()
-            row.headers?.forEach { requestBuilder.header(it.key, it.value) }
+            val resolved =
+                base
+                    .resolve(row.endpoint)
+                    ?.newBuilder()
+                    ?.apply {
+                        params.forEach { (k, v) -> addQueryParameter(k, v) }
+                    }?.build()
+                    ?: throw IllegalStateException("Could not resolve endpoint: ${row.endpoint}")
+            val request =
+                Request
+                    .Builder()
+                    .url(resolved)
+                    .get()
+                    .apply {
+                        row.headers?.forEach { header(it.key, it.value) }
+                    }.build()
             val response =
                 authOkHttpClient
-                    .newCall(requestBuilder.build())
+                    .newCall(request)
                     .execute()
             return response.use {
                 if (!it.isSuccessful) {
                     throw InvalidStatusException(it.code, null)
                 }
-                HomeSettingsService.jsonParser.decodeFromString<BaseItemDtoQueryResult>(it.body.string()).items
+                val queryResult =
+                    HomeSettingsService.jsonParser.decodeFromStream<BaseItemDtoQueryResult>(it.body.byteStream())
+                Timber.v("Got %s items from custom endpoint", queryResult.items.size)
+                queryResult.items
             }
         }
     }

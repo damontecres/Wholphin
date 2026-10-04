@@ -100,6 +100,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
                 is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
                 is HomeRowConfig.Studios -> foundTypes.add(it::class)
+                is HomeRowConfig.CustomEndpoint -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
