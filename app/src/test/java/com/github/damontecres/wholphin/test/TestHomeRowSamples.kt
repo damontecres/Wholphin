@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.test
 import com.github.damontecres.wholphin.data.model.HomeGetItemsFilter
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.KeyValueEntry
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.ui.AspectRatio
@@ -77,6 +78,12 @@ class TestHomeRowSamples {
                 HomeRowConfig.TvPrograms(),
                 HomeRowConfig.TvChannels(),
                 HomeRowConfig.Suggestions(parentId = UUID.randomUUID()),
+                HomeRowConfig.CustomEndpoint(
+                    endpoint = "/path/to/items",
+                    title = "Items",
+                    query = listOf(KeyValueEntry("key", "value")),
+                    headers = listOf(KeyValueEntry("X-Header", "1234")),
+                ),
             )
     }
 
@@ -100,6 +107,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
                 is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
                 is HomeRowConfig.Studios -> foundTypes.add(it::class)
+                is HomeRowConfig.CustomEndpoint -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
