@@ -45,19 +45,17 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.acra.util.versionCodeLong
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
-import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Date
@@ -211,71 +209,48 @@ class DebugViewModel
         }
 
         companion object {
-            fun getLogCatLines(): List<LogcatLine> {
-                val lineCount = 500
-                val args =
-                    buildList {
-                        add("logcat")
-                        add("-d")
-                        add("-t")
-                        add(lineCount.toString())
-                        addAll(THIRD_PARTY_TAGS)
-                        add("*:V")
-                    }
-                val process = ProcessBuilder().command(args).redirectErrorStream(true).start()
-                val logLines = mutableListOf<LogcatLine>()
-                try {
-                    val reader = BufferedReader(InputStreamReader(process.inputStream))
-                    var count = 0
-
-                    while (count < lineCount) {
-                        val line = reader.readLine()
-                        if (line != null) {
-                            val level = line.split(Regex("\\s+")).getOrNull(4)
-                            val logLevel =
-                                when (level?.uppercase()) {
-                                    "V" -> Log.VERBOSE
-                                    "D" -> Log.DEBUG
-                                    "I" -> Log.INFO
-                                    "W" -> Log.WARN
-                                    "E" -> Log.ERROR
-                                    else -> Log.VERBOSE
-                                }
-                            logLines.add(LogcatLine(logLevel, line))
-                        } else {
-                            break
+            suspend fun getLogCatLines(): List<LogcatLine> =
+                withContext(WholphinDispatchers.IO) {
+                    val lineCount = 500
+                    val args =
+                        buildList {
+                            add("logcat")
+                            add("-d")
+                            add("-t")
+                            add(lineCount.toString())
+                            addAll(THIRD_PARTY_TAGS)
+                            add("*:V")
                         }
-                        count++
+                    val process = ProcessBuilder().command(args).redirectErrorStream(true).start()
+                    val logLines = mutableListOf<LogcatLine>()
+                    try {
+                        val reader = BufferedReader(InputStreamReader(process.inputStream))
+                        var count = 0
+
+                        while (count < lineCount) {
+                            val line = reader.readLine()
+                            if (line != null) {
+                                val level = line.split(Regex("\\s+")).getOrNull(4)
+                                val logLevel =
+                                    when (level?.uppercase()) {
+                                        "V" -> Log.VERBOSE
+                                        "D" -> Log.DEBUG
+                                        "I" -> Log.INFO
+                                        "W" -> Log.WARN
+                                        "E" -> Log.ERROR
+                                        else -> Log.VERBOSE
+                                    }
+                                logLines.add(LogcatLine(logLevel, line))
+                            } else {
+                                break
+                            }
+                            count++
+                        }
+                    } finally {
+                        process.destroy()
                     }
-                } finally {
-                    process.destroy()
+                    return@withContext logLines
                 }
-                return logLines
-            }
-
-            fun ViewModel.sendAppLogs(
-                context: Context,
-                api: ApiClient,
-                clientInfo: ClientInfo?,
-                deviceInfo: DeviceInfo?,
-            ) {
-                viewModelScope.launchIO(ExceptionHandler(true)) {
-                    val logcat = getLogCatLines().joinToString("\n") { it.text }
-                    val body =
-                        """
-                        Send App Logs
-                        clientInfo=$clientInfo
-                        deviceInfo=$deviceInfo
-                        manufacturer=${Build.MANUFACTURER}
-                        model=${Build.MODEL}
-                        apiLevel=${Build.VERSION.SDK_INT}
-
-                        """.trimIndent()
-                    Timber.w(body)
-                    val response by api.clientLogApi.logFile(body + logcat)
-                    showToast(context, "Sent! Filename=${response.fileName}")
-                }
-            }
         }
     }
 

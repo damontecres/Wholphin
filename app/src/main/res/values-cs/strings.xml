@@ -63,9 +63,7 @@
     <string name="more">Více</string>
     <plurals name="movies">
         <item quantity="one">Filmy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Filmy</item>
     </plurals>
     <string name="name">Jméno</string>
     <string name="next_up">Další v pořadí</string>
@@ -80,9 +78,7 @@
     <string name="path">Cesta</string>
     <plurals name="people">
         <item quantity="one">Lidé</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Lidé</item>
     </plurals>
     <string name="play_count">Počet přehrání</string>
     <string name="play_from_here">Přehrát odtud</string>
@@ -151,9 +147,7 @@
     <string name="top_unwatched">Nejlépe hodnocené Nezhlédnuté</string>
     <plurals name="trailers">
         <item quantity="one">Upoutávky</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Upoutávky</item>
     </plurals>
     <string name="tv_dvr_schedule">Harmonogram nahrávání</string>
     <string name="tv_guide">Televizní program</string>
@@ -161,9 +155,7 @@
     <string name="tv_seasons">Sezóny</string>
     <plurals name="tv_shows">
         <item quantity="one">Seriály</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Seriály</item>
     </plurals>
     <string name="ui_interface">Prostředí</string>
     <string name="unknown">Neznámý</string>
@@ -173,7 +165,9 @@
     <string name="video">Video</string>
     <string name="videos">Videa</string>
     <string name="watch_live">Sledujte živě</string>
-    <string name="years_old">%1$d let starý</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d let starý</item>
+    </plurals>
     <string name="play_with_transcoding">Přehraj s překódováním</string>
     <string name="media_information">Informace o médiu</string>
     <string name="show_clock">Zobrazit hodiny</string>
@@ -190,57 +184,39 @@
     <string name="extras_title">Doplňky</string>
     <plurals name="other_extras">
         <item quantity="one">Jiný</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Jiný</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">V zákulisí</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">V zákulisí</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Znělky</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Znělky</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Tématická videa</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Tématická videa</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Klipy</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Vymazané scény</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Vymazané scény</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Rozhovory</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Rozhovory</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scény</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Scény</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Krátkometrážní filmy</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Krátkometrážní filmy</item>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d hodina</item>
@@ -422,21 +398,17 @@
     <string name="request_4k">Žádost ve 4K</string>
     <string name="software_decoding_av1">Softwarové dekódování AV1</string>
     <string name="commercial">Komerční</string>
-    <string name="download_and_update"><![CDATA[Download & Update]]></string>
+    <string name="download_and_update">Download &amp; Update</string>
     <string name="immediate">Bezprostředně</string>
-    <string name="search_and_download"><![CDATA[Search & Download]]></string>
+    <string name="search_and_download"><![CDATA[Najít &amp; Stáhnout]]></string>
     <string name="runtime_sort">Trvání</string>
     <plurals name="samples">
         <item quantity="one">Vzorky</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Vzorky</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Krátká videa</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="other">Krátká videa</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s Stažen</item>
@@ -444,11 +416,11 @@
         <item quantity="many">%s Stažení</item>
         <item quantity="other">%s Stažení</item>
     </plurals>
-    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
-    <string name="direct_play_ass">Direct play ASS titulky</string>
+    <string name="combine_continue_next">Combine Continue Watching &amp; Next Up</string>
+    <string name="direct_play_ass">Použít libass pro ASS titulky</string>
     <string name="direct_play_pgs">Direct play PGS titulky</string>
     <string name="player_backend">Přehrávání Backendu</string>
-    <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
+    <string name="cast_and_crew">Cast &amp; Crew</string>
     <string name="anamorphic">Anamorfní</string>
     <string name="interlaced">Prokládané</string>
     <string name="color_code_programs">Color code programs</string>
@@ -558,12 +530,57 @@
     <string name="image_type_thumb">Náhled</string>
     <string name="backdrop_style_dynamic">Obrázek s dynamickou barvou</string>
     <string name="backdrop_style_image">Pouze obrázek</string>
-    <string name="enter_url_api_key"><![CDATA[Zadejte adresu a klíč API]]></string>
+    <string name="enter_url_api_key">Zadejte adresu a klíč API</string>
     <string name="api_key">Klíč API</string>
     <string name="seerr_login">Přihlásit se k serveru Seerr</string>
     <string name="seerr_jellyfin_user">Uživatel Jellyfin</string>
     <string name="seerr_local_user">Lokální uživatel</string>
-    <string name="search_and_download_subtitles"><![CDATA[Hledat a stáhnout titulky]]></string>
+    <string name="search_and_download_subtitles">Hledat a stáhnout titulky</string>
     <string name="no_subtitles_found">Nenalezeny žádné vzdálené titulky</string>
     <string name="series_continueing">Současnost</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="movies_title">Filmy</string>
+    <string name="people_title">Osoby</string>
+    <string name="profile_specific_settings_from_server">Nastavení uživatelského profilu ze serveru</string>
+    <string name="time_left">%1$s zbývá</string>
+    <string name="trailers_title">Ukázky</string>
+    <string name="tv_shows_title">TV Seriály</string>
+    <string name="other_extras_title">Jiné</string>
+    <string name="behind_the_scenes_title">Ze zákulisí</string>
+    <string name="clips_title">Klipy</string>
+    <string name="deleted_scenes_title">Vystřižené scény</string>
+    <string name="interviews_title">Rozhovory</string>
+    <string name="scenes_title">Scény</string>
+    <string name="samples_title">Ukázky</string>
+    <string name="featurettes_title">Film o filmu</string>
+    <string name="shorts_title">Krátké filmy</string>
+    <plurals name="minutes">
+        <item quantity="one">%s minuta</item>
+        <item quantity="few">%s minut</item>
+        <item quantity="many">%s minut</item>
+        <item quantity="other">%s minut</item>
+    </plurals>
+    <string name="require_login">Požaduje přihlášení pro profil</string>
+    <string name="pin_digits_hint">[0–9]</string>
+    <string name="disable_audio_offload">Vypnout hardwarové zpracování zvuku</string>
+    <string name="disable_audio_offload_summary">Vypnutí hardwarového dekódování zvuku může u některých zařízení vyřešit zamrzání přehrávání</string>
+    <string name="combined_search_results">Společné výsledky vyhledávání</string>
+    <string name="combined_search_results_on">Zobraz všechny výsledky v jednom seznamu</string>
+    <string name="combined_search_results_off">Zobraz výsledky podle kategorie</string>
+    <string name="show_voice_search_button">Zobraz tlačítko pro hlasové vyhledávání</string>
+    <string name="visible_ui">Viditelné</string>
+    <string name="hidden_ui">Skryté</string>
+    <string name="results">Výsledky</string>
+    <string name="albums">Alba</string>
+    <string name="artists">Tvůrci</string>
+    <string name="songs">Skladby</string>
+    <string name="go_to_artist">Přejdi na tvůrce</string>
+    <string name="now_playing">Právě hraje</string>
+    <string name="go_to_album">Jdi do alba</string>
+    <string name="add_to_queue">Přidat do fronty</string>
 </resources>

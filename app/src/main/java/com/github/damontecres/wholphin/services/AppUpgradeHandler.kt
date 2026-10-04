@@ -13,9 +13,11 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
+import com.github.damontecres.wholphin.preferences.updateExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
@@ -29,6 +31,7 @@ import com.github.damontecres.wholphin.preferences.updateSearchPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.preferences.subtitle.shouldEnableSeparateHdrToggle
 import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -407,6 +410,36 @@ class AppUpgradeHandler
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error saving migrated tabs")
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.2-8-g0"))) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        useSeparateHdr = it.interfacePreferences.shouldEnableSeparateHdrToggle()
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.6-0-g0"))) {
+                appPreferences.updateData {
+                    it.updateScreensaverPreferences {
+                        dimPercent = ScreensaverPreference.DimPercentage.defaultValue.toInt()
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.6-7-g0"))) {
+                // preferAc3Surround was mistaken enabled by default, reset it only if the user hasn't enabled experimental settings
+                appPreferences.updateData {
+                    if (!it.experimentalPreferences.enabled) {
+                        it.updateExperimentalPreferences {
+                            preferAc3Surround =
+                                ExperimentalPreference.PreferAc3ForSurround.defaultValue
+                        }
+                    } else {
+                        it
+                    }
                 }
             }
         }

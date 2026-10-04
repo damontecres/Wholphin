@@ -52,8 +52,6 @@ fun GridCard(
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
-    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
     var focusedAfterDelay by remember { mutableStateOf(false) }
 
     val hideOverlayDelay = 500L
@@ -71,7 +69,7 @@ fun GridCard(
     }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         Card(
@@ -107,13 +105,7 @@ fun GridCard(
             )
         }
         AnimatedVisibility(showTitle) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                modifier =
-                    Modifier
-                        .padding(bottom = spaceBelow)
-                        .fillMaxWidth(),
-            ) {
+            SlidingCardText(focused) {
                 Text(
                     text = item?.title ?: "",
                     maxLines = 1,

@@ -50,12 +50,13 @@ import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.main.SearchCombinedResults
-import com.github.damontecres.wholphin.ui.main.SearchResult
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.search.SearchCombinedResults
+import com.github.damontecres.wholphin.ui.search.SearchResult
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,13 +89,20 @@ class DiscoverSearchViewModel
                 }
                 Timber.v("Starting seerr search")
                 seerrResults.value = SearchResult.Searching
-                val results =
-                    seerrService
-                        .search(query)
-                        .map { seerrService.createDiscoverItem(it) }
-                        .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
-                Timber.v("Seerr search complete: %s results", results.size)
-                seerrResults.value = SearchResult.SuccessSeerr(results)
+                try {
+                    val results =
+                        seerrService
+                            .search(query)
+                            .map { seerrService.createDiscoverItem(it) }
+                            .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
+                    Timber.v("Seerr search complete: %s results", results.size)
+                    seerrResults.value = SearchResult.SuccessSeerr(results)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during seerr search")
+                    seerrResults.value = SearchResult.Error(ex)
+                }
             }
         }
     }
@@ -102,6 +110,7 @@ class DiscoverSearchViewModel
 @Composable
 fun DiscoverSearchPage(
     preferences: UserPreferences,
+    positionCallback: (columns: Int, position: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DiscoverSearchViewModel = hiltViewModel(),
 ) {
@@ -238,10 +247,14 @@ fun DiscoverSearchPage(
             result = seerrResults,
             focusRequester = gridFocusRequester,
             onClickItem = { _, _ -> },
+            onLongClickItem = { _, _ -> },
             onPlayItem = { _, _ -> },
             onClickPosition = { position = it.column },
             onClickDiscover = onClickDiscover,
-            positionCallback = { columns, index -> position = index },
+            positionCallback = { columns, index ->
+                position = index
+                positionCallback.invoke(columns, index)
+            },
             modifier = Modifier.fillMaxSize(),
         )
     }

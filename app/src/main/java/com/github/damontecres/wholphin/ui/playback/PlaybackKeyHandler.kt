@@ -7,6 +7,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.media3.common.Player
 import androidx.media3.common.util.Util
+import com.github.damontecres.wholphin.preferences.DpadSeekMode
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import kotlin.time.Duration
@@ -15,7 +16,6 @@ import kotlin.time.Duration
  * Handles [KeyEvent]s during playback on [PlaybackPage]
  */
 class PlaybackKeyHandler(
-    private val isLtr: Boolean,
     private val player: Player,
     private val controlsEnabled: Boolean,
     private val skipWithLeftRight: Boolean,
@@ -24,11 +24,15 @@ class PlaybackKeyHandler(
     private val getDurationMs: () -> Long,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
+    private val clearSkipIndicator: () -> Unit,
     private val skipBackOnResume: Duration?,
     private val oneClickPause: Boolean,
     private val onInteraction: () -> Unit,
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
+    private val isDpadSeekVisible: () -> Boolean = { false },
+    private val onDpadSeek: (Long) -> Unit = { },
+    private val dpadSeekMode: DpadSeekMode,
 ) {
     private var leftHandledByRepeat = false
     private var rightHandledByRepeat = false
@@ -48,21 +52,12 @@ class PlaybackKeyHandler(
         if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
-                    if (isLtr) {
-                        updateSkipIndicator(-seekBack.inWholeMilliseconds)
-                        player.seekBack(seekBack)
-                    } else {
-                        updateSkipIndicator(seekForward.inWholeMilliseconds)
-                        player.seekForward(seekForward)
-                    }
+                    seekBy(-seekBack)
                 } else if (skipWithLeftRight && isSkipForward(it)) {
-                    if (isLtr) {
-                        player.seekForward(seekForward)
-                        updateSkipIndicator(seekForward.inWholeMilliseconds)
-                    } else {
-                        player.seekBack(seekBack)
-                        updateSkipIndicator(seekBack.inWholeMilliseconds)
-                    }
+                    seekBy(seekForward)
+                } else if (isEnterKey(it) && isDpadSeekVisible()) {
+                    // If d-pad seek bar is visible, hide it
+                    clearSkipIndicator.invoke()
                 } else if (oneClickPause && isEnterKey(it)) {
                     val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
@@ -138,7 +133,7 @@ class PlaybackKeyHandler(
             return false
         }
 
-        val isBack = if (isLtr) isSkipBack(event) else isSkipForward(event)
+        val isBack = isSkipBack(event)
         return when (event.type) {
             KeyEventType.KeyDown -> {
                 val repeatCount = event.nativeKeyEvent.repeatCount
@@ -180,12 +175,24 @@ class PlaybackKeyHandler(
     ) {
         if (isBack) {
             val skipDuration = seekBack * multiplier
-            player.seekBack(skipDuration)
-            updateSkipIndicator(-skipDuration.inWholeMilliseconds)
+            seekBy(-skipDuration)
         } else {
             val skipDuration = seekForward * multiplier
-            player.seekForward(skipDuration)
-            updateSkipIndicator(skipDuration.inWholeMilliseconds)
+            seekBy(skipDuration)
+        }
+    }
+
+    private fun seekBy(duration: Duration) {
+        val durationMs = duration.inWholeMilliseconds
+        if (dpadSeekMode == DpadSeekMode.SEEKBAR_TRICKPLAY) {
+            onDpadSeek.invoke(durationMs)
+        } else {
+            if (duration < Duration.ZERO) {
+                player.seekBack(-duration)
+            } else {
+                player.seekForward(duration)
+            }
+            updateSkipIndicator(durationMs)
         }
     }
 

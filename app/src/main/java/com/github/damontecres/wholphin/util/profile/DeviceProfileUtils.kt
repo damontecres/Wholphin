@@ -71,6 +71,7 @@ fun createDeviceProfile(
     dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
+    preferAc3ForSurround: Boolean,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -132,31 +133,61 @@ fun createDeviceProfile(
 
     // / Transcoding profiles
     // Video
-    transcodingProfile {
-        type = DlnaProfileType.VIDEO
-        context = EncodingContext.STREAMING
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        if (supportsHevc) videoCodec(Codec.Video.HEVC)
-        videoCodec(Codec.Video.H264)
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
 
-        audioCodec(*allowedAudioCodecs)
+            audioCodec(Codec.Audio.AC3)
 
-        copyTimestamps = false
-        enableSubtitlesInManifest = true
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
+
+            audioCodec(*allowedAudioCodecs)
+
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
     }
 
     // Audio
-    transcodingProfile {
-        type = DlnaProfileType.AUDIO
-        context = EncodingContext.STREAMING
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
 
-        container = Codec.Container.TS
-        protocol = MediaStreamProtocol.HLS
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
 
-        audioCodec(Codec.Audio.AAC)
+            audioCodec(Codec.Audio.AC3)
+        }
+    } else {
+        transcodingProfile {
+            type = DlnaProfileType.AUDIO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            audioCodec(Codec.Audio.AAC)
+        }
     }
 
     // / Direct play profiles
@@ -203,6 +234,19 @@ fun createDeviceProfile(
     }
 
     // / Codec profiles
+    // Prevent 8-channel EAC3 passthrough in TS on certain devices
+    if (KnownDefects.eac3HlsPassthroughBug && Codec.Audio.EAC3 in allowedAudioCodecs) {
+        codecProfile {
+            type = CodecType.VIDEO_AUDIO
+            container = Codec.Container.TS
+            codec = Codec.Audio.EAC3
+
+            conditions {
+                ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 7
+            }
+        }
+    }
+
     // H264 profile
     codecProfile {
         type = CodecType.VIDEO
@@ -515,6 +559,27 @@ fun createDeviceProfile(
                 ProfileConditionValue.VIDEO_RANGE_TYPE inCollection unsupportedRangeTypesHevc
             }
         }
+    }
+
+    if (preferAc3ForSurround) {
+        supportedAudioCodecs
+            .filterNot { it == Codec.Audio.AC3 }
+            .forEach { audioCodec ->
+                codecProfile {
+                    type = CodecType.VIDEO_AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+                codecProfile {
+                    type = CodecType.AUDIO
+                    codec = audioCodec
+                    conditions {
+                        ProfileConditionValue.AUDIO_CHANNELS lowerThanOrEquals 2
+                    }
+                }
+            }
     }
 
     // Audio channel profile

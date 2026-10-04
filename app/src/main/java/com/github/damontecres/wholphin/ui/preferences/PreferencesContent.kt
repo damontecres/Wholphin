@@ -48,13 +48,17 @@ import coil3.imageLoader
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
+import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
+import com.github.damontecres.wholphin.preferences.experimentalPreferences
+import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.Release
@@ -96,11 +100,13 @@ fun PreferencesContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+    val firstFocusRequester = remember { FocusRequester() }
+    val lastFocusRequester = remember { FocusRequester() }
+
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.collectAsState()
-    val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
     val players by viewModel.externalPlayers.collectAsState()
@@ -133,7 +139,7 @@ fun PreferencesContent(
         }
     }
 
-    val movementSounds = true
+    val movementSounds = false
     val installedVersion = updateVM.currentVersion
     val updateAvailable =
         remember(updateState.release) {
@@ -148,6 +154,7 @@ fun PreferencesContent(
             PreferenceScreenOption.MPV -> MpvPreferences
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
             PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
+            PreferenceScreenOption.EXPERIMENTAL -> experimentalPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -157,6 +164,7 @@ fun PreferencesContent(
             PreferenceScreenOption.MPV -> R.string.mpv_options
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
             PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
+            PreferenceScreenOption.EXPERIMENTAL -> R.string.experimental_settings
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -180,6 +188,12 @@ fun PreferencesContent(
             }
         }
     }
+
+    val showUpdate =
+        UpdateChecker.ACTIVE &&
+            preferenceScreenOption == PreferenceScreenOption.BASIC &&
+            preferences.autoCheckForUpdates &&
+            updateAvailable
 
     AnimatedVisibility(
         visible = visible,
@@ -210,11 +224,7 @@ fun PreferencesContent(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                if (UpdateChecker.ACTIVE &&
-                    preferenceScreenOption == PreferenceScreenOption.BASIC &&
-                    preferences.autoCheckForUpdates &&
-                    updateAvailable
-                ) {
+                if (showUpdate) {
                     item {
                         val updateFocusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) {
@@ -233,6 +243,7 @@ fun PreferencesContent(
                             modifier =
                                 Modifier
                                     .focusRequester(updateFocusRequester)
+                                    .focusRequester(firstFocusRequester)
                                     .playSoundOnFocus(movementSounds),
                         )
                     }
@@ -258,15 +269,25 @@ fun PreferencesContent(
                                 .flatten()
                     groupPreferences.forEachIndexed { prefIndex, pref ->
                         pref as AppPreference<AppPreferences, Any>
+                        val isFirst = groupIndex == 0 && prefIndex == 0 && !showUpdate
+                        val isLast =
+                            groupIndex == prefList.lastIndex && prefIndex == groupPreferences.lastIndex
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
+                            val focused = interactionSource.collectIsFocusedAsState().value
                             val focusModifier =
                                 Modifier
                                     .ifElse(
                                         groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
                                         Modifier.focusRequester(focusRequester),
+                                    ).lazyListWrapScrolling(
+                                        state,
+                                        focused,
+                                        isFirst,
+                                        isLast,
+                                        firstFocusRequester,
+                                        lastFocusRequester,
                                     )
-                            val focused = interactionSource.collectIsFocusedAsState().value
                             LaunchedEffect(focused) {
                                 if (focused) {
                                     focusedIndex = Pair(groupIndex, prefIndex)
@@ -569,6 +590,46 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                ExperimentalPreference.Enable -> {
+                                    var showConfirm by remember { mutableStateOf(false) }
+                                    pref as AppSwitchPreference<AppPreferences>
+                                    val value = pref.getter.invoke(preferences)
+                                    SwitchPreference(
+                                        title = stringResource(pref.title),
+                                        value = value,
+                                        onClick = {
+                                            if (value) {
+                                                scope.launch(ExceptionHandler()) {
+                                                    preferences =
+                                                        viewModel.preferenceDataStore.updateData { prefs ->
+                                                            pref.setter.invoke(prefs, false)
+                                                        }
+                                                }
+                                            } else {
+                                                showConfirm = true
+                                            }
+                                        },
+                                        summaryOn = pref.summaryOn?.let { stringResource(pref.summaryOn) },
+                                        summaryOff = pref.summaryOff?.let { stringResource(pref.summaryOff) },
+                                    )
+                                    if (showConfirm) {
+                                        ConfirmDialog(
+                                            title = stringResource(R.string.confirm_enable_experimental_title),
+                                            body = stringResource(R.string.confirm_enable_experimental_body),
+                                            onCancel = { showConfirm = false },
+                                            onConfirm = {
+                                                showConfirm = false
+                                                scope.launch(ExceptionHandler()) {
+                                                    preferences =
+                                                        viewModel.preferenceDataStore.updateData { prefs ->
+                                                            pref.setter.invoke(prefs, true)
+                                                        }
+                                                }
+                                            },
+                                        )
+                                    }
+                                }
+
                                 else -> {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
@@ -576,7 +637,7 @@ fun PreferencesContent(
                                         value = value,
                                         onNavigate = viewModel.navigationManager::navigateTo,
                                         onValueChange = { newValue ->
-                                            val validation = pref.validate(newValue)
+                                            val validation = pref.validate(preferences, newValue)
                                             when (validation) {
                                                 is PreferenceValidation.Invalid -> {
                                                     // TODO?
@@ -762,6 +823,7 @@ fun PreferencesPage(
             PreferenceScreenOption.MPV,
             PreferenceScreenOption.SCREENSAVER,
             PreferenceScreenOption.SKIP_SEGMENTS,
+            PreferenceScreenOption.EXPERIMENTAL,
             -> {
                 PreferencesContent(
                     initialPreferences,

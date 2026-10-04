@@ -26,6 +26,13 @@
     <string name="continue_watching">Continue watching</string>
     <string name="critic_rating">Critic Rating</string>
     <string name="decimal_seconds">%.2f seconds</string>
+    <string name="duration_hours_minutes_seconds">%1$dh %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_hours_seconds">%1$dh %2$ds</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
     <string name="default_track">Default</string>
     <string name="delete">Delete</string>
     <string name="died">Died</string>
@@ -89,6 +96,7 @@
     <string name="playlists">Playlists</string>
     <string name="preview">Preview</string>
     <string name="profile_specific_settings">User Profile Settings</string>
+    <string name="profile_specific_settings_from_server">User profile settings from server</string>
     <string name="queue">Queue</string>
     <string name="recap">Recap</string>
     <string name="recently_added_in">Recently added in %1$s</string>
@@ -144,12 +152,19 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
+    <string name="time_left">%1$s left</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
     <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
     <string name="tv_guide">Guide</string>
     <string name="tv_season">Season</string>
     <string name="tv_seasons">Seasons</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Season %1$d</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
@@ -158,8 +173,12 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>
-    <string name="years_old">%1$d years old</string>
+    <string name="watch_live">Watch live</string>g
+    <plurals name="years_old">
+        <item quantity="zero">%1$d years old</item>
+        <item quantity="one">%1$d year old</item>
+        <item quantity="other">%1$d years old</item>
+    </plurals>
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
@@ -390,8 +409,10 @@
     <string name="incorrect">Incorrect</string>
     <string name="pin_too_short">PIN must be 4 keys or longer</string>
     <string name="will_remove_pin">Will remove PIN</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
+    <string name="disable_audio_offload">Disable audio hardware offload</string>
+    <string name="disable_audio_offload_summary">Disabling offloading audio decoding may fix playback freezes on some devices</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
     <string name="spacing">Spacing</string>
@@ -466,6 +487,8 @@
     <string name="dts">DTS</string>
     <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
     <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+    <string name="prefer_dovi_over_hdr10_plus">Prefer Dolby Vision over HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Removes HDR10+ metadata from Dolby Vision videos, for TVs that otherwise play them as HDR10+</string>
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
@@ -491,7 +514,7 @@
     <string name="image_subtitle_opacity">Image subtitle opacity</string>
 
     <string name="brightness">Brightness</string>
-    <string name="contrast">Constrast</string>
+    <string name="contrast">Contrast</string>
     <string name="saturation">Saturation</string>
     <string name="hue">Hue</string>
     <string name="red">Red</string>
@@ -544,6 +567,8 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transcode non-stereo audio to AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Use AC3 for surround sound audio</string>
     <string name="start_after">Start after</string>
     <string name="animate">Animate</string>
     <string name="max_age_rating">Max age rating</string>
@@ -585,6 +610,7 @@
     <string name="orange">Orange</string>
     <string name="bold_blue">Bold Blue</string>
     <string name="black">Black</string>
+    <string name="brown">Brown</string>
     <string-array name="app_theme_colors">
         <item>@string/purple</item>
         <item>@string/blue</item>
@@ -592,6 +618,8 @@
         <item>@string/orange</item>
         <item>@string/bold_blue</item>
         <item>@string/black</item>
+        <item>@string/red</item>
+        <item>@string/brown</item>
     </string-array>
 
     <string name="skip_ignore">Ignore</string>
@@ -821,10 +849,94 @@
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>
     <string name="split_into_separate_rows">Split into separate rows</string>
+    <string name="genre_movies">%1$s Movies</string>
+    <string name="genre_tv_shows">%1$s TV Shows</string>
+    <string name="quality_profile">Quality profile</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Root folder</string>
+    <string name="popularity">Popularity</string>
+    <string name="production_status">Production status</string>
+    <string name="different_for_hdr">Use different style for HDR</string>
+    <string name="experimental_settings">Experimental settings</string>
+    <string name="confirm_enable_experimental_title">Enable experimental settings?</string>
+    <string name="confirm_enable_experimental_body">Experimental settings may be unstable!\n\n These may removed or changed in any release.</string>
+    <string name="video_tunneling">Video tunneling</string>
+
+    <string name="d_pad_seek_mode_title">D-Pad seek bar mode</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string-array name="dpad_seek_mode_options">
+        <item>@string/dpad_seek_mode_minimal</item>
+        <item>@string/dpad_seek_mode_trickplay</item>
+        <item>@string/none</item>
+    </string-array>
+    <string name="dpad_seek_mode_minimal_summary">Small seek bar along the bottom of the screen (default)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Seek bar with trickplay preview images</string>
+    <string name="dpad_seek_mode_none_summary">No seek bar</string>
+    <string-array name="dpad_seek_mode_summaries">
+        <item>@string/dpad_seek_mode_minimal_summary</item>
+        <item>@string/dpad_seek_mode_trickplay_summary</item>
+        <item>@string/dpad_seek_mode_none_summary</item>
+    </string-array>
+
+    <string name="blocklisted">Blocklisted</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="subtitle_mode">Subtitle mode</string>
+
+    <string name="use_user_profile">Use your profile setting</string>
+
+    <string name="subtitle_mode_default">Default</string>
+    <string name="subtitle_mode_smart">Smart</string>
+    <string name="subtitle_mode_only_forced">Only Forced</string>
+    <string name="subtitle_mode_always">Always</string>
+    <string name="subtitle_mode_none">None</string>
+    <string-array name="subtitle_mode_options">
+        <item>@string/use_user_profile</item>
+        <item>@string/subtitle_mode_default</item>
+        <item>@string/subtitle_mode_smart</item>
+        <item>@string/subtitle_mode_only_forced</item>
+        <item>@string/subtitle_mode_always</item>
+        <item>@string/subtitle_mode_none</item>
+    </string-array>
+
+    <string-array name="home_click_to_play_options">
+        <item>@string/continue_watching_click_summary_off</item>
+        <item>@string/continue_watching_click_summary_on</item>
+    </string-array>
+
+    <string name="preferred_subtitle_language">Preferred subtitle language</string>
+    <string name="preferred_audio_language">Preferred audio language</string>
+    <string name="override_user_profile_settings">More user profile settings</string>
+    <string name="override_user_profile_settings_summary">Override your user profile settings from the server</string>
+    <string name="any_language">Any language</string>
+    <string name="hash_matches">Hash matches</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">TV programs</string>
+    <string name="recordings">Recordings</string>
+    <string name="folders_title">Folders</string>
+    <string name="user_views">User views</string>
+    <string name="books">Books</string>
+    <string name="audio_books">Audio books</string>
+    <string name="server_version_not_supported">Server version not supported</string>
+    <string name="appears_on">Appears on</string>
+    <string name="dim_after_delay">Dim screen after delay</string>
+    <string name="dim_percentage">Dim percentage</string>
+    <string name="dim_screen">Dim screen</string>
+    <string name="photo_albums">Photo albums</string>
+    <string name="no_favorites_found">No favorites found!</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="login_credentials_expired">Credentials expired, please login in again</string>
+    <string name="login_not_authorized">You are not authorized to access the server at this time</string>
+    <plurals name="episodes_count">
+        <item quantity="zero">%1$d Episodes</item>
+        <item quantity="one">%1$d Episode</item>
+        <item quantity="other">%1$d Episodes</item>
+    </plurals>
     <string name="load_from_server_plugin">Load default from server</string>
-    <string name="save_to_local">Save only locally</string>
+    <string name="save_to_local">Save only to this device</string>
     <string name="home_settings_source_unset">Default</string>
-    <string name="home_settings_source_local">Local</string>
+    <string name="home_settings_source_local">Device specific</string>
     <string name="home_settings_source_server_profile">Server user profile</string>
-    <string name="home_settings_source_plugin">Server</string>
+    <string name="home_settings_source_plugin">Server default</string>
+    <string name="home_settings_source_web">User web client</string>
 </resources>

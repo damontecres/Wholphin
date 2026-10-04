@@ -137,7 +137,9 @@
     <string name="video">Video</string>
     <string name="videos">Video</string>
     <string name="watch_live">Tonton langsung</string>
-    <string name="years_old">%1$d tahun</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d tahun</item>
+    </plurals>
     <string name="play_with_transcoding">Putar dengan transcoding</string>
     <string name="show_clock">Tampilkan Jam</string>
     <string name="aired_episode_order">Urutan Episode Tayang</string>
@@ -156,19 +158,19 @@
         <item quantity="other">Lainnya</item>
     </plurals>
     <plurals name="behind_the_scenes">
-        <item quantity="other">Di Balik Layar</item>
+        <item quantity="other">Di balik layar</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="other">Lagu Tema</item>
+        <item quantity="other">Lagu tema</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="other">Video Tema</item>
+        <item quantity="other">Video tema</item>
     </plurals>
     <plurals name="clips">
         <item quantity="other">Klip</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="other">Adegan Dihapus</item>
+        <item quantity="other">Adegan dihapus</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="other">Wawancara</item>
@@ -183,7 +185,7 @@
         <item quantity="other">Featurette</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="other">Klip Pendek</item>
+        <item quantity="other">Klip pendek</item>
     </plurals>
     <plurals name="hours">
         <item quantity="other">%d jam</item>
@@ -581,7 +583,7 @@
     <string name="play_with">Putar dengan</string>
     <string name="skip_behavior_summary">Untuk intro, kredit, dll</string>
     <string name="skip_behavior">Perilaku lewati</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="combined_search_results">Hasil pencarian gabungan</string>
     <string name="combined_search_results_on">Tampilkan semua hasil dalam satu daftar</string>
     <string name="combined_search_results_off">Tampilkan hasil berdasarkan kategori</string>
@@ -602,4 +604,94 @@
     <string name="continue_watching_click_summary_off">Tampilkan detail saat diklik</string>
     <string name="stars">Bintang</string>
     <string name="tomatoes">Tomatoes</string>
+    <string name="trailers_title">Trailer</string>
+    <string name="other_extras_title">Lainnya</string>
+    <string name="behind_the_scenes_title">Di Balik Layar</string>
+    <string name="theme_songs_title">Lagu Tema</string>
+    <string name="theme_videos_title">Video Tema</string>
+    <string name="clips_title">Klip</string>
+    <string name="deleted_scenes_title">Adegan Dihapus</string>
+    <plurals name="movies">
+        <item quantity="other">Film</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="other">Acara TV</item>
+    </plurals>
+    <string name="interviews_title">Wawancara</string>
+    <string name="scenes_title">Adegan</string>
+    <string name="samples_title">Sampel</string>
+    <string name="featurettes_title">Featurette</string>
+    <string name="shorts_title">Shorts</string>
+    <string name="sort">Urutkan</string>
+    <string name="split_into_separate_rows">Pisahkan menjadi baris terpisah</string>
+    <string name="genre_movies">%1$s Film</string>
+    <string name="genre_tv_shows">%1$s Acara TV</string>
+    <string name="quality_profile">Profil kualitas</string>
+    <string name="is_default">Default</string>
+    <string name="root_folder">Folder root</string>
+    <string name="popularity">Popularitas</string>
+    <string name="production_status">Status produksi</string>
+    <string name="different_for_hdr">Gunakan gaya berbeda untuk HDR</string>
+    <string name="experimental_settings">Pengaturan eksperimental</string>
+    <string name="confirm_enable_experimental_title">Aktifkan pengaturan eksperimental?</string>
+    <string name="confirm_enable_experimental_body">Pengaturan eksperimental mungkin tidak stabil!\n\nPengaturan ini dapat dihapus atau diubah pada rilisan mana pun.</string>
+    <string name="video_tunneling">Video tunneling</string>
+    <plurals name="people">
+        <item quantity="other">Orang</item>
+    </plurals>
+    <string name="prefer_ac3_for_surround">Gunakan AC3 untuk surround sound</string>
+    <string name="duration_hours_minutes_seconds">%1$dj %2$dm %3$dd</string>
+    <string name="duration_hours_minutes">%1$dj %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$dd</string>
+    <string name="duration_hours">%1$dj</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$dd</string>
+    <string name="time_left">Sisa %1$s</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transkode audio non-stereo ke AC3/Dolby Digital]]></string>
+    <string name="unavailable">Tidak tersedia</string>
+    <string name="profile_specific_settings_from_server">Pengaturan profil pengguna dari server</string>
+    <string name="subtitle_mode">Mode subtitel</string>
+    <string name="use_user_profile">Gunakan pengaturan profil kamu</string>
+    <string name="subtitle_mode_default">Default</string>
+    <string name="subtitle_mode_smart">Pintar</string>
+    <string name="subtitle_mode_only_forced">Hanya Paksaan</string>
+    <string name="subtitle_mode_always">Selalu</string>
+    <string name="subtitle_mode_none">Tidak ada</string>
+    <string name="preferred_subtitle_language">Bahasa subtitel preferensi</string>
+    <string name="preferred_audio_language">Bahasa audio preferensi</string>
+    <string name="override_user_profile_settings">Pengaturan profil pengguna lainnya</string>
+    <string name="override_user_profile_settings_summary">Timpa pengaturan profil pengguna dari server</string>
+    <string name="any_language">Semua bahasa</string>
+    <string name="brown">Cokelat</string>
+    <string name="d_pad_seek_mode_title">Mode bilah geser D-Pad</string>
+    <string name="duration_hours_seconds">%1$dj %2$dd</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Season %1$d</string>
+    <string name="disable_audio_offload">Nonaktifkan offload audio hardware</string>
+    <string name="disable_audio_offload_summary">Menonaktifkan dekode audio offload dapat mengatasi masalah pemutaran macet pada beberapa perangkat</string>
+    <string name="dpad_seek_mode_minimal">Minimal</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string name="dpad_seek_mode_minimal_summary">Bilah geser kecil di sepanjang bawah layar (default)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Bilah geser dengan gambar pratinjau trickplay</string>
+    <string name="dpad_seek_mode_none_summary">Tanpa bilah geser</string>
+    <string name="blocklisted">Daftar blokir</string>
+    <string name="hash_matches">Hash sesuai</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Acara TV</string>
+    <string name="recordings">Rekaman</string>
+    <string name="folders_title">Folder</string>
+    <string name="user_views">Tampilan pengguna</string>
+    <string name="books">Buku</string>
+    <string name="audio_books">Buku audio</string>
+    <string name="server_version_not_supported">Versi server tidak didukung</string>
+    <string name="appears_on">Tampil pada</string>
+    <string name="dim_after_delay">Redupkan layar setelah penundaan</string>
+    <string name="dim_percentage">Persentase redup</string>
+    <string name="dim_screen">Redupkan layar</string>
+    <string name="photo_albums">Album foto</string>
+    <string name="no_favorites_found">Favorit tidak ditemukan!</string>
 </resources>

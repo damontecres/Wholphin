@@ -53,10 +53,8 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DialogItem
-import com.github.damontecres.wholphin.ui.components.DialogParams
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -67,7 +65,6 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 
 @Composable
 fun DiscoverMovieDetails(
@@ -90,7 +87,7 @@ fun DiscoverMovieDetails(
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
-    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showRequestDialog by remember { mutableStateOf(false) }
 
     val requestStr = stringResource(R.string.request)
     val request4kStr = stringResource(R.string.request_4k)
@@ -119,28 +116,8 @@ fun DiscoverMovieDetails(
                 similar = state.similar,
                 recommended = state.recommended,
                 requestOnClick = {
-                    movie.id?.let { id ->
-                        if (request4kEnabled) {
-                            moreDialog =
-                                DialogParams(
-                                    fromLongClick = false,
-                                    title = movie.title + " (${movie.releaseDate ?: ""})",
-                                    items =
-                                        listOf(
-                                            DialogItem(
-                                                text = requestStr,
-                                                onClick = { viewModel.request(id, false) },
-                                            ),
-                                            DialogItem(
-                                                text = request4kStr,
-                                                onClick = { viewModel.request(id, true) },
-                                            ),
-                                        ),
-                                )
-                        } else {
-                            viewModel.request(id, false)
-                        }
-                    }
+                    viewModel.requestOnClick()
+                    showRequestDialog = true
                 },
                 cancelOnClick = {
                     movie.id?.let { viewModel.cancelRequest(it) }
@@ -161,23 +138,9 @@ fun DiscoverMovieDetails(
                         )
                 },
                 goToOnClick = {
-                    movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
-                        viewModel.navigateTo(
-                            Destination.MediaItem(
-                                itemId = it,
-                                type = BaseItemKind.MOVIE,
-                            ),
-                        )
-                    }
+                    viewModel.goTo(movie.mediaInfo, BaseItemKind.MOVIE)
                 },
-                moreOnClick = {
-                    moreDialog =
-                        DialogParams(
-                            fromLongClick = false,
-                            title = movie.title + " (${movie.releaseDate ?: ""})",
-                            items = listOf(),
-                        )
-                },
+                moreOnClick = {},
                 onLongClickPerson = { index, person -> },
                 onLongClickSimilar = { index, similar ->
                 },
@@ -186,6 +149,19 @@ fun DiscoverMovieDetails(
                 },
                 modifier = modifier,
             )
+            if (showRequestDialog) {
+                RequestMovieDialog(
+                    loading = state.profileLoading,
+                    data = state.requestData,
+                    request4kEnabled = request4kEnabled,
+                    movie = movie,
+                    onSubmit = {
+                        viewModel.request(it)
+                        showRequestDialog = false
+                    },
+                    onDismissRequest = { showRequestDialog = false },
+                )
+            }
         }
     }
     overviewDialog?.let { info ->
@@ -193,16 +169,6 @@ fun DiscoverMovieDetails(
             info = info,
             showFilePath = false,
             onDismissRequest = { overviewDialog = null },
-        )
-    }
-    moreDialog?.let { params ->
-        DialogPopup(
-            showDialog = true,
-            title = params.title,
-            dialogItems = params.items,
-            onDismissRequest = { moreDialog = null },
-            dismissOnClick = true,
-            waitToLoad = params.fromLongClick,
         )
     }
 }
@@ -265,10 +231,11 @@ fun DiscoverMovieDetailsContent(
                         rating = rating,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
+                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
                     ExpandableDiscoverButtons(
                         availability =

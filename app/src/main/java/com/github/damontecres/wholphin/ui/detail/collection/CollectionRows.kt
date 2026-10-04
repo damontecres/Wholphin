@@ -51,18 +51,45 @@ fun CollectionRows(
                         if (row is HomeRowLoadingState.Success) {
                             // TODO not great to do this in the UI
                             val viewOptions =
-                                if (type == BaseItemKind.EPISODE) {
-                                    HomeRowViewOptions(
-                                        heightDp = Cards.HEIGHT_EPISODE,
-                                        episodeAspectRatio = AspectRatio.WIDE,
-                                        showTitles = cardViewOptions.showTitles,
-                                        useSeries = false,
-                                    )
-                                } else {
-                                    HomeRowViewOptions(
-                                        showTitles = cardViewOptions.showTitles,
-                                    )
+                                when (type) {
+                                    BaseItemKind.EPISODE -> {
+                                        HomeRowViewOptions(
+                                            heightDp = Cards.HEIGHT_EPISODE,
+                                            episodeAspectRatio = AspectRatio.WIDE,
+                                            showTitles = cardViewOptions.showTitles,
+                                            useSeries = false,
+                                        )
+                                    }
+
+                                    BaseItemKind.MUSIC_ARTIST,
+                                    BaseItemKind.MUSIC_ALBUM,
+                                    BaseItemKind.PLAYLIST,
+                                    BaseItemKind.AUDIO,
+                                    -> {
+                                        HomeRowViewOptions(
+                                            heightDp = Cards.HEIGHT_EPISODE,
+                                            aspectRatio = AspectRatio.SQUARE,
+                                            showTitles = cardViewOptions.showTitles,
+                                        )
+                                    }
+
+                                    BaseItemKind.VIDEO,
+                                    BaseItemKind.MUSIC_VIDEO,
+                                    -> {
+                                        HomeRowViewOptions(
+                                            heightDp = Cards.HEIGHT_EPISODE,
+                                            aspectRatio = AspectRatio.WIDE,
+                                            showTitles = cardViewOptions.showTitles,
+                                        )
+                                    }
+
+                                    else -> {
+                                        HomeRowViewOptions(
+                                            showTitles = cardViewOptions.showTitles,
+                                        )
+                                    }
                                 }
+
                             row.copy(viewOptions = viewOptions)
                         } else {
                             row

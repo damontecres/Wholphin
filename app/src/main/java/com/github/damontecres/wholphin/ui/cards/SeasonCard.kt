@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
@@ -36,51 +37,21 @@ import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
- * A Card for a TV Show Season, but can generically show most items
+ * A Card for a TV Show Season, but can generally show most items
  */
 @Composable
 fun SeasonCard(
     item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    imageHeight: Dp,
     modifier: Modifier = Modifier,
-    imageHeight: Dp = Dp.Unspecified,
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
 ) {
-    val imageUrlService = LocalImageUrlService.current
-    val density = LocalDensity.current
-    val imageUrl =
-        remember(item, imageHeight, imageWidth, density) {
-            if (item != null) {
-                val fillHeight =
-                    if (imageHeight != Dp.Unspecified) {
-                        with(density) {
-                            imageHeight.roundToPx()
-                        }
-                    } else {
-                        null
-                    }
-                val fillWidth =
-                    if (imageWidth != Dp.Unspecified) {
-                        with(density) {
-                            imageWidth.roundToPx()
-                        }
-                    } else {
-                        null
-                    }
-                imageUrlService.getItemImageUrl(
-                    item,
-                    ImageType.PRIMARY,
-                    fillWidth = fillWidth,
-                    fillHeight = fillHeight,
-                )
-            } else {
-                null
-            }
-        }
+    val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
         title = item?.title,
         subtitle = item?.subtitle,
@@ -100,6 +71,44 @@ fun SeasonCard(
         showImageOverlay = showImageOverlay,
         aspectRatio = aspectRatio,
     )
+}
+
+@Composable
+fun rememberImageUrl(
+    item: BaseItem?,
+    imageHeight: Dp,
+    imageWidth: Dp = Dp.Unspecified,
+): String? {
+    val density = LocalDensity.current
+    val imageUrlService = LocalImageUrlService.current
+    return remember(item, imageHeight, imageWidth, density) {
+        if (item != null) {
+            val fillHeight =
+                if (imageHeight.isSpecified) {
+                    with(density) {
+                        imageHeight.roundToPx()
+                    }
+                } else {
+                    null
+                }
+            val fillWidth =
+                if (imageWidth.isSpecified) {
+                    with(density) {
+                        imageWidth.roundToPx()
+                    }
+                } else {
+                    null
+                }
+            imageUrlService.getItemImageUrl(
+                item,
+                ImageType.PRIMARY,
+                fillWidth = fillWidth,
+                fillHeight = fillHeight,
+            )
+        } else {
+            null
+        }
+    }
 }
 
 private val spaceBetweenFocused = 4.dp

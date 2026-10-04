@@ -24,13 +24,17 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.session.MediaSession
+import com.github.damontecres.wholphin.mpv.MpvPlayer
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
-import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
+import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
-import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
@@ -60,8 +64,9 @@ class PlayerFactory
 
         suspend fun createVideoPlayer(
             backend: PlayerBackend,
-            prefs: PlaybackPreferences,
+            appPreferences: AppPreferences,
         ): PlayerCreation {
+            val prefs = appPreferences.playbackPreferences
             withContext(WholphinDispatchers.Main) {
                 if (currentPlayer?.isReleased == false) {
                     Timber.w("Player was not released before trying to create a new one!")
@@ -86,6 +91,9 @@ class PlayerFactory
                         val useLibAss =
                             prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
                         val decodeAv1 = prefs.overrides.decodeAv1
+                        val preferDolbyVision =
+                            appPreferences.experimentalPreferences
+                                .get { preferDolbyVisionOverHdr10Plus } ?: false
                         Timber.v(
                             "extensions=%s, assPlaybackMode=%s",
                             extensions,
@@ -101,9 +109,10 @@ class PlayerFactory
                         val dataSourceFactory = DefaultDataSource.Factory(context)
                         val extractorsFactory = createExtractorsFactory()
                         var renderersFactory: RenderersFactory =
-                            WholphinRenderersFactory(context, decodeAv1)
+                            WholphinRenderersFactory(context, decodeAv1, preferDolbyVision)
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
+
                         val mediaSourceFactory =
                             if (useLibAss) {
                                 val renderType =
@@ -128,7 +137,15 @@ class PlayerFactory
                                     extractorsFactory,
                                 )
                             }
-                        val trackSelector = createTrackSelector()
+                        val disableAudioOffload =
+                            appPreferences.experimentalPreferences.get { disableAudioOffload } ?: false
+                        val tunneling =
+                            appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
+                        val trackSelector =
+                            createTrackSelector(
+                                tunneling = tunneling,
+                                disableAudioOffload = disableAudioOffload,
+                            )
 
                         ExoPlayer
                             .Builder(context)
@@ -158,7 +175,10 @@ class PlayerFactory
             return PlayerCreation(newPlayer, assHandler)
         }
 
-        fun createAudioPlayer(extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK): ExoPlayer {
+        fun createAudioPlayer(
+            disableAudioOffload: Boolean,
+            extensions: MediaExtensionStatus = MediaExtensionStatus.MES_FALLBACK,
+        ): ExoPlayer {
             val rendererMode =
                 when (extensions) {
                     MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
@@ -176,7 +196,7 @@ class PlayerFactory
                     OkHttpDataSource.Factory(authOkHttpClient),
                     extractorsFactory,
                 )
-            val trackSelector = createTrackSelector()
+            val trackSelector = createTrackSelector(disableAudioOffload = disableAudioOffload)
             return ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
@@ -187,9 +207,10 @@ class PlayerFactory
                     it.setAudioAttributes(
                         AudioAttributes
                             .Builder()
+                            .setUsage(C.USAGE_MEDIA)
                             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                             .build(),
-                        false,
+                        true,
                     )
                 }
         }
@@ -199,18 +220,33 @@ class PlayerFactory
                 .setConstantBitrateSeekingEnabled(true)
                 .setConstantBitrateSeekingAlwaysEnabled(true)
 
-        private fun createTrackSelector() =
-            DefaultTrackSelector(context).apply {
-                setParameters(
-                    buildUponParameters()
-                        .setAudioOffloadPreferences(
-                            AudioOffloadPreferences
-                                .Builder()
-                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED)
-                                .build(),
-                        ),
-                )
-            }
+        private fun createTrackSelector(
+            tunneling: Boolean? = null,
+            disableAudioOffload: Boolean = false,
+        ) = DefaultTrackSelector(context).apply {
+            val offloadMode =
+                if (disableAudioOffload) {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                } else {
+                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                }
+            setParameters(
+                buildUponParameters()
+                    .apply {
+                        tunneling?.let { setTunnelingEnabled(tunneling) }
+                    }.setAudioOffloadPreferences(
+                        AudioOffloadPreferences
+                            .Builder()
+                            .setAudioOffloadMode(offloadMode)
+                            .build(),
+                    ),
+            )
+        }
+
+        fun createMediaSession(player: Player) =
+            MediaSession
+                .Builder(context, player)
+                .build()
     }
 
 val Player.isReleased: Boolean
@@ -231,6 +267,7 @@ data class PlayerCreation(
 class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
+    private val preferDolbyVisionOverHdr10Plus: Boolean = false,
 ) : DefaultRenderersFactory(context) {
     @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
@@ -243,10 +280,19 @@ class WholphinRenderersFactory(
         allowedVideoJoiningTimeMs: Long,
         out: ArrayList<Renderer>,
     ) {
+        val videoCodecAdapterFactory =
+            if (preferDolbyVisionOverHdr10Plus) {
+                BitstreamFilteringCodecAdapterFactory(
+                    codecAdapterFactory,
+                    listOf(Hdr10PlusMaskingFilter()),
+                )
+            } else {
+                codecAdapterFactory
+            }
         var videoRendererBuilder =
             MediaCodecVideoRenderer
                 .Builder(context)
-                .setCodecAdapterFactory(codecAdapterFactory)
+                .setCodecAdapterFactory(videoCodecAdapterFactory)
                 .setMediaCodecSelector(mediaCodecSelector)
                 .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
                 .setEnableDecoderFallback(enableDecoderFallback)

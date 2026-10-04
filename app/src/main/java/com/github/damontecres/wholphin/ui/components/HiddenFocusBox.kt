@@ -25,7 +25,7 @@ fun HiddenFocusBox(
     modifier =
         Modifier
             .fillMaxWidth()
-            .height(1.dp)
+            .height(0.dp)
             .focusRequester(focusRequester)
             .onFocusChanged {
                 if (it.isFocused) onFocus.invoke()

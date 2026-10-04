@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.test
 
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.NameGuidPair
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -264,32 +263,3 @@ class TestSuggestionsCombineAndDeduplicate(
         }
     }
 }
-
-// Helper functions to create test data
-
-private fun movie(
-    id: UUID = UUID.randomUUID(),
-    name: String = "Test Movie",
-    genres: List<NameGuidPair>? = null,
-): BaseItemDto =
-    BaseItemDto(
-        id = id,
-        type = BaseItemKind.MOVIE,
-        name = name,
-        seriesId = null,
-        genreItems = genres,
-    )
-
-private fun episode(
-    id: UUID = UUID.randomUUID(),
-    seriesId: UUID,
-    name: String = "Test Episode",
-    genres: List<NameGuidPair>? = null,
-): BaseItemDto =
-    BaseItemDto(
-        id = id,
-        type = BaseItemKind.EPISODE,
-        name = name,
-        seriesId = seriesId,
-        genreItems = genres,
-    )

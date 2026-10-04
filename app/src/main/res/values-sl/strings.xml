@@ -31,7 +31,7 @@
     <string name="director">Režiser</string>
     <string name="disabled">Onemogočeno</string>
     <string name="discovered_servers">Najdeni strežniki</string>
-    <string name="download_and_update"><![CDATA[Prenesi in posodobi]]></string>
+    <string name="download_and_update">Prenesi in posodobi</string>
     <string name="downloading">Prenos poteka…</string>
     <string name="enabled">Omogočeno</string>
     <string name="ends_at">Konča se ob %1$s</string>
@@ -66,6 +66,7 @@
     <string name="more">Več</string>
     <plurals name="movies">
         <item quantity="one">Filmi</item>
+        <item quantity="other">Filmi</item>
     </plurals>
     <string name="name">Ime</string>
     <string name="next_up">Naslednjo</string>
@@ -80,6 +81,7 @@
     <string name="path">Pot</string>
     <plurals name="people">
         <item quantity="one">Osebe</item>
+        <item quantity="other">Osebe</item>
     </plurals>
     <string name="play_count">Število predvajanj</string>
     <string name="play_from_here">Predvajaj od tu</string>
@@ -104,7 +106,7 @@
     <string name="restart">Zaženi znova</string>
     <string name="resume">Nadaljuj</string>
     <string name="save">Shrani</string>
-    <string name="search_and_download"><![CDATA[Poišči in prenesi]]></string>
+    <string name="search_and_download">Poišči in prenesi</string>
     <string name="search">Išči</string>
     <string name="searching">Iskanje…</string>
     <string name="voice_search">Glasovno iskanje</string>
@@ -148,6 +150,7 @@
     <string name="top_unwatched">Najbolje ocenjeno, neogledano</string>
     <plurals name="trailers">
         <item quantity="one">Napovedniki</item>
+        <item quantity="other">Napovedniki</item>
     </plurals>
     <string name="tv_dvr_schedule">Program snemalnika</string>
     <string name="tv_guide">Vodnik</string>
@@ -155,6 +158,7 @@
     <string name="tv_seasons">Sezone</string>
     <plurals name="tv_shows">
         <item quantity="one">TV oddaje</item>
+        <item quantity="other">TV oddaje</item>
     </plurals>
     <string name="ui_interface">Vmesnik</string>
     <string name="unknown">Neznano</string>
@@ -164,7 +168,9 @@
     <string name="video">Video</string>
     <string name="videos">Videji</string>
     <string name="watch_live">Glej v živo</string>
-    <string name="years_old">%1$d let staro</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d let staro</item>
+    </plurals>
     <string name="play_with_transcoding">Igrajte s transkodiranjem</string>
     <string name="media_information">Informacije o mediji</string>
     <string name="show_clock">Prikaži uro</string>
@@ -182,36 +188,47 @@
     <string name="extras_title">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Ostalo</item>
+        <item quantity="other">Ostalo</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">V zakulisju</item>
+        <item quantity="other">V zakulisju</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Tematske pesmi</item>
+        <item quantity="other">Tematske pesmi</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Tematski videi</item>
+        <item quantity="other">Tematski videi</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Posnetki</item>
+        <item quantity="other">Posnetki</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Izbrisane scene</item>
+        <item quantity="other">Izbrisane scene</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuji</item>
+        <item quantity="other">Intervjuji</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Prizori</item>
+        <item quantity="other">Prizori</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Vzorci</item>
+        <item quantity="other">Vzorci</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Kratki filmi</item>
+        <item quantity="other">Kratki filmi</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kratki filmi</item>
+        <item quantity="other">Kratki filmi</item>
     </plurals>
     <string name="favorite_items_title">Dodaj %s med priljubljene</string>
     <plurals name="downloads">
@@ -259,7 +276,7 @@
     <string name="auto_play_next">Samodejno predvajanje naslednjega</string>
     <string name="check_for_updates">Preveri za posodobitve</string>
     <string name="combine_continue_next_summary">Velja samo za televizijske serije</string>
-    <string name="combine_continue_next"><![CDATA[Združi »Nadaljuj z ogledom« in »Naslednje«]]></string>
+    <string name="combine_continue_next">Združi »Nadaljuj z ogledom« in »Naslednje«</string>
     <string name="direct_play_ass">Za podnapise v formatu ASS uporabite knjižnico libass</string>
     <string name="direct_play_pgs">Neposredno predvajanje podnapisov PGS</string>
     <string name="downmix_stereo">Vedno pretvori v stereo</string>
@@ -343,7 +360,7 @@
     <string name="aspect_ratio">Razmerje stranic</string>
     <string name="show_details">Pokaži podrobnosti</string>
     <string name="image_type">Vrsta slike</string>
-    <string name="cast_and_crew"><![CDATA[Igralska zasedba in ekipa]]></string>
+    <string name="cast_and_crew">Igralska zasedba in ekipa</string>
     <string name="guest_stars">Gostujoči igralci</string>
     <string name="edge_size">Velikost roba</string>
     <string name="refresh_rate_switching">Preklapljanje hitrosti osveževanja</string>
@@ -540,12 +557,12 @@
     <string name="image_type_thumb">Thumb</string>
     <string name="backdrop_style_dynamic">Slika z dinamičnimi barvami</string>
     <string name="backdrop_style_image">Samo slika</string>
-    <string name="enter_url_api_key"><![CDATA[Vnesite URL in API ključ]]></string>
+    <string name="enter_url_api_key">Vnesite URL in API ključ</string>
     <string name="api_key">API ključ</string>
     <string name="seerr_login">Prijava na strežnik Seerr</string>
     <string name="seerr_jellyfin_user">Jellyfin uporabnik</string>
     <string name="seerr_local_user">Lokalni uporabnik</string>
-    <string name="search_and_download_subtitles"><![CDATA[Išči in prenesi podnapise]]></string>
+    <string name="search_and_download_subtitles">Išči in prenesi podnapise</string>
     <string name="no_subtitles_found">Ni bilo najdenih podnapisov</string>
     <string name="series_continueing">danes</string>
     <string name="in_app_screensaver">Uporabite ohranjevalnik zaslona aplikacije</string>

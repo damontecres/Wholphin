@@ -409,7 +409,7 @@ fun NavDrawer(
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.setIndex(SEARCH_INDEX)
-                                    viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
+                                    viewModel.navigationManager.navigateToFromDrawer(Destination.Search())
                                 },
                                 modifier =
                                     Modifier
@@ -432,6 +432,7 @@ fun NavDrawer(
                                     viewModel.setIndex(HOME_INDEX)
                                     if (destination is Destination.Home) {
                                         viewModel.navigationManager.reloadHome()
+                                        onClearBackdrop.invoke()
                                     } else {
                                         viewModel.navigationManager.goToHome()
                                     }
@@ -771,6 +772,8 @@ fun navItemColor(
                     AppThemeColors.BLUE,
                     AppThemeColors.GREEN,
                     AppThemeColors.ORANGE,
+                    AppThemeColors.RED,
+                    AppThemeColors.BROWN,
                     -> MaterialTheme.colorScheme.border
 
                     AppThemeColors.BOLD_BLUE,

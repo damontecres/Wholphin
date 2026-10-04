@@ -36,7 +36,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -93,7 +92,7 @@ fun SeriesOverview(
     LaunchedEffect(Unit) {
         if (state.seasons.isNotEmpty()) {
             state.seasons.getOrNull(position.seasonTabIndex)?.let {
-                viewModel.loadEpisodes(it.id)
+                viewModel.loadEpisodes(it.id, it.indexNumber)
             }
         }
     }
@@ -116,10 +115,10 @@ fun SeriesOverview(
                     viewModel.setFavorite(itemId, favorite, currentPosition.episodeRowIndex)
                 },
                 onClickAddPlaylist = { itemId ->
-                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                    playlistViewModel.loadPlaylists()
                     showPlaylistDialog = itemId
                 },
-                onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                 onDeleteItem = viewModel::deleteItem,
                 onChooseVersion = { item, source ->
                     viewModel.savePlayVersion(
@@ -211,7 +210,7 @@ fun SeriesOverview(
                 onChangeSeason = { index ->
                     if (index != position.seasonTabIndex) {
                         state.seasons.getOrNull(index)?.let { season ->
-                            viewModel.loadEpisodes(season.id)
+                            viewModel.loadEpisodes(season.id, season.indexNumber)
                             viewModel.position.update {
                                 SeriesOverviewPosition(index, 0)
                             }
@@ -348,6 +347,7 @@ fun SeriesOverview(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog = null
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }

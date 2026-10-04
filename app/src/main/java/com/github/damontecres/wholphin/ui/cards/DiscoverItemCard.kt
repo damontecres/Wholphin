@@ -59,8 +59,6 @@ fun DiscoverItemCard(
     width: Dp = Cards.height2x3 * AspectRatios.TALL,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
-    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
-    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
     var focusedAfterDelay by remember { mutableStateOf(false) }
 
     val hideOverlayDelay = 500L
@@ -78,7 +76,7 @@ fun DiscoverItemCard(
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.size(width, Dp.Unspecified),
     ) {
         Card(
@@ -130,7 +128,16 @@ fun DiscoverItemCard(
                         AvailableIndicator(Modifier.align(Alignment.TopEnd))
                     }
 
-                    else -> {}
+                    SeerrAvailability.BLOCKLISTED -> {
+                        // TODO handle block listed
+//                        BlocklistedIndicator(Modifier.align(Alignment.TopEnd))
+                    }
+
+                    SeerrAvailability.UNKNOWN,
+                    SeerrAvailability.DELETED,
+                    null,
+                    -> {
+                    }
                 }
                 if (showOverlay) {
                     val color =
@@ -171,13 +178,7 @@ fun DiscoverItemCard(
                 }
             }
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
-        ) {
+        SlidingCardText(focused) {
             Text(
                 text = item?.title ?: "",
                 maxLines = 1,
@@ -284,6 +285,31 @@ fun PartiallyAvailableIndicator(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun BlocklistedIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = CircleShape,
+                ).background(
+                    color = AppColors.Discover.Red.copy(alpha = .85f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_xmark),
+            fontFamily = FontAwesome,
+            fontSize = 10.sp,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
 @PreviewTvSpec
 @Composable
 private fun Preview() {
@@ -292,6 +318,7 @@ private fun Preview() {
             PendingIndicator()
             AvailableIndicator()
             PartiallyAvailableIndicator()
+            BlocklistedIndicator()
         }
     }
 }

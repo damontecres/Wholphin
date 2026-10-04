@@ -77,23 +77,28 @@ val DefaultPlaylistItemsOptions =
     )
 
 /**
- * A way to filter libraries
- *
- * Gets and sets values within a [GetItemsFilter]
+ * Abstract way to filter data
  */
-sealed interface ItemFilterBy<T> {
+sealed interface FilterBy<FilterType, DataType> {
     @get:StringRes
     val stringRes: Int
 
     val supportMultiple: Boolean
 
-    fun get(filter: GetItemsFilter): T?
+    fun get(filter: FilterType): DataType?
 
     fun set(
-        value: T?,
-        filter: GetItemsFilter,
-    ): GetItemsFilter
+        value: DataType?,
+        filter: FilterType,
+    ): FilterType
 }
+
+/**
+ * A way to filter jellyfin libraries
+ *
+ * Gets and sets values within a [GetItemsFilter]
+ */
+sealed interface ItemFilterBy<T> : FilterBy<GetItemsFilter, T>
 
 data object GenreFilter : ItemFilterBy<List<UUID>> {
     override val stringRes: Int = R.string.genres

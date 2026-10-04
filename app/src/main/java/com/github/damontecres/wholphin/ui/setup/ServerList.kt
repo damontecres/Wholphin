@@ -97,6 +97,7 @@ fun rememberIdColor(
 @Composable
 fun ServerIconCard(
     server: JellyfinServer,
+    serverVersionSupported: ServerVersionSupported,
     connectionStatus: ServerConnectionStatus,
     isCurrentServer: Boolean,
     onClick: () -> Unit,
@@ -166,28 +167,8 @@ fun ServerIconCard(
                 contentAlignment = Alignment.Center,
             ) {
                 // Show connection status indicator or server name/letter
-                when (connectionStatus) {
-                    is ServerConnectionStatus.Success -> {
-                        // Show server name/letter
-
-                        Text(
-                            text = displayText,
-                            style =
-                                MaterialTheme.typography.displayLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-
-                    ServerConnectionStatus.Pending -> {
-                        CircularProgress(
-                            modifier = Modifier.size(cardSize * 0.4f),
-                        )
-                    }
-
-                    is ServerConnectionStatus.Error -> {
+                when {
+                    connectionStatus is ServerConnectionStatus.Error || serverVersionSupported != ServerVersionSupported.SUPPORTED -> {
                         // Show warning icon with server letter below
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -195,7 +176,7 @@ fun ServerIconCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
-                                contentDescription = connectionStatus.message,
+                                contentDescription = (connectionStatus as? ServerConnectionStatus.Error)?.message,
                                 tint = MaterialTheme.colorScheme.errorContainer,
                                 modifier = Modifier.size(cardSize * 0.3f),
                             )
@@ -209,6 +190,26 @@ fun ServerIconCard(
                                 textAlign = TextAlign.Center,
                             )
                         }
+                    }
+
+                    connectionStatus is ServerConnectionStatus.Success -> {
+                        // Show server name/letter
+
+                        Text(
+                            text = displayText,
+                            style =
+                                MaterialTheme.typography.displayLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+
+                    connectionStatus == ServerConnectionStatus.Pending -> {
+                        CircularProgress(
+                            modifier = Modifier.size(cardSize * 0.4f),
+                        )
                     }
                 }
             }

@@ -20,6 +20,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Listens for JF user switching in the app to also switch other settings like Seerr user/server
@@ -65,7 +66,9 @@ class UserSwitchListener
                 launchIO {
                     val serverPluginInstalled =
                         try {
-                            serverPluginApi.public()
+                            serverPluginApi.checkInstalled()
+                        } catch (ex: CancellationException) {
+                            throw ex
                         } catch (ex: Exception) {
                             Timber.e(ex, "Error checking for server plugin")
                             false

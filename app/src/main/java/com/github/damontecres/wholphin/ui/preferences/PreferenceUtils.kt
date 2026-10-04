@@ -37,6 +37,7 @@ enum class PreferenceScreenOption {
     MPV,
     SCREENSAVER,
     SKIP_SEGMENTS,
+    EXPERIMENTAL,
     ;
 
     companion object {

@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.HomeDataService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomePageSettingsSource
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
@@ -34,8 +35,9 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
-import com.github.damontecres.wholphin.services.tvAccess
-import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.services.getRecentlyAddedTitle
+import com.github.damontecres.wholphin.services.viewOptionsForCollectionType
+import com.github.damontecres.wholphin.ui.formatTypeName
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
@@ -79,6 +81,7 @@ class HomeSettingsViewModel
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val homeSettingsService: HomeSettingsService,
+        private val homeDataService: HomeDataService,
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
@@ -101,8 +104,12 @@ class HomeSettingsViewModel
                 )
         val settingsChanged =
             state
-                .map { HomePageResolvedSettings(it.rows).asHomePageSettings() != originalSettings }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+                .map {
+                    HomePageSettings(
+                        rows = it.rows.map { it.config },
+                        version = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
+                    ) != originalSettings
+                }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         private var idCounter by Delegates.notNull<Int>()
 
@@ -122,7 +129,7 @@ class HomeSettingsViewModel
                 idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
-                        source = user.config.homeSettingsSource,
+                        source = currentSettings.source,
                         libraries = libraries,
                         rows = currentSettings.rows,
                     )
@@ -150,7 +157,7 @@ class HomeSettingsViewModel
                                     viewModelScope.async(WholphinDispatchers.IO) {
                                         semaphore.withPermit {
                                             try {
-                                                homeSettingsService.fetchDataForRow(
+                                                homeDataService.fetchDataForRow(
                                                     row = row.config,
                                                     scope = viewModelScope,
                                                     prefs = prefs,
@@ -291,24 +298,7 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
-                val viewOptions =
-                    when (library.collectionType) {
-                        CollectionType.MUSIC -> {
-                            HomeRowViewOptions(aspectRatio = AspectRatio.SQUARE)
-                        }
-
-                        CollectionType.HOMEVIDEOS,
-                        CollectionType.MUSICVIDEOS,
-                        -> {
-                            HomeRowViewOptions(
-                                aspectRatio = AspectRatio.WIDE,
-                            )
-                        }
-
-                        else -> {
-                            HomeRowViewOptions()
-                        }
-                    }
+                val viewOptions = viewOptionsForCollectionType(library.collectionType)
                 val id = idCounter++
                 val newRow =
                     when (rowType) {
@@ -399,7 +389,7 @@ class HomeSettingsViewModel
                         }
 
                         LibraryRowType.RECENTLY_RECORDED -> {
-                            val title = ResStringProvider(R.string.recently_recorded)
+                            val title = getRecentlyAddedTitle(library.name)
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
@@ -432,9 +422,13 @@ class HomeSettingsViewModel
                         title =
                             ResProviderStringProvider(
                                 R.string.favorite_items_title,
-                                ResStringProvider(favoriteOptions[type]!!),
+                                ResStringProvider(formatTypeName(type)),
                             ),
-                        config = HomeRowConfig.Favorite(type),
+                        config =
+                            HomeRowConfig.Favorite(
+                                kind = type,
+                                viewOptions = HomeRowPresets.WholphinDefault.getByItemType(type),
+                            ),
                     )
                 updateState {
                     it.copy(
@@ -638,11 +632,6 @@ class HomeSettingsViewModel
             _state.update {
                 update.invoke(it)
             }
-            homeSettingsService.currentSettings.update {
-                HomePageResolvedSettings(
-                    state.value.rows,
-                )
-            }
         }
 
         fun resizeCards(relative: Int) {
@@ -673,7 +662,6 @@ class HomeSettingsViewModel
             viewModelScope.launchIO {
                 val user = serverRepository.currentUser ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
-                var source = HomePageSettingsSource.UNSET
                 val result =
                     if (serverPluginActive.value) {
                         try {
@@ -682,7 +670,6 @@ class HomeSettingsViewModel
                                     user.id,
                                     HomePageSettingsSource.PLUGIN,
                                 )
-                            source = HomePageSettingsSource.PLUGIN
                             settings
                         } catch (ex: Exception) {
                             Timber.e(ex, "Plugin is active, but error fetching home settings")
@@ -695,7 +682,7 @@ class HomeSettingsViewModel
                 idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
-                        source = source,
+                        source = result.source,
                         rows = result.rows,
                         rowData = emptyList(),
                     )
@@ -745,17 +732,7 @@ class HomeSettingsViewModel
                                 }
 
                                 is HomeRowConfig.Favorite -> {
-                                    val viewOptions =
-                                        when (it.config.kind) {
-                                            BaseItemKind.MOVIE -> preset.movieLibrary
-                                            BaseItemKind.SERIES -> preset.tvLibrary
-                                            BaseItemKind.EPISODE -> preset.continueWatching
-                                            BaseItemKind.VIDEO -> preset.videoLibrary
-                                            BaseItemKind.PLAYLIST -> preset.playlist
-                                            BaseItemKind.PERSON -> preset.movieLibrary
-                                            BaseItemKind.MUSIC_ARTIST, BaseItemKind.MUSIC_ALBUM -> preset.musicLibrary
-                                            else -> preset.movieLibrary
-                                        }
+                                    val viewOptions = preset.getByItemType(it.config.kind)
                                     it.config.updateViewOptions(viewOptions)
                                 }
 
@@ -957,9 +934,7 @@ class HomeSettingsViewModel
             }
         }
 
-        fun discardChanges(): Job {
-            TODO("Not yet implemented")
-        }
+        fun discardChanges(): Job = Job().apply { complete() }
     }
 
 data class HomePageSettingsState(

@@ -53,7 +53,10 @@ sealed interface AppPreference<Pref, T> {
         value: T?,
     ): String? = null
 
-    fun validate(value: T): PreferenceValidation = PreferenceValidation.Valid
+    fun validate(
+        prefs: Pref,
+        value: T,
+    ): PreferenceValidation = PreferenceValidation.Valid
 
     companion object {
         val SkipForward =
@@ -215,15 +218,16 @@ sealed interface AppPreference<Pref, T> {
             )
 
         val HomeClickToPlay =
-            AppSwitchPreference<AppPreferences>(
+            AppChoicePreference<AppPreferences, Boolean>(
                 title = R.string.continue_watching_click_behavior,
                 defaultValue = false,
                 getter = { it.homePagePreferences.clickToPlay },
                 setter = { prefs, value ->
                     prefs.updateHomePagePreferences { clickToPlay = value }
                 },
-                summaryOn = R.string.continue_watching_click_summary_on,
-                summaryOff = R.string.continue_watching_click_summary_off,
+                displayValues = R.array.home_click_to_play_options,
+                indexToValue = { it != 0 },
+                valueToIndex = { if (it) 1 else 0 },
             )
 
         val PlayThemeMusic =
@@ -391,18 +395,25 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                    if (!value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
+                    prefs.updatePlaybackOverrides {
+                        ac3Supported = value
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
         val DownMixStereo =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.downmix_stereo,
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                    if (value) prefs.updateExperimentalPreferences { preferAc3Surround = false }
+                    prefs.updatePlaybackOverrides {
+                        downmixStereo = value
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -572,6 +583,13 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.ADVANCED),
             )
 
+        val UserProfileSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.override_user_profile_settings,
+                destination = Destination.UserAppPreferences,
+                summary = R.string.override_user_profile_settings_summary,
+            )
+
         val SkipIntros =
             AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_intro_behavior,
@@ -642,6 +660,20 @@ sealed interface AppPreference<Pref, T> {
                 title = R.string.skip_behavior,
                 summary = R.string.skip_behavior_summary,
                 destination = Destination.Settings(PreferenceScreenOption.SKIP_SEGMENTS),
+            )
+
+        val DpadSeekModePref =
+            AppChoicePreference<AppPreferences, DpadSeekMode>(
+                title = R.string.d_pad_seek_mode_title,
+                defaultValue = DpadSeekMode.SEEKBAR_MINIMAL,
+                getter = { it.playbackPreferences.dpadSeekMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { dpadSeekMode = value }
+                },
+                displayValues = R.array.dpad_seek_mode_options,
+                indexToValue = { DpadSeekMode.forNumber(it) },
+                valueToIndex = { if (it != DpadSeekMode.UNRECOGNIZED) it.number else 0 },
+                subtitles = R.array.dpad_seek_mode_summaries,
             )
 
         val GlobalContentScale =
@@ -1106,6 +1138,7 @@ val basicPreferences =
                     AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                     AppPreference.UserInterfaceLanguage,
+                    AppPreference.UserProfileSettings,
                 ),
         ),
         PreferenceGroup(
@@ -1208,6 +1241,7 @@ val advancedPreferences =
                         AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
                         AppPreference.SkipSegments,
+                        AppPreference.DpadSeekModePref,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,
@@ -1266,7 +1300,15 @@ val advancedPreferences =
                         AppPreference.DebugLogging,
                         AppPreference.ImageDiskCacheSize,
                         AppPreference.ClearImageCache,
+                        ExperimentalPreference.Enable,
                         AppPreference.OssLicenseInfo,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.experimentalPreferences.enabled },
+                            preferences = listOf(ExperimentalPreference.ExperimentalSettings),
+                        ),
                     ),
             ),
         )
@@ -1296,6 +1338,14 @@ val screensaverPreferences =
                     ScreensaverPreference.Start,
                 ),
         ),
+        PreferenceGroup(
+            title = R.string.dim_screen,
+            preferences =
+                listOf(
+                    ScreensaverPreference.DimToggle,
+                    ScreensaverPreference.DimPercentage,
+                ),
+        ),
     )
 
 data class AppSwitchPreference<Pref>(
@@ -1303,11 +1353,16 @@ data class AppSwitchPreference<Pref>(
     override val defaultValue: Boolean,
     override val getter: (prefs: Pref) -> Boolean,
     override val setter: (prefs: Pref, value: Boolean) -> Pref,
-    val validator: (value: Boolean) -> PreferenceValidation = { PreferenceValidation.Valid },
+    val validator: (prefs: Pref, value: Boolean) -> PreferenceValidation = { _, _ -> PreferenceValidation.Valid },
     @param:StringRes val summary: Int? = null,
     @param:StringRes val summaryOn: Int? = null,
     @param:StringRes val summaryOff: Int? = null,
 ) : AppPreference<Pref, Boolean> {
+    override fun validate(
+        prefs: Pref,
+        value: Boolean,
+    ): PreferenceValidation = validator.invoke(prefs, value)
+
     override fun summary(
         context: Context,
         value: Boolean?,

@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui
 
+import android.content.Context
+import android.content.res.Resources
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
@@ -12,19 +15,36 @@ import org.jellyfin.sdk.model.api.MediaSegmentType
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
+import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration
 
-private var timeFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+/**
+ * Format the time-of-day of [time] honouring the device's 12/24-hour setting and the current
+ * locale. [context] should be an Activity/composition context (e.g. `LocalContext.current`) so an
+ * in-app language switch (`AppCompatDelegate.setApplicationLocales`) is reflected; the application
+ * context may carry a stale locale.
+ */
+fun formatTime(
+    context: Context,
+    time: LocalDateTime,
+): String = formatTime(context, time.toLocalTime())
 
-fun getTimeFormatter(): DateTimeFormatter {
-    if (timeFormatter.locale != Locale.getDefault()) {
-        timeFormatter = timeFormatter.withLocale(Locale.getDefault())
-    }
-    return timeFormatter
+fun formatTime(
+    context: Context,
+    time: LocalTime,
+): String {
+    val instant =
+        time
+            .atDate(LocalDate.now())
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+    return DateFormat.getTimeFormat(context).format(Date.from(instant))
 }
 
 private var dateFormatter: DateTimeFormatter =
@@ -59,36 +79,74 @@ fun toLocalDate(date: String?): LocalDate? =
         }
     }
 
+// Falls back to the default format if the application is not initialized (e.g. unit tests)
+private fun formatStringWithFallback(
+    @StringRes resId: Int,
+    defaultFormat: String,
+    vararg args: Any,
+): String {
+    val resources =
+        try {
+            WholphinApplication.instance.resources
+        } catch (_: UninitializedPropertyAccessException) {
+            null
+        }
+    return resources?.getString(resId, *args)
+        ?: String.format(Locale.getDefault(), defaultFormat, *args)
+}
+
 /**
- * If the item has season & episode info, format as `S# E#`
+ * Format season & episode numbers using localized string resources.
+ * Returns null if [season] or [episode] is missing.
+ */
+fun formatSeasonEpisode(
+    season: Int?,
+    episode: Int?,
+    episodeEnd: Int? = null,
+    padded: Boolean = false,
+): String? {
+    if (season == null || episode == null) return null
+    return if (episodeEnd != null) {
+        if (padded) {
+            formatStringWithFallback(R.string.season_episode_number_padded_range, "S%1\$02dE%2\$02d-E%3\$02d", season, episode, episodeEnd)
+        } else {
+            formatStringWithFallback(R.string.season_episode_number_range, "S%1\$d E%2\$d-E%3\$d", season, episode, episodeEnd)
+        }
+    } else if (padded) {
+        formatStringWithFallback(R.string.season_episode_number_padded, "S%1\$02dE%2\$02d", season, episode)
+    } else {
+        formatStringWithFallback(R.string.season_episode_number, "S%1\$d E%2\$d", season, episode)
+    }
+}
+
+/** Compact episode-only label, e.g. `E3`. */
+fun formatEpisodeNumber(episode: Int): String = formatStringWithFallback(R.string.episode_number_short, "E%1\$d", episode)
+
+/** Fallback season title when the library has no season name, e.g. `Season 2`. */
+fun formatSeasonNumber(season: Int): String = formatStringWithFallback(R.string.season_number, "Season %1\$d", season)
+
+/**
+ * If the item has season & episode info, format as localized `S# E#`
  */
 val BaseItemDto.seasonEpisode: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null && indexNumberEnd != null) {
-            "S$parentIndexNumber E$indexNumber-E$indexNumberEnd"
-        } else if (parentIndexNumber != null && indexNumber != null) {
-            "S$parentIndexNumber E$indexNumber"
-        } else {
-            null
-        }
+        formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+        )
 
 /**
- * If the item has season & episode info, format padded as `S## E##`
+ * If the item has season & episode info, format padded as localized `S##E##`
  */
 val BaseItemDto.seasonEpisodePadded: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null) {
-            val season = parentIndexNumber?.toString()?.padStart(2, '0')
-            val episode = indexNumber?.toString()?.padStart(2, '0')
-            val endEpisode = indexNumberEnd?.toString()?.padStart(2, '0')
-            if (endEpisode != null) {
-                "S${season}E$episode-E$endEpisode"
-            } else {
-                "S${season}E$episode"
-            }
-        } else {
-            null
-        }
+        formatSeasonEpisode(
+            parentIndexNumber,
+            indexNumber,
+            indexNumberEnd,
+            padded = true,
+        )
 
 val BaseItemDto.seriesProductionYears: String?
     get() =
@@ -200,6 +258,10 @@ fun listToDotString(
         }
     }
 
+@get:StringRes
+val BaseItemKind.titleStringRes: Int
+    get() = formatTypeName(this)
+
 @StringRes
 fun formatTypeName(type: BaseItemKind): Int =
     when (type) {
@@ -210,34 +272,50 @@ fun formatTypeName(type: BaseItemKind): Int =
         BaseItemKind.PLAYLIST -> R.string.playlists
         BaseItemKind.PERSON -> R.string.people_title
         BaseItemKind.BOX_SET -> R.string.collections
-        BaseItemKind.AUDIO -> TODO()
+        BaseItemKind.AUDIO -> R.string.songs
         BaseItemKind.CHANNEL -> R.string.channels
         BaseItemKind.GENRE -> R.string.genres
         BaseItemKind.LIVE_TV_CHANNEL -> R.string.channels
-        BaseItemKind.MUSIC_ALBUM -> TODO()
-        BaseItemKind.MUSIC_ARTIST -> TODO()
-        BaseItemKind.MUSIC_GENRE -> TODO()
-        BaseItemKind.MUSIC_VIDEO -> TODO()
+        BaseItemKind.MUSIC_ALBUM -> R.string.albums
+        BaseItemKind.MUSIC_ARTIST -> R.string.artists
+        BaseItemKind.MUSIC_GENRE -> R.string.genres
+        BaseItemKind.MUSIC_VIDEO -> R.string.music_videos
         BaseItemKind.PHOTO -> R.string.photos
-        BaseItemKind.PHOTO_ALBUM -> TODO()
-        BaseItemKind.PROGRAM -> TODO()
-        BaseItemKind.RECORDING -> TODO()
+        BaseItemKind.PHOTO_ALBUM -> R.string.photo_albums
+        BaseItemKind.PROGRAM -> R.string.programs
+        BaseItemKind.RECORDING -> R.string.recordings
         BaseItemKind.SEASON -> R.string.tv_seasons
         BaseItemKind.STUDIO -> R.string.studios
         BaseItemKind.TRAILER -> R.string.trailers_title
         BaseItemKind.TV_CHANNEL -> R.string.channels
-        BaseItemKind.TV_PROGRAM -> TODO()
-        BaseItemKind.USER_ROOT_FOLDER -> TODO()
-        BaseItemKind.USER_VIEW -> TODO()
-        BaseItemKind.YEAR -> TODO()
-        BaseItemKind.AGGREGATE_FOLDER -> TODO()
-        BaseItemKind.AUDIO_BOOK -> TODO()
-        BaseItemKind.BASE_PLUGIN_FOLDER -> TODO()
-        BaseItemKind.BOOK -> TODO()
-        BaseItemKind.CHANNEL_FOLDER_ITEM -> TODO()
-        BaseItemKind.COLLECTION_FOLDER -> TODO()
-        BaseItemKind.FOLDER -> TODO()
-        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> TODO()
-        BaseItemKind.LIVE_TV_PROGRAM -> TODO()
-        BaseItemKind.PLAYLISTS_FOLDER -> TODO()
+        BaseItemKind.TV_PROGRAM -> R.string.programs
+        BaseItemKind.USER_ROOT_FOLDER -> R.string.folders_title
+        BaseItemKind.USER_VIEW -> R.string.user_views
+        BaseItemKind.YEAR -> R.string.year
+        BaseItemKind.AGGREGATE_FOLDER -> R.string.folders_title
+        BaseItemKind.AUDIO_BOOK -> R.string.audio_books
+        BaseItemKind.BASE_PLUGIN_FOLDER -> R.string.folders_title
+        BaseItemKind.BOOK -> R.string.books
+        BaseItemKind.CHANNEL_FOLDER_ITEM -> R.string.folders_title
+        BaseItemKind.COLLECTION_FOLDER -> R.string.library
+        BaseItemKind.FOLDER -> R.string.folders_title
+        BaseItemKind.MANUAL_PLAYLISTS_FOLDER -> R.string.playlists
+        BaseItemKind.LIVE_TV_PROGRAM -> R.string.programs
+        BaseItemKind.PLAYLISTS_FOLDER -> R.string.playlists
+    }
+
+/**
+ * Format a [Duration] into a localized "Xh Ym Zs" string using string resources.
+ */
+fun Resources.formatDuration(duration: Duration): String =
+    duration.toComponents { hours, minutes, seconds, _ ->
+        when {
+            hours > 0 && minutes > 0 && seconds > 0 -> getString(R.string.duration_hours_minutes_seconds, hours.toInt(), minutes, seconds)
+            hours > 0 && minutes > 0 -> getString(R.string.duration_hours_minutes, hours.toInt(), minutes)
+            hours > 0 && seconds > 0 -> getString(R.string.duration_hours_seconds, hours.toInt(), seconds)
+            hours > 0 -> getString(R.string.duration_hours, hours.toInt())
+            minutes > 0 && seconds > 0 -> getString(R.string.duration_minutes_seconds, minutes, seconds)
+            minutes > 0 -> getString(R.string.duration_minutes, minutes)
+            else -> getString(R.string.duration_seconds, seconds)
+        }
     }

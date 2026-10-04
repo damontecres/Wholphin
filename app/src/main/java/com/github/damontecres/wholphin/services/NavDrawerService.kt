@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
@@ -69,10 +71,11 @@ class NavDrawerService
                     userDto?.id,
                     discoverActive,
                 )
-                _state.update { NavDrawerItemState() }
                 try {
                     if (user != null && userDto != null && user.id == userDto.id) {
                         updateNavDrawer(user, userDto, discoverActive)
+                    } else {
+                        _state.update { NavDrawerItemState() }
                     }
                 } catch (ex: CancellationException) {
                     throw ex
@@ -132,13 +135,22 @@ class NavDrawerService
                     .content.items
             val recordingFolders =
                 if (tvAccess) {
-                    api.liveTvApi
-                        .getRecordingFolders(userId = userId)
-                        .content.items
-                        .map { it.id }
-                        .toSet()
+                    try {
+                        api.liveTvApi
+                            .getRecordingFolders(userId = userId)
+                            .content.items
+                            .map { it.id }
+                            .toSet()
+                    } catch (ex: InvalidStatusException) {
+                        if (ex.status == 401 || ex.status == 403) {
+                            Timber.w("Got HTTP %s querying for recording folders", ex.status)
+                            emptySet()
+                        } else {
+                            throw ex
+                        }
+                    }
                 } else {
-                    setOf()
+                    emptySet()
                 }
             val libraries =
                 userViews
@@ -177,7 +189,7 @@ class NavDrawerService
          */
         suspend fun updateNavDrawer(
             user: JellyfinUser,
-            userDto: UserDto,
+            userDto: ServerUserConfig,
             discoverActive: Boolean,
         ) {
             val builtins =
@@ -234,6 +246,7 @@ class NavDrawerService
                 it.copy(
                     items = items,
                     moreItems = moreItems,
+                    allLibraries = allLibraries,
                 )
             }
         }
@@ -244,6 +257,7 @@ data class NavDrawerItemState(
     val moreItems: List<NavDrawerItem> = emptyList(),
     val nowPlayingEnabled: Boolean = false,
     val nowPlayingTitle: String? = null,
+    val allLibraries: List<Library> = emptyList(),
 )
 
 val UserDto.tvAccess: Boolean get() = policy?.enableLiveTvAccess == true

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.preferences
 
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.UserConfiguration
 
@@ -8,6 +9,7 @@ import org.jellyfin.sdk.model.api.UserConfiguration
  */
 data class UserPreferences(
     val appPreferences: AppPreferences,
+    val userPreferences: JellyfinUserPreferences?,
 )
 
 val DefaultUserConfiguration =

@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -48,6 +50,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.AudioItem
+import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
@@ -65,7 +68,6 @@ fun NowPlayingOverlay(
     state: NowPlayingState,
     player: Player,
     current: AudioItem?,
-    queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
     onClickSong: (Int, AudioItem) -> Unit,
     onLongClickSong: (Int, AudioItem) -> Unit,
@@ -78,6 +80,7 @@ fun NowPlayingOverlay(
 ) {
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+    val currentItemFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
 
     var queueHasFocus by remember { mutableStateOf(false) }
@@ -89,13 +92,16 @@ fun NowPlayingOverlay(
         },
         animationSpec = tween(durationMillis = 500),
     )
-    val listState = rememberLazyListState()
+    val listState =
+        rememberLazyListState(
+            initialFirstVisibleItemIndex = state.musicServiceState.currentIndex,
+        )
     var showButtons by remember { mutableStateOf(true) }
 
     val firstFocusRequester = remember { FocusRequester() }
     BackHandler(!showButtons) {
         scope.launch {
-            listState.animateScrollToItem(0)
+            listState.scrollToItem(0)
             firstFocusRequester.tryRequestFocus()
         }
     }
@@ -141,6 +147,12 @@ fun NowPlayingOverlay(
                         .align(Alignment.CenterHorizontally),
             )
         }
+        val queue =
+            rememberQueue(
+                player,
+                state.musicServiceState.queueVersion,
+                state.musicServiceState.queueSize,
+            )
         if (queue.isEmpty()) {
             Text("No items")
         } else {
@@ -158,12 +170,16 @@ fun NowPlayingOverlay(
                         .onFocusChanged {
                             queueHasFocus = it.hasFocus
                         }.focusProperties {
+                            onEnter = {
+                                currentItemFocusRequester.tryRequestFocus()
+                            }
                             onExit = {
                                 if (requestedFocusDirection == FocusDirection.Up) focusRequester.requestFocus()
                             }
                         },
             ) {
                 itemsIndexed(queue, key = { _, song -> song.key }) { index, song ->
+                    val bringIntoViewRequester = remember { BringIntoViewRequester() }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
@@ -176,7 +192,8 @@ fun NowPlayingOverlay(
                                 .onFocusChanged {
                                     if (it.hasFocus) showButtons = index < 3
                                     controllerViewState.pulseControls()
-                                }.animateItem(),
+                                }.animateItem()
+                                .bringIntoViewRequester(bringIntoViewRequester),
                     ) {
                         SongListItem(
                             title = song.title,
@@ -193,6 +210,9 @@ fun NowPlayingOverlay(
                                     .ifElse(
                                         index == 0,
                                         Modifier.focusRequester(firstFocusRequester),
+                                    ).ifElse(
+                                        index == state.musicServiceState.currentIndex,
+                                        Modifier.focusRequester(currentItemFocusRequester),
                                     ),
                         )
                         Row(
@@ -203,12 +223,22 @@ fun NowPlayingOverlay(
                             MoveButton(
                                 icon = R.string.fa_caret_up,
                                 enabled = index > 0,
-                                onClick = { onMoveQueue.invoke(index, MoveDirection.UP) },
+                                onClick = {
+                                    onMoveQueue.invoke(index, MoveDirection.UP)
+                                    scope.launch {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
+                                },
                             )
                             MoveButton(
                                 icon = R.string.fa_caret_down,
                                 enabled = index < queue.lastIndex,
-                                onClick = { onMoveQueue.invoke(index, MoveDirection.DOWN) },
+                                onClick = {
+                                    onMoveQueue.invoke(index, MoveDirection.DOWN)
+                                    scope.launch {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
+                                },
                             )
                             Button(
                                 onClick = { onClickMoreItem.invoke(index, song) },

@@ -15,6 +15,8 @@ import org.acra.ReportField
 import org.acra.config.dialog
 import org.acra.data.StringFormat
 import org.acra.ktx.initAcra
+import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.model.ServerVersion
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -120,5 +122,7 @@ class WholphinApplication :
     companion object {
         lateinit var instance: WholphinApplication
             private set
+
+        val minimumServerVersion: ServerVersion = Jellyfin.minimumVersion
     }
 }

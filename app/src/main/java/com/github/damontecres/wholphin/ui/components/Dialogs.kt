@@ -63,20 +63,19 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.formatBitrate
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
-import com.github.damontecres.wholphin.ui.playback.isDown
-import com.github.damontecres.wholphin.ui.playback.isUp
-import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
@@ -86,7 +85,7 @@ import java.util.UUID
 data class DialogParams(
     val fromLongClick: Boolean,
     val title: String,
-    val items: List<DialogItem>,
+    val items: List<DialogItemEntry>,
 )
 
 sealed interface DialogItemEntry
@@ -320,30 +319,13 @@ fun DialogPopupContent(
                             modifier =
                                 Modifier
                                     .focusRequester(focusRequesters[index])
-                                    .ifElse(
+                                    .lazyListWrapScrolling(
+                                        listState,
+                                        focused,
                                         index == 0,
-                                        Modifier.onKeyEvent {
-                                            if (focused && isUp(it) && it.type == KeyEventType.KeyDown) {
-                                                scope.launch {
-                                                    listState.animateScrollToItem(dialogItems.lastIndex)
-                                                    focusRequesters[dialogItems.lastIndex].tryRequestFocus()
-                                                }
-                                                return@onKeyEvent true
-                                            }
-                                            false
-                                        },
-                                    ).ifElse(
                                         index == dialogItems.lastIndex,
-                                        Modifier.onKeyEvent {
-                                            if (focused && isDown(it) && it.type == KeyEventType.KeyDown) {
-                                                scope.launch {
-                                                    listState.animateScrollToItem(0)
-                                                    focusRequesters[0].tryRequestFocus()
-                                                }
-                                                return@onKeyEvent true
-                                            }
-                                            false
-                                        },
+                                        focusRequesters[0],
+                                        focusRequesters[dialogItems.lastIndex],
                                     ),
                         )
                     }
@@ -640,6 +622,16 @@ fun chooseVersionParams(
                             }
                         Text(text)
                     },
+                    trailingContent = {
+                        val runtime =
+                            remember {
+                                source.runTimeTicks
+                                    ?.ticks
+                                    ?.roundMinutes
+                                    .toString()
+                            }
+                        Text(runtime)
+                    },
                     onClick = { onClick.invoke(index) },
                 )
             },
@@ -663,8 +655,9 @@ fun chooseStream(
     type: MediaStreamType,
     preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
-): DialogParams =
-    DialogParams(
+): DialogParams {
+    val filteredStreams = streams.filter { it.type == type }
+    return DialogParams(
         fromLongClick = false,
         title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
         items =
@@ -697,10 +690,12 @@ fun chooseStream(
                             onClick = { onClick.invoke(TrackIndex.ONLY_FORCED) },
                         ),
                     )
+                    if (filteredStreams.isNotEmpty()) {
+                        add(DialogItemDivider)
+                    }
                 }
                 addAll(
-                    streams
-                        .filter { it.type == type }
+                    filteredStreams
                         .let {
                             if (type == MediaStreamType.SUBTITLE && preferredSubtitleLanguage.isNotNullOrBlank()) {
                                 it.sortedByDescending { it.language != null && it.language == preferredSubtitleLanguage }
@@ -716,7 +711,9 @@ fun chooseStream(
                                 },
                                 headlineContent = {
                                     Text(
-                                        text = simpleStream.streamTitle ?: simpleStream.displayTitle,
+                                        text =
+                                            simpleStream.streamTitle
+                                                ?: simpleStream.displayTitle,
                                     )
                                 },
                                 supportingContent = {
@@ -728,3 +725,4 @@ fun chooseStream(
                 )
             },
     )
+}
