@@ -685,4 +685,5 @@
     <string name="folders_title">Mappar</string>
     <string name="user_views">Användarvisningar</string>
     <string name="genre_movies">%1$sfilmer</string>
+    <string name="quality_profile">Kvalitetsprofil</string>
 </resources>
