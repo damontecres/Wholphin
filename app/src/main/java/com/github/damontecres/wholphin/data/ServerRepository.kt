@@ -29,6 +29,7 @@ import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
+import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.time.ZonedDateTime
@@ -318,8 +319,17 @@ class ServerRepository
          */
         suspend fun updateUserDto() {
             val userDto by apiClient.userApi.getCurrentUser()
+            updateUserDto(userDto)
+        }
+
+        /**
+         * Update [currentUserDto] with the specified [UserDto]
+         *
+         * This will only update if the [UserDto] is for the [currentUser]
+         */
+        fun updateUserDto(userDto: UserDto) {
             _currentUserDto.update {
-                if (it?.id == userDto.id && currentUser?.id == userDto.id) ServerUserConfig(userDto) else it
+                if (currentUser?.id == userDto.id) ServerUserConfig(userDto) else it
             }
         }
 
