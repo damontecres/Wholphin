@@ -57,7 +57,8 @@ message PlaybackOverrides{
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
-  bool direct_play_hdr10_plus = 9;
+  int32 max_resolution = 9;
+  bool direct_play_hdr10_plus = 10;
 }
 
 message PlaybackPreferences {

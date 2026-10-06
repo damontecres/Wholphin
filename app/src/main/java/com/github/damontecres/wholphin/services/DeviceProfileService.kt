@@ -66,6 +66,7 @@ class DeviceProfileService
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 preferAc3ForSurround = appPrefs.experimentalPreferences.enabled { preferAc3Surround },
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
+                                maxResolution = newConfig.overrides.maxResolution,
                             )
                     }
                     this@DeviceProfileService.deviceProfile!!
