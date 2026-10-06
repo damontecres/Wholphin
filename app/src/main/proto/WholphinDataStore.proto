@@ -57,11 +57,12 @@ message PlaybackOverrides{
   bool direct_play_dolby_vision_e_l = 6 [deprecated = true];
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
-  HdrOverrideMode dovi_profile_5_override = 9;
-  HdrOverrideMode dovi_profile_7_override = 10;
-  HdrOverrideMode dovi_profile_8_override = 11;
-  HdrOverrideMode hdr10_override = 12;
-  HdrOverrideMode hdr10_plus_override = 13;
+  int32 max_resolution = 9;
+  HdrOverrideMode dovi_profile_5_override = 10;
+  HdrOverrideMode dovi_profile_7_override = 11;
+  HdrOverrideMode dovi_profile_8_override = 12;
+  HdrOverrideMode hdr10_override = 13;
+  HdrOverrideMode hdr10_plus_override = 14;
 }
 
 message PlaybackPreferences {

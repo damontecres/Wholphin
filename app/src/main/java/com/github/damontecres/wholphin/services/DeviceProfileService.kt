@@ -70,6 +70,7 @@ class DeviceProfileService
                                 forceDisabledHdr =
                                     appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, newConfig.jellyfinTenEleven),
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
+                                maxResolution = newConfig.overrides.maxResolution,
                             )
                     }
                     this@DeviceProfileService.deviceProfile!!

@@ -48,6 +48,7 @@ class TestDeviceProfileUtils {
             preferAc3ForSurround = false,
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
+            maxResolution = 0,
         )
 
     @Test
