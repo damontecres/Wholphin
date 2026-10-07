@@ -210,9 +210,7 @@ class UpdateChecker
                 okHttpClient.newCall(request).execute().use {
                     if (it.isSuccessful) {
                         Timber.v("Request successful for ${release.downloadUrl}")
-                        withContext(WholphinDispatchers.Main) {
-                            callback.contentLength(it.body.contentLength())
-                        }
+                        callback.contentLength(it.body.contentLength())
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val contentValues =
                                 ContentValues().apply {
@@ -397,9 +395,7 @@ suspend fun copyTo(
         while (bytes >= 0) {
             out.write(buffer, 0, bytes)
             bytesCopied += bytes
-            withContext(WholphinDispatchers.Main) {
-                callback.bytesDownloaded(bytesCopied)
-            }
+            callback.bytesDownloaded(bytesCopied)
             bytes = input.read(buffer)
         }
         return@withContext bytesCopied
