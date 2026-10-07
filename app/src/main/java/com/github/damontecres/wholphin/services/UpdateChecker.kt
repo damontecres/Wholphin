@@ -416,7 +416,12 @@ fun getDownloadUrl(
         buildList {
             add("$ASSET_NAME${releaseSuffix}$abiSuffix.apk")
             add("$ASSET_NAME$releaseSuffix.apk")
-            if (!debug) add("$ASSET_NAME.apk")
+            if (!debug) {
+                if (abiSuffix.isNotNullOrBlank()) {
+                    add("$ASSET_NAME$abiSuffix.apk")
+                }
+                add("$ASSET_NAME.apk")
+            }
         }
     var preferredAsset: JsonObject? = null
     outer@ for (name in preferredNames) {
