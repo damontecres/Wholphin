@@ -609,6 +609,7 @@ fun AlbumDetailsPage(
                                                 ),
                                             canRemoveFromQueue = false,
                                             actions = moreDialogActions,
+                                            showGoTo = true,
                                         )
                                 },
                                 cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
