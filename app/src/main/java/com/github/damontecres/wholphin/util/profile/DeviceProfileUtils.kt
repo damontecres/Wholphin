@@ -128,6 +128,7 @@ fun createDeviceProfile(
     val supportsHevcDolbyVisionEL = mediaTest.supportsHevcDolbyVisionEL()
     val supportsHevcHDR10 = mediaTest.supportsHevcHDR10()
     val supportsHevcHDR10Plus = mediaTest.supportsHevcHDR10Plus()
+    val displaySupportsDolbyVision = mediaTest.displaySupportsDolbyVision()
 
     name = "AndroidTV-Default"
 
@@ -516,7 +517,7 @@ fun createDeviceProfile(
                 if (!supportsHevcHDR10) add(VideoRangeType.HDR10.serialName)
             }
 
-            if (jellyfinTenEleven && KnownDefects.hevcDoviHdr10PlusBug) {
+            if (jellyfinTenEleven && KnownDefects.hevcDoviHdr10PlusBug && displaySupportsDolbyVision) {
                 add("DOVIWithHDR10Plus")
                 add("DOVIWithELHDR10Plus")
             }
