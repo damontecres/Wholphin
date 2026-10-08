@@ -237,6 +237,8 @@ class PlayExternalViewModel
                             }
 
                             // VLC
+                            // A zero position alone does not override VLC's saved resume position.
+                            putExtra("from_start", positionMs == 0L)
                             if (subtitleUrls.isNotEmpty()) {
                                 putExtra("subtitles_location", subtitleUrls.first().toString())
                             }
