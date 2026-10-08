@@ -76,6 +76,7 @@ class TestHomeRowSamples {
                 HomeRowConfig.Recordings(),
                 HomeRowConfig.TvPrograms(),
                 HomeRowConfig.TvChannels(),
+                HomeRowConfig.CsfdTvTips(),
                 HomeRowConfig.Suggestions(parentId = UUID.randomUUID()),
             )
     }
@@ -99,6 +100,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.TvPrograms -> foundTypes.add(it::class)
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
                 is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
+                is HomeRowConfig.CsfdTvTips -> foundTypes.add(it::class)
                 is HomeRowConfig.Studios -> foundTypes.add(it::class)
             }
         }

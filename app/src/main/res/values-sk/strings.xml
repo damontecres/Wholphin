@@ -167,6 +167,7 @@
     <string name="video">Video</string>
     <string name="videos">Videá</string>
     <string name="watch_live">Sledovať naživo</string>
+    <string name="csfd_tv_tips">TV tipy dňa</string>
     <plurals name="years_old">
         <item quantity="one">vo veku %1$d roka</item>
         <item quantity="few">vo veku %1$d rokov</item>

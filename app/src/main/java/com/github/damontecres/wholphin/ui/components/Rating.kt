@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
@@ -113,6 +114,46 @@ fun SimpleStarRating(
                 modifier = Modifier.height(height),
             )
         }
+    }
+}
+
+// ČSFD colours: red for 70%+, blue for 30-69%, dark grey ("odpad") below 30%
+private val CsfdRed = Color(0xFFBA0305)
+private val CsfdBlue = Color(0xFF658DB4)
+private val CsfdGrey = Color(0xFF535353)
+
+fun csfdColor(percent: Int): Color =
+    when {
+        percent >= 70 -> CsfdRed
+        percent >= 30 -> CsfdBlue
+        else -> CsfdGrey
+    }
+
+fun csfdInlineContentId(percent: Int) = "csfd:${percent.coerceIn(0, 100)}"
+
+/**
+ * ČSFD style rating: percentage in a rounded square coloured by the rating
+ */
+@Composable
+fun CsfdRating(
+    percent: Int,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(csfdColor(percent)),
+    ) {
+        Text(
+            text = "$percent%",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            fontSize = with(LocalDensity.current) { (LocalTextStyle.current.fontSize.toDp() * .8f).toSp() },
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
     }
 }
 

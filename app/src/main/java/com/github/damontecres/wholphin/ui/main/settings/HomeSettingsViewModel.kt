@@ -250,6 +250,14 @@ class HomeSettingsViewModel
                             )
                         }
 
+                        MetaRowType.CSFD_TV_TIPS -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = ResStringProvider(R.string.csfd_tv_tips),
+                                config = HomeRowConfig.CsfdTvTips(),
+                            )
+                        }
+
                         MetaRowType.FAVORITES,
                         MetaRowType.COLLECTION,
                         MetaRowType.PLAYLIST,
@@ -745,6 +753,11 @@ class HomeSettingsViewModel
 
                                 is HomeRowConfig.TvChannels -> {
                                     it.config.updateViewOptions(preset.liveTv)
+                                }
+
+                                is HomeRowConfig.CsfdTvTips -> {
+                                    // Keep tips small regardless of the preset
+                                    it.config
                                 }
                             }
                         it.copy(config = newConfig)

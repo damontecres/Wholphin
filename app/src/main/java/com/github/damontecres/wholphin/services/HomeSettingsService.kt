@@ -98,6 +98,7 @@ class HomeSettingsService
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
         private val displayPreferencesService: DisplayPreferencesService,
+        private val csfdTvTipsService: CsfdTvTipsService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -315,7 +316,15 @@ class HomeSettingsService
                         config = HomeRowConfig.ContinueWatchingCombined(),
                     ),
                 )
-            val rowConfig = continueWatchingRow + includedIds
+            val csfdTipsRow =
+                listOf(
+                    HomeRowConfigDisplay(
+                        id = includedIds.size + 2,
+                        title = ResStringProvider(R.string.csfd_tv_tips),
+                        config = HomeRowConfig.CsfdTvTips(),
+                    ),
+                )
+            val rowConfig = csfdTipsRow + continueWatchingRow + includedIds
             return HomePageResolvedSettings(userId, rowConfig)
         }
 
@@ -548,6 +557,14 @@ class HomeSettingsService
                     HomeRowConfigDisplay(
                         id = id,
                         title = ResStringProvider(R.string.channels),
+                        config,
+                    )
+                }
+
+                is HomeRowConfig.CsfdTvTips -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = ResStringProvider(R.string.csfd_tv_tips),
                         config,
                     )
                 }
@@ -1159,6 +1176,30 @@ class HomeSettingsService
                             showViewMore = it.size >= limit,
                         )
                     }
+                }
+
+                is HomeRowConfig.CsfdTvTips -> {
+                    val title = ResStringProvider(R.string.csfd_tv_tips)
+                    val ids = csfdTvTipsService.getItemIds(limit.coerceAtMost(10))
+                    val items =
+                        if (ids.isEmpty()) {
+                            listOf()
+                        } else {
+                            // The plugin returns best rated first; the server does not keep the order of `ids`
+                            val byId =
+                                GetItemsRequestHandler
+                                    .execute(
+                                        api,
+                                        GetItemsRequest(
+                                            userId = userDto.id,
+                                            ids = ids,
+                                            fields = HomeItemFields,
+                                        ),
+                                    ).toBaseItems(row.viewOptions.useSeries)
+                                    .associateBy { it.id }
+                            ids.mapNotNull { byId[it] }
+                        }
+                    Success(title, items, row.viewOptions, rowType = row)
                 }
 
                 is HomeRowConfig.Suggestions -> {
