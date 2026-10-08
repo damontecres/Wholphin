@@ -14,7 +14,8 @@ coreKtx = "1.19.0"
 appcompat = "1.8.0"
 composeBom = "2026.09.00"
 mockk = "1.14.11"
-robolectric = "4.16.1"
+profileinstaller = "1.4.1"
+robolectric = "4.17"
 multiplatformMarkdownRenderer = "0.45.0"
 okhttpBom = "5.5.0"
 programguide = "1.6.0"
@@ -87,6 +88,8 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 androidx-tvprovider = { module = "androidx.tvprovider:tvprovider", version.ref = "tvprovider" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltCompiler" }
+androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
+
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoServiceKsp" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }

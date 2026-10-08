@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.data
 import android.content.Context
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -48,9 +49,9 @@ class ServerRepository
         private var _current = MutableStateFlow<CurrentUser?>(null)
         val current: StateFlow<CurrentUser?> = _current
 
-        private var _currentUserDto = MutableStateFlow<UserDto?>(null)
-        val currentUserDto: UserDto? get() = _currentUserDto.value
-        val currentUserDtoFlow: StateFlow<UserDto?> get() = _currentUserDto
+        private var _currentUserDto = MutableStateFlow<ServerUserConfig?>(null)
+        val currentUserDto: ServerUserConfig? get() = _currentUserDto.value
+        val currentUserDtoFlow: StateFlow<ServerUserConfig?> get() = _currentUserDto
 
         val currentServer: JellyfinServer? get() = _current.value?.server
         val currentServerFlow: Flow<JellyfinServer?> get() = _current.map { it?.server }
@@ -115,7 +116,7 @@ class ServerRepository
                 val currentUser = CurrentUser(updatedServer, updatedUser)
                 mostRecentServerProvider.save(currentUser)
                 _current.value = currentUser
-                _currentUserDto.value = userDto
+                _currentUserDto.value = ServerUserConfig(userDto)
                 return@withContext currentUser
             }
 
@@ -325,8 +326,17 @@ class ServerRepository
          */
         suspend fun updateUserDto() {
             val userDto by apiClient.userApi.getCurrentUser()
+            updateUserDto(userDto)
+        }
+
+        /**
+         * Update [currentUserDto] with the specified [UserDto]
+         *
+         * This will only update if the [UserDto] is for the [currentUser]
+         */
+        fun updateUserDto(userDto: UserDto) {
             _currentUserDto.update {
-                if (it?.id == userDto.id && currentUser?.id == userDto.id) userDto else it
+                if (currentUser?.id == userDto.id) ServerUserConfig(userDto) else it
             }
         }
     }

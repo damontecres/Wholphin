@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import com.github.damontecres.wholphin.test.nonBlankString
@@ -153,6 +154,7 @@ class ServerRepositoryTest {
             hasConfiguredPassword = true,
             hasConfiguredEasyPassword = false,
         )
+    private val serverUserConfig = ServerUserConfig(userDto)
 
     private fun setUpCurrentUser(
         serverRepository: ServerRepository,
@@ -200,7 +202,7 @@ class ServerRepositoryTest {
 
             Assert.assertEquals(server, serverRepository.currentServer)
             Assert.assertEquals(user, serverRepository.currentUser)
-            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+            Assert.assertEquals(serverUserConfig, serverRepository.currentUserDto)
 
             coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
             verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateUser(user) }
@@ -231,7 +233,7 @@ class ServerRepositoryTest {
             }
             Assert.assertEquals(server, serverRepository.currentServer)
             Assert.assertEquals(user, serverRepository.currentUser)
-            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+            Assert.assertEquals(serverUserConfig, serverRepository.currentUserDto)
         }
 
     @Test
@@ -367,7 +369,7 @@ class ServerRepositoryTest {
 
             Assert.assertEquals(server, serverRepository.currentServer)
             Assert.assertEquals(user, serverRepository.currentUser)
-            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+            Assert.assertEquals(serverUserConfig, serverRepository.currentUserDto)
 
             coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
         }
@@ -406,7 +408,7 @@ class ServerRepositoryTest {
 
             Assert.assertEquals(server, serverRepository.currentServer)
             Assert.assertEquals(user, serverRepository.currentUser)
-            Assert.assertEquals(userDto, serverRepository.currentUserDto)
+            Assert.assertEquals(serverUserConfig, serverRepository.currentUserDto)
 
             coVerify(exactly = 1) { mockMostRecentServerProvider.save(CurrentUser(server, user)) }
         }

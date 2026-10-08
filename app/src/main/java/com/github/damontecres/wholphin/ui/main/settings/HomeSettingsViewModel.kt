@@ -595,7 +595,7 @@ class HomeSettingsViewModel
                             }
                         if (shouldSave) {
                             homeSettingsService.saveToLocal(user.id, settings)
-                            homeSettingsService.updateCurrent(settings)
+                            homeSettingsService.updateCurrent(user.id, settings)
                             showSaveToast()
                         } else {
                             Timber.d("No changes")
@@ -616,7 +616,11 @@ class HomeSettingsViewModel
             _state.update {
                 update.invoke(it)
             }
-            homeSettingsService.currentSettings.update { HomePageResolvedSettings(state.value.rows) }
+            serverRepository.currentUser?.id?.let { userId ->
+                homeSettingsService.currentSettings.update {
+                    HomePageResolvedSettings(userId, state.value.rows)
+                }
+            }
         }
 
         fun resizeCards(relative: Int) {
