@@ -69,13 +69,9 @@ class ScreensaverService
                         val enabled =
                             prefs.appPreferences.interfacePreferences.screensaverPreference.enabled
                         keepScreenOnInternal(enabled)
-                        ScreensaverState(
+                        it.copy(
                             enabled = enabled,
-                            enabledTemp = false,
-                            active = false,
-                            paused = false,
                             dimEnabled = prefs.appPreferences.interfacePreferences.screensaverPreference.dimEnabled,
-                            dimActive = false,
                         )
                     }
                 }.launchIn(scope)
@@ -185,7 +181,10 @@ class ScreensaverService
                             paused = keep,
                         )
                     }
-                    if (!keep) {
+                    if (keep) {
+                        waitJob?.cancel()
+                        dimJob?.cancel()
+                    } else {
                         pulse()
                     }
                 }
