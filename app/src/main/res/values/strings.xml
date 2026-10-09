@@ -332,6 +332,8 @@
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
     <string name="direct_play_ass">Use libass for ASS subtitles</string>
     <string name="direct_play_pgs">Direct play PGS subtitles</string>
+    <string name="direct_play_hdr10_plus">Direct play HDR10+ as HDR10</string>
+    <string name="direct_play_hdr10_plus_summary">For devices that can decode HDR10+ streams but do not advertise HDR10+ support</string>
     <string name="downmix_stereo">Always downmix to stereo</string>
     <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
     <string name="global_content_scale">Default content scale</string>
