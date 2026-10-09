@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.nav.PrebakeBackdrop
 import kotlinx.coroutines.delay
 
 /**
@@ -50,6 +51,7 @@ fun GridCard(
     fillWidth: Int? = null,
     fillHeight: Int? = null,
 ) {
+    PrebakeBackdrop(item)
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
     var focusedAfterDelay by remember { mutableStateOf(false) }

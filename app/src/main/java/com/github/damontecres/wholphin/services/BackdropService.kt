@@ -31,6 +31,7 @@ import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 
 /**
  * Stores state for the backdrop of the app shown on non-full screen pages
@@ -46,7 +47,7 @@ class BackdropService
         private val imageUrlService: ImageUrlService,
         private val preferences: DataStore<AppPreferences>,
     ) {
-        private val extractedColorCache = LruCache<String, ExtractedColors>(50)
+        private val extractedColorCache = LruCache<String, ExtractedColors>(400)
 
         private val _backdropFlow = MutableStateFlow<BackdropResult>(BackdropResult.NONE)
         val backdropFlow = _backdropFlow
@@ -146,6 +147,9 @@ class BackdropService
                         ImageRequest
                             .Builder(context)
                             .data(imageUrl)
+                            // A small version is plenty for picking colours, and far quicker to
+                            // decode than the full image
+                            .size(320, 180)
                             .allowHardware(false)
                             .bitmapConfig(Bitmap.Config.ARGB_8888)
                             .build()
@@ -179,6 +183,15 @@ class BackdropService
                 return b > r && (b + g) > (r * 1.5f)
             }
 
+        // The vivid colour has to cover more than this share of the image to be used for the glows
+        private val VIVID_SHARE_THRESHOLD = 0.35f
+
+        // Swatches within this many degrees of hue count as the same colour as the vivid one
+        private val VIVID_HUE_RANGE = 30f
+
+        // Swatches less saturated than this (0-1) are not counted as vivid
+        private val VIVID_MIN_SATURATION = 0.3f
+
         private fun toColor(
             swatch: Palette.Swatch?,
             alpha: Float,
@@ -187,9 +200,15 @@ class BackdropService
         /**
          * Extracts colors from a bitmap using Android's Palette API.
          *
+         * If the most vivid colour covers more than [VIVID_SHARE_THRESHOLD] of the image, the vivid
+         * colours are used:
          * - Primary (Bottom-Right): darkVibrant -> darkMuted -> default
          * - Secondary (Top-Left): Smart selection based on color temperature (prefers cool colors)
          * - Tertiary (Top-Right): vibrant -> lightVibrant -> default
+         *
+         * Otherwise the most common colours are used:
+         * - Primary (Bottom-Right) and Tertiary (Top-Right): most common colour
+         * - Secondary (Top-Left): second most common colour
          *
          * @param bitmap The bitmap to extract colors from
          * @return ExtractedColors containing primary, secondary, and tertiary colors
@@ -206,24 +225,62 @@ class BackdropService
                 val lightMuted = palette.lightMutedSwatch
                 val dominant = palette.dominantSwatch
 
-                // Primary (Bottom-Right)
-                val primaryColor = toColor(darkVibrant ?: darkMuted, .4f)
+                // The colours the image is mostly made of
+                val byCoverage = palette.swatches.sortedByDescending { it.population }
+                val mostCommon = dominant ?: byCoverage.getOrNull(0)
+                val secondMostCommon = byCoverage.firstOrNull { it != mostCommon }
 
-                // Secondary (Top-Left): Smart selection based on color properties
-                // If Vibrant is cool (blue/purple), use it. If Vibrant is warm (yellow/orange) and Muted is cool, use Muted.
-                // This ensures we get cool tones (blue/purple) for top-left when available
+                // How much of the image the most vivid colour covers, counting every swatch of a
+                // similar hue that is not washed out
+                val mostVivid = vibrant ?: lightVibrant ?: darkVibrant
+                val totalPopulation = palette.swatches.sumOf { it.population }
+                val vividShare =
+                    if (mostVivid == null || totalPopulation == 0) {
+                        0f
+                    } else {
+                        val vividHue = mostVivid.hsl[0]
+                        palette.swatches
+                            .filter {
+                                val hueDistance = abs(it.hsl[0] - vividHue).let { d -> minOf(d, 360f - d) }
+                                hueDistance <= VIVID_HUE_RANGE && it.hsl[1] >= VIVID_MIN_SATURATION
+                            }.sumOf { it.population }
+                            .toFloat() / totalPopulation
+                    }
+                val useVivid = vividShare > VIVID_SHARE_THRESHOLD
+
+                // Primary (Bottom-Right)
+                val primaryColor =
+                    if (useVivid) {
+                        toColor(darkVibrant ?: darkMuted, .4f)
+                    } else {
+                        toColor(mostCommon ?: darkVibrant ?: darkMuted, .4f)
+                    }
+
+                // Secondary (Top-Left)
                 val secondaryColor =
-                    when {
-                        vibrant != null && vibrant.coolColor -> vibrant
-                        muted != null && muted.coolColor -> muted
-                        vibrant != null -> vibrant
-                        muted != null -> muted
-                        else -> null
-                    }.let { toColor(it, .4f) }
+                    if (useVivid) {
+                        // If Vibrant is cool (blue/purple), use it. If Vibrant is warm (yellow/orange)
+                        // and Muted is cool, use Muted
+                        when {
+                            vibrant != null && vibrant.coolColor -> vibrant
+                            muted != null && muted.coolColor -> muted
+                            vibrant != null -> vibrant
+                            muted != null -> muted
+                            else -> null
+                        }.let { toColor(it, .4f) }
+                    } else {
+                        toColor(secondMostCommon ?: mostCommon ?: vibrant ?: muted, .4f)
+                    }
 
                 // Tertiary (Top-Right under image)
-                val tertiaryColor = toColor(vibrant ?: lightVibrant, .35f)
+                val tertiaryColor =
+                    if (useVivid) {
+                        toColor(vibrant ?: lightVibrant, .35f)
+                    } else {
+                        toColor(mostCommon ?: vibrant ?: lightVibrant, .35f)
+                    }
 
+                Timber.v("Vivid colour covers %s of the image, useVivid=%s", vividShare, useVivid)
                 Timber.v(
                     "Colors extracted: primary=%s, secondary=%s, tertiary=%s",
                     primaryColor,

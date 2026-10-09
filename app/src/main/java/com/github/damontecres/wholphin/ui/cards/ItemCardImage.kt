@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
+import com.github.damontecres.wholphin.ui.nav.PrebakeBackdrop
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -66,6 +67,7 @@ fun ItemCardImage(
     fillWidth: Int? = null,
     fillHeight: Int? = null,
 ) {
+    PrebakeBackdrop(item)
     val imageUrlService = LocalImageUrlService.current
     val imageUrl =
         remember(item, imageType, fillWidth, fillHeight) {

@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.nav.PrebakeBackdrop
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.ImageType
 
@@ -51,6 +52,7 @@ fun SeasonCard(
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
 ) {
+    PrebakeBackdrop(item)
     val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
         title = item?.title,
