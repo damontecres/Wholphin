@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -262,6 +263,11 @@ fun Backdrop(
             // Opacity of the whole blurred stack as one group: 0 = glows only, 1 = full effect.
             // The stack keeps its look; this only fades between the two
             val blurOpacity = 0.43f
+            // Animated titles (by genre): how much of the blurred copy they keep.
+            // 1 = same as everything else, 0 = no blurred copy, just the glows
+            val blurOnAnimation = 0f
+
+            fun blurOpacityFor(animated: Boolean) = if (animated) blurOpacity * blurOnAnimation else blurOpacity
             val blurRadius = 30.dp
             // One copy is drawn per line, bottom to top, as "blend mode to opacity". Stack several
             // to combine modes, e.g. SrcOver (normal), Screen, Overlay, Softlight, Hardlight,
@@ -390,12 +396,13 @@ fun Backdrop(
                     secondary: Color,
                     tertiary: Color,
                     glows: Boolean,
+                    animated: Boolean,
                 ): List<Any?> =
                     listOf(
                         imageUrl,
                         listOf(primary, secondary, tertiary, baseBackgroundColor),
                         listOf(glows, isRtl, bakeWidth, bakeHeight, darkCornerWiden, darkCornerDrop),
-                        listOf(blurResolution, blurScale, blurWiden, blurShiftX, blurShiftY, blurOpacity),
+                        listOf(blurResolution, blurScale, blurWiden, blurShiftX, blurShiftY, blurOpacityFor(animated)),
                         blurLayers,
                         vignettes,
                         bakeSmooth,
@@ -407,6 +414,7 @@ fun Backdrop(
                     secondary: Color,
                     tertiary: Color,
                     glows: Boolean,
+                    animated: Boolean,
                 ): ImageBitmap? =
                     bakeBackdropBackground(
                         context = context,
@@ -422,7 +430,7 @@ fun Backdrop(
                         shiftX = blurShiftX,
                         shiftY = blurShiftY,
                         layers = blurLayers,
-                        groupOpacity = blurOpacity,
+                        groupOpacity = blurOpacityFor(animated),
                         drawBackground = if (glows) glowPainter(primary, secondary, tertiary) else drawPlain,
                         drawOverlay = drawVignette,
                         smoothRadius = (bakeWidth * bakeSmooth).roundToInt(),
@@ -438,6 +446,7 @@ fun Backdrop(
                         targetSecondary,
                         targetTertiary,
                         showGlows,
+                        backdrop.isAnimated,
                     )
                 // The finished background, together with the image it was made for
                 val baked by produceState<Pair<String?, ImageBitmap>?>(null, bakeKey, backdrop.colorsPending) {
@@ -461,6 +470,7 @@ fun Backdrop(
                             targetSecondary,
                             targetTertiary,
                             showGlows,
+                            backdrop.isAnimated,
                         )
                     // Keep showing the previous background if this one could not be made
                     if (result != null) {
@@ -514,7 +524,7 @@ fun Backdrop(
                     val dynamicColors =
                         backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR ||
                             backdropStyle == BackdropStyle.UNRECOGNIZED
-                    val prebake: suspend (String) -> Unit = { imageUrl ->
+                    val prebake: suspend (String, Boolean) -> Unit = { imageUrl, animated ->
                         val colors = if (dynamicColors) prebakeColors(imageUrl) else ExtractedColors.DEFAULT
                         if (colors != null) {
                             val glows =
@@ -523,9 +533,9 @@ fun Backdrop(
                             val primary = targetGlow(colors.primary)
                             val secondary = targetGlow(colors.secondary)
                             val tertiary = targetGlow(colors.tertiary)
-                            val key = bakeKeyFor(imageUrl, primary, secondary, tertiary, glows)
+                            val key = bakeKeyFor(imageUrl, primary, secondary, tertiary, glows, animated)
                             if (bakedBackgrounds.get(key) == null) {
-                                bakeFor(imageUrl, primary, secondary, tertiary, glows)?.let {
+                                bakeFor(imageUrl, primary, secondary, tertiary, glows, animated)?.let {
                                     bakedBackgrounds.put(key, it)
                                 }
                             }
@@ -590,7 +600,7 @@ fun Backdrop(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .graphicsLayer { alpha = 1f - blurOpacity.coerceIn(0f, 1f) }
+                            .graphicsLayer { alpha = 1f - blurOpacityFor(backdrop.isAnimated).coerceIn(0f, 1f) }
                             .drawBehind {
                                 if (showGlows) drawGlows() else drawRect(color = baseBackgroundColor)
                             },
@@ -711,6 +721,14 @@ fun Backdrop(
             // It has to be drawn at full screen resolution, so it is its own layer on top and
             // cannot be part of the small baked image
             val grainOpacity = 0.4f // strength: 0 = none
+            // Animated titles (by genre): how much grain they keep. 1 = same as everything else,
+            // 0 = none. The change is faded so it does not pop when moving between titles
+            val grainOnAnimation = 0f
+            val grainFactor by animateFloatAsState(
+                targetValue = if (backdrop.isAnimated) grainOnAnimation else 1f,
+                animationSpec = tween(backgroundFade.inWholeMilliseconds.toInt()),
+                label = "grain_on_animation",
+            )
             val grainSize = 0.25f // size of one grain in screen pixels: higher = coarser
             val grainContrast = 0.2f // range of greys: 0 = all neutral (no grain), 1 = black to white
             // how much the grain gathers into uneven patches: 0 = evenly fine, 1 = all patches
@@ -744,7 +762,7 @@ fun Backdrop(
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            if (grainOpacity > 0f) {
+                            if (grainOpacity * grainFactor > 0f) {
                                 val grain = grainSize.coerceAtLeast(0.25f)
                                 val shift = grainShift.value
                                 scale(scaleX = grain, scaleY = grain, pivot = Offset.Zero) {
@@ -753,7 +771,7 @@ fun Backdrop(
                                         brush = grainBrush,
                                         topLeft = shift,
                                         size = Size(size.width / grain, size.height / grain),
-                                        alpha = grainOpacity.coerceIn(0f, 1f),
+                                        alpha = (grainOpacity * grainFactor).coerceIn(0f, 1f),
                                         blendMode = grainBlendMode,
                                     )
                                     }

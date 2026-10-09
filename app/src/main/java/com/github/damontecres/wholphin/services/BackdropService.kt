@@ -20,15 +20,19 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -46,7 +50,17 @@ class BackdropService
         @param:ApplicationContext private val context: Context,
         private val imageUrlService: ImageUrlService,
         private val preferences: DataStore<AppPreferences>,
+        private val api: ApiClient,
     ) {
+        init {
+            // Lets the animation check look up a series' genres, for episodes and seasons
+            AnimatedTitles.fetchGenres = { itemId ->
+                api.userLibraryApi
+                    .getItem(itemId = itemId)
+                    .content.genres
+            }
+        }
+
         // How long focus has to rest on an item before its backdrop starts loading
         private val BACKDROP_FOCUS_DELAY_MS = 250L
 
@@ -66,7 +80,7 @@ class BackdropService
                     } else {
                         imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                     }
-                submit(item.id.toString(), imageUrl)
+                submit(item.id.toString(), imageUrl, AnimatedTitles.isAnimated(item))
             }
 
         /**
@@ -80,6 +94,7 @@ class BackdropService
         suspend fun submit(
             itemId: String,
             imageUrl: String?,
+            animated: Boolean = false,
         ) = withContext(WholphinDispatchers.IO) {
             if (backdropFlow.firstOrNull()?.imageUrl != imageUrl || imageUrl == null) {
                 _backdropFlow.update {
@@ -90,7 +105,7 @@ class BackdropService
                         colorsPending = true,
                     )
                 }
-                extractColors(itemId, imageUrl)
+                extractColors(itemId, imageUrl, animated)
             }
         }
 
@@ -106,13 +121,14 @@ class BackdropService
         private suspend fun extractColors(
             itemId: String,
             imageUrl: String?,
+            animated: Boolean,
         ) {
             // Wait a moment before loading anything, so nothing is fetched for items that are
             // only passed over while scrolling
             delay(BACKDROP_FOCUS_DELAY_MS)
             // Announce the image first, so it can start loading while the colours are worked out
             _backdropFlow.update {
-                if (it.itemId == itemId) it.copy(imageUrl = imageUrl, colorsPending = true) else it
+                if (it.itemId == itemId) it.copy(imageUrl = imageUrl, colorsPending = true, isAnimated = animated) else it
             }
             val backdropStyle =
                 preferences.data
@@ -136,6 +152,7 @@ class BackdropService
                         primaryColor = colors?.primary ?: it.primaryColor,
                         secondaryColor = colors?.secondary ?: it.secondaryColor,
                         tertiaryColor = colors?.tertiary ?: it.tertiaryColor,
+                        isAnimated = animated,
                     )
                 } else {
                     it
@@ -322,6 +339,8 @@ data class BackdropResult(
     // is not known yet (imageUrl is null), then while its colours are being worked out. Until it
     // is false again, the colours here are still the previous backdrop's
     val colorsPending: Boolean = false,
+    // True for animated titles, which get a plainer treatment (see Backdrop)
+    val isAnimated: Boolean = false,
 ) {
     val hasColors: Boolean =
         primaryColor.isSpecified ||
@@ -347,5 +366,44 @@ data class ExtractedColors(
 ) {
     companion object {
         val DEFAULT = ExtractedColors(Color.Unspecified, Color.Unspecified, Color.Unspecified)
+    }
+}
+
+// Genres that mark a title as animated
+private val animationGenres = setOf("animation", "anime")
+
+private fun List<String>?.hasAnimationGenre(): Boolean = orEmpty().any { it.trim().lowercase() in animationGenres }
+
+/**
+ * Works out whether a title is animated, going by its genres on the server. It is only as good as
+ * the library's metadata.
+ *
+ * Episodes and seasons usually carry no genres of their own, so for those the series is looked up
+ * once and the answer remembered.
+ */
+object AnimatedTitles {
+    // Set by BackdropService; fetches the genres of the item with this id
+    @Volatile
+    var fetchGenres: (suspend (UUID) -> List<String>?)? = null
+
+    // Series already looked up
+    private val seriesAnimated = LruCache<UUID, Boolean>(500)
+
+    suspend fun isAnimated(item: BaseItem): Boolean {
+        if (item.data.genres.hasAnimationGenre()) return true
+        val seriesId = item.data.seriesId ?: return false
+        if (seriesId == item.id) return false
+        seriesAnimated.get(seriesId)?.let { return it }
+        val fetch = fetchGenres ?: return false
+        return try {
+            val animated = withContext(WholphinDispatchers.IO) { fetch(seriesId) }.hasAnimationGenre()
+            seriesAnimated.put(seriesId, animated)
+            animated
+        } catch (ex: CancellationException) {
+            throw ex
+        } catch (ex: Exception) {
+            Timber.w(ex, "Could not look up genres for series %s", seriesId)
+            false
+        }
     }
 }

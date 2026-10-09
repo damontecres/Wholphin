@@ -4,6 +4,7 @@ import android.util.LruCache
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.services.AnimatedTitles
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -33,17 +34,18 @@ object BackdropPrebaker {
     // Pause between two backdrops, to leave the device room for everything else
     private const val PAUSE_MS = 40L
 
-    private val waiting = ArrayDeque<String>()
+    // Image address and whether the title is animated
+    private val waiting = ArrayDeque<Pair<String, Boolean>>()
     private val done = LruCache<String, Boolean>(400)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var worker: Job? = null
-    private var baker: (suspend (String) -> Unit)? = null
+    private var baker: (suspend (String, Boolean) -> Unit)? = null
 
     /**
      * Sets what actually bakes a backdrop. The [Backdrop] on screen provides it, because the
      * recipe (theme, glows, blur layers, vignettes) lives there. Null when no backdrop is shown
      */
-    fun setBaker(newBaker: (suspend (String) -> Unit)?) {
+    fun setBaker(newBaker: (suspend (String, Boolean) -> Unit)?) {
         synchronized(this) {
             baker = newBaker
         }
@@ -53,12 +55,15 @@ object BackdropPrebaker {
     /**
      * Asks for the background of this backdrop image to be prepared
      */
-    fun request(imageUrl: String?) {
+    fun request(
+        imageUrl: String?,
+        animated: Boolean,
+    ) {
         if (imageUrl.isNullOrBlank()) return
         synchronized(this) {
             if (done.get(imageUrl) != null) return
-            waiting.remove(imageUrl)
-            waiting.addFirst(imageUrl)
+            waiting.removeAll { it.first == imageUrl }
+            waiting.addFirst(imageUrl to animated)
             while (waiting.size > MAX_WAITING) waiting.removeLast()
         }
         startWorker()
@@ -70,7 +75,7 @@ object BackdropPrebaker {
             worker =
                 scope.launch {
                     while (true) {
-                        val (imageUrl, bake) =
+                        val (request, bake) =
                             synchronized(this@BackdropPrebaker) {
                                 val currentBaker = baker
                                 if (currentBaker == null || waiting.isEmpty()) {
@@ -80,8 +85,8 @@ object BackdropPrebaker {
                                 waiting.removeFirst() to currentBaker
                             }
                         try {
-                            bake(imageUrl)
-                            done.put(imageUrl, true)
+                            bake(request.first, request.second)
+                            done.put(request.first, true)
                         } catch (ex: CancellationException) {
                             throw ex
                         } catch (ex: Exception) {
@@ -109,7 +114,7 @@ fun PrebakeBackdrop(item: BaseItem?) {
                 } else {
                     imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                 }
-            BackdropPrebaker.request(imageUrl)
+            BackdropPrebaker.request(imageUrl, AnimatedTitles.isAnimated(item))
         }
     }
 }
