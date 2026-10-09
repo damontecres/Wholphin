@@ -47,6 +47,9 @@ class BackdropService
         private val imageUrlService: ImageUrlService,
         private val preferences: DataStore<AppPreferences>,
     ) {
+        // How long focus has to rest on an item before its backdrop starts loading
+        private val BACKDROP_FOCUS_DELAY_MS = 250L
+
         private val extractedColorCache = LruCache<String, ExtractedColors>(400)
 
         private val _backdropFlow = MutableStateFlow<BackdropResult>(BackdropResult.NONE)
@@ -83,6 +86,8 @@ class BackdropService
                     it.copy(
                         itemId = itemId,
                         imageUrl = null,
+                        // A new backdrop is on its way
+                        colorsPending = true,
                     )
                 }
                 extractColors(itemId, imageUrl)
@@ -102,7 +107,13 @@ class BackdropService
             itemId: String,
             imageUrl: String?,
         ) {
-            delay(500)
+            // Wait a moment before loading anything, so nothing is fetched for items that are
+            // only passed over while scrolling
+            delay(BACKDROP_FOCUS_DELAY_MS)
+            // Announce the image first, so it can start loading while the colours are worked out
+            _backdropFlow.update {
+                if (it.itemId == itemId) it.copy(imageUrl = imageUrl, colorsPending = true) else it
+            }
             val backdropStyle =
                 preferences.data
                     .firstOrNull()
@@ -307,6 +318,10 @@ data class BackdropResult(
     val primaryColor: Color = Color.Unspecified,
     val secondaryColor: Color = Color.Unspecified,
     val tertiaryColor: Color = Color.Unspecified,
+    // True from the moment focus moves until the new backdrop is complete: first while its image
+    // is not known yet (imageUrl is null), then while its colours are being worked out. Until it
+    // is false again, the colours here are still the previous backdrop's
+    val colorsPending: Boolean = false,
 ) {
     val hasColors: Boolean =
         primaryColor.isSpecified ||

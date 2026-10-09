@@ -4,6 +4,7 @@ package com.github.damontecres.wholphin.ui.nav
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,9 @@ import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.ExtractedColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.theme.LocalFluidTheme
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -108,6 +112,24 @@ fun Backdrop(
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val baseBackgroundColor = MaterialTheme.colorScheme.background
+
+    // How one backdrop gives way to the next, with timings as shares of crossfadeDuration (0.8 s
+    // unless a page asks for something else).
+    // When focus moves, the background darkens slightly; the sharp image stays as it is. When the
+    // new backdrop is ready, the background crossfades to the new one while the darkening lifts,
+    // and the sharp image crossfades to the new one a moment later
+    val fadeOutShare = 0.4f // how long the background takes to darken
+    val fadeInShare = 3f // how long each crossfade takes, and the darkening takes to lift
+    val imageDelayShare = 2f // how long the sharp image waits after the background starts
+    // How dark the background gets in between: 0 = not at all, 1 = fully black
+    val dipDepth = 1f
+    val dipColor = Color.Black
+    val imageDelay = crossfadeDuration * imageDelayShare.toDouble()
+    val fadeOut = crossfadeDuration * fadeOutShare.toDouble()
+    val fadeIn = crossfadeDuration * fadeInShare.toDouble()
+    // Used by the live (not baked) layers
+    val imageFade = fadeIn
+    val backgroundFade = fadeIn
     val showGlows =
         backdrop.hasColors &&
             (backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR || backdropStyle == BackdropStyle.UNRECOGNIZED)
@@ -339,6 +361,14 @@ fun Backdrop(
             val drawVignette: DrawScope.() -> Unit = { vignette(size, Offset.Zero, BlendMode.SrcOver) }
             val screenWidthPx = constraints.maxWidth.toFloat()
             val screenHeightPx = constraints.maxHeight.toFloat()
+            // What is on screen right now. It trails behind the backdrop that has been asked for:
+            // the change only happens once the new background is ready and the dimming is done
+            val shownImageUrl = remember { mutableStateOf(backdrop.imageUrl) }
+            val shownBackground = remember { mutableStateOf<ImageBitmap?>(null) }
+            // The sharp image that has finished loading, to know when it is safe to lift the black
+            val loadedImageUrl = remember { mutableStateOf<String?>(null) }
+            // How much black is over the backdrop at the moment, 0 to 1
+            val dip = remember { Animatable(0f) }
             if (bakeBackground) {
                 val context = LocalContext.current
                 val density = LocalDensity.current
@@ -402,26 +432,79 @@ fun Backdrop(
                 val targetSecondary = targetGlow(backdrop.secondaryColor)
                 val targetTertiary = targetGlow(backdrop.tertiaryColor)
                 val bakeKey =
-                    bakeKeyFor(backdrop.imageUrl, targetPrimary, targetSecondary, targetTertiary, showGlows)
-                val baked by produceState<ImageBitmap?>(null, bakeKey) {
+                    bakeKeyFor(
+                        backdrop.imageUrl,
+                        targetPrimary,
+                        targetSecondary,
+                        targetTertiary,
+                        showGlows,
+                    )
+                // The finished background, together with the image it was made for
+                val baked by produceState<Pair<String?, ImageBitmap>?>(null, bakeKey, backdrop.colorsPending) {
                     if (backdrop.imageUrl == null) {
                         // No image: either the page was left (clear the background) or a new
                         // backdrop is on its way (keep showing the current one until it arrives)
                         if (!backdrop.hasColors) value = null
                         return@produceState
                     }
-                    // Already made for this backdrop: show it straight away
+                    // The colours for this image are not in yet; wait for them
+                    if (backdrop.colorsPending) return@produceState
+                    // Already made for this backdrop
                     bakedBackgrounds.get(bakeKey)?.let {
-                        value = it
+                        value = backdrop.imageUrl to it
                         return@produceState
                     }
                     val result =
-                        bakeFor(backdrop.imageUrl, targetPrimary, targetSecondary, targetTertiary, showGlows)
+                        bakeFor(
+                            backdrop.imageUrl,
+                            targetPrimary,
+                            targetSecondary,
+                            targetTertiary,
+                            showGlows,
+                        )
                     // Keep showing the previous background if this one could not be made
                     if (result != null) {
                         bakedBackgrounds.put(bakeKey, result)
-                        value = result
+                        value = backdrop.imageUrl to result
                     }
+                }
+
+                // Runs the change from one backdrop to the next. It restarts whenever the
+                // backdrop or its background changes, and picks up from however dark it is
+                LaunchedEffect(backdrop.itemId, backdrop.imageUrl, backdrop.colorsPending, baked) {
+                    val imageUrl = backdrop.imageUrl
+                    val depth = dipDepth.coerceIn(0f, 1f)
+                    val dimming = tween<Float>(fadeOut.inWholeMilliseconds.toInt())
+                    val lifting = tween<Float>(fadeIn.inWholeMilliseconds.toInt())
+                    val ready = baked
+                    if (backdrop.colorsPending) {
+                        // Focus has moved and the new backdrop is not complete yet: darken the
+                        // background and wait
+                        dip.animateTo(depth, dimming)
+                    } else if (imageUrl == null) {
+                        // Nothing to show (the page was left, or the item has no backdrop)
+                        dip.animateTo(depth, dimming)
+                        shownImageUrl.value = null
+                        if (!backdrop.hasColors) shownBackground.value = null
+                        dip.animateTo(0f, lifting)
+                    } else if (ready != null && ready.first == imageUrl) {
+                        if (shownBackground.value !== ready.second) {
+                            dip.animateTo(depth, dimming)
+                            shownBackground.value = ready.second
+                        }
+                        coroutineScope {
+                            // The sharp image follows a moment after the background
+                            launch {
+                                if (shownImageUrl.value != imageUrl) {
+                                    delay(imageDelay)
+                                    shownImageUrl.value = imageUrl
+                                }
+                            }
+                            dip.animateTo(0f, lifting)
+                        }
+                    }
+                    // Otherwise the background for this image is still being made; this runs
+                    // again when it arrives
                 }
 
                 // Preparing backgrounds ahead of time, for the items whose cards are on screen.
@@ -454,8 +537,8 @@ fun Backdrop(
                     }
                 }
                 Crossfade(
-                    targetState = baked,
-                    animationSpec = tween(crossfadeDuration.inWholeMilliseconds.toInt()),
+                    targetState = shownBackground.value,
+                    animationSpec = tween(fadeIn.inWholeMilliseconds.toInt()),
                     label = "baked_backdrop_background",
                 ) { image ->
                     if (image != null) {
@@ -476,7 +559,7 @@ fun Backdrop(
                         .Builder(LocalContext.current)
                         .data(backdrop.imageUrl)
                         .size(blurResolution, (blurResolution / imageAspect).toInt().coerceAtLeast(1))
-                        .transitionFactory(CrossFadeFactory(crossfadeDuration))
+                        .transitionFactory(CrossFadeFactory(backgroundFade))
                         .build()
                 blurLayers.forEach { (layerBlendMode, layerOpacity) ->
                     AsyncImage(
@@ -514,14 +597,27 @@ fun Backdrop(
                 )
                 Box(modifier = Modifier.fillMaxSize().drawBehind(drawVignette))
             }
+            // The darkening that comes over the background while the backdrop changes. It sits under
+            // the sharp image, so the image itself is not darkened
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            if (dip.value > 0f) drawRect(color = dipColor, alpha = dip.value.coerceIn(0f, 1f))
+                        },
+            )
             AsyncImage(
                 model =
                     ImageRequest
                         .Builder(LocalContext.current)
-                        .data(backdrop.imageUrl)
-                        .useExistingImageAsPlaceholder(useExistingImageAsPlaceholder)
-                        .transitionFactory(CrossFadeFactory(crossfadeDuration))
+                        // When baked, the image changes together with the background (see above)
+                        // and crossfades from the previous one
+                        .data(if (bakeBackground) shownImageUrl.value else backdrop.imageUrl)
+                        .useExistingImageAsPlaceholder(bakeBackground || useExistingImageAsPlaceholder)
+                        .transitionFactory(CrossFadeFactory(imageFade))
                         .build(),
+                onSuccess = { loadedImageUrl.value = it.result.request.data as? String },
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter,
@@ -633,7 +729,7 @@ fun Backdrop(
             // The pattern is moved to a new random position whenever a new backdrop arrives, so
             // each backdrop gets what looks like fresh grain at no extra cost
             val grainShift = remember { mutableStateOf(Offset.Zero) }
-            val grainBackdrop = backdrop.imageUrl
+            val grainBackdrop = if (bakeBackground) shownImageUrl.value else backdrop.imageUrl
             LaunchedEffect(grainBackdrop) {
                 if (grainBackdrop != null) {
                     grainShift.value =
