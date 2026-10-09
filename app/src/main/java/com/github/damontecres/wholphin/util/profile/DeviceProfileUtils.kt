@@ -12,7 +12,6 @@ import org.jellyfin.sdk.model.api.EncodingContext
 import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.api.ProfileConditionValue
 import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
-import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.deviceprofile.DeviceProfileBuilder
 import org.jellyfin.sdk.model.deviceprofile.buildDeviceProfile
 
@@ -71,10 +70,11 @@ fun createDeviceProfile(
     downMixAudio: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
-    dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
+    forceEnabledHdr: Set<String>,
+    forceDisabledHdr: Set<String>,
     maxResolution: Int,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
@@ -467,60 +467,56 @@ fun createDeviceProfile(
 
     // / HDR exclude list
 
-    // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
     val unsupportedRangeTypesAv1 =
         buildSet {
-            if (jellyfinTenEleven) add("DOVIInvalid")
+            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
 
             if (!decodeAv1) {
                 if (!supportsAV1DolbyVision) {
-                    add(VideoRangeType.DOVI.serialName)
-                    if (!supportsAV1HDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
-                    if (jellyfinTenEleven && !supportsAV1HDR10Plus) add("DOVIWithHDR10Plus")
+                    add(WholphinVideoRangeType.DOVI.serialName)
+                    if (!supportsAV1HDR10) add(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven && !supportsAV1HDR10Plus) add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
                 }
 
                 if (!supportsAV1HDR10Plus) {
-                    add(VideoRangeType.HDR10_PLUS.serialName)
+                    add(WholphinVideoRangeType.HDR10_PLUS.serialName)
 
-                    if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
+                    if (!mediaTest.supportsAV1HDR10()) add(WholphinVideoRangeType.HDR10.serialName)
                 }
             }
-        }
+        } - forceEnabledHdr + forceDisabledHdr
 
-    // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
     val unsupportedRangeTypesHevc =
         buildSet {
-            if (jellyfinTenEleven) add("DOVIInvalid")
+            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
 
             if (!supportsHevcDolbyVisionEL) {
-                if (!dolbyVisionELDirectPlay) {
-                    if (jellyfinTenEleven) {
-                        add("DOVIWithEL")
-                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                if (jellyfinTenEleven) {
+                    add(WholphinVideoRangeType.DOVI_WITH_EL.serialName)
+                    if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
+                        add(WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName)
                     }
                 }
 
                 if (!supportsHevcDolbyVision) {
-                    add(VideoRangeType.DOVI.serialName)
-                    if (!supportsHevcHDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    add(WholphinVideoRangeType.DOVI.serialName)
+                    if (!supportsHevcHDR10) add(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven && !supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
-                        add(
-                            "DOVIWithHDR10Plus",
-                        )
+                        add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
                     }
                 }
             }
 
             if (!supportsHevcHDR10Plus) {
-                add(VideoRangeType.HDR10_PLUS.serialName)
-                if (!supportsHevcHDR10) add(VideoRangeType.HDR10.serialName)
+                add(WholphinVideoRangeType.HDR10_PLUS.serialName)
+                if (!supportsHevcHDR10) add(WholphinVideoRangeType.HDR10.serialName)
             }
 
             if (jellyfinTenEleven && KnownDefects.hevcDoviHdr10PlusBug) {
-                add("DOVIWithHDR10Plus")
-                add("DOVIWithELHDR10Plus")
+                add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
+                add(WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName)
             }
-        }
+        } - forceEnabledHdr + forceDisabledHdr
 
     // Display
     // Note: The codec profiles use a workaround to create correct behavior
