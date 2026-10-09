@@ -611,6 +611,30 @@
     <string name="bold_blue">Bold Blue</string>
     <string name="black">Black</string>
     <string name="brown">Brown</string>
+    <string name="highlight_color">Highlight color</string>
+    <string name="theme_vivid">Vivid</string>
+    <string name="theme_muted">Muted</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_darkest">Darkest</string>
+    <string name="pink">Pink</string>
+    <string-array name="fluid_themes">
+        <item>@string/theme_vivid</item>
+        <item>@string/theme_muted</item>
+        <item>@string/theme_dark</item>
+        <item>@string/theme_darkest</item>
+    </string-array>
+    <string-array name="highlight_colors">
+        <item>@string/purple</item>
+        <item>@string/blue</item>
+        <item>@string/cyan</item>
+        <item>@string/green</item>
+        <item>@string/yellow</item>
+        <item>@string/orange</item>
+        <item>@string/red</item>
+        <item>@string/pink</item>
+        <item>@string/white</item>
+    </string-array>
+
     <string-array name="app_theme_colors">
         <item>@string/purple</item>
         <item>@string/blue</item>

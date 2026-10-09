@@ -3,6 +3,8 @@ package com.github.damontecres.wholphin.preferences
 import android.content.Context
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.BuildConfig
@@ -14,6 +16,11 @@ import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
+import com.github.damontecres.wholphin.ui.theme.DefaultHighlight
+import com.github.damontecres.wholphin.ui.theme.fluidThemes
+import com.github.damontecres.wholphin.ui.theme.highlightColors
+import com.github.damontecres.wholphin.ui.theme.highlightFromPreference
+import com.github.damontecres.wholphin.ui.theme.resolved
 import com.github.damontecres.wholphin.util.DebugLogTree
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
@@ -506,14 +513,30 @@ sealed interface AppPreference<Pref, T> {
         val ThemeColors =
             AppChoicePreference<AppPreferences, AppThemeColors>(
                 title = R.string.app_theme,
-                defaultValue = AppThemeColors.PURPLE,
+                defaultValue = AppThemeColors.MUTED,
                 getter = { it.interfacePreferences.appThemeColors },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { appThemeColors = value }
                 },
-                displayValues = R.array.app_theme_colors,
-                indexToValue = { AppThemeColors.forNumber(it) },
-                valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
+                displayValues = R.array.fluid_themes,
+                indexToValue = { fluidThemes.getOrElse(it) { AppThemeColors.MUTED } },
+                valueToIndex = { fluidThemes.indexOf(it.resolved()).coerceAtLeast(0) },
+            )
+
+        val HighlightColor =
+            AppChoicePreference<AppPreferences, Color>(
+                title = R.string.highlight_color,
+                defaultValue = DefaultHighlight,
+                getter = { highlightFromPreference(it.interfacePreferences.highlightColor) },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { highlightColor = value.toArgb().and(0x00FFFFFF) }
+                },
+                displayValues = R.array.highlight_colors,
+                indexToValue = { highlightColors.getOrElse(it) { DefaultHighlight } },
+                valueToIndex = { value ->
+                    val color = value.toArgb().and(0x00FFFFFF)
+                    highlightColors.indexOfFirst { color == it.toArgb().and(0x00FFFFFF) }.coerceAtLeast(0)
+                },
             )
 
         val ShowLogos =
@@ -1121,6 +1144,7 @@ val basicPreferences =
                     AppPreference.PlayThemeMusic,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.HighlightColor,
                     AppPreference.ScreensaverSettings,
                 ),
         ),

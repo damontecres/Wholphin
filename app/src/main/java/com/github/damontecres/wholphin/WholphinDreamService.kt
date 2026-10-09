@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.components.AppScreensaverContent
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.theme.highlightFromPreference
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -103,7 +104,10 @@ class WholphinDreamService :
                                 debugLogging = false,
                                 enableCache = true,
                             )
-                            WholphinTheme(appThemeColors = prefs.interfacePreferences.appThemeColors) {
+                            WholphinTheme(
+                                appThemeColors = prefs.interfacePreferences.appThemeColors,
+                                highlight = highlightFromPreference(prefs.interfacePreferences.highlightColor),
+                            ) {
                                 ProvideLocalClock {
                                     val screensaverPrefs = prefs.interfacePreferences.screensaverPreference
                                     val currentItem by itemFlow.collectAsState(null)
