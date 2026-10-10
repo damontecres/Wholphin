@@ -616,9 +616,11 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            allowIndexRemapRetry: Boolean = true,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
+                val requestedSource = item.data.mediaSources?.firstOrNull { it.id == sourceId }
 
                 trackChangeListener?.let { onMain { player.removeListener(it) } }
                 trackChangeListener = null
@@ -687,6 +689,78 @@ class PlaybackViewModel
                 }
                 val source = response.mediaSources.firstOrNull()
                 source?.let { source ->
+                    val originalAudioIndex = audioIndex
+                    val originalSubtitleIndex = subtitleIndex
+                    val audioIndex =
+                        requestedSource
+                            ?.takeIf { allowIndexRemapRetry }
+                            ?.remapStreamIndex(source, originalAudioIndex, MediaStreamType.AUDIO)
+                            ?: originalAudioIndex
+                    val subtitleIndex =
+                        requestedSource
+                            ?.takeIf { allowIndexRemapRetry }
+                            ?.remapStreamIndex(source, originalSubtitleIndex, MediaStreamType.SUBTITLE)
+                            ?: originalSubtitleIndex
+                    val indexesChanged = audioIndex != originalAudioIndex || subtitleIndex != originalSubtitleIndex
+                    val item =
+                        item.copy(
+                            data =
+                                item.data.copy(
+                                    mediaSources = item.data.mediaSources?.map { if (it.id == source.id) source else it },
+                                ),
+                        )
+
+                    currentItem =
+                        when (currentItem) {
+                            is PlaylistItem.Intro -> PlaylistItem.Intro(item)
+                            is PlaylistItem.Media -> PlaylistItem.Media(item)
+                        }
+                    updateCurrentMedia {
+                        it.copy(
+                            sourceId = source.id,
+                            audioStreams = getAudioStreams(source),
+                            subtitleStreams = getSubtitleStreams(source),
+                        )
+                    }
+
+                    state.value.currentItemPlayback?.let { savedChoice ->
+                        val updatedChoice =
+                            savedChoice.copy(
+                                audioIndex =
+                                    if (savedChoice.audioIndex ==
+                                        originalAudioIndex
+                                    ) {
+                                        audioIndex ?: savedChoice.audioIndex
+                                    } else {
+                                        savedChoice.audioIndex
+                                    },
+                                subtitleIndex =
+                                    if (savedChoice.subtitleIndex == originalSubtitleIndex) {
+                                        subtitleIndex ?: savedChoice.subtitleIndex
+                                    } else {
+                                        savedChoice.subtitleIndex
+                                    },
+                            )
+                        if (updatedChoice != savedChoice) {
+                            itemPlaybackRepository.saveItemPlayback(updatedChoice)
+                            _state.update { it.copy(currentItemPlayback = updatedChoice) }
+                        }
+                    }
+
+                    if (indexesChanged && !source.supportsDirectPlay) {
+                        changeStreams(
+                            item = item,
+                            sourceId = source.id,
+                            audioIndex = audioIndex,
+                            subtitleIndex = subtitleIndex,
+                            positionMs = positionMs,
+                            enableDirectPlay = enableDirectPlay,
+                            enableDirectStream = enableDirectStream,
+                            allowIndexRemapRetry = false,
+                        )
+                        return@withContext
+                    }
+
                     val mediaUrl =
                         if (source.supportsDirectPlay) {
                             if (source.isRemote && source.path.isNotNullOrBlank()) {
