@@ -738,4 +738,7 @@
     <string name="season_episode_number_padded_range">T%1$02dE%2$02d-E%3$02d</string>
     <string name="episode_number_short">E%1$d</string>
     <string name="season_number">Temporada %1$d</string>
+    <string name="remove_from_playlist">Remover da lista de reprodução</string>
+    <string name="login_credentials_expired">As credenciais expiraram. Inicie sessão novamente</string>
+    <string name="login_not_authorized">Não tem autorização para aceder ao servidor neste momento</string>
 </resources>

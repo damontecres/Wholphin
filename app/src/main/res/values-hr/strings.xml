@@ -738,4 +738,7 @@
     <string name="season_number">Sezona %1$d</string>
     <string name="photo_albums">Albumi slika</string>
     <string name="no_favorites_found">Nijedan favorit nije pronađen!</string>
+    <string name="remove_from_playlist">Ukloni s popisa za reprodukciju</string>
+    <string name="login_credentials_expired">Vjerodajnice su istekle, prijavite se ponovno</string>
+    <string name="login_not_authorized">Trenutno nemate ovlasti za pristup poslužitelju</string>
 </resources>

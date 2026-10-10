@@ -149,7 +149,7 @@
         <item quantity="other">Specialinslag</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Kortfilmer</item>
+        <item quantity="one">Kortfilm</item>
         <item quantity="other">Kortfilmer</item>
     </plurals>
     <plurals name="downloads">
@@ -200,7 +200,7 @@
     <string name="mark_watched">Markera som spelad</string>
     <string name="max_bitrate">Maximal bithastighet</string>
     <string name="more_like_this">Liknande titlar</string>
-    <string name="next_up">Näst på tur</string>
+    <string name="next_up">Nästa på tur</string>
     <string name="no_data">Ingen data</string>
     <string name="no_scheduled_recordings">Inga schemalagda inspelningar</string>
     <string name="no_update_available">Ingen uppdatering tillgänglig</string>
@@ -238,7 +238,7 @@
     <string name="edge_style">Kantstil</string>
     <string name="edge_color">Kantfärg</string>
     <string name="background_opacity">Bakgrundsopacitet</string>
-    <string name="direct_play_ass">Direktuppspelning av ASS-undertexter</string>
+    <string name="direct_play_ass">Använd libass för ASS-undertexter</string>
     <string name="direct_play_pgs">Direktuppspelning av PGS-undertexter</string>
     <string name="downmix_stereo">Mixa alltid om till stereo</string>
     <string name="ffmpeg_extension_pref">Använd FFmpeg dekodermodul</string>
@@ -670,4 +670,20 @@
     <string name="confirm_enable_experimental_body">Experimentella inställningar kan vara instabila!\n\n Dessa kan tas bort eller ändras i framtida versioner.</string>
     <string name="remove_from_playlist">Ta bort från spellista</string>
     <string name="trailers_title">Trailers</string>
+    <string name="visualizer_rationale">Visualisering av ljuduppspelning kräver behörighet att spela in ljud.</string>
+    <string name="login_credentials_expired">Inloggningsuppgifter har löpt ut. Vänligen logga in på nytt.</string>
+    <string name="subtitle_mode">Undertextläge</string>
+    <string name="subtitle_mode_default">Standard</string>
+    <string name="subtitle_mode_smart">Smart</string>
+    <string name="subtitle_mode_only_forced">Endast tvingande</string>
+    <string name="subtitle_mode_always">Alltid</string>
+    <string name="subtitle_mode_none">Inga</string>
+    <string name="preferred_subtitle_language">Fördraget undertextspråk</string>
+    <string name="subtitles_hearing_impaired">För hörselskadade</string>
+    <string name="programs">TV-program</string>
+    <string name="recordings">Inspelningar</string>
+    <string name="folders_title">Mappar</string>
+    <string name="user_views">Användarvisningar</string>
+    <string name="genre_movies">%1$sfilmer</string>
+    <string name="quality_profile">Kvalitetsprofil</string>
 </resources>
