@@ -89,6 +89,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -168,15 +169,25 @@ class CollectionFolderViewModel
                             val id = collectionFilter.libraryDisplayInfoIdOverride ?: itemId
                             libraryDisplayInfoDao.getItem(user, id)
                         }
+                    val ancestorDisplayInfos =
+                        if (libraryDisplayInfo?.viewOptions == null && item != null) {
+                            getAncestorDisplayInfos(item)
+                        } else {
+                            emptyList()
+                        }
+                    val viewOptions =
+                        libraryDisplayInfo?.viewOptions
+                            ?: ancestorDisplayInfos.firstNotNullOfOrNull { it.viewOptions }
                     _state.update {
                         it.copy(
-                            viewOptions = libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
+                            viewOptions = viewOptions ?: defaultViewOptions,
                         )
                     }
 
                     val sortAndDirection =
                         if (collectionFilter.useSavedLibraryDisplayInfo) {
                             libraryDisplayInfo?.sortAndDirection
+                                ?: ancestorDisplayInfos.firstOrNull()?.sortAndDirection
                         } else {
                             null
                         } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
@@ -229,6 +240,25 @@ class CollectionFolderViewModel
             } catch (ex: Exception) {
                 Timber.e(ex, "Error refreshing after deleted item %s", itemId)
                 showToast(context, "Error refreshing after item deleted")
+            }
+        }
+
+        /**
+         * For a sub-folder, returns the saved display info of its ancestors, ordered from the closest parent up to the root
+         */
+        private suspend fun getAncestorDisplayInfos(item: BaseItem): List<LibraryDisplayInfo> {
+            if (item.type != BaseItemKind.FOLDER || collectionFilter.libraryDisplayInfoIdOverride != null) {
+                return emptyList()
+            }
+            val user = serverRepository.currentUser ?: return emptyList()
+            return try {
+                api.libraryApi
+                    .getAncestors(item.id, user.id)
+                    .content
+                    .mapNotNull { ancestor -> libraryDisplayInfoDao.getItem(user, ancestor.id) }
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error getting ancestors for %s", item.id)
+                emptyList()
             }
         }
 
