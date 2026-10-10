@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.hilt.work.HiltWorker
 import androidx.tvprovider.media.tv.Channel
+import androidx.tvprovider.media.tv.ChannelLogoUtils
 import androidx.tvprovider.media.tv.PreviewProgram
 import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.tvprovider.media.tv.TvContractCompat.Channels
@@ -305,6 +308,9 @@ class TvProviderWorker
                     Timber.w("channelId was null")
                     throw IllegalStateException("channelId was null")
                 }
+            }
+            ContextCompat.getDrawable(context, R.mipmap.ic_launcher)?.let {
+                ChannelLogoUtils.storeChannelLogo(context, ContentUris.parseId(channelId), it.toBitmap())
             }
             val programs = latest.map { convert(channelId, it).toContentValues() }.toTypedArray()
 
