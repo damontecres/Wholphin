@@ -1,7 +1,7 @@
 package com.github.damontecres.wholphin.util
 
 import android.content.Context
-import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.MostRecentServer
 import com.github.damontecres.wholphin.services.hilt.AppModule
 import com.github.damontecres.wholphin.services.hilt.DeviceModule
 import com.google.auto.service.AutoService
@@ -13,6 +13,7 @@ import org.acra.sender.ReportSender
 import org.acra.sender.ReportSenderException
 import org.acra.sender.ReportSenderFactory
 import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
@@ -39,26 +40,10 @@ class CrashReportSender : ReportSender {
         errorContent: CrashReportData,
     ) {
         Timber.v("Attempting to send crash report")
-        val prefs = ServerRepository.getServerSharedPreferences(context)
-        val serverUrl = prefs.getString(ServerRepository.SERVER_URL_KEY, null)
-        val accessToken = prefs.getString(ServerRepository.ACCESS_TOKEN_KEY, null)
-        if (serverUrl != null && accessToken != null) {
-            try {
-                val okHttpClient =
-                    OkHttpClient
-                        .Builder()
-                        .build()
-                val okHttpFactory = OkHttpFactory(okHttpClient)
-                val api =
-                    createJellyfin {
-                        this.context = context
-                        clientInfo = AppModule.clientInfo(context)
-                        deviceInfo = DeviceModule.deviceInfo(context)
-                        apiClientFactory = okHttpFactory
-                        socketConnectionFactory = okHttpFactory
-                        minimumServerVersion = Jellyfin.minimumVersion
-                    }.createApi(baseUrl = serverUrl, accessToken = accessToken)
-
+        try {
+            val recentServer = AppModule.mostRecentServerProvider(context).get()
+            val api = recentServer.createApi(context)
+            if (api != null) {
                 val obj = JSONObject()
                 for ((key, value) in errorContent.toMap()) {
                     obj.put(key, value)
@@ -75,13 +60,32 @@ class CrashReportSender : ReportSender {
 
                                 """.trimIndent() + jsonStr,
                             ).content.fileName
-                    Timber.i("Sent report to $serverUrl, filename=$filename")
+                    Timber.i("Sent report to %s, filename=%s", api.baseUrl, filename)
                 }
-            } catch (ex: Exception) {
-                throw ReportSenderException("Exception while sending crash report", ex)
+            } else {
+                throw ReportSenderException("Could not find valid server and/or credentials to use")
             }
-        } else {
-            throw ReportSenderException("Could not find valid server and/or credentials to use")
+        } catch (ex: Exception) {
+            throw ReportSenderException("Exception while sending crash report", ex)
         }
     }
 }
+
+private fun MostRecentServer.createApi(context: Context): ApiClient? =
+    (this as? MostRecentServer.ServerAndUser)?.let {
+        val okHttpClient =
+            OkHttpClient
+                .Builder()
+                .build()
+        val okHttpFactory = OkHttpFactory(okHttpClient)
+        val api =
+            createJellyfin {
+                this.context = context
+                clientInfo = AppModule.clientInfo(context)
+                deviceInfo = DeviceModule.deviceInfo(context)
+                apiClientFactory = okHttpFactory
+                socketConnectionFactory = okHttpFactory
+                minimumServerVersion = Jellyfin.minimumVersion
+            }.createApi(baseUrl = serverUrl, accessToken = accessToken)
+        api
+    }
