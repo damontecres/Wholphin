@@ -151,6 +151,7 @@ fun HomeSettingsPage(
                                             MetaRowType.CONTINUE_WATCHING,
                                             MetaRowType.NEXT_UP,
                                             MetaRowType.COMBINED_CONTINUE_WATCHING,
+                                            MetaRowType.CSFD_TV_TIPS,
                                             -> {
                                                 addRow { viewModel.addRow(it) }
                                             }

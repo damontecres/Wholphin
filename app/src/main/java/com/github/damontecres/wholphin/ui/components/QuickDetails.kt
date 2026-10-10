@@ -84,7 +84,22 @@ fun QuickDetailsText(
 @Composable
 fun rememberQuickDetailsContentMap(textStyle: TextStyle = MaterialTheme.typography.titleSmall) =
     remember(textStyle) {
-        mapOf(
+        // One entry per possible ČSFD percentage, the id is built by csfdInlineContentId()
+        val csfd =
+            (0..100).associate { percent ->
+                csfdInlineContentId(percent) to
+                    InlineTextContent(
+                        Placeholder(
+                            textStyle.fontSize * 3.2f,
+                            textStyle.fontSize * 1.3f,
+                            PlaceholderVerticalAlign.TextCenter,
+                        ),
+                    ) {
+                        CsfdRating(percent, Modifier.fillMaxSize())
+                    }
+            }
+        csfd +
+            mapOf(
             "star" to
                 InlineTextContent(
                     Placeholder(

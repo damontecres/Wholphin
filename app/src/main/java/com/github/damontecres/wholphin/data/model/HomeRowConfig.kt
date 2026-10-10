@@ -160,6 +160,18 @@ sealed interface HomeRowConfig {
     }
 
     /**
+     * ČSFD "TV tipy dňa" that exist in the user's library, best rated first.
+     * Needs the Jellyfin ČSFD plugin (endpoint `/Csfd/TvTips`).
+     */
+    @Serializable
+    @SerialName("CsfdTvTips")
+    data class CsfdTvTips(
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.csfdTipsDefault,
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): CsfdTvTips = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
      * Fetch by parent ID such as a library, collection, or playlist with optional simple sorting
      */
     @Serializable
@@ -232,6 +244,9 @@ data class HomeRowViewOptions(
                 heightDp = Cards.HEIGHT_EPISODE,
                 aspectRatio = AspectRatio.WIDE,
             )
+
+        /** Smaller cards than the other rows */
+        val csfdTipsDefault = HomeRowViewOptions(heightDp = Cards.HEIGHT_2X3_DP * 2 / 3)
 
         val liveTvDefault =
             HomeRowViewOptions(

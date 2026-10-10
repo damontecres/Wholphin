@@ -173,7 +173,8 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>g
+    <string name="watch_live">Watch live</string>
+    <string name="csfd_tv_tips">TV tips of the day</string>g
     <plurals name="years_old">
         <item quantity="zero">%1$d years old</item>
         <item quantity="one">%1$d year old</item>
