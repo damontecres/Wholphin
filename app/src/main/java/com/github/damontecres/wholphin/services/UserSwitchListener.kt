@@ -20,6 +20,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Listens for JF user switching in the app to also switch other settings like Seerr user/server
@@ -34,6 +35,7 @@ class UserSwitchListener
         private val seerrServerDao: SeerrServerDao,
         private val seerrApi: SeerrApi,
         private val homeSettingsService: HomeSettingsService,
+        private val serverPluginApi: ServerPluginApi,
     ) {
         init {
             context as AppCompatActivity
@@ -60,9 +62,22 @@ class UserSwitchListener
                     AppCompatDelegate.setApplicationLocales(localeList)
                 }
 
-                // Check for home settings
+                // Check if plugin is installed, then for home settings
                 launchIO {
-                    homeSettingsService.loadCurrentSettings(user.id)
+                    val serverPluginInstalled =
+                        try {
+                            serverPluginApi.checkInstalled()
+                        } catch (ex: CancellationException) {
+                            throw ex
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error checking for server plugin")
+                            false
+                        }
+                    Timber.i("Server plugin installed: %s", serverPluginInstalled)
+                    serverRepository.serverPluginInstalled.value = serverPluginInstalled
+
+                    // Check for home settings
+                    homeSettingsService.loadCurrentSettings(user)
                 }
                 if (BuildConfig.DISCOVER_ENABLED) {
                     // Check for seerr server

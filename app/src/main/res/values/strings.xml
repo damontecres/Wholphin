@@ -951,4 +951,11 @@
         <item quantity="one">%1$d Episode</item>
         <item quantity="other">%1$d Episodes</item>
     </plurals>
+    <string name="load_from_server_plugin">Load default from server</string>
+    <string name="save_to_local">Save only to this device</string>
+    <string name="home_settings_source_unset">Default</string>
+    <string name="home_settings_source_local">Device specific</string>
+    <string name="home_settings_source_server_profile">Server user profile</string>
+    <string name="home_settings_source_plugin">Server default</string>
+    <string name="home_settings_source_web">User web client</string>
 </resources>
