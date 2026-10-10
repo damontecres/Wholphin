@@ -718,4 +718,19 @@
     <string name="remove_from_playlist">Oynatma listesinden kaldır</string>
     <string name="login_credentials_expired">Oturum süresi doldu, lütfen tekrar giriş yapın</string>
     <string name="login_not_authorized">Şu anda sunucuya erişim yetkiniz bulunmuyor</string>
+    <string name="prefer_dovi_over_hdr10_plus">HDR10+ yerine Dolby Vision\'ı tercih et</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Aksi takdirde bu videoları HDR10+ olarak oynatacak TV\'ler için, Dolby Vision videolardan HDR10+ meta verilerini kaldırır</string>
+    <string name="max_resolution">Dönüştürme öncesi maksimum çözünürlük</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <plurals name="episodes_count">
+        <item quantity="one">%1$d Bölüm</item>
+        <item quantity="other">%1$d Bölüm</item>
+    </plurals>
+    <string name="appears_on">Yer Aldığı</string>
 </resources>
