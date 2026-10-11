@@ -75,6 +75,7 @@ fun createDeviceProfile(
     preferAc3ForSurround: Boolean,
     forceEnabledHdr: Set<String>,
     forceDisabledHdr: Set<String>,
+    directPlayInvalidDolbyVision: Boolean,
     maxResolution: Int,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
@@ -469,7 +470,9 @@ fun createDeviceProfile(
 
     val unsupportedRangeTypesAv1 =
         buildSet {
-            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
+            if (jellyfinTenEleven && !(directPlayInvalidDolbyVision && supportsAV1DolbyVision)) {
+                add(WholphinVideoRangeType.DOVI_INVALID.serialName)
+            }
 
             if (!decodeAv1) {
                 if (!supportsAV1DolbyVision) {
@@ -488,7 +491,9 @@ fun createDeviceProfile(
 
     val unsupportedRangeTypesHevc =
         buildSet {
-            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
+            if (jellyfinTenEleven && !(directPlayInvalidDolbyVision && supportsHevcDolbyVision)) {
+                add(WholphinVideoRangeType.DOVI_INVALID.serialName)
+            }
 
             if (!supportsHevcDolbyVisionEL) {
                 if (jellyfinTenEleven) {

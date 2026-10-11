@@ -35,6 +35,7 @@ class TestDeviceProfileUtils {
         decodeAv1: Boolean = false,
         forceEnabledHdr: Set<String> = emptySet(),
         forceDisabledHdr: Set<String> = emptySet(),
+        directPlayInvalidDolbyVision: Boolean = false,
     ): DeviceProfile =
         createDeviceProfile(
             mediaTest = mediaTest,
@@ -48,8 +49,30 @@ class TestDeviceProfileUtils {
             preferAc3ForSurround = false,
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
+            directPlayInvalidDolbyVision = directPlayInvalidDolbyVision,
             maxResolution = 0,
         )
+
+    @Test
+    fun `Test DOVIInvalid direct play option with HEVC Dolby Vision decoder`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsHevcDolbyVision() } returns true
+
+        val off = buildProfile(mediaTest, jellyfinTenEleven = true)
+        Assert.assertTrue(unsupportedRangeTypes(off, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_INVALID.serialName))
+
+        val on = buildProfile(mediaTest, jellyfinTenEleven = true, directPlayInvalidDolbyVision = true)
+        Assert.assertFalse(unsupportedRangeTypes(on, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_INVALID.serialName))
+    }
+
+    @Test
+    fun `Test DOVIInvalid direct play option ignored without HEVC Dolby Vision decoder`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsHevcDolbyVision() } returns false
+
+        val profile = buildProfile(mediaTest, jellyfinTenEleven = true, directPlayInvalidDolbyVision = true)
+        Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.HEVC).contains(WholphinVideoRangeType.DOVI_INVALID.serialName))
+    }
 
     @Test
     fun `Test HEVC Profile 7 unsupported when device does not support it`() {

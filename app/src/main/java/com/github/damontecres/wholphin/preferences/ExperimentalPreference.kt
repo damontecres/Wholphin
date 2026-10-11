@@ -48,6 +48,17 @@ object ExperimentalPreference {
             summary = R.string.prefer_dovi_over_hdr10_plus_summary,
         )
 
+    val DirectPlayInvalidDolbyVision =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.direct_play_invalid_dovi,
+            defaultValue = false,
+            getter = { it.experimentalPreferences.directPlayInvalidDolbyVision },
+            setter = { prefs, value ->
+                prefs.updateExperimentalPreferences { directPlayInvalidDolbyVision = value }
+            },
+            summary = R.string.direct_play_invalid_dovi_summary,
+        )
+
     val PreferAc3ForSurround =
         AppSwitchPreference<AppPreferences>(
             title = R.string.prefer_ac3_for_surround,
@@ -93,6 +104,7 @@ val experimentalPreferences =
                     listOf(
                         ExperimentalPreference.VideoTunneling,
                         ExperimentalPreference.PreferDolbyVisionOverHdr10Plus,
+                        ExperimentalPreference.DirectPlayInvalidDolbyVision,
                         ExperimentalPreference.PreferAc3ForSurround,
                         ExperimentalPreference.DisableAudioOffload,
                     ),

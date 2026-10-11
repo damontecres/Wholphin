@@ -502,6 +502,8 @@
     <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
     <string name="prefer_dovi_over_hdr10_plus">Prefer Dolby Vision over HDR10+</string>
     <string name="prefer_dovi_over_hdr10_plus_summary">Removes HDR10+ metadata from Dolby Vision videos, for TVs that otherwise play them as HDR10+</string>
+    <string name="direct_play_invalid_dovi">Direct play out-of-spec Dolby Vision</string>
+    <string name="direct_play_invalid_dovi_summary">Direct play files the server tags DOVIInvalid (e.g. Profile 8 with compatibility ID 0 or 6) instead of transcoding them. Some devices may fail to play such files</string>
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
