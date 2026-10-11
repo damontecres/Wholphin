@@ -226,6 +226,8 @@ fun PreferencesContent(
             ) {
                 if (showUpdate) {
                     item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused = interactionSource.collectIsFocusedAsState().value
                         val updateFocusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) {
                             if (focusedIndex.first == 0 && focusedIndex.second == 0) {
@@ -240,11 +242,20 @@ fun PreferencesContent(
                                 viewModel.navigationManager.navigateTo(Destination.UpdateApp)
                             },
                             summary = release?.version?.toString(),
+                            interactionSource = interactionSource,
                             modifier =
                                 Modifier
                                     .focusRequester(updateFocusRequester)
                                     .focusRequester(firstFocusRequester)
-                                    .playSoundOnFocus(movementSounds),
+                                    .playSoundOnFocus(movementSounds)
+                                    .lazyListWrapScrolling(
+                                        state = state,
+                                        focused = focused,
+                                        isFirst = true,
+                                        isLast = false,
+                                        firstFocusRequester = firstFocusRequester,
+                                        lastFocusRequester = lastFocusRequester,
+                                    ),
                         )
                     }
                 }

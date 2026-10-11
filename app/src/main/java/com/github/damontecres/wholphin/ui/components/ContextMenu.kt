@@ -66,6 +66,7 @@ sealed interface ContextMenu {
         val canRemoveFromQueue: Boolean,
         val actions: MusicContextActions,
         val showRemoveFromPlaylist: Boolean = false,
+        val showGoTo: Boolean = false,
     ) : ContextMenu
 
     data class ForQueue(
@@ -758,6 +759,18 @@ fun buildContextForMusic(
     buildList {
         val item = music.item
         val index = music.index
+        // Songs should not show Go to
+        if (music.showGoTo && item.type != BaseItemKind.AUDIO) {
+            add(
+                DialogItem(
+                    resources.getString(R.string.go_to),
+                    Icons.Default.ArrowForward,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(item.destination())
+                },
+            )
+        }
         add(
             DialogItem(
                 resources.getString(R.string.play),
