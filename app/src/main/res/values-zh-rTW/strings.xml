@@ -697,4 +697,17 @@
     <string name="remove_from_playlist">從播放清單中移除</string>
     <string name="login_not_authorized">您目前無存取此伺服器的權限</string>
     <string name="login_credentials_expired">登入憑證已過期，請重新登入</string>
+    <plurals name="episodes_count">
+        <item quantity="other">%1$d 集</item>
+    </plurals>
+    <string name="prefer_dovi_over_hdr10_plus">Dolby Vision 優先於 HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">移除 Dolby Vision 影片中的 HDR10+ 中介資料，以解決部分電視誤播為 HDR10+</string>
+    <string name="max_resolution">最高解析度，超過將轉碼</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
 </resources>
