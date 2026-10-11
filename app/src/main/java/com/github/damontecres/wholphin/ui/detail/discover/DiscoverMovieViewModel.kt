@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.SeerrUserConfig
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -83,7 +84,14 @@ class DiscoverMovieViewModel
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
-                    _state.update { it.copy(movie = DataLoadingState.Success(movie)) }
+                    val watchProviders =
+                        seerrService.createWatchProviderDisplays(movie.watchProviders)
+                    _state.update {
+                        it.copy(
+                            movie = DataLoadingState.Success(movie),
+                            watchProviders = watchProviders,
+                        )
+                    }
                     movie
                 } catch (ex: CancellationException) {
                     throw ex
@@ -98,7 +106,14 @@ class DiscoverMovieViewModel
                 Timber.v("Init for movie %s", item.id)
                 try {
                     val movie = seerrService.api.moviesApi.movieMovieIdGet(movieId = item.id)
-                    _state.update { it.copy(movie = DataLoadingState.Success(movie)) }
+                    val watchProviders =
+                        seerrService.createWatchProviderDisplays(movie.watchProviders)
+                    _state.update {
+                        it.copy(
+                            movie = DataLoadingState.Success(movie),
+                            watchProviders = watchProviders,
+                        )
+                    }
                     val discoveredItem = seerrService.createDiscoverItem(movie)
                     backdropService.submit(discoveredItem)
 
@@ -276,6 +291,7 @@ fun canUserCancelRequest(
 
 data class DiscoverMovieState(
     val movie: DataLoadingState<MovieDetails> = DataLoadingState.Pending,
+    val watchProviders: List<WatchProviderDisplay> = emptyList(),
     val rating: DiscoverRating? = null,
     val seasons: List<RequestSeason> = emptyList(),
     val trailers: List<Trailer> = emptyList(),

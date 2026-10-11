@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -108,6 +109,7 @@ fun DiscoverMovieDetails(
             DiscoverMovieDetailsContent(
                 preferences = preferences,
                 movie = movie,
+                watchProviders = state.watchProviders,
                 userConfig = userConfig,
                 rating = state.rating,
                 canCancel = state.canCancelRequest,
@@ -185,6 +187,7 @@ fun DiscoverMovieDetailsContent(
     preferences: UserPreferences,
     userConfig: SeerrUserConfig?,
     movie: MovieDetails,
+    watchProviders: List<WatchProviderDisplay>,
     rating: DiscoverRating?,
     canCancel: Boolean,
     people: List<DiscoverItem>,
@@ -228,6 +231,7 @@ fun DiscoverMovieDetailsContent(
                     DiscoverMovieDetailsHeader(
                         preferences = preferences,
                         movie = movie,
+                        watchProviders = watchProviders,
                         rating = rating,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,

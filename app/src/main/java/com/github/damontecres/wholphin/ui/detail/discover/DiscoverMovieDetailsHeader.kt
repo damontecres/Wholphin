@@ -2,10 +2,12 @@ package com.github.damontecres.wholphin.ui.detail.discover
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -29,6 +31,8 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
+import com.github.damontecres.wholphin.ui.components.WatchProvidersRow
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -44,6 +48,7 @@ import kotlin.time.Duration.Companion.minutes
 fun DiscoverMovieDetailsHeader(
     preferences: UserPreferences,
     movie: MovieDetails,
+    watchProviders: List<WatchProviderDisplay>,
     rating: DiscoverRating?,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
@@ -164,6 +169,11 @@ fun DiscoverMovieDetailsHeader(
                         modifier = Modifier.padding(start = HeaderUtils.startPadding),
                     )
                 }
+            Spacer(modifier = Modifier.padding(2.dp))
+            WatchProvidersRow(
+                providers = watchProviders,
+                modifier = Modifier.padding(start = HeaderUtils.startPadding),
+            )
         }
     }
 }

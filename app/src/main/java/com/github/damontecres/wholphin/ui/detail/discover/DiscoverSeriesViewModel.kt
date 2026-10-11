@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -85,7 +86,14 @@ class DiscoverSeriesViewModel
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val tv = seerrService.api.tvApi.tvTvIdGet(tvId = item.id)
-                    _state.update { it.copy(tvSeries = DataLoadingState.Success(tv)) }
+                    val watchProviders =
+                        seerrService.createWatchProviderDisplays(tv.watchProviders)
+                    _state.update {
+                        it.copy(
+                            tvSeries = DataLoadingState.Success(tv),
+                            watchProviders = watchProviders,
+                        )
+                    }
                     tv
                 } catch (ex: CancellationException) {
                     throw ex
@@ -100,7 +108,14 @@ class DiscoverSeriesViewModel
                 Timber.v("Init for tv %s", item.id)
                 try {
                     val tv = seerrService.api.tvApi.tvTvIdGet(tvId = item.id)
-                    _state.update { it.copy(tvSeries = DataLoadingState.Success(tv)) }
+                    val watchProviders =
+                        seerrService.createWatchProviderDisplays(tv.watchProviders)
+                    _state.update {
+                        it.copy(
+                            tvSeries = DataLoadingState.Success(tv),
+                            watchProviders = watchProviders,
+                        )
+                    }
                     val discoveredItem = seerrService.createDiscoverItem(tv)
                     backdropService.submit(discoveredItem)
 
@@ -416,6 +431,7 @@ class DiscoverSeriesViewModel
 
 data class DiscoverSeriesState(
     val tvSeries: DataLoadingState<TvDetails> = DataLoadingState.Pending,
+    val watchProviders: List<WatchProviderDisplay> = emptyList(),
     val rating: DiscoverRating? = null,
     val seasons: List<RequestSeason> = emptyList(),
     val seasons4k: List<RequestSeason> = emptyList(),
