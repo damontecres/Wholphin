@@ -716,4 +716,7 @@
     <string name="dim_screen">Bildschirm dimmen</string>
     <string name="photo_albums">Fotoalben</string>
     <string name="no_favorites_found">Keine Favoriten vorhanden!</string>
+    <string name="remove_from_playlist">Von Wiedergabeliste entfernen</string>
+    <string name="login_credentials_expired">Anmeldeinformationen abgelaufen, bitte erneut anmelden</string>
+    <string name="login_not_authorized">Du bist aktuell nicht berechtigt auf den Server zuzugreifen</string>
 </resources>
