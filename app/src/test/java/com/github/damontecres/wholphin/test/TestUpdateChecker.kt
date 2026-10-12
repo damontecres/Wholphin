@@ -16,12 +16,19 @@ class TestUpdateChecker {
     lateinit var releaseJson: JsonObject
     val assetsJson: JsonArray by lazy { releaseJson["assets"]!!.jsonArray }
 
-    @Before
-    fun setup() {
-        val resource = javaClass.classLoader?.getResource("release_develop.json")
+    lateinit var releaseV108Json: JsonObject
+    val assetsV108Json: JsonArray by lazy { releaseV108Json["assets"]!!.jsonArray }
+
+    private fun read(filename: String): JsonObject {
+        val resource = javaClass.classLoader?.getResource(filename)
         Assert.assertNotNull(resource)
         val fileContents = Paths.get(resource!!.toURI()).readText()
-        releaseJson = Json.parseToJsonElement(fileContents).jsonObject
+        return Json.parseToJsonElement(fileContents).jsonObject
+    }
+
+    @Before
+    fun setup() {
+        releaseJson = read("release_develop.json")
     }
 
     @Test
@@ -52,5 +59,31 @@ class TestUpdateChecker {
     fun `Choose debug abi`() {
         val url = getDownloadUrl(assetsJson, true, listOf("arm64-v8a"))
         Assert.assertEquals("https://github.com/damontecres/Wholphin/releases/download/develop/Wholphin-debug-arm64-v8a.apk", url)
+    }
+
+    @Test
+    fun `Test regular release`() {
+        releaseV108Json = read("release_v108.json")
+        getDownloadUrl(assetsV108Json, false, listOf("arm64-v8a")).let { url ->
+            Assert.assertEquals(
+                "https://github.com/damontecres/Wholphin/releases/download/v1.0.8/Wholphin-arm64-v8a.apk",
+                url,
+            )
+        }
+        getDownloadUrl(assetsV108Json, false, listOf("armeabi-v7a")).let { url ->
+            Assert.assertEquals(
+                "https://github.com/damontecres/Wholphin/releases/download/v1.0.8/Wholphin-armeabi-v7a.apk",
+                url,
+            )
+        }
+        getDownloadUrl(assetsV108Json, false, emptyList()).let { url ->
+            Assert.assertEquals(
+                "https://github.com/damontecres/Wholphin/releases/download/v1.0.8/Wholphin.apk",
+                url,
+            )
+        }
+        getDownloadUrl(assetsV108Json, true, listOf("arm64-v8a")).let { url ->
+            Assert.assertNull(url)
+        }
     }
 }

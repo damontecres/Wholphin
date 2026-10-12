@@ -22,6 +22,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
@@ -33,9 +34,7 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import okhttp3.OkHttpClient
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
@@ -75,8 +74,10 @@ class WholphinDreamService :
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         lifecycleScope.launchDefault {
             if (serverRepository.current.value == null) {
-                val prefs = preferencesDataStore.data.first()
-                serverRepository.restoreSession(prefs.currentServerId.toUUIDOrNull(), prefs.currentUserId.toUUIDOrNull())
+                val result = serverRepository.restoreLastSession()
+                if (result !is RestoredSession.Success) {
+                    Timber.w("Could not restore user session")
+                }
             }
         }
     }
