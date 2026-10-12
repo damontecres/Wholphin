@@ -27,6 +27,7 @@ sealed interface ExtrasItem {
     val subtitle: String?
     val isPlayed: Boolean
     val playedPercentage: Double
+    val aspectRatio: Float?
 
     /**
      * Represents multiple extras of the same type
@@ -39,6 +40,7 @@ sealed interface ExtrasItem {
         override val title: String,
         override val subtitle: String,
         override val isPlayed: Boolean,
+        override val aspectRatio: Float?,
     ) : ExtrasItem {
         override val destination: Destination =
             Destination.ItemGrid(
@@ -82,6 +84,8 @@ sealed interface ExtrasItem {
             get() = item.played
         override val playedPercentage
             get() = item.data.userData?.playedPercentage ?: 0.0
+        override val aspectRatio: Float?
+            get() = item.aspectRatio
     }
 }
 

@@ -16,7 +16,7 @@ concurrency:
 
 env:
   BRANCH_NAME: ${{ github.ref_name }}
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx8g -XX:MaxMetaspaceSize=512m'"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=1024m'"
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
@@ -54,7 +54,8 @@ jobs:
           ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
           ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
-          ./gradlew clean assembleDefaultRelease assembleDefaultDebug --no-daemon
+          ./gradlew clean assembleDefaultDebug
+          ./gradlew assembleDefaultRelease
 
       - name: Verify signatures
         run: |
@@ -76,7 +77,7 @@ jobs:
           echo "SHA256 checksums:"
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Upload mapping files
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mapping
           path: |

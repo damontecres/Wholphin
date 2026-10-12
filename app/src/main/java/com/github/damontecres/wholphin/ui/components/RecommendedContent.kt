@@ -22,9 +22,9 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.SuggestionService
 import com.github.damontecres.wholphin.services.SuggestionsResource
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -62,7 +62,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -81,7 +80,7 @@ class RecommendedViewModel
         private val backdropService: BackdropService,
         private val mediaManagementService: MediaManagementService,
         private val suggestionService: SuggestionService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         @Assisted private val parentId: UUID,
         @Assisted private val suggestionsType: BaseItemKind,
         @Assisted private val recommendedRows: List<RecommendedRow<*>>,
@@ -388,10 +387,10 @@ fun RecommendedContent(
                             viewModel.setFavorite(position, itemId, favorite)
                         },
                         onClickAddPlaylist = { itemId ->
-                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                            playlistViewModel.loadPlaylists()
                             showPlaylistDialog.makePresent(itemId)
                         },
-                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                        onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                         onDeleteItem = { viewModel.deleteItem(position, it) },
                         onShowOverview = { overviewDialog = ItemDetailsDialogInfo(it) },
                         onChooseVersion = { _, _ ->
@@ -485,12 +484,8 @@ fun RecommendedContent(
                 playlistViewModel.createPlaylistAndAddItem(it, itemId)
                 showPlaylistDialog.makeAbsent()
             },
+            onSearch = playlistViewModel::loadPlaylists,
             elevation = 3.dp,
         )
     }
 }
-
-data class RowColumnItem(
-    val position: RowColumn,
-    val item: BaseItem,
-)

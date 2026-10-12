@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -32,7 +33,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.ui.getTimeFormatter
+import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import kotlinx.coroutines.delay
@@ -199,8 +200,9 @@ fun Controller(
                     )
                 }
 
+                val context = LocalContext.current
                 var endTimeStr by remember { mutableStateOf("...") }
-                LaunchedEffect(player) {
+                LaunchedEffect(player, context) {
                     while (isActive) {
                         val remaining =
                             (player.duration - player.currentPosition)
@@ -208,12 +210,12 @@ fun Controller(
                                 .toLong()
                                 .milliseconds
                         val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                        endTimeStr = getTimeFormatter().format(endTime)
+                        endTimeStr = formatTime(context, endTime)
                         delay(1.seconds)
                     }
                 }
                 Text(
-                    text = "Ends $endTimeStr",
+                    text = stringResource(R.string.ends_at, endTimeStr),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelLarge,
                     modifier =

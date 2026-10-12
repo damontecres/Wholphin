@@ -27,6 +27,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +72,7 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
@@ -189,6 +192,7 @@ fun PlaybackControls(
                 onClickPlaybackDialogType = onClickPlaybackDialogType,
                 modifier = Modifier.align(Alignment.CenterStart),
             )
+
             PlaybackButtons(
                 player = player,
                 initialFocusRequester = initialFocusRequester,
@@ -202,6 +206,7 @@ fun PlaybackControls(
                 skipBackOnResume = skipBackOnResume,
                 modifier = Modifier.align(Alignment.Center),
             )
+
             Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
             ) {
@@ -270,27 +275,53 @@ fun SeekBar(
             seekBack = seekBack,
             seekForward = seekForward,
         )
-        Row(
+        SeekTimecodes(
+            positionMs = position,
+            durationMs = player.duration,
             modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+fun SeekTimecodes(
+    positionMs: Long,
+    durationMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    val currentLayoutDirection = LocalLayoutDirection.current
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = modifier,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            val remaining = ((player.duration - position) / 1000).seconds
-            Text(
-                text = (position / 1000).seconds.toString(),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
-            Text(
-                text = "-$remaining",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                modifier =
-                    Modifier
-                        .padding(8.dp),
-            )
+            val resources = LocalResources.current
+            val positionSec = positionMs / 1000
+            val remainingSec = (durationMs - positionMs) / 1000
+            val positionText =
+                remember(positionSec) { resources.formatDuration(positionSec.seconds) }
+            val remainingText =
+                remember(remainingSec) { "-${resources.formatDuration(remainingSec.seconds)}" }
+            CompositionLocalProvider(LocalLayoutDirection provides currentLayoutDirection) {
+                Text(
+                    text = positionText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier =
+                        Modifier
+                            .padding(8.dp),
+                )
+            }
+            CompositionLocalProvider(LocalLayoutDirection provides currentLayoutDirection) {
+                Text(
+                    text = remainingText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier =
+                        Modifier
+                            .padding(8.dp),
+                )
+            }
         }
     }
 }
@@ -370,61 +401,62 @@ fun PlaybackButtons(
     seekForward: Duration,
     modifier: Modifier = Modifier,
 ) {
-    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    Row(
-        modifier = modifier.focusGroup(),
-        horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
-    ) {
-        PlaybackButton(
-            iconRes = if (isLtr) R.drawable.baseline_skip_previous_24 else R.drawable.baseline_skip_next_24,
-            onClick = {
-                onControllerInteraction.invoke()
-                onPlaybackActionClick.invoke(PlaybackAction.Previous)
-            },
-            enabled = previousEnabled,
-            onControllerInteraction = onControllerInteraction,
-        )
-        PlaybackButton(
-            iconRes = if (isLtr) R.drawable.baseline_fast_rewind_24 else R.drawable.baseline_fast_forward_24,
-            onClick = {
-                onControllerInteraction.invoke()
-                player.seekBack(seekBack)
-            },
-            onControllerInteraction = onControllerInteraction,
-        )
-        PlaybackButton(
-            modifier = Modifier.focusRequester(initialFocusRequester),
-            iconRes = if (showPlay) R.drawable.baseline_play_arrow_24 else R.drawable.baseline_pause_24,
-            onClick = {
-                onControllerInteraction.invoke()
-                if (showPlay) {
-                    player.play()
-                    skipBackOnResume?.let {
-                        player.seekBack(it)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = modifier.focusGroup(),
+            horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
+        ) {
+            PlaybackButton(
+                iconRes = R.drawable.baseline_skip_previous_24,
+                onClick = {
+                    onControllerInteraction.invoke()
+                    onPlaybackActionClick.invoke(PlaybackAction.Previous)
+                },
+                enabled = previousEnabled,
+                onControllerInteraction = onControllerInteraction,
+            )
+            PlaybackButton(
+                iconRes = R.drawable.baseline_fast_rewind_24,
+                onClick = {
+                    onControllerInteraction.invoke()
+                    player.seekBack(seekBack)
+                },
+                onControllerInteraction = onControllerInteraction,
+            )
+            PlaybackButton(
+                modifier = Modifier.focusRequester(initialFocusRequester),
+                iconRes = if (showPlay) R.drawable.baseline_play_arrow_24 else R.drawable.baseline_pause_24,
+                onClick = {
+                    onControllerInteraction.invoke()
+                    if (showPlay) {
+                        player.play()
+                        skipBackOnResume?.let {
+                            player.seekBack(it)
+                        }
+                    } else {
+                        player.pause()
                     }
-                } else {
-                    player.pause()
-                }
-            },
-            onControllerInteraction = onControllerInteraction,
-        )
-        PlaybackButton(
-            iconRes = if (isLtr) R.drawable.baseline_fast_forward_24 else R.drawable.baseline_fast_rewind_24,
-            onClick = {
-                onControllerInteraction.invoke()
-                player.seekForward(seekForward)
-            },
-            onControllerInteraction = onControllerInteraction,
-        )
-        PlaybackButton(
-            iconRes = if (isLtr) R.drawable.baseline_skip_next_24 else R.drawable.baseline_skip_previous_24,
-            onClick = {
-                onControllerInteraction.invoke()
-                onPlaybackActionClick.invoke(PlaybackAction.Next)
-            },
-            enabled = nextEnabled,
-            onControllerInteraction = onControllerInteraction,
-        )
+                },
+                onControllerInteraction = onControllerInteraction,
+            )
+            PlaybackButton(
+                iconRes = R.drawable.baseline_fast_forward_24,
+                onClick = {
+                    onControllerInteraction.invoke()
+                    player.seekForward(seekForward)
+                },
+                onControllerInteraction = onControllerInteraction,
+            )
+            PlaybackButton(
+                iconRes = R.drawable.baseline_skip_next_24,
+                onClick = {
+                    onControllerInteraction.invoke()
+                    onPlaybackActionClick.invoke(PlaybackAction.Next)
+                },
+                enabled = nextEnabled,
+                onControllerInteraction = onControllerInteraction,
+            )
+        }
     }
 }
 

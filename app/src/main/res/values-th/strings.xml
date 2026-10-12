@@ -165,7 +165,9 @@
     <string name="video">วิดีโอ</string>
     <string name="videos">วิดีโอ</string>
     <string name="watch_live">ชมสด</string>
-    <string name="years_old">%1$d ปี</string>
+    <plurals name="years_old">
+        <item quantity="other">%1$d ปี</item>
+    </plurals>
     <string name="play_with_transcoding">เล่นโดยใช้การแปลงรหัส</string>
     <string name="media_information">ข้อมูลสื่อ</string>
     <string name="show_clock">แสดงนาฬิกา</string>

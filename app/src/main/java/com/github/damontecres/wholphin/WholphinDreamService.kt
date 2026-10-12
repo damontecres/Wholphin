@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin
 
 import android.service.dreams.DreamService
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.Lifecycle
@@ -104,13 +107,23 @@ class WholphinDreamService :
                                 ProvideLocalClock {
                                     val screensaverPrefs = prefs.interfacePreferences.screensaverPreference
                                     val currentItem by itemFlow.collectAsState(null)
-                                    AppScreensaverContent(
-                                        currentItem = currentItem,
-                                        showClock = screensaverPrefs.showClock,
-                                        duration = screensaverPrefs.duration.milliseconds,
-                                        animate = screensaverPrefs.animate,
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
+                                    Box(Modifier.fillMaxSize()) {
+                                        AppScreensaverContent(
+                                            currentItem = currentItem,
+                                            showClock = screensaverPrefs.showClock,
+                                            duration = screensaverPrefs.duration.milliseconds,
+                                            animate = screensaverPrefs.animate,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                        if (screensaverPrefs.dimEnabled) {
+                                            val alpha = screensaverPrefs.dimPercent / 100f
+                                            Box(
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .background(Color.Black.copy(alpha = alpha)),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

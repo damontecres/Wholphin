@@ -42,6 +42,8 @@ If you want to include these in a local build, see the [instructions here](https
 
 You can also build the extensions locally from https://github.com/damontecres/wholphin-extensions and include them in `app/libs`. The gradle build dependency resolution prefers these local files over fetching from the remote maven registry.
 
+Finally, if no `wholphin-mpv` implementation is found, `wholphin-mpv-stub` will be used. This allows the app to compile, but any runtime usage of MPV will throw an exception.
+
 ## Code organization
 
 Code is split into several packages:
@@ -95,3 +97,9 @@ Some of the models, such as `GetItemsFilter` or `ViewOptions`, are stored as JSO
 These settings are similar to Room ones and are usually stored per user. These can be accessed via `KeyValueService`. The values are `@Serializable` objects saved as JSON.
 
 This should be used sparingly.
+
+#### Experimental
+
+Some settings are considered "experimental". These may cause instabilities or may need further testing. They may be changed or removed any time.
+
+These are stored in the `ExperimentalPreferences` object in `AppPreferences`. Accessing them should always be gated with `ExperimentalPreferences.enabled`. There are a few helper functions for this purpose.

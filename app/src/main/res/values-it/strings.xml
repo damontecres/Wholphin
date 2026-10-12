@@ -81,24 +81,24 @@
     <string name="font">Carattere</string>
     <string name="background">Sfondo</string>
     <plurals name="behind_the_scenes">
-        <item quantity="one">Dietro le Scena</item>
-        <item quantity="many">Dietro le Scene</item>
-        <item quantity="other">Dietro le Scene</item>
+        <item quantity="one">Dietro la scena</item>
+        <item quantity="many">Dietro le scene</item>
+        <item quantity="other">Dietro le scene</item>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Sigla</item>
-        <item quantity="many">sigle</item>
-        <item quantity="other">sigle</item>
+        <item quantity="many">Sigle</item>
+        <item quantity="other">Sigle</item>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">Interviste</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Intervista</item>
+        <item quantity="many">Interviste</item>
+        <item quantity="other">Interviste</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Scene</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Scena</item>
+        <item quantity="many">Scene</item>
+        <item quantity="other">Scene</item>
     </plurals>
     <string name="watch_live">Guarda diretta</string>
     <string name="tv_guide">Guida TV</string>
@@ -110,7 +110,7 @@
     <string name="critic_rating">Valutazione della critica</string>
     <string name="default_track">Predefinita</string>
     <string name="discovered_servers">Server Scoperti</string>
-    <string name="download_and_update"><![CDATA[Scarica &amp; Aggiorna]]></string>
+    <string name="download_and_update"><![CDATA[Scarica e Aggiorna]]></string>
     <string name="downloading">Scaricando…</string>
     <string name="forced_track">Forzata</string>
     <string name="go_to">Vai a</string>
@@ -175,15 +175,19 @@
     <string name="switch_servers">Cambia server</string>
     <string name="switch_user">Cambia</string>
     <plurals name="trailers">
-        <item quantity="one">I trailer</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Trailer</item>
+        <item quantity="many">Trailer</item>
+        <item quantity="other">Trailer</item>
     </plurals>
     <string name="tv_dvr_schedule">Programma DVR</string>
     <string name="video_scale">Scala Video</string>
     <string name="video">Video</string>
     <string name="videos">I video</string>
-    <string name="years_old">%1$d anni</string>
+    <plurals name="years_old">
+        <item quantity="one">%1$d anno</item>
+        <item quantity="many">%1$d anni</item>
+        <item quantity="other">%1$d anni</item>
+    </plurals>
     <string name="play_with_transcoding">Riproduci con transcodifica</string>
     <string name="immediate">Immediato</string>
     <string name="show_next_up_when">Mostra prossimo episodio</string>
@@ -212,19 +216,19 @@
     <string name="background_opacity">Opacità sfondo</string>
     <string name="skip_segment_outro">Salta Outro</string>
     <plurals name="theme_videos">
-        <item quantity="one">Temi Video</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Tema Video</item>
+        <item quantity="many">Temi Video</item>
+        <item quantity="other">Temi Video</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Scene Eliminate</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Scena Eliminata</item>
+        <item quantity="many">Scene Eliminate</item>
+        <item quantity="other">Scene Eliminate</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Video brevi</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Video breve</item>
+        <item quantity="many">Video brevi</item>
+        <item quantity="other">Video brevi</item>
     </plurals>
     <string name="advanced_settings">Impostazioni Avanzate</string>
     <string name="check_for_updates">Cerca aggiornamenti</string>
@@ -253,14 +257,14 @@
     </plurals>
     <string name="remember_selected_tab">Ricorda schede selezionate</string>
     <plurals name="samples">
-        <item quantity="one">Campioni</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Campione</item>
+        <item quantity="many">Campioni</item>
+        <item quantity="other">Campioni</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Featurettes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Contenuto extra</item>
+        <item quantity="many">Contenuti extra</item>
+        <item quantity="other">Contenuti extra</item>
     </plurals>
     <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare &amp; Prossimo Episodio]]></string>
     <string name="downmix_stereo">Converti sempre in stereo</string>
@@ -270,8 +274,8 @@
     <string name="runtime_sort">Durata</string>
     <plurals name="clips">
         <item quantity="one">Clip</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Clip</item>
+        <item quantity="other">Clip</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s scaricamento</item>
@@ -516,7 +520,7 @@
     <string name="subtitle_edge_shadow">Ombra</string>
     <string name="background_style_wrap">Avvolgi</string>
     <string name="background_style_boxed">Con riquadro</string>
-    <string name="prefer_mpv">Preferisci MVP</string>
+    <string name="prefer_mpv">Preferisci MPV</string>
     <string name="player_backend_options_subtitles_prefer_mpv">Usa ExoPlayer per la riproduzione HDR</string>
     <string name="aspect_ratios_poster">Copertina (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
@@ -617,7 +621,7 @@
     <string name="skip_behavior_summary">Per intro, titoli di coda e altro</string>
     <string name="play_with">Riproduci con</string>
     <string name="transcoding">Trascodifica</string>
-    <string name="pin_digits_hint">[0-9]</string>
+    <string name="pin_digits_hint">[0–9]</string>
     <string name="results">Risultati</string>
     <string name="require_login">Richiedi login per il profilo</string>
     <string name="combined_search_results">Risultati di ricerca combinati</string>
@@ -640,4 +644,101 @@
     <string name="display_toggles_summary">Personalizza quali mostrare</string>
     <string name="continue_watching_click_behavior">Comportamento click su Continua a guardare / Prossimo</string>
     <string name="sort">Ordina</string>
+    <string name="trailers_title">Trailer</string>
+    <string name="other_extras_title">Altri</string>
+    <string name="behind_the_scenes_title">Dietro le scene</string>
+    <string name="theme_songs_title">Sigle</string>
+    <string name="theme_videos_title">Video delle sigle</string>
+    <string name="clips_title">Clip</string>
+    <string name="deleted_scenes_title">Scene cancellate</string>
+    <string name="interviews_title">Interviste</string>
+    <string name="scenes_title">Scene</string>
+    <string name="samples_title">Campioni</string>
+    <string name="shorts_title">Corti</string>
+    <string name="featurettes_title">Contenuti extra</string>
+    <plurals name="movies">
+        <item quantity="one">Film</item>
+        <item quantity="many">Film</item>
+        <item quantity="other">Film</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="one">Serie TV</item>
+        <item quantity="many">Serie TV</item>
+        <item quantity="other">Serie TV</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="one">Persona</item>
+        <item quantity="many">Persone</item>
+        <item quantity="other">Persone</item>
+    </plurals>
+    <string name="genre_movies">%1$s Film</string>
+    <string name="genre_tv_shows">%1$s Serie TV</string>
+    <string name="quality_profile">Profilo di qualità</string>
+    <string name="is_default">Predefinito</string>
+    <string name="root_folder">Cartella principale</string>
+    <string name="popularity">Popolarità</string>
+    <string name="production_status">Stato di produzione</string>
+    <string name="different_for_hdr">Usa stile differente per HDR</string>
+    <string name="experimental_settings">Impostazioni sperimentali</string>
+    <string name="confirm_enable_experimental_title">Abilita impostazioni sperimentali?</string>
+    <string name="confirm_enable_experimental_body">Le impostazioni sperimentali possono essere instabili!\nPossono essere rimosse o cambiate in qualsiasi aggiornamento.</string>
+    <string name="video_tunneling">Tunneling video</string>
+    <string name="duration_hours_minutes_seconds">%1$do %2$dm %3$ds</string>
+    <string name="duration_hours_minutes">%1$do %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_hours">%1$do</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="time_left">%1$s rimanenti</string>
+    <string name="prefer_ac3_for_surround_summary"><![CDATA[Transcodifica l’audio non stereo in AC3/Dolby Digital]]></string>
+    <string name="prefer_ac3_for_surround">Usa AC3 per l’audio surround</string>
+    <string name="blocklisted">Bloccati</string>
+    <string name="unavailable">Non disponibile</string>
+    <string name="subtitle_mode_default">Predefinito</string>
+    <string name="subtitle_mode_none">Nessuno</string>
+    <string name="profile_specific_settings_from_server">Impostazioni profilo utente dal server</string>
+    <string name="subtitle_mode">Modalità sottotitoli</string>
+    <string name="use_user_profile">Usa le impostazioni del tuo profilo</string>
+    <string name="subtitle_mode_smart">Intelligente</string>
+    <string name="subtitle_mode_only_forced">Solo forzati</string>
+    <string name="subtitle_mode_always">Sempre</string>
+    <string name="preferred_subtitle_language">Lingua preferita per i sottotitoli</string>
+    <string name="preferred_audio_language">Lingua preferita per l\'audio</string>
+    <string name="override_user_profile_settings">Altre impostazioni del profilo utente</string>
+    <string name="override_user_profile_settings_summary">Sovrascrivi le impostazioni del tuo profilo utente dal server</string>
+    <string name="any_language">Qualsiasi lingua</string>
+    <string name="brown">Marrone</string>
+    <string name="dpad_seek_mode_trickplay">Trickplay</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programmi TV</string>
+    <string name="recordings">Registrazioni</string>
+    <string name="folders_title">Cartelle</string>
+    <string name="books">Libri</string>
+    <string name="d_pad_seek_mode_title">Modalità barra di avanzamento con D-Pad</string>
+    <string name="dpad_seek_mode_minimal">Minimale</string>
+    <string name="dpad_seek_mode_minimal_summary">Barra di avanzamento piccola in basso allo schermo (predefinita)</string>
+    <string name="dpad_seek_mode_trickplay_summary">Barra di avanzamento con anteprime trickplay</string>
+    <string name="dpad_seek_mode_none_summary">Nessuna barra di avanzamento</string>
+    <string name="hash_matches">Corrispondenze hash</string>
+    <string name="user_views">Viste utente</string>
+    <string name="audio_books">Audiolibri</string>
+    <string name="server_version_not_supported">Versione del server non supportata</string>
+    <string name="appears_on">Appare in</string>
+    <string name="disable_audio_offload">Disabilita offload hardware audio</string>
+    <string name="disable_audio_offload_summary">Disabilitare l’offload della decodifica audio può risolvere i blocchi di riproduzione su alcuni dispositivi</string>
+    <string name="dim_after_delay">Scurisci lo schermo dopo un ritardo</string>
+    <string name="dim_percentage">Percentuale di oscuramento</string>
+    <string name="dim_screen">Scurisci schermo</string>
+    <string name="photo_albums">Album fotografici</string>
+    <string name="no_favorites_found">Nessun preferito trovato!</string>
+    <string name="duration_hours_seconds">%1$do %2$ds</string>
+    <string name="season_episode_number">S%1$d E%2$d</string>
+    <string name="season_episode_number_range">S%1$d E%2$d-E%3$d</string>
+    <string name="season_episode_number_padded">S%1$02dE%2$02d</string>
+    <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
+    <string name="episode_number_short">E%1$d</string>
+    <string name="season_number">Stagione %1$d</string>
+    <string name="remove_from_playlist">Rimuovi dalla playlist</string>
+    <string name="login_credentials_expired">Credenziali scadute, effettua di nuovo l’accesso</string>
+    <string name="login_not_authorized">Non sei autorizzato ad accedere al server in questo momento</string>
 </resources>

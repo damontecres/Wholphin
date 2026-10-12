@@ -3,6 +3,7 @@
 package com.github.damontecres.wholphin.ui.nav
 
 import androidx.navigation3.runtime.NavKey
+import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
@@ -53,7 +54,11 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
-    data object Search : Destination()
+    data class Search(
+        val query: String = "",
+    ) : Destination()
+
+    data object UserAppPreferences : Destination(true)
 
     @Serializable
     data class SeriesOverview(
@@ -69,6 +74,7 @@ sealed class Destination(
         val itemId: UUID,
         val type: BaseItemKind,
         val collectionType: CollectionType? = null,
+        val initialSongId: UUID? = null,
     ) : Destination() {
         constructor(item: BaseItem) : this(item.id, item.type, item.data.collectionType)
     }
@@ -84,6 +90,7 @@ sealed class Destination(
         val positionMs: Long,
         val forceTranscoding: Boolean = false,
         val backend: PlayerBackend? = null,
+        val shuffle: Boolean = false,
     ) : Destination(true) {
         constructor(item: BaseItem) : this(item.id, item.resumeMs)
     }
@@ -144,11 +151,16 @@ sealed class Destination(
     @Serializable
     data class DiscoveredItem(
         val item: DiscoverItem,
+        // Index to scroll to on the person page grid
+        val startIndex: Int = 0,
     ) : Destination(false)
 
+    @Serializable
     data class DiscoverMoreResult(
         val type: DiscoverRequestType,
         val startIndex: Int = SEERR_PAGE_SIZE,
+        val initialFilter: DiscoverFilter = DiscoverFilter(),
+        val titleOverride: StringProvider? = null,
     ) : Destination(false)
 
     @Serializable

@@ -10,11 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +40,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
@@ -61,6 +65,8 @@ fun SubtitlePreferencesContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+    val firstFocusRequester = remember { FocusRequester() }
+    val lastFocusRequester = remember { FocusRequester() }
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
 
@@ -79,112 +85,133 @@ fun SubtitlePreferencesContent(
         LaunchedEffect(Unit) {
             focusRequester.tryRequestFocus()
         }
-        LazyColumn(
-            state = state,
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            contentPadding = PaddingValues(16.dp),
+        Column(
             modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
         ) {
-            stickyHeader {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                )
-            }
-            prefList.forEachIndexed { groupIndex, group ->
-                item {
-                    Text(
-                        text = stringResource(group.title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp, bottom = 4.dp),
-                    )
-                }
-                val groupPreferences =
-                    group.preferences +
-                        group.conditionalPreferences
-                            .filter { it.condition.invoke(preferences) }
-                            .map { it.preferences }
-                            .flatten()
-                groupPreferences.forEachIndexed { prefIndex, pref ->
-                    pref as AppPreference<SubtitlePreferences, Any>
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+            )
+            LazyColumn(
+                state = state,
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                contentPadding = PaddingValues(16.dp),
+            ) {
+                prefList.forEachIndexed { groupIndex, group ->
                     item {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val focused = interactionSource.collectIsFocusedAsState().value
-                        LaunchedEffect(focused) {
-                            if (focused) {
-                                focusedIndex = Pair(groupIndex, prefIndex)
-                                onFocus.invoke(groupIndex, prefIndex)
+                        Text(
+                            text = stringResource(group.title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Start,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp, bottom = 4.dp),
+                        )
+                    }
+                    val groupPreferences =
+                        group.preferences +
+                            group.conditionalPreferences
+                                .filter { it.condition.invoke(preferences) }
+                                .map { it.preferences }
+                                .flatten()
+                    groupPreferences.forEachIndexed { prefIndex, pref ->
+                        pref as AppPreference<SubtitlePreferences, Any>
+                        item {
+                            val isFirst = groupIndex == 0 && prefIndex == 0
+                            val isLast =
+                                groupIndex == prefList.lastIndex && prefIndex == groupPreferences.lastIndex
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val bringIntoViewRequester = remember { BringIntoViewRequester() }
+                            val focused = interactionSource.collectIsFocusedAsState().value
+                            LaunchedEffect(focused) {
+                                if (focused) {
+                                    focusedIndex = Pair(groupIndex, prefIndex)
+                                    onFocus.invoke(groupIndex, prefIndex)
+                                }
                             }
-                        }
-                        when (pref) {
-                            SubtitleSettings.Reset -> {
-                                ClickPreference(
-                                    title = stringResource(pref.title),
-                                    onClick = {
-                                        scope.launch(ExceptionHandler()) {
-                                            val newValue =
-                                                SubtitlePreferences
-                                                    .newBuilder()
-                                                    .apply { resetSubtitles() }
-                                                    .build()
-                                            onPreferenceChange.invoke(newValue)
-                                        }
-                                    },
-                                    interactionSource = interactionSource,
-                                )
+                            if (preferences.useSeparateHdr && pref == SubtitleSettings.SeparateHdr) {
+                                LaunchedEffect(Unit) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
                             }
+                            val focusModifier =
+                                Modifier
+                                    .ifElse(
+                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).bringIntoViewRequester(bringIntoViewRequester)
+                                    .lazyListWrapScrolling(
+                                        state,
+                                        focused,
+                                        isFirst,
+                                        isLast,
+                                        firstFocusRequester,
+                                        lastFocusRequester,
+                                    )
 
-                            else -> {
-                                val value = pref.getter.invoke(preferences)
-                                ComposablePreference(
-                                    preference = pref,
-                                    value = value,
-                                    onNavigate = viewModel.navigationManager::navigateTo,
-                                    onValueChange = { newValue ->
-                                        val validation = pref.validate(newValue)
-                                        when (validation) {
-                                            is PreferenceValidation.Invalid -> {
-                                                // TODO?
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        validation.message,
-                                                        Toast.LENGTH_SHORT,
-                                                    ).show()
+                            when (pref) {
+                                SubtitleSettings.Reset -> {
+                                    ClickPreference(
+                                        title = stringResource(pref.title),
+                                        onClick = {
+                                            scope.launch(ExceptionHandler()) {
+                                                val newValue =
+                                                    SubtitlePreferences
+                                                        .newBuilder()
+                                                        .apply { resetSubtitles() }
+                                                        .build()
+                                                onPreferenceChange.invoke(newValue)
                                             }
+                                        },
+                                        interactionSource = interactionSource,
+                                        modifier = focusModifier,
+                                    )
+                                }
 
-                                            PreferenceValidation.Valid -> {
-                                                scope.launch(ExceptionHandler()) {
-                                                    onPreferenceChange.invoke(
-                                                        pref.setter(
-                                                            preferences,
-                                                            newValue,
-                                                        ),
-                                                    )
+                                else -> {
+                                    val value = pref.getter.invoke(preferences)
+                                    ComposablePreference(
+                                        preference = pref,
+                                        value = value,
+                                        onNavigate = viewModel.navigationManager::navigateTo,
+                                        onValueChange = { newValue ->
+                                            val validation = pref.validate(preferences, newValue)
+                                            when (validation) {
+                                                is PreferenceValidation.Invalid -> {
+                                                    // TODO?
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            validation.message,
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
+                                                }
+
+                                                PreferenceValidation.Valid -> {
+                                                    scope.launch(ExceptionHandler()) {
+                                                        onPreferenceChange.invoke(
+                                                            pref.setter(
+                                                                preferences,
+                                                                newValue,
+                                                            ),
+                                                        )
+                                                    }
                                                 }
                                             }
-                                        }
-                                    },
-                                    interactionSource = interactionSource,
-                                    modifier =
-                                        Modifier
-                                            .ifElse(
-                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                                Modifier.focusRequester(focusRequester),
-                                            ),
-                                )
+                                        },
+                                        interactionSource = interactionSource,
+                                        modifier = focusModifier,
+                                    )
+                                }
                             }
                         }
                     }

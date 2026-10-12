@@ -48,7 +48,7 @@ val SeriesSortOptions =
         ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_LAST_CONTENT_ADDED,
-        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.SERIES_DATE_PLAYED,
         ItemSortBy.COMMUNITY_RATING,
         ItemSortBy.CRITIC_RATING,
         ItemSortBy.OFFICIAL_RATING,

@@ -50,7 +50,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Path": "",
-      "Level": 0
+      "Level": 0,
+      "DeliveryMethod": "External"
     },
     {
       "Codec": "subrip",
@@ -79,7 +80,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Path": "",
-      "Level": 0
+      "Level": 0,
+      "DeliveryMethod": "External"
     },
     {
       "Codec": "subrip",
@@ -107,7 +109,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Path": "",
-      "Level": 0
+      "Level": 0,
+      "DeliveryMethod": "External"
     },
     {
       "Codec": "eac3",
@@ -194,7 +197,8 @@
       "IsExternal": false,
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
-      "Level": 0
+      "Level": 0,
+      "DeliveryMethod": "Embed"
     }
   ],
   "MediaAttachments": [],

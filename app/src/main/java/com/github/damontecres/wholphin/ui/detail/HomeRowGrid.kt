@@ -24,17 +24,16 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
-import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.HomeDataService
 import com.github.damontecres.wholphin.services.MediaManagementService
-import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
-import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -75,7 +74,7 @@ class HomeRowGridViewModel
         val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerService: NavDrawerService,
-        private val homeSettingsService: HomeSettingsService,
+        private val homeDataService: HomeDataService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
         private val navigationManager: NavigationManager,
@@ -83,7 +82,7 @@ class HomeRowGridViewModel
         private val mediaManagementService: MediaManagementService,
         private val musicService: MusicService,
         val streamChoiceService: StreamChoiceService,
-        val mediaReportService: MediaReportService,
+        val serverReportService: ServerReportService,
         @Assisted private val title: StringProvider,
         @Assisted private val rowConfig: HomeRowConfig,
     ) : ViewModel(),
@@ -128,7 +127,7 @@ class HomeRowGridViewModel
                         val libraries =
                             navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                         val result =
-                            homeSettingsService.fetchDataForRow(
+                            homeDataService.fetchDataForRow(
                                 row = rowConfig,
                                 scope = viewModelScope,
                                 prefs = prefs,
@@ -187,7 +186,7 @@ class HomeRowGridViewModel
             }
         }
 
-        override fun sendReportFor(itemId: UUID) = mediaReportService.sendReportFor(itemId)
+        override fun sendReportFor(itemId: UUID) = serverReportService.sendMediaReportFor(itemId)
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {

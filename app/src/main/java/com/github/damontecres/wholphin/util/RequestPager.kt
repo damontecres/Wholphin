@@ -24,7 +24,7 @@ import java.util.function.Predicate
  */
 abstract class RequestPager<T>(
     protected val scope: CoroutineScope,
-    protected val pageSize: Int = DEFAULT_PAGE_SIZE,
+    val pageSize: Int = DEFAULT_PAGE_SIZE,
     cacheSize: Long = 8,
 ) : AbstractList<T?>(),
     BlockingList<T?> {

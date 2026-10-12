@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="active_recordings">Rregjistrime aktive</string>
+    <string name="add_favorite">Shto si të preferuar</string>
+    <string name="add_server">Shto server</string>
+    <string name="add_user">Shto përdorues</string>
+    <string name="collection">Koleksion</string>
+    <string name="confirm">Konfirmo</string>
+    <string name="continue_watching">Vazhdo shikimin</string>
+    <string name="delete">Fshij</string>
+    <string name="download_and_update"><![CDATA[Shkarko &amp; Përditëso]]></string>
+    <string name="decimal_seconds">%.2f sekonda</string>
+    <string name="duration_hours_minutes_seconds">%1$dh%2$dm%3$ds</string>
+    <string name="duration_hours_minutes">%1$dh%2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm%2$ds</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="directed_by">Drejtuar nga %1$s</string>
+    <string name="downloading">Duke shkarkuar…</string>
+    <string name="enabled">Aktivizuar</string>
+    <string name="ends_at">Përfundon në %1$s</string>
+    <string name="enter_server_url">Vendos IP-në ose URL-në e serverit</string>
+    <string name="subtitles_hearing_impaired">SDH</string>
+    <string name="programs">Programe TV</string>
+    <string name="recordings">Rregjistrime</string>
+    <string name="books">Libra</string>
+    <string name="user_views">Shikimet e përdoruesit</string>
+    <string name="appears_on">Shfaqet në</string>
+    <string name="audio_books">Audiolibra</string>
+    <string name="server_version_not_supported">Versioni i serverit nuk suportohet</string>
+    <string name="folders_title">Dosje</string>
+    <string name="any_language">Çdo gjuhë</string>
+    <string name="hash_matches">Hash-i përputhet</string>
+    <string name="override_user_profile_settings_summary">Ndrysho cilësimet e profilit tënd të përdoruesit nga serveri</string>
+</resources>

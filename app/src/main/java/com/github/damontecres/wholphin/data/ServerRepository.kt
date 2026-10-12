@@ -6,16 +6,21 @@ import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
@@ -49,14 +54,25 @@ class ServerRepository
         private var _current = MutableStateFlow<CurrentUser?>(null)
         val current: StateFlow<CurrentUser?> = _current
 
-        private var _currentUserDto = MutableStateFlow<UserDto?>(null)
-        val currentUserDto: UserDto? get() = _currentUserDto.value
-        val currentUserDtoFlow: StateFlow<UserDto?> get() = _currentUserDto
+        private var _currentUserDto = MutableStateFlow<ServerUserConfig?>(null)
+        val currentUserDto: ServerUserConfig? get() = _currentUserDto.value
+        val currentUserDtoFlow: StateFlow<ServerUserConfig?> get() = _currentUserDto
 
         val currentServer: JellyfinServer? get() = _current.value?.server
         val currentServerFlow: Flow<JellyfinServer?> get() = _current.map { it?.server }
         val currentUser: JellyfinUser? get() = _current.value?.user
-        val currentUserFlow: Flow<JellyfinUser?> get() = _current.map { it?.user }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        val currentUserFlow: Flow<JellyfinUser?>
+            get() =
+                _current
+                    .flatMapLatest { user ->
+                        if (user?.user != null) {
+                            serverDao.getUserFlow(user.user.serverId, user.user.id)
+                        } else {
+                            flow { emit(null) }
+                        }
+                    }
 
         val serverPluginInstalled = MutableStateFlow<Boolean>(false)
 
@@ -113,7 +129,7 @@ class ServerRepository
                 val currentUser = CurrentUser(updatedServer, updatedUser)
                 withContext(WholphinDispatchers.Main) {
                     _current.value = currentUser
-                    _currentUserDto.value = userDto
+                    _currentUserDto.value = ServerUserConfig(userDto)
                 }
                 getServerSharedPreferences(context).edit(true) {
                     putString(SERVER_URL_KEY, updatedServer.url)
@@ -299,6 +315,25 @@ class ServerRepository
                 val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
                 response.content
             }
+
+        /**
+         * Update [currentUserDto] by querying the server
+         */
+        suspend fun updateUserDto() {
+            val userDto by apiClient.userApi.getCurrentUser()
+            updateUserDto(userDto)
+        }
+
+        /**
+         * Update [currentUserDto] with the specified [UserDto]
+         *
+         * This will only update if the [UserDto] is for the [currentUser]
+         */
+        fun updateUserDto(userDto: UserDto) {
+            _currentUserDto.update {
+                if (currentUser?.id == userDto.id) ServerUserConfig(userDto) else it
+            }
+        }
 
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =

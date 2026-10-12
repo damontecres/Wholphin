@@ -51,7 +51,7 @@ import timber.log.Timber
 @Composable
 fun SubtitleStylePage(
     initialPreferences: AppPreferences,
-    hdrSettings: Boolean,
+    isPageForHdrSettings: Boolean,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
 ) {
@@ -67,7 +67,7 @@ fun SubtitleStylePage(
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         DisposableEffect(context) {
-            if (hdrSettings) {
+            if (isPageForHdrSettings) {
                 Timber.v("Switching color mode to HDR")
                 context.findActivity()?.window?.colorMode = ActivityInfo.COLOR_MODE_HDR
             }
@@ -77,7 +77,7 @@ fun SubtitleStylePage(
         }
     }
     val prefs =
-        if (hdrSettings) {
+        if (isPageForHdrSettings) {
             preferences.interfacePreferences.hdrSubtitlesPreferences
         } else {
             preferences.interfacePreferences.subtitlesPreferences
@@ -192,8 +192,8 @@ fun SubtitleStylePage(
         }
         val display = LocalView.current.display
         val prefList =
-            remember(hdrSettings, display) {
-                if (!hdrSettings && SubtitleSettings.shouldShowHdr(display)) {
+            remember(isPageForHdrSettings, display) {
+                if (!isPageForHdrSettings && SubtitleSettings.shouldShowHdr(display)) {
                     // If not on HDR page and display is HDR capable, then show the HDR button
                     SubtitleSettings.preferences + SubtitleSettings.hdrPreferenceGroup
                 } else {
@@ -202,13 +202,13 @@ fun SubtitleStylePage(
             }
         SubtitlePreferencesContent(
             title =
-                if (hdrSettings) {
+                if (isPageForHdrSettings) {
                     stringResource(R.string.hdr_subtitle_style)
                 } else {
                     stringResource(R.string.subtitle_style)
                 },
             preferences =
-                if (hdrSettings) {
+                if (isPageForHdrSettings) {
                     preferences.interfacePreferences.hdrSubtitlesPreferences
                 } else {
                     preferences.interfacePreferences.subtitlesPreferences
@@ -217,7 +217,7 @@ fun SubtitleStylePage(
             onPreferenceChange = { newSubtitlePrefs ->
                 viewModel.preferenceDataStore.updateData {
                     it.updateInterfacePreferences {
-                        if (hdrSettings) {
+                        if (isPageForHdrSettings) {
                             hdrSubtitlesPreferences = newSubtitlePrefs
                         } else {
                             subtitlesPreferences = newSubtitlePrefs

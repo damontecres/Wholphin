@@ -43,8 +43,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
@@ -104,6 +102,30 @@ fun SteppedSeekBarImpl(
             seek(seekProgress)
         },
         interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
+/**
+ * A read-only seek bar for showing progress without taking focus or handling D-Pad input.
+ *
+ * This is used by overlays where seeking is handled elsewhere and the bar is only a visual indicator.
+ */
+@Composable
+fun StaticSeekBarImpl(
+    progress: Float,
+    durationMs: Long,
+    bufferedProgress: Float,
+    modifier: Modifier = Modifier,
+) {
+    SeekBarDisplay(
+        enabled = false,
+        progress = progress,
+        bufferedProgress = bufferedProgress,
+        durationMs = durationMs,
+        onLeft = {},
+        onRight = {},
+        interactionSource = remember { MutableInteractionSource() },
         modifier = modifier,
     )
 }
@@ -178,7 +200,6 @@ private fun SeekBarDisplay(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val color = MaterialTheme.colorScheme.border
     val onSurface = MaterialTheme.colorScheme.onSurface
 
@@ -201,13 +222,7 @@ private fun SeekBarDisplay(
                             Timber.v("Ignoring %s", event)
                             return@onPreviewKeyEvent false
                         }
-                        val seekBack =
-                            if (isLtr) {
-                                isDpadLeft(event)
-                            } else {
-                                isDpadRight(event)
-                            }
-                        if (seekBack) {
+                        if (isDpadLeft(event)) {
                             when (event.type) {
                                 KeyEventType.KeyDown -> {
                                     val repeatCount = event.nativeKeyEvent.repeatCount
@@ -276,68 +291,34 @@ private fun SeekBarDisplay(
                     strokeWidth = size.height,
                     cap = StrokeCap.Round,
                 )
-                if (isLtr) {
-                    drawLine(
-                        color = onSurface.copy(alpha = .65f),
-                        start = Offset(x = 0f, y = yOffset),
-                        end =
-                            Offset(
-                                x = size.width.times(bufferedProgress),
-                                y = yOffset,
-                            ),
-                        strokeWidth = size.height,
-                        cap = StrokeCap.Round,
-                    )
-                    drawLine(
-                        color = color,
-                        start = Offset(x = 0f, y = yOffset),
-                        end =
-                            Offset(
-                                x = size.width.times(progress),
-                                y = yOffset,
-                            ),
-                        strokeWidth = size.height,
-                        cap = StrokeCap.Round,
-                    )
-                } else {
-                    drawLine(
-                        color = onSurface.copy(alpha = .65f),
-                        start =
-                            Offset(
-                                x = size.width - size.width.times(bufferedProgress),
-                                y = yOffset,
-                            ),
-                        end =
-                            Offset(
-                                x = size.width,
-                                y = yOffset,
-                            ),
-                        strokeWidth = size.height,
-                        cap = StrokeCap.Round,
-                    )
-                    drawLine(
-                        color = color,
-                        start = Offset(x = size.width - size.width.times(progress), y = yOffset),
-                        end =
-                            Offset(
-                                x = size.width,
-                                y = yOffset,
-                            ),
-                        strokeWidth = size.height,
-                        cap = StrokeCap.Round,
-                    )
-                }
+                drawLine(
+                    color = onSurface.copy(alpha = .65f),
+                    start = Offset(x = 0f, y = yOffset),
+                    end =
+                        Offset(
+                            x = size.width.times(bufferedProgress),
+                            y = yOffset,
+                        ),
+                    strokeWidth = size.height,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = color,
+                    start = Offset(x = 0f, y = yOffset),
+                    end =
+                        Offset(
+                            x = size.width.times(progress),
+                            y = yOffset,
+                        ),
+                    strokeWidth = size.height,
+                    cap = StrokeCap.Round,
+                )
                 drawCircle(
                     color = Color.White,
                     radius = size.height + 2,
                     center =
                         Offset(
-                            x =
-                                if (isLtr) {
-                                    size.width.times(progress)
-                                } else {
-                                    size.width - size.width.times(progress)
-                                },
+                            x = size.width.times(progress),
                             y = yOffset,
                         ),
                 )

@@ -4,10 +4,16 @@ import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
+import com.github.damontecres.wholphin.data.filter.DiscoverFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.services.SeerrSearchResult
+import com.github.damontecres.wholphin.ui.discover.discoverGenreTitle
+import com.github.damontecres.wholphin.ui.util.ResStringProvider
+import com.github.damontecres.wholphin.ui.util.StringProvider
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.serialization.Serializable
 
 /**
  * A [RequestPager] for Seerr server queries
@@ -45,6 +51,27 @@ enum class DiscoverRequestType(
     UNKNOWN(R.string.unknown),
 }
 
+@Serializable
+sealed interface DiscoverPagerType {
+    val title: StringProvider
+
+    @Serializable
+    data class RequestType(
+        val type: DiscoverRequestType,
+    ) : DiscoverPagerType {
+        override val title: StringProvider = ResStringProvider(type.stringRes)
+    }
+
+    @Serializable
+    data class Genre(
+        val genreId: Int,
+        val name: String,
+        val type: SeerrItemType,
+    ) : DiscoverPagerType {
+        override val title: StringProvider = discoverGenreTitle(name, type)
+    }
+}
+
 /**
  * Specifies how a [RequestPager] should prepare and execute API calls
  */
@@ -55,27 +82,29 @@ interface DiscoverRequestHandler<T> {
     ): QueryResult<T>
 }
 
-val DiscoverTvRequestHandler =
-    object : DiscoverRequestHandler<TvResult> {
-        override suspend fun execute(
-            api: SeerrApi,
-            pageNumber: Int,
-        ): QueryResult<TvResult> =
-            api.api.searchApi.discoverTvGet(page = pageNumber).let {
-                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
-            }
-    }
+class DiscoverTvRequestHandler(
+    val filter: DiscoverFilter = DiscoverFilter(),
+) : DiscoverRequestHandler<TvResult> {
+    override suspend fun execute(
+        api: SeerrApi,
+        pageNumber: Int,
+    ): QueryResult<TvResult> =
+        filter.discoverTv(api.api.searchApi, pageNumber).let {
+            QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+        }
+}
 
-val DiscoverMovieRequestHandler =
-    object : DiscoverRequestHandler<MovieResult> {
-        override suspend fun execute(
-            api: SeerrApi,
-            pageNumber: Int,
-        ): QueryResult<MovieResult> =
-            api.api.searchApi.discoverMoviesGet(page = pageNumber).let {
-                QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
-            }
-    }
+class DiscoverMovieRequestHandler(
+    val filter: DiscoverFilter = DiscoverFilter(),
+) : DiscoverRequestHandler<MovieResult> {
+    override suspend fun execute(
+        api: SeerrApi,
+        pageNumber: Int,
+    ): QueryResult<MovieResult> =
+        filter.discoverMovies(api.api.searchApi, pageNumber).let {
+            QueryResult(it.results.orEmpty(), it.totalResults ?: 0)
+        }
+}
 
 val TrendingRequestHandler =
     object : DiscoverRequestHandler<SeerrSearchResult> {

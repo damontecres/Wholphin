@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.text.format.DateUtils
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -178,6 +179,7 @@ fun DvrSchedule(
                         .focusRequester(focusRequester),
             )
             showDialog?.let { item ->
+                val context = LocalContext.current
                 ProgramDialog(
                     state = DataLoadingState.Success(item),
                     canRecord = true,
@@ -185,13 +187,18 @@ fun DvrSchedule(
                         showDialog = null
                     },
                     onWatch = { program ->
-                        program.data.channelId?.let {
+                        val channelId = program.data.channelId
+                        if (channelId != null) {
                             viewModel.navigationManager.navigateTo(
                                 Destination.Playback(
-                                    itemId = it,
+                                    itemId = channelId,
                                     positionMs = 0L,
                                 ),
                             )
+                        } else {
+                            Toast
+                                .makeText(context, "Program has no channel ID", Toast.LENGTH_LONG)
+                                .show()
                         }
                     },
                     onRecord = { _, _ ->

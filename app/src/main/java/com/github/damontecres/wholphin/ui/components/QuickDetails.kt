@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -25,7 +26,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.preferences.DisplayToggle
 import com.github.damontecres.wholphin.ui.dot
-import com.github.damontecres.wholphin.ui.getTimeFormatter
+import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import org.jellyfin.sdk.model.DateTime
@@ -138,21 +139,11 @@ fun TimeRemaining(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
-    val resources = LocalResources.current
     val now by LocalClock.current.now
-    val remainingStr =
-        remember(remaining, now, resources) {
-            val endTimeStr = getTimeFormatter().format(now.plusSeconds(remaining.inWholeSeconds))
-            buildAnnotatedString {
-                dot()
-                append(resources.getString(R.string.ends_at, endTimeStr))
-            }
-        }
-    Text(
-        text = remainingStr,
-        style = textStyle,
-        maxLines = 1,
+    EndsAt(
+        endsAt = now.plusSeconds(remaining.inWholeSeconds),
         modifier = modifier,
+        textStyle = textStyle,
     )
 }
 
@@ -163,9 +154,10 @@ fun EndsAt(
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
     val resources = LocalResources.current
+    val context = LocalContext.current
     val remainingStr =
-        remember(endsAt, resources) {
-            val endTimeStr = getTimeFormatter().format(endsAt)
+        remember(endsAt, resources, context) {
+            val endTimeStr = formatTime(context, endsAt)
             buildAnnotatedString {
                 dot()
                 append(resources.getString(R.string.ends_at, endTimeStr))

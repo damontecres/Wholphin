@@ -1,11 +1,8 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -15,7 +12,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.ifElse
 
@@ -31,9 +27,7 @@ fun HomeSettingsAddRow(
 //    LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         TitleText(stringResource(R.string.add_row))
-        LazyColumn(
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        HomeSettingsLazyColumn(
             modifier =
                 modifier
                     .fillMaxHeight()

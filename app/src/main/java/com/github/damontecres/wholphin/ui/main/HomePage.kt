@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -90,7 +91,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -103,8 +103,9 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
+    LifecycleStartEffect(Unit) {
         viewModel.init()
+        onStopOrDispose { }
     }
     val state by viewModel.state.collectAsState()
     val loading = state.loadingState
@@ -175,10 +176,10 @@ fun HomePage(
                                         onClickWatch = viewModel::setWatched,
                                         onClickFavorite = viewModel::setFavorite,
                                         onClickAddPlaylist = { itemId ->
-                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            playlistViewModel.loadPlaylists()
                                             showPlaylistDialog = itemId
                                         },
-                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                        onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
                                         onDeleteItem = {
                                             viewModel.deleteItem(position, it)
                                         },
@@ -256,6 +257,7 @@ fun HomePage(
                         playlistViewModel.createPlaylistAndAddItem(it, itemId)
                         showPlaylistDialog = null
                     },
+                    onSearch = playlistViewModel::loadPlaylists,
                     elevation = 3.dp,
                 )
             }
@@ -543,11 +545,30 @@ fun HomePageHeader(
     modifier: Modifier = Modifier,
 ) {
     val isEpisode = item?.type == BaseItemKind.EPISODE
-    val dto = item?.data
+    val title =
+        remember(item?.id) {
+            when (item?.type) {
+                BaseItemKind.EPISODE,
+                BaseItemKind.SEASON,
+                -> item.data.seriesName
+
+                else -> item?.title
+            }
+        }
+    val subtitle =
+        remember(item?.id) {
+            when (item?.type) {
+                BaseItemKind.SEASON,
+                BaseItemKind.EPISODE,
+                -> item.name
+
+                else -> null
+            }
+        }
     HomePageHeader(
-        title = item?.title,
-        subtitle = if (isEpisode) dto?.name else null,
-        overview = dto?.overview,
+        title = title,
+        subtitle = subtitle,
+        overview = item?.data?.overview,
         overviewTwoLines = isEpisode,
         quickDetails = item?.ui?.quickDetails,
         timeRemaining = item?.timeRemainingOrRuntime,

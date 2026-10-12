@@ -31,6 +31,7 @@ fun MusicExpandableButtons(
     canDelete: Boolean,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
+    showShuffle: Boolean = true,
 ) {
     val firstFocus = remember { FocusRequester() }
     LazyRow(
@@ -53,13 +54,15 @@ fun MusicExpandableButtons(
                         .onFocusChanged(buttonOnFocusChanged),
             )
         }
-        item("shuffle") {
-            ExpandableFaButton(
-                title = R.string.shuffle,
-                iconStringRes = R.string.fa_shuffle,
-                onClick = { actions.onClickPlay.invoke(true) },
-                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
-            )
+        if (showShuffle) {
+            item("shuffle") {
+                ExpandableFaButton(
+                    title = R.string.shuffle,
+                    iconStringRes = R.string.fa_shuffle,
+                    onClick = { actions.onClickPlay.invoke(true) },
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                )
+            }
         }
         item("instant_mix") {
             ExpandableFaButton(

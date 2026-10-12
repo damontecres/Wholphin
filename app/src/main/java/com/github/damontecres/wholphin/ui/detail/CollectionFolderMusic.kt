@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.MusicService
@@ -74,13 +75,7 @@ class CollectionFolderMusicViewModel
             index: Int,
             item: BaseItem,
         ) {
-            if (item.type == BaseItemKind.AUDIO) {
-                viewModelScope.launchDefault {
-                    musicService.setQueue(listOf(item), false)
-                }
-            } else {
-                navigationManager.navigateTo(item.destination())
-            }
+            navigationManager.navigateTo(item.destination())
         }
 
         fun onClickPlayAll(shuffle: Boolean) {
@@ -203,7 +198,7 @@ fun CollectionFolderMusic(
                         CollectionFolderFilter(
                             filter =
                                 GetItemsFilter(
-                                    includeItemTypes = listOf(BaseItemKind.MUSIC_ARTIST),
+                                    override = GetItemsFilterOverride.ARTIST,
                                 ),
                         ),
                     showTitle = false,
