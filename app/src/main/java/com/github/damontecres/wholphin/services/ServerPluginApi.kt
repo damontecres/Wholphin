@@ -89,23 +89,24 @@ class ServerPluginApi
             }
 
         @OptIn(ExperimentalSerializationApi::class)
-        suspend fun fetchSeerrSettings(): SeerrPluginSettings? {
-            val url = createUrl(SEERR_CONFIG_PATH) ?: return null
-            val request =
-                Request
-                    .Builder()
-                    .url(url)
-                    .get()
-                    .build()
-            return okHttpClient.newCall(request).execute().use { res ->
-                if (res.isSuccessful) {
-                    json.decodeFromStream<SeerrPluginSettings>(res.body.byteStream())
-                } else if (res.code == 404) {
-                    Timber.d("fetchSeerrSettings: plugin not configured (404)")
-                    null
-                } else {
-                    throw ApiClientException(res.code.toString() + " " + res.body.string())
+        suspend fun fetchSeerrSettings(): SeerrPluginSettings? =
+            withContext(WholphinDispatchers.IO) {
+                val url = createUrl(SEERR_CONFIG_PATH) ?: return@withContext null
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .build()
+                okHttpClient.newCall(request).execute().use { res ->
+                    if (res.isSuccessful) {
+                        json.decodeFromStream<SeerrPluginSettings>(res.body.byteStream())
+                    } else if (res.code == 404) {
+                        Timber.d("fetchSeerrSettings: plugin not configured (404)")
+                        null
+                    } else {
+                        throw ApiClientException(res.code.toString() + " " + res.body.string())
+                    }
                 }
             }
-        }
     }
