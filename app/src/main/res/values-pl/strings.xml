@@ -763,4 +763,20 @@
     <string name="season_episode_number_padded_range">S%1$02d O%2$02d-%3$02d</string>
     <string name="disable_audio_offload">Wyłącz sprzętowe wsparcie dźwięku</string>
     <string name="disable_audio_offload_summary">Wyłączenie sprzętowego wsparcie dźwięku może naprawić błąd z zatrzymaniem się odtwarzania na niektórych urządzeniach</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080p</string>
+    <string name="resolution_720">720p</string>
+    <string name="resolution_576">576p</string>
+    <string name="resolution_480">480p</string>
+    <string name="resolution_360">360p</string>
+    <plurals name="episodes_count">
+        <item quantity="one">%1$d odcinek</item>
+        <item quantity="few">%1$d odcinki</item>
+        <item quantity="many">%1$d odcinków</item>
+        <item quantity="other">%1$d odcinków</item>
+    </plurals>
+    <string name="max_resolution">Maksymalna rozdzielczość przed transkodowaniem</string>
+    <string name="prefer_dovi_over_hdr10_plus">Preferuj Dolby Vision nad HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Usuwa metadane HDR10+ z filmów Dolby Vision, dla telewizorów, które w przeciwnym razie odtwarzają je jako HDR10+</string>
 </resources>
