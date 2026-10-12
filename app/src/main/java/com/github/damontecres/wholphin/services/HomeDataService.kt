@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -8,6 +9,7 @@ import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
+import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.HomeItemFields
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
@@ -32,10 +34,18 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.decodeFromStream
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.DateTime
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.GetProgramsDto
@@ -51,15 +61,18 @@ import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
+import timber.log.Timber
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalSerializationApi::class)
 @Singleton
 class HomeDataService
     @Inject
     constructor(
         private val api: ApiClient,
+        @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
         private val serverRepository: ServerRepository,
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
@@ -669,7 +682,67 @@ class HomeDataService
                         )
                     }
                 }
+
+                is HomeRowConfig.CustomEndpoint -> {
+                    val title = StringStringProvider(row.title)
+                    try {
+                        val items =
+                            fetchCustomEndpointItems(row)
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        Success(title, items, row.viewOptions, rowType = row)
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "Custom endpoint %s failed", row.endpoint)
+                        HomeRowLoadingState.Error(title, exception = ex)
+                    }
+                }
             }
+
+        private suspend fun fetchCustomEndpointItems(row: HomeRowConfig.CustomEndpoint): List<BaseItemDto> {
+            val base =
+                api.baseUrl?.toHttpUrlOrNull()
+                    ?: throw IllegalStateException("Jellyfin baseUrl not set")
+            val endpointUri = row.endpoint.toUri()
+            if (!endpointUri.isRelative) {
+                throw IllegalArgumentException("Custom endpoint must be an path relative to Jellyfin baseUrl: ${row.endpoint}")
+            }
+            val params =
+                buildMap {
+                    serverRepository.currentUser
+                        ?.id
+                        ?.toString()
+                        ?.let { put("userId", it) }
+                    row.query?.forEach { put(it.key, it.value) }
+                }
+            val resolved =
+                base
+                    .resolve(row.endpoint)
+                    ?.newBuilder()
+                    ?.apply {
+                        params.forEach { (k, v) -> addQueryParameter(k, v) }
+                    }?.build()
+                    ?: throw IllegalStateException("Could not resolve endpoint: ${row.endpoint}")
+            val request =
+                Request
+                    .Builder()
+                    .url(resolved)
+                    .get()
+                    .apply {
+                        row.headers?.forEach { header(it.key, it.value) }
+                    }.build()
+            val response =
+                authOkHttpClient
+                    .newCall(request)
+                    .execute()
+            return response.use {
+                if (!it.isSuccessful) {
+                    throw InvalidStatusException(it.code, null)
+                }
+                val queryResult =
+                    HomeSettingsService.jsonParser.decodeFromStream<BaseItemDtoQueryResult>(it.body.byteStream())
+                Timber.v("Got %s items from custom endpoint", queryResult.items.size)
+                queryResult.items
+            }
+        }
     }
 
 private val Library?.itemFields: List<ItemFields>
@@ -681,9 +754,10 @@ private val Library?.itemFields: List<ItemFields>
             HomeItemFields
         }
 
-private val Library.includeItemTypes: List<BaseItemKind>? get() =
-    collectionType.let { collectionType ->
-        getTypeFor(collectionType)?.let { type -> listOf(type) }
-    }
+private val Library.includeItemTypes: List<BaseItemKind>?
+    get() =
+        collectionType.let { collectionType ->
+            getTypeFor(collectionType)?.let { type -> listOf(type) }
+        }
 
 private val HomeItemFieldsBoxSets get() = HomeItemFields + listOf(ItemFields.CHILD_COUNT)

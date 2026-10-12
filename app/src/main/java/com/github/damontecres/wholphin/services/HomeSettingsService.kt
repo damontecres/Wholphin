@@ -562,6 +562,14 @@ class HomeSettingsService
                         config,
                     )
                 }
+
+                is HomeRowConfig.CustomEndpoint -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = StringStringProvider(config.title),
+                        config,
+                    )
+                }
             }
 
         private suspend fun getItemName(
