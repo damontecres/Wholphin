@@ -58,6 +58,7 @@ message PlaybackOverrides{
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
   int32 max_resolution = 9;
+  bool direct_play_hdr10_plus = 10;
 }
 
 message PlaybackPreferences {
