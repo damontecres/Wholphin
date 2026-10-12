@@ -8,6 +8,7 @@ import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.os.Build
 import android.util.Size
+import android.view.Display
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MimeTypes
 import timber.log.Timber
@@ -198,6 +199,13 @@ class MediaCodecCapabilitiesTest(
     fun supportsHevcDolbyVision(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
             hasCodecForMime(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION)
+
+    // Whether the connected display can actually render Dolby Vision
+    fun displaySupportsDolbyVision(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+            display.hdrCapabilities
+                ?.supportedHdrTypes
+                ?.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION) == true
 
     // Checks for Dolby Vision Profile 7 (Enhancement Layer) and multi-instance HEVC support
     fun supportsHevcDolbyVisionEL(): Boolean =
