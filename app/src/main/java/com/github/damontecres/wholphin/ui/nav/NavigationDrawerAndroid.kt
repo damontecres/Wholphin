@@ -134,7 +134,7 @@ internal class NavigationDrawerScopeImpl(
 ) : NavigationDrawerScope
 
 internal val CollapsedDrawerItemWidth = 64.dp
-internal val ExpandedDrawerItemWidth = 224.dp
+internal val ExpandedDrawerItemWidth = 300.dp
 internal val DrawerIconSize = 24.dp
 internal val DrawerIconPadding = (ListItemDefaults.IconSize - DrawerIconSize) / 2
 internal val DrawerAnimationStiffness = Spring.StiffnessMedium
