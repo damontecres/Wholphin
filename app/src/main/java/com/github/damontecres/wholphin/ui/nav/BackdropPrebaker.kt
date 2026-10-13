@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.AnimatedTitles
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
@@ -116,5 +118,18 @@ fun PrebakeBackdrop(item: BaseItem?) {
                 }
             BackdropPrebaker.request(imageUrl, AnimatedTitles.isAnimated(item))
         }
+    }
+}
+
+/**
+ * Hands the prebaker the current recipe for baking a backdrop, and takes it away again when the
+ * backdrop leaves the screen. Lives here rather than in Backdrop.kt because Live Edit cannot
+ * update a file that contains an onDispose block
+ */
+@Composable
+internal fun RegisterBackdropBaker(baker: suspend (String, Boolean) -> Unit) {
+    SideEffect { BackdropPrebaker.setBaker(baker) }
+    DisposableEffect(Unit) {
+        onDispose { BackdropPrebaker.setBaker(null) }
     }
 }

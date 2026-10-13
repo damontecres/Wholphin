@@ -11,11 +11,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -42,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -60,6 +60,7 @@ import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.ExtractedColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 import com.github.damontecres.wholphin.ui.theme.LocalFluidTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -152,14 +153,29 @@ fun Backdrop(
     // Strength of the colour glows behind the image: 1 = upstream's look, higher = more colour.
     // Kept local so Live Edit picks up changes
     // The theme scales this: full strength on Vivid, down to a fraction on Darkest
-    val glowIntensity = 2f * LocalFluidTheme.current.glow
+    val glowIntensity = 6f * LocalFluidTheme.current.glow
 
-    // Dark patch in the bottom corner: how much wider than tall it is (1 = round), and how far
-    // its centre sits below the screen edge, as a share of the screen height
-    val darkCornerWiden = 3f
-    val darkCornerDrop = 0.5f
+    // Brightest a glow colour may be, 0 to 1 (1 = no cap). Brighter colours are darkened down
+    // to this, keeping their hue and saturation, so a white or yellow poster cannot wash the
+    // background out
+    val glowMaxBrightness = 0.45f
+    // Darkest a glow colour may be, 0 to 1 (0 = no cap). Darker colours are lifted up to this,
+    // keeping their hue and saturation, so a near-black poster still gives a hint of colour
+    val glowMinBrightness = 0.18f
 
-    fun Color.intensified() = if (isSpecified) copy(alpha = (alpha * glowIntensity).coerceIn(0f, 1f)) else this
+    fun Color.capped(): Color {
+        if (!isSpecified) return this
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(toArgb(), hsv)
+        val low = glowMinBrightness.coerceIn(0f, 1f)
+        val high = glowMaxBrightness.coerceIn(low, 1f)
+        val capped = hsv[2].coerceIn(low, high)
+        if (capped == hsv[2]) return this
+        hsv[2] = capped
+        return Color(android.graphics.Color.HSVToColor(hsv)).copy(alpha = alpha)
+    }
+
+    fun Color.intensified() = if (isSpecified) capped().copy(alpha = (alpha * glowIntensity).coerceIn(0f, 1f)) else this
     val glowPrimary = animPrimary.intensified()
     val glowSecondary = animSecondary.intensified()
     val glowTertiary = animTertiary.intensified()
@@ -192,22 +208,6 @@ fun Backdrop(
                         radius = size.width * 0.8f,
                     ),
             )
-            // Bottom Left (Dark / Bridge), stretched sideways and pushed down
-            val darkCenter = Offset(start, size.height * (1f + darkCornerDrop))
-            scale(scaleX = darkCornerWiden, scaleY = 1f, pivot = darkCenter) {
-                drawRect(
-                    brush =
-                        Brush.radialGradient(
-                            colors =
-                                listOf(
-                                    baseBackgroundColor,
-                                    Color.Transparent,
-                                ),
-                            center = darkCenter,
-                            radius = size.width * 0.8f,
-                        ),
-                )
-            }
             // Top Right (Under Image - Vibrant/Bright)
             drawRect(
                 brush =
@@ -245,41 +245,138 @@ fun Backdrop(
 
             // width: clamp(min, target, max), with the target tied to the screen's height
             val widthMin = vw * 0.3f
-            val widthTarget = vh * 1.2f
-            val widthMax = vw * 0.69f
+            val widthTarget = vh * 1.5f
+            val widthMax = vw * 0.63f
             // tallest the image may get; anything beyond this is cropped
-            val heightMax = vh * 1.5f
+            val heightMax = vh * 1.8f
 
             val imageWidth = widthTarget.coerceIn(widthMin, widthMax)
+            // The image stops short of the screen's right edge by the right margin (see FluidLayout)
+            val imageEdgeMargin = FluidLayout.rightMargin()
             val imageHeight = (imageWidth / imageAspect).coerceAtMost(heightMax)
-            // Blurred, oversized copy of the image, between the colour glows and the image itself.
-            // The blur comes from loading a tiny version and stretching it over the screen, which
-            // works on every Android version; blurRadius adds a real blur on Android 12 and newer
-            val blurResolution = 16 // width in pixels of the tiny version: lower = blurrier
-            val blurScale = 1.33f // how oversized it is: 1 = fills the screen exactly
-            val blurShiftX = 1.5f // how much of the sideways overflow to shift right by
-            val blurShiftY = 0.9f // how much of the upward overflow to shift down by
-            val blurWiden = 1.2f // extra horizontal stretch: 1 = none
-            // Opacity of the whole blurred stack as one group: 0 = glows only, 1 = full effect.
-            // The stack keeps its look; this only fades between the two
-            val blurOpacity = 0.43f
-            // Animated titles (by genre): how much of the blurred copy they keep.
-            // 1 = same as everything else, 0 = no blurred copy, just the glows
-            val blurOnAnimation = 0f
+            // The tiles: copies of the backdrop image, usually blurred, that make up the baked
+            // background on top of the colour glows. They are drawn in order, each one blending
+            // with everything before it. They only exist when the background is baked.
+            //
+            // Every tile has the same settings, and any it does not mention keep their default:
+            // - left: where the tile's left edge sits across the screen, as a share of its width
+            //     0f = at the screen's left edge, 0.5f = halfway across,
+            //     -0.2f = starts a fifth of a screen off to the left
+            // - top: where the tile's top edge sits down the screen, as a share of its height
+            //     0f = at the top of the screen, 0.5f = halfway down,
+            //     -0.1f = starts a little above the screen
+            // - width: as a share of the screen's width (1f = as wide as the screen)
+            // - height: as a share of the screen's height (1f = as tall as the screen). The
+            //   picture is squeezed or pulled to fit, so width and height together set its shape
+            // - flip, flipVertical: mirrored left to right, or upside down, in place
+            // - resolution: width in pixels of the image stretched over the tile (lower = blurrier)
+            // - smooth: extra blur on this tile alone, as a share of the screen's width
+            // - feather: soft edges, see mirrorFeather below
+            // - layers: how it is drawn, bottom to top, as blend mode to opacity. This is also
+            //   where a tile's strength is set: BlendMode.SrcOver to 0.5f is a plain half-strength tile
+            //
+            // The mirror tiles: blurred together as one group (groupSmooth) and blended as one
+            // (groupLayers, groupOpacity, further down) over the glows and the main tile
+            val mirrorTiles =
+                buildList {
+                    addAll(
+                        listOf(
+                            // right reflection
+                            Tile(
+                                left = 0.8f,
+                                top = -0.13f,
+                                width = 1.1f,
+                                height = 0.791f,
+                                flip = true,
+                                resolution = 80,
+                                smooth = 0f,
+                                layers = listOf(BlendMode.SrcOver to 1f),
+                            ),
+                            // lower left reflection
+                            Tile(
+                                left = -2.2f,
+                                top = 0.45f,
+                                width = 2.75f,
+                                height = 2.75f,
+                                flip = true,
+                                flipVertical = true,
+                                resolution = 80,
+                                smooth = 0.03f,
+                                layers = listOf(BlendMode.SrcOver to 0.8f),
+                            ),
+                            // left reflection
+                            Tile(
+                                left = -2.2f,
+                                top = -0.06f,
+                                width = 2.75f,
+                                height = 0.7f,
+                                flip = true,
+                                resolution = 80,
+                                smooth = 0.03f,
+                                layers = listOf(BlendMode.SrcOver to 1f),
+                            ),
+                            // lower left reflection mirror
+                            Tile(
+                                left = -3f,
+                                top = 0.56f,
+                                width = 4f,
+                                height = 2.4f,
+                                flip = false,
+                                flipVertical = true,
+                                resolution = 80,
+                                smooth = 0.04f,
+                                layers = listOf(BlendMode.SrcOver to 1f),
+                            ),
+                            // bottom reflection
+                            Tile(
+                                left = 0.37f,
+                                top = 0.63f,
+                                width = 0.57f,
+                                height = 0.72f,
+                                flip = false,
+                                flipVertical = true,
+                                resolution = 80,
+                                smooth = 0.01f,
+                                layers = listOf(BlendMode.Softlight to 0.5f),
+                            ),
+                        )
+                    )
+                }
+            // Soft edges on the mirror tiles: how far in from each edge they fade out, as a share
+            // of the tile's own width and height. 0f = hard edges, 0.2f = the outer fifth fades,
+            // 0.5f = fades all the way to the middle. A tile can set its own with feather = …
+            val mirrorFeather = 0.2f
+            fun List<Tile>.withFeather() = map { if (it.feather == null) it.copy(feather = mirrorFeather) else it }
 
-            fun blurOpacityFor(animated: Boolean) = if (animated) blurOpacity * blurOnAnimation else blurOpacity
-            val blurRadius = 30.dp
-            // One copy is drawn per line, bottom to top, as "blend mode to opacity". Stack several
-            // to combine modes, e.g. SrcOver (normal), Screen, Overlay, Softlight, Hardlight,
-            // Multiply, Plus, Luminosity, Color
-            val blurLayers =
-                listOf(
-                    BlendMode.Modulate to 0.9f,
-                    BlendMode.Softlight to 0.6f,
-                    BlendMode.Hardlight to 0.3f,
-                    BlendMode.Darken to 0.3f,
-                    BlendMode.Multiply to 1f,
+            // The main tile: on its own, with its own blend modes, drawn over the mirror tiles
+            // after they have been blurred and blended as a group
+            val mainTile =
+                Tile(
+                    left = -0.05f,
+                    top = -0.1f,
+                    width = 3.8f,
+                    height = 4.012f,
+                    flip = false,
+                    flipVertical = false,
+                    resolution = 680,
+                    smooth = 0.03f,
+                    layers =
+                        listOf(
+                            BlendMode.SrcOver to 0.1f,
+                            BlendMode.Overlay to 0.1f,
+                        ),
                 )
+            // Switch for the main tile: true = on, false = off
+            val showMainTile = true
+            val tiles =
+                if (showMainTile) {
+                    mirrorTiles.withFeather() + mainTile.copy(onTop = true)
+                } else {
+                    mirrorTiles.withFeather()
+                }
+            // Animated titles (by genre): how much of the tiles they keep.
+            // 1 = same as everything else, 0 = no tiles, just the glows
+            val tilesOnAnimation = 0f
             // Vignettes over the background and the sharp image: clear at the centre, darkening
             // outwards. Each one has:
             // - centerX, centerY: the centre as a share of the screen (0f, 0f is the top-left
@@ -292,13 +389,15 @@ fun Backdrop(
             //   centre to the radius and darkness is how black it gets there (0f = untouched,
             //   1f = black)
             // They are drawn in order, each on top of the one before
-            val vignettes =
+            // Switch for all the vignettes at once: true = on, false = off
+            val showVignettes = true
+            val allVignettes =
                 listOf(
                     // spotlight on the image
                     Vignette(
                         centerX = 0.72f,
                         centerY = 0.31f,
-                        radius = 0.3f,
+                        radius = 1.3f,
                         widthToHeight = 1.35f,
                         stops =
                             listOf(
@@ -312,9 +411,9 @@ fun Backdrop(
                     ),
                     // edge shade
                     Vignette(
-                        centerX = 0.56f,
+                        centerX = 0.52f,
                         centerY = 0.41f,
-                        radius = 1f,
+                        radius = 1.1f,
                         widthToHeight = 0.5f,
                         stops =
                             listOf(
@@ -323,7 +422,21 @@ fun Backdrop(
                                 1f to 0.88f,
                             ),
                     ),
+                    // dark bottom-left corner: the other way round, darkest at its centre (which
+                    // sits below the screen) and fading out from there
+                    Vignette(
+                        centerX = 0f,
+                        centerY = 1.5f,
+                        radius = 0.72f,
+                        widthToHeight = 3f,
+                        stops =
+                            listOf(
+                                0f to 1f,
+                                1f to 0f,
+                            ),
+                    ),
                 )
+            val vignettes = if (showVignettes) allVignettes else emptyList()
             // Draws the vignette for a screen of the given size. origin is where the area being
             // drawn into sits on that screen, so a smaller layer (the sharp image) gets the part
             // of the vignette that falls on it
@@ -380,14 +493,33 @@ fun Backdrop(
                 val density = LocalDensity.current
                 val layoutDirection = LocalLayoutDirection.current
                 // Size of the baked image; it is soft everywhere, so it can be small
-                val bakeWidth = 480
+                val bakeWidth = 1280
                 // Extra smoothing of the baked glows and blur, as a share of the screen width:
                 // 0 = none, 0.01 = a soft blur about 1% of the screen wide. Only applies when baked
-                val bakeSmooth = 0.0099f
+                val bakeSmooth = 0.01f // the final blur, over everything: glows and all tiles
+                // Blur of the mirror tiles as one group, before they are blended over the main
+                // tile. Same scale as bakeSmooth
+                val groupSmooth = 0.007f
+                // How the blurred mirror tiles are blended onto the glows, bottom to top, as blend
+                // mode to opacity, and the opacity of the group as a whole
+                val groupLayers = listOf(BlendMode.Overlay to 1f, BlendMode.Hardlight to 1f, BlendMode.Multiply to 1f, BlendMode.Hardlight to 1f)
+                val groupOpacity = 0.3f
                 val bakeHeight = (bakeWidth * (maxHeight / maxWidth)).toInt().coerceAtLeast(1)
                 // The baked version uses the colours the glows are heading for, not the animated
                 // ones, so it is composed once per backdrop instead of on every animation frame
                 fun targetGlow(color: Color) = color.takeOrElse { Color.Transparent }.intensified()
+
+                // The tiles as they apply to this title
+                fun tilesFor(animated: Boolean): List<Tile> =
+                    if (!animated) {
+                        tiles
+                    } else if (tilesOnAnimation <= 0f) {
+                        emptyList()
+                    } else {
+                        tiles.map { tile ->
+                            tile.copy(layers = tile.layers.map { (mode, opacity) -> mode to opacity * tilesOnAnimation })
+                        }
+                    }
 
                 // Everything a baked image depends on; also its key in the cache
                 fun bakeKeyFor(
@@ -401,11 +533,14 @@ fun Backdrop(
                     listOf(
                         imageUrl,
                         listOf(primary, secondary, tertiary, baseBackgroundColor),
-                        listOf(glows, isRtl, bakeWidth, bakeHeight, darkCornerWiden, darkCornerDrop),
-                        listOf(blurResolution, blurScale, blurWiden, blurShiftX, blurShiftY, blurOpacityFor(animated)),
-                        blurLayers,
+                        listOf(glows, isRtl, bakeWidth, bakeHeight),
+                        tilesFor(animated),
                         vignettes,
                         bakeSmooth,
+                        groupSmooth,
+                        groupLayers,
+                        groupOpacity,
+                        BackdropDebug.outlineCopies,
                     )
 
                 suspend fun bakeFor(
@@ -423,17 +558,15 @@ fun Backdrop(
                         height = bakeHeight,
                         density = density,
                         layoutDirection = layoutDirection,
-                        resolution = blurResolution,
                         imageAspect = imageAspect,
-                        scaleX = blurScale * blurWiden,
-                        scaleY = blurScale,
-                        shiftX = blurShiftX,
-                        shiftY = blurShiftY,
-                        layers = blurLayers,
-                        groupOpacity = blurOpacityFor(animated),
+                        tiles = tilesFor(animated),
                         drawBackground = if (glows) glowPainter(primary, secondary, tertiary) else drawPlain,
                         drawOverlay = drawVignette,
+                        groupSmoothRadius = (bakeWidth * groupSmooth).roundToInt(),
+                        groupLayers = groupLayers,
+                        groupOpacity = groupOpacity,
                         smoothRadius = (bakeWidth * bakeSmooth).roundToInt(),
+                        outlineCopies = BackdropDebug.outlineCopies,
                     )
 
                 val targetPrimary = targetGlow(backdrop.primaryColor)
@@ -541,10 +674,7 @@ fun Backdrop(
                             }
                         }
                     }
-                    SideEffect { BackdropPrebaker.setBaker(prebake) }
-                    DisposableEffect(Unit) {
-                        onDispose { BackdropPrebaker.setBaker(null) }
-                    }
+                    RegisterBackdropBaker(prebake)
                 }
                 Crossfade(
                     targetState = shownBackground.value,
@@ -564,47 +694,7 @@ fun Backdrop(
                     }
                 }
             } else {
-                val blurRequest =
-                    ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(backdrop.imageUrl)
-                        .size(blurResolution, (blurResolution / imageAspect).toInt().coerceAtLeast(1))
-                        .transitionFactory(CrossFadeFactory(backgroundFade))
-                        .build()
-                blurLayers.forEach { (layerBlendMode, layerOpacity) ->
-                    AsyncImage(
-                        model = blurRequest,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    // negative = mirrored left to right
-                                    scaleX = blurScale * blurWiden
-                                    scaleY = blurScale
-                                    // The scaling makes it overflow each edge by this share of its
-                                    // size. Shift it right and down by a factor of that overflow:
-                                    // 1 lines its left/top edge up with the screen's, 0 leaves it centred
-                                    val overflow = (blurScale - 1f) / 2f
-                                    translationX = size.width * overflow * blurShiftX
-                                    translationY = size.height * overflow * blurShiftY
-                                    alpha = layerOpacity
-                                    blendMode = layerBlendMode
-                                }.blur(blurRadius),
-                    )
-                }
-                // Group opacity: the background and glows drawn again over the blurred stack, fading
-                // it back towards the plain glows as blurOpacity goes down
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { alpha = 1f - blurOpacityFor(backdrop.isAnimated).coerceIn(0f, 1f) }
-                            .drawBehind {
-                                if (showGlows) drawGlows() else drawRect(color = baseBackgroundColor)
-                            },
-                )
+                // Not baked: only the live glows (drawn above) and the vignettes. The tiles need baking
                 Box(modifier = Modifier.fillMaxSize().drawBehind(drawVignette))
             }
             // The darkening that comes over the background while the backdrop changes. It sits under
@@ -634,9 +724,13 @@ fun Backdrop(
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
+                        .padding(end = imageEdgeMargin)
                         .size(imageWidth, imageHeight)
-                        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                        .drawWithContent {
+                        .graphicsLayer(
+                            compositingStrategy = CompositingStrategy.Offscreen,
+                            // Development switch, see BackdropDebug
+                            alpha = if (BackdropDebug.hideImage) 0f else 1f,
+                        ).drawWithContent {
                             val start = if (isRtl) size.width else 0f
                             drawContent()
                             if (drawerIsOpen) {
@@ -666,7 +760,15 @@ fun Backdrop(
                             // SrcAtop darkens only the image itself, not the empty box around it
                             vignette(
                                 screen = Size(screenWidthPx, screenHeightPx),
-                                origin = Offset(if (isRtl) 0f else screenWidthPx - size.width, 0f),
+                                origin =
+                                    Offset(
+                                        if (isRtl) {
+                                            imageEdgeMargin.toPx()
+                                        } else {
+                                            screenWidthPx - size.width - imageEdgeMargin.toPx()
+                                        },
+                                        0f,
+                                    ),
                                 mode = BlendMode.SrcAtop,
                             )
                             // The image's mask, written like CSS gradient stops: each line is
@@ -683,14 +785,15 @@ fun Backdrop(
                                     0.35f to 0.5f,
                                     0.45f to 0.8f,
                                     0.75f to 0.68f,
-                                    1f to 0.9f,
+                                    0.98f to 0.9f,
+                                    1f to 0f,
                                 )
                             // Vertical fade, measured from the top of the image to the bottom
                             val verticalFade =
                                 listOf(
                                     0f   to 1f,
-                                    0.8f to 1f,
-                                    0.92f to 0.4f,
+                                    0.75f to 1f,
+                                    0.91f to 0.7f,
                                     1f   to 0f,
                                 )
 
@@ -715,6 +818,93 @@ fun Backdrop(
                                     ),
                                 blendMode = BlendMode.DstIn,
                             )
+
+                            // Rounded fade on the side facing the screen edge. Instead of a
+                            // straight edge, the image fades out along a curve: an ellipse whose
+                            // centre sits inside the image and whose far side reaches the image's
+                            // edge. Stops are "position to opacity", from the centre (0f) out to
+                            // the ellipse's rim (1f)
+                            val edgeFade =
+                                listOf(
+                                    0f to 1f,
+                                    0.86f to 1f,
+                                    1f to 0f,
+                                )
+                            // Centre of the curve, as shares of the image's width and height.
+                            // Further from the edge = a wider, gentler curve
+                            val edgeFadeCenterX = 0.3f
+                            val edgeFadeCenterY = 0.4f
+                            // Height of the curve relative to the image's height: lower = rounder
+                            // (corners cut away more), higher = flatter (closer to a straight edge)
+                            val edgeFadeHeight = 0.9f
+
+                            val curveCenter =
+                                Offset(
+                                    if (isRtl) size.width * (1f - edgeFadeCenterX) else size.width * edgeFadeCenterX,
+                                    size.height * edgeFadeCenterY,
+                                )
+                            // Horizontal reach: from the centre to the image's outer edge
+                            val curveReach = if (isRtl) curveCenter.x else size.width - curveCenter.x
+                            val curveStretch = (size.height * edgeFadeHeight / curveReach).coerceAtLeast(0.01f)
+                            scale(scaleX = 1f, scaleY = curveStretch, pivot = curveCenter) {
+                                // Only the half of the image beyond the curve's centre is touched
+                                val top = curveCenter.y - curveCenter.y / curveStretch
+                                val bottom = curveCenter.y + (size.height - curveCenter.y) / curveStretch
+                                drawRect(
+                                    brush =
+                                        Brush.radialGradient(
+                                            colorStops = edgeFade.asMask(),
+                                            center = curveCenter,
+                                            radius = curveReach,
+                                        ),
+                                    topLeft = Offset(if (isRtl) 0f else curveCenter.x, top),
+                                    size = Size(curveReach, bottom - top),
+                                    blendMode = BlendMode.DstIn,
+                                )
+                            }
+
+                            // Rounded fade along the bottom, the same idea turned on its side: an
+                            // ellipse whose centre sits inside the image and whose lower rim
+                            // reaches the image's bottom edge. Stops are "position to opacity",
+                            // from the centre (0f) down to the rim (1f)
+                            val bottomFade =
+                                listOf(
+                                    0f to 1f,
+                                    0.9f to 1f,
+                                    1f to 0f,
+                                )
+                            // Centre of the curve, as shares of the image's width and height.
+                            // Further from the bottom = a taller, gentler fade
+                            val bottomFadeCenterX = 0.59f
+                            val bottomFadeCenterY = 0.55f
+                            // Width of the curve relative to the image's width: lower = rounder
+                            // (corners cut away more), higher = flatter (closer to a straight edge)
+                            val bottomFadeWidth = 0.8f
+
+                            val bottomCenter =
+                                Offset(
+                                    if (isRtl) size.width * (1f - bottomFadeCenterX) else size.width * bottomFadeCenterX,
+                                    size.height * bottomFadeCenterY,
+                                )
+                            // Vertical reach: from the centre down to the image's bottom edge
+                            val bottomReach = (size.height - bottomCenter.y).coerceAtLeast(1f)
+                            val bottomStretch = (size.width * bottomFadeWidth / bottomReach).coerceAtLeast(0.01f)
+                            scale(scaleX = bottomStretch, scaleY = 1f, pivot = bottomCenter) {
+                                // Only the part of the image below the curve's centre is touched
+                                val left = bottomCenter.x - bottomCenter.x / bottomStretch
+                                val right = bottomCenter.x + (size.width - bottomCenter.x) / bottomStretch
+                                drawRect(
+                                    brush =
+                                        Brush.radialGradient(
+                                            colorStops = bottomFade.asMask(),
+                                            center = bottomCenter,
+                                            radius = bottomReach,
+                                        ),
+                                    topLeft = Offset(left, bottomCenter.y),
+                                    size = Size(right - left, bottomReach),
+                                    blendMode = BlendMode.DstIn,
+                                )
+                            }
                         },
             )
             // Film grain over everything: the baked background and the sharp image.
