@@ -1244,6 +1244,7 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DecodeAv1,
+        AppPreference.HdrFormatSettings,
     )
 
 private val HdrFormatSettings =
@@ -1347,7 +1348,7 @@ val advancedPreferences =
                     listOf(
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
-                            ExoPlayerSettings + AppPreference.HdrFormatSettings,
+                            ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
@@ -1358,7 +1359,6 @@ val advancedPreferences =
                             listOf(
                                 AppPreference.ExoPlayerSettings,
                                 AppPreference.MpvSettings,
-                                AppPreference.HdrFormatSettings,
                             ),
                         ),
                         ConditionalPreferences(
