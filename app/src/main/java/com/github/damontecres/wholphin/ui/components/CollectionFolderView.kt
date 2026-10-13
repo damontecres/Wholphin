@@ -64,6 +64,7 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.goToRandom
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -269,11 +270,19 @@ class CollectionFolderViewModel
         override fun onClickRandom() {
             viewModelScope.launchIO {
                 try {
-                    val random =
-                        (state.value.items.successValue as? BlockingList<BaseItem?>)?.randomBlocking()
-                    Timber.d("Got random item: %s", random?.id)
-                    random?.destination()?.let {
-                        navigateTo(random.destination())
+                    val state = state.value
+                    val list = state.items.successValue as? BlockingList<BaseItem?>
+                    if (list != null) {
+                        goToRandom(
+                            navigateTo = ::navigateTo,
+                            parentId = itemId,
+                            filter = state.filter,
+                            sortAndDirection = state.sortAndDirection,
+                            recursive = recursive,
+                            list = list,
+                        )
+                    } else {
+                        Timber.w("state.value.items is not successful: %s", state.items)
                     }
                 } catch (ex: CancellationException) {
                     throw ex
