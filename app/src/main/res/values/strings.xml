@@ -173,7 +173,7 @@
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
     <string name="videos">Videos</string>
-    <string name="watch_live">Watch live</string>g
+    <string name="watch_live">Watch live</string>
     <plurals name="years_old">
         <item quantity="zero">%1$d years old</item>
         <item quantity="one">%1$d year old</item>
@@ -413,6 +413,19 @@
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="disable_audio_offload">Disable audio hardware offload</string>
     <string name="disable_audio_offload_summary">Disabling offloading audio decoding may fix playback freezes on some devices</string>
+    <string name="hdr_formats">HDR formats</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">Dolby Vision Profile 5</string>
+    <string name="dovi_profile_7">Dolby Vision Profile 7</string>
+    <string name="dovi_profile_8">Dolby Vision Profile 8</string>
+    <string name="force_enable">Force enable</string>
+    <string name="force_disable">Force disable</string>
+    <string-array name="hdr_override_modes">
+        <item>@string/automatic</item>
+        <item>@string/force_enable</item>
+        <item>@string/force_disable</item>
+    </string-array>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
     <string name="spacing">Spacing</string>
