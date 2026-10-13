@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.canRequestTv
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
@@ -290,7 +291,7 @@ fun DiscoverSeriesDetailsContent(
                                     }
                                 }
                             },
-                            canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                            canRequest = userConfig.canRequestTv,
                             canCancel = canCancel,
                             trailers = trailers,
                             trailerOnClick = trailerOnClick,

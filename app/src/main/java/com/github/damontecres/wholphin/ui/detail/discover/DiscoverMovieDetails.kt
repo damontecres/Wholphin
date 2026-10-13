@@ -42,9 +42,8 @@ import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
-import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.data.model.canRequestMovies
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
@@ -253,7 +252,7 @@ fun DiscoverMovieDetailsContent(
                                 }
                             }
                         },
-                        canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                        canRequest = userConfig.canRequestMovies,
                         canCancel = canCancel,
                         trailers = trailers,
                         trailerOnClick = trailerOnClick,
