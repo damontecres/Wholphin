@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -24,7 +25,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.nav.BackdropDebug
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
@@ -56,7 +59,10 @@ fun <T> ItemRow(
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
-            modifier.focusProperties {
+            modifier
+                // Development switch, see BackdropDebug
+                .alpha(if (BackdropDebug.hideRows) 0f else 1f)
+                .focusProperties {
                 onEnter = {
                     focusRequester.tryRequestFocus()
                 }
@@ -67,7 +73,13 @@ fun <T> ItemRow(
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(horizontalPadding),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
+            contentPadding = PaddingValues(
+                    // The first card lines up with the headlines; the rest scroll full width
+                    start = FluidLayout.rowStart(horizontalPadding),
+                    end = horizontalPadding,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -135,5 +147,6 @@ fun ItemRowTitle(
     text = title,
     style = MaterialTheme.typography.titleLarge,
     color = MaterialTheme.colorScheme.onBackground,
-    modifier = modifier.padding(start = 8.dp),
+    // Row titles line up with the page's title, at the left margin
+    modifier = modifier.padding(start = FluidLayout.headlineInset()),
 )

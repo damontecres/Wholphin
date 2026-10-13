@@ -17,6 +17,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 
 @Composable
 fun ChapterRow(
@@ -38,7 +39,13 @@ fun ChapterRow(
         LazyRow(
             state = rememberLazyListState(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+            contentPadding = PaddingValues(
+                    // The first card lines up with the headlines; the rest scroll full width
+                    start = FluidLayout.rowStart(16.dp),
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()

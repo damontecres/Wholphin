@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.cards.ViewMoreCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 
@@ -121,7 +122,13 @@ fun DiscoverItemRow(
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(horizontalPadding),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
+            contentPadding = PaddingValues(
+                    // The first card lines up with the headlines; the rest scroll full width
+                    start = FluidLayout.rowStart(horizontalPadding),
+                    end = horizontalPadding,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()

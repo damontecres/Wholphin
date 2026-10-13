@@ -27,6 +27,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 
 @Composable
 fun PersonRow(
@@ -51,7 +52,13 @@ fun PersonRow(
         LazyRow(
             state = rememberLazyListState(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(
+                    // The first card lines up with the headlines; the rest scroll full width
+                    start = FluidLayout.rowStart(8.dp),
+                    end = 8.dp,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -100,7 +107,13 @@ fun DiscoverPersonRow(
         LazyRow(
             state = rememberLazyListState(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(
+                    // The first card lines up with the headlines; the rest scroll full width
+                    start = FluidLayout.rowStart(8.dp),
+                    end = 8.dp,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                ),
             modifier =
                 Modifier
                     .padding(start = 16.dp)
