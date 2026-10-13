@@ -49,7 +49,7 @@ import java.util.UUID
         SeerrUser::class,
         RememberedTab::class,
     ],
-    version = 35,
+    version = 40,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -68,6 +68,7 @@ import java.util.UUID
         AutoMigration(32, 33),
         AutoMigration(33, 34),
         AutoMigration(34, 35),
+        AutoMigration(35, 40),
     ],
 )
 @TypeConverters(Converters::class)
