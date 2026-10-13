@@ -448,20 +448,6 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("1.0.7"))) {
-                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
-                appPreferences.updateData {
-                    if (it.playbackPreferences.overrides.directPlayDolbyVisionEL) {
-                        it.updatePlaybackOverrides {
-                            doviProfile7Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE
-                            directPlayDolbyVisionEL = false
-                        }
-                    } else {
-                        it
-                    }
-                }
-            }
-
             if (current.isEqualOrBefore(Version.fromString("1.0.8-0-g0"))) {
                 try {
                     val prefs = appPreferences.data.firstOrNull()
@@ -482,6 +468,20 @@ class AppUpgradeHandler
                     it.update {
                         currentServerId = ""
                         currentUserId = ""
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.10"))) {
+                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
+                appPreferences.updateData {
+                    if (it.playbackPreferences.overrides.directPlayDolbyVisionEL) {
+                        it.updatePlaybackOverrides {
+                            doviProfile7Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE
+                            directPlayDolbyVisionEL = false
+                        }
+                    } else {
+                        it
                     }
                 }
             }
