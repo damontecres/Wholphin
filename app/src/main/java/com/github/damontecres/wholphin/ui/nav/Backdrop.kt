@@ -243,14 +243,12 @@ fun Backdrop(
             // shape of the backdrop images themselves (Jellyfin backdrops are 16:9)
             val imageAspect = 16f / 9f
 
-            // width: clamp(min, target, max), with the target tied to the screen's height
-            val widthMin = vw * 0.3f
-            val widthTarget = vh * 1.5f
-            val widthMax = vw * 0.63f
+            // width: clamp(min, target, max), set in FluidLayout so the headline block can
+            // line up with it
             // tallest the image may get; anything beyond this is cropped
             val heightMax = vh * 1.8f
 
-            val imageWidth = widthTarget.coerceIn(widthMin, widthMax)
+            val imageWidth = FluidLayout.backdropImageWidth()
             // The image stops short of the screen's right edge by the right margin (see FluidLayout)
             val imageEdgeMargin = FluidLayout.rightMargin()
             val imageHeight = (imageWidth / imageAspect).coerceAtMost(heightMax)
@@ -376,7 +374,7 @@ fun Backdrop(
                 }
             // Animated titles (by genre): how much of the tiles they keep.
             // 1 = same as everything else, 0 = no tiles, just the glows
-            val tilesOnAnimation = 0f
+            val tilesOnAnimation = 0.6f
             // Vignettes over the background and the sharp image: clear at the centre, darkening
             // outwards. Each one has:
             // - centerX, centerY: the centre as a share of the screen (0f, 0f is the top-left

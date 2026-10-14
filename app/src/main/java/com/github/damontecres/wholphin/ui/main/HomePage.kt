@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -84,6 +85,7 @@ import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.ui.theme.FluidLayout
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -592,31 +594,38 @@ fun HomePageHeader(
     logoImageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
+    // Gap between the logo (or title) and the lines below it
+    val titleGap = 16.dp
+    // The whole block is as wide as the space left of the backdrop image (see FluidLayout)
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(titleGap),
+        modifier = modifier.width(FluidLayout.headlineWidth()),
     ) {
         TitleOrLogo(
             title = title,
             logoImageUrl = logoImageUrl,
             showLogo = showLogo,
-            modifier = Modifier.fillMaxWidth(.75f),
+            modifier = Modifier.fillMaxWidth(),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 Modifier
-                    .fillMaxWidth(.6f),
+                    .fillMaxWidth(),
         ) {
             if (subtitle != null) {
                 EpisodeName(subtitle)
             }
             QuickDetails(quickDetails, timeRemaining, endsAt = endsAt)
+            // The description fills the block, but stops at a comfortable line length for
+            // reading (around 80 characters) however wide the block gets
+            val overviewMaxWidth = 600.dp
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
                     .height(48.dp + if (!overviewTwoLines) 12.dp else 0.dp)
-                    .width(400.dp)
+                    .fillMaxWidth()
+                    .widthIn(max = overviewMaxWidth)
             if (overview.isNotNullOrBlank()) {
                 Text(
                     text = overview,

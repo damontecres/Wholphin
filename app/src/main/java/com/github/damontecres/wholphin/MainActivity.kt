@@ -45,6 +45,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.WatchLaterService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
@@ -141,6 +142,9 @@ class MainActivity : AppCompatActivity() {
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
+
+    @Inject
+    lateinit var watchLaterService: WatchLaterService
 
     // Note: unused but injected to ensure it is created
     @Inject
@@ -290,6 +294,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_DPAD_UP && screensaverService.state.value.show) {
+            // Save the item on the screensaver to "Watch later" without closing the screensaver
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                screensaverService.currentItem.value?.let { item ->
+                    lifecycleScope.launchDefault { watchLaterService.add(item) }
+                }
+            }
+            return true
+        }
         if (screensaverService.state.value.run { show || showDim }) {
             screensaverService.stop(false)
             screensaverService.pulse()

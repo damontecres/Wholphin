@@ -67,4 +67,38 @@ object FluidLayout {
      */
     @Composable
     fun rowStart(usual: Dp): Dp = maxOf(usual, headlineInset())
+
+    /**
+     * Width of the sharp backdrop image: clamp(min, target, max), with the target tied to the
+     * screen's height and min/max shares of the screen width
+     */
+    @Composable
+    fun backdropImageWidth(): Dp {
+        val configuration = LocalConfiguration.current
+        val vw = configuration.screenWidthDp.dp
+        val vh = configuration.screenHeightDp.dp
+        val widthMin = vw * 0.3f
+        val widthTarget = vh * 1.5f
+        val widthMax = vw * 0.63f
+        return widthTarget.coerceIn(widthMin, widthMax)
+    }
+
+    /**
+     * Width of the headline block (title, details and description on the home screen). It runs
+     * from the left margin to where the backdrop image starts, reaching a little way into the
+     * image because the image's left side is faded out. Kept within a min and max so the text
+     * never gets too narrow to read or too long per line
+     */
+    @Composable
+    fun headlineWidth(): Dp {
+        val vw = LocalConfiguration.current.screenWidthDp.dp
+        // How far into the image the text may run, as a share of the image's width
+        val reachIntoImage = 0.15f
+        val widthMin = vw * 0.3f
+        val widthMax = vw * 0.45f
+        val imageWidth = backdropImageWidth()
+        val imageStart = vw - rightMargin() - imageWidth
+        val target = imageStart + imageWidth * reachIntoImage - leftMargin()
+        return target.coerceIn(widthMin, widthMax)
+    }
 }
