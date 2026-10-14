@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import coil3.imageLoader
 import coil3.request.ImageRequest
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.components.ScreensaverItem
 import com.github.damontecres.wholphin.ui.formatDate
@@ -58,6 +59,13 @@ class ScreensaverService
         val state: StateFlow<ScreensaverState> = _state
 
         val keepScreenOn = MutableStateFlow(false)
+
+        private val _currentItem = MutableStateFlow<BaseItem?>(null)
+
+        /**
+         * The item currently shown on the screensaver, if any
+         */
+        val currentItem: StateFlow<BaseItem?> = _currentItem
 
         private var waitJob: Job? = null
         private var dimJob: Job? = null
@@ -252,6 +260,7 @@ class ScreensaverService
                                                 .build(),
                                         ).job
                                         .await()
+                                    _currentItem.value = item
                                     emit(
                                         ScreensaverItem.CurrentItem(
                                             item,
