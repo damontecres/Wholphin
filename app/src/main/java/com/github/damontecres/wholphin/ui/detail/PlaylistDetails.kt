@@ -360,6 +360,7 @@ class PlaylistViewModel
             filterOptionCache.getFilterOptionValues(
                 itemId,
                 filterOption,
+                fromItems = true,
             )
 
         fun updateBackdrop(item: BaseItem) {

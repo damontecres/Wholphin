@@ -67,6 +67,7 @@ val DefaultForStudiosFilterOptions =
 
 val DefaultPlaylistItemsOptions =
     listOf(
+        GenreFilter,
         PlayedFilter,
         FavoriteFilter,
         CommunityRatingFilter,
