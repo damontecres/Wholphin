@@ -83,13 +83,11 @@ fun DiscoverMovieDetails(
     }
     val state by viewModel.state.collectAsState()
     val userConfig by viewModel.userConfig.collectAsState(null)
+    val requestEnabled by viewModel.requestEnabled.collectAsState(false)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showRequestDialog by remember { mutableStateOf(false) }
-
-    val requestStr = stringResource(R.string.request)
-    val request4kStr = stringResource(R.string.request_4k)
 
     when (val st = state.movie) {
         is DataLoadingState.Error -> {
@@ -152,6 +150,7 @@ fun DiscoverMovieDetails(
                 RequestMovieDialog(
                     loading = state.profileLoading,
                     data = state.requestData,
+                    requestEnabled = requestEnabled,
                     request4kEnabled = request4kEnabled,
                     movie = movie,
                     onSubmit = {
