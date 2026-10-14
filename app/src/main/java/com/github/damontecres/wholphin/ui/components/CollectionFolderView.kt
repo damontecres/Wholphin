@@ -517,6 +517,9 @@ class CollectionFolderViewModel
             filterOptionCache.getFilterOptionValues(
                 itemId.toUUID(),
                 filterOption,
+                fromItems =
+                    state.value.item.successValue
+                        ?.type == BaseItemKind.PLAYLIST,
             )
 
         /**
