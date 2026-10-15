@@ -389,6 +389,19 @@ sealed interface AppPreference<Pref, T> {
                 },
             )
 
+        val MaxResolutionPref =
+            AppChoicePreference<AppPreferences, MaxResolution>(
+                title = R.string.max_resolution,
+                defaultValue = MaxResolution.NO_LIMIT,
+                getter = { MaxResolution.fromValue(it.playbackPreferences.overrides.maxResolution) },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { maxResolution = value.value }
+                },
+                displayValues = R.array.max_resolution_options,
+                indexToValue = { MaxResolution.entries.getOrNull(it) ?: MaxResolution.NO_LIMIT },
+                valueToIndex = { it.ordinal },
+            )
+
         val Ac3Supported =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.ac3_supported,
@@ -443,15 +456,69 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val DirectPlayDoviProfile7 =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.force_dovi_profile_7,
-                defaultValue = false,
-                getter = { it.playbackPreferences.overrides.directPlayDolbyVisionEL },
+        val Hdr10Override =
+            AppChoicePreference<AppPreferences, HdrOverrideMode>(
+                title = R.string.hdr10_override,
+                defaultValue = HdrOverrideMode.HDR_OVERRIDE_AUTO,
+                getter = { it.playbackPreferences.overrides.hdr10Override },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { directPlayDolbyVisionEL = value }
+                    prefs.updatePlaybackOverrides { hdr10Override = value }
                 },
-                summary = R.string.force_dovi_profile_7_summary,
+                displayValues = R.array.hdr_override_modes,
+                indexToValue = { HdrOverrideMode.forNumber(it) ?: HdrOverrideMode.HDR_OVERRIDE_AUTO },
+                valueToIndex = { if (it != HdrOverrideMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val Hdr10PlusOverride =
+            AppChoicePreference<AppPreferences, HdrOverrideMode>(
+                title = R.string.hdr10_plus_override,
+                defaultValue = HdrOverrideMode.HDR_OVERRIDE_AUTO,
+                getter = { it.playbackPreferences.overrides.hdr10PlusOverride },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { hdr10PlusOverride = value }
+                },
+                displayValues = R.array.hdr_override_modes,
+                indexToValue = { HdrOverrideMode.forNumber(it) ?: HdrOverrideMode.HDR_OVERRIDE_AUTO },
+                valueToIndex = { if (it != HdrOverrideMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val DoviProfile5Override =
+            AppChoicePreference<AppPreferences, HdrOverrideMode>(
+                title = R.string.dovi_profile_5,
+                defaultValue = HdrOverrideMode.HDR_OVERRIDE_AUTO,
+                getter = { it.playbackPreferences.overrides.doviProfile5Override },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { doviProfile5Override = value }
+                },
+                displayValues = R.array.hdr_override_modes,
+                indexToValue = { HdrOverrideMode.forNumber(it) ?: HdrOverrideMode.HDR_OVERRIDE_AUTO },
+                valueToIndex = { if (it != HdrOverrideMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val DoviProfile7Override =
+            AppChoicePreference<AppPreferences, HdrOverrideMode>(
+                title = R.string.dovi_profile_7,
+                defaultValue = HdrOverrideMode.HDR_OVERRIDE_AUTO,
+                getter = { it.playbackPreferences.overrides.doviProfile7Override },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { doviProfile7Override = value }
+                },
+                displayValues = R.array.hdr_override_modes,
+                indexToValue = { HdrOverrideMode.forNumber(it) ?: HdrOverrideMode.HDR_OVERRIDE_AUTO },
+                valueToIndex = { if (it != HdrOverrideMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val DoviProfile8Override =
+            AppChoicePreference<AppPreferences, HdrOverrideMode>(
+                title = R.string.dovi_profile_8,
+                defaultValue = HdrOverrideMode.HDR_OVERRIDE_AUTO,
+                getter = { it.playbackPreferences.overrides.doviProfile8Override },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { doviProfile8Override = value }
+                },
+                displayValues = R.array.hdr_override_modes,
+                indexToValue = { HdrOverrideMode.forNumber(it) ?: HdrOverrideMode.HDR_OVERRIDE_AUTO },
+                valueToIndex = { if (it != HdrOverrideMode.UNRECOGNIZED) it.number else 0 },
             )
 
         val DecodeAv1 =
@@ -906,6 +973,12 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.MPV),
             )
 
+        val HdrFormatSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.hdr_formats,
+                destination = Destination.Settings(PreferenceScreenOption.HDR_FORMATS),
+            )
+
         val MpvHardwareDecoding =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_hardware_decoding,
@@ -1170,8 +1243,17 @@ private val ExoPlayerSettings =
         AppPreference.Ac3Supported,
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
-        AppPreference.DirectPlayDoviProfile7,
         AppPreference.DecodeAv1,
+        AppPreference.HdrFormatSettings,
+    )
+
+private val HdrFormatSettings =
+    listOf(
+        AppPreference.Hdr10Override,
+        AppPreference.Hdr10PlusOverride,
+        AppPreference.DoviProfile5Override,
+        AppPreference.DoviProfile7Override,
+        AppPreference.DoviProfile8Override,
     )
 
 val ExoPlayerPreferences =
@@ -1179,6 +1261,14 @@ val ExoPlayerPreferences =
         PreferenceGroup(
             title = R.string.exoplayer_options,
             preferences = ExoPlayerSettings,
+        ),
+    )
+
+val HdrFormatPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.hdr_formats,
+            preferences = HdrFormatSettings,
         ),
     )
 
@@ -1242,6 +1332,7 @@ val advancedPreferences =
                         AppPreference.GlobalContentScale,
                         AppPreference.SkipSegments,
                         AppPreference.DpadSeekModePref,
+                        AppPreference.MaxResolutionPref,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
                         AppPreference.ResolutionSwitching,

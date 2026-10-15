@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -72,7 +73,6 @@ import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoResponse
-import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.junit.After
@@ -156,13 +156,9 @@ class PlaybackViewModelTests {
             pin = "1234",
         )
     private val userDto =
-        UserDto(
+        ServerUserConfig(
             id = userId,
             name = "test-user",
-            serverName = "test server",
-            hasPassword = true,
-            hasConfiguredPassword = true,
-            hasConfiguredEasyPassword = false,
         )
 
     private val mediaSource =

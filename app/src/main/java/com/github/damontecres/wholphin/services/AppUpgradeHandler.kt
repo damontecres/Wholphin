@@ -6,7 +6,9 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.MostRecentServerProvider
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
@@ -17,6 +19,7 @@ import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
+import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
@@ -39,6 +42,7 @@ import com.github.damontecres.wholphin.ui.setup.seerr.migrateSeerrUrl
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -59,6 +63,7 @@ class AppUpgradeHandler
         private val seerrServerDao: SeerrServerDao,
         private val serverDao: JellyfinServerDao,
         private val rememberedTabDao: RememberedTabDao,
+        private val mostRecentServerProvider: MostRecentServerProvider,
         private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
         private val seriesTrackChoiceDao: SeriesTrackChoiceDao,
     ) {
@@ -448,7 +453,45 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isLessThan(Version.fromString("1.0.7-14-g0"))) {
+            if (current.isEqualOrBefore(Version.fromString("1.0.8-0-g0"))) {
+                try {
+                    val prefs = appPreferences.data.firstOrNull()
+                    val serverId = prefs?.currentServerId?.toUUIDOrNull()
+                    val userId = prefs?.currentUserId?.toUUIDOrNull()
+                    if (serverId != null && userId != null) {
+                        val server = serverDao.getServer(serverId)
+                        val user = server?.users?.firstOrNull { it.id == userId }
+                        if (server != null && user != null) {
+                            Timber.i("Migrating most recent server")
+                            mostRecentServerProvider.save(CurrentUser(server.server, user))
+                        }
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during migration for most recent server")
+                }
+                appPreferences.updateData {
+                    it.update {
+                        currentServerId = ""
+                        currentUserId = ""
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.10"))) {
+                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
+                appPreferences.updateData {
+                    if (it.playbackPreferences.overrides.directPlayDolbyVisionEL) {
+                        it.updatePlaybackOverrides {
+                            doviProfile7Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE
+                            directPlayDolbyVisionEL = false
+                        }
+                    } else {
+                        it
+                    }
+                }
+            }
+
+            if (previous.isLessThan(Version.fromString("1.0.10-0-g0"))) {
                 val count = seriesTrackChoiceDao.count()
                 if (count == 0) {
                     var offset = 0

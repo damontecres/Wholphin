@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateMusicPreferences
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.ExtractedColors
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -278,7 +279,7 @@ class NowPlayingViewModel
             val (primaryColor, secondaryColor, tertiaryColor) =
                 backdropService.extractColorsFromBackdrop(
                     imageUrl,
-                )
+                ) ?: ExtractedColors.DEFAULT
             val backdropResult =
                 BackdropResult(
                     itemId = itemId.toString(),

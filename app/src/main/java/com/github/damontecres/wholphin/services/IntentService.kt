@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.services
 
 import android.app.SearchManager
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -55,30 +57,37 @@ class IntentService
                 val query = intent.getStringParam(SearchManager.QUERY)
                 return IntentResult.Target(listOf(Destination.Search(query ?: "")))
             }
-            val itemId =
-                intent.getStringParam("itemId")?.toUUIDOrNull()
-                    ?: return IntentResult.Error("No item id provided")
 
+            val itemId = intent.getStringParam("itemId")?.toUUIDOrNull()
             val item =
-                try {
-                    api.userLibraryApi
-                        .getItem(itemId)
-                        .content
-                        .let { BaseItem(it) }
-                } catch (ex: Exception) {
-                    Timber.w(ex, "Error fetching item %s", itemId)
-                    return IntentResult.Error("Could not fetch item $itemId")
+                itemId?.let {
+                    try {
+                        api.userLibraryApi
+                            .getItem(itemId)
+                            .content
+                            .let { BaseItem(it) }
+                    } catch (ex: Exception) {
+                        Timber.w(ex, "Error fetching item %s", itemId)
+                        return IntentResult.Error("Could not fetch item $itemId")
+                    }
                 }
-
-            val itemDestination = item.destination()
+            val itemDestination = item?.destination()
 
             val destinations =
                 when (action) {
                     Intent.ACTION_VIEW, "view" -> {
-                        listOf(itemDestination)
+                        if (itemDestination != null) {
+                            listOf(itemDestination)
+                        } else {
+                            // Will go to the home page
+                            emptyList()
+                        }
                     }
 
-                    "com.github.damontecres.wholphin.PLAYBACK", "play" -> {
+                    ACTION_PLAYBACK, "play" -> {
+                        if (itemId == null || itemDestination == null) {
+                            return IntentResult.Error("Cannot start playback with no itemId")
+                        }
                         val position = intent.getLongParam("position")?.coerceAtLeast(0)
                         val shuffle = intent.getBooleanExtra("shuffle", false)
 
@@ -104,9 +113,10 @@ class IntentService
                     }
                 }
 
-            return IntentResult.Target(destinations)
+            return IntentResult.Target(destinations, true)
         }
 
+        @VisibleForTesting
         internal suspend fun prepare(intent: Intent): IntentResult? {
             val appPrefs = userPreferencesService.flow.first().appPreferences
 
@@ -114,39 +124,33 @@ class IntentService
             val serverId = intent.getStringParam(INTENT_SERVER_ID)?.toUUIDOrNull()
             return if (userId != null && serverId != null) {
                 Timber.v("Intent switches user")
-                val user = serverRepository.serverDao.getUser(serverId, userId)
-                if (user != null && !user.isProtected) {
-                    serverRepository.restoreSession(serverId, userId)
-                        ?: IntentResult.Error("Error restoring user")
+                val user = serverRepository.tryChangeUser(serverId, userId)
+                if (user != null) {
                     null
                 } else {
-                    IntentResult.Error("Cannot switch to specified user")
+                    IntentResult.Error("Error restoring user")
                 }
-            } else {
-                val profileProtected =
-                    serverRepository.current.value
-                        ?.user
-                        ?.isProtected == true
-                if (appPrefs.signInAutomatically && !profileProtected) {
-                    Timber.v("No current user, so restoring last")
-                    val userId = appPrefs.currentUserId?.toUUIDOrNull()
-                    val serverId = appPrefs.currentServerId?.toUUIDOrNull()
+            } else if (appPrefs.signInAutomatically) {
+                Timber.v("No current user, so restoring last")
+                val result = serverRepository.restoreLastSession()
+                Timber.v("Restored result=%s", result)
+                when (result) {
+                    RestoredSession.None,
+                    is RestoredSession.ServerOnly,
+                    -> {
+                        IntentResult.Error("Could not auto sign-in, specify a server & user")
+                    }
 
-                    if (userId != null && serverId != null) {
-                        val current =
-                            serverRepository.restoreSession(serverId, userId)
-                                ?: return IntentResult.Error("Error restoring user")
-                        if (current.user.isProtected) {
+                    is RestoredSession.Success -> {
+                        if (result.currentUser.user.isProtected) {
                             IntentResult.Error("Could not auto sign-in, user is protected")
                         } else {
                             null
                         }
-                    } else {
-                        IntentResult.Error("Could not auto sign-in, specify a server & user")
                     }
-                } else {
-                    IntentResult.Error("Auto sign-in not enabled or user is protected")
                 }
+            } else {
+                IntentResult.Error("Auto sign-in not enabled")
             }
         }
 
@@ -195,6 +199,8 @@ class IntentService
             const val INTENT_SEASON_ID = "seaId"
             const val INTENT_SERVER_ID = "serverId"
             const val INTENT_USER_ID = "userId"
+
+            const val ACTION_PLAYBACK = "com.github.damontecres.wholphin.PLAYBACK"
         }
     }
 

@@ -112,21 +112,31 @@ data class BaseItem(
     val ui =
         BaseItemUi(
             episodeCornerText =
-                data.indexNumber?.let { formatEpisodeNumber(it) }
-                    ?: data.premiereDate?.let(::formatDateTime),
-            episodeUnplayedCornerText =
-                if (type == BaseItemKind.SERIES ||
-                    type == BaseItemKind.SEASON ||
-                    type == BaseItemKind.EPISODE ||
-                    type == BaseItemKind.BOX_SET
-                ) {
+                if (type == BaseItemKind.EPISODE) {
                     data.indexNumber?.let { formatEpisodeNumber(it) }
-                        ?: data.userData
+                        ?: data.premiereDate?.let(::formatDateTime)
+                } else {
+                    null
+                },
+            episodeUnplayedCornerText =
+                when (type) {
+                    BaseItemKind.EPISODE -> {
+                        data.indexNumber?.let { formatEpisodeNumber(it) }
+                    }
+
+                    BaseItemKind.SERIES,
+                    BaseItemKind.SEASON,
+                    BaseItemKind.BOX_SET,
+                    -> {
+                        data.userData
                             ?.unplayedItemCount
                             ?.takeIf { it > 0 }
                             ?.let { abbreviateNumber(it) }
-                } else {
-                    null
+                    }
+
+                    else -> {
+                        null
+                    }
                 },
             quickDetails =
                 QuickDetailsData(
@@ -134,33 +144,64 @@ data class BaseItem(
                         buildAnnotatedString {
                             val details =
                                 buildList {
-                                    if (type == BaseItemKind.EPISODE) {
-                                        data.seasonEpisode?.let(::add)
-                                        data.premiereDate?.let { add(getDateFormatter().format(it)) }
-                                    } else if (type == BaseItemKind.SERIES) {
-                                        data.seriesProductionYears?.let(::add)
-                                    } else if (type == BaseItemKind.PHOTO) {
-                                        if (data.productionYear != null) {
-                                            add(data.productionYear!!.toString())
-                                        } else if (data.premiereDate != null) {
-                                            add(data.premiereDate!!.toLocalDate().toString())
-                                        }
-                                    } else if (type == BaseItemKind.BOX_SET) {
-                                        data.productionYear?.let { add(it.toString()) }
-                                        data.childCount?.let { add("$it items") }
-                                    } else if (type == BaseItemKind.PROGRAM) {
-                                        data.channelName?.let(::add)
-                                        if (data.isSeries == true) {
-                                            // TV episode
+                                    when (type) {
+                                        BaseItemKind.EPISODE -> {
                                             data.seasonEpisode?.let(::add)
                                             data.premiereDate?.let {
-                                                add(getDateFormatter().format(it))
+                                                add(
+                                                    getDateFormatter().format(
+                                                        it,
+                                                    ),
+                                                )
                                             }
-                                        } else {
+                                        }
+
+                                        BaseItemKind.SEASON -> {
+                                            data.childCount?.let { childCount ->
+                                                add(
+                                                    WholphinApplication.instance.resources.getQuantityString(
+                                                        R.plurals.episodes_count,
+                                                        childCount,
+                                                        childCount,
+                                                    ),
+                                                )
+                                            }
                                             data.productionYear?.let { add(it.toString()) }
                                         }
-                                    } else {
-                                        data.productionYear?.let { add(it.toString()) }
+
+                                        BaseItemKind.SERIES -> {
+                                            data.seriesProductionYears?.let(::add)
+                                        }
+
+                                        BaseItemKind.PHOTO -> {
+                                            if (data.productionYear != null) {
+                                                add(data.productionYear!!.toString())
+                                            } else if (data.premiereDate != null) {
+                                                add(data.premiereDate!!.toLocalDate().toString())
+                                            }
+                                        }
+
+                                        BaseItemKind.BOX_SET -> {
+                                            data.productionYear?.let { add(it.toString()) }
+                                            data.childCount?.let { add("$it items") }
+                                        }
+
+                                        BaseItemKind.PROGRAM -> {
+                                            data.channelName?.let(::add)
+                                            if (data.isSeries == true) {
+                                                // TV episode
+                                                data.seasonEpisode?.let(::add)
+                                                data.premiereDate?.let {
+                                                    add(getDateFormatter().format(it))
+                                                }
+                                            } else {
+                                                data.productionYear?.let { add(it.toString()) }
+                                            }
+                                        }
+
+                                        else -> {
+                                            data.productionYear?.let { add(it.toString()) }
+                                        }
                                     }
                                     data.runTimeTicks
                                         ?.ticks
@@ -237,21 +278,30 @@ data class BaseItem(
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    data.seasonId?.let { seasonId ->
+                    val seasonId = data.seasonId
+                    val seriesId = data.seriesId
+                    if (seasonId != null && seriesId != null) {
                         Destination.SeriesOverview(
-                            data.seriesId!!,
+                            seriesId,
                             BaseItemKind.SERIES,
                             SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
                         )
-                    } ?: Destination.MediaItem(this)
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.SEASON -> {
-                    Destination.SeriesOverview(
-                        data.seriesId!!,
-                        BaseItemKind.SERIES,
-                        SeasonEpisodeIds(id, indexNumber, null, null),
-                    )
+                    val seriesId = data.seriesId
+                    if (seriesId != null) {
+                        Destination.SeriesOverview(
+                            seriesId,
+                            BaseItemKind.SERIES,
+                            SeasonEpisodeIds(id, indexNumber, null, null),
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 BaseItemKind.TV_CHANNEL -> {

@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.util.profile
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt
 
 import android.media.MediaCodecInfo
+import android.util.Size
 import androidx.media3.common.MimeTypes
 import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
@@ -11,7 +12,6 @@ import org.jellyfin.sdk.model.api.EncodingContext
 import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.api.ProfileConditionValue
 import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
-import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.deviceprofile.DeviceProfileBuilder
 import org.jellyfin.sdk.model.deviceprofile.buildDeviceProfile
 
@@ -61,6 +61,8 @@ val supportedAudioCodecs =
 //    )
 // }
 
+private fun Size.min(min: Int) = if (min > 0 && height > min) Size(width, min) else this
+
 fun createDeviceProfile(
     mediaTest: MediaCodecCapabilitiesTest,
     maxBitrate: Int,
@@ -68,10 +70,12 @@ fun createDeviceProfile(
     downMixAudio: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
-    dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
+    forceEnabledHdr: Set<String>,
+    forceDisabledHdr: Set<String>,
+    maxResolution: Int,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -106,10 +110,10 @@ fun createDeviceProfile(
     val supportsAV1 = mediaTest.supportsAV1()
     val supportsAV1Main10 = mediaTest.supportsAV1Main10()
     val supportsVC1 = mediaTest.supportsVc1()
-    val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264)
-    val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265)
-    val maxResolutionAV1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_AV1)
-    val maxResolutionVC1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_VC1)
+    val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264).min(maxResolution)
+    val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265).min(maxResolution)
+    val maxResolutionAV1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_AV1).min(maxResolution)
+    val maxResolutionVC1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_VC1).min(maxResolution)
 
     // / HDR capabilities
 
@@ -133,59 +137,43 @@ fun createDeviceProfile(
 
     // / Transcoding profiles
     // Video
-    if (preferAc3ForSurround) {
-        transcodingProfile {
-            type = DlnaProfileType.VIDEO
-            context = EncodingContext.STREAMING
+    transcodingProfile {
+        type = DlnaProfileType.VIDEO
+        context = EncodingContext.STREAMING
 
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
+        container = Codec.Container.TS
+        protocol = MediaStreamProtocol.HLS
 
-            if (supportsHevc) videoCodec(Codec.Video.HEVC)
-            videoCodec(Codec.Video.H264)
+        if (supportsHevc) videoCodec(Codec.Video.HEVC)
+        videoCodec(Codec.Video.H264)
 
-            audioCodec(Codec.Audio.AC3)
-
-            copyTimestamps = false
-            enableSubtitlesInManifest = true
-        }
-    } else {
-        transcodingProfile {
-            type = DlnaProfileType.VIDEO
-            context = EncodingContext.STREAMING
-
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
-
-            if (supportsHevc) videoCodec(Codec.Video.HEVC)
-            videoCodec(Codec.Video.H264)
-
+        if (preferAc3ForSurround) {
             audioCodec(*allowedAudioCodecs)
+        } else {
+            audioCodec(Codec.Audio.AC3)
+        }
 
-            copyTimestamps = false
-            enableSubtitlesInManifest = true
+        copyTimestamps = false
+        enableSubtitlesInManifest = true
+
+        if (maxResolution > 0) {
+            conditions {
+                ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
+            }
         }
     }
 
     // Audio
-    if (preferAc3ForSurround) {
-        transcodingProfile {
-            type = DlnaProfileType.AUDIO
-            context = EncodingContext.STREAMING
+    transcodingProfile {
+        type = DlnaProfileType.AUDIO
+        context = EncodingContext.STREAMING
 
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
+        container = Codec.Container.TS
+        protocol = MediaStreamProtocol.HLS
 
+        if (preferAc3ForSurround) {
             audioCodec(Codec.Audio.AC3)
-        }
-    } else {
-        transcodingProfile {
-            type = DlnaProfileType.AUDIO
-            context = EncodingContext.STREAMING
-
-            container = Codec.Container.TS
-            protocol = MediaStreamProtocol.HLS
-
+        } else {
             audioCodec(Codec.Audio.AAC)
         }
     }
@@ -459,62 +447,76 @@ fun createDeviceProfile(
         }
     }
 
-    // / HDR exclude list
+    if (maxResolution > 0) {
+        listOf(
+            Codec.Video.MPEG,
+            Codec.Video.MPEG2VIDEO,
+            Codec.Video.VP8,
+            Codec.Video.VP9,
+        ).forEach { codecName ->
+            codecProfile {
+                type = CodecType.VIDEO
+                codec = codecName
 
-    // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
-    val unsupportedRangeTypesAv1 =
-        buildSet {
-            if (jellyfinTenEleven) add("DOVIInvalid")
-
-            if (!decodeAv1) {
-                if (!supportsAV1DolbyVision) {
-                    add(VideoRangeType.DOVI.serialName)
-                    if (!supportsAV1HDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
-                    if (jellyfinTenEleven && !supportsAV1HDR10Plus) add("DOVIWithHDR10Plus")
-                }
-
-                if (!supportsAV1HDR10Plus) {
-                    add(VideoRangeType.HDR10_PLUS.serialName)
-
-                    if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
+                conditions {
+                    ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolution
                 }
             }
         }
+    }
 
-    // TODO Use VideoRangeType enum with Jellyfin 10.11 based SDK
+    // / HDR exclude list
+
+    val unsupportedRangeTypesAv1 =
+        buildSet {
+            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
+
+            if (!decodeAv1) {
+                if (!supportsAV1DolbyVision) {
+                    add(WholphinVideoRangeType.DOVI.serialName)
+                    if (!supportsAV1HDR10) add(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven && !supportsAV1HDR10Plus) add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
+                }
+
+                if (!supportsAV1HDR10Plus) {
+                    add(WholphinVideoRangeType.HDR10_PLUS.serialName)
+
+                    if (!mediaTest.supportsAV1HDR10()) add(WholphinVideoRangeType.HDR10.serialName)
+                }
+            }
+        } - forceEnabledHdr + forceDisabledHdr
+
     val unsupportedRangeTypesHevc =
         buildSet {
-            if (jellyfinTenEleven) add("DOVIInvalid")
+            if (jellyfinTenEleven) add(WholphinVideoRangeType.DOVI_INVALID.serialName)
 
             if (!supportsHevcDolbyVisionEL) {
-                if (!dolbyVisionELDirectPlay) {
-                    if (jellyfinTenEleven) {
-                        add("DOVIWithEL")
-                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                if (jellyfinTenEleven) {
+                    add(WholphinVideoRangeType.DOVI_WITH_EL.serialName)
+                    if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
+                        add(WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName)
                     }
                 }
 
                 if (!supportsHevcDolbyVision) {
-                    add(VideoRangeType.DOVI.serialName)
-                    if (!supportsHevcHDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    add(WholphinVideoRangeType.DOVI.serialName)
+                    if (!supportsHevcHDR10) add(WholphinVideoRangeType.DOVI_WITH_HDR10.serialName)
                     if (jellyfinTenEleven && !supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) {
-                        add(
-                            "DOVIWithHDR10Plus",
-                        )
+                        add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
                     }
                 }
             }
 
             if (!supportsHevcHDR10Plus) {
-                add(VideoRangeType.HDR10_PLUS.serialName)
-                if (!supportsHevcHDR10) add(VideoRangeType.HDR10.serialName)
+                add(WholphinVideoRangeType.HDR10_PLUS.serialName)
+                if (!supportsHevcHDR10) add(WholphinVideoRangeType.HDR10.serialName)
             }
 
             if (jellyfinTenEleven && KnownDefects.hevcDoviHdr10PlusBug) {
-                add("DOVIWithHDR10Plus")
-                add("DOVIWithELHDR10Plus")
+                add(WholphinVideoRangeType.DOVI_WITH_HDR10_PLUS.serialName)
+                add(WholphinVideoRangeType.DOVI_WITH_EL_HDR10_PLUS.serialName)
             }
-        }
+        } - forceEnabledHdr + forceDisabledHdr
 
     // Display
     // Note: The codec profiles use a workaround to create correct behavior
