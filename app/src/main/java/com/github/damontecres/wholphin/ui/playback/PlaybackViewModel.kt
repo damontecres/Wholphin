@@ -38,12 +38,16 @@ import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
+import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
+import com.github.damontecres.wholphin.playback.leveling.toLevelingMode
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.enabled
+import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
@@ -166,6 +170,23 @@ class PlaybackViewModel
             fun create(destination: Destination): PlaybackViewModel
         }
 
+        private var volumeSaveJob: Job? = null
+        val evenOutVolume get() = playerFactory.evenOutVolume
+        val levelingNeedsNextVideo: Boolean get() = playerFactory.levelingNeedsNextVideo
+
+        fun setEvenOutVolume(value: EvenOutVolume) {
+            playerFactory.setEvenOutVolume(value)
+            preferences = preferences.copy(
+                appPreferences = preferences.appPreferences.updatePlaybackPreferences { evenOutVolume = value },
+            )
+            val previousSave = volumeSaveJob
+            volumeSaveJob = viewModelScope.launchIO(ExceptionHandler()) {
+                // IO dispatch may reorder quick remote-control selections. Commit them in UI order.
+                previousSave?.join()
+                userPreferencesService.setEvenOutVolume(value)
+            }
+        }
+
         val currentPlayer = MutableStateFlow<PlayerInstance?>(null)
 
         internal lateinit var player: Player
@@ -255,7 +276,8 @@ class PlaybackViewModel
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
-            if (currentPlayer.value?.backend != playerBackend) {
+            val levelingPolicy = VolumeLevelingPolicy(playerBackend, preferences.appPreferences.playbackPreferences.evenOutVolume.toLevelingMode())
+            if (currentPlayer.value?.backend != playerBackend || currentPlayer.value?.levelingPcmOnly != levelingPolicy.pcmOnly) {
                 Timber.i("Switching player backend to %s", playerBackend)
                 withContext(WholphinDispatchers.Main) {
                     disconnectPlayer()
@@ -268,7 +290,7 @@ class PlaybackViewModel
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
-                    PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler)
+                    PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler, levelingPolicy.pcmOnly)
                 }
                 configurePlayer()
             }

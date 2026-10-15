@@ -296,6 +296,10 @@ fun PlaybackPageContent(
                 TODO()
             }
 
+            is PlaybackAction.SetEvenOutVolume -> {
+                viewModel.setEvenOutVolume(it.value)
+            }
+
             is PlaybackAction.ToggleAudio -> {
                 viewModel.changeAudioStream(it.index)
             }
@@ -734,12 +738,16 @@ fun PlaybackPageContent(
         }
     }
 
+    val evenOutVolume by viewModel.evenOutVolume.collectAsState()
     playbackDialog?.let { type ->
         PlaybackDialog(
             type = type,
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
+                    evenOutVolume = evenOutVolume,
+                    levelingSupported = playerBackend == PlayerBackend.EXO_PLAYER,
+                    levelingNeedsNextVideo = viewModel.levelingNeedsNextVideo,
                     audioIndex = state.currentPlayback?.audioIndex,
                     audioStreams = state.currentMediaInfo.audioStreams,
                     subtitleIndex = state.currentPlayback?.subtitleIndex,
@@ -757,6 +765,7 @@ fun PlaybackPageContent(
                 playbackDialog =
                     when (type) {
                         // Go back to settings dialog
+                        PlaybackDialogType.EVEN_OUT_VOLUME -> PlaybackDialogType.AUDIO
                         PlaybackDialogType.PLAYBACK_SPEED,
                         PlaybackDialogType.VIDEO_SCALE,
                         -> PlaybackDialogType.SETTINGS

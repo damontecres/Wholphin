@@ -65,6 +65,12 @@ message PlaybackOverrides{
   HdrOverrideMode hdr10_plus_override = 14;
 }
 
+enum EvenOutVolume {
+  VOLUME_OFF = 0;
+  VOLUME_LIGHT = 1;
+  VOLUME_STRONG = 2;
+}
+
 message PlaybackPreferences {
   int64 skip_forward_ms = 1;
   int64 skip_back_ms = 2;
@@ -94,6 +100,7 @@ message PlaybackPreferences {
   string external_player = 24;
   bool cinema_mode = 25;
   DpadSeekMode dpad_seek_mode = 26;
+  EvenOutVolume even_out_volume = 27;
 }
 
 enum DpadSeekMode {

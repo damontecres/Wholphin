@@ -243,6 +243,17 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != ThemeSongVolume.UNRECOGNIZED) it.number else 0 },
             )
 
+        val EvenOutVolumePref =
+            AppChoicePreference<AppPreferences, EvenOutVolume>(
+                title = R.string.even_out_volume,
+                defaultValue = EvenOutVolume.VOLUME_OFF,
+                displayValues = R.array.even_out_volume_values,
+                indexToValue = { EvenOutVolume.forNumber(it) },
+                valueToIndex = { if (it == EvenOutVolume.UNRECOGNIZED) 0 else it.number },
+                getter = { it.playbackPreferences.evenOutVolume },
+                setter = { prefs, value -> prefs.updatePlaybackPreferences { evenOutVolume = value } },
+            )
+
         val PlaybackDebugInfo =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.playback_debug_info,
@@ -1188,6 +1199,7 @@ val basicPreferences =
             title = R.string.playback,
             preferences =
                 listOf(
+                    AppPreference.EvenOutVolumePref,
                     AppPreference.SkipForward,
                     AppPreference.SkipBack,
                     AppPreference.SkipBackOnResume,

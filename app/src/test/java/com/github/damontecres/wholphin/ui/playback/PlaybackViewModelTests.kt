@@ -407,6 +407,64 @@ class PlaybackViewModelTests {
         }
 
     @Test
+    fun `Live leveling applies now and rebuilds the PCM policy at the next playlist video`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { }
+            every { mockPlayerFactory.setEvenOutVolume(any()) } returns Unit
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+
+            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG)
+            testScheduler.advanceUntilIdle()
+            verify { mockPlayerFactory.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) }
+            coVerify { mockUserPreferencesService.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) }
+            // Changing mode alone must not interrupt the current episode.
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+            Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
+
+            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF)
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 3) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+            Assert.assertFalse(viewModel.currentPlayer.value!!.levelingPcmOnly)
+        }
+
+    @Test
+    fun `Rapid leveling choices save in selection order even when the first write is slow`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { }
+            every { mockPlayerFactory.setEvenOutVolume(any()) } returns Unit
+            val saved = mutableListOf<com.github.damontecres.wholphin.preferences.EvenOutVolume>()
+            coEvery { mockUserPreferencesService.setEvenOutVolume(any()) } coAnswers {
+                val mode = firstArg<com.github.damontecres.wholphin.preferences.EvenOutVolume>()
+                if (mode == com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) kotlinx.coroutines.delay(100)
+                saved.add(mode)
+            }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG)
+            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF)
+            testScheduler.advanceUntilIdle()
+            Assert.assertEquals(
+                listOf(
+                    com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG,
+                    com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF,
+                ),
+                saved,
+            )
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+        }
+
+    @Test
     fun `Play previous`() =
         runTest(testDispatcher) {
             setupForPlaylist()

@@ -66,6 +66,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
+import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
@@ -102,6 +103,8 @@ sealed interface PlaybackAction {
     data object ShowVideoFilterDialog : PlaybackAction
 
     data object SearchCaptions : PlaybackAction
+
+    data class SetEvenOutVolume(val value: EvenOutVolume) : PlaybackAction
 
     data class ToggleCaptions(
         val index: Int,

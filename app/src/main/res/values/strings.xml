@@ -974,4 +974,16 @@
     <string name="home_settings_source_server_profile">Server user profile</string>
     <string name="home_settings_source_plugin">Server default</string>
     <string name="home_settings_source_web">User web client</string>
+    <string name="even_out_volume">Even out volume</string>
+    <string name="even_out_volume_off">Off</string>
+    <string name="even_out_volume_light">Light</string>
+    <string name="even_out_volume_strong">Strong</string>
+    <string name="even_out_volume_summary">%1$s. Turns off audio passthrough to your receiver while on.</string>
+    <string name="even_out_volume_exoplayer_required">%1$s. Needs the ExoPlayer backend. No volume leveling is applied with MPV or an external player.</string>
+    <string name="even_out_volume_next_video">%1$s. Applies from the next video while audio bypasses processing. Turns off audio passthrough to your receiver while on.</string>
+    <string-array name="even_out_volume_values">
+        <item>@string/even_out_volume_off</item>
+        <item>@string/even_out_volume_light</item>
+        <item>@string/even_out_volume_strong</item>
+    </string-array>
 </resources>
