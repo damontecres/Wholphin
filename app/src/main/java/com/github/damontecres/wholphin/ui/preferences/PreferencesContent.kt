@@ -46,6 +46,8 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.SeerrServer
+import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
@@ -61,6 +63,7 @@ import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.services.CurrentSeerr
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -475,7 +478,8 @@ fun PreferencesContent(
                                                 when (val conn = seerrConnection) {
                                                     is SeerrConnectionStatus.Error -> {
                                                         SeerrDialogMode.Error(
-                                                            conn.server.url,
+                                                            conn.server,
+                                                            conn.user,
                                                             conn.ex,
                                                         )
                                                     }
@@ -486,7 +490,7 @@ fun PreferencesContent(
 
                                                     is SeerrConnectionStatus.Success -> {
                                                         SeerrDialogMode.Remove(
-                                                            conn.current.server.url,
+                                                            conn.current,
                                                         )
                                                     }
                                                 }
@@ -698,14 +702,16 @@ fun PreferencesContent(
         }
         when (val mode = seerrDialogMode) {
             is SeerrDialogMode.Remove -> {
+                val body = rememberSeerrDialogBody(mode.current.user, mode.current.server)
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = mode.serverUrl,
+                    body = body,
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
                         seerrDialogMode = SeerrDialogMode.None
                     },
+                    elevation = 3.dp,
                 )
             }
 
@@ -729,15 +735,7 @@ fun PreferencesContent(
             }
 
             is SeerrDialogMode.Error -> {
-                val errorStr = stringResource(R.string.voice_error_server)
-                val body =
-                    remember(mode) {
-                        """
-                        ${mode.serverUrl}
-
-                        $errorStr: ${mode.ex.localizedMessage}
-                        """.trimIndent()
-                    }
+                val body = rememberSeerrDialogBody(mode.user, mode.server, mode.ex)
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
                     body = body,
@@ -747,6 +745,7 @@ fun PreferencesContent(
                         seerrDialogMode = SeerrDialogMode.None
                     },
                     bodyColor = MaterialTheme.colorScheme.error,
+                    elevation = 3.dp,
                 )
             }
 
@@ -861,11 +860,12 @@ private sealed interface SeerrDialogMode {
     data object Add : SeerrDialogMode
 
     data class Remove(
-        val serverUrl: String,
+        val current: CurrentSeerr,
     ) : SeerrDialogMode
 
     data class Error(
-        val serverUrl: String,
+        val server: SeerrServer,
+        val user: SeerrUser,
         val ex: Exception,
     ) : SeerrDialogMode
 }
