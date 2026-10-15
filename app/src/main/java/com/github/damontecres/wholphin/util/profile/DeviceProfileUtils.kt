@@ -147,10 +147,11 @@ fun createDeviceProfile(
         if (supportsHevc) videoCodec(Codec.Video.HEVC)
         videoCodec(Codec.Video.H264)
 
-        if (preferAc3ForSurround) {
-            audioCodec(*allowedAudioCodecs)
-        } else {
+        // Direct-play support does not imply that a codec is a suitable HLS transcode target.
+        if (preferAc3ForSurround && isAC3Enabled && !downMixAudio) {
             audioCodec(Codec.Audio.AC3)
+        } else {
+            audioCodec(Codec.Audio.AAC)
         }
 
         copyTimestamps = false
@@ -171,7 +172,7 @@ fun createDeviceProfile(
         container = Codec.Container.TS
         protocol = MediaStreamProtocol.HLS
 
-        if (preferAc3ForSurround) {
+        if (preferAc3ForSurround && isAC3Enabled && !downMixAudio) {
             audioCodec(Codec.Audio.AC3)
         } else {
             audioCodec(Codec.Audio.AAC)

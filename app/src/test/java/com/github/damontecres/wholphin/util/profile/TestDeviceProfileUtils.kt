@@ -4,6 +4,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.api.DlnaProfileType
+import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.api.ProfileConditionValue
 import org.junit.Assert
 import org.junit.Test
@@ -35,21 +37,49 @@ class TestDeviceProfileUtils {
         decodeAv1: Boolean = false,
         forceEnabledHdr: Set<String> = emptySet(),
         forceDisabledHdr: Set<String> = emptySet(),
+        preferAc3ForSurround: Boolean = false,
+        isAC3Enabled: Boolean = true,
+        downMixAudio: Boolean = false,
     ): DeviceProfile =
         createDeviceProfile(
             mediaTest = mediaTest,
             maxBitrate = 100_000_000,
-            isAC3Enabled = true,
-            downMixAudio = false,
+            isAC3Enabled = isAC3Enabled,
+            downMixAudio = downMixAudio,
             assDirectPlay = true,
             pgsDirectPlay = true,
             decodeAv1 = decodeAv1,
             jellyfinTenEleven = jellyfinTenEleven,
-            preferAc3ForSurround = false,
+            preferAc3ForSurround = preferAc3ForSurround,
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
             maxResolution = 0,
         )
+
+    @Test
+    fun `HLS transcoding uses AAC unless AC3 surround is requested and allowed`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        for (preferAc3 in listOf(false, true)) {
+            for (ac3Enabled in listOf(false, true)) {
+                for (downmix in listOf(false, true)) {
+                    val profile =
+                        buildProfile(
+                            mediaTest,
+                            preferAc3ForSurround = preferAc3,
+                            isAC3Enabled = ac3Enabled,
+                            downMixAudio = downmix,
+                        )
+                    val expectedCodec =
+                        if (preferAc3 && ac3Enabled && !downmix) Codec.Audio.AC3 else Codec.Audio.AAC
+                    val hlsProfiles = profile.transcodingProfiles.filter { it.protocol == MediaStreamProtocol.HLS }
+                    Assert.assertEquals(setOf(DlnaProfileType.AUDIO, DlnaProfileType.VIDEO), hlsProfiles.map { it.type }.toSet())
+                    hlsProfiles.forEach { Assert.assertEquals(expectedCodec, it.audioCodec) }
+                    // MPEG audio remains supported for direct playback.
+                    Assert.assertTrue(profile.directPlayProfiles.any { Codec.Audio.MP3 in it.audioCodec.orEmpty().split(',') })
+                }
+            }
+        }
+    }
 
     @Test
     fun `Test HEVC Profile 7 unsupported when device does not support it`() {

@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.ui.playback
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionParameters
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -40,6 +42,7 @@ import com.github.damontecres.wholphin.ui.successResponse
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.configure
+import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.reset
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -68,7 +71,10 @@ import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaybackInfoResponse
+import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
+import org.jellyfin.sdk.model.deviceprofile.buildDeviceProfile
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.junit.After
@@ -274,6 +280,113 @@ class PlaybackViewModelTests {
             ?.let { throw it }
         return viewModel
     }
+
+    @Test
+    fun `SubRip read failure retries externally once before transcoding at the same position`() =
+        testSubtitleRecovery(deliverExternally = true)
+
+    @Test
+    fun `Server returning embedded subtitles does not cause a recovery loop`() = testSubtitleRecovery(deliverExternally = false)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun testSubtitleRecovery(deliverExternally: Boolean) =
+        runTest(testDispatcher) {
+            setupPreferences { }
+            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            val embeddedSource =
+                mediaSource.copy(
+                    id = "source-2074",
+                    container = Codec.Container.MKV,
+                    mediaStreams =
+                        mediaSource.mediaStreams!!.map {
+                            if (it.type == MediaStreamType.SUBTITLE) {
+                                it.copy(codec = Codec.Subtitle.SUBRIP, supportsExternalStream = true)
+                            } else {
+                                it
+                            }
+                        },
+                )
+            val selectedSubtitle = embeddedSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }
+            val externalSource =
+                embeddedSource.copy(
+                    mediaStreams =
+                        embeddedSource.mediaStreams!!.map {
+                            if (it.index == selectedSubtitle.index) {
+                                it.copy(deliveryMethod = SubtitleDeliveryMethod.EXTERNAL, deliveryUrl = "/subtitles/3.srt")
+                            } else {
+                                it
+                            }
+                        },
+                )
+            val transcodedSource =
+                externalSource.copy(supportsDirectPlay = false, supportsDirectStream = false, transcodingUrl = "/master.m3u8")
+            val profile =
+                buildDeviceProfile {
+                    subtitleProfile(Codec.Subtitle.SUBRIP, SubtitleDeliveryMethod.EMBED)
+                    subtitleProfile(Codec.Subtitle.SUBRIP, SubtitleDeliveryMethod.EXTERNAL)
+                    subtitleProfile(Codec.Subtitle.WEBVTT, SubtitleDeliveryMethod.EMBED)
+                }
+            coEvery { mockDeviceProfileService.getOrCreateDeviceProfile(any(), any()) } returns profile
+            every {
+                mockVideosApi.getVideoStreamUrl(
+                    itemId = any(),
+                    mediaSourceId = embeddedSource.id,
+                    static = true,
+                    tag = embeddedSource.eTag,
+                    playSessionId = playSessionId,
+                )
+            } returns videoStreamUrl
+            val requests = mutableListOf<PlaybackInfoDto>()
+            coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), capture(requests)) } returnsMany
+                listOf(embeddedSource, if (deliverExternally) externalSource else embeddedSource, transcodedSource).map {
+                    successResponse(PlaybackInfoResponse(mediaSources = listOf(it), playSessionId = playSessionId))
+                }
+            every { mockApi.createUrl(any<String>()) } answers { "http://localhost:8096${firstArg<String>()}" }
+            every { mockPlayer.currentPosition } returns 12_345L
+            every { mockPlayer.trackSelectionParameters } returns TrackSelectionParameters.DEFAULT_WITHOUT_CONTEXT
+            every { mockPlayer.currentTracks } returns TestTracks.fromMediaSourceInfo(mediaSource).buildForExoPlayer().toTracks()
+
+            val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
+            val error =
+                PlaybackException(
+                    "Source error",
+                    RuntimeException(IllegalStateException("No valid varint length mask found")),
+                    PlaybackException.ERROR_CODE_UNSPECIFIED,
+                )
+            viewModel.onPlayerError(error)
+            testScheduler.advanceUntilIdle()
+
+            Assert.assertEquals(2, requests.size)
+            Assert.assertTrue(requests[1].enableDirectPlay!!)
+            Assert.assertTrue(requests[1].enableDirectStream!!)
+            Assert.assertEquals(requests[0].audioStreamIndex, requests[1].audioStreamIndex)
+            Assert.assertEquals(embeddedSource.id, requests[1].mediaSourceId)
+            Assert.assertEquals(selectedSubtitle.index, requests[1].subtitleStreamIndex)
+            Assert.assertFalse(requests[1].deviceProfile!!.subtitleProfiles.any { it.method == SubtitleDeliveryMethod.EMBED })
+            val mediaItems = mutableListOf<MediaItem>()
+            verify(exactly = 1) { mockPlayer.setMediaItem(capture(mediaItems), 12_345L) }
+            val subtitles = mediaItems.single().localConfiguration!!.subtitleConfigurations
+            if (deliverExternally) {
+                Assert.assertEquals("http://localhost:8096/subtitles/3.srt", subtitles.single().uri.toString())
+            } else {
+                Assert.assertTrue(subtitles.isEmpty())
+            }
+            Assert.assertTrue(profile.subtitleProfiles.any { it.method == SubtitleDeliveryMethod.EMBED })
+
+            viewModel.onPlayerError(error)
+            testScheduler.advanceUntilIdle()
+            Assert.assertEquals(3, requests.size)
+            Assert.assertFalse(requests[2].enableDirectPlay!!)
+            Assert.assertFalse(requests[2].enableDirectStream!!)
+            Assert.assertEquals(requests[1].audioStreamIndex, requests[2].audioStreamIndex)
+            Assert.assertEquals(requests[1].subtitleStreamIndex, requests[2].subtitleStreamIndex)
+            verify(exactly = 2) { mockPlayer.setMediaItem(any(), 12_345L) }
+
+            viewModel.onPlayerError(error)
+            testScheduler.advanceUntilIdle()
+            Assert.assertEquals(3, requests.size)
+            Assert.assertTrue(viewModel.state.value.loading is LoadingState.Error)
+        }
 
     @Test
     fun `Play intro first`() =

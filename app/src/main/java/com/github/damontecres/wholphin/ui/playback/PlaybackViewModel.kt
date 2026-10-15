@@ -188,6 +188,7 @@ class PlaybackViewModel
         internal lateinit var itemId: UUID
         internal lateinit var currentItem: PlaylistItem
         internal var forceTranscoding: Boolean = false
+        private var preferExternalSubtitles = false
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
@@ -450,6 +451,7 @@ class PlaybackViewModel
 
                 // New item, so we can clear the media segment tracker & subtitle cues
                 resetSegmentState()
+                preferExternalSubtitles = false
                 _state.update { it.copy(subtitleCues = emptyList()) }
 
                 viewModelScope.launchIO {
@@ -617,6 +619,7 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            forceReload: Boolean = false,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -627,7 +630,7 @@ class PlaybackViewModel
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                        enableDirectPlay
+                        enableDirectPlay && !forceReload
                     ) {
                         val wasSuccessful =
                             changeStreamsDirectPlay(
@@ -660,10 +663,11 @@ class PlaybackViewModel
                                 startTimeTicks = null,
                                 deviceProfile =
                                     if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
-                                        deviceProfileService.getOrCreateDeviceProfile(
-                                            preferences.appPreferences,
-                                            serverRepository.currentServer?.serverVersion,
-                                        )
+                                        deviceProfileService
+                                            .getOrCreateDeviceProfile(
+                                                preferences.appPreferences,
+                                                serverRepository.currentServer?.serverVersion,
+                                            ).let { if (preferExternalSubtitles) it.withExternalSubtitles() else it }
                                     } else {
                                         mpvDeviceProfile
                                     },
@@ -1392,7 +1396,14 @@ class PlaybackViewModel
                         }
 
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
-                            Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
+                            val retryWithExternalSubtitles =
+                                !preferExternalSubtitles && it.canRetryWithExternalSubtitles(error)
+                            if (retryWithExternalSubtitles) {
+                                Timber.w("Matroska subtitle read failed, retrying with external subtitles")
+                                preferExternalSubtitles = true
+                            } else {
+                                Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
+                            }
                             val currentPlayback = state.value.currentPlayback
                             if (currentPlayback == null) {
                                 Timber.w("Playback error, currentPlayback is null")
@@ -1403,8 +1414,9 @@ class PlaybackViewModel
                                 audioIndex = currentPlayback?.audioIndex,
                                 subtitleIndex = currentPlayback?.subtitleIndex,
                                 positionMs = player.currentPosition,
-                                enableDirectPlay = false,
-                                enableDirectStream = false,
+                                enableDirectPlay = retryWithExternalSubtitles,
+                                enableDirectStream = retryWithExternalSubtitles,
+                                forceReload = true,
                             )
                             withContext(WholphinDispatchers.Main) {
                                 player.prepare()
