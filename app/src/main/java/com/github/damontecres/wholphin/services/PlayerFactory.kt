@@ -31,14 +31,11 @@ import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.playback.leveling.PcmOnlyAudioSink
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingAudioProcessor
-import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingAudioSink
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingState
-import com.github.damontecres.wholphin.playback.leveling.core.LevelingMode
 import com.github.damontecres.wholphin.playback.leveling.toLevelingMode
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
@@ -75,16 +72,12 @@ class PlayerFactory
         var currentPlayer: Player? = null
             private set
 
-        private val _evenOutVolume = MutableStateFlow(EvenOutVolume.VOLUME_OFF)
-        val evenOutVolume = _evenOutVolume.asStateFlow()
-        private var levelingState: VolumeLevelingState? = null
-        private var levelingPolicy = VolumeLevelingPolicy(PlayerBackend.EXO_PLAYER, LevelingMode.OFF)
+        private val _reduceLoudSounds = MutableStateFlow(false)
+        val reduceLoudSounds = _reduceLoudSounds.asStateFlow()
+        @Volatile private var levelingState: VolumeLevelingState? = null
 
-        val levelingNeedsNextVideo: Boolean
-            get() = levelingPolicy.supported && !levelingPolicy.pcmOnly && levelingState?.processingPcm != true
-
-        fun setEvenOutVolume(value: EvenOutVolume) {
-            _evenOutVolume.value = value
+        fun setReduceLoudSounds(value: Boolean) {
+            _reduceLoudSounds.value = value
             levelingState?.mode = value.toLevelingMode()
         }
 
@@ -99,9 +92,8 @@ class PlayerFactory
                     currentPlayer?.release()
                 }
             }
-            levelingPolicy = VolumeLevelingPolicy(backend, prefs.evenOutVolume.toLevelingMode())
-            levelingState = if (levelingPolicy.supported) VolumeLevelingState(levelingPolicy.mode) else null
-            _evenOutVolume.value = prefs.evenOutVolume
+            val levelingPolicy = VolumeLevelingPolicy(backend, prefs.reduceLoudSounds)
+            levelingState = if (levelingPolicy.supported) VolumeLevelingState(prefs.reduceLoudSounds.toLevelingMode()) else null
             val processor = levelingState?.let { VolumeLevelingAudioProcessor(it) }
             var assHandler: AssHandler? = null
             val newPlayer =
@@ -140,7 +132,7 @@ class PlayerFactory
                         val extractorsFactory = createExtractorsFactory()
                         val tunneling = appPreferences.experimentalPreferences.get { videoTunnelingEnabled }
                         // Tunneling requires non-buffering processors. Preserve the original sink
-                        // for Off-created tunneled players and defer enabling until the next video.
+                        // for Off-created tunneled players. Enabling rebuilds the player.
                         val installedProcessor = processor.takeUnless { !levelingPolicy.pcmOnly && tunneling == true }
                         var renderersFactory: RenderersFactory =
                             WholphinRenderersFactory(
@@ -329,8 +321,7 @@ class WholphinRenderersFactory(
             .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
             .setAudioProcessors(arrayOf(processor))
             .build()
-        val observedSink = VolumeLevelingAudioSink(sink, processor.state)
-        return if (pcmOnly) PcmOnlyAudioSink(observedSink) else observedSink
+        return if (pcmOnly) PcmOnlyAudioSink(sink) else sink
     }
 
     @OptIn(ExperimentalApi::class)

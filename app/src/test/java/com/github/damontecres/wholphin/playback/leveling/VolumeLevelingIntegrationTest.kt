@@ -44,22 +44,40 @@ class VolumeLevelingIntegrationTest {
     fun `default and legacy protobuf preferences keep leveling Off and ExoPlayer selected`() = runTest {
         val serializer = AppPreferencesSerializer()
         for (prefs in listOf(serializer.defaultValue, serializer.readFrom(ByteArrayInputStream(byteArrayOf())), AppPreferences.getDefaultInstance())) {
-            assertEquals(EvenOutVolume.VOLUME_OFF, prefs.playbackPreferences.evenOutVolume)
+            assertEquals(false, prefs.playbackPreferences.reduceLoudSounds)
             assertEquals(PlayerBackend.EXO_PLAYER, prefs.playbackPreferences.playerBackend)
         }
-        assertEquals(EvenOutVolume.VOLUME_OFF, AppPreference.EvenOutVolumePref.defaultValue)
+        assertFalse(AppPreference.ReduceLoudSounds.defaultValue)
+    }
+
+    @Test
+    fun `old enum field values are ignored without crashing or enabling the new boolean`() = runTest {
+        for (oldValue in listOf(0, 1, 2, 99)) {
+            // Old playback field 27, wire type varint. The new boolean uses field 28.
+            val playback = PlaybackPreferences.parseFrom(byteArrayOf(0xd8.toByte(), 0x01, oldValue.toByte()))
+            val old = AppPreferences.newBuilder().setPlaybackPreferences(playback).build()
+            val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(old.toByteArray()))
+            assertFalse(restored.playbackPreferences.reduceLoudSounds)
+        }
+    }
+
+    @Test
+    fun `boolean On uses the single named Strong profile and Off bypasses`() {
+        assertEquals(LevelingMode.STRONG, REDUCE_LOUD_SOUNDS_PROFILE)
+        assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, true.toLevelingMode())
+        assertEquals(LevelingMode.OFF, false.toLevelingMode())
     }
 
     @Test
     fun `choice persists through serializer without changing other playback preferences`() = runTest {
         val original = AppPreferencesSerializer().defaultValue.updatePlaybackPreferences { maxBitrate = 987654; skipBackMs = 7000 }
-        for (mode in listOf(EvenOutVolume.VOLUME_OFF, EvenOutVolume.VOLUME_LIGHT, EvenOutVolume.VOLUME_STRONG)) {
-            val updated = AppPreference.EvenOutVolumePref.setter(original, mode)
+        for (mode in listOf(false, true)) {
+            val updated = AppPreference.ReduceLoudSounds.setter(original, mode)
             val bytes = ByteArrayOutputStream()
             AppPreferencesSerializer().writeTo(updated, bytes)
             val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(bytes.toByteArray()))
-            assertEquals(mode, AppPreference.EvenOutVolumePref.getter(restored))
-            assertEquals(original, restored.updatePlaybackPreferences { evenOutVolume = EvenOutVolume.VOLUME_OFF })
+            assertEquals(mode, AppPreference.ReduceLoudSounds.getter(restored))
+            assertEquals(original, restored.updatePlaybackPreferences { reduceLoudSounds = false })
         }
     }
 
@@ -70,7 +88,7 @@ class VolumeLevelingIntegrationTest {
         every { receiver.getFormatSupport(any()) } returns AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
         val offload = androidx.media3.exoplayer.audio.AudioOffloadSupport.Builder().setIsFormatSupported(true).build()
         every { receiver.getFormatOffloadSupport(any()) } returns offload
-        val originalBehavior = VolumeLevelingAudioSink(receiver, VolumeLevelingState())
+        val originalBehavior = receiver
         val guarded = PcmOnlyAudioSink(receiver)
         for (mime in listOf(MimeTypes.AUDIO_AC3, MimeTypes.AUDIO_E_AC3, MimeTypes.AUDIO_DTS, MimeTypes.AUDIO_TRUEHD, MimeTypes.AUDIO_AAC)) {
             val encoded = raw.buildUpon().setSampleMimeType(mime).build()
@@ -88,15 +106,15 @@ class VolumeLevelingIntegrationTest {
 
     @Test
     fun `renderers factory installs custom processing for PCM even when mode starts Off`() {
-        for (mode in LevelingMode.entries) {
-            val processor = spyk(VolumeLevelingAudioProcessor(VolumeLevelingState(mode)))
-            val factory = WholphinRenderersFactory(context, false, volumeProcessor = processor, pcmOnly = mode != LevelingMode.OFF)
+        for (mode in listOf(false, true)) {
+            val processor = spyk(VolumeLevelingAudioProcessor(VolumeLevelingState(mode.toLevelingMode())))
+            val factory = WholphinRenderersFactory(context, false, volumeProcessor = processor, pcmOnly = mode)
             val sink = checkNotNull(factory.buildAudioSink(context, false, false))
             try {
                 sink.configure(raw, 0, null)
                 verify { processor.configure(AudioFormat(48000, 2, C.ENCODING_PCM_16BIT)) }
                 assertTrue(processor.isActive)
-                assertEquals(mode != LevelingMode.OFF, sink is PcmOnlyAudioSink)
+                assertEquals(mode, sink is PcmOnlyAudioSink)
             } finally {
                 sink.reset()
                 sink.release()
@@ -105,17 +123,8 @@ class VolumeLevelingIntegrationTest {
     }
 
     @Test
-    fun `switching tracks clears the previous PCM observation and PCM-only rejects encoded configure`() {
-        val state = VolumeLevelingState().apply { processingPcm = true }
-        val sink = VolumeLevelingAudioSink(mockk(relaxed = true), state)
+    fun `PCM-only sink rejects encoded configure`() {
         val encoded = raw.buildUpon().setSampleMimeType(MimeTypes.AUDIO_AC3).build()
-        sink.configure(androidx.media3.exoplayer.audio.AudioSink.AudioSinkConfig.Builder(encoded).build())
-        assertFalse(state.processingPcm)
-        val oldPcm = VolumeLevelingAudioProcessor(state)
-        oldPcm.configure(AudioFormat(48000, 2, C.ENCODING_PCM_16BIT))
-        oldPcm.flush()
-        oldPcm.queueInput(java.nio.ByteBuffer.allocateDirect(4000).order(java.nio.ByteOrder.nativeOrder()))
-        assertFalse("old PCM still draining cannot hide the new passthrough route", state.processingPcm)
         val guarded = PcmOnlyAudioSink(mockk(relaxed = true))
         assertThrows(AudioSink.ConfigurationException::class.java) {
             guarded.configure(androidx.media3.exoplayer.audio.AudioSink.AudioSinkConfig.Builder(encoded).build())
@@ -134,29 +143,24 @@ class VolumeLevelingIntegrationTest {
     fun `video factory disables tunneling and offload when leveling starts on`() = runTest {
         WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
         try {
-            for (mode in listOf(EvenOutVolume.VOLUME_LIGHT, EvenOutVolume.VOLUME_STRONG)) {
-                val factory = PlayerFactory(context, OkHttpClient())
-                val prefs = factoryPreferences(mode)
-                val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
-                try {
-                    val parameters = (player.trackSelector as DefaultTrackSelector).parameters
-                    assertFalse(parameters.tunnelingEnabled)
-                    assertEquals(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED, parameters.audioOffloadPreferences.audioOffloadMode)
-                    assertEquals(mode, factory.evenOutVolume.value)
-                    assertFalse(factory.levelingNeedsNextVideo)
-                    val installed = installedProcessor(player)
-                    assertTrue(installed.first is PcmOnlyAudioSink)
-                    val processor = checkNotNull(installed.second)
-                    assertEquals(mode.toLevelingMode(), processor.state.mode)
-                    val epoch = processor.state.mediaEpoch.get()
-                    player.setMediaItem(androidx.media3.common.MediaItem.fromUri("https://example.invalid/video.mp4"))
-                    org.robolectric.shadows.ShadowLooper.idleMainLooper()
-                    assertTrue("real player transition must reset the installed processor", processor.state.mediaEpoch.get() > epoch)
-                    factory.setEvenOutVolume(EvenOutVolume.VOLUME_OFF)
-                    assertEquals(LevelingMode.OFF, processor.state.mode)
-                    assertFalse("live Off cannot rebuild or unguard the on-created sink", factory.levelingNeedsNextVideo)
-                } finally { player.release() }
-            }
+            val factory = PlayerFactory(context, OkHttpClient())
+            val prefs = factoryPreferences(true)
+            val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
+            try {
+                val parameters = (player.trackSelector as DefaultTrackSelector).parameters
+                assertFalse(parameters.tunnelingEnabled)
+                assertEquals(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED, parameters.audioOffloadPreferences.audioOffloadMode)
+                val installed = installedProcessor(player)
+                assertTrue(installed.first is PcmOnlyAudioSink)
+                val processor = checkNotNull(installed.second)
+                assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, processor.state.mode)
+                val epoch = processor.state.mediaEpoch.get()
+                player.setMediaItem(androidx.media3.common.MediaItem.fromUri("https://example.invalid/video.mp4"))
+                org.robolectric.shadows.ShadowLooper.idleMainLooper()
+                assertTrue("real player transition must reset the installed processor", processor.state.mediaEpoch.get() > epoch)
+                factory.setReduceLoudSounds(false)
+                assertEquals(LevelingMode.OFF, processor.state.mode)
+            } finally { player.release() }
         } finally { WholphinDispatchers.reset() }
     }
 
@@ -166,7 +170,7 @@ class VolumeLevelingIntegrationTest {
         try {
             for (disabled in listOf(false, true)) for (tunneled in listOf(false, true)) {
                 val factory = PlayerFactory(context, OkHttpClient())
-                val prefs = factoryPreferences(EvenOutVolume.VOLUME_OFF).updateExperimentalPreferences {
+                val prefs = factoryPreferences(false).updateExperimentalPreferences {
                     disableAudioOffload = disabled
                     videoTunnelingEnabled = tunneled
                 }
@@ -185,11 +189,9 @@ class VolumeLevelingIntegrationTest {
                         if (disabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED,
                         parameters.audioOffloadPreferences.audioOffloadMode,
                     )
-                    assertTrue("no PCM has reached the processor; toggle must be marked deferred", factory.levelingNeedsNextVideo)
-                    factory.setEvenOutVolume(EvenOutVolume.VOLUME_STRONG)
-                    assertEquals(EvenOutVolume.VOLUME_STRONG, factory.evenOutVolume.value)
+                    factory.setReduceLoudSounds(true)
+                    assertEquals(true, factory.reduceLoudSounds.value)
                     if (!tunneled) assertEquals(LevelingMode.STRONG, checkNotNull(installed.second).state.mode)
-                    assertTrue(factory.levelingNeedsNextVideo)
                     assertEquals(tunneled, (player.trackSelector as DefaultTrackSelector).parameters.tunnelingEnabled)
                 } finally { player.release() }
             }
@@ -199,7 +201,7 @@ class VolumeLevelingIntegrationTest {
     @Test
     fun `MPV prefer-MPV and external backends never activate the ExoPlayer leveling policy`() {
         for (backend in listOf(PlayerBackend.MPV, PlayerBackend.PREFER_MPV, PlayerBackend.EXTERNAL_PLAYER)) {
-            for (mode in LevelingMode.entries) {
+            for (mode in listOf(false, true)) {
                 val policy = VolumeLevelingPolicy(backend, mode)
                 assertFalse(policy.supported)
                 assertFalse(policy.pcmOnly)
@@ -251,10 +253,10 @@ class VolumeLevelingIntegrationTest {
         return installedSink to processor
     }
 
-    private fun factoryPreferences(mode: EvenOutVolume): AppPreferences =
+    private fun factoryPreferences(mode: Boolean): AppPreferences =
         AppPreferencesSerializer().defaultValue
             .updatePlaybackPreferences {
-                evenOutVolume = mode
+                reduceLoudSounds = mode
                 overrides = overrides.toBuilder().setAssPlaybackMode(AssPlaybackMode.ASS_EXO_PLAYER).setMediaExtensionsEnabled(MediaExtensionStatus.MES_DISABLED).build()
             }.updateExperimentalPreferences {
                 enabled = true

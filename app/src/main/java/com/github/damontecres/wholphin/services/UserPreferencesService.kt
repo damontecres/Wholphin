@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.services
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import kotlinx.coroutines.flow.Flow
@@ -27,8 +26,8 @@ class UserPreferencesService
                 UserPreferences(appPrefs, user?.appPreferences)
             }
 
-        suspend fun setEvenOutVolume(value: EvenOutVolume) {
-            preferencesDataStore.updateData { it.updatePlaybackPreferences { evenOutVolume = value } }
+        suspend fun setReduceLoudSounds(value: Boolean) {
+            preferencesDataStore.updateData { it.updatePlaybackPreferences { reduceLoudSounds = value } }
         }
 
         suspend fun getCurrent(): UserPreferences = flow.first()

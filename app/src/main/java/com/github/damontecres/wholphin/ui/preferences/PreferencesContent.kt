@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,7 +51,6 @@ import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.HdrFormatPreferences
@@ -315,23 +313,22 @@ fun PreferencesContent(
                                 }
                             }
                             when (pref) {
-                                AppPreference.EvenOutVolumePref -> {
-                                    val mode = preferences.playbackPreferences.evenOutVolume
-                                    val names = stringArrayResource(R.array.even_out_volume_values).toList()
-                                    val index = AppPreference.EvenOutVolumePref.valueToIndex(mode)
-                                    val exo = preferences.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER
-                                    ChoicePreference(
-                                        title = stringResource(R.string.even_out_volume),
-                                        summary = stringResource(
-                                            if (exo) R.string.even_out_volume_summary else R.string.even_out_volume_exoplayer_required,
-                                            names[index],
-                                        ),
-                                        possibleValues = names,
-                                        selectedIndex = index,
-                                        onValueChange = { choice ->
+                                AppPreference.ReduceLoudSounds -> {
+                                    val enabled = preferences.playbackPreferences.reduceLoudSounds
+                                    val backend = preferences.playbackPreferences.playerBackend
+                                    SwitchPreference(
+                                        title = stringResource(R.string.reduce_loud_sounds),
+                                        value = enabled,
+                                        summary =
+                                            if (backend == PlayerBackend.EXO_PLAYER || backend == PlayerBackend.UNRECOGNIZED) {
+                                                null
+                                            } else {
+                                                stringResource(R.string.requires_exoplayer)
+                                            },
+                                        onClick = {
                                             scope.launch(ExceptionHandler()) {
                                                 viewModel.preferenceDataStore.updateData {
-                                                    AppPreference.EvenOutVolumePref.setter(it, EvenOutVolume.forNumber(choice))
+                                                    AppPreference.ReduceLoudSounds.setter(it, !it.playbackPreferences.reduceLoudSounds)
                                                 }
                                             }
                                         },

@@ -48,6 +48,11 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -62,11 +67,11 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
@@ -104,7 +109,7 @@ sealed interface PlaybackAction {
 
     data object SearchCaptions : PlaybackAction
 
-    data class SetEvenOutVolume(val value: EvenOutVolume) : PlaybackAction
+    data class SetReduceLoudSounds(val value: Boolean) : PlaybackAction
 
     data class ToggleCaptions(
         val index: Int,
@@ -605,29 +610,31 @@ fun <T> BottomDialog(
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
-                        selected = choice == currentChoice,
+                        selected = choice.checked ?: (choice == currentChoice),
                         enabled = choice.enabled,
                         onClick = {
-                            onDismissRequest()
+                            if (choice.dismissOnSelect) onDismissRequest()
                             onSelectChoice(index, choice)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(choice == currentChoice)
+                            if (choice.checked == null) SelectedLeadingContent(choice == currentChoice)
                         },
                         headlineContent = {
                             Text(
                                 text = choice.headline,
                             )
                         },
-                        supportingContent = {
-                            choice.supporting?.let {
-                                Text(
-                                    text = it,
-                                )
-                            }
+                        supportingContent = choice.supporting?.let { { Text(it) } },
+                        trailingContent = {
+                            choice.checked?.let { Switch(checked = it, onCheckedChange = null) }
                         },
                         interactionSource = interactionSource,
-                        modifier = Modifier.focusRequester(focusRequesters[index]),
+                        modifier = Modifier.focusRequester(focusRequesters[index]).semantics {
+                            choice.checked?.let {
+                                role = Role.Switch
+                                toggleableState = ToggleableState(it)
+                            }
+                        },
                     )
                 }
             }
@@ -640,6 +647,8 @@ data class BottomDialogItem<T>(
     val headline: String,
     val supporting: String?,
     val enabled: Boolean = true,
+    val checked: Boolean? = null,
+    val dismissOnSelect: Boolean = true,
 )
 
 @PreviewTvSpec

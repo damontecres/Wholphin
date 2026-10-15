@@ -296,8 +296,8 @@ fun PlaybackPageContent(
                 TODO()
             }
 
-            is PlaybackAction.SetEvenOutVolume -> {
-                viewModel.setEvenOutVolume(it.value)
+            is PlaybackAction.SetReduceLoudSounds -> {
+                viewModel.setReduceLoudSounds(it.value)
             }
 
             is PlaybackAction.ToggleAudio -> {
@@ -738,16 +738,15 @@ fun PlaybackPageContent(
         }
     }
 
-    val evenOutVolume by viewModel.evenOutVolume.collectAsState()
+    val reduceLoudSounds by viewModel.reduceLoudSounds.collectAsState()
     playbackDialog?.let { type ->
         PlaybackDialog(
             type = type,
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    evenOutVolume = evenOutVolume,
+                    reduceLoudSounds = reduceLoudSounds,
                     levelingSupported = playerBackend == PlayerBackend.EXO_PLAYER,
-                    levelingNeedsNextVideo = viewModel.levelingNeedsNextVideo,
                     audioIndex = state.currentPlayback?.audioIndex,
                     audioStreams = state.currentMediaInfo.audioStreams,
                     subtitleIndex = state.currentPlayback?.subtitleIndex,
@@ -765,7 +764,7 @@ fun PlaybackPageContent(
                 playbackDialog =
                     when (type) {
                         // Go back to settings dialog
-                        PlaybackDialogType.EVEN_OUT_VOLUME -> PlaybackDialogType.AUDIO
+                        PlaybackDialogType.AUDIO_TRACK -> PlaybackDialogType.AUDIO
                         PlaybackDialogType.PLAYBACK_SPEED,
                         PlaybackDialogType.VIDEO_SCALE,
                         -> PlaybackDialogType.SETTINGS

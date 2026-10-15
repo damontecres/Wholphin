@@ -13,8 +13,10 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -213,6 +215,7 @@ class PlaybackViewModelTests {
         } returns emptyList()
         coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
             PlayerCreation(mockPlayer)
+        every { mockPlayerFactory.setReduceLoudSounds(any()) } returns Unit
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
 
         coEvery {
@@ -407,55 +410,130 @@ class PlaybackViewModelTests {
         }
 
     @Test
-    fun `Live leveling applies now and rebuilds the PCM policy at the next playlist video`() =
+    fun `enabling on an Off-created player rebuilds now and preserves position tracks and play intent`() =
         runTest(testDispatcher) {
-            setupForPlaylist()
-            setupPreferences { }
-            every { mockPlayerFactory.setEvenOutVolume(any()) } returns Unit
-            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
-            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-
-            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG)
-            testScheduler.advanceUntilIdle()
-            verify { mockPlayerFactory.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) }
-            coVerify { mockUserPreferencesService.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) }
-            // Changing mode alone must not interrupt the current episode.
-            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-
-            viewModel.playNextUp()
-            testScheduler.advanceUntilIdle()
-            coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-            Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
-
-            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF)
-            testScheduler.advanceUntilIdle()
-            coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-            viewModel.playNextUp()
-            testScheduler.advanceUntilIdle()
-            coVerify(exactly = 3) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-            Assert.assertFalse(viewModel.currentPlayer.value!!.levelingPcmOnly)
+            for (playing in listOf(false, true)) for (subtitles in listOf(false, true)) {
+                io.mockk.clearMocks(mockPlayerFactory, mockPlayer, answers = false)
+                setupForPlaylist()
+                setupPreferences { }
+                coEvery { mockStreamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns
+                    mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }.takeIf { subtitles }
+                val replacement = mockk<Player>(relaxed = true)
+                coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returnsMany listOf(PlayerCreation(mockPlayer), PlayerCreation(replacement))
+                every { mockPlayer.currentPosition } returns 123456L
+                every { mockPlayer.playWhenReady } returns playing
+                every { mockPlayer.playbackParameters } returns androidx.media3.common.PlaybackParameters(1.25f)
+                every { mockPlayer.volume } returns .7f
+                val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+                val before = checkNotNull(viewModel.state.value.currentPlayback)
+                io.mockk.clearMocks(mockMediaInfoApi, answers = false)
+                viewModel.setReduceLoudSounds(true)
+                testScheduler.advanceUntilIdle()
+                coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+                verify { mockPlayer.release() }
+                verify { replacement.setMediaItem(any(), 123456L) }
+                verify { replacement.prepare() }
+                verify { replacement.playWhenReady = playing }
+                verify { replacement.playbackParameters = androidx.media3.common.PlaybackParameters(1.25f) }
+                verify { replacement.volume = .7f }
+                val after = checkNotNull(viewModel.state.value.currentPlayback)
+                Assert.assertEquals(before.item.id, after.item.id)
+                Assert.assertEquals(before.mediaSourceInfo.id, after.mediaSourceInfo.id)
+                Assert.assertEquals(before.audioIndex, after.audioIndex)
+                Assert.assertEquals(before.subtitleIndex, after.subtitleIndex)
+                Assert.assertEquals(if (subtitles) 2 else TrackIndex.DISABLED, after.subtitleIndex)
+                coVerify(exactly = 1) {
+                    mockMediaInfoApi.getPostedPlaybackInfo(
+                        before.item.id,
+                        match {
+                            it.audioStreamIndex == before.audioIndex &&
+                                it.subtitleStreamIndex == before.subtitleIndex &&
+                                it.mediaSourceId == before.mediaSourceInfo.id
+                        },
+                    )
+                }
+                Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
+                coVerify { mockUserPreferencesService.setReduceLoudSounds(true) }
+                viewModel.setReduceLoudSounds(false)
+                testScheduler.advanceUntilIdle()
+                coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+                verify { mockPlayerFactory.setReduceLoudSounds(false) }
+                viewModel.release()
+            }
         }
+
+    @Test
+    fun `enabling on an On-created player uses live processing without rebuilding`() = runTest(testDispatcher) {
+        setupForPlaylist()
+        setupPreferences { reduceLoudSounds = true }
+        val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+        viewModel.setReduceLoudSounds(false)
+        viewModel.setReduceLoudSounds(true)
+        testScheduler.advanceUntilIdle()
+        coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+        verify { mockPlayerFactory.setReduceLoudSounds(true) }
+    }
+
+    @Test
+    fun `Off selected while replacement is being built wins after construction`() = runTest(testDispatcher) {
+        setupForPlaylist()
+        setupPreferences { }
+        val replacement = mockk<Player>(relaxed = true)
+        val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+        var building = false
+        var latestChoice = false
+        every { mockPlayerFactory.setReduceLoudSounds(any()) } answers { latestChoice = firstArg() }
+        coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } coAnswers {
+            building = true
+            kotlinx.coroutines.delay(100)
+            // A suspended construction started with On; it must not overwrite a newer Off.
+            latestChoice = secondArg<AppPreferences>().playbackPreferences.reduceLoudSounds
+            PlayerCreation(replacement)
+        }
+        viewModel.setReduceLoudSounds(true)
+        testScheduler.runCurrent()
+        Assert.assertTrue(building)
+        viewModel.setReduceLoudSounds(false)
+        testScheduler.advanceUntilIdle()
+        Assert.assertFalse(latestChoice)
+        coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+        verify { replacement.prepare() }
+        viewModel.release()
+    }
+
+    @Test
+    fun `MPV playback saves the boolean without rebuilding its native player`() = runTest(testDispatcher) {
+        setupForPlaylist()
+        setupPreferences { playerBackend = PlayerBackend.MPV }
+        val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+        viewModel.setReduceLoudSounds(true)
+        testScheduler.advanceUntilIdle()
+        coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(PlayerBackend.MPV, any()) }
+        coVerify { mockUserPreferencesService.setReduceLoudSounds(true) }
+        Assert.assertFalse(viewModel.currentPlayer.value!!.levelingPcmOnly)
+        viewModel.release()
+    }
 
     @Test
     fun `Rapid leveling choices save in selection order even when the first write is slow`() =
         runTest(testDispatcher) {
             setupForPlaylist()
             setupPreferences { }
-            every { mockPlayerFactory.setEvenOutVolume(any()) } returns Unit
-            val saved = mutableListOf<com.github.damontecres.wholphin.preferences.EvenOutVolume>()
-            coEvery { mockUserPreferencesService.setEvenOutVolume(any()) } coAnswers {
-                val mode = firstArg<com.github.damontecres.wholphin.preferences.EvenOutVolume>()
-                if (mode == com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG) kotlinx.coroutines.delay(100)
+            every { mockPlayerFactory.setReduceLoudSounds(any()) } returns Unit
+            val saved = mutableListOf<Boolean>()
+            coEvery { mockUserPreferencesService.setReduceLoudSounds(any()) } coAnswers {
+                val mode = firstArg<Boolean>()
+                if (mode == true) kotlinx.coroutines.delay(100)
                 saved.add(mode)
             }
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
-            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG)
-            viewModel.setEvenOutVolume(com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF)
+            viewModel.setReduceLoudSounds(true)
+            viewModel.setReduceLoudSounds(false)
             testScheduler.advanceUntilIdle()
             Assert.assertEquals(
                 listOf(
-                    com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_STRONG,
-                    com.github.damontecres.wholphin.preferences.EvenOutVolume.VOLUME_OFF,
+                    true,
+                    false,
                 ),
                 saved,
             )

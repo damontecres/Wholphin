@@ -39,9 +39,7 @@ import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
-import com.github.damontecres.wholphin.playback.leveling.toLevelingMode
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
@@ -170,20 +168,54 @@ class PlaybackViewModel
             fun create(destination: Destination): PlaybackViewModel
         }
 
-        private var volumeSaveJob: Job? = null
-        val evenOutVolume get() = playerFactory.evenOutVolume
-        val levelingNeedsNextVideo: Boolean get() = playerFactory.levelingNeedsNextVideo
+        private var volumeChangeJob: Job? = null
+        private val playbackMutex = Mutex()
+        val reduceLoudSounds get() = playerFactory.reduceLoudSounds
 
-        fun setEvenOutVolume(value: EvenOutVolume) {
-            playerFactory.setEvenOutVolume(value)
+        fun setReduceLoudSounds(value: Boolean) {
+            playerFactory.setReduceLoudSounds(value)
             preferences = preferences.copy(
-                appPreferences = preferences.appPreferences.updatePlaybackPreferences { evenOutVolume = value },
+                appPreferences = preferences.appPreferences.updatePlaybackPreferences { reduceLoudSounds = value },
             )
-            val previousSave = volumeSaveJob
-            volumeSaveJob = viewModelScope.launchIO(ExceptionHandler()) {
-                // IO dispatch may reorder quick remote-control selections. Commit them in UI order.
-                previousSave?.join()
-                userPreferencesService.setEvenOutVolume(value)
+            val previousChange = volumeChangeJob
+            volumeChangeJob = viewModelScope.launchIO(ExceptionHandler()) {
+                // Keep rapid remote-control selections ordered, including their persisted values.
+                previousChange?.join()
+                userPreferencesService.setReduceLoudSounds(value)
+                playbackMutex.withLock {
+                    applyReduceLoudSounds()
+                }
+            }
+        }
+
+        private suspend fun applyReduceLoudSounds() {
+            val current = currentPlayer.value ?: return
+            if (!preferences.appPreferences.playbackPreferences.reduceLoudSounds ||
+                current.backend != PlayerBackend.EXO_PLAYER || current.levelingPcmOnly
+            ) return
+            val playback = state.value.currentPlayback ?: return
+            val video = state.value.currentMediaInfo.videoStream
+            val position = onMain { player.currentPosition.coerceAtLeast(0) }
+            val playWhenReady = onMain { player.playWhenReady }
+            val playbackParameters = onMain { player.playbackParameters }
+            val volume = onMain { player.volume }
+            if (createPlayer(video?.hdr == true, video?.is4k == true)) {
+                // Reuse normal stream setup (including external/disabled subtitles) but never its
+                // fast track-only shortcut: this is a fresh player with no media loaded yet.
+                changeStreams(
+                    item = playback.item,
+                    sourceId = playback.mediaSourceInfo.id,
+                    audioIndex = playback.audioIndex,
+                    subtitleIndex = playback.subtitleIndex,
+                    positionMs = position,
+                    forceReload = true,
+                )
+                withContext(WholphinDispatchers.Main) {
+                    player.playbackParameters = playbackParameters
+                    player.volume = volume
+                    player.prepare()
+                    player.playWhenReady = playWhenReady
+                }
             }
         }
 
@@ -250,18 +282,22 @@ class PlaybackViewModel
                 player.release()
                 mediaSession?.release()
             }
+            activityListener = null
+            trackChangeListener = null
             jobs.forEach { it.cancel() }
+            jobs.clear()
         }
 
         private suspend fun createPlayer(
             isHdr: Boolean,
             is4k: Boolean,
-        ) {
+        ): Boolean {
+            val appPreferences = preferences.appPreferences
             val softwareDecoding =
-                !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
+                !appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val requestBackend =
                 (destination as? Destination.Playback)?.backend
-                    ?: preferences.appPreferences.playbackPreferences.playerBackend
+                    ?: appPreferences.playbackPreferences.playerBackend
             val playerBackend =
                 when (requestBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -276,7 +312,7 @@ class PlaybackViewModel
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
-            val levelingPolicy = VolumeLevelingPolicy(playerBackend, preferences.appPreferences.playbackPreferences.evenOutVolume.toLevelingMode())
+            val levelingPolicy = VolumeLevelingPolicy(playerBackend, appPreferences.playbackPreferences.reduceLoudSounds)
             if (currentPlayer.value?.backend != playerBackend || currentPlayer.value?.levelingPcmOnly != levelingPolicy.pcmOnly) {
                 Timber.i("Switching player backend to %s", playerBackend)
                 withContext(WholphinDispatchers.Main) {
@@ -286,14 +322,18 @@ class PlaybackViewModel
                 val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
-                        preferences.appPreferences,
+                        appPreferences,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
                     PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler, levelingPolicy.pcmOnly)
                 }
                 configurePlayer()
+                // A later toggle may have arrived while construction suspended. Its choice wins.
+                playerFactory.setReduceLoudSounds(preferences.appPreferences.playbackPreferences.reduceLoudSounds)
+                return true
             }
+            return false
         }
 
         private fun configurePlayer() {
@@ -316,6 +356,7 @@ class PlaybackViewModel
             musicService.stop()
             _state.update { it.copy(nextUp = null) }
             this.preferences = userPreferencesService.getCurrent()
+            playerFactory.setReduceLoudSounds(preferences.appPreferences.playbackPreferences.reduceLoudSounds)
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                 addCloseable { refreshRateService.resetRefreshRate() }
             }
@@ -458,6 +499,12 @@ class PlaybackViewModel
          * @param forceTranscoding whether the user has requested to force playback via transcoding
          */
         private suspend fun play(
+            playlistItem: PlaylistItem,
+            positionMs: Long,
+            forceTranscoding: Boolean = this.forceTranscoding,
+        ): Boolean = playbackMutex.withLock { loadAndPlay(playlistItem, positionMs, forceTranscoding) }
+
+        private suspend fun loadAndPlay(
             playlistItem: PlaylistItem,
             positionMs: Long,
             forceTranscoding: Boolean = this.forceTranscoding,
@@ -650,6 +697,7 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            forceReload: Boolean = false,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -660,7 +708,7 @@ class PlaybackViewModel
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                        enableDirectPlay
+                        enableDirectPlay && !forceReload
                     ) {
                         val wasSuccessful =
                             changeStreamsDirectPlay(

@@ -9,35 +9,23 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.AudioSink.AudioSinkConfig
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
 import com.github.damontecres.wholphin.playback.leveling.core.LevelingMode
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 
-fun EvenOutVolume.toLevelingMode(): LevelingMode =
-    when (this) {
-        EvenOutVolume.VOLUME_LIGHT -> LevelingMode.LIGHT
-        EvenOutVolume.VOLUME_STRONG -> LevelingMode.STRONG
-        else -> LevelingMode.OFF
-    }
+/** The single enabled profile, kept outside the unchanged DSP so it can be retuned here. */
+val REDUCE_LOUD_SOUNDS_PROFILE = LevelingMode.STRONG
 
-/** Captured at player creation: live changes never rebuild the sink or disturb playback. */
+fun Boolean.toLevelingMode(): LevelingMode = if (this) REDUCE_LOUD_SOUNDS_PROFILE else LevelingMode.OFF
+
+/** Captured at player creation: enabling on an Off-created player requires a rebuild. */
 data class VolumeLevelingPolicy(
     val backend: PlayerBackend,
-    val mode: LevelingMode,
+    val enabled: Boolean,
 ) {
     val supported: Boolean = backend == PlayerBackend.EXO_PLAYER || backend == PlayerBackend.UNRECOGNIZED
-    val pcmOnly: Boolean = supported && mode != LevelingMode.OFF
+    val pcmOnly: Boolean = supported && enabled
 
     fun disableOffload(existing: Boolean): Boolean = pcmOnly || existing
     fun tunneling(existing: Boolean?): Boolean? = if (pcmOnly) false else existing
-}
-
-/** Clear the PCM observation when a different track is configured, including PCM to passthrough. */
-class VolumeLevelingAudioSink(sink: AudioSink, private val state: VolumeLevelingState) : ForwardingAudioSink(sink) {
-    override fun configure(audioSinkConfig: AudioSinkConfig) {
-        state.processingPcm = false
-        state.pcmConfigured = audioSinkConfig.format.sampleMimeType == MimeTypes.AUDIO_RAW
-        super.configure(audioSinkConfig)
-    }
 }
 
 /** Media3 1.11 ignores Builder.setAudioCapabilities when Context is supplied. Guard the actual

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +30,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -44,8 +42,6 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.EvenOutVolume
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
@@ -64,7 +60,7 @@ enum class PlaybackDialogType {
     PLAYBACK_SPEED,
     VIDEO_SCALE,
     SUBTITLE_DELAY,
-    EVEN_OUT_VOLUME,
+    AUDIO_TRACK,
 }
 
 data class PlaybackSettings(
@@ -78,9 +74,8 @@ data class PlaybackSettings(
     val subtitleDelay: Duration,
     val hasSubtitleDownloadPermission: Boolean,
     val playbackSpeedEnabled: Boolean,
-    val evenOutVolume: EvenOutVolume = EvenOutVolume.VOLUME_OFF,
+    val reduceLoudSounds: Boolean = false,
     val levelingSupported: Boolean = true,
-    val levelingNeedsNextVideo: Boolean = false,
 )
 
 /**
@@ -194,62 +189,48 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.AUDIO -> {
+            val currentTrack = settings.audioStreams.firstOrNull { it.index == settings.audioIndex }
+            val choices = listOf(
+                BottomDialogItem(
+                    data = PlaybackDialogType.AUDIO_TRACK,
+                    headline = stringResource(R.string.audio_track),
+                    supporting = currentTrack?.let { it.streamTitle ?: it.displayTitle },
+                    dismissOnSelect = false,
+                ),
+                BottomDialogItem(
+                    data = PlaybackDialogType.AUDIO,
+                    headline = stringResource(R.string.reduce_loud_sounds),
+                    supporting = if (settings.levelingSupported) null else stringResource(R.string.requires_exoplayer),
+                    checked = settings.reduceLoudSounds,
+                    dismissOnSelect = false,
+                ),
+            )
+            BottomDialog(
+                choices = choices,
+                onDismissRequest = onDismissRequest,
+                onSelectChoice = { _, choice ->
+                    onControllerInteraction()
+                    if (choice.data == PlaybackDialogType.AUDIO_TRACK) {
+                        onClickPlaybackDialogType(PlaybackDialogType.AUDIO_TRACK)
+                    } else {
+                        onPlaybackActionClick(PlaybackAction.SetReduceLoudSounds(!settings.reduceLoudSounds))
+                    }
+                },
+                gravity = rightGravity,
+            )
+        }
+
+        PlaybackDialogType.AUDIO_TRACK -> {
             StreamChoiceBottomDialog(
                 choices = settings.audioStreams,
                 currentChoice = settings.audioIndex,
                 onDismissRequest = {
-                    onControllerInteraction.invoke()
-                    onDismissRequest.invoke()
+                    onControllerInteraction()
+                    onDismissRequest()
                 },
                 onSelectChoice = { _, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
+                    onPlaybackActionClick(PlaybackAction.ToggleAudio(choice.index))
                 },
-                gravity = rightGravity,
-                extraContent = {
-                    item {
-                        val names = stringArrayResource(R.array.even_out_volume_values)
-                        val index = AppPreference.EvenOutVolumePref.valueToIndex(settings.evenOutVolume)
-                        ListItem(
-                            selected = false,
-                            onClick = { onClickPlaybackDialogType(PlaybackDialogType.EVEN_OUT_VOLUME) },
-                            headlineContent = { Text(stringResource(R.string.even_out_volume)) },
-                            supportingContent = {
-                                Text(stringResource(
-                                    when {
-                                        !settings.levelingSupported -> R.string.even_out_volume_exoplayer_required
-                                        settings.levelingNeedsNextVideo -> R.string.even_out_volume_next_video
-                                        else -> R.string.even_out_volume_summary
-                                    },
-                                    names[index],
-                                ))
-                            },
-                        )
-                    }
-                },
-            )
-        }
-
-        PlaybackDialogType.EVEN_OUT_VOLUME -> {
-            val names = stringArrayResource(R.array.even_out_volume_values)
-            val choices = (0..2).map { index ->
-                BottomDialogItem(
-                    data = EvenOutVolume.forNumber(index),
-                    headline = names[index],
-                    supporting = stringResource(
-                        when {
-                            !settings.levelingSupported -> R.string.even_out_volume_exoplayer_required
-                            settings.levelingNeedsNextVideo -> R.string.even_out_volume_next_video
-                            else -> R.string.even_out_volume_summary
-                        },
-                        names[index],
-                    ),
-                )
-            }
-            BottomDialog(
-                choices = choices,
-                currentChoice = choices.firstOrNull { it.data == settings.evenOutVolume },
-                onDismissRequest = { onControllerInteraction(); onDismissRequest() },
-                onSelectChoice = { _, choice -> onPlaybackActionClick(PlaybackAction.SetEvenOutVolume(choice.data)) },
                 gravity = rightGravity,
             )
         }
@@ -505,7 +486,6 @@ fun StreamChoiceBottomDialog(
     onSelectChoice: (Int, SimpleMediaStream) -> Unit,
     gravity: Int,
     currentChoice: Int? = null,
-    extraContent: LazyListScope.() -> Unit = {},
 ) {
     val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
     if (currentChoice != null) {
@@ -545,7 +525,6 @@ fun StreamChoiceBottomDialog(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                extraContent()
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(

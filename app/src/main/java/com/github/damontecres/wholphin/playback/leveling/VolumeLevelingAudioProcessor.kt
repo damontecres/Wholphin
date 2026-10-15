@@ -19,11 +19,7 @@ class VolumeLevelingState(initialMode: LevelingMode = LevelingMode.OFF) {
     @Volatile
     var mode: LevelingMode = initialMode
 
-    @Volatile
-    var processingPcm: Boolean = false
-        internal set
     internal val mediaEpoch = AtomicLong()
-    internal var pcmConfigured = true
 
     fun onMediaItemTransition() {
         mediaEpoch.incrementAndGet()
@@ -79,7 +75,6 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
         holdback = core!!.latencyFrames
         pendingFrames = 0
         endQueued = false
-        state.processingPcm = false
         tailOutput.clear()
         tailOutput.flip()
         // Reserve enough for a transition's old tail followed by one chunk of the new item.
@@ -117,7 +112,6 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
         dsp.process(samples, 0, processed, 0, frames)
         val written = emit(output, frames)
         pendingFrames += frames - written
-        state.processingPcm = state.pcmConfigured
         output.flip()
     }
 
@@ -174,7 +168,6 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
         pendingFrames = 0
         holdback = 0
         tailOutput = EMPTY_BUFFER
-        state.processingPcm = false
     }
 
     private companion object {
