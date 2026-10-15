@@ -17,6 +17,13 @@ You can choose a server and user to switch to with the `serverId` and `userId` U
 
 If not specified, the app will use the current user if auto sign in is enabled.
 
+### Examples
+
+URI based
+```bash
+adb shell am start -d 'wholphin://view?serverId=YourServerIDhere\&userId=YourUserIDHere'
+```
+
 ## Search
 
 Action: `android.intent.action.SEARCH`
