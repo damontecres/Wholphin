@@ -227,11 +227,18 @@ class VolumeLevelingIntegrationTest {
     fun `copied core matches original recorded hashes after undoing the package rename`() {
         val root = File("src/main/java/com/github/damontecres/wholphin/playback/leveling/core")
         val recorded = File(root, "README.md").readText()
+        assertTrue(recorded.contains("`440c54402ad12c3af96073bbc8c1aff2bdbcce9e`"))
+        val expectedHashes = mapOf(
+            "Api.kt" to "01d40179aaa9eee78893e728c446a04f95899f220742ab208441a59a33b36706",
+            "DspMath.kt" to "efe218bcede73e2fb906924f148c7b41dfeeffc16ed92bc56bd2f10f5c1d63d4",
+            "LoudnessMeter.kt" to "bc1d948f25e5eb7b5c1148cd5f204c2b02f8b43a32dee5fdf87c841fbc847bed",
+        )
         val files = root.listFiles()!!.filter { it.extension == "kt" }
-        assertEquals(3, files.size)
+        assertEquals(expectedHashes.keys, files.map { it.name }.toSet())
         files.forEach { file ->
             val original = file.readText().replace("package com.github.damontecres.wholphin.playback.leveling.core", "package volumeleveler")
             val hash = MessageDigest.getInstance("SHA-256").digest(original.toByteArray()).joinToString("") { "%02x".format(it) }
+            assertEquals("${file.name}: copied core differs from source commit", expectedHashes.getValue(file.name), hash)
             assertTrue("${file.name}: $hash absent from provenance", recorded.contains("`${file.name}`: `$hash`"))
         }
     }

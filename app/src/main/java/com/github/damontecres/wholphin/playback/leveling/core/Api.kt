@@ -54,6 +54,8 @@ class VolumeLeveler(val sampleRate: Int, val channelCount: Int) {
     val limiterGainDb: Float get() = (20*log10(selected().limiterGain)).toFloat()
     val clampedSampleCount: Long get() = clamps
     val maximumLevelerBoostDb: Float get() = max(selected().maximumGainDb,selected().gainDb).toFloat()
+    /** Largest linear-gain correction by the limiter's final safety bound since reset. */
+    val maximumLimiterSafetyCorrection: Double get() = selected().maximumSafetyCorrection
     private fun selected(): Branch = if (mode == LevelingMode.LIGHT) light else strong
 
     fun process(input: FloatArray, inputOffset: Int, output: FloatArray, outputOffset: Int, frames: Int) {
@@ -141,6 +143,7 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
     var reduction = 0.0; private set
     var maximumGainDb = 0.0; private set
     var limiterGain = 1.0; private set
+    internal var maximumSafetyCorrection = 0.0; private set
     private val blockFrames = rate / 10
     private val threshold = (profile.targetLufs+profile.compressorThresholdOffsetLu).toDouble()
     private val knee = profile.compressorKneeDb.toDouble()
@@ -168,15 +171,22 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
     private val gains = DoubleArray(delay)
     private var gainCursor = 0
     private val needs = DoubleArray(delay) { 1.0 }
+    private val approach = DoubleArray(delay+2) { if(it==0) 0.0 else 1.0/it }
     private val required = DoubleArray(delay+2)
     private val times = LongArray(delay+2)
     private var head=0; private var tail=0
+    // Unlike the minimum deque, this queue never discards a peak before its deadline.
+    // Unity requirements impose no attack, so only limiting peaks need a scan slot.
+    private val pendingNeeds = DoubleArray(delay+2)
+    private val pendingTimes = LongArray(delay+2)
+    private var pendingHead=0; private var pendingTail=0
     fun block(momentary: Double) {
         maximumGainDb=max(maximumGainDb,gainDb)
         if(rms < 1e-30) rms=0.0
         if(reduction < 1e-20) reduction=0.0
         compressionGain=exp(-reduction*ln(10.0)/20)
-        if(1.0-limiterGain < 1e-12) limiterGain=1.0
+        // A near-unity numerical snap must still respect a pending peak's requirement.
+        if(1.0-limiterGain < 1e-12 && (head==tail || required[head]==1.0)) limiterGain=1.0
         if(momentary > -50 && momentary > estimate-15) {
             estimate += (if(activeBlocks < 150) warmAlpha else slowAlpha)*(min(momentary,estimate+2.5)-estimate)
             activeBlocks++
@@ -222,6 +232,12 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
     private fun anticipate(need: Double) {
         val n = required.size
         while(head != tail && times[head] < sequence-delay) head=if(head+1==n) 0 else head+1
+        while(pendingHead != pendingTail && pendingTimes[pendingHead] < sequence-delay)
+            pendingHead=if(pendingHead+1==n) 0 else pendingHead+1
+        if(need<1.0) {
+            pendingNeeds[pendingTail]=need; pendingTimes[pendingTail]=sequence
+            pendingTail=if(pendingTail+1==n) 0 else pendingTail+1
+        }
         while(head != tail) {
             val prev=if(tail==0) n-1 else tail-1
             if(required[prev] < need) break
@@ -229,10 +245,29 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
         }
         required[tail]=need; times[tail]=sequence; tail=if(tail+1==n) 0 else tail+1
         val minimum=required[head]
-        // Linear anticipation reaches the most restrictive future peak on its due frame.
-        val distance=(times[head]-(sequence-delay)).toInt()
-        if(minimum < limiterGain) limiterGain += (minimum-limiterGain)/max(1,distance+1)
-        else limiterGain += limitRelease*(1.0-limiterGain)
+        if(minimum < limiterGain) {
+            // Every pending deadline constrains the attack. A deeper, later peak may replace
+            // the deque head, but must not replace the approach required by an earlier peak.
+            // The newly arriving peak has delay+1 attack steps including this frame.
+            var step=0.0
+            var index=pendingHead
+            while(index!=pendingTail) {
+                val pending=pendingNeeds[index]
+                if(pending<limiterGain) {
+                    val distance=(pendingTimes[index]-(sequence-delay)).toInt()+1
+                    step=min(step,(pending-limiterGain)*approach[distance])
+                }
+                index=if(index+1==n) 0 else index+1
+            }
+            limiterGain+=step
+        } else {
+            // A pending peak also bounds release. Without this cap release could cross its
+            // requirement on the due frame and leave the safety bound to make a gain step.
+            limiterGain=min(minimum,limiterGain+limitRelease*(1.0-limiterGain))
+        }
+        // An idle limiter has unity requirements throughout its delay. All potential safety
+        // corrections therefore occur here; keep diagnostics off the ordinary frame path.
+        maximumSafetyCorrection=max(maximumSafetyCorrection,limiterGain-needs[gainCursor])
     }
     internal fun desiredReduction(power: Double): Double {
         if(power<=lowerKneePower) return 0.0
@@ -248,6 +283,7 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
         gainStep=0.0; rampLeft=0; linearLevelGain=exp(gainDb*ln(10.0)/20); linearGainStep=1.0
         rms=0.0; reduction=0.0; compressionGain=1.0; limiterGain=1.0
         sequence=0; gainCursor=0; gains.fill(0.0); needs.fill(1.0); head=0; tail=0
+        pendingHead=0; pendingTail=0
     }
-    fun reset() { clearFast(); estimate=profile.targetLufs.toDouble(); gainDb=0.0; linearLevelGain=1.0; maximumGainDb=0.0; activeBlocks=0 }
+    fun reset() { clearFast(); maximumSafetyCorrection=0.0; estimate=profile.targetLufs.toDouble(); gainDb=0.0; linearLevelGain=1.0; maximumGainDb=0.0; activeBlocks=0 }
 }
