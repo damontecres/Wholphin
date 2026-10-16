@@ -54,6 +54,7 @@ import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -419,6 +420,9 @@ class PlaybackViewModelTests {
                 setupPreferences { }
                 coEvery { mockStreamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns
                     mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }.takeIf { subtitles }
+                val oldSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
+                val newSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
+                every { mockPlayerFactory.createMediaSession(any()) } returnsMany listOf(oldSession, newSession)
                 val replacement = mockk<Player>(relaxed = true)
                 coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returnsMany listOf(PlayerCreation(mockPlayer), PlayerCreation(replacement))
                 every { mockPlayer.currentPosition } returns 123456L
@@ -431,7 +435,11 @@ class PlaybackViewModelTests {
                 viewModel.setReduceLoudSounds(true)
                 testScheduler.advanceUntilIdle()
                 coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
-                verify { mockPlayer.release() }
+                verifyOrder { oldSession.release(); mockPlayer.release() }
+                verify(exactly = 0) { newSession.release() }
+                verify(exactly = 2) { mockPlayerFactory.createMediaSession(any()) }
+                verify { mockPlayer.removeListener(viewModel) }
+                verify { replacement.addListener(viewModel) }
                 verify { replacement.setMediaItem(any(), 123456L) }
                 verify { replacement.prepare() }
                 verify { replacement.playWhenReady = playing }
@@ -462,6 +470,41 @@ class PlaybackViewModelTests {
                 viewModel.release()
             }
         }
+
+    @Test
+    fun `delayed subtitle settings do not overwrite a different item after replacement`() = runTest(testDispatcher) {
+        setupForPlaylist()
+        setupPreferences { }
+        val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+        viewModel.updateCurrentPlayback { it?.copy(subtitleIndex = 2) }
+        val before = checkNotNull(viewModel.state.value.currentPlayback)
+        val pending = kotlinx.coroutines.CompletableDeferred<com.github.damontecres.wholphin.data.model.ItemTrackModification?>()
+        coEvery { mockItemPlaybackRepository.getTrackModifications(before.item.id, 2) } coAnswers { pending.await() }
+        val load = launch { viewModel.loadSubtitleDelay() }
+        testScheduler.runCurrent()
+        viewModel.updateCurrentPlayback { it?.copy(item = BaseItem(movie2), subtitleDelay = kotlin.time.Duration.ZERO) }
+        pending.complete(com.github.damontecres.wholphin.data.model.ItemTrackModification(1, before.item.id, 2, 500))
+        load.join()
+        Assert.assertEquals(kotlin.time.Duration.ZERO, viewModel.state.value.currentPlayback!!.subtitleDelay)
+        viewModel.release()
+    }
+
+    @Test
+    fun `disconnect cancels old player callbacks and segment monitoring`() = runTest(testDispatcher) {
+        setupForPlaylist()
+        setupPreferences { showNextUpWhen = ShowNextUpWhen.DURING_CREDITS }
+        val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+        val segmentJob = kotlinx.coroutines.CoroutineScope(testDispatcher).launch {
+            kotlinx.coroutines.awaitCancellation()
+        }
+        viewModel.segmentJob = segmentJob
+        viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+        viewModel.release()
+        testScheduler.runCurrent()
+        Assert.assertTrue("released player's segment loop must stop", segmentJob.isCancelled)
+        Assert.assertNull("queued old ENDED callback must not open next-up", viewModel.state.value.nextUp)
+        verify { mockPlayer.removeListener(viewModel) }
+    }
 
     @Test
     fun `confirmed PCM promotion preserves player source tracks position and pause without reloading`() = runTest(testDispatcher) {

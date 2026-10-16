@@ -32,6 +32,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -166,7 +167,7 @@ fun PlaybackPageContent(
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    LaunchedEffect(density) { viewModel.updateDensity(density) }
+    LaunchedEffect(player, density) { viewModel.updateDensity(density) }
     val userDto by viewModel.currentUserDto.collectAsState()
 
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -183,17 +184,17 @@ fun PlaybackPageContent(
         )
     }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
-    LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
+    LaunchedEffect(player, playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-    LaunchedEffect(state.currentPlayback?.subtitleDelay) {
+    LaunchedEffect(player, state.currentPlayback?.subtitleDelay) {
         (player as? MpvPlayer)?.subtitleDelay =
             state.currentPlayback?.subtitleDelay ?: Duration.ZERO
     }
 
     val presentationState = rememberPresentationState(player, false)
     val playbackState by rememberPlayerState(player)
-    var showBuffering by remember { mutableStateOf(false) }
-    LaunchedEffect(playbackState) {
+    var showBuffering by remember(player) { mutableStateOf(false) }
+    LaunchedEffect(player, playbackState) {
         if (playbackState == PlayerState.BUFFERING) {
             // Delay before showing the loading indicator
             // So if buffering is quick, the UI won't flash
@@ -214,12 +215,12 @@ fun PlaybackPageContent(
     }
     val controllerViewState = remember { viewModel.controllerViewState }
 
-    var skipIndicatorDuration by remember { mutableLongStateOf(0L) }
+    var skipIndicatorDuration by remember(player) { mutableLongStateOf(0L) }
     LaunchedEffect(controllerViewState.controlsVisible) {
         // If controller shows/hides, immediately cancel the skip indicator
         skipIndicatorDuration = 0L
     }
-    var skipPosition by remember { mutableLongStateOf(0L) }
+    var skipPosition by remember(player) { mutableLongStateOf(0L) }
     val updateSkipIndicator = { delta: Long ->
         if ((skipIndicatorDuration > 0 && delta < 0) || (skipIndicatorDuration < 0 && delta > 0)) {
             skipIndicatorDuration = 0
@@ -245,7 +246,7 @@ fun PlaybackPageContent(
         seekBarState.onValueChange(skipPosition)
     }
     val keyHandler =
-        remember(preferences) {
+        remember(player, preferences, state.nextUp == null) {
             PlaybackKeyHandler(
                 player = player,
                 controlsEnabled = state.nextUp == null,
@@ -470,36 +471,38 @@ fun PlaybackPageContent(
 
             // The playback controls
 
-            PlaybackOverlay(
-                modifier =
-                    Modifier
-                        .padding(WindowInsets.systemBars.asPaddingValues())
-                        .fillMaxSize()
-                        .background(Color.Transparent),
-                item = state.currentPlayback?.item,
-                player = player,
-                controllerViewState = controllerViewState,
-                showPlay = playPauseState.showPlay,
-                previousEnabled = true,
-                nextEnabled = state.hasNext,
-                seekEnabled = true,
-                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-                onPlaybackActionClick = onPlaybackActionClick,
-                onClickPlaybackDialogType = { playbackDialog = it },
-                onSeekBarChange = seekBarState::onValueChange,
-                showDebugInfo = showDebugInfo,
-                currentPlayback = state.currentPlayback,
-                chapters = state.currentMediaInfo.chapters,
-                trickplayInfo = state.currentMediaInfo.trickPlayInfo,
-                trickplayUrlFor = viewModel::getTrickplayUrl,
-                queue = remember(state.playlistIndex, state.playlist) { state.upcomingItems },
-                onClickPlaylist = viewModel::playItemInPlaylist,
-                currentSegment = state.currentSegment?.segment,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
-                analyticsState = state.analyticsState,
-            )
+            key(player) {
+                PlaybackOverlay(
+                    modifier =
+                        Modifier
+                            .padding(WindowInsets.systemBars.asPaddingValues())
+                            .fillMaxSize()
+                            .background(Color.Transparent),
+                    item = state.currentPlayback?.item,
+                    player = player,
+                    controllerViewState = controllerViewState,
+                    showPlay = playPauseState.showPlay,
+                    previousEnabled = true,
+                    nextEnabled = state.hasNext,
+                    seekEnabled = true,
+                    seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                    seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                    skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onSeekBarChange = seekBarState::onValueChange,
+                    showDebugInfo = showDebugInfo,
+                    currentPlayback = state.currentPlayback,
+                    chapters = state.currentMediaInfo.chapters,
+                    trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                    trickplayUrlFor = viewModel::getTrickplayUrl,
+                    queue = remember(state.playlistIndex, state.playlist) { state.upcomingItems },
+                    onClickPlaylist = viewModel::playItemInPlaylist,
+                    currentSegment = state.currentSegment?.segment,
+                    showClock = preferences.appPreferences.interfacePreferences.showClock,
+                    analyticsState = state.analyticsState,
+                )
+            }
 
             var subtitleStyleAppliedForHdr by remember { mutableStateOf(state.currentMediaInfo.videoStream?.hdr == true) }
             val subtitleSettings =
@@ -522,84 +525,86 @@ fun PlaybackPageContent(
                 remember(state.subtitleCues) { state.subtitleCues.firstOrNull()?.bitmap != null }
 
             // Reset cueCount when density changes to force re-applying subtitle style
-            var cueCount by remember(density) { mutableIntStateOf(0) }
+            var cueCount by remember(player, density) { mutableIntStateOf(0) }
 
             val subtitleVisible =
                 skipIndicatorDuration == 0L &&
                     state.currentPlayback?.subtitleIndexEnabled == true &&
                     !presentationState.coverSurface
 
-            AndroidView(
-                factory = { context ->
-                    SubtitleView(context).apply {
-                        subtitleSettings.applyTo(this)
-                        playerInstance.assHandler?.let { assHandler ->
-                            if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
-                                Timber.v("Adding AssSubtitleView")
-                                addView(
-                                    AssSubtitleView(context, assHandler).apply {
-                                        layoutParams =
-                                            FrameLayout
-                                                .LayoutParams(
-                                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                                ).apply { gravity = Gravity.CENTER }
-                                    },
-                                )
-                            }
-                        }
-                    }
-                },
-                update = { subtitleView ->
-                    if (subtitleStyleAppliedForHdr != state.currentMediaInfo.videoStream?.hdr) {
-                        // If the media has switched between SDR & HDR, reapply subtitle settings
-                        Timber.v("Switching SDR/HDR, reapplying subtitle style")
-                        subtitleSettings.applyTo(subtitleView)
-                    }
-                    subtitleView.setCues(state.subtitleCues)
-                    if (state.subtitleCues.size > cueCount) {
-                        Timber.i("Applying subtitle style to SubtitleView")
-                        // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
-                        Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
-                            .apply(subtitleView)
-                        cueCount = state.subtitleCues.size
-                    }
-                    subtitleView.children.firstOrNull { it is AssSubtitleView }?.let {
-                        (it as? AssSubtitleView)?.apply {
-                            val resized =
-                                layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
-
-                            if (resized && playerSurfaceSize.width > 0 && playerSurfaceSize.height > 0) {
-                                Timber.v("Resizing AssSubtitleView: %s", playerSurfaceSize)
-                                layoutParams =
-                                    FrameLayout
-                                        .LayoutParams(
-                                            playerSurfaceSize.width,
-                                            playerSurfaceSize.height,
-                                        ).apply { gravity = Gravity.CENTER }
-                            }
-                        }
-                    }
-                },
-                onReset = {
-                    it.setCues(null)
-                },
-                modifier =
-                    Modifier
-                        .fillMaxSize(subtitleMaxSize)
-                        .align(Alignment.TopCenter)
-                        .background(Color.Transparent)
-                        .graphicsLayer {
-                            alpha =
-                                if (!subtitleVisible) {
-                                    0f
-                                } else if (isImageSubtitles) {
-                                    subtitleImageOpacity
-                                } else {
-                                    1f
+            key(player, playerInstance.assHandler) {
+                AndroidView(
+                    factory = { context ->
+                        SubtitleView(context).apply {
+                            subtitleSettings.applyTo(this)
+                            playerInstance.assHandler?.let { assHandler ->
+                                if (prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS) {
+                                    Timber.v("Adding AssSubtitleView")
+                                    addView(
+                                        AssSubtitleView(context, assHandler).apply {
+                                            layoutParams =
+                                                FrameLayout
+                                                    .LayoutParams(
+                                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    ).apply { gravity = Gravity.CENTER }
+                                        },
+                                    )
                                 }
-                        },
-            )
+                            }
+                        }
+                    },
+                    update = { subtitleView ->
+                        if (subtitleStyleAppliedForHdr != state.currentMediaInfo.videoStream?.hdr) {
+                            // If the media has switched between SDR & HDR, reapply subtitle settings
+                            Timber.v("Switching SDR/HDR, reapplying subtitle style")
+                            subtitleSettings.applyTo(subtitleView)
+                        }
+                        subtitleView.setCues(state.subtitleCues)
+                        if (state.subtitleCues.size > cueCount) {
+                            Timber.i("Applying subtitle style to SubtitleView")
+                            // The output creates a painter for each cue, so need to apply the changes when the number of cues increases
+                            Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
+                                .apply(subtitleView)
+                            cueCount = state.subtitleCues.size
+                        }
+                        subtitleView.children.firstOrNull { it is AssSubtitleView }?.let {
+                            (it as? AssSubtitleView)?.apply {
+                                val resized =
+                                    layoutParams.let { it.width != playerSurfaceSize.width || it.height != playerSurfaceSize.height }
+
+                                if (resized && playerSurfaceSize.width > 0 && playerSurfaceSize.height > 0) {
+                                    Timber.v("Resizing AssSubtitleView: %s", playerSurfaceSize)
+                                    layoutParams =
+                                        FrameLayout
+                                            .LayoutParams(
+                                                playerSurfaceSize.width,
+                                                playerSurfaceSize.height,
+                                            ).apply { gravity = Gravity.CENTER }
+                                }
+                            }
+                        }
+                    },
+                    onReset = {
+                        it.setCues(null)
+                    },
+                    modifier =
+                        Modifier
+                            .fillMaxSize(subtitleMaxSize)
+                            .align(Alignment.TopCenter)
+                            .background(Color.Transparent)
+                            .graphicsLayer {
+                                alpha =
+                                    if (!subtitleVisible) {
+                                        0f
+                                    } else if (isImageSubtitles) {
+                                        subtitleImageOpacity
+                                    } else {
+                                        1f
+                                    }
+                            },
+                )
+            }
         }
 
         // Ask to skip intros, etc button
@@ -703,7 +708,7 @@ fun PlaybackPageContent(
 
     if (subtitleSearchState.status != SubtitleSearchStatus.Inactive) {
         val wasPlaying = remember { player.isPlaying }
-        LaunchedEffect(Unit) {
+        LaunchedEffect(player) {
             player.pause()
         }
         val onDismissRequest = {

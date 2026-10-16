@@ -86,7 +86,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -225,6 +228,7 @@ class PlaybackViewModel
                     player.prepare()
                     player.playWhenReady = playWhenReady
                 }
+                listenForSegments(playback.item.id)
             }
         }
 
@@ -254,6 +258,12 @@ class PlaybackViewModel
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
+        // Callback work belongs to one player; queued old callbacks cannot act on a replacement.
+        private var playerCallbackScope = newPlayerCallbackScope()
+
+        private fun newPlayerCallbackScope() =
+            CoroutineScope(viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]))
+
         private var subscribeJob: Job? = null
 
         private val isPlaylist = destination is Destination.PlaybackList
@@ -277,6 +287,11 @@ class PlaybackViewModel
         }
 
         private fun disconnectPlayer() {
+            playerCallbackScope.cancel()
+            segmentJob?.cancel()
+            segmentJob = null
+            subscribeJob?.cancel()
+            subscribeJob = null
             if (this@PlaybackViewModel::player.isInitialized) {
                 player.removeListener(this@PlaybackViewModel)
                 (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel)
@@ -288,8 +303,9 @@ class PlaybackViewModel
                 this@PlaybackViewModel.trackChangeListener?.let {
                     player.removeListener(it)
                 }
-                player.release()
                 mediaSession?.release()
+                mediaSession = null
+                player.release()
             }
             activityListener = null
             trackChangeListener = null
@@ -349,6 +365,7 @@ class PlaybackViewModel
         }
 
         private fun configurePlayer() {
+            playerCallbackScope = newPlayerCallbackScope()
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
             subscribeToWebSocket()
@@ -1163,7 +1180,7 @@ class PlaybackViewModel
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
                 Timber.v("Playback state is STATE_ENDED")
-                viewModelScope.launchDefault {
+                playerCallbackScope.launchDefault {
                     when (val nextItem = state.value.nextItem()) {
                         is PlaylistItem.Intro -> {
                             Timber.v("Next item is intro, so playing immediately")
@@ -1469,7 +1486,7 @@ class PlaybackViewModel
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e(error, "Playback error")
-            viewModelScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
+            playerCallbackScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
                 state.value.currentPlayback?.let {
                     when (it.playMethod) {
                         PlayMethod.TRANSCODE -> {
@@ -1607,7 +1624,7 @@ class PlaybackViewModel
             decoderName: String,
             type: MediaType,
         ) {
-            viewModelScope.launchDefault {
+            playerCallbackScope.launchDefault {
                 val codecInfo =
                     MediaCodecList(MediaCodecList.ALL_CODECS)
                         .codecInfos
@@ -1731,7 +1748,13 @@ class PlaybackViewModel
                             it.subtitleIndex,
                             it.item.id,
                         )
-                        updateCurrentPlayback { it?.copy(subtitleDelay = result.delayMs.milliseconds) }
+                        updateCurrentPlayback { current ->
+                            if (current?.item?.id == it.item.id && current.subtitleIndex == it.subtitleIndex) {
+                                current.copy(subtitleDelay = result.delayMs.milliseconds)
+                            } else {
+                                current
+                            }
+                        }
                     }
                 }
             }
@@ -1746,7 +1769,7 @@ class PlaybackViewModel
             if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
                 // MpvPlayer is initialized, so configure subtitles
                 Timber.i("Applying subtitle config to MPV")
-                viewModelScope.launchDefault {
+                playerCallbackScope.launchDefault {
                     val configuration = context.resources.configuration
                     val density = Density(context.resources.displayMetrics.density)
                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
@@ -1759,7 +1782,7 @@ class PlaybackViewModel
 
         fun updateDensity(density: Density) {
             Timber.d("Density changed")
-            viewModelScope.launchDefault {
+            playerCallbackScope.launchDefault {
                 val availableCommands = onMain { player.availableCommands }
                 if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
                     Timber.i("Applying density change for subtitle config to MPV")
