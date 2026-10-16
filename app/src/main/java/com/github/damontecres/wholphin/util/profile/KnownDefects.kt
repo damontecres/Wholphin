@@ -23,6 +23,17 @@ private val modelsWithEac3TsPassthroughBug =
     )
 
 /**
+ * List of device codenames whose platform FLAC decoder advertises multichannel support but fails
+ * at runtime on multichannel (>2 channel) FLAC with "no streaminfo metadata block". Keyed on
+ * Build.DEVICE, not Build.MODEL: every SHIELD TV reports the same model ("SHIELD Android TV"), so
+ * the codename is what isolates the affected 2019 (non-Pro) unit from the Pro and older models.
+ */
+private val devicesWithMultichannelFlacBug =
+    listOf(
+        "sif", // NVIDIA SHIELD TV 2019 (non-Pro, 2GB "Tube")
+    )
+
+/**
  * List of device models that support H264 Hi10P 5.2, but don't advertise it
  *
  * Amazon devices from https://developer.amazon.com/docs/device-specs/device-specifications-fire-tv-streaming-media-player.html
@@ -39,5 +50,6 @@ private val modelsWithHi10P52Support =
 object KnownDefects {
     val hevcDoviHdr10PlusBug = Build.MODEL in modelsWithDoViHdr10PlusBug
     val eac3HlsPassthroughBug = Build.MODEL in modelsWithEac3TsPassthroughBug
+    val multichannelFlacBug = Build.DEVICE in devicesWithMultichannelFlacBug
     val supportsHi10P52 = Build.MODEL in modelsWithHi10P52Support
 }
