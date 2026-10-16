@@ -964,4 +964,7 @@
         <item quantity="one">%1$d Episode</item>
         <item quantity="other">%1$d Episodes</item>
     </plurals>
+    <string name="chosen_by">Chosen by %1$s</string>
+    <string name="user">User</string>
+    <string name="series">Series</string>
 </resources>
