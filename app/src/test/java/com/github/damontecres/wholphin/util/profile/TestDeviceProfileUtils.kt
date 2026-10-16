@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.api.DlnaProfileType
 import org.jellyfin.sdk.model.api.ProfileConditionValue
 import org.junit.Assert
 import org.junit.Test
@@ -35,6 +36,7 @@ class TestDeviceProfileUtils {
         decodeAv1: Boolean = false,
         forceEnabledHdr: Set<String> = emptySet(),
         forceDisabledHdr: Set<String> = emptySet(),
+        preferAc3ForSurround: Boolean = false,
     ): DeviceProfile =
         createDeviceProfile(
             mediaTest = mediaTest,
@@ -45,7 +47,7 @@ class TestDeviceProfileUtils {
             pgsDirectPlay = true,
             decodeAv1 = decodeAv1,
             jellyfinTenEleven = jellyfinTenEleven,
-            preferAc3ForSurround = false,
+            preferAc3ForSurround = preferAc3ForSurround,
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
             maxResolution = 0,
@@ -137,5 +139,27 @@ class TestDeviceProfileUtils {
                 forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI.serialName),
             )
         Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
+    }
+
+    private fun transcodingAudioCodecs(
+        profile: DeviceProfile,
+        type: DlnaProfileType,
+    ): Set<String> =
+        profile.transcodingProfiles
+            .single { it.type == type }
+            .audioCodec
+            .split(",")
+            .toSet()
+
+    @Test
+    fun `Test video transcoding allows all audio codecs when not preferring AC3`() {
+        val profile = buildProfile(mockk(relaxed = true), preferAc3ForSurround = false)
+        Assert.assertEquals(supportedAudioCodecs.toSet(), transcodingAudioCodecs(profile, DlnaProfileType.VIDEO))
+    }
+
+    @Test
+    fun `Test video transcoding uses only AC3 when preferring AC3`() {
+        val profile = buildProfile(mockk(relaxed = true), preferAc3ForSurround = true)
+        Assert.assertEquals(setOf(Codec.Audio.AC3), transcodingAudioCodecs(profile, DlnaProfileType.VIDEO))
     }
 }
