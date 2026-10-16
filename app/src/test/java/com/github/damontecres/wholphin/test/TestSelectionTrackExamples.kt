@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.playback.TrackSelected
 import com.github.damontecres.wholphin.ui.playback.TrackSelectionResult
 import com.github.damontecres.wholphin.ui.playback.TrackSelectionUtils
+import com.github.damontecres.wholphin.ui.playback.remapStreamIndex
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.junit.Assert
 import org.junit.Test
@@ -42,6 +43,15 @@ class TestSelectionTrackExamples {
                 subtitleIndex = subtitleIndex,
                 source = builder.buildMediaSourceInfo(),
             ).also(onResult)
+    }
+
+    @Test
+    fun `remap audio and subtitles after an external subtitle is added`() {
+        val cachedSource = TrackExamples.builderVAASSS.buildMediaSourceInfo()
+        val updatedSource = TrackExamples.builderEVAASSS.buildMediaSourceInfo()
+
+        Assert.assertEquals(3, cachedSource.remapStreamIndex(updatedSource, 2, MediaStreamType.AUDIO))
+        Assert.assertEquals(5, cachedSource.remapStreamIndex(updatedSource, 4, MediaStreamType.SUBTITLE))
     }
 
     @Test
