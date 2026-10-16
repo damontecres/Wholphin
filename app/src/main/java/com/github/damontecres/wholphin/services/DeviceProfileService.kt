@@ -4,10 +4,12 @@ import android.content.Context
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
+import com.github.damontecres.wholphin.preferences.HdrFormat
 import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.PlaybackOverrides
 import com.github.damontecres.wholphin.preferences.enabled
 import com.github.damontecres.wholphin.preferences.getHdrRangeTypesFor
+import com.github.damontecres.wholphin.util.DolbyVisionProfile7Conversion
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -66,7 +68,13 @@ class DeviceProfileService
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 preferAc3ForSurround = appPrefs.experimentalPreferences.enabled { preferAc3Surround },
                                 forceEnabledHdr =
-                                    appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, newConfig.jellyfinTenEleven),
+                                    appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, newConfig.jellyfinTenEleven) +
+                                        // A profile 7 track the player converts to 8.1 is one the server need not transcode
+                                        if (DolbyVisionProfile7Conversion.isWanted(newConfig.experimental, mediaCodecCapabilitiesTest)) {
+                                            HdrFormat.DOVI_PROFILE_7.rangeTypeNames(newConfig.jellyfinTenEleven)
+                                        } else {
+                                            emptySet()
+                                        },
                                 forceDisabledHdr =
                                     appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, newConfig.jellyfinTenEleven),
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
