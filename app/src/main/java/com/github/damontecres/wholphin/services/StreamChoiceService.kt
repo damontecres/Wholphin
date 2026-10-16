@@ -19,9 +19,9 @@ import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.util.ResProviderStringProvider
 import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
-import com.github.damontecres.wholphin.ui.util.StringStringProvider
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
@@ -176,7 +176,7 @@ class StreamChoiceService
                 } else {
                     // Otherwise, use the best scored stream
                     Timber.v("Using audio STC from %s", first.parentId)
-                    result.first().second with StreamChoiceReason.from(first, result)
+                    result.first().stream with StreamChoiceReason.from(first, result)
                 }
             } else {
                 val audioLanguage = getPreferredLanguage(MediaStreamType.AUDIO, prefs, userConfig)
@@ -413,7 +413,7 @@ class StreamChoiceService
          * Recursively calls [chooseSubtitleStream] based on [result] and [stc]
          */
         private fun handleSubtitleStreamChoiceResult(
-            result: List<Pair<Int, MediaStream>>,
+            result: List<ScoredMediaStream>,
             audioStreamLang: String?,
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
@@ -443,7 +443,7 @@ class StreamChoiceService
             } else {
                 // Otherwise, use the best scored stream
                 Timber.v("Using subtitle STC from %s", first.parentId)
-                result.first().second with StreamChoiceReason.from(first, result)
+                result.first().stream with StreamChoiceReason.from(first, result)
             }
         }
 
@@ -595,7 +595,7 @@ fun getPreferredLanguage(
 fun scoreStreams(
     streams: List<MediaStream>,
     choice: SeriesTrackChoice,
-): List<Pair<Int, MediaStream>>? {
+): List<ScoredMediaStream>? {
     if (choice.activation == ActivationFlag.DISABLED) {
         return null
     }
@@ -664,9 +664,8 @@ fun scoreStreams(
                     // All else being equal, prefer the default track
                     score += 1
                 }
-
-                score to s.stream
-            }.sortedByDescending { it.first }
+                ScoredMediaStream(score, s.stream)
+            }.sortedByDescending { it.score }
     return scored
 }
 
@@ -675,12 +674,19 @@ data class StreamChoiceResult(
     val reason: StreamChoiceReason,
 )
 
+data class ScoredMediaStream(
+    val score: Int,
+    val stream: MediaStream,
+)
+
 private infix fun MediaStream?.with(reason: StreamChoiceReason) = StreamChoiceResult(this, reason)
 
+/**
+ * Why a particular [MediaStream] was chosen
+ */
 sealed interface StreamChoiceReason {
     val description: StringProvider
-    val scores: List<Pair<Int, MediaStream>>
-        get() = emptyList()
+    val scores: List<ScoredMediaStream> get() = emptyList()
 
     data object Unknown : StreamChoiceReason {
         override val description: StringProvider = ResStringProvider(R.string.unknown)
@@ -693,44 +699,40 @@ sealed interface StreamChoiceReason {
 
     data class Series(
         val stc: SeriesTrackChoice,
-        override val scores: List<Pair<Int, MediaStream>>,
+        override val scores: List<ScoredMediaStream>,
     ) : StreamChoiceReason {
         override val description: StringProvider =
-            // TODO better strings and move to resources
-            when (stc.activation) {
-                ActivationFlag.ACTIVATED -> StringStringProvider("Series choice")
-                ActivationFlag.DISABLED -> StringStringProvider("Disabled by Series")
-                ActivationFlag.ONLY_FORCED -> StringStringProvider("Only forced by Series")
-            }
+            ResProviderStringProvider(R.string.chosen_by, SERIES_PROVIDER)
     }
 
     data class Season(
         val stc: SeriesTrackChoice,
-        override val scores: List<Pair<Int, MediaStream>>,
+        override val scores: List<ScoredMediaStream>,
     ) : StreamChoiceReason {
         override val description: StringProvider =
-            when (stc.activation) {
-                ActivationFlag.ACTIVATED -> StringStringProvider("Season choice")
-                ActivationFlag.DISABLED -> StringStringProvider("Disabled by Season")
-                ActivationFlag.ONLY_FORCED -> StringStringProvider("Only forced by Season")
-            }
+            ResProviderStringProvider(R.string.chosen_by, SEASON_PROVIDER)
     }
 
     data class Item(
         val itemPlayback: ItemPlayback,
     ) : StreamChoiceReason {
-        override val description: StringProvider = StringStringProvider("Item specific")
+        override val description: StringProvider =
+            ResProviderStringProvider(R.string.chosen_by, USER_PROVIDER)
     }
 
     companion object {
         fun from(
             stc: SeriesTrackChoice,
-            scores: List<Pair<Int, MediaStream>> = emptyList(),
+            scores: List<ScoredMediaStream> = emptyList(),
         ) = when (stc.parentType) {
             TrackChoiceParentType.SERIES -> Series(stc, scores)
             TrackChoiceParentType.SEASON -> Season(stc, scores)
             TrackChoiceParentType.DEPRECATED -> Unknown
             TrackChoiceParentType.UNKNOWN -> Unknown
         }
+
+        private val USER_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.series) }
+        private val SERIES_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.series) }
+        private val SEASON_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.tv_season) }
     }
 }

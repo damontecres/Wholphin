@@ -12,6 +12,11 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
+/**
+ * Stores the user's chosen track for a media item. This is by type, ie Audio vs Subtitle tracks
+ *
+ * Additional information about the chosen track is stored to compare against tracks in other media
+ */
 @Entity(
     foreignKeys = [
         ForeignKey(
@@ -42,8 +47,18 @@ data class SeriesTrackChoice(
     val itemId: UUID? = null,
     val language: String? = null,
     val activation: ActivationFlag = ActivationFlag.ACTIVATED,
+    /**
+     * Flags for the track such as external or forced
+     *
+     * @see [TrackFlag]
+     */
     val trackFlags: Int = 0,
     val codec: String? = null,
+    /**
+     * The track index based on its position within all streams of the same type
+     *
+     * @see [RelativeMediaStream]
+     */
     val relativeTrackIndex: Int? = null,
     val title: String? = null,
     val audioChannels: Int? = null,
@@ -72,6 +87,9 @@ data class SeriesTrackChoice(
     )
 
     companion object {
+        /**
+         * Convert the old [PlaybackLanguageChoice] into [SeriesTrackChoice]s
+         */
         fun from(plc: PlaybackLanguageChoice): List<SeriesTrackChoice> =
             buildList {
                 if (plc.subtitleLanguage != null) {
