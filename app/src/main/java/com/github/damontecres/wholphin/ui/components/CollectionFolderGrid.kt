@@ -210,10 +210,10 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 listOf(BaseItemKind.SERIES, BaseItemKind.SEASON, BaseItemKind.EPISODE)
             }
 
-            CollectionType.HOMEVIDEOS -> {
-                listOf(BaseItemKind.VIDEO)
-                listOf(BaseItemKind.PHOTO)
-                listOf(BaseItemKind.PHOTO_ALBUM)
+            CollectionType.PHOTOS,
+            CollectionType.HOMEVIDEOS,
+            -> {
+                listOf(BaseItemKind.VIDEO, BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
             }
 
             CollectionType.MUSIC -> {
@@ -234,10 +234,6 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
 
             CollectionType.PLAYLISTS -> {
                 listOf(BaseItemKind.PLAYLIST)
-            }
-
-            CollectionType.PHOTOS -> {
-                listOf(BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
             }
 
             CollectionType.LIVETV -> {
