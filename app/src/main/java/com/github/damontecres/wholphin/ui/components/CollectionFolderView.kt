@@ -169,25 +169,25 @@ class CollectionFolderViewModel
                             val id = collectionFilter.libraryDisplayInfoIdOverride ?: itemId
                             libraryDisplayInfoDao.getItem(user, id)
                         }
-                    val ancestorDisplayInfos =
+                    val ancestorDisplayInfo =
                         if (libraryDisplayInfo?.viewOptions == null && item != null) {
-                            getAncestorDisplayInfos(item)
+                            getAncestorDisplayInfo(item)
                         } else {
-                            emptyList()
+                            null
                         }
-                    val viewOptions =
-                        libraryDisplayInfo?.viewOptions
-                            ?: ancestorDisplayInfos.firstNotNullOfOrNull { it.viewOptions }
                     _state.update {
                         it.copy(
-                            viewOptions = viewOptions ?: defaultViewOptions,
+                            viewOptions =
+                                libraryDisplayInfo?.viewOptions
+                                    ?: ancestorDisplayInfo?.viewOptions
+                                    ?: defaultViewOptions,
                         )
                     }
 
                     val sortAndDirection =
                         if (collectionFilter.useSavedLibraryDisplayInfo) {
                             libraryDisplayInfo?.sortAndDirection
-                                ?: ancestorDisplayInfos.firstOrNull()?.sortAndDirection
+                                ?: ancestorDisplayInfo?.sortAndDirection
                         } else {
                             null
                         } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
@@ -244,21 +244,21 @@ class CollectionFolderViewModel
         }
 
         /**
-         * For a sub-folder, returns the saved display info of its ancestors, ordered from the closest parent up to the root
+         * For a sub-folder, returns the saved display info of the closest ancestor that has one
          */
-        private suspend fun getAncestorDisplayInfos(item: BaseItem): List<LibraryDisplayInfo> {
+        private suspend fun getAncestorDisplayInfo(item: BaseItem): LibraryDisplayInfo? {
             if (item.type != BaseItemKind.FOLDER || collectionFilter.libraryDisplayInfoIdOverride != null) {
-                return emptyList()
+                return null
             }
-            val user = serverRepository.currentUser ?: return emptyList()
+            val user = serverRepository.currentUser ?: return null
             return try {
                 api.libraryApi
                     .getAncestors(item.id, user.id)
                     .content
-                    .mapNotNull { ancestor -> libraryDisplayInfoDao.getItem(user, ancestor.id) }
+                    .firstNotNullOfOrNull { ancestor -> libraryDisplayInfoDao.getItem(user, ancestor.id) }
             } catch (ex: Exception) {
                 Timber.w(ex, "Error getting ancestors for %s", item.id)
-                emptyList()
+                null
             }
         }
 
