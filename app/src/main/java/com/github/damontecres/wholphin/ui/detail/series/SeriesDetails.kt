@@ -4,6 +4,7 @@ import android.content.res.Resources
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,16 +17,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -39,20 +43,25 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
+import com.github.damontecres.wholphin.ui.cards.AvailableIndicator
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
+import com.github.damontecres.wholphin.ui.cards.PartiallyAvailableIndicator
+import com.github.damontecres.wholphin.ui.cards.PendingIndicator
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.ContextMenu
@@ -77,6 +86,7 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.discover.RequestSeasonsDialog
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -115,6 +125,12 @@ fun SeriesDetails(
 
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    var requestSeasonNumber by remember { mutableStateOf<Int?>(null) }
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState()
+
+    LaunchedEffect(state.seerrTvDetails) {
+        if (state.seerrTvDetails == null) requestSeasonNumber = null
+    }
 
     val contextActions =
         remember {
@@ -186,7 +202,7 @@ fun SeriesDetails(
             SeriesDetailsContent(
                 preferences = preferences,
                 series = series,
-                seasons = state.seasons,
+                seasons = state.detailsSeasons,
                 trailers = state.trailers,
                 extras = state.extras,
                 people = state.people,
@@ -219,6 +235,10 @@ fun SeriesDetails(
                             canRemoveNextUp = false,
                             actions = contextActions,
                         )
+                },
+                onClickMissingSeason = { seasonNumber ->
+                    viewModel.requestOnClick()
+                    requestSeasonNumber = seasonNumber
                 },
                 overviewOnClick = {
                     overviewDialog = ItemDetailsDialogInfo(series)
@@ -261,6 +281,23 @@ fun SeriesDetails(
                 },
                 actions = contextActions,
             )
+            requestSeasonNumber?.takeIf { state.seerrTvDetails != null }?.let { seasonNumber ->
+                RequestSeasonsDialog(
+                    id = state.seerrTvDetails?.id ?: -1,
+                    title = state.seerrTvDetails?.name ?: series.title.orEmpty(),
+                    seasons = state.requestSeasons,
+                    seasons4k = state.requestSeasons4k,
+                    request4kEnabled = request4kEnabled,
+                    initialSeasonNumber = seasonNumber,
+                    loading = state.profileLoading,
+                    data = state.requestData,
+                    onSubmit = {
+                        requestSeasonNumber = null
+                        viewModel.request(it)
+                    },
+                    onDismissRequest = { requestSeasonNumber = null },
+                )
+            }
             if (showWatchConfirmation) {
                 ConfirmDialog(
                     title = series.name ?: "",
@@ -324,7 +361,7 @@ private const val DISCOVER_ROW = SIMILAR_ROW + 1
 fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
-    seasons: List<BaseItem?>,
+    seasons: List<SeriesDetailsSeason>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
@@ -336,6 +373,7 @@ fun SeriesDetailsContent(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
+    onClickMissingSeason: (Int) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: (Boolean) -> Unit,
     watchOnClick: () -> Unit,
@@ -374,6 +412,7 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        availability = discoverSeries?.availability,
                         showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
                         bringIntoViewRequester = bringIntoViewRequester,
@@ -512,26 +551,84 @@ fun SeriesDetailsContent(
                         items = seasons,
                         onClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onClickItem.invoke(index, item)
+                            val jellyfinSeason = item.jellyfinItem
+                            when {
+                                jellyfinSeason != null -> onClickItem.invoke(index, jellyfinSeason)
+                                item.canRequest() -> onClickMissingSeason(item.seasonNumber)
+                            }
                         },
                         onLongClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onLongClickItem.invoke(index, item)
+                            item.jellyfinItem?.let { onLongClickItem.invoke(index, it) }
                         },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters[SEASONS_ROW]),
                         cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                            SeasonCard(
-                                item = item,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                imageHeight = Cards.height2x3,
-                                imageWidth = Dp.Unspecified,
-                                showImageOverlay = true,
-                                modifier = mod,
-                            )
+                            if (item?.jellyfinItem != null) {
+                                SeasonCard(
+                                    item = item.jellyfinItem,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                    showImageOverlay = true,
+                                    modifier = mod,
+                                )
+                            } else if (item != null) {
+                                val title =
+                                    if (item.seasonNumber == 0) {
+                                        stringResource(R.string.specials)
+                                    } else {
+                                        stringResource(R.string.tv_season) + " ${item.seasonNumber}"
+                                    }
+                                SeasonCard(
+                                    title = title,
+                                    subtitle = item.seerrSeason?.season?.airDate?.take(4),
+                                    name = title,
+                                    imageUrl = item.imageUrl,
+                                    isFavorite = false,
+                                    isPlayed = false,
+                                    unplayedItemCount = item.seerrSeason?.season?.episodeCount ?: 0,
+                                    playedPercentage = 0.0,
+                                    numberOfVersions = 0,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                    showImageOverlay = true,
+                                    imageAlpha = .45f,
+                                    artworkOverlay = {
+                                        when (item.seerrSeason?.availability) {
+                                            SeerrAvailability.PENDING,
+                                            SeerrAvailability.PROCESSING,
+                                            -> PendingIndicator(Modifier.align(Alignment.TopStart))
+
+                                            SeerrAvailability.PARTIALLY_AVAILABLE ->
+                                                PartiallyAvailableIndicator(Modifier.align(Alignment.TopStart))
+
+                                            else -> Unit
+                                        }
+                                        if (item.canRequest()) {
+                                            Text(
+                                                text = stringResource(R.string.request),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                modifier =
+                                                    Modifier
+                                                        .align(Alignment.BottomCenter)
+                                                        .padding(8.dp)
+                                                        .background(
+                                                            MaterialTheme.colorScheme.primary,
+                                                            RoundedCornerShape(4.dp),
+                                                        ).padding(horizontal = 8.dp, vertical = 3.dp),
+                                            )
+                                        }
+                                    },
+                                    modifier = mod,
+                                )
+                            }
                         },
                     )
                 }
@@ -650,6 +747,7 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    availability: SeerrAvailability?,
     showLogo: Boolean,
     overviewOnClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester,
@@ -673,11 +771,20 @@ fun SeriesDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(
-                series.ui.quickDetails,
-                null,
-                Modifier.padding(start = HeaderUtils.startPadding),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = HeaderUtils.startPadding),
+            ) {
+                QuickDetails(
+                    series.ui.quickDetails,
+                    null,
+                )
+                when (availability) {
+                    SeerrAvailability.AVAILABLE -> AvailableIndicator()
+                    SeerrAvailability.PARTIALLY_AVAILABLE -> PartiallyAvailableIndicator()
+                    else -> Unit
+                }
+            }
             dto.studios?.let {
                 val studios = remember { series.studioNames }
                 GenreText(
