@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -88,19 +89,24 @@ fun UserList(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
-            val focusRequester = remember { FocusRequester() }
-            val firstFocusRequester = remember { FocusRequester() }
-            if (users.isNotEmpty()) {
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+            val listState = rememberLazyListState()
+            val initialFocusRequester = remember { FocusRequester() }
+            val initialIndex =
+                users.indexOfFirst { it.user.id == currentUser?.id }.takeIf { it >= 0 } ?: 0
+            LaunchedEffect(users, currentUser?.id) {
+                if (users.isNotEmpty()) {
+                    listState.scrollToItem(initialIndex)
+                    initialFocusRequester.tryRequestFocus()
+                }
             }
             LazyRow(
+                state = listState,
                 horizontalArrangement = Arrangement.spacedBy(24.dp), // Spacing to accommodate 20% scale
                 contentPadding = PaddingValues(horizontal = 48.dp, vertical = 16.dp), // Increased padding to accommodate 20% scale
                 modifier =
                     Modifier
                         .wrapContentWidth()
-                        .focusRestorer(firstFocusRequester)
-                        .focusRequester(focusRequester),
+                        .focusRestorer(initialFocusRequester),
             ) {
                 itemsIndexed(users) { index, user ->
                     UserIconCard(
@@ -108,7 +114,7 @@ fun UserList(
                         isCurrentUser = user.user.id == currentUser?.id,
                         onClick = { onSwitchUser.invoke(user.user) },
                         onLongClick = { showDeleteDialog = user },
-                        modifier = if (index == 0) Modifier.focusRequester(firstFocusRequester) else Modifier,
+                        modifier = if (index == initialIndex) Modifier.focusRequester(initialFocusRequester) else Modifier,
                     )
                 }
                 // Add User card - always rightmost
