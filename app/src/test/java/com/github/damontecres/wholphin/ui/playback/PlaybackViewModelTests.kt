@@ -216,6 +216,7 @@ class PlaybackViewModelTests {
         coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
             PlayerCreation(mockPlayer)
         every { mockPlayerFactory.setReduceLoudSounds(any()) } returns Unit
+        coEvery { mockPlayerFactory.tryEnableReduceLoudSoundsOnPcm() } returns false
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
 
         coEvery {
@@ -461,6 +462,33 @@ class PlaybackViewModelTests {
                 viewModel.release()
             }
         }
+
+    @Test
+    fun `confirmed PCM promotion preserves player source tracks position and pause without reloading`() = runTest(testDispatcher) {
+        for (playing in listOf(false, true)) {
+            setupForPlaylist()
+            setupPreferences { }
+            coEvery { mockPlayerFactory.tryEnableReduceLoudSoundsOnPcm() } returns true
+            every { mockPlayer.currentPosition } returns 123456L
+            every { mockPlayer.playWhenReady } returns playing
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            val before = viewModel.state.value.currentPlayback
+            io.mockk.clearMocks(mockPlayer, mockMediaInfoApi, answers = false)
+            viewModel.setReduceLoudSounds(true)
+            testScheduler.advanceUntilIdle()
+            Assert.assertSame(mockPlayer, viewModel.currentPlayer.value!!.player)
+            Assert.assertSame(before, viewModel.state.value.currentPlayback)
+            Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
+            verify(exactly = 0) { mockPlayer.release() }
+            verify(exactly = 0) { mockPlayer.stop() }
+            verify(exactly = 0) { mockPlayer.prepare() }
+            verify(exactly = 0) { mockPlayer.setMediaItem(any(), any<Long>()) }
+            verify(exactly = 0) { mockPlayer.seekTo(any<Long>()) }
+            coVerify(exactly = 0) { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) }
+            viewModel.release()
+            io.mockk.clearMocks(mockPlayerFactory, answers = false)
+        }
+    }
 
     @Test
     fun `enabling on an On-created player uses live processing without rebuilding`() = runTest(testDispatcher) {

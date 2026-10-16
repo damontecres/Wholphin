@@ -28,7 +28,9 @@ import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.session.MediaSession
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.mpv.MpvPlayer
+import com.github.damontecres.wholphin.playback.leveling.PlaybackRouteTrace
 import com.github.damontecres.wholphin.playback.leveling.PcmOnlyAudioSink
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingAudioProcessor
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
@@ -49,9 +51,11 @@ import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.lang.reflect.Constructor
@@ -76,15 +80,43 @@ class PlayerFactory
         val reduceLoudSounds = _reduceLoudSounds.asStateFlow()
         @Volatile private var levelingState: VolumeLevelingState? = null
 
+        private var volumeRenderersFactory: WholphinRenderersFactory? = null
+
         fun setReduceLoudSounds(value: Boolean) {
             _reduceLoudSounds.value = value
             levelingState?.mode = value.toLevelingMode()
+        }
+
+        /** Avoid a restart only when the sink proves it is already rendering decoded PCM.
+         * Latch on the playback thread so configuration cannot change between the check and guard.
+         * Never invalidate renderer capabilities here: encoded and tunneled routes still rebuild.
+         */
+        suspend fun tryEnableReduceLoudSoundsOnPcm(): Boolean = withContext(WholphinDispatchers.Main) {
+            val exo = currentPlayer as? ExoPlayer ?: return@withContext false
+            if (exo.isReleased) return@withContext false
+            val sink = volumeRenderersFactory?.volumeSink ?: return@withContext false
+            val result = CompletableDeferred<Boolean>()
+            val message = exo.createMessage { _, _ -> result.complete(sink.enableIfConfiguredPcm()) }.send()
+            val enabled = withTimeoutOrNull(500L) { result.await() } == true
+            if (!enabled || exo !== currentPlayer || exo.isReleased) {
+                message.cancel()
+                return@withContext false
+            }
+            val selector = exo.trackSelector as DefaultTrackSelector
+            selector.parameters = selector.buildUponParameters().setAudioOffloadPreferences(
+                AudioOffloadPreferences.Builder()
+                    .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
+                    .build(),
+            ).build()
+            PlaybackRouteTrace.mark("pcm-promoted")
+            true
         }
 
         suspend fun createVideoPlayer(
             backend: PlayerBackend,
             appPreferences: AppPreferences,
         ): PlayerCreation {
+            volumeRenderersFactory = null
             val prefs = appPreferences.playbackPreferences
             withContext(WholphinDispatchers.Main) {
                 if (currentPlayer?.isReleased == false) {
@@ -141,7 +173,7 @@ class PlayerFactory
                                 preferDolbyVision,
                                 installedProcessor,
                                 levelingPolicy.pcmOnly,
-                            )
+                            ).also { volumeRenderersFactory = it }
                                 .setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
@@ -184,6 +216,7 @@ class PlayerFactory
                             .setTrackSelector(trackSelector)
                             .build()
                             .apply {
+                                if (BuildConfig.DEBUG) addAnalyticsListener(PlaybackRouteTrace())
                                 assHandler?.init(this)
                                 val state = checkNotNull(levelingState)
                                 withContext(WholphinDispatchers.Main) {
@@ -309,6 +342,9 @@ class WholphinRenderersFactory(
     private val volumeProcessor: VolumeLevelingAudioProcessor? = null,
     private val pcmOnly: Boolean = false,
 ) : DefaultRenderersFactory(context) {
+    var volumeSink: PcmOnlyAudioSink? = null
+        private set
+
     public override fun buildAudioSink(
         context: Context,
         enableFloatOutput: Boolean,
@@ -321,7 +357,7 @@ class WholphinRenderersFactory(
             .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
             .setAudioProcessors(arrayOf(processor))
             .build()
-        return if (pcmOnly) PcmOnlyAudioSink(sink) else sink
+        return PcmOnlyAudioSink(sink, pcmOnly).also { volumeSink = it }
     }
 
     @OptIn(ExperimentalApi::class)

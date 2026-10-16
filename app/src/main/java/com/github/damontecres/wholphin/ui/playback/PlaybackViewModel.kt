@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
+import com.github.damontecres.wholphin.playback.leveling.PlaybackRouteTrace
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -173,6 +174,7 @@ class PlaybackViewModel
         val reduceLoudSounds get() = playerFactory.reduceLoudSounds
 
         fun setReduceLoudSounds(value: Boolean) {
+            PlaybackRouteTrace.mark("request enabled=$value")
             playerFactory.setReduceLoudSounds(value)
             preferences = preferences.copy(
                 appPreferences = preferences.appPreferences.updatePlaybackPreferences { reduceLoudSounds = value },
@@ -182,6 +184,7 @@ class PlaybackViewModel
                 // Keep rapid remote-control selections ordered, including their persisted values.
                 previousChange?.join()
                 userPreferencesService.setReduceLoudSounds(value)
+                PlaybackRouteTrace.mark("preference-saved")
                 playbackMutex.withLock {
                     applyReduceLoudSounds()
                 }
@@ -194,6 +197,12 @@ class PlaybackViewModel
                 current.backend != PlayerBackend.EXO_PLAYER || current.levelingPcmOnly
             ) return
             val playback = state.value.currentPlayback ?: return
+            if (playerFactory.tryEnableReduceLoudSoundsOnPcm()) {
+                currentPlayer.update { if (it === current) it.copy(levelingPcmOnly = true) else it }
+                return
+            }
+            if (!preferences.appPreferences.playbackPreferences.reduceLoudSounds) return
+            PlaybackRouteTrace.mark("rebuild-fallback")
             val video = state.value.currentMediaInfo.videoStream
             val position = onMain { player.currentPosition.coerceAtLeast(0) }
             val playWhenReady = onMain { player.playWhenReady }
@@ -316,7 +325,9 @@ class PlaybackViewModel
             if (currentPlayer.value?.backend != playerBackend || currentPlayer.value?.levelingPcmOnly != levelingPolicy.pcmOnly) {
                 Timber.i("Switching player backend to %s", playerBackend)
                 withContext(WholphinDispatchers.Main) {
+                    PlaybackRouteTrace.mark("release-start")
                     disconnectPlayer()
+                    PlaybackRouteTrace.mark("release-end")
                 }
 
                 val playerCreation =
@@ -329,6 +340,7 @@ class PlaybackViewModel
                     PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler, levelingPolicy.pcmOnly)
                 }
                 configurePlayer()
+                PlaybackRouteTrace.mark("player-created")
                 // A later toggle may have arrived while construction suspended. Its choice wins.
                 playerFactory.setReduceLoudSounds(preferences.appPreferences.playbackPreferences.reduceLoudSounds)
                 return true
