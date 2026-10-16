@@ -72,6 +72,8 @@ class DiscoverMovieViewModel
         val state: StateFlow<DiscoverMovieState> = _state
 
         val userConfig = seerrServerRepository.current.map { it?.config }
+        val requestEnabled =
+            seerrServerRepository.current.map { it?.requestMovieEnabled ?: false }
         val request4kEnabled =
             seerrServerRepository.current.map { it?.request4kMovieEnabled ?: false }
 
@@ -191,7 +193,7 @@ class DiscoverMovieViewModel
                     return@launchIO
                 }
                 try {
-                    seerrService.api.requestApi.requestPost(
+                    val postRequest =
                         RequestPostRequest(
                             is4k = request.is4k,
                             mediaId = request.movieId,
@@ -205,8 +207,9 @@ class DiscoverMovieViewModel
                             profileId = request.profileId,
                             rootFolder = request.folder,
                             tags = emptyList(),
-                        ),
-                    )
+                        )
+                    Timber.v("postRequest=%s", postRequest)
+                    seerrService.api.requestApi.requestPost(postRequest)
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
