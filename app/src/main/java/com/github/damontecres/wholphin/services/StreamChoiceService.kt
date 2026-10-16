@@ -731,7 +731,7 @@ sealed interface StreamChoiceReason {
             TrackChoiceParentType.UNKNOWN -> Unknown
         }
 
-        private val USER_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.series) }
+        private val USER_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.user) }
         private val SERIES_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.series) }
         private val SEASON_PROVIDER: StringProvider by lazy { ResStringProvider(R.string.tv_season) }
     }
