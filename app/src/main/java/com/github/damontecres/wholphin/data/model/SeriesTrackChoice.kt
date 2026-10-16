@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.services.isSigns
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -43,7 +44,7 @@ data class SeriesTrackChoice(
     val activation: ActivationFlag = ActivationFlag.ACTIVATED,
     val trackFlags: Int = 0,
     val codec: String? = null,
-    val trackIndex: Int? = null,
+    val relativeTrackIndex: Int? = null,
     val title: String? = null,
     val audioChannels: Int? = null,
 ) {
@@ -53,7 +54,7 @@ data class SeriesTrackChoice(
         parentId: UUID,
         type: SeriesTrackChoiceType,
         parentType: TrackChoiceParentType,
-        stream: MediaStream?,
+        stream: RelativeMediaStream?,
         activation: ActivationFlag,
     ) : this(
         userId = userId,
@@ -63,11 +64,11 @@ data class SeriesTrackChoice(
         itemId = itemId,
         language = stream?.language,
         activation = activation,
-        trackFlags = stream?.let { TrackFlag.calculateTrackFlags(stream) } ?: 0,
-        codec = stream?.codec,
-        trackIndex = stream?.index,
-        title = stream?.title,
-        audioChannels = stream?.channels,
+        trackFlags = stream?.let { TrackFlag.calculateTrackFlags(stream.stream) } ?: 0,
+        codec = stream?.stream?.codec,
+        relativeTrackIndex = stream?.relativeIndex,
+        title = stream?.stream?.title,
+        audioChannels = stream?.stream?.channels,
     )
 
     companion object {
@@ -85,7 +86,7 @@ data class SeriesTrackChoice(
                             activation = if (plc.subtitlesDisabled == true) ActivationFlag.DISABLED else ActivationFlag.ACTIVATED,
                             trackFlags = 0,
                             codec = null,
-                            trackIndex = null,
+                            relativeTrackIndex = null,
                             title = null,
                             audioChannels = null,
                         ),
@@ -103,7 +104,7 @@ data class SeriesTrackChoice(
                             activation = ActivationFlag.ACTIVATED,
                             trackFlags = 0,
                             codec = null,
-                            trackIndex = null,
+                            relativeTrackIndex = null,
                             title = null,
                             audioChannels = null,
                         ),
@@ -113,9 +114,11 @@ data class SeriesTrackChoice(
     }
 }
 
-enum class SeriesTrackChoiceType {
-    AUDIO,
-    SUBTITLE,
+enum class SeriesTrackChoiceType(
+    val mediaStreamType: MediaStreamType,
+) {
+    AUDIO(MediaStreamType.AUDIO),
+    SUBTITLE(MediaStreamType.SUBTITLE),
 }
 
 /**

@@ -1063,7 +1063,7 @@ private fun plc(
                     activation = ActivationFlag.ACTIVATED,
                     trackFlags = 0,
                     codec = null,
-                    trackIndex = null,
+                    relativeTrackIndex = null,
                     title = null,
                     audioChannels = null,
                 )
@@ -1078,7 +1078,7 @@ private fun plc(
                 activation = ActivationFlag.ACTIVATED,
                 trackFlags = 0,
                 codec = null,
-                trackIndex = null,
+                relativeTrackIndex = null,
                 title = null,
                 audioChannels = null,
             ).let(::add)
@@ -1091,7 +1091,7 @@ private fun plc(
                 activation = ActivationFlag.DISABLED,
                 trackFlags = 0,
                 codec = null,
-                trackIndex = null,
+                relativeTrackIndex = null,
                 title = null,
                 audioChannels = null,
             ).let(::add)
@@ -1104,7 +1104,7 @@ private fun plc(
                 activation = ActivationFlag.ONLY_FORCED,
                 trackFlags = 0,
                 codec = null,
-                trackIndex = null,
+                relativeTrackIndex = null,
                 title = null,
                 audioChannels = null,
             ).let(::add)

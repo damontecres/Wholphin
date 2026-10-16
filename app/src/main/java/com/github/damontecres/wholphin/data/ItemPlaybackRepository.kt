@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.data
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.ItemTrackModification
+import com.github.damontecres.wholphin.data.model.RelativeMediaStream
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
@@ -185,7 +186,8 @@ class ItemPlaybackRepository
                 val seriesId = item.data.seriesId
                 if (seriesId != null || item.data.parentId != null) {
                     if (type == MediaStreamType.AUDIO) {
-                        val stream = source.mediaStreams?.first { it.index == trackIndex }
+                        val stream =
+                            RelativeMediaStream.from(trackIndex, source.mediaStreams.orEmpty())
                         if (stream?.language != null) {
                             streamChoiceService.saveSeriesTrackChoice(
                                 item.data,
@@ -205,7 +207,8 @@ class ItemPlaybackRepository
                                 MediaStreamType.SUBTITLE,
                             )
                         } else {
-                            val stream = source.mediaStreams?.firstOrNull { it.index == trackIndex }
+                            val stream =
+                                RelativeMediaStream.from(trackIndex, source.mediaStreams.orEmpty())
                             if (stream?.language != null) {
                                 streamChoiceService.saveSeriesTrackChoice(
                                     item.data,

@@ -5,12 +5,14 @@ import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ActivationFlag
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.RelativeMediaStream
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackChoiceParentType
 import com.github.damontecres.wholphin.data.model.TrackFlag
 import com.github.damontecres.wholphin.data.model.TrackFlag.Companion.has
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.data.model.asRelative
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.UserProfileSettings
@@ -47,7 +49,7 @@ class StreamChoiceService
         suspend fun saveSeriesTrackChoice(
             dto: BaseItemDto,
             type: MediaStreamType,
-            stream: MediaStream?,
+            stream: RelativeMediaStream?,
             activation: ActivationFlag = ActivationFlag.ACTIVATED,
         ) {
             val type =
@@ -613,25 +615,21 @@ fun scoreStreams(
                 return@filter false
             }
             // Filter by type
-            when (choice.type) {
-                SeriesTrackChoiceType.AUDIO -> it.type == MediaStreamType.AUDIO
-                SeriesTrackChoiceType.SUBTITLE -> it.type == MediaStreamType.SUBTITLE
-            }
+            choice.type.mediaStreamType == it.type
         }
     val scored =
         streams
+            .asRelative()
             .map { s ->
                 var score = 0
 
                 // Prefer exact language match over unknown
-                // TODO what if choice.language.isUnknown and the user has a preferred subtitle language?
-                // choice.language is never unknown, it is only saved if specified
                 if (choice.language.equalsLangExact(s.language)) score += 10_000
 
                 if (s.isForced && choice.has(TrackFlag.FORCED)) {
                     score += 1_000
                 }
-                if (choice.has(TrackFlag.SIGNS) && isSigns(s)) {
+                if (choice.has(TrackFlag.SIGNS) && isSigns(s.stream)) {
                     score += 500
                 }
                 if (s.isDefault && choice.has(TrackFlag.DEFAULT)) {
@@ -649,17 +647,16 @@ fun scoreStreams(
                     score += 100
                 }
 
-                // TODO should relative indexes be used instead? eg 2nd _subtitle_ stream
-                if (s.index == choice.trackIndex) {
+                if (s.relativeIndex == choice.relativeTrackIndex) {
                     score += 100
                 }
-                if (s.title == choice.title) {
+                if (s.stream.title == choice.title) {
                     score += 10
                 }
 
-                if (choice.audioChannels != null && s.channels == choice.audioChannels) {
+                if (choice.audioChannels != null && s.stream.channels == choice.audioChannels) {
                     score += 100
-                } else if (choice.audioChannels != null && s.channels.gt(choice.audioChannels)) {
+                } else if (choice.audioChannels != null && s.stream.channels.gt(choice.audioChannels)) {
                     score += 50
                 }
 
@@ -668,7 +665,7 @@ fun scoreStreams(
                     score += 1
                 }
 
-                score to s
+                score to s.stream
             }.sortedByDescending { it.first }
     return scored
 }
