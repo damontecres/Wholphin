@@ -232,7 +232,14 @@ baselineProfile {
     // Write the generated profile to app/src/main/generated/baselineProfiles so it can be committed
     mergeIntoMain = true
     saveInSrc = true
-    dexLayoutOptimization = true
+    // The plugin does not filter startup profiles, which would add all of the AndroidX rules back
+    dexLayoutOptimization = false
+
+    // AndroidX libraries ship their own profiles that AGP merges in, and j$ is desugared code
+    filter {
+        exclude("androidx.**")
+        exclude("j$.**")
+    }
 }
 
 room {

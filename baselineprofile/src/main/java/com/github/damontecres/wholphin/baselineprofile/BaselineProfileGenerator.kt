@@ -28,14 +28,15 @@ class BaselineProfileGenerator {
 
     private val args = InstrumentationRegistry.getArguments()
 
+    private val targetAppId =
+        args.getString("targetAppId")
+            ?: throw IllegalStateException("targetAppId not passed as instrumentation argument")
+
     @Test
     fun generate() {
-        val targetAppId =
-            args.getString("targetAppId")
-                ?: throw IllegalStateException("targetAppId not passed as instrumentation argument")
         rule.collect(
             packageName = targetAppId,
-            includeInStartupProfile = true,
+            includeInStartupProfile = false,
         ) {
             pressHome()
             startActivityAndWait()
