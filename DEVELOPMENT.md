@@ -61,6 +61,12 @@ To profile your own server, pass the credentials as instrumentation arguments (n
 ./gradlew :app:generateBaselineProfile   -Pandroid.testInstrumentationRunnerArguments.wholphin.server=http://192.168.1.2:8096   -Pandroid.testInstrumentationRunnerArguments.wholphin.username=user   -Pandroid.testInstrumentationRunnerArguments.wholphin.password=pass
 ```
 
+To measure the effect of the profile, run the benchmarks in `WholphinBenchmarks`, which compare cold start and navigation frame timings with and without the profile:
+```bash
+./gradlew :baselineprofile:pixel6Api34BenchmarkReleaseAndroidTest   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=macrobenchmark   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,LOW-BATTERY,DEBUGGABLE
+```
+Emulator results are only indicative. For real numbers, run it on a physical TV device and remove `suppressErrors`.
+
 The `Generate baseline profile` GitHub workflow can be run manually to regenerate the profile in CI. It uploads the result as an artifact to commit. Regenerate the profile before releases and after major UI changes.
 
 ## Code organization
