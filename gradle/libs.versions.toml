@@ -15,6 +15,9 @@ appcompat = "1.8.0"
 composeBom = "2026.09.00"
 mockk = "1.14.11"
 profileinstaller = "1.4.1"
+baselineprofile = "1.5.0"
+benchmarkMacroJunit4 = "1.5.0"
+uiautomator = "2.3.0"
 robolectric = "4.17"
 multiplatformMarkdownRenderer = "0.45.0"
 okhttpBom = "5.5.0"
@@ -146,6 +149,8 @@ androidx-room-testing = { group = "androidx.room", name = "room-testing", versio
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 
 ass-media = { group = "io.github.peerless2012", name = "ass-media", version.ref = "libass-android" }
@@ -166,3 +171,5 @@ room = { id = "androidx.room", version.ref = "room" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-test = { id = "com.android.test", version.ref = "agp" }
+androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
