@@ -122,6 +122,10 @@ sealed interface PlaybackAction {
     data object Previous : PlaybackAction
 
     data object Next : PlaybackAction
+
+    data class ChangeBitrate(
+        val maxBitrate: Long,
+    ) : PlaybackAction
 }
 
 /**
