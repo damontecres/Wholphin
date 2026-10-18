@@ -148,9 +148,9 @@ fun createDeviceProfile(
         videoCodec(Codec.Video.H264)
 
         if (preferAc3ForSurround) {
-            audioCodec(Codec.Audio.AC3)
-        } else {
             audioCodec(*allowedAudioCodecs)
+        } else {
+            audioCodec(Codec.Audio.AC3)
         }
 
         copyTimestamps = false
