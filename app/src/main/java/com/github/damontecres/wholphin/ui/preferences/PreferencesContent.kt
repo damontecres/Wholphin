@@ -736,7 +736,7 @@ fun PreferencesContent(
                     DataLoadingState.Pending,
                     DataLoadingState.Loading,
                     -> {
-                        LoadingPage()
+                        LoadingPage(focusEnabled = false)
                     }
 
                     is DataLoadingState.Success -> {

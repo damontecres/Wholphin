@@ -175,7 +175,15 @@ fun AddSeerrServerUsername(
         val focusRequester = remember { FocusRequester() }
         val usernameFocusRequester = remember { FocusRequester() }
         val passwordFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        LaunchedEffect(Unit) {
+            val focusRequester =
+                when {
+                    url.isNotNullOrBlank() && username.isNotNullOrBlank() -> passwordFocusRequester
+                    url.isNotNullOrBlank() -> usernameFocusRequester
+                    else -> focusRequester
+                }
+            focusRequester.tryRequestFocus()
+        }
         Text(
             text = stringResource(R.string.username_or_password),
             style = MaterialTheme.typography.titleMedium,
