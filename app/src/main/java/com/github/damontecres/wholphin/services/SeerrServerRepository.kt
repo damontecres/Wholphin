@@ -205,11 +205,15 @@ data class CurrentSeerr(
     val config: SeerrUserConfig,
     val serverConfig: PublicSettings,
 ) {
+    val requestMovieEnabled: Boolean
+        get() = config.hasPermission(SeerrPermission.REQUEST_MOVIE)
     val request4kMovieEnabled: Boolean
         get() =
             (serverConfig.movie4kEnabled ?: false) &&
                 config.hasPermission(SeerrPermission.REQUEST_4K_MOVIE)
 
+    val requestTvEnabled: Boolean
+        get() = config.hasPermission(SeerrPermission.REQUEST_TV)
     val request4kTvEnabled: Boolean
         get() =
             (serverConfig.series4kEnabled ?: false) &&
