@@ -46,11 +46,14 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.SeerrServer
+import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
+import com.github.damontecres.wholphin.preferences.HdrFormatPreferences
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
@@ -61,6 +64,7 @@ import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.services.CurrentSeerr
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -155,6 +159,7 @@ fun PreferencesContent(
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
             PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
             PreferenceScreenOption.EXPERIMENTAL -> experimentalPreferences
+            PreferenceScreenOption.HDR_FORMATS -> HdrFormatPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -165,6 +170,7 @@ fun PreferencesContent(
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
             PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
             PreferenceScreenOption.EXPERIMENTAL -> R.string.experimental_settings
+            PreferenceScreenOption.HDR_FORMATS -> R.string.hdr_formats
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -226,6 +232,8 @@ fun PreferencesContent(
             ) {
                 if (showUpdate) {
                     item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused = interactionSource.collectIsFocusedAsState().value
                         val updateFocusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) {
                             if (focusedIndex.first == 0 && focusedIndex.second == 0) {
@@ -240,11 +248,20 @@ fun PreferencesContent(
                                 viewModel.navigationManager.navigateTo(Destination.UpdateApp)
                             },
                             summary = release?.version?.toString(),
+                            interactionSource = interactionSource,
                             modifier =
                                 Modifier
                                     .focusRequester(updateFocusRequester)
                                     .focusRequester(firstFocusRequester)
-                                    .playSoundOnFocus(movementSounds),
+                                    .playSoundOnFocus(movementSounds)
+                                    .lazyListWrapScrolling(
+                                        state = state,
+                                        focused = focused,
+                                        isFirst = true,
+                                        isLast = false,
+                                        firstFocusRequester = firstFocusRequester,
+                                        lastFocusRequester = lastFocusRequester,
+                                    ),
                         )
                     }
                 }
@@ -464,7 +481,8 @@ fun PreferencesContent(
                                                 when (val conn = seerrConnection) {
                                                     is SeerrConnectionStatus.Error -> {
                                                         SeerrDialogMode.Error(
-                                                            conn.server.url,
+                                                            conn.server,
+                                                            conn.user,
                                                             conn.ex,
                                                         )
                                                     }
@@ -475,7 +493,7 @@ fun PreferencesContent(
 
                                                     is SeerrConnectionStatus.Success -> {
                                                         SeerrDialogMode.Remove(
-                                                            conn.current.server.url,
+                                                            conn.current,
                                                         )
                                                     }
                                                 }
@@ -687,14 +705,16 @@ fun PreferencesContent(
         }
         when (val mode = seerrDialogMode) {
             is SeerrDialogMode.Remove -> {
+                val body = rememberSeerrDialogBody(mode.current.user, mode.current.server)
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = mode.serverUrl,
+                    body = body,
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
                         seerrDialogMode = SeerrDialogMode.None
                     },
+                    elevation = 3.dp,
                 )
             }
 
@@ -744,15 +764,7 @@ fun PreferencesContent(
             }
 
             is SeerrDialogMode.Error -> {
-                val errorStr = stringResource(R.string.voice_error_server)
-                val body =
-                    remember(mode) {
-                        """
-                        ${mode.serverUrl}
-
-                        $errorStr: ${mode.ex.localizedMessage}
-                        """.trimIndent()
-                    }
+                val body = rememberSeerrDialogBody(mode.user, mode.server, mode.ex)
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
                     body = body,
@@ -762,6 +774,7 @@ fun PreferencesContent(
                         seerrDialogMode = SeerrDialogMode.None
                     },
                     bodyColor = MaterialTheme.colorScheme.error,
+                    elevation = 3.dp,
                 )
             }
 
@@ -850,6 +863,7 @@ fun PreferencesPage(
             PreferenceScreenOption.SCREENSAVER,
             PreferenceScreenOption.SKIP_SEGMENTS,
             PreferenceScreenOption.EXPERIMENTAL,
+            PreferenceScreenOption.HDR_FORMATS,
             -> {
                 PreferencesContent(
                     initialPreferences,
@@ -876,11 +890,12 @@ private sealed interface SeerrDialogMode {
     data object Add : SeerrDialogMode
 
     data class Remove(
-        val serverUrl: String,
+        val current: CurrentSeerr,
     ) : SeerrDialogMode
 
     data class Error(
-        val serverUrl: String,
+        val server: SeerrServer,
+        val user: SeerrUser,
         val ex: Exception,
     ) : SeerrDialogMode
 }

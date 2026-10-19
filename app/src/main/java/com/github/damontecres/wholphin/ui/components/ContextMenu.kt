@@ -66,6 +66,7 @@ sealed interface ContextMenu {
         val canRemoveFromQueue: Boolean,
         val actions: MusicContextActions,
         val showRemoveFromPlaylist: Boolean = false,
+        val showGoTo: Boolean = false,
     ) : ContextMenu
 
     data class ForQueue(
@@ -208,7 +209,12 @@ fun ContextMenu(
                 favorite = item.favorite,
                 seriesId = item.data.seriesId,
                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
-                canClearChosenStreams = chosenStreams.let { it?.itemPlayback != null || it?.plc != null },
+                canClearChosenStreams =
+                    chosenStreams.let {
+                        it?.itemPlayback != null ||
+                            it?.audioStc?.isNotEmpty() == true ||
+                            it?.subtitleStc?.isNotEmpty() == true
+                    },
                 contextMenu = contextMenu,
                 actions = actions,
                 onChooseVersion = {
@@ -234,11 +240,11 @@ fun ContextMenu(
                                     resources = resources,
                                     streams = source.mediaStreams.orEmpty(),
                                     type = type,
-                                    currentIndex =
+                                    streamChoice =
                                         if (type == MediaStreamType.AUDIO) {
-                                            chosenStreams?.audioStream?.index
+                                            chosenStreams?.audioStream
                                         } else {
-                                            chosenStreams?.subtitleStream?.index
+                                            chosenStreams?.subtitleStream
                                         },
                                     onClick = { trackIndex ->
                                         actions.onChooseTracks.invoke(
@@ -758,6 +764,18 @@ fun buildContextForMusic(
     buildList {
         val item = music.item
         val index = music.index
+        // Songs should not show Go to
+        if (music.showGoTo && item.type != BaseItemKind.AUDIO) {
+            add(
+                DialogItem(
+                    resources.getString(R.string.go_to),
+                    Icons.Default.ArrowForward,
+                    dismissOnClick = true,
+                ) {
+                    actions.navigateTo(item.destination())
+                },
+            )
+        }
         add(
             DialogItem(
                 resources.getString(R.string.play),

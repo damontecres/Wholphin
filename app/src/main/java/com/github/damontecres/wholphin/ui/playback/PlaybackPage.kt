@@ -269,6 +269,8 @@ fun PlaybackPageContent(
                 },
                 onDpadSeek = onDpadSeek,
                 dpadSeekMode = prefs.dpadSeekMode,
+                onSeekToNext = viewModel::playNextUp,
+                onPSeekToPrevious = viewModel::playPrevious,
             )
         }
 

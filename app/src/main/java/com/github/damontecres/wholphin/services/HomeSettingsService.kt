@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -139,9 +140,8 @@ class HomeSettingsService
 
         /**
          * Decodes [HomePageSettings] from a [JsonElement] skipping any unknown/unparsable rows
-         *
-         * This is public only for testing
          */
+        @VisibleForTesting
         fun decode(element: JsonElement): HomePageSettings {
             val version = element.jsonObject["version"]?.jsonPrimitive?.intOrNull
             if (version == null || version > SUPPORTED_HOME_PAGE_SETTINGS_VERSION) {
@@ -559,6 +559,14 @@ class HomeSettingsService
                     HomeRowConfigDisplay(
                         id = id,
                         title = title,
+                        config,
+                    )
+                }
+
+                is HomeRowConfig.CustomEndpoint -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = StringStringProvider(config.title),
                         config,
                     )
                 }

@@ -568,6 +568,7 @@ fun ArtistDetailsPage(
                                                 ),
                                             canRemoveFromQueue = false,
                                             actions = moreDialogActions,
+                                            showGoTo = true,
                                         )
                                 },
                                 cardContent = { index: Int, album: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
@@ -606,6 +607,7 @@ fun ArtistDetailsPage(
                                                 ),
                                             canRemoveFromQueue = false,
                                             actions = moreDialogActions,
+                                            showGoTo = true,
                                         )
                                 },
                                 cardContent = { index: Int, album: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
@@ -704,6 +706,7 @@ fun ArtistDetailsPage(
                                                 ),
                                             canRemoveFromQueue = false,
                                             actions = moreDialogActions,
+                                            showGoTo = true,
                                         )
                                 },
                                 cardContent = { index: Int, item: BaseItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
