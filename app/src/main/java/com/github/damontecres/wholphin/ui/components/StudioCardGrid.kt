@@ -97,6 +97,7 @@ class StudioViewModel
                                         itemId = it.id,
                                         imageType = ImageType.THUMB,
                                         fillWidth = cardWidthPx,
+                                        tag = it.imageTags?.get(ImageType.THUMB),
                                     )
                                 Studio(
                                     id = it.id,
