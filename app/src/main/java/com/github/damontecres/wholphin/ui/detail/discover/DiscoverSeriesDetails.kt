@@ -56,8 +56,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
-import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
-import com.github.damontecres.wholphin.ui.components.WatchProvidersRow
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.formatDuration
@@ -113,7 +111,6 @@ fun DiscoverSeriesDetails(
             DiscoverSeriesDetailsContent(
                 preferences = preferences,
                 series = item,
-                watchProviders = state.watchProviders,
                 availability = state.availability,
                 userConfig = userConfig,
                 rating = state.rating,
@@ -139,6 +136,7 @@ fun DiscoverSeriesDetails(
                             overview = item.overview,
                             genres = item.genres?.mapNotNull { it.name }.orEmpty(),
                             files = listOf(),
+                            watchProviders = state.watchProviders,
                         )
                 },
                 trailerOnClick = {
@@ -216,7 +214,6 @@ fun DiscoverSeriesDetailsContent(
     preferences: UserPreferences,
     userConfig: SeerrUserConfig?,
     series: TvDetails,
-    watchProviders: List<WatchProviderDisplay>,
     availability: SeerrAvailability,
     rating: DiscoverRating?,
     canCancel: Boolean,
@@ -272,7 +269,6 @@ fun DiscoverSeriesDetailsContent(
                     ) {
                         DiscoverSeriesDetailsHeader(
                             series = series,
-                            watchProviders = watchProviders,
                             rating = rating,
                             overviewOnClick = overviewOnClick,
                             showLogo = preferences.appPreferences.interfacePreferences.showLogos,
@@ -428,7 +424,6 @@ fun DiscoverSeriesDetailsContent(
 @Composable
 fun DiscoverSeriesDetailsHeader(
     series: TvDetails,
-    watchProviders: List<WatchProviderDisplay>,
     rating: DiscoverRating?,
     overviewOnClick: () -> Unit,
     showLogo: Boolean,
@@ -491,10 +486,6 @@ fun DiscoverSeriesDetailsHeader(
                     textBoxHeight = Dp.Unspecified,
                 )
             }
-            WatchProvidersRow(
-                providers = watchProviders,
-                modifier = Modifier.padding(start = HeaderUtils.startPadding),
-            )
         }
     }
 }
