@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.ContextMenu
@@ -136,6 +137,7 @@ fun EpisodeDetails(
                 preferences = preferences,
                 ep = ep,
                 chosenStreams = state.chosenStreams,
+                externalRatings = state.externalRatings,
                 playOnClick = {
                     viewModel.navigateTo(
                         Destination.Playback(
@@ -220,6 +222,7 @@ fun EpisodeDetailsContent(
     preferences: UserPreferences,
     ep: BaseItem,
     chosenStreams: ChosenStreams?,
+    externalRatings: List<ExternalRating>,
     playOnClick: (Duration) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -257,6 +260,7 @@ fun EpisodeDetailsContent(
                         preferences = preferences,
                         ep = ep,
                         chosenStreams = chosenStreams,
+                        externalRatings = externalRatings,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         modifier =

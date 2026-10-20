@@ -586,7 +586,10 @@ sealed interface AppPreference<Pref, T> {
             AppMultiChoicePreference<AppPreferences, DisplayToggle>(
                 title = R.string.display_toggles_title,
                 summary = R.string.display_toggles_summary,
-                defaultValue = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
+                defaultValue =
+                    DisplayToggle.entries.filterNot {
+                        it == DisplayToggle.UNRECOGNIZED || it == DisplayToggle.MDBLIST_RATINGS
+                    },
                 allValues = DisplayToggle.entries.filterNot { it == DisplayToggle.UNRECOGNIZED },
                 displayValues = R.array.display_toggle_types,
                 displayValuesSubtitles = R.array.display_toggle_types_subtitles,

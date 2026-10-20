@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.studioNames
@@ -191,6 +192,7 @@ fun SeriesDetails(
                 extras = state.extras,
                 people = state.people,
                 similar = state.similar,
+                externalRatings = state.externalRatings,
                 played = played,
                 favorite = series.data.userData?.isFavorite ?: false,
                 canDelete = state.canDeleteSeries,
@@ -326,6 +328,7 @@ fun SeriesDetailsContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     similar: List<BaseItem>,
+    externalRatings: List<ExternalRating>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
     people: List<Person>,
@@ -374,6 +377,7 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        externalRatings = externalRatings,
                         showLogo = preferences.appPreferences.interfacePreferences.showLogos,
                         overviewOnClick = overviewOnClick,
                         bringIntoViewRequester = bringIntoViewRequester,
@@ -650,6 +654,7 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    externalRatings: List<ExternalRating>,
     showLogo: Boolean,
     overviewOnClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester,
@@ -677,6 +682,7 @@ fun SeriesDetailsHeader(
                 series.ui.quickDetails,
                 null,
                 Modifier.padding(start = HeaderUtils.startPadding),
+                externalRatings = externalRatings,
             )
             dto.studios?.let {
                 val studios = remember { series.studioNames }
