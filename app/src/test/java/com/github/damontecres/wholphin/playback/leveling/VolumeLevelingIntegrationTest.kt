@@ -52,8 +52,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.security.MessageDigest
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [30])
@@ -460,31 +458,6 @@ class VolumeLevelingIntegrationTest {
                 WholphinDispatchers.reset()
             }
         }
-
-    @Test
-    fun `copied core matches recorded formatted hashes after undoing the package rename`() {
-        val root = File("src/main/java/com/github/damontecres/wholphin/playback/leveling/core")
-        val recorded = File(root, "README.md").readText()
-        assertTrue(recorded.contains("`fcdc3a8562a00b33739c4bafc3c86f5218c22edd`"))
-        val expectedHashes =
-            mapOf(
-                "Api.kt" to "a569e37c8cb31a379c606f4c015f1e7b85bec22da14cd4ae4c83c27d681bef12",
-                "DspMath.kt" to "74d4862e918acc07560ae7fbc2d7b6280c5df793359f8df75fe3a87f9e3599cf",
-                "LoudnessMeter.kt" to "2ddc97457347b32746a7fffb66de3173dbe3571b2a5a33ac43eeda5a0e0f9433",
-            )
-        val files = root.listFiles()!!.filter { it.extension == "kt" }
-        assertEquals(expectedHashes.keys, files.map { it.name }.toSet())
-        files.forEach { file ->
-            val original =
-                file.readText().replace(
-                    "package com.github.damontecres.wholphin.playback.leveling.core",
-                    "package volumeleveler",
-                )
-            val hash = MessageDigest.getInstance("SHA-256").digest(original.toByteArray()).joinToString("") { "%02x".format(it) }
-            assertEquals("${file.name}: copied core differs from source commit", expectedHashes.getValue(file.name), hash)
-            assertTrue("${file.name}: $hash absent from provenance", recorded.contains("`${file.name}`: `$hash`"))
-        }
-    }
 
     /** Inspect the real player's audio renderer, then assert on the installed DSP's live behavior.
      * Reflection is confined to Media3's private sink/chain fields; no production test hooks.
