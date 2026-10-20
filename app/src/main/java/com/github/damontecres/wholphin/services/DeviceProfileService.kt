@@ -4,8 +4,10 @@ import android.content.Context
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
+import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.PlaybackOverrides
 import com.github.damontecres.wholphin.preferences.enabled
+import com.github.damontecres.wholphin.preferences.getHdrRangeTypesFor
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -61,9 +63,12 @@ class DeviceProfileService
                                 downMixAudio = newConfig.overrides.downmixStereo,
                                 assDirectPlay = newConfig.overrides.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.overrides.directPlayPgs,
-                                dolbyVisionELDirectPlay = newConfig.overrides.directPlayDolbyVisionEL,
                                 decodeAv1 = prefs.overrides.decodeAv1,
                                 preferAc3ForSurround = appPrefs.experimentalPreferences.enabled { preferAc3Surround },
+                                forceEnabledHdr =
+                                    appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_ENABLE, newConfig.jellyfinTenEleven),
+                                forceDisabledHdr =
+                                    appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, newConfig.jellyfinTenEleven),
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                                 maxResolution = newConfig.overrides.maxResolution,
                             )

@@ -54,10 +54,15 @@ message PlaybackOverrides{
   bool direct_play_ass = 3 [deprecated = true];
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
-  bool direct_play_dolby_vision_e_l = 6;
+  bool direct_play_dolby_vision_e_l = 6 [deprecated = true];
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
   int32 max_resolution = 9;
+  HdrOverrideMode dovi_profile_5_override = 10;
+  HdrOverrideMode dovi_profile_7_override = 11;
+  HdrOverrideMode dovi_profile_8_override = 12;
+  HdrOverrideMode hdr10_override = 13;
+  HdrOverrideMode hdr10_plus_override = 14;
 }
 
 message PlaybackPreferences {
@@ -231,6 +236,12 @@ message MusicPreferences {
   bool show_backdrop = 4;
 }
 
+enum HdrOverrideMode{
+  HDR_OVERRIDE_AUTO = 0;
+  HDR_OVERRIDE_ENABLE = 1;
+  HDR_OVERRIDE_DISABLE = 2;
+}
+
 message ExperimentalPreferences {
   bool enabled = 1;
   bool video_tunneling_enabled = 2;
@@ -240,9 +251,8 @@ message ExperimentalPreferences {
 }
 
 message AppPreferences {
-  // The currently signed in server and user IDs, mostly for restoring a session
-  string current_server_id = 1;
-  string current_user_id = 2;
+  string current_server_id = 1 [deprecated = true];
+  string current_user_id = 2 [deprecated = true];
 
   PlaybackPreferences playback_preferences = 3;
   HomePagePreferences home_page_preferences = 4;

@@ -257,6 +257,7 @@ fun PersonPage(
                     imageUrlService.getItemImageUrl(
                         itemId = person.id,
                         imageType = ImageType.PRIMARY,
+                        tag = person.data.imageTags?.get(ImageType.PRIMARY),
                     )
                 }
             // A long filmography is hard to navigate as a row, so it is cut at the same

@@ -235,7 +235,7 @@ fun SeriesOverviewContent(
                             contentPadding = PaddingValues(start = FluidLayout.rowStart(16.dp), end = 16.dp),
                             modifier =
                                 Modifier
-                                    .focusRestorer(firstItemFocusRequester)
+                                    .focusRestorer(episodeRowFocusRequester)
 //                                    .focusRequester(episodeRowFocusRequester)
                                     .onFocusChanged {
                                         cardRowHasFocus = it.hasFocus
