@@ -73,6 +73,10 @@ class DiscoverSeriesViewModel
         val state: StateFlow<DiscoverSeriesState> = _state
 
         val userConfig = seerrServerRepository.current.map { it?.config }
+        val requestEnabled =
+            seerrServerRepository.current
+                .map { it?.requestTvEnabled ?: false }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
         val request4kEnabled =
             seerrServerRepository.current
                 .map { it?.request4kTvEnabled ?: false }
@@ -120,7 +124,7 @@ class DiscoverSeriesViewModel
                     backdropService.submit(discoveredItem)
 
                     updateSeasonStatus(tv)
-                    updateCanCancel()
+                    updateAvailability()
 
                     viewModelScope.launchIO {
                         val rating =
@@ -200,6 +204,7 @@ class DiscoverSeriesViewModel
             tv: TvDetails,
             is4k: Boolean,
         ) {
+            Timber.v("updateSeasonStatus: id=%s, is4k=%s", tv.id, is4k)
             val currentUserId = seerrServerRepository.currentUserId.first()
             val seasonStatus = mutableMapOf<Int, RequestStatus>()
             val seasonAvailability = mutableMapOf<Int, SeerrAvailability>()
@@ -240,7 +245,10 @@ class DiscoverSeriesViewModel
                                 seasonStatus[season.seasonNumber] = new
                             }
                             editable[season.seasonNumber] =
-                                currentUserId == req.requestedBy?.id && req.status == RequestStatus.PENDING.status
+                                currentUserId == req.requestedBy?.id && (
+                                    req.status == RequestStatus.PENDING.status ||
+                                        req.status == RequestStatus.DECLINED.status
+                                )
                         }
                     }
                 }
@@ -309,7 +317,7 @@ class DiscoverSeriesViewModel
             }
         }
 
-        private suspend fun updateCanCancel() {
+        private suspend fun updateAvailability() {
             val user = userConfig.firstOrNull()
             val canCancel =
                 canUserCancelRequest(
@@ -318,7 +326,32 @@ class DiscoverSeriesViewModel
                         ?.mediaInfo
                         ?.requests,
                 )
-            _state.update { it.copy(canCancelRequest = canCancel) }
+            val status =
+                state.value.tvSeries.successValue?.let { tv ->
+                    val overallStatus = SeerrAvailability.from(tv.mediaInfo?.status)
+                    if (overallStatus == SeerrAvailability.UNKNOWN) {
+                        val userRequests =
+                            tv.mediaInfo
+                                ?.requests
+                                ?.filter { it.requestedBy?.id == user?.id }
+                                .orEmpty()
+                        if (userRequests.any { RequestStatus.from(it.status) == RequestStatus.PENDING }) {
+                            SeerrAvailability.PENDING
+                        } else if (userRequests.any { RequestStatus.from(it.status) == RequestStatus.APPROVED }) {
+                            SeerrAvailability.PROCESSING
+                        } else {
+                            SeerrAvailability.UNKNOWN
+                        }
+                    } else {
+                        overallStatus
+                    }
+                }
+            _state.update {
+                it.copy(
+                    canCancelRequest = canCancel,
+                    availability = status ?: SeerrAvailability.UNKNOWN,
+                )
+            }
         }
 
         fun requestOnClick() {
@@ -401,7 +434,7 @@ class DiscoverSeriesViewModel
 
                     fetchAndSetItem().await()?.let {
                         updateSeasonStatus(it)
-                        updateCanCancel()
+                        updateAvailability()
                     }
                 }
             }
@@ -422,7 +455,7 @@ class DiscoverSeriesViewModel
 
                     fetchAndSetItem().await()?.let {
                         updateSeasonStatus(it)
-                        updateCanCancel()
+                        updateAvailability()
                     }
                 }
             }
@@ -442,4 +475,5 @@ data class DiscoverSeriesState(
     val canCancelRequest: Boolean = false,
     val profileLoading: LoadingState = LoadingState.Pending,
     val requestData: SeerrRequestData = SeerrRequestData(),
+    val availability: SeerrAvailability = SeerrAvailability.UNKNOWN,
 )

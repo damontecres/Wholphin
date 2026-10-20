@@ -42,9 +42,8 @@ import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
-import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.data.model.canRequestMovies
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
@@ -85,13 +84,11 @@ fun DiscoverMovieDetails(
     }
     val state by viewModel.state.collectAsState()
     val userConfig by viewModel.userConfig.collectAsState(null)
+    val requestEnabled by viewModel.requestEnabled.collectAsState(false)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showRequestDialog by remember { mutableStateOf(false) }
-
-    val requestStr = stringResource(R.string.request)
-    val request4kStr = stringResource(R.string.request_4k)
 
     when (val st = state.movie) {
         is DataLoadingState.Error -> {
@@ -155,6 +152,7 @@ fun DiscoverMovieDetails(
                 RequestMovieDialog(
                     loading = state.profileLoading,
                     data = state.requestData,
+                    requestEnabled = requestEnabled,
                     request4kEnabled = request4kEnabled,
                     movie = movie,
                     onSubmit = {
@@ -257,7 +255,7 @@ fun DiscoverMovieDetailsContent(
                                 }
                             }
                         },
-                        canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                        canRequest = userConfig.canRequestMovies,
                         canCancel = canCancel,
                         trailers = trailers,
                         trailerOnClick = trailerOnClick,

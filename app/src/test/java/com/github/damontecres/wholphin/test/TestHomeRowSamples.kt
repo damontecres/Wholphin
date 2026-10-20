@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.test
 
+import com.github.damontecres.wholphin.data.model.HomeGetItemsFilter
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.KeyValueEntry
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.ui.AspectRatio
@@ -13,7 +15,6 @@ import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.junit.Assert
 import org.junit.Test
 import kotlin.reflect.KClass
@@ -61,8 +62,8 @@ class TestHomeRowSamples {
                 ),
                 HomeRowConfig.GetItems(
                     name = "Episodes by date created",
-                    getItems =
-                        GetItemsRequest(
+                    filter =
+                        HomeGetItemsFilter(
                             parentId = UUID.randomUUID(),
                             recursive = true,
                             isFavorite = true,
@@ -77,6 +78,12 @@ class TestHomeRowSamples {
                 HomeRowConfig.TvPrograms(),
                 HomeRowConfig.TvChannels(),
                 HomeRowConfig.Suggestions(parentId = UUID.randomUUID()),
+                HomeRowConfig.CustomEndpoint(
+                    endpoint = "/path/to/items",
+                    title = "Items",
+                    query = listOf(KeyValueEntry("key", "value")),
+                    headers = listOf(KeyValueEntry("X-Header", "1234")),
+                ),
             )
     }
 
@@ -100,6 +107,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
                 is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
                 is HomeRowConfig.Studios -> foundTypes.add(it::class)
+                is HomeRowConfig.CustomEndpoint -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
@@ -126,12 +134,10 @@ class TestHomeRowSamples {
                 context = mockk(),
                 api = mockk(),
                 serverRepository = mockk(),
-                userPreferencesService = mockk(),
                 navDrawerService = mockk(),
-                latestNextUpService = mockk(),
-                imageUrlService = mockk(),
-                suggestionService = mockk(),
                 displayPreferencesService = mockk(),
+                serverPluginApi = mockk(),
+                serverDao = mockk(),
             )
 
         val str = """{
@@ -149,7 +155,7 @@ class TestHomeRowSamples {
             ]
         }"""
 
-        val jsonElement = service.jsonParser.parseToJsonElement(str)
+        val jsonElement = HomeSettingsService.jsonParser.parseToJsonElement(str)
         val settings = service.decode(jsonElement)
         Assert.assertEquals(1, settings.rows.size)
     }
