@@ -7,6 +7,7 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import androidx.media3.common.audio.AudioProcessor.StreamMetadata
 import androidx.media3.common.audio.AudioProcessor.UnhandledAudioFormatException
 import androidx.media3.common.audio.BaseAudioProcessor
+import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.playback.leveling.core.LevelingMode
 import com.github.damontecres.wholphin.playback.leveling.core.VolumeLeveler
 import java.nio.ByteBuffer
@@ -15,7 +16,9 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.roundToInt
 
 /** UI writes mode/epoch only; the playback thread exclusively owns the DSP and buffers. */
-class VolumeLevelingState(initialMode: LevelingMode = LevelingMode.OFF) {
+class VolumeLevelingState(
+    initialMode: LevelingMode = LevelingMode.OFF,
+) {
     @Volatile
     var mode: LevelingMode = initialMode
 
@@ -31,7 +34,9 @@ class VolumeLevelingState(initialMode: LevelingMode = LevelingMode.OFF) {
  * Scratch and direct output storage are allocated only on flush/format change. Large decoder buffers
  * are consumed in bounded chunks; Media3 calls queueInput again after consuming getOutput().
  */
-class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioProcessor() {
+class VolumeLevelingAudioProcessor(
+    val state: VolumeLevelingState,
+) : BaseAudioProcessor() {
     private var core: VolumeLeveler? = null
     private var format = AudioFormat.NOT_SET
     private var samples = FloatArray(0)
@@ -44,8 +49,10 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
 
     override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat {
         if (
-            inputAudioFormat.encoding != C.ENCODING_PCM_16BIT &&
-            inputAudioFormat.encoding != C.ENCODING_PCM_FLOAT ||
+            (
+                inputAudioFormat.encoding != C.ENCODING_PCM_16BIT &&
+                    inputAudioFormat.encoding != C.ENCODING_PCM_FLOAT
+            ) ||
             inputAudioFormat.sampleRate !in 8000..384000 ||
             inputAudioFormat.channelCount !in 1..32
         ) {
@@ -62,6 +69,12 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
             core?.reset()
             format = inputAudioFormat
             core = VolumeLeveler(format.sampleRate, format.channelCount)
+            if (BuildConfig.DEBUG) {
+                PlaybackRouteTrace.mark(
+                    "processor-format rate=${format.sampleRate} channels=${format.channelCount} encoding=${format.encoding} mode=${state.mode}",
+                )
+                PlaybackRouteTrace.mark("processor-reset cause=format estimateLufs=${core!!.levelEstimateLufs}")
+            }
             val frames = maxOf(CHUNK_FRAMES, core!!.latencyFrames)
             samples = FloatArray(frames * format.channelCount)
             processed = FloatArray(samples.size)
@@ -70,7 +83,14 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
             core!!.flush()
         }
         val newEpoch = state.mediaEpoch.get()
-        if (epoch != newEpoch) core!!.reset()
+        if (epoch != newEpoch) {
+            core!!.reset()
+            if (BuildConfig.DEBUG) {
+                PlaybackRouteTrace.mark(
+                    "processor-reset cause=item-flush epoch=$newEpoch estimateLufs=${core!!.levelEstimateLufs}",
+                )
+            }
+        }
         epoch = newEpoch
         holdback = core!!.latencyFrames
         pendingFrames = 0
@@ -92,6 +112,11 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
             // before resetting its estimate, then hold back the new item's priming frames.
             drain(output)
             dsp.reset()
+            if (BuildConfig.DEBUG) {
+                PlaybackRouteTrace.mark(
+                    "processor-reset cause=item-buffer epoch=$newEpoch estimateLufs=${dsp.levelEstimateLufs}",
+                )
+            }
             holdback = dsp.latencyFrames
             pendingFrames = 0
             epoch = newEpoch
@@ -108,14 +133,19 @@ class VolumeLevelingAudioProcessor(val state: VolumeLevelingState) : BaseAudioPr
                 samples[i++] = inputBuffer.float
             }
         }
-        dsp.mode = state.mode
+        val mode = state.mode
+        if (BuildConfig.DEBUG && dsp.mode != mode) PlaybackRouteTrace.mark("processor-mode=$mode frames=$frames epoch=$epoch")
+        dsp.mode = mode
         dsp.process(samples, 0, processed, 0, frames)
         val written = emit(output, frames)
         pendingFrames += frames - written
         output.flip()
     }
 
-    private fun emit(output: ByteBuffer, frames: Int): Int {
+    private fun emit(
+        output: ByteBuffer,
+        frames: Int,
+    ): Int {
         val skipped = minOf(holdback, frames)
         holdback -= skipped
         var i = skipped * format.channelCount

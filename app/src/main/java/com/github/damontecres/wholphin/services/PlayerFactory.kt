@@ -30,8 +30,8 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.mpv.MpvPlayer
-import com.github.damontecres.wholphin.playback.leveling.PlaybackRouteTrace
 import com.github.damontecres.wholphin.playback.leveling.PcmOnlyAudioSink
+import com.github.damontecres.wholphin.playback.leveling.PlaybackRouteTrace
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingAudioProcessor
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
 import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingState
@@ -78,6 +78,7 @@ class PlayerFactory
 
         private val _reduceLoudSounds = MutableStateFlow(false)
         val reduceLoudSounds = _reduceLoudSounds.asStateFlow()
+
         @Volatile private var levelingState: VolumeLevelingState? = null
 
         private var volumeRenderersFactory: WholphinRenderersFactory? = null
@@ -91,26 +92,31 @@ class PlayerFactory
          * Latch on the playback thread so configuration cannot change between the check and guard.
          * Never invalidate renderer capabilities here: encoded and tunneled routes still rebuild.
          */
-        suspend fun tryEnableReduceLoudSoundsOnPcm(): Boolean = withContext(WholphinDispatchers.Main) {
-            val exo = currentPlayer as? ExoPlayer ?: return@withContext false
-            if (exo.isReleased) return@withContext false
-            val sink = volumeRenderersFactory?.volumeSink ?: return@withContext false
-            val result = CompletableDeferred<Boolean>()
-            val message = exo.createMessage { _, _ -> result.complete(sink.enableIfConfiguredPcm()) }.send()
-            val enabled = withTimeoutOrNull(500L) { result.await() } == true
-            if (!enabled || exo !== currentPlayer || exo.isReleased) {
-                message.cancel()
-                return@withContext false
+        suspend fun tryEnableReduceLoudSoundsOnPcm(): Boolean =
+            withContext(WholphinDispatchers.Main) {
+                val exo = currentPlayer as? ExoPlayer ?: return@withContext false
+                if (exo.isReleased) return@withContext false
+                val sink = volumeRenderersFactory?.volumeSink ?: return@withContext false
+                val result = CompletableDeferred<Boolean>()
+                val message = exo.createMessage { _, _ -> result.complete(sink.enableIfConfiguredPcm()) }.send()
+                val enabled = withTimeoutOrNull(500L) { result.await() } == true
+                if (!enabled || exo !== currentPlayer || exo.isReleased) {
+                    message.cancel()
+                    return@withContext false
+                }
+                val selector = exo.trackSelector as DefaultTrackSelector
+                selector.parameters =
+                    selector
+                        .buildUponParameters()
+                        .setAudioOffloadPreferences(
+                            AudioOffloadPreferences
+                                .Builder()
+                                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
+                                .build(),
+                        ).build()
+                PlaybackRouteTrace.mark("pcm-promoted")
+                true
             }
-            val selector = exo.trackSelector as DefaultTrackSelector
-            selector.parameters = selector.buildUponParameters().setAudioOffloadPreferences(
-                AudioOffloadPreferences.Builder()
-                    .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
-                    .build(),
-            ).build()
-            PlaybackRouteTrace.mark("pcm-promoted")
-            true
-        }
 
         suspend fun createVideoPlayer(
             backend: PlayerBackend,
@@ -220,11 +226,16 @@ class PlayerFactory
                                 assHandler?.init(this)
                                 val state = checkNotNull(levelingState)
                                 withContext(WholphinDispatchers.Main) {
-                                    addListener(object : Player.Listener {
-                                        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                                            state.onMediaItemTransition()
-                                        }
-                                    })
+                                    addListener(
+                                        object : Player.Listener {
+                                            override fun onMediaItemTransition(
+                                                mediaItem: MediaItem?,
+                                                reason: Int,
+                                            ) {
+                                                state.onMediaItemTransition()
+                                            }
+                                        },
+                                    )
                                 }
                                 withContext(WholphinDispatchers.Main) {
                                     setAudioAttributes(
@@ -351,12 +362,14 @@ class WholphinRenderersFactory(
         enableAudioOutputPlaybackParams: Boolean,
     ): AudioSink? {
         val processor = volumeProcessor ?: return super.buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams)
-        val sink = DefaultAudioSink.Builder(context)
-            // Media3 bypasses custom processors for float output. Keep the app's default false.
-            .setEnableFloatOutput(false)
-            .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-            .setAudioProcessors(arrayOf(processor))
-            .build()
+        val sink =
+            DefaultAudioSink
+                .Builder(context)
+                // Media3 bypasses custom processors for float output. Keep the app's default false.
+                .setEnableFloatOutput(false)
+                .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+                .setAudioProcessors(arrayOf(processor))
+                .build()
         return PcmOnlyAudioSink(sink, pcmOnly).also { volumeSink = it }
     }
 

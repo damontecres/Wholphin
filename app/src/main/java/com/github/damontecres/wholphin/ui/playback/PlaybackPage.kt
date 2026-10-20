@@ -770,6 +770,7 @@ fun PlaybackPageContent(
                     when (type) {
                         // Go back to settings dialog
                         PlaybackDialogType.AUDIO_TRACK -> PlaybackDialogType.AUDIO
+
                         PlaybackDialogType.PLAYBACK_SPEED,
                         PlaybackDialogType.VIDEO_SCALE,
                         -> PlaybackDialogType.SETTINGS

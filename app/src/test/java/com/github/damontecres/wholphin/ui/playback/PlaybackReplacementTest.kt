@@ -1,4 +1,5 @@
 @file:androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
+
 package com.github.damontecres.wholphin.ui.playback
 
 import android.app.Application
@@ -34,12 +35,19 @@ import java.util.UUID
 @Config(application = Application::class, sdk = [34])
 class PlaybackReplacementTest {
     @get:Rule val compose = createComposeRule()
-    private fun player(position: Long) = mockk<Player>(relaxed = true).also {
-        every { it.playbackState } returns Player.STATE_READY
-        every { it.currentPosition } returns position
-        every { it.duration } returns 300_000L
-        every { it.availableCommands } returns Player.Commands.Builder().addAll(Player.COMMAND_PLAY_PAUSE, Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM).build()
-    }
+
+    private fun player(position: Long) =
+        mockk<Player>(relaxed = true).also {
+            every { it.playbackState } returns Player.STATE_READY
+            every { it.currentPosition } returns position
+            every { it.duration } returns 300_000L
+            every { it.availableCommands } returns
+                Player.Commands
+                    .Builder()
+                    .addAll(Player.COMMAND_PLAY_PAUSE, Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                    .build()
+        }
+
     @Test
     fun `hidden controls seek and stop use replacement player with unchanged preferences`() {
         val old = player(100_000L)
@@ -51,11 +59,15 @@ class PlaybackReplacementTest {
         every { viewModel.currentUserDto } returns MutableStateFlow(null)
         every { viewModel.reduceLoudSounds } returns MutableStateFlow(false)
         every { viewModel.controllerViewState } returns ControllerViewState(5000, true)
-        val preferences = UserPreferences(AppPreferencesSerializer().defaultValue.updatePlaybackPreferences {
-            skipForwardMs = 10_000L
-            skipBackMs = 5_000L
-            dpadSeekMode = DpadSeekMode.SEEKBAR_MINIMAL
-        }, null)
+        val preferences =
+            UserPreferences(
+                AppPreferencesSerializer().defaultValue.updatePlaybackPreferences {
+                    skipForwardMs = 10_000L
+                    skipBackMs = 5_000L
+                    dpadSeekMode = DpadSeekMode.SEEKBAR_MINIMAL
+                },
+                null,
+            )
         val destination = Destination.Playback(UUID.randomUUID(), 0L)
         val images = mockk<ImageUrlService>(relaxed = true)
         compose.setContent {
@@ -63,16 +75,28 @@ class PlaybackReplacementTest {
                 WholphinTheme { PlaybackPageContent(current.value, preferences, destination, viewModel = viewModel) }
             }
         }
-        compose.onRoot().performKeyInput { keyDown(Key.DirectionRight); keyUp(Key.DirectionRight) }
+        compose.onRoot().performKeyInput {
+            keyDown(Key.DirectionRight)
+            keyUp(Key.DirectionRight)
+        }
         compose.runOnIdle {
             verify { old.seekTo(110_000L) }
             current.value = PlayerInstance(replacement, PlayerBackend.EXO_PLAYER, null)
             clearMocks(old, replacement, answers = false)
         }
         compose.waitForIdle()
-        compose.onRoot().performKeyInput { keyDown(Key.DirectionRight); keyUp(Key.DirectionRight) }
-        compose.onRoot().performKeyInput { keyDown(Key.DirectionLeft); keyUp(Key.DirectionLeft) }
-        compose.onRoot().performKeyInput { keyDown(Key.MediaStop); keyUp(Key.MediaStop) }
+        compose.onRoot().performKeyInput {
+            keyDown(Key.DirectionRight)
+            keyUp(Key.DirectionRight)
+        }
+        compose.onRoot().performKeyInput {
+            keyDown(Key.DirectionLeft)
+            keyUp(Key.DirectionLeft)
+        }
+        compose.onRoot().performKeyInput {
+            keyDown(Key.MediaStop)
+            keyUp(Key.MediaStop)
+        }
         compose.runOnIdle {
             verify { replacement.seekTo(223_543L) }
             verify { replacement.setPlaybackSpeed(1f) }

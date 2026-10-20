@@ -7,7 +7,13 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import androidx.media3.common.audio.AudioProcessor.UnhandledAudioFormatException
 import com.github.damontecres.wholphin.playback.leveling.core.LevelingMode
 import com.github.damontecres.wholphin.playback.leveling.core.VolumeLeveler
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -17,28 +23,39 @@ import kotlin.random.Random
 
 class VolumeLevelingAudioProcessorTest {
     private fun buffer(bytes: ByteArray): ByteBuffer =
-        ByteBuffer.allocateDirect(bytes.size).order(ByteOrder.nativeOrder()).apply { put(bytes); flip() }
+        ByteBuffer.allocateDirect(bytes.size).order(ByteOrder.nativeOrder()).apply {
+            put(bytes)
+            flip()
+        }
 
     private fun configured(
         state: VolumeLevelingState = VolumeLevelingState(),
         rate: Int = 48000,
         channels: Int = 2,
         encoding: Int = C.ENCODING_PCM_16BIT,
-    ): VolumeLevelingAudioProcessor = VolumeLevelingAudioProcessor(state).apply {
-        assertEquals(AudioFormat(rate, channels, encoding), configure(AudioFormat(rate, channels, encoding)))
-        assertTrue(isActive)
-        flush()
-        output // discard empty preallocated output
-    }
+    ): VolumeLevelingAudioProcessor =
+        VolumeLevelingAudioProcessor(state).apply {
+            assertEquals(AudioFormat(rate, channels, encoding), configure(AudioFormat(rate, channels, encoding)))
+            assertTrue(isActive)
+            flush()
+            output // discard empty preallocated output
+        }
 
-    private fun copyOutput(processor: VolumeLevelingAudioProcessor, target: ByteArrayOutputStream) {
+    private fun copyOutput(
+        processor: VolumeLevelingAudioProcessor,
+        target: ByteArrayOutputStream,
+    ) {
         val output = processor.output
         val bytes = ByteArray(output.remaining())
         output.get(bytes)
         target.write(bytes)
     }
 
-    private fun feed(processor: VolumeLevelingAudioProcessor, bytes: ByteArray, target: ByteArrayOutputStream) {
+    private fun feed(
+        processor: VolumeLevelingAudioProcessor,
+        bytes: ByteArray,
+        target: ByteArrayOutputStream,
+    ) {
         val input = buffer(bytes)
         while (input.hasRemaining()) {
             val before = input.position()
@@ -48,7 +65,10 @@ class VolumeLevelingAudioProcessorTest {
         }
     }
 
-    private fun finish(processor: VolumeLevelingAudioProcessor, target: ByteArrayOutputStream) {
+    private fun finish(
+        processor: VolumeLevelingAudioProcessor,
+        target: ByteArrayOutputStream,
+    ) {
         processor.queueEndOfStream()
         copyOutput(processor, target)
         assertTrue(processor.isEnded)
@@ -82,7 +102,15 @@ class VolumeLevelingAudioProcessorTest {
         for (i in Short.MIN_VALUE..Short.MAX_VALUE) values.putShort(i.toShort())
         for ((rate, channels) in listOf(8000 to 1, 44100 to 2, 48000 to 6, 96000 to 8, 384000 to 1)) {
             val bytes = values.array().copyOf(values.capacity() / (2 * channels) * (2 * channels))
-            repeat(3) { seed -> assertArrayEquals("$rate/$channels seed=$seed", bytes, run(bytes, rate, channels, C.ENCODING_PCM_16BIT, LevelingMode.OFF, seed)) }
+            repeat(
+                3,
+            ) { seed ->
+                assertArrayEquals(
+                    "$rate/$channels seed=$seed",
+                    bytes,
+                    run(bytes, rate, channels, C.ENCODING_PCM_16BIT, LevelingMode.OFF, seed),
+                )
+            }
         }
     }
 
@@ -97,25 +125,42 @@ class VolumeLevelingAudioProcessorTest {
     @Test
     fun `float Off preserves finite sample bits including signed zero`() {
         val input = ByteBuffer.allocate(2048 * 4).order(ByteOrder.nativeOrder())
-        repeat(2048) { i -> input.putFloat(when (i % 4) { 0 -> -0f; 1 -> 1f; 2 -> -1f; else -> .12345678f }) }
+        repeat(2048) { i ->
+            input.putFloat(
+                when (i % 4) {
+                    0 -> -0f
+                    1 -> 1f
+                    2 -> -1f
+                    else -> .12345678f
+                },
+            )
+        }
         assertArrayEquals(input.array(), run(input.array(), 44100, 2, C.ENCODING_PCM_FLOAT, LevelingMode.OFF, 12))
     }
 
     @Test
     fun `enabled output equals the reference core with its delay removed for all channel layouts`() {
-        for (channels in listOf(1, 2, 6, 8)) for (mode in listOf(LevelingMode.LIGHT, LevelingMode.STRONG)) {
-            val frames = 9001
-            val samples = FloatArray(frames * channels) { i -> (sin(i * .041) * .7).toFloat() }
-            val bytes = ByteBuffer.allocate(samples.size * 4).order(ByteOrder.nativeOrder()).apply { samples.forEach { putFloat(it) } }.array()
-            val reference = VolumeLeveler(48000, channels).apply { this.mode = mode }
-            val delayed = FloatArray(samples.size)
-            reference.process(samples, 0, delayed, 0, frames)
-            val tail = FloatArray(reference.latencyFrames * channels)
-            reference.process(FloatArray(tail.size), 0, tail, 0, reference.latencyFrames)
-            val expected = ByteBuffer.allocate(bytes.size).order(ByteOrder.nativeOrder())
-            delayed.drop(reference.latencyFrames * channels).forEach { expected.putFloat(it) }
-            tail.forEach { expected.putFloat(it) }
-            assertArrayEquals("$channels/$mode", expected.array(), run(bytes, 48000, channels, C.ENCODING_PCM_FLOAT, mode, 31))
+        for (channels in listOf(1, 2, 6, 8)) {
+            for (mode in listOf(LevelingMode.LIGHT, LevelingMode.STRONG)) {
+                val frames = 9001
+                val samples = FloatArray(frames * channels) { i -> (sin(i * .041) * .7).toFloat() }
+                val bytes =
+                    ByteBuffer
+                        .allocate(
+                            samples.size * 4,
+                        ).order(ByteOrder.nativeOrder())
+                        .apply { samples.forEach { putFloat(it) } }
+                        .array()
+                val reference = VolumeLeveler(48000, channels).apply { this.mode = mode }
+                val delayed = FloatArray(samples.size)
+                reference.process(samples, 0, delayed, 0, frames)
+                val tail = FloatArray(reference.latencyFrames * channels)
+                reference.process(FloatArray(tail.size), 0, tail, 0, reference.latencyFrames)
+                val expected = ByteBuffer.allocate(bytes.size).order(ByteOrder.nativeOrder())
+                delayed.drop(reference.latencyFrames * channels).forEach { expected.putFloat(it) }
+                tail.forEach { expected.putFloat(it) }
+                assertArrayEquals("$channels/$mode", expected.array(), run(bytes, 48000, channels, C.ENCODING_PCM_FLOAT, mode, 31))
+            }
         }
     }
 
@@ -141,7 +186,12 @@ class VolumeLevelingAudioProcessorTest {
         finish(processor, oldResult)
         assertArrayEquals(old, oldResult.toByteArray())
         processor.flush()
-        val fresh = ByteBuffer.allocate(24).order(ByteOrder.nativeOrder()).apply { repeat(6) { putFloat(it / 10f) } }.array()
+        val fresh =
+            ByteBuffer
+                .allocate(24)
+                .order(ByteOrder.nativeOrder())
+                .apply { repeat(6) { putFloat(it / 10f) } }
+                .array()
         val result = ByteArrayOutputStream()
         feed(processor, fresh, result)
         finish(processor, result)
@@ -151,15 +201,23 @@ class VolumeLevelingAudioProcessorTest {
     @Test
     fun `a trained processor changing format matches a fresh core at the new rate and channel layout`() {
         val processor = configured(VolumeLevelingState(LevelingMode.STRONG), channels = 1, encoding = C.ENCODING_PCM_FLOAT)
-        val training = ByteBuffer.allocate(48000 * 10 * 4).order(ByteOrder.nativeOrder()).apply {
-            repeat(48000 * 10) { putFloat((.02 * sin(it * .06)).toFloat()) }
-        }.array()
+        val training =
+            ByteBuffer
+                .allocate(48000 * 10 * 4)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    repeat(48000 * 10) { putFloat((.02 * sin(it * .06)).toFloat()) }
+                }.array()
         feed(processor, training, ByteArrayOutputStream())
         processor.configure(AudioFormat(96000, 6, C.ENCODING_PCM_FLOAT))
         processor.flush()
-        val fresh = ByteBuffer.allocate(48001 * 6 * 4).order(ByteOrder.nativeOrder()).apply {
-            repeat(48001 * 6) { putFloat((.7 * sin(it * .07)).toFloat()) }
-        }.array()
+        val fresh =
+            ByteBuffer
+                .allocate(48001 * 6 * 4)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    repeat(48001 * 6) { putFloat((.7 * sin(it * .07)).toFloat()) }
+                }.array()
         val result = ByteArrayOutputStream()
         feed(processor, fresh, result)
         finish(processor, result)
@@ -193,9 +251,13 @@ class VolumeLevelingAudioProcessorTest {
     fun `media transition resets a trained estimate to the new titles warmup`() {
         val state = VolumeLevelingState(LevelingMode.STRONG)
         val processor = configured(state, channels = 1, encoding = C.ENCODING_PCM_FLOAT)
-        val quiet = ByteBuffer.allocate(48000 * 20 * 4).order(ByteOrder.nativeOrder()).apply {
-            repeat(48000 * 20) { putFloat((.02 * sin(it * .06)).toFloat()) }
-        }.array()
+        val quiet =
+            ByteBuffer
+                .allocate(48000 * 20 * 4)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    repeat(48000 * 20) { putFloat((.02 * sin(it * .06)).toFloat()) }
+                }.array()
         feed(processor, quiet, ByteArrayOutputStream())
         state.onMediaItemTransition()
         val fresh = quiet.copyOf(4800 * 4)
@@ -222,9 +284,13 @@ class VolumeLevelingAudioProcessorTest {
     fun `live holder switch changes audio and returns to exact Off after crossfade`() {
         val state = VolumeLevelingState()
         val processor = configured(state, channels = 1)
-        val tone = ByteBuffer.allocate(48000 * 2).order(ByteOrder.nativeOrder()).apply {
-            repeat(48000) { putShort((sin(it * .07) * 29000).toInt().toShort()) }
-        }.array()
+        val tone =
+            ByteBuffer
+                .allocate(48000 * 2)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    repeat(48000) { putShort((sin(it * .07) * 29000).toInt().toShort()) }
+                }.array()
         feed(processor, tone, ByteArrayOutputStream())
         state.mode = LevelingMode.STRONG
         val wet = ByteArrayOutputStream()
@@ -295,10 +361,20 @@ class VolumeLevelingAudioProcessorTest {
     @Test
     fun `Media3 pipeline preserves frame origin and tail with an active upstream processor`() {
         val processor = VolumeLevelingAudioProcessor(VolumeLevelingState())
-        val mapping = androidx.media3.exoplayer.audio.ChannelMappingAudioProcessor().apply { setChannelMap(intArrayOf(1, 0)) }
-        val pipeline = androidx.media3.common.audio.AudioProcessingPipeline(
-            com.google.common.collect.ImmutableList.of(mapping, processor, androidx.media3.common.audio.SonicAudioProcessor()),
-        )
+        val mapping =
+            androidx.media3.exoplayer.audio
+                .ChannelMappingAudioProcessor()
+                .apply { setChannelMap(intArrayOf(1, 0)) }
+        val pipeline =
+            androidx.media3.common.audio.AudioProcessingPipeline(
+                com.google.common.collect.ImmutableList
+                    .of(
+                        mapping,
+                        processor,
+                        androidx.media3.common.audio
+                            .SonicAudioProcessor(),
+                    ),
+            )
         pipeline.configure(AudioFormat(48000, 2, C.ENCODING_PCM_16BIT))
         pipeline.flush()
         val bytes = Random(451).nextBytes(32000)
@@ -333,9 +409,13 @@ class VolumeLevelingAudioProcessorTest {
     @Test
     fun `flushing a seek preserves the trained level estimate`() {
         val processor = configured(VolumeLevelingState(LevelingMode.STRONG), channels = 1, encoding = C.ENCODING_PCM_FLOAT)
-        val quiet = ByteBuffer.allocate(48000 * 20 * 4).order(ByteOrder.nativeOrder()).apply {
-            repeat(48000 * 20) { putFloat((.02 * sin(it * .06)).toFloat()) }
-        }.array()
+        val quiet =
+            ByteBuffer
+                .allocate(48000 * 20 * 4)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    repeat(48000 * 20) { putFloat((.02 * sin(it * .06)).toFloat()) }
+                }.array()
         feed(processor, quiet, ByteArrayOutputStream())
         processor.flush()
         val fresh = quiet.copyOf(4800 * 4)
@@ -355,7 +435,9 @@ class VolumeLevelingAudioProcessorTest {
 
     @Test
     fun `steady callbacks including live switches use preallocated scratch and output storage`() {
-        val bean = java.lang.management.ManagementFactory.getThreadMXBean() as com.sun.management.ThreadMXBean
+        val bean =
+            java.lang.management.ManagementFactory
+                .getThreadMXBean() as com.sun.management.ThreadMXBean
         assertTrue(bean.isThreadAllocatedMemorySupported)
         bean.isThreadAllocatedMemoryEnabled = true
         val state = VolumeLevelingState()

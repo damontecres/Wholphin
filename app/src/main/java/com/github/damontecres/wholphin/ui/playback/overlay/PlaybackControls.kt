@@ -109,7 +109,9 @@ sealed interface PlaybackAction {
 
     data object SearchCaptions : PlaybackAction
 
-    data class SetReduceLoudSounds(val value: Boolean) : PlaybackAction
+    data class SetReduceLoudSounds(
+        val value: Boolean,
+    ) : PlaybackAction
 
     data class ToggleCaptions(
         val index: Int,
@@ -629,12 +631,13 @@ fun <T> BottomDialog(
                             choice.checked?.let { Switch(checked = it, onCheckedChange = null) }
                         },
                         interactionSource = interactionSource,
-                        modifier = Modifier.focusRequester(focusRequesters[index]).semantics {
-                            choice.checked?.let {
-                                role = Role.Switch
-                                toggleableState = ToggleableState(it)
-                            }
-                        },
+                        modifier =
+                            Modifier.focusRequester(focusRequesters[index]).semantics {
+                                choice.checked?.let {
+                                    role = Role.Switch
+                                    toggleableState = ToggleableState(it)
+                                }
+                            },
                     )
                 }
             }

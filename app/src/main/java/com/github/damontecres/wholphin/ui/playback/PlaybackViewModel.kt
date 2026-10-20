@@ -179,26 +179,30 @@ class PlaybackViewModel
         fun setReduceLoudSounds(value: Boolean) {
             PlaybackRouteTrace.mark("request enabled=$value")
             playerFactory.setReduceLoudSounds(value)
-            preferences = preferences.copy(
-                appPreferences = preferences.appPreferences.updatePlaybackPreferences { reduceLoudSounds = value },
-            )
+            preferences =
+                preferences.copy(
+                    appPreferences = preferences.appPreferences.updatePlaybackPreferences { reduceLoudSounds = value },
+                )
             val previousChange = volumeChangeJob
-            volumeChangeJob = viewModelScope.launchIO(ExceptionHandler()) {
-                // Keep rapid remote-control selections ordered, including their persisted values.
-                previousChange?.join()
-                userPreferencesService.setReduceLoudSounds(value)
-                PlaybackRouteTrace.mark("preference-saved")
-                playbackMutex.withLock {
-                    applyReduceLoudSounds()
+            volumeChangeJob =
+                viewModelScope.launchIO(ExceptionHandler()) {
+                    // Keep rapid remote-control selections ordered, including their persisted values.
+                    previousChange?.join()
+                    userPreferencesService.setReduceLoudSounds(value)
+                    PlaybackRouteTrace.mark("preference-saved")
+                    playbackMutex.withLock {
+                        applyReduceLoudSounds()
+                    }
                 }
-            }
         }
 
         private suspend fun applyReduceLoudSounds() {
             val current = currentPlayer.value ?: return
             if (!preferences.appPreferences.playbackPreferences.reduceLoudSounds ||
                 current.backend != PlayerBackend.EXO_PLAYER || current.levelingPcmOnly
-            ) return
+            ) {
+                return
+            }
             val playback = state.value.currentPlayback ?: return
             if (playerFactory.tryEnableReduceLoudSoundsOnPcm()) {
                 currentPlayer.update { if (it === current) it.copy(levelingPcmOnly = true) else it }
@@ -258,6 +262,7 @@ class PlaybackViewModel
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
+
         // Callback work belongs to one player; queued old callbacks cannot act on a replacement.
         private var playerCallbackScope = newPlayerCallbackScope()
 

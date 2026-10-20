@@ -6,15 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.requestFocus
 import com.github.damontecres.wholphin.ui.performClickEnter
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
@@ -40,19 +40,25 @@ class PlaybackAudioMenuTest {
             WholphinTheme {
                 var type by remember { mutableStateOf<PlaybackDialogType?>(PlaybackDialogType.AUDIO) }
                 var settings by remember {
-                    mutableStateOf(PlaybackSettings(
-                        showDebugInfo = false,
-                        audioIndex = 1,
-                        audioStreams = listOf(SimpleMediaStream(1, "English", "AAC stereo"), SimpleMediaStream(2, "Spanish", "AC3 surround")),
-                        subtitleIndex = null,
-                        subtitleStreams = emptyList(),
-                        playbackSpeed = 1f,
-                        contentScale = ContentScale.Fit,
-                        subtitleDelay = Duration.ZERO,
-                        hasSubtitleDownloadPermission = false,
-                        playbackSpeedEnabled = true,
-                        levelingSupported = supported,
-                    ))
+                    mutableStateOf(
+                        PlaybackSettings(
+                            showDebugInfo = false,
+                            audioIndex = 1,
+                            audioStreams =
+                                listOf(
+                                    SimpleMediaStream(1, "English", "AAC stereo"),
+                                    SimpleMediaStream(2, "Spanish", "AC3 surround"),
+                                ),
+                            subtitleIndex = null,
+                            subtitleStreams = emptyList(),
+                            playbackSpeed = 1f,
+                            contentScale = ContentScale.Fit,
+                            subtitleDelay = Duration.ZERO,
+                            hasSubtitleDownloadPermission = false,
+                            playbackSpeedEnabled = true,
+                            levelingSupported = supported,
+                        ),
+                    )
                 }
                 type?.let { currentType ->
                     PlaybackDialog(
@@ -72,8 +78,14 @@ class PlaybackAudioMenuTest {
                                     toggles.add(action.value)
                                     settings = settings.copy(reduceLoudSounds = action.value)
                                 }
-                                is PlaybackAction.ToggleAudio -> settings = settings.copy(audioIndex = action.index)
-                                else -> error("Unexpected action: $action")
+
+                                is PlaybackAction.ToggleAudio -> {
+                                    settings = settings.copy(audioIndex = action.index)
+                                }
+
+                                else -> {
+                                    error("Unexpected action: $action")
+                                }
                             }
                         },
                         onChangeSubtitleDelay = {},
@@ -90,8 +102,17 @@ class PlaybackAudioMenuTest {
         compose.onNodeWithText("Audio Track").assertIsDisplayed()
         compose.onNodeWithText("English").assertIsDisplayed()
         compose.onNodeWithText("Spanish").assertDoesNotExist()
-        compose.onNodeWithText("Reduce Loud Sounds").assertIsOff().requestFocus().assertIsFocused().performClickEnter()
-        compose.onNodeWithText("Reduce Loud Sounds").assertIsOn().assertIsFocused().performClickEnter()
+        compose
+            .onNodeWithText("Reduce Loud Sounds")
+            .assertIsOff()
+            .requestFocus()
+            .assertIsFocused()
+            .performClickEnter()
+        compose
+            .onNodeWithText("Reduce Loud Sounds")
+            .assertIsOn()
+            .assertIsFocused()
+            .performClickEnter()
         compose.onNodeWithText("Reduce Loud Sounds").assertIsOff()
         compose.onNodeWithText("Audio Track").assertIsDisplayed()
         compose.runOnIdle {
@@ -103,9 +124,18 @@ class PlaybackAudioMenuTest {
     @Test
     fun `audio track opens existing list and returns to parent showing selected track`() {
         show()
-        compose.onNodeWithText("Audio Track").requestFocus().assertIsFocused().performClickEnter()
+        compose
+            .onNodeWithText("Audio Track")
+            .requestFocus()
+            .assertIsFocused()
+            .performClickEnter()
         compose.onNodeWithText("Reduce Loud Sounds").assertDoesNotExist()
-        compose.onNodeWithText("Spanish").assertIsDisplayed().requestFocus().assertIsFocused().performClickEnter()
+        compose
+            .onNodeWithText("Spanish")
+            .assertIsDisplayed()
+            .requestFocus()
+            .assertIsFocused()
+            .performClickEnter()
         compose.onNodeWithText("Audio Track").assertIsDisplayed()
         compose.onNodeWithText("Spanish").assertIsDisplayed()
         compose.onNodeWithText("English").assertDoesNotExist()

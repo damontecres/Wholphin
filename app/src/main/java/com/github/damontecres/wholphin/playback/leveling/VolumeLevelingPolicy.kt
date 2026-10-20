@@ -26,31 +26,38 @@ data class VolumeLevelingPolicy(
     val pcmOnly: Boolean = supported && enabled
 
     fun disableOffload(existing: Boolean): Boolean = pcmOnly || existing
+
     fun tunneling(existing: Boolean?): Boolean? = if (pcmOnly) false else existing
 }
 
 /** Media3 1.11 ignores Builder.setAudioCapabilities when Context is supplied. Guard the actual
  * sink support queries instead, including the direct/offload query used by MediaCodecAudioRenderer.
  */
-class PcmOnlyAudioSink(sink: AudioSink, pcmOnly: Boolean = true) : ForwardingAudioSink(sink) {
+class PcmOnlyAudioSink(
+    sink: AudioSink,
+    pcmOnly: Boolean = true,
+) : ForwardingAudioSink(sink) {
     var pcmOnly: Boolean = pcmOnly
         private set
     private var configuredPcm = false
+
     @Volatile private var activePcmTrack = false
 
     override fun setListener(listener: AudioSink.Listener) {
-        super.setListener(object : AudioSink.Listener by listener {
-            override fun onAudioTrackInitialized(config: AudioSink.AudioTrackConfig) {
-                activePcmTrack = !config.offload && !config.tunneling &&
-                    (config.encoding == C.ENCODING_PCM_16BIT || config.encoding == C.ENCODING_PCM_FLOAT)
-                listener.onAudioTrackInitialized(config)
-            }
+        super.setListener(
+            object : AudioSink.Listener by listener {
+                override fun onAudioTrackInitialized(config: AudioSink.AudioTrackConfig) {
+                    activePcmTrack = !config.offload && !config.tunneling &&
+                        (config.encoding == C.ENCODING_PCM_16BIT || config.encoding == C.ENCODING_PCM_FLOAT)
+                    listener.onAudioTrackInitialized(config)
+                }
 
-            override fun onAudioTrackReleased(config: AudioSink.AudioTrackConfig) {
-                activePcmTrack = false
-                listener.onAudioTrackReleased(config)
-            }
-        })
+                override fun onAudioTrackReleased(config: AudioSink.AudioTrackConfig) {
+                    activePcmTrack = false
+                    listener.onAudioTrackReleased(config)
+                }
+            },
+        )
     }
 
     /** Playback thread only, serialized with configure/handleBuffer. Positive evidence of both

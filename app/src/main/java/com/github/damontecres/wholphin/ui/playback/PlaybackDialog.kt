@@ -190,21 +190,22 @@ fun PlaybackDialog(
 
         PlaybackDialogType.AUDIO -> {
             val currentTrack = settings.audioStreams.firstOrNull { it.index == settings.audioIndex }
-            val choices = listOf(
-                BottomDialogItem(
-                    data = PlaybackDialogType.AUDIO_TRACK,
-                    headline = stringResource(R.string.audio_track),
-                    supporting = currentTrack?.let { it.streamTitle ?: it.displayTitle },
-                    dismissOnSelect = false,
-                ),
-                BottomDialogItem(
-                    data = PlaybackDialogType.AUDIO,
-                    headline = stringResource(R.string.reduce_loud_sounds),
-                    supporting = if (settings.levelingSupported) null else stringResource(R.string.requires_exoplayer),
-                    checked = settings.reduceLoudSounds,
-                    dismissOnSelect = false,
-                ),
-            )
+            val choices =
+                listOf(
+                    BottomDialogItem(
+                        data = PlaybackDialogType.AUDIO_TRACK,
+                        headline = stringResource(R.string.audio_track),
+                        supporting = currentTrack?.let { it.streamTitle ?: it.displayTitle },
+                        dismissOnSelect = false,
+                    ),
+                    BottomDialogItem(
+                        data = PlaybackDialogType.AUDIO,
+                        headline = stringResource(R.string.reduce_loud_sounds),
+                        supporting = if (settings.levelingSupported) null else stringResource(R.string.requires_exoplayer),
+                        checked = settings.reduceLoudSounds,
+                        dismissOnSelect = false,
+                    ),
+                )
             BottomDialog(
                 choices = choices,
                 onDismissRequest = onDismissRequest,

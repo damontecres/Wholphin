@@ -52,6 +52,7 @@ class TrackActivityPlaybackListener(
     private var initialized = false
 
     @Volatile private var released = false
+
     @Volatile private var starting = false
 
     fun init() {

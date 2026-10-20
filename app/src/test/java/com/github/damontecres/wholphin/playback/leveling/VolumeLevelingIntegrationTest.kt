@@ -14,18 +14,37 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.test.core.app.ApplicationProvider
 import com.github.damontecres.wholphin.playback.leveling.core.LevelingMode
-import com.github.damontecres.wholphin.preferences.*
+import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
+import com.github.damontecres.wholphin.preferences.AssPlaybackMode
+import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
+import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.preferences.updateExperimentalPreferences
+import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.WholphinRenderersFactory
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.configure
 import com.github.damontecres.wholphin.util.reset
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -39,28 +58,42 @@ import java.security.MessageDigest
 @Config(manifest = Config.NONE, sdk = [30])
 class VolumeLevelingIntegrationTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
-    private val raw = Format.Builder().setSampleMimeType(MimeTypes.AUDIO_RAW).setSampleRate(48000).setChannelCount(2).setPcmEncoding(C.ENCODING_PCM_16BIT).build()
+    private val raw =
+        Format
+            .Builder()
+            .setSampleMimeType(
+                MimeTypes.AUDIO_RAW,
+            ).setSampleRate(48000)
+            .setChannelCount(2)
+            .setPcmEncoding(C.ENCODING_PCM_16BIT)
+            .build()
 
     @Test
-    fun `default and legacy protobuf preferences keep leveling Off and ExoPlayer selected`() = runTest {
-        val serializer = AppPreferencesSerializer()
-        for (prefs in listOf(serializer.defaultValue, serializer.readFrom(ByteArrayInputStream(byteArrayOf())), AppPreferences.getDefaultInstance())) {
-            assertEquals(false, prefs.playbackPreferences.reduceLoudSounds)
-            assertEquals(PlayerBackend.EXO_PLAYER, prefs.playbackPreferences.playerBackend)
+    fun `default and legacy protobuf preferences keep leveling Off and ExoPlayer selected`() =
+        runTest {
+            val serializer = AppPreferencesSerializer()
+            for (prefs in listOf(
+                serializer.defaultValue,
+                serializer.readFrom(ByteArrayInputStream(byteArrayOf())),
+                AppPreferences.getDefaultInstance(),
+            )) {
+                assertEquals(false, prefs.playbackPreferences.reduceLoudSounds)
+                assertEquals(PlayerBackend.EXO_PLAYER, prefs.playbackPreferences.playerBackend)
+            }
+            assertFalse(AppPreference.ReduceLoudSounds.defaultValue)
         }
-        assertFalse(AppPreference.ReduceLoudSounds.defaultValue)
-    }
 
     @Test
-    fun `old enum field values are ignored without crashing or enabling the new boolean`() = runTest {
-        for (oldValue in listOf(0, 1, 2, 99)) {
-            // Old playback field 27, wire type varint. The new boolean uses field 28.
-            val playback = PlaybackPreferences.parseFrom(byteArrayOf(0xd8.toByte(), 0x01, oldValue.toByte()))
-            val old = AppPreferences.newBuilder().setPlaybackPreferences(playback).build()
-            val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(old.toByteArray()))
-            assertFalse(restored.playbackPreferences.reduceLoudSounds)
+    fun `old enum field values are ignored without crashing or enabling the new boolean`() =
+        runTest {
+            for (oldValue in listOf(0, 1, 2, 99)) {
+                // Old playback field 27, wire type varint. The new boolean uses field 28.
+                val playback = PlaybackPreferences.parseFrom(byteArrayOf(0xd8.toByte(), 0x01, oldValue.toByte()))
+                val old = AppPreferences.newBuilder().setPlaybackPreferences(playback).build()
+                val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(old.toByteArray()))
+                assertFalse(restored.playbackPreferences.reduceLoudSounds)
+            }
         }
-    }
 
     @Test
     fun `boolean On uses the single named Strong profile and Off bypasses`() {
@@ -70,24 +103,33 @@ class VolumeLevelingIntegrationTest {
     }
 
     @Test
-    fun `choice persists through serializer without changing other playback preferences`() = runTest {
-        val original = AppPreferencesSerializer().defaultValue.updatePlaybackPreferences { maxBitrate = 987654; skipBackMs = 7000 }
-        for (mode in listOf(false, true)) {
-            val updated = AppPreference.ReduceLoudSounds.setter(original, mode)
-            val bytes = ByteArrayOutputStream()
-            AppPreferencesSerializer().writeTo(updated, bytes)
-            val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(bytes.toByteArray()))
-            assertEquals(mode, AppPreference.ReduceLoudSounds.getter(restored))
-            assertEquals(original, restored.updatePlaybackPreferences { reduceLoudSounds = false })
+    fun `choice persists through serializer without changing other playback preferences`() =
+        runTest {
+            val original =
+                AppPreferencesSerializer().defaultValue.updatePlaybackPreferences {
+                    maxBitrate = 987654
+                    skipBackMs = 7000
+                }
+            for (mode in listOf(false, true)) {
+                val updated = AppPreference.ReduceLoudSounds.setter(original, mode)
+                val bytes = ByteArrayOutputStream()
+                AppPreferencesSerializer().writeTo(updated, bytes)
+                val restored = AppPreferencesSerializer().readFrom(ByteArrayInputStream(bytes.toByteArray()))
+                assertEquals(mode, AppPreference.ReduceLoudSounds.getter(restored))
+                assertEquals(original, restored.updatePlaybackPreferences { reduceLoudSounds = false })
+            }
         }
-    }
 
     @Test
     fun `PCM-only sink refuses every encoded receiver format including offload`() {
         val receiver = mockk<AudioSink>()
         every { receiver.supportsFormat(any()) } returns true
         every { receiver.getFormatSupport(any()) } returns AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
-        val offload = androidx.media3.exoplayer.audio.AudioOffloadSupport.Builder().setIsFormatSupported(true).build()
+        val offload =
+            androidx.media3.exoplayer.audio.AudioOffloadSupport
+                .Builder()
+                .setIsFormatSupported(true)
+                .build()
         every { receiver.getFormatOffloadSupport(any()) } returns offload
         val originalBehavior = receiver
         val guarded = PcmOnlyAudioSink(receiver)
@@ -128,7 +170,11 @@ class VolumeLevelingIntegrationTest {
         val encoded = raw.buildUpon().setSampleMimeType(MimeTypes.AUDIO_AC3).build()
         val guarded = PcmOnlyAudioSink(mockk(relaxed = true))
         assertThrows(AudioSink.ConfigurationException::class.java) {
-            guarded.configure(androidx.media3.exoplayer.audio.AudioSink.AudioSinkConfig.Builder(encoded).build())
+            guarded.configure(
+                androidx.media3.exoplayer.audio.AudioSink.AudioSinkConfig
+                    .Builder(encoded)
+                    .build(),
+            )
         }
     }
 
@@ -141,63 +187,84 @@ class VolumeLevelingIntegrationTest {
     }
 
     @Test
-    fun `video factory disables tunneling and offload when leveling starts on`() = runTest {
-        WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
-        try {
-            val factory = PlayerFactory(context, OkHttpClient())
-            val prefs = factoryPreferences(true)
-            val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
+    fun `video factory disables tunneling and offload when leveling starts on`() =
+        runTest {
+            WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
             try {
-                val parameters = (player.trackSelector as DefaultTrackSelector).parameters
-                assertFalse(parameters.tunnelingEnabled)
-                assertEquals(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED, parameters.audioOffloadPreferences.audioOffloadMode)
-                val installed = installedProcessor(player)
-                assertTrue(installed.first is PcmOnlyAudioSink)
-                val processor = checkNotNull(installed.second)
-                assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, processor.state.mode)
-                val epoch = processor.state.mediaEpoch.get()
-                player.setMediaItem(androidx.media3.common.MediaItem.fromUri("https://example.invalid/video.mp4"))
-                org.robolectric.shadows.ShadowLooper.idleMainLooper()
-                assertTrue("real player transition must reset the installed processor", processor.state.mediaEpoch.get() > epoch)
-                factory.setReduceLoudSounds(false)
-                assertEquals(LevelingMode.OFF, processor.state.mode)
-            } finally { player.release() }
-        } finally { WholphinDispatchers.reset() }
-    }
-
-    @Test
-    fun `Off at video creation preserves existing tunneling and offload preferences`() = runTest {
-        WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
-        try {
-            for (disabled in listOf(false, true)) for (tunneled in listOf(false, true)) {
                 val factory = PlayerFactory(context, OkHttpClient())
-                val prefs = factoryPreferences(false).updateExperimentalPreferences {
-                    disableAudioOffload = disabled
-                    videoTunnelingEnabled = tunneled
-                }
+                val prefs = factoryPreferences(true)
                 val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
                 try {
                     val parameters = (player.trackSelector as DefaultTrackSelector).parameters
-                    assertEquals(tunneled, parameters.tunnelingEnabled)
+                    assertFalse(parameters.tunnelingEnabled)
+                    assertEquals(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED, parameters.audioOffloadPreferences.audioOffloadMode)
                     val installed = installedProcessor(player)
-                    assertFalse((installed.first as? PcmOnlyAudioSink)?.pcmOnly == true)
-                    if (tunneled) {
-                        assertNull("Off-created tunneling must keep the original non-buffering sink", installed.second)
-                    } else {
-                        assertEquals(LevelingMode.OFF, checkNotNull(installed.second).state.mode)
-                    }
-                    assertEquals(
-                        if (disabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED,
-                        parameters.audioOffloadPreferences.audioOffloadMode,
+                    assertTrue(installed.first is PcmOnlyAudioSink)
+                    val processor = checkNotNull(installed.second)
+                    assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, processor.state.mode)
+                    val epoch = processor.state.mediaEpoch.get()
+                    player.setMediaItem(
+                        androidx.media3.common.MediaItem
+                            .fromUri("https://example.invalid/video.mp4"),
                     )
-                    factory.setReduceLoudSounds(true)
-                    assertEquals(true, factory.reduceLoudSounds.value)
-                    if (!tunneled) assertEquals(LevelingMode.STRONG, checkNotNull(installed.second).state.mode)
-                    assertEquals(tunneled, (player.trackSelector as DefaultTrackSelector).parameters.tunnelingEnabled)
-                } finally { player.release() }
+                    org.robolectric.shadows.ShadowLooper
+                        .idleMainLooper()
+                    assertTrue("real player transition must reset the installed processor", processor.state.mediaEpoch.get() > epoch)
+                    factory.setReduceLoudSounds(false)
+                    assertEquals(LevelingMode.OFF, processor.state.mode)
+                } finally {
+                    player.release()
+                }
+            } finally {
+                WholphinDispatchers.reset()
             }
-        } finally { WholphinDispatchers.reset() }
-    }
+        }
+
+    @Test
+    fun `Off at creation preserves tunneling and offload preferences`() =
+        runTest {
+            WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
+            try {
+                for (disabled in listOf(false, true)) {
+                    for (tunneled in listOf(false, true)) {
+                        val factory = PlayerFactory(context, OkHttpClient())
+                        val prefs =
+                            factoryPreferences(false).updateExperimentalPreferences {
+                                disableAudioOffload = disabled
+                                videoTunnelingEnabled = tunneled
+                            }
+                        val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
+                        try {
+                            val parameters = (player.trackSelector as DefaultTrackSelector).parameters
+                            assertEquals(tunneled, parameters.tunnelingEnabled)
+                            val installed = installedProcessor(player)
+                            assertFalse((installed.first as? PcmOnlyAudioSink)?.pcmOnly == true)
+                            if (tunneled) {
+                                assertNull("Off-created tunneling must keep the original non-buffering sink", installed.second)
+                            } else {
+                                assertEquals(LevelingMode.OFF, checkNotNull(installed.second).state.mode)
+                            }
+                            assertEquals(
+                                if (disabled) {
+                                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+                                } else {
+                                    AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+                                },
+                                parameters.audioOffloadPreferences.audioOffloadMode,
+                            )
+                            factory.setReduceLoudSounds(true)
+                            assertEquals(true, factory.reduceLoudSounds.value)
+                            if (!tunneled) assertEquals(LevelingMode.STRONG, checkNotNull(installed.second).state.mode)
+                            assertEquals(tunneled, (player.trackSelector as DefaultTrackSelector).parameters.tunnelingEnabled)
+                        } finally {
+                            player.release()
+                        }
+                    }
+                }
+            } finally {
+                WholphinDispatchers.reset()
+            }
+        }
 
     @Test
     fun `MPV prefer-MPV and external backends never activate the ExoPlayer leveling policy`() {
@@ -216,7 +283,11 @@ class VolumeLevelingIntegrationTest {
     fun `mode holder shares live writes with an already constructed processor`() {
         val holder = VolumeLevelingState()
         val processor = VolumeLevelingAudioProcessor(holder)
-        val writer = Thread { holder.mode = LevelingMode.STRONG; holder.onMediaItemTransition() }
+        val writer =
+            Thread {
+                holder.mode = LevelingMode.STRONG
+                holder.onMediaItemTransition()
+            }
         writer.start()
         writer.join()
         assertSame(holder, processor.state)
@@ -228,7 +299,11 @@ class VolumeLevelingIntegrationTest {
     fun `Off sink delegates receiver capabilities until PCM is positively configured`() {
         val delegate = mockk<AudioSink>(relaxed = true)
         val encoded = raw.buildUpon().setSampleMimeType(MimeTypes.AUDIO_E_AC3).build()
-        val offload = androidx.media3.exoplayer.audio.AudioOffloadSupport.Builder().setIsFormatSupported(true).build()
+        val offload =
+            androidx.media3.exoplayer.audio.AudioOffloadSupport
+                .Builder()
+                .setIsFormatSupported(true)
+                .build()
         every { delegate.supportsFormat(any()) } returns true
         every { delegate.getFormatSupport(any()) } returns AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
         every { delegate.getFormatOffloadSupport(any()) } returns offload
@@ -263,7 +338,13 @@ class VolumeLevelingIntegrationTest {
             listener.captured.onAudioTrackInitialized(AudioSink.AudioTrackConfig(encoding, 48000, 12, false, false, 4096))
             assertTrue(sink.enableIfConfiguredPcm())
             assertTrue(sink.pcmOnly)
-            for (mime in listOf(MimeTypes.AUDIO_E_AC3, MimeTypes.AUDIO_AC3, MimeTypes.AUDIO_DTS, MimeTypes.AUDIO_TRUEHD, MimeTypes.AUDIO_AAC)) {
+            for (mime in listOf(
+                MimeTypes.AUDIO_E_AC3,
+                MimeTypes.AUDIO_AC3,
+                MimeTypes.AUDIO_DTS,
+                MimeTypes.AUDIO_TRUEHD,
+                MimeTypes.AUDIO_AAC,
+            )) {
                 val encoded = pcm.buildUpon().setSampleMimeType(mime).build()
                 assertFalse(sink.supportsFormat(encoded))
                 assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, sink.getFormatSupport(encoded))
@@ -294,84 +375,110 @@ class VolumeLevelingIntegrationTest {
     }
 
     @Test
-    fun `real player PCM promotion preserves queued messages timeline position tracks and playback intent`() = runTest {
-        WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
-        try {
-            val factory = PlayerFactory(context, OkHttpClient())
-            val prefs = factoryPreferences(false).updateExperimentalPreferences { videoTunnelingEnabled = false }
-            val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
+    fun `real player PCM promotion preserves queued messages timeline position tracks and playback intent`() =
+        runTest {
+            WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
             try {
-                player.setMediaItem(androidx.media3.common.MediaItem.fromUri("https://example.invalid/video.mp4"), 1234L)
-                player.playWhenReady = false
-                player.playbackParameters = androidx.media3.common.PlaybackParameters(1.25f)
-                player.volume = .7f
-                val audioGroup = androidx.media3.common.TrackGroup("selected-audio", raw.buildUpon().setSampleMimeType(MimeTypes.AUDIO_AAC).build())
-                player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
-                    .setOverrideForType(androidx.media3.common.TrackSelectionOverride(audioGroup, 0))
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                    .build()
-                var delivered = false
-                val scheduled = player.createMessage { _, _ -> delivered = true }.setPosition(10000).send()
-                player.createMessage { _, _ -> }.send().blockUntilDelivered(2000)
-                val timeline = player.currentTimeline
-                val parameters = player.trackSelectionParameters
-                val installed = installedProcessor(player)
-                val sink = installed.first as PcmOnlyAudioSink
-                assertFalse(sink.pcmOnly)
-                // An idle player's renderer hasn't installed its listener yet (onEnabled does that).
-                // Supply that listener, then require a real AudioTrack initialization and PCM write.
-                sink.setListener(mockk(relaxed = true))
-                sink.configure(AudioSink.AudioSinkConfig.Builder(raw).build())
-                val pcm = java.nio.ByteBuffer.allocateDirect(19200).order(java.nio.ByteOrder.nativeOrder())
-                val deadline = System.nanoTime() + 2_000_000_000L
-                while (pcm.hasRemaining() && System.nanoTime() < deadline) {
-                    sink.handleBuffer(pcm, 0L, 1)
-                    if (pcm.hasRemaining()) Thread.sleep(10)
+                val factory = PlayerFactory(context, OkHttpClient())
+                val prefs = factoryPreferences(false).updateExperimentalPreferences { videoTunnelingEnabled = false }
+                val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
+                try {
+                    player.setMediaItem(
+                        androidx.media3.common.MediaItem
+                            .fromUri("https://example.invalid/video.mp4"),
+                        1234L,
+                    )
+                    player.playWhenReady = false
+                    player.playbackParameters = androidx.media3.common.PlaybackParameters(1.25f)
+                    player.volume = .7f
+                    val audioGroup =
+                        androidx.media3.common.TrackGroup(
+                            "selected-audio",
+                            raw.buildUpon().setSampleMimeType(MimeTypes.AUDIO_AAC).build(),
+                        )
+                    player.trackSelectionParameters =
+                        player.trackSelectionParameters
+                            .buildUpon()
+                            .setOverrideForType(androidx.media3.common.TrackSelectionOverride(audioGroup, 0))
+                            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                            .build()
+                    var delivered = false
+                    val scheduled = player.createMessage { _, _ -> delivered = true }.setPosition(10000).send()
+                    player.createMessage { _, _ -> }.send().blockUntilDelivered(2000)
+                    val timeline = player.currentTimeline
+                    val parameters = player.trackSelectionParameters
+                    val installed = installedProcessor(player)
+                    val sink = installed.first as PcmOnlyAudioSink
+                    assertFalse(sink.pcmOnly)
+                    // An idle player's renderer hasn't installed its listener yet (onEnabled does that).
+                    // Supply that listener, then require a real AudioTrack initialization and PCM write.
+                    sink.setListener(mockk(relaxed = true))
+                    sink.configure(AudioSink.AudioSinkConfig.Builder(raw).build())
+                    val pcm =
+                        java.nio.ByteBuffer
+                            .allocateDirect(19200)
+                            .order(java.nio.ByteOrder.nativeOrder())
+                    val deadline = System.nanoTime() + 2_000_000_000L
+                    while (pcm.hasRemaining() && System.nanoTime() < deadline) {
+                        sink.handleBuffer(pcm, 0L, 1)
+                        if (pcm.hasRemaining()) Thread.sleep(10)
+                    }
+                    assertFalse("the real sink must have initialized and accepted PCM", pcm.hasRemaining())
+                    factory.setReduceLoudSounds(true)
+                    val promotion = async { factory.tryEnableReduceLoudSoundsOnPcm() }
+                    testScheduler.runCurrent()
+                    player.createMessage { _, _ -> }.send().blockUntilDelivered(2000)
+                    testScheduler.runCurrent()
+                    assertTrue(promotion.await())
+                    assertSame(player, factory.currentPlayer)
+                    assertSame(timeline, player.currentTimeline)
+                    assertEquals(1234L, player.currentPosition)
+                    assertFalse(player.playWhenReady)
+                    assertEquals(1.25f, player.playbackParameters.speed)
+                    assertEquals(.7f, player.volume)
+                    assertTrue(player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT))
+                    assertEquals(parameters.overrides, player.trackSelectionParameters.overrides)
+                    assertTrue(sink.pcmOnly)
+                    assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, checkNotNull(installed.second).state.mode)
+                    assertEquals(
+                        AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED,
+                        player.trackSelectionParameters.audioOffloadPreferences.audioOffloadMode,
+                    )
+                    assertFalse(scheduled.isCanceled)
+                    val processed = scheduled.javaClass.getDeclaredField("isProcessed").apply { isAccessible = true }
+                    assertFalse(processed.getBoolean(scheduled))
+                    assertFalse(delivered)
+                    factory.setReduceLoudSounds(false)
+                    assertTrue(sink.pcmOnly)
+                    assertEquals(LevelingMode.OFF, installed.second!!.state.mode)
+                    scheduled.cancel()
+                } finally {
+                    player.release()
                 }
-                assertFalse("the real sink must have initialized and accepted PCM", pcm.hasRemaining())
-                factory.setReduceLoudSounds(true)
-                val promotion = async { factory.tryEnableReduceLoudSoundsOnPcm() }
-                testScheduler.runCurrent()
-                player.createMessage { _, _ -> }.send().blockUntilDelivered(2000)
-                testScheduler.runCurrent()
-                assertTrue(promotion.await())
-                assertSame(player, factory.currentPlayer)
-                assertSame(timeline, player.currentTimeline)
-                assertEquals(1234L, player.currentPosition)
-                assertFalse(player.playWhenReady)
-                assertEquals(1.25f, player.playbackParameters.speed)
-                assertEquals(.7f, player.volume)
-                assertTrue(player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT))
-                assertEquals(parameters.overrides, player.trackSelectionParameters.overrides)
-                assertTrue(sink.pcmOnly)
-                assertEquals(REDUCE_LOUD_SOUNDS_PROFILE, checkNotNull(installed.second).state.mode)
-                assertEquals(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED, player.trackSelectionParameters.audioOffloadPreferences.audioOffloadMode)
-                assertFalse(scheduled.isCanceled)
-                val processed = scheduled.javaClass.getDeclaredField("isProcessed").apply { isAccessible = true }
-                assertFalse(processed.getBoolean(scheduled))
-                assertFalse(delivered)
-                factory.setReduceLoudSounds(false)
-                assertTrue(sink.pcmOnly)
-                assertEquals(LevelingMode.OFF, installed.second!!.state.mode)
-                scheduled.cancel()
-            } finally { player.release() }
-        } finally { WholphinDispatchers.reset() }
-    }
+            } finally {
+                WholphinDispatchers.reset()
+            }
+        }
 
     @Test
-    fun `copied core matches original recorded hashes after undoing the package rename`() {
+    fun `copied core matches recorded formatted hashes after undoing the package rename`() {
         val root = File("src/main/java/com/github/damontecres/wholphin/playback/leveling/core")
         val recorded = File(root, "README.md").readText()
         assertTrue(recorded.contains("`fcdc3a8562a00b33739c4bafc3c86f5218c22edd`"))
-        val expectedHashes = mapOf(
-            "Api.kt" to "f556a8b2bc61282f641b3512b1770abca0515fdc2b633d53537ff033e3656f2f",
-            "DspMath.kt" to "efe218bcede73e2fb906924f148c7b41dfeeffc16ed92bc56bd2f10f5c1d63d4",
-            "LoudnessMeter.kt" to "bc1d948f25e5eb7b5c1148cd5f204c2b02f8b43a32dee5fdf87c841fbc847bed",
-        )
+        val expectedHashes =
+            mapOf(
+                "Api.kt" to "a569e37c8cb31a379c606f4c015f1e7b85bec22da14cd4ae4c83c27d681bef12",
+                "DspMath.kt" to "74d4862e918acc07560ae7fbc2d7b6280c5df793359f8df75fe3a87f9e3599cf",
+                "LoudnessMeter.kt" to "2ddc97457347b32746a7fffb66de3173dbe3571b2a5a33ac43eeda5a0e0f9433",
+            )
         val files = root.listFiles()!!.filter { it.extension == "kt" }
         assertEquals(expectedHashes.keys, files.map { it.name }.toSet())
         files.forEach { file ->
-            val original = file.readText().replace("package com.github.damontecres.wholphin.playback.leveling.core", "package volumeleveler")
+            val original =
+                file.readText().replace(
+                    "package com.github.damontecres.wholphin.playback.leveling.core",
+                    "package volumeleveler",
+                )
             val hash = MessageDigest.getInstance("SHA-256").digest(original.toByteArray()).joinToString("") { "%02x".format(it) }
             assertEquals("${file.name}: copied core differs from source commit", expectedHashes.getValue(file.name), hash)
             assertTrue("${file.name}: $hash absent from provenance", recorded.contains("`${file.name}`: `$hash`"))
@@ -382,24 +489,46 @@ class VolumeLevelingIntegrationTest {
      * Reflection is confined to Media3's private sink/chain fields; no production test hooks.
      */
     private fun installedProcessor(player: ExoPlayer): Pair<AudioSink, VolumeLevelingAudioProcessor?> {
-        val renderer = (0 until player.rendererCount).map { player.getRenderer(it) }
-            .filterIsInstance<androidx.media3.exoplayer.audio.MediaCodecAudioRenderer>().single()
-        val sinkField = androidx.media3.exoplayer.audio.MediaCodecAudioRenderer::class.java.getDeclaredField("audioSink").apply { isAccessible = true }
+        val renderer =
+            (0 until player.rendererCount)
+                .map { player.getRenderer(it) }
+                .filterIsInstance<androidx.media3.exoplayer.audio.MediaCodecAudioRenderer>()
+                .single()
+        val sinkField =
+            androidx.media3.exoplayer.audio.MediaCodecAudioRenderer::class.java.getDeclaredField("audioSink").apply {
+                isAccessible =
+                    true
+            }
         val installedSink = sinkField.get(renderer) as AudioSink
         var sink = installedSink
-        val delegateField = androidx.media3.exoplayer.audio.ForwardingAudioSink::class.java.getDeclaredField("sink").apply { isAccessible = true }
+        val delegateField =
+            androidx.media3.exoplayer.audio.ForwardingAudioSink::class.java.getDeclaredField("sink").apply {
+                isAccessible =
+                    true
+            }
         while (sink is androidx.media3.exoplayer.audio.ForwardingAudioSink) sink = delegateField.get(sink) as AudioSink
-        val chainField = androidx.media3.exoplayer.audio.DefaultAudioSink::class.java.getDeclaredField("audioProcessorChain").apply { isAccessible = true }
+        val chainField =
+            androidx.media3.exoplayer.audio.DefaultAudioSink::class.java.getDeclaredField("audioProcessorChain").apply {
+                isAccessible =
+                    true
+            }
         val chain = chainField.get(sink) as androidx.media3.common.audio.AudioProcessorChain
         val processor = chain.audioProcessors.filterIsInstance<VolumeLevelingAudioProcessor>().singleOrNull()
         return installedSink to processor
     }
 
     private fun factoryPreferences(mode: Boolean): AppPreferences =
-        AppPreferencesSerializer().defaultValue
+        AppPreferencesSerializer()
+            .defaultValue
             .updatePlaybackPreferences {
                 reduceLoudSounds = mode
-                overrides = overrides.toBuilder().setAssPlaybackMode(AssPlaybackMode.ASS_EXO_PLAYER).setMediaExtensionsEnabled(MediaExtensionStatus.MES_DISABLED).build()
+                overrides =
+                    overrides
+                        .toBuilder()
+                        .setAssPlaybackMode(
+                            AssPlaybackMode.ASS_EXO_PLAYER,
+                        ).setMediaExtensionsEnabled(MediaExtensionStatus.MES_DISABLED)
+                        .build()
             }.updateExperimentalPreferences {
                 enabled = true
                 videoTunnelingEnabled = true
