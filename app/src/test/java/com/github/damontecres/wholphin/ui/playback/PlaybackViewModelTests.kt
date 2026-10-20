@@ -420,7 +420,10 @@ class PlaybackViewModelTests {
                     setupForPlaylist()
                     setupPreferences { }
                     coEvery { mockStreamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns
-                        mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }.takeIf { subtitles }
+                        StreamChoiceResult(
+                            mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }.takeIf { subtitles },
+                            StreamChoiceReason.Unknown,
+                        )
                     val oldSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
                     val newSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
                     every { mockPlayerFactory.createMediaSession(any()) } returnsMany listOf(oldSession, newSession)
