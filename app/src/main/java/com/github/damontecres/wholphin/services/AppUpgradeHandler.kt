@@ -9,13 +9,17 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.MostRecentServerProvider
+import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.RememberedTabDao
 import com.github.damontecres.wholphin.data.SeerrServerDao
+import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.RememberedTab
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
+import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
@@ -60,6 +64,8 @@ class AppUpgradeHandler
         private val serverDao: JellyfinServerDao,
         private val rememberedTabDao: RememberedTabDao,
         private val mostRecentServerProvider: MostRecentServerProvider,
+        private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
+        private val seriesTrackChoiceDao: SeriesTrackChoiceDao,
     ) {
         val pkgInfo: PackageInfo get() = context.packageManager.getPackageInfo(context.packageName, 0)
         val currentVersion: Version get() = Version.fromString(pkgInfo.versionName!!)
@@ -467,6 +473,36 @@ class AppUpgradeHandler
                     it.update {
                         currentServerId = ""
                         currentUserId = ""
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.0.10"))) {
+                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
+                appPreferences.updateData {
+                    if (it.playbackPreferences.overrides.directPlayDolbyVisionEL) {
+                        it.updatePlaybackOverrides {
+                            doviProfile7Override = HdrOverrideMode.HDR_OVERRIDE_ENABLE
+                            directPlayDolbyVisionEL = false
+                        }
+                    } else {
+                        it
+                    }
+                }
+            }
+
+            if (previous.isLessThan(Version.fromString("1.0.10-0-g0"))) {
+                val count = seriesTrackChoiceDao.count()
+                if (count == 0) {
+                    var offset = 0
+                    while (true) {
+                        val plcs = playbackLanguageChoiceDao.getAll(100, offset)
+                        if (plcs.isEmpty()) break
+                        offset += plcs.size
+
+                        val stcs = plcs.flatMap(SeriesTrackChoice::from)
+                        Timber.i("Migrating %s PLC to %s STC", plcs.size, stcs.size)
+                        seriesTrackChoiceDao.save(stcs)
                     }
                 }
             }
