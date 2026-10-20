@@ -22,6 +22,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -36,6 +37,7 @@ fun EpisodeDetailsHeader(
     preferences: UserPreferences,
     ep: BaseItem,
     chosenStreams: ChosenStreams?,
+    externalRatings: List<ExternalRating>,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -55,7 +57,7 @@ fun EpisodeDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 8.dp
-            QuickDetails(ep.ui.quickDetails, ep.timeRemainingOrRuntime)
+            QuickDetails(ep.ui.quickDetails, ep.timeRemainingOrRuntime, externalRatings = externalRatings)
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,

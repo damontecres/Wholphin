@@ -10,12 +10,14 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MdbListRatingsService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -71,6 +73,7 @@ class MovieViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val mediaManagementService: MediaManagementService,
+        private val mdbListRatingsService: MdbListRatingsService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -127,6 +130,10 @@ class MovieViewModel
                     )
                 }
                 backdropService.submit(movie)
+                viewModelScope.launchIO {
+                    val externalRatings = mdbListRatingsService.getRatings(itemId)
+                    _state.update { it.copy(externalRatings = externalRatings) }
+                }
                 viewModelScope.launchIO {
                     trailerService.getLocalTrailers(movie).letNotEmpty { localTrailers ->
                         _state.update {
@@ -302,6 +309,7 @@ data class MovieState(
     val discovered: List<DiscoverItem> = emptyList(),
     val chosenStreams: ChosenStreams? = null,
     val canDelete: Boolean = false,
+    val externalRatings: List<ExternalRating> = emptyList(),
 ) {
     val movie: BaseItem? = (loading as? DataLoadingState.Success<BaseItem>)?.data
 }

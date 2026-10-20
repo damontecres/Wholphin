@@ -193,6 +193,7 @@ enum DisplayToggle{
   OFFICIAL_RATING = 0;
   CRITIC_RATING = 1;
   COMMUNITY_RATING = 2;
+  MDBLIST_RATINGS = 3;
 }
 
 message InterfacePreferences {
