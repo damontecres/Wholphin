@@ -10,10 +10,13 @@ data class LevelingProfile(
     val compressorThresholdOffsetLu: Float, val compressorRatio: Float, val compressorKneeDb: Float,
     val compressorAttackMs: Float, val compressorReleaseMs: Float,
     val compressorMaxReductionDb: Float, val limiterCeilingDbfs: Float,
+    val levelerRiseLimitLu: Float = 2.5f,
+    val levelerPowerMean: Boolean = false,
+    val levelerTransientTauSeconds: Float = 0f,
 ) {
     companion object {
-        val LIGHT = LevelingProfile(-26f,6f,6f,3f,20f,1.25f,4f,6f,20f,200f,8f,-4f)
-        val STRONG = LevelingProfile(-26f,10f,9f,2f,10f,0f,4f,6f,10f,300f,14f,-4f)
+        val LIGHT = LevelingProfile(-26f,6f,6f,3f,5f,5f,4f,4f,20f,200f,8f,-4f,6f,true,20f)
+        val STRONG = LevelingProfile(-26f,10f,9f,2f,4f,6f,16f,4f,30f,350f,14f,-4f,4f,true,12f)
         fun of(mode: LevelingMode): LevelingProfile? = when(mode) {
             LevelingMode.OFF -> null; LevelingMode.LIGHT -> LIGHT; LevelingMode.STRONG -> STRONG
         }
@@ -156,6 +159,8 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
     private val saturatedPower = 10.0.pow((threshold+max(halfKnee,maxReduction/curveSlope)+0.000001+0.691)/10)
     private val warmAlpha = -expm1(-0.1/profile.warmTauSeconds)
     private val slowAlpha = -expm1(-0.1/profile.slowTauSeconds)
+    private val transientLevel = threshold + max(halfKnee,maxReduction/(2*curveSlope))
+    private val transientAlpha = if(profile.levelerTransientTauSeconds > 0) -expm1(-0.1/profile.levelerTransientTauSeconds) else 0.0
     private val rmsAlpha = -expm1(-1.0/(rate*0.05))
     private val attackAlpha = -expm1(-1000.0/(rate*profile.compressorAttackMs))
     private val releaseAlpha = -expm1(-1000.0/(rate*profile.compressorReleaseMs))
@@ -188,7 +193,12 @@ internal class Branch(rate: Int, private val delay: Int, val profile: LevelingPr
         // A near-unity numerical snap must still respect a pending peak's requirement.
         if(1.0-limiterGain < 1e-12 && (head==tail || required[head]==1.0)) limiterGain=1.0
         if(momentary > -50 && momentary > estimate-15) {
-            estimate += (if(activeBlocks < 150) warmAlpha else slowAlpha)*(min(momentary,estimate+2.5)-estimate)
+            // Heavy compression marks an event: retain the conservative historical title update
+            // instead of letting its energy pull down the dialogue that follows it.
+            val transient = transientAlpha > 0 && (reduction >= maxReduction/2 || momentary+gainDb >= transientLevel)
+            val alpha = if(transient) transientAlpha else if(activeBlocks < 150) warmAlpha else slowAlpha
+            val delta = min(momentary,estimate+if(transient) 2.5 else profile.levelerRiseLimitLu.toDouble())-estimate
+            estimate += if(profile.levelerPowerMean && !transient) 10*log10(1+alpha*(10.0.pow(delta/10)-1)) else alpha*delta
             activeBlocks++
         }
         val target = (profile.targetLufs-estimate).coerceIn(-profile.maxCutDb.toDouble(),profile.maxBoostDb.toDouble())

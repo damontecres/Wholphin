@@ -362,9 +362,9 @@ class VolumeLevelingIntegrationTest {
     fun `copied core matches original recorded hashes after undoing the package rename`() {
         val root = File("src/main/java/com/github/damontecres/wholphin/playback/leveling/core")
         val recorded = File(root, "README.md").readText()
-        assertTrue(recorded.contains("`440c54402ad12c3af96073bbc8c1aff2bdbcce9e`"))
+        assertTrue(recorded.contains("`fcdc3a8562a00b33739c4bafc3c86f5218c22edd`"))
         val expectedHashes = mapOf(
-            "Api.kt" to "01d40179aaa9eee78893e728c446a04f95899f220742ab208441a59a33b36706",
+            "Api.kt" to "f556a8b2bc61282f641b3512b1770abca0515fdc2b633d53537ff033e3656f2f",
             "DspMath.kt" to "efe218bcede73e2fb906924f148c7b41dfeeffc16ed92bc56bd2f10f5c1d63d4",
             "LoudnessMeter.kt" to "bc1d948f25e5eb7b5c1148cd5f204c2b02f8b43a32dee5fdf87c841fbc847bed",
         )
