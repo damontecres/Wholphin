@@ -11,7 +11,9 @@ import com.github.damontecres.wholphin.BuildConfig
 import timber.log.Timber
 
 /** Debug-only route timing. No URLs, credentials, buffer contents or per-buffer logging. */
-class PlaybackRouteTrace : AnalyticsListener {
+class PlaybackRouteTrace(
+    private val processorState: VolumeLevelingState,
+) : AnalyticsListener {
     override fun onPlaybackStateChanged(
         eventTime: AnalyticsListener.EventTime,
         state: Int,
@@ -62,9 +64,24 @@ class PlaybackRouteTrace : AnalyticsListener {
     private fun event(
         time: AnalyticsListener.EventTime,
         detail: String,
-    ) = mark("$detail eventMs=${time.realtimeMs} positionMs=${time.currentPlaybackPositionMs}")
+    ) {
+        mark("$detail eventMs=${time.realtimeMs} positionMs=${time.currentPlaybackPositionMs}")
+        processor(processorState)
+    }
 
     companion object {
+        /** Application-thread diagnostics; the audio callback only updates primitive counters. */
+        fun processor(state: VolumeLevelingState) {
+            if (BuildConfig.DEBUG) {
+                val format = state.debugFormat
+                mark(
+                    "processor rate=${format.sampleRate} channels=${format.channelCount} encoding=${format.encoding} " +
+                        "mode=${state.debugAppliedMode} frames=${state.debugProcessedFrames} " +
+                        "resets=${state.debugResetCount} resetEstimateLufs=${state.debugResetEstimateLufs}",
+                )
+            }
+        }
+
         fun mark(detail: String) {
             if (BuildConfig.DEBUG) Timber.tag("VolumeSwitch").d("atMs=${SystemClock.elapsedRealtime()} $detail")
         }

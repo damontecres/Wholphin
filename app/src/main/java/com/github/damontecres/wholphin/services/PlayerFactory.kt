@@ -86,6 +86,15 @@ class PlayerFactory
         fun setReduceLoudSounds(value: Boolean) {
             _reduceLoudSounds.value = value
             levelingState?.mode = value.toLevelingMode()
+            if (BuildConfig.DEBUG) {
+                val exo = currentPlayer as? ExoPlayer
+                val state = levelingState
+                if (exo != null && state != null) {
+                    Handler(exo.applicationLooper).postDelayed({
+                        if (currentPlayer === exo && !exo.isReleased) PlaybackRouteTrace.processor(state)
+                    }, 300L)
+                }
+            }
         }
 
         /** Avoid a restart only when the sink proves it is already rendering decoded PCM.
@@ -222,7 +231,7 @@ class PlayerFactory
                             .setTrackSelector(trackSelector)
                             .build()
                             .apply {
-                                if (BuildConfig.DEBUG) addAnalyticsListener(PlaybackRouteTrace())
+                                if (BuildConfig.DEBUG) addAnalyticsListener(PlaybackRouteTrace(checkNotNull(levelingState)))
                                 assHandler?.init(this)
                                 val state = checkNotNull(levelingState)
                                 withContext(WholphinDispatchers.Main) {

@@ -24,6 +24,24 @@ class VolumeLevelingState(
 
     internal val mediaEpoch = AtomicLong()
 
+    // Debug snapshots: single audio-thread writer, application-thread reader. No callback allocation.
+    @Volatile internal var debugFormat = AudioFormat.NOT_SET
+
+    @Volatile internal var debugProcessedFrames = 0L
+
+    @Volatile internal var debugAppliedMode = LevelingMode.OFF
+
+    @Volatile internal var debugResetCount = 0L
+
+    @Volatile internal var debugResetEstimateLufs = Float.NaN
+
+    internal fun recordDebugReset(dsp: VolumeLeveler) {
+        if (BuildConfig.DEBUG) {
+            debugResetEstimateLufs = dsp.levelEstimateLufs
+            debugResetCount++
+        }
+    }
+
     fun onMediaItemTransition() {
         mediaEpoch.incrementAndGet()
     }
@@ -69,12 +87,8 @@ class VolumeLevelingAudioProcessor(
             core?.reset()
             format = inputAudioFormat
             core = VolumeLeveler(format.sampleRate, format.channelCount)
-            if (BuildConfig.DEBUG) {
-                PlaybackRouteTrace.mark(
-                    "processor-format rate=${format.sampleRate} channels=${format.channelCount} encoding=${format.encoding} mode=${state.mode}",
-                )
-                PlaybackRouteTrace.mark("processor-reset cause=format estimateLufs=${core!!.levelEstimateLufs}")
-            }
+            if (BuildConfig.DEBUG) state.debugFormat = format
+            state.recordDebugReset(core!!)
             val frames = maxOf(CHUNK_FRAMES, core!!.latencyFrames)
             samples = FloatArray(frames * format.channelCount)
             processed = FloatArray(samples.size)
@@ -85,11 +99,7 @@ class VolumeLevelingAudioProcessor(
         val newEpoch = state.mediaEpoch.get()
         if (epoch != newEpoch) {
             core!!.reset()
-            if (BuildConfig.DEBUG) {
-                PlaybackRouteTrace.mark(
-                    "processor-reset cause=item-flush epoch=$newEpoch estimateLufs=${core!!.levelEstimateLufs}",
-                )
-            }
+            state.recordDebugReset(core!!)
         }
         epoch = newEpoch
         holdback = core!!.latencyFrames
@@ -112,11 +122,7 @@ class VolumeLevelingAudioProcessor(
             // before resetting its estimate, then hold back the new item's priming frames.
             drain(output)
             dsp.reset()
-            if (BuildConfig.DEBUG) {
-                PlaybackRouteTrace.mark(
-                    "processor-reset cause=item-buffer epoch=$newEpoch estimateLufs=${dsp.levelEstimateLufs}",
-                )
-            }
+            state.recordDebugReset(dsp)
             holdback = dsp.latencyFrames
             pendingFrames = 0
             epoch = newEpoch
@@ -134,9 +140,12 @@ class VolumeLevelingAudioProcessor(
             }
         }
         val mode = state.mode
-        if (BuildConfig.DEBUG && dsp.mode != mode) PlaybackRouteTrace.mark("processor-mode=$mode frames=$frames epoch=$epoch")
         dsp.mode = mode
         dsp.process(samples, 0, processed, 0, frames)
+        if (BuildConfig.DEBUG) {
+            state.debugAppliedMode = mode
+            state.debugProcessedFrames += frames
+        }
         val written = emit(output, frames)
         pendingFrames += frames - written
         output.flip()
