@@ -327,6 +327,7 @@ class MusicService
                     imageUrlService.getItemImageUrl(
                         itemId = albumId,
                         imageType = ImageType.PRIMARY,
+                        tag = audio.data.albumPrimaryImageTag,
                     )
                 }
             return MediaItem
