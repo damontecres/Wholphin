@@ -149,7 +149,11 @@ class LiveTvViewModel
                                     number = it.channelNumber,
                                     name = it.channelName ?: it.name,
                                     imageUrl =
-                                        imageUrlService.getItemImageUrl(it.id, ImageType.PRIMARY),
+                                        imageUrlService.getItemImageUrl(
+                                            itemId = it.id,
+                                            imageType = ImageType.PRIMARY,
+                                            tag = it.imageTags?.get(ImageType.PRIMARY),
+                                        ),
                                     favorite = it.userData?.isFavorite == true,
                                 )
                             }
@@ -299,6 +303,7 @@ class LiveTvViewModel
                                     imageUrlService.getItemImageUrl(
                                         dto.id,
                                         ImageType.PRIMARY,
+                                        tag = dto.imageTags?.get(ImageType.PRIMARY),
                                     ),
                             )
                         if (index == 0) {

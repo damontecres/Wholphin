@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -63,12 +64,8 @@ class SuggestionsWorker
             }
 
             if (api.baseUrl.isNullOrBlank() || api.accessToken.isNullOrBlank()) {
-                var currentUser = serverRepository.current.value
-                if (currentUser == null) {
-                    serverRepository.restoreSession(serverId, userId)
-                    currentUser = serverRepository.current.value
-                }
-                if (currentUser == null) {
+                val result = serverRepository.restoreLastSession()
+                if (result !is RestoredSession.Success) {
                     Timber.w("No user found during run")
                     return Result.failure()
                 }
