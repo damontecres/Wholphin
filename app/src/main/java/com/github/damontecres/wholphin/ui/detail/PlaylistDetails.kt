@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -33,7 +30,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.ListItem
+import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -45,17 +42,20 @@ import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
-import com.github.damontecres.wholphin.ui.cards.ItemCardImage
+import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
+import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.CollectionFolderState
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewModel
+import com.github.damontecres.wholphin.ui.components.CollectionFolderViewScope
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.GridClickActions
+import com.github.damontecres.wholphin.ui.components.ListItemWrapper
 import com.github.damontecres.wholphin.ui.components.MusicContextActions
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.TextButton
@@ -98,7 +98,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
@@ -536,7 +535,7 @@ fun PlaylistDetails(
 }
 
 @Composable
-fun PlaylistItem(
+fun CollectionFolderViewScope.PlaylistItem(
     item: BaseItem?,
     index: Int,
     onClick: () -> Unit,
@@ -551,19 +550,18 @@ fun PlaylistItem(
     isPlaying: Boolean = false,
     isQueued: Boolean = false,
 ) {
+    val dense = viewOptions.type == ViewOptionsType.DENSE_LIST
     val focused by interactionSource.collectIsFocusedAsState()
-    val imageWidth = 160.dp
-    val density = LocalDensity.current
-    val imageWidthPx = remember(imageWidth, density) { with(density) { imageWidth.roundToPx() } }
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier =
             modifier
-                .fillMaxWidth()
-                .heightIn(min = 40.dp, max = 88.dp),
+                .fillMaxWidth(),
+//                .heightIn(min = 40.dp, max = 88.dp),
     ) {
-        ListItem(
+        ListItemWrapper(
+            dense = dense,
             selected = false,
             onClick = onClick,
             onLongClick = onLongClick,
@@ -582,19 +580,21 @@ fun PlaylistItem(
             },
             trailingContent = {
                 val duration =
-                    when (item?.type) {
-                        BaseItemKind.AUDIO -> {
-                            item.data.runTimeTicks
-                                ?.ticks
-                                ?.roundSeconds
-                        }
+                    remember(item?.data?.runTimeTicks) {
+                        when (item?.type) {
+                            BaseItemKind.AUDIO -> {
+                                item.data.runTimeTicks
+                                    ?.ticks
+                                    ?.roundSeconds
+                            }
 
-                        else -> {
-                            item
-                                ?.data
-                                ?.runTimeTicks
-                                ?.ticks
-                                ?.roundMinutes
+                            else -> {
+                                item
+                                    ?.data
+                                    ?.runTimeTicks
+                                    ?.ticks
+                                    ?.roundMinutes
+                            }
                         }
                     }
                 duration?.let { duration ->
@@ -608,15 +608,25 @@ fun PlaylistItem(
                     val resources = LocalResources.current
                     val durationText =
                         remember(resources, duration) { resources.formatDuration(duration) }
-                    Column {
-                        Text(
-                            text = durationText,
-                        )
-                        if (item?.type != BaseItemKind.AUDIO) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Column {
                             Text(
-                                text = stringResource(R.string.ends_at, endTimeStr),
-                                style = MaterialTheme.typography.bodySmall,
+                                text = durationText,
                             )
+                            if (item?.type != BaseItemKind.AUDIO && !dense) {
+                                val style =
+                                    LocalTextStyle.current.let { it.copy(fontSize = it.fontSize * .75) }
+                                Text(
+                                    text = stringResource(R.string.ends_at, endTimeStr),
+                                    style = style,
+                                )
+                            }
+                        }
+                        if (item?.played == true) {
+                            WatchedIcon(padding = 0.dp)
                         }
                     }
                 }
@@ -624,41 +634,29 @@ fun PlaylistItem(
             leadingContent = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "${index + 1}.",
-                        style = MaterialTheme.typography.labelLarge,
-                    )
+                    if (sortAndDirection.sort == ItemSortBy.DEFAULT) {
+//                        val indexText =
+//                            remember(index, collectionSize, sortAndDirection) {
+//                                when (sortAndDirection.direction) {
+//                                    SortOrder.ASCENDING -> "${index + 1}."
+//                                    SortOrder.DESCENDING -> "${collectionSize - index}."
+//                                }
+//                            }
+                        // TODO default descending doesn't work?
+                        val indexText = "${index + 1}."
+                        Text(
+                            text = indexText,
+                        )
+                    }
                     if (item?.type == BaseItemKind.AUDIO) {
                         MusicQueueMarker(
                             isPlaying = isPlaying,
                             isQueued = isQueued,
                         )
-                    } else {
-                        val imageType =
-                            remember(item) {
-                                if (item != null && ImageType.THUMB in item.data.imageTags.orEmpty()) {
-                                    ImageType.THUMB
-                                } else {
-                                    ImageType.PRIMARY
-                                }
-                            }
-                        ItemCardImage(
-                            item = item,
-                            name = item?.name,
-                            imageType = imageType,
-                            showOverlay = true,
-                            favorite = item?.data?.userData?.isFavorite ?: false,
-                            watched = item?.data?.userData?.played ?: false,
-                            unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
-                            watchedPercent = 0.0,
-                            numberOfVersions = item?.data?.mediaSourceCount ?: 0,
-                            modifier = Modifier.width(imageWidth),
-                            useFallbackText = false,
-                            fillWidth = imageWidthPx,
-                        )
                     }
+                    if (item?.favorite == true) FavoriteIndicator()
                 }
             },
             modifier = Modifier.weight(1f),

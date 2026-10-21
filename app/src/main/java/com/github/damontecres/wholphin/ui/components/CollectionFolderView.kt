@@ -1036,14 +1036,17 @@ fun CollectionFolderViewContent(
                                 clickedRandom = false
                             }
                             val scope =
-                                remember(state.viewOptions, item?.data?.collectionType) {
-                                    object : CollectionFolderViewScope {
-                                        override val viewOptions: ViewOptions
-                                            get() = state.viewOptions
-                                        override val collectionType: CollectionType?
-                                            get() = item?.data?.collectionType
-                                    }
+                                object : CollectionFolderViewScope {
+                                    override val viewOptions: ViewOptions
+                                        get() = state.viewOptions
+                                    override val collectionType: CollectionType?
+                                        get() = item?.data?.collectionType
+                                    override val sortAndDirection: SortAndDirection
+                                        get() = state.sortAndDirection
+                                    override val collectionSize: Int
+                                        get() = pager.data.size
                                 }
+
                             Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {
                                     scope.CollectionFolderGrid(
@@ -1130,4 +1133,6 @@ fun CollectionFolderViewContent(
 interface CollectionFolderViewScope {
     val viewOptions: ViewOptions
     val collectionType: CollectionType?
+    val sortAndDirection: SortAndDirection
+    val collectionSize: Int
 }
