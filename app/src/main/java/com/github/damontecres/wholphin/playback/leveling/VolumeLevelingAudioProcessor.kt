@@ -51,6 +51,9 @@ class VolumeLevelingState(
  * Removes the core's initial delay and drains its tail, retaining one output frame per input frame.
  * Scratch and direct output storage are allocated only on flush/format change. Large decoder buffers
  * are consumed in bounded chunks; Media3 calls queueInput again after consuming getOutput().
+ *
+ * Off copies input straight to output and leaves the core idle. Turning it on mid-stream starts the
+ * core fresh and fades it in; turning it off fades it out, drains its delay and returns to copying.
  */
 class VolumeLevelingAudioProcessor(
     val state: VolumeLevelingState,
@@ -64,6 +67,11 @@ class VolumeLevelingAudioProcessor(
     private var epoch = 0L
     private var tailOutput: ByteBuffer = EMPTY_BUFFER
     private var endQueued = false
+    private var running = false
+    private var fadeIn = false
+    private var offFrames = 0
+
+    internal val levelerRunning: Boolean get() = running
 
     override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat {
         if (
@@ -97,11 +105,16 @@ class VolumeLevelingAudioProcessor(
             core!!.flush()
         }
         val newEpoch = state.mediaEpoch.get()
-        if (epoch != newEpoch) {
+        val on = state.mode != LevelingMode.OFF
+        // An estimate from before the core went idle is as stale as a previous item's.
+        if (epoch != newEpoch || (on && !running && !changed)) {
             core!!.reset()
             state.recordDebugReset(core!!)
         }
         epoch = newEpoch
+        running = on
+        fadeIn = false
+        offFrames = 0
         holdback = core!!.latencyFrames
         pendingFrames = 0
         endQueued = false
@@ -116,18 +129,42 @@ class VolumeLevelingAudioProcessor(
         val dsp = checkNotNull(core)
         require(inputBuffer.remaining() % format.bytesPerFrame == 0) { "Incomplete PCM frame" }
         val output = replaceOutputBuffer((CHUNK_FRAMES + dsp.latencyFrames) * format.bytesPerFrame)
+        val mode = state.mode
         val newEpoch = state.mediaEpoch.get()
         if (epoch != newEpoch) {
-            // A seamless transition need not cause a sink flush. Preserve the previous item's tail
-            // before resetting its estimate, then hold back the new item's priming frames.
-            drain(output)
-            dsp.reset()
-            state.recordDebugReset(dsp)
-            holdback = dsp.latencyFrames
-            pendingFrames = 0
             epoch = newEpoch
+            if (running) {
+                // A seamless transition need not cause a sink flush. Preserve the previous item's tail
+                // before resetting its estimate, then hold back the new item's priming frames.
+                drain(output)
+                if (mode == LevelingMode.OFF) {
+                    running = false
+                } else {
+                    restart(dsp)
+                }
+            }
+        }
+        if (running && mode == LevelingMode.OFF && offFrames >= format.sampleRate * OFF_SETTLE_MS / 1000) {
+            // The core's output is dry again; release its delayed frames and stop running it.
+            drain(output)
+            running = false
+        } else if (!running && mode != LevelingMode.OFF) {
+            // Start from Off so the fresh core fades in instead of switching abruptly.
+            dsp.mode = LevelingMode.OFF
+            restart(dsp)
+            running = true
+            fadeIn = true
         }
         val frames = minOf(CHUNK_FRAMES, inputBuffer.remaining() / format.bytesPerFrame)
+        if (!running) {
+            val limit = inputBuffer.limit()
+            inputBuffer.limit(inputBuffer.position() + frames * format.bytesPerFrame)
+            output.put(inputBuffer)
+            inputBuffer.limit(limit)
+            if (BuildConfig.DEBUG) state.debugAppliedMode = LevelingMode.OFF
+            output.flip()
+            return
+        }
         val count = frames * format.channelCount
         var i = 0
         if (format.encoding == C.ENCODING_PCM_16BIT) {
@@ -139,16 +176,26 @@ class VolumeLevelingAudioProcessor(
                 samples[i++] = inputBuffer.float
             }
         }
-        val mode = state.mode
-        dsp.mode = mode
+        val applied = if (fadeIn) LevelingMode.OFF else mode
+        fadeIn = false
+        offFrames = if (applied == LevelingMode.OFF) offFrames + frames else 0
+        dsp.mode = applied
         dsp.process(samples, 0, processed, 0, frames)
         if (BuildConfig.DEBUG) {
-            state.debugAppliedMode = mode
+            state.debugAppliedMode = applied
             state.debugProcessedFrames += frames
         }
         val written = emit(output, frames)
         pendingFrames += frames - written
         output.flip()
+    }
+
+    private fun restart(dsp: VolumeLeveler) {
+        dsp.reset()
+        state.recordDebugReset(dsp)
+        holdback = dsp.latencyFrames
+        pendingFrames = 0
+        offFrames = 0
     }
 
     private fun emit(
@@ -207,9 +254,15 @@ class VolumeLevelingAudioProcessor(
         pendingFrames = 0
         holdback = 0
         tailOutput = EMPTY_BUFFER
+        running = false
+        fadeIn = false
+        offFrames = 0
     }
 
     private companion object {
         const val CHUNK_FRAMES = 1024
+
+        // Twice the core's 100 ms Off transition.
+        const val OFF_SETTLE_MS = 200
     }
 }

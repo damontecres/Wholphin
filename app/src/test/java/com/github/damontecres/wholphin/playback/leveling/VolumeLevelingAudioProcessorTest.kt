@@ -166,25 +166,29 @@ class VolumeLevelingAudioProcessorTest {
 
     @Test
     fun `flush discards old tail and re-primes holdback without leaking samples`() {
-        val processor = configured()
-        feed(processor, ByteArray(4000) { 0x73 }, ByteArrayOutputStream())
+        val processor = configured(VolumeLevelingState(LevelingMode.STRONG), channels = 1, encoding = C.ENCODING_PCM_FLOAT)
+        val old = floats(1000) { .6 * sin(it * .05) }
+        feed(processor, old, ByteArrayOutputStream())
         processor.flush()
         val result = ByteArrayOutputStream()
-        val fresh = Random(29).nextBytes(1200)
+        val fresh = floats(300) { .3 * sin(it * .09) }
         feed(processor, fresh, result)
         finish(processor, result)
-        assertArrayEquals(fresh, result.toByteArray())
+        val reference = VolumeLeveler(48000, 1).apply { mode = LevelingMode.STRONG }
+        samples(old).let { reference.process(it, 0, FloatArray(it.size), 0, it.size) }
+        reference.flush()
+        assertArrayEquals(levelled(reference, fresh), result.toByteArray())
     }
 
     @Test
     fun `format change waits for flush and resets channel count and delay`() {
-        val processor = configured()
+        val processor = configured(VolumeLevelingState(LevelingMode.STRONG))
         val old = Random(9).nextBytes(1200)
         val oldResult = ByteArrayOutputStream()
         feed(processor, old, oldResult)
         processor.configure(AudioFormat(96000, 6, C.ENCODING_PCM_FLOAT))
         finish(processor, oldResult)
-        assertArrayEquals(old, oldResult.toByteArray())
+        assertArrayEquals(run(old, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 91), oldResult.toByteArray())
         processor.flush()
         val fresh =
             ByteBuffer
@@ -195,7 +199,7 @@ class VolumeLevelingAudioProcessorTest {
         val result = ByteArrayOutputStream()
         feed(processor, fresh, result)
         finish(processor, result)
-        assertArrayEquals(fresh, result.toByteArray())
+        assertArrayEquals(run(fresh, 96000, 6, C.ENCODING_PCM_FLOAT, LevelingMode.STRONG, 92), result.toByteArray())
     }
 
     @Test
@@ -235,7 +239,7 @@ class VolumeLevelingAudioProcessorTest {
 
     @Test
     fun `a seamless media transition preserves the old tail and frame alignment`() {
-        val state = VolumeLevelingState()
+        val state = VolumeLevelingState(LevelingMode.STRONG)
         val processor = configured(state)
         val first = Random(7).nextBytes(4000)
         val second = Random(8).nextBytes(8000)
@@ -244,7 +248,10 @@ class VolumeLevelingAudioProcessorTest {
         state.onMediaItemTransition()
         feed(processor, second, result)
         finish(processor, result)
-        assertArrayEquals(first + second, result.toByteArray())
+        val expected =
+            run(first, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 71) +
+                run(second, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 72)
+        assertArrayEquals(expected, result.toByteArray())
     }
 
     @Test
@@ -300,9 +307,108 @@ class VolumeLevelingAudioProcessorTest {
         val dry = ByteArrayOutputStream()
         feed(processor, tone, dry)
         feed(processor, tone, dry)
+        assertFalse("Off must stop running the leveler once its fade ends", processor.levelerRunning)
         finish(processor, dry)
         assertArrayEquals(tone, dry.toByteArray().takeLast(tone.size).toByteArray())
+        assertEquals(tone.size * 7L, wet.size() + dry.size() + tone.size.toLong())
         assertTrue(processor.isActive)
+    }
+
+    private fun floats(
+        frames: Int,
+        sample: (Int) -> Double,
+    ): ByteArray =
+        ByteBuffer
+            .allocate(frames * 4)
+            .order(ByteOrder.nativeOrder())
+            .apply { repeat(frames) { putFloat(sample(it).toFloat()) } }
+            .array()
+
+    private fun samples(bytes: ByteArray): FloatArray {
+        val input = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder())
+        return FloatArray(bytes.size / 4) { input.float }
+    }
+
+    // Mono float frames through a core in its current state, with its delay removed and its tail drained.
+    private fun levelled(
+        core: VolumeLeveler,
+        bytes: ByteArray,
+    ): ByteArray {
+        val input = samples(bytes).copyOf(bytes.size / 4 + core.latencyFrames)
+        val processed = FloatArray(input.size)
+        core.process(input, 0, processed, 0, input.size)
+        val output = ByteBuffer.allocate(bytes.size).order(ByteOrder.nativeOrder())
+        processed.drop(core.latencyFrames).forEach { output.putFloat(it) }
+        return output.array()
+    }
+
+    @Test
+    fun `Off copies audio without running the leveler`() {
+        for (encoding in listOf(C.ENCODING_PCM_16BIT, C.ENCODING_PCM_FLOAT)) {
+            val processor = configured(encoding = encoding)
+            val bytes = Random(5).nextBytes(48000 * 8)
+            val result = ByteArrayOutputStream()
+            feed(processor, bytes, result)
+            assertFalse(processor.levelerRunning)
+            finish(processor, result)
+            assertArrayEquals(bytes, result.toByteArray())
+        }
+    }
+
+    @Test
+    fun `turning on mid-stream starts a fresh leveler and fades it in without moving frames`() {
+        val state = VolumeLevelingState(LevelingMode.STRONG)
+        val processor = configured(state, channels = 1, encoding = C.ENCODING_PCM_FLOAT)
+        val result = ByteArrayOutputStream()
+        // Train an estimate that a fresh core would not have, then turn off until the core is idle.
+        val training = floats(48000 * 20) { .02 * sin(it * .06) }
+        feed(processor, training, result)
+        state.mode = LevelingMode.OFF
+        val off = floats(48000) { .5 * sin(it * .05) }
+        feed(processor, off, result)
+        assertFalse(processor.levelerRunning)
+        state.mode = LevelingMode.STRONG
+        val on = floats(48000 * 3) { (if (it < 72000) .05 else .8) * sin(it * .07) }
+        val before = result.size()
+        feed(processor, on, result)
+        assertTrue(processor.levelerRunning)
+        finish(processor, result)
+        assertEquals(training.size + off.size + on.size, result.size())
+
+        // The first chunk after switching on runs at Off, so the core starts there and fades in.
+        val input = ByteBuffer.wrap(on).order(ByteOrder.nativeOrder())
+        val samples = FloatArray(on.size / 4) { input.float }
+        val reference = VolumeLeveler(48000, 1)
+        val delayed = FloatArray(samples.size)
+        reference.process(samples, 0, delayed, 0, 1024)
+        reference.mode = LevelingMode.STRONG
+        reference.process(samples, 1024, delayed, 1024, samples.size - 1024)
+        val tail = FloatArray(reference.latencyFrames)
+        reference.process(FloatArray(tail.size), 0, tail, 0, tail.size)
+        val expected = ByteBuffer.allocate(on.size).order(ByteOrder.nativeOrder())
+        delayed.drop(reference.latencyFrames).forEach { expected.putFloat(it) }
+        tail.forEach { expected.putFloat(it) }
+        val actual = result.toByteArray().copyOfRange(before, result.size())
+        assertFalse("the leveler must change the loud part", on.contentEquals(actual))
+        assertArrayEquals(expected.array(), actual)
+    }
+
+    @Test
+    fun `seeking after switching on while idle starts a fresh leveler`() {
+        val state = VolumeLevelingState(LevelingMode.STRONG)
+        val processor = configured(state, channels = 1, encoding = C.ENCODING_PCM_FLOAT)
+        val quiet = floats(48000 * 20) { .02 * sin(it * .06) }
+        feed(processor, quiet, ByteArrayOutputStream())
+        state.mode = LevelingMode.OFF
+        feed(processor, quiet.copyOf(48000 * 4), ByteArrayOutputStream())
+        assertFalse(processor.levelerRunning)
+        state.mode = LevelingMode.STRONG
+        processor.flush()
+        val fresh = quiet.copyOf(4800 * 4)
+        val result = ByteArrayOutputStream()
+        feed(processor, fresh, result)
+        finish(processor, result)
+        assertArrayEquals(run(fresh, 48000, 1, C.ENCODING_PCM_FLOAT, LevelingMode.STRONG, 47), result.toByteArray())
     }
 
     @Test
@@ -325,7 +431,7 @@ class VolumeLevelingAudioProcessorTest {
     @Test
     fun `EOS preserves output still held by Media3 before exposing the delayed tail`() {
         for (retrieveFirst in listOf(false, true)) {
-            val processor = configured()
+            val processor = configured(VolumeLevelingState(LevelingMode.STRONG))
             val bytes = Random(84).nextBytes(4000)
             processor.queueInput(buffer(bytes))
             val held = if (retrieveFirst) processor.output else null
@@ -337,13 +443,14 @@ class VolumeLevelingAudioProcessorTest {
                 result.write(first)
             }
             while (!processor.isEnded) copyOutput(processor, result)
-            assertArrayEquals("retrieveFirst=$retrieveFirst", bytes, result.toByteArray())
+            val expected = run(bytes, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 84)
+            assertArrayEquals("retrieveFirst=$retrieveFirst", expected, result.toByteArray())
         }
     }
 
     @Test
     fun `repeated EOS from an upstream processor cannot erase a partially consumed tail`() {
-        val processor = configured()
+        val processor = configured(VolumeLevelingState(LevelingMode.STRONG))
         val bytes = Random(62).nextBytes(4000)
         val result = ByteArrayOutputStream()
         feed(processor, bytes, result)
@@ -355,12 +462,12 @@ class VolumeLevelingAudioProcessorTest {
         val rest = ByteArray(tail.remaining())
         tail.get(rest)
         result.write(rest)
-        assertArrayEquals(bytes, result.toByteArray())
+        assertArrayEquals(run(bytes, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 62), result.toByteArray())
     }
 
     @Test
     fun `Media3 pipeline preserves frame origin and tail with an active upstream processor`() {
-        val processor = VolumeLevelingAudioProcessor(VolumeLevelingState())
+        val processor = VolumeLevelingAudioProcessor(VolumeLevelingState(LevelingMode.STRONG))
         val mapping =
             androidx.media3.exoplayer.audio
                 .ChannelMappingAudioProcessor()
@@ -396,14 +503,14 @@ class VolumeLevelingAudioProcessorTest {
             output.get(block)
             result.write(block)
         }
-        val expected = ByteArray(bytes.size)
+        val swapped = ByteArray(bytes.size)
         for (frame in bytes.indices step 4) {
-            expected[frame] = bytes[frame + 2]
-            expected[frame + 1] = bytes[frame + 3]
-            expected[frame + 2] = bytes[frame]
-            expected[frame + 3] = bytes[frame + 1]
+            swapped[frame] = bytes[frame + 2]
+            swapped[frame + 1] = bytes[frame + 3]
+            swapped[frame + 2] = bytes[frame]
+            swapped[frame + 3] = bytes[frame + 1]
         }
-        assertArrayEquals(expected, result.toByteArray())
+        assertArrayEquals(run(swapped, 48000, 2, C.ENCODING_PCM_16BIT, LevelingMode.STRONG, 451), result.toByteArray())
     }
 
     @Test
