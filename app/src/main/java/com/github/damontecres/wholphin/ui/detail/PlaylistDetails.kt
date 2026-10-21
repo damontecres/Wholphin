@@ -58,7 +58,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.DefaultPlaylistItemsOptions
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
@@ -66,29 +65,23 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
-import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
-import com.github.damontecres.wholphin.services.FilterOptionCache
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PlaylistCreator
-import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.ui.FontAwesome
-import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
+import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.CollectionFolderState
-import com.github.damontecres.wholphin.ui.components.CollectionFolderViewActions
 import com.github.damontecres.wholphin.ui.components.CollectionFolderViewContent
+import com.github.damontecres.wholphin.ui.components.CollectionFolderViewModel
 import com.github.damontecres.wholphin.ui.components.ContextMenu
 import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
-import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -127,9 +120,7 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.successValue
@@ -141,18 +132,19 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -168,28 +160,21 @@ class PlaylistViewModel
         navigationManager: NavigationManager,
         musicService: MusicService,
         mediaManagementService: MediaManagementService,
-        private val backdropService: BackdropService,
         private val serverRepository: ServerRepository,
-        private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
-        private val serverReportService: ServerReportService,
-        private val filterOptionCache: FilterOptionCache,
-        private val playlistCreator: PlaylistCreator,
         @Assisted itemId: UUID,
-    ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService),
-        ContextMenuProvider,
-        CollectionFolderViewActions {
+        @Assisted private val collectionState: StateFlow<CollectionFolderState>,
+    ) : MusicViewModel(itemId, context, api, musicService, navigationManager, mediaManagementService) {
         @AssistedFactory
         interface Factory {
-            fun create(itemId: UUID): PlaylistViewModel
+            fun create(
+                itemId: UUID,
+                collectionState: StateFlow<CollectionFolderState>,
+            ): PlaylistViewModel
         }
 
-        private val _state =
-            MutableStateFlow(CollectionFolderState(viewOptions = playlistDefaultViewOptions))
-        val state: StateFlow<CollectionFolderState> = _state
-
-        private val _playlistState = MutableStateFlow(PlaylistDetailsState())
-        val playlistState: StateFlow<PlaylistDetailsState> = _playlistState
+        private val _state = MutableStateFlow(PlaylistDetailsState())
+        val state: StateFlow<PlaylistDetailsState> = _state
 
         val musicState = musicService.state
 
@@ -206,11 +191,6 @@ class PlaylistViewModel
         override fun init() {
             viewModelScope.launchDefault {
                 try {
-                    val playlist =
-                        api.userLibraryApi
-                            .getItem(itemId)
-                            .content
-                            .let { BaseItem(it, false) }
                     val user = serverRepository.currentUser
                     val canEdit =
                         user?.let { user ->
@@ -243,88 +223,12 @@ class PlaylistViewModel
                                 false
                             }
                         } ?: false
-                    _state.update {
-                        it.copy(item = DataLoadingState.Success(playlist))
-                    }
-                    _playlistState.update { it.copy(canEdit = canEdit) }
 
-                    val libraryDisplayInfo =
-                        user?.let { user ->
-                            libraryDisplayInfoDao.getItem(user, itemId)
-                        }
-                    val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
-                    val sortAndDirection =
-                        libraryDisplayInfo?.sortAndDirection ?: SortAndDirection(
-                            ItemSortBy.DEFAULT,
-                            SortOrder.ASCENDING,
-                        )
-                    loadItems(filter, sortAndDirection).join()
+                    _state.update { it.copy(canEdit = canEdit) }
                     determineMediaType()
                 } catch (ex: Exception) {
-                    Timber.e(ex, "Error fetching playlist %s", itemId)
-                    _state.update { it.copy(item = DataLoadingState.Error(ex)) }
-                }
-            }
-        }
-
-        fun loadItems(
-            filter: GetItemsFilter,
-            sortAndDirection: SortAndDirection,
-        ) = viewModelScope.launchIO {
-            backdropService.clearBackdrop()
-            _state.update {
-                it.copy(
-                    items = DataLoadingState.Loading,
-                    filter = filter,
-                    sortAndDirection = sortAndDirection,
-                )
-            }
-
-            serverRepository.currentUser?.let { user ->
-                viewModelScope.launchIO {
-                    val libraryDisplayInfo =
-                        libraryDisplayInfoDao.getItem(user, itemId)?.copy(
-                            filter = filter,
-                            sort = sortAndDirection.sort,
-                            direction = sortAndDirection.direction,
-                        )
-                            ?: LibraryDisplayInfo(
-                                userId = user.rowId,
-                                itemId = itemId.toServerString(),
-                                sort = sortAndDirection.sort,
-                                direction = sortAndDirection.direction,
-                                filter = filter,
-                                viewOptions = null,
-                            )
-                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
-                }
-
-                val request =
-                    filter.applyTo(
-                        GetItemsRequest(
-                            parentId = itemId,
-                            userId = user.id,
-                            fields = SlimItemFields,
-                            sortBy = listOf(sortAndDirection.sort),
-                            sortOrder = listOf(sortAndDirection.direction),
-                        ),
-                    )
-                try {
-                    val pager =
-                        ApiRequestPager(
-                            api,
-                            request,
-                            GetItemsRequestHandler,
-                            viewModelScope,
-                        ).init()
-                    _state.update {
-                        it.copy(items = DataLoadingState.Success(pager))
-                    }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Error fetching playlist %s", itemId)
-                    _state.update {
-                        it.copy(items = DataLoadingState.Error(ex))
-                    }
+                    Timber.e(ex, "Error fetching playlist info for %s", itemId)
+//                    _state.update { it.copy(item = DataLoadingState.Error(ex)) }
                 }
             }
         }
@@ -334,86 +238,49 @@ class PlaylistViewModel
          *
          * In theory, the server will set the type, but sometimes it doesn't
          */
-        private suspend fun determineMediaType() {
-            // Use the type the server says
-            var mediaType =
-                state.value.item.successValue
-                    ?.data
-                    ?.mediaType ?: MediaType.UNKNOWN
-            mediaType =
-                if (mediaType == MediaType.UNKNOWN) {
-                    // Otherwise, if a most of the list is one type, we can assume that type
-                    val pager = (state.value.items.successValue as? ApiRequestPager<*>)
-                    if (pager != null && pager.size <= 50) {
-                        val types =
-                            (0..<50.coerceAtMost(pager.size)).groupBy { index ->
-                                val pagerItem = pager.getBlocking(index)
-                                when (pagerItem?.type) {
-                                    BaseItemKind.AUDIO -> MediaType.AUDIO
+        private fun determineMediaType() {
+            collectionState
+                .map { Pair(it.item, it.items) }
+                .distinctUntilChanged()
+                .catch { ex -> Timber.e(ex, "Error in determineMediaType") }
+                .collectLatestIn(viewModelScope) { (item, items) ->
+                    var mediaType = item.successValue?.data?.mediaType ?: MediaType.UNKNOWN
+                    mediaType =
+                        if (mediaType == MediaType.UNKNOWN) {
+                            // Otherwise, if a most of the list is one type, we can assume that type
+                            val pager = (items.successValue as? ApiRequestPager<*>)
+                            if (pager != null && pager.size <= 50) {
+                                val types =
+                                    (0..<50.coerceAtMost(pager.size)).groupBy { index ->
+                                        val pagerItem = pager.getBlocking(index)
+                                        when (pagerItem?.type) {
+                                            BaseItemKind.AUDIO -> MediaType.AUDIO
 
-                                    BaseItemKind.VIDEO,
-                                    BaseItemKind.EPISODE,
-                                    BaseItemKind.MOVIE,
-                                    BaseItemKind.BOX_SET,
-                                    -> MediaType.VIDEO
+                                            BaseItemKind.VIDEO,
+                                            BaseItemKind.EPISODE,
+                                            BaseItemKind.MOVIE,
+                                            BaseItemKind.BOX_SET,
+                                            -> MediaType.VIDEO
 
-                                    else -> MediaType.UNKNOWN
+                                            else -> MediaType.UNKNOWN
+                                        }
+                                    }
+                                if (types.keys.size == 1) {
+                                    types.keys.first()
+                                } else {
+                                    MediaType.UNKNOWN
                                 }
+                            } else {
+                                MediaType.UNKNOWN
                             }
-                        if (types.keys.size == 1) {
-                            types.keys.first()
                         } else {
-                            MediaType.UNKNOWN
+                            mediaType
                         }
-                    } else {
-                        MediaType.UNKNOWN
+                    Timber.d("mediaType=%s", mediaType)
+                    _state.update {
+                        it.copy(mediaType = mediaType)
                     }
-                } else {
-                    mediaType
                 }
-            Timber.d("mediaType=%s", mediaType)
-            _playlistState.update {
-                it.copy(mediaType = mediaType)
-            }
-        }
-
-        override suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
-            filterOptionCache.getFilterOptionValues(
-                itemId,
-                filterOption,
-            )
-
-        override suspend fun positionOfLetter(letter: Char): Int? {
-            TODO("Not yet implemented")
-        }
-
-        override fun saveViewOptions(viewOptions: ViewOptions) {
-            TODO("Not yet implemented")
-        }
-
-        override fun onClickRandom() {
-            TODO("Not yet implemented")
-        }
-
-        override fun updateBackdrop(item: BaseItem) {
-            viewModelScope.launchIO {
-                backdropService.submit(item)
-            }
-        }
-
-        override fun onSortChange(
-            sortAndDirection: SortAndDirection,
-            recursive: Boolean,
-            filter: GetItemsFilter,
-        ) {
-            TODO("Not yet implemented")
-        }
-
-        override fun onFilterChange(
-            newFilter: GetItemsFilter,
-            recursive: Boolean,
-        ) {
-            TODO("Not yet implemented")
         }
 
         fun setWatched(
@@ -430,21 +297,19 @@ class PlaylistViewModel
             favoriteWatchManager.setFavorite(itemId, favorite)
         }
 
-        fun sendMediaReport(itemId: UUID) {
-            viewModelScope.launchDefault { serverReportService.sendMediaReportFor(itemId) }
-        }
-
         fun removeFromPlaylist(
             index: Int,
             itemId: UUID,
         ) {
             viewModelScope.launchIO {
                 try {
-                    playlistCreator.removeFromServerPlaylist(
-                        playlistId = this@PlaylistViewModel.itemId,
-                        itemId = itemId,
+                    api.playlistsApi.removeItemFromPlaylist(
+                        this@PlaylistViewModel.itemId.toServerString(),
+                        listOf(itemId.toServerString()),
                     )
-                    (state.value.items as? ApiRequestPager<*>)?.refreshPagesAfter(index)
+                    (collectionState.value.items.successValue as? ApiRequestPager<*>)?.refreshPagesAfter(
+                        index,
+                    )
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
@@ -471,43 +336,10 @@ class PlaylistViewModel
                     itemId = itemId.toServerString(),
                     newIndex = newIndex,
                 )
-                (state.value.items as? ApiRequestPager<*>)?.refreshPagesAfter(index - 1)
+                (collectionState.value.items.successValue as? ApiRequestPager<*>)?.refreshPagesAfter(
+                    index - 1,
+                )
             }
-        }
-
-        override fun isAdministrator(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun navigateTo(destination: Destination) {
-            TODO("Not yet implemented")
-        }
-
-        override fun deleteItem(
-            index: Int,
-            item: BaseItem,
-        ) {
-            TODO("Not yet implemented")
-        }
-
-        override fun setWatched(
-            position: Int,
-            itemId: UUID,
-            played: Boolean,
-        ) {
-            TODO("Not yet implemented")
-        }
-
-        override fun setFavorite(
-            position: Int,
-            itemId: UUID,
-            favorite: Boolean,
-        ) {
-            TODO("Not yet implemented")
-        }
-
-        override fun sendReportFor(itemId: UUID) {
-            TODO("Not yet implemented")
         }
     }
 
@@ -527,14 +359,31 @@ fun PlaylistDetails(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
+    collectionViewModel: CollectionFolderViewModel =
+        hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
+            creationCallback = {
+                it.create(
+                    itemId = destination.itemId.toServerString(),
+                    initialSortAndDirection =
+                        SortAndDirection(
+                            ItemSortBy.DEFAULT,
+                            SortOrder.ASCENDING,
+                        ),
+                    recursive = false,
+                    collectionFilter = CollectionFolderFilter(),
+                    useSeriesForPrimary = false,
+                    defaultViewOptions = playlistDefaultViewOptions,
+                )
+            },
+        ),
     viewModel: PlaylistViewModel =
         hiltViewModel<PlaylistViewModel, PlaylistViewModel.Factory>(
-            creationCallback = { it.create(destination.itemId) },
+            creationCallback = { it.create(destination.itemId, collectionViewModel.state) },
         ),
     addToPlaylistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
-    val playlistState by viewModel.playlistState.collectAsState()
+    val state by collectionViewModel.state.collectAsState()
+    val playlistState by viewModel.state.collectAsState()
     val musicState by viewModel.musicState.collectAsState()
     val focusManager = LocalFocusManager.current
 
@@ -551,7 +400,7 @@ fun PlaylistDetails(
     ) {
         when (mediaTypeOverride ?: playlistState.mediaType) {
             MediaType.VIDEO -> {
-                viewModel.navigationManager.navigateTo(
+                collectionViewModel.navigateTo(
                     Destination.PlaybackList(
                         itemId = destination.itemId,
                         startIndex = index,
@@ -575,7 +424,7 @@ fun PlaylistDetails(
     val musicContextActions =
         remember {
             MusicContextActions(
-                navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                navigateTo = { collectionViewModel.navigateTo(it) },
                 onClickPlay = { index, item -> play(index, item, false, MediaType.AUDIO) },
                 onClickPlayNext = { index, item -> viewModel.playNext(item) },
                 onClickAddToQueue = { item -> viewModel.addToQueue(item, Int.MAX_VALUE) },
@@ -592,14 +441,14 @@ fun PlaylistDetails(
     val contextActions =
         remember {
             ContextMenuActions(
-                navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                navigateTo = { collectionViewModel.navigateTo(it) },
                 onClickWatch = { id, watched -> viewModel.setWatched(id, watched) },
                 onClickFavorite = { id, favorite -> viewModel.setFavorite(id, favorite) },
                 onClickAddPlaylist = { itemId ->
                     addToPlaylistViewModel.loadPlaylists()
                     showPlaylistDialog.makePresent(itemId)
                 },
-                onSendMediaInfo = viewModel::sendMediaReport,
+                onSendMediaInfo = collectionViewModel::sendReportFor,
                 onDeleteItem = viewModel::deleteItem,
                 onClickAddToQueue = { viewModel.addToQueue(it, 0) },
                 onShowOverview = {},
@@ -613,7 +462,7 @@ fun PlaylistDetails(
     val actions =
         remember {
             GridClickActions(
-                onClickItem = { index, item -> viewModel.navigateTo(item.destination(index)) },
+                onClickItem = { index, item -> collectionViewModel.navigateTo(item.destination(index)) },
                 onLongClickItem = { index, item -> },
             )
         }
@@ -628,8 +477,8 @@ fun PlaylistDetails(
         sortOptions = PlaylistSortOptions,
         playEnabled = true,
         defaultViewOptions = playlistDefaultViewOptions,
-        viewActions = viewModel,
-        provider = viewModel,
+        viewActions = collectionViewModel,
+        provider = collectionViewModel,
         positionCallback = { _, position -> viewModel.position = position },
         modifier = modifier,
         listItemContent = { (item, index, onClick, onLongClick, _, mod) ->
