@@ -36,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -78,6 +80,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.serverSupportedMessage
 import com.github.damontecres.wholphin.ui.setup.ReleaseNotes
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
@@ -102,6 +105,7 @@ fun PreferencesContent(
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val firstFocusRequester = remember { FocusRequester() }
@@ -114,6 +118,11 @@ fun PreferencesContent(
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
     val players by viewModel.externalPlayers.collectAsState()
+    val serverSupported by viewModel.serverSupported.collectAsState()
+    val serverVersionMessage =
+        remember(resources, serverSupported) {
+            resources.serverSupportedMessage(serverSupported.second, serverSupported.first)
+        }
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrConnection by viewModel.seerrConnection.collectAsState()
@@ -230,6 +239,19 @@ fun PreferencesContent(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                serverVersionMessage?.let { message ->
+                    item {
+                        ListItem(
+                            selected = false,
+                            enabled = true,
+                            onClick = {},
+                            headlineContent = {
+                                PreferenceTitle(message, color = MaterialTheme.colorScheme.error)
+                            },
+                            modifier = Modifier,
+                        )
+                    }
+                }
                 if (showUpdate) {
                     item {
                         val interactionSource = remember { MutableInteractionSource() }
@@ -265,6 +287,7 @@ fun PreferencesContent(
                         )
                     }
                 }
+
                 prefList.forEachIndexed { groupIndex, group ->
                     item {
                         Text(
