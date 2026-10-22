@@ -313,6 +313,30 @@ fun PreferencesContent(
                                 }
                             }
                             when (pref) {
+                                AppPreference.ReduceLoudSounds -> {
+                                    val enabled = preferences.playbackPreferences.reduceLoudSounds
+                                    val backend = preferences.playbackPreferences.playerBackend
+                                    SwitchPreference(
+                                        title = stringResource(R.string.reduce_loud_sounds),
+                                        value = enabled,
+                                        summary =
+                                            if (backend == PlayerBackend.EXO_PLAYER || backend == PlayerBackend.UNRECOGNIZED) {
+                                                null
+                                            } else {
+                                                stringResource(R.string.requires_exoplayer)
+                                            },
+                                        onClick = {
+                                            scope.launch(ExceptionHandler()) {
+                                                viewModel.preferenceDataStore.updateData {
+                                                    AppPreference.ReduceLoudSounds.setter(it, !it.playbackPreferences.reduceLoudSounds)
+                                                }
+                                            }
+                                        },
+                                        interactionSource = interactionSource,
+                                        modifier = focusModifier,
+                                    )
+                                }
+
                                 AppPreference.InstalledVersion -> {
                                     ClickPreference(
                                         title = stringResource(R.string.installed_version),
