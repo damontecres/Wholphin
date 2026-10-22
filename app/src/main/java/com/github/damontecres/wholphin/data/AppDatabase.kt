@@ -51,7 +51,7 @@ import java.util.UUID
         RememberedTab::class,
         SeriesTrackChoice::class,
     ],
-    version = 40,
+    version = 41,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -71,6 +71,7 @@ import java.util.UUID
         AutoMigration(33, 34),
         AutoMigration(34, 35),
         AutoMigration(35, 40),
+        AutoMigration(40, 41),
     ],
 )
 @TypeConverters(Converters::class)
