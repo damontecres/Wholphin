@@ -501,6 +501,11 @@ fun serverErrorMessage(
             resources.getString(R.string.server_version_not_supported) + ": ${server.status.systemInfo.version}"
         }
 
+        server?.status is ServerConnectionStatus.Success &&
+            server.versionSupported == ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE -> {
+            resources.getString(R.string.server_version_not_supported_future) + ": ${server.status.systemInfo.version}"
+        }
+
         server?.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
             resources.getString(R.string.server_version_not_supported)
         }

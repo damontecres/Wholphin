@@ -308,6 +308,8 @@ class SwitchUserViewModel
                 systemInfo.version to ServerVersionSupported.UNKNOWN
             } else if (serverVersion < WholphinApplication.minimumServerVersion) {
                 systemInfo.version to ServerVersionSupported.NOT_SUPPORTED
+            } else if (serverVersion < WholphinApplication.newMinimumServerVersion) {
+                systemInfo.version to ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE
             } else {
                 systemInfo.version to ServerVersionSupported.SUPPORTED
             }

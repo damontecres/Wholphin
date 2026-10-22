@@ -183,36 +183,47 @@ fun SwitchUserContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                when (state.serverVersionSupported) {
-                    ServerVersionSupported.SUPPORTED -> {}
+                val resources = LocalResources.current
+                val message =
+                    remember(resources, state.serverVersionSupported) {
+                        val errorMsg =
+                            when (state.serverVersionSupported) {
+                                ServerVersionSupported.SUPPORTED -> {
+                                    null
+                                }
 
-                    ServerVersionSupported.NOT_SUPPORTED,
-                    ServerVersionSupported.UNKNOWN,
-                    -> {
-                        val resources = LocalResources.current
-                        val message =
-                            remember(resources) {
-                                if (state.serverVersion.isNotNullOrBlank()) {
-                                    resources.getString(R.string.server_version_not_supported) + ": ${state.serverVersion}"
-                                } else {
-                                    resources.getString(R.string.server_version_not_supported) + ": " +
-                                        resources.getString(R.string.unknown)
+                                ServerVersionSupported.NOT_SUPPORTED,
+                                ServerVersionSupported.UNKNOWN,
+                                -> {
+                                    resources.getString(R.string.server_version_not_supported)
+                                }
+
+                                ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE -> {
+                                    resources.getString(R.string.server_version_not_supported_future)
                                 }
                             }
-                        Text(
-                            text = message,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
-                                    .align(Alignment.BottomCenter),
-                        )
+                        errorMsg?.let {
+                            if (state.serverVersion.isNotNullOrBlank()) {
+                                it + ": ${state.serverVersion}"
+                            } else {
+                                it + ": " + resources.getString(R.string.unknown)
+                            }
+                        }
                     }
+                message?.let {
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
+                                .align(Alignment.BottomCenter),
+                    )
                 }
             }
         }
