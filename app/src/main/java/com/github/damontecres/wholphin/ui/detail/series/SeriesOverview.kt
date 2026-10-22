@@ -156,6 +156,7 @@ fun SeriesOverview(
         focusedEpisode?.let {
             viewModel.lookUpChosenTracks(it.id, it)
             viewModel.lookupPeopleInEpisode(it)
+            viewModel.lookUpEpisodeRatings(it)
         }
     }
     val chosenStreams = state.chosenStreams
@@ -199,6 +200,7 @@ fun SeriesOverview(
                 seasons = state.seasons,
                 episodes = state.episodes,
                 chosenStreams = chosenStreams,
+                episodeRatings = state.episodeRatings,
                 peopleInEpisode = state.peopleInEpisode.people,
                 seasonExtras = state.extras,
                 position = position,

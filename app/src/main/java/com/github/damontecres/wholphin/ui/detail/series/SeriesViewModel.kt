@@ -10,6 +10,8 @@ import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
+import com.github.damontecres.wholphin.data.model.ExternalRatings
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -17,6 +19,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MdbListRatingsService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -101,6 +104,7 @@ class SeriesViewModel
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
         private val mediaManagementService: MediaManagementService,
+        private val mdbListRatingsService: MdbListRatingsService,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
         @Assisted val seriesPageType: SeriesPageType,
@@ -142,6 +146,12 @@ class SeriesViewModel
                     }
                 }
                 backdropService.submit(series)
+                if (seriesPageType == SeriesPageType.DETAILS) {
+                    viewModelScope.launchIO {
+                        val externalRatings = mdbListRatingsService.getRatings(seriesId)
+                        _state.update { it.copy(externalRatings = externalRatings) }
+                    }
+                }
 
                 val seasonsDeferred = getSeasons(series, seasonEpisodeIds?.seasonNumber)
 
@@ -537,6 +547,19 @@ class SeriesViewModel
         }
 
         private var chosenStreamsJob: Job? = null
+        private var episodeRatingsJob: Job? = null
+
+        fun lookUpEpisodeRatings(item: BaseItem) {
+            episodeRatingsJob?.cancel()
+            if (state.value.episodeRatings.itemId != item.id) {
+                _state.update { it.copy(episodeRatings = ExternalRatings(item.id, emptyList())) }
+            }
+            episodeRatingsJob =
+                viewModelScope.launchIO {
+                    val ratings = mdbListRatingsService.getRatings(item.id)
+                    _state.update { it.copy(episodeRatings = ExternalRatings(item.id, ratings)) }
+                }
+        }
 
         fun lookUpChosenTracks(
             itemId: UUID,
@@ -891,4 +914,6 @@ data class SeriesState(
     val discovered: List<DiscoverItem> = emptyList(),
     val discoverSeries: DiscoverItem? = null,
     val chosenStreams: ChosenStreams? = null,
+    val externalRatings: List<ExternalRating> = emptyList(),
+    val episodeRatings: ExternalRatings = ExternalRatings(),
 )

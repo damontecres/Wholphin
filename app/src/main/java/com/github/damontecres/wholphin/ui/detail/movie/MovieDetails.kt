@@ -337,6 +337,7 @@ fun MovieDetailsContent(
                         preferences = preferences,
                         movie = movie,
                         chosenStreams = state.chosenStreams,
+                        externalRatings = state.externalRatings,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         modifier =
