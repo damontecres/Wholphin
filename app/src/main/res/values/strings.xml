@@ -433,6 +433,7 @@
     <string name="show_details">Show details</string>
     <string name="image_type">Image type</string>
     <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
+    <string name="currently_streaming_on">Currently Streaming On</string>
     <string name="guest_stars">Guest stars</string>
     <string name="edge_size">Edge size</string>
     <string name="refresh_rate_switching">Refresh rate switching</string>

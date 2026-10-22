@@ -2052,6 +2052,7 @@ components:
           items:
             $ref: '#/components/schemas/WatchProviderDetails'
         flatrate:
+          type: array
           items:
             $ref: '#/components/schemas/WatchProviderDetails'
     WatchProviderDetails:

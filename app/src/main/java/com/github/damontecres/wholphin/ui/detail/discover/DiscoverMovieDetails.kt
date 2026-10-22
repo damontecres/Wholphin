@@ -132,6 +132,7 @@ fun DiscoverMovieDetails(
                             overview = movie.overview,
                             genres = movie.genres?.mapNotNull { it.name }.orEmpty(),
                             files = listOf(),
+                            watchProviders = state.watchProviders,
                         )
                 },
                 goToOnClick = {
