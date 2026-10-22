@@ -22,7 +22,7 @@ import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
 import org.jellyfin.sdk.api.client.extensions.userViewApi
-import org.jellyfin.sdk.api.operations.userViewApi
+import org.jellyfin.sdk.api.operations.UserViewApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -41,7 +41,7 @@ class SuggestionsWorkerTest {
     private val mockPreferences = mockk<DataStore<AppPreferences>>(relaxed = true)
     private val mockApi = mockk<ApiClient>(relaxed = true)
     private val mockCache = mockk<SuggestionsCache>(relaxed = true)
-    private val mockuserViewApi = mockk<userViewApi>(relaxed = true)
+    private val mockuserViewApi = mockk<UserViewApi>(relaxed = true)
 
     @Before
     fun setUp() {

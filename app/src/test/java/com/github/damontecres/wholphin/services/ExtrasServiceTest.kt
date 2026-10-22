@@ -16,7 +16,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.operations.libraryApi
+import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -34,7 +34,7 @@ class ExtrasServiceTest {
     private val mockApiClient = mockk<ApiClient>()
     private val mockImageUrlService = mockk<ImageUrlService>()
 
-    private val mocklibraryApi = mockk<libraryApi>()
+    private val mocklibraryApi = mockk<LibraryApi>()
     private val mockResources = mockk<Resources>()
 
     private val extrasService = ExtrasService(mockApiClient, mockContext, mockImageUrlService)
