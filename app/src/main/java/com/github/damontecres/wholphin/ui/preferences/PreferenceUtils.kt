@@ -1,6 +1,13 @@
 package com.github.damontecres.wholphin.ui.preferences
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
+import com.github.damontecres.wholphin.data.model.SeerrServer
+import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.preferences.AppPreference
 import kotlinx.serialization.Serializable
 
@@ -38,9 +45,47 @@ enum class PreferenceScreenOption {
     SCREENSAVER,
     SKIP_SEGMENTS,
     EXPERIMENTAL,
+    HDR_FORMATS,
     ;
 
     companion object {
         fun fromString(name: String?) = entries.firstOrNull { it.name == name } ?: BASIC
     }
+}
+
+@Composable
+fun rememberSeerrDialogBody(
+    user: SeerrUser,
+    server: SeerrServer,
+    ex: Exception? = null,
+): String {
+    val username =
+        when (user.authMethod) {
+            SeerrAuthMethod.LOCAL,
+            SeerrAuthMethod.JELLYFIN,
+            -> user.username ?: stringResource(R.string.unknown)
+
+            SeerrAuthMethod.API_KEY -> stringResource(R.string.api_key)
+        }
+    val method =
+        when (user.authMethod) {
+            SeerrAuthMethod.LOCAL -> R.string.seerr_local_user
+            SeerrAuthMethod.JELLYFIN -> R.string.seerr_jellyfin_user
+            SeerrAuthMethod.API_KEY -> 0
+        }.let {
+            if (it != 0) " (${stringResource(it)})" else ""
+        }
+
+    val body =
+        """
+        ${stringResource(R.string.url)}: ${server.url}
+        ${stringResource(R.string.username)}: $username$method
+        """.trimIndent() +
+            if (ex != null) {
+                "\n\n${stringResource(R.string.voice_error_server)}: ${ex.localizedMessage}"
+            } else {
+                ""
+            }
+
+    return remember { body }
 }

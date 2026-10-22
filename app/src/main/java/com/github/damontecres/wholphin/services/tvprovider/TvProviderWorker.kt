@@ -19,6 +19,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreference
@@ -70,12 +71,8 @@ class TvProviderWorker
 
             if (api.baseUrl.isNullOrBlank() || api.accessToken.isNullOrBlank()) {
                 // Not active
-                var currentUser = serverRepository.current.value
-                if (currentUser == null) {
-                    serverRepository.restoreSession(serverId, userId)
-                    currentUser = serverRepository.current.value
-                }
-                if (currentUser == null) {
+                val result = serverRepository.restoreLastSession()
+                if (result !is RestoredSession.Success) {
                     Timber.w("No user found during run")
                     return Result.failure()
                 }

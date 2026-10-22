@@ -35,6 +35,11 @@ class ImageUrlService
             parentBackdropId: UUID? = null,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
+            seriesPrimaryTag: String? = null,
+            parentLogoId: UUID? = null,
+            parentLogoTag: String? = null,
+            parentThumbTag: String? = null,
+            parentBackdropTags: List<String> = emptyList(),
         ): String? =
             when (imageType) {
                 ImageType.LOGO -> {
@@ -44,6 +49,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = parentLogoTag.takeIf { parentLogoId == seriesId },
                         )
                     } else {
                         getItemImageUrl(
@@ -51,6 +57,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = imageTags[imageType],
                         )
                     }
                 }
@@ -63,6 +70,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = parentBackdropTags.firstOrNull().takeIf { parentBackdropId == seriesId },
                         )
                     } else if (backdropTags.isNotEmpty()) {
                         getItemImageUrl(
@@ -70,6 +78,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = backdropTags.first(),
                         )
                     } else {
                         null
@@ -86,6 +95,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = parentThumbTag,
                         )
                     } else if (useSeriesForPrimary && parentBackdropId != null &&
                         (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
@@ -96,6 +106,7 @@ class ImageUrlService
                             imageType = ImageType.BACKDROP,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = parentBackdropTags.firstOrNull(),
                         )
                     } else if (parentThumbId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
                         getItemImageUrl(
@@ -103,6 +114,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = parentThumbTag,
                         )
                     } else if (useSeriesForPrimary &&
                         parentThumbId == null &&
@@ -115,6 +127,7 @@ class ImageUrlService
                             imageType = ImageType.PRIMARY,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = imageTags[ImageType.PRIMARY],
                         )
                     } else if (imageType !in imageTags && backdropTags.isNotEmpty()) {
                         // If no thumb, use backdrop if available
@@ -123,6 +136,7 @@ class ImageUrlService
                             imageType = ImageType.BACKDROP,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = backdropTags.first(),
                         )
                     } else {
                         getItemImageUrl(
@@ -130,6 +144,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = imageTags[imageType],
                         )
                     }
                 }
@@ -145,6 +160,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = seriesPrimaryTag.takeIf { imageType == ImageType.PRIMARY },
                         )
                     } else if (seriesId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
                         getItemImageUrl(
@@ -152,6 +168,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = seriesPrimaryTag.takeIf { imageType == ImageType.PRIMARY },
                         )
                     } else {
                         getItemImageUrl(
@@ -159,6 +176,7 @@ class ImageUrlService
                             imageType = imageType,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
+                            tag = imageTags[imageType],
                         )
                     }
                 }
@@ -169,6 +187,7 @@ class ImageUrlService
                         imageType = imageType,
                         fillWidth = fillWidth,
                         fillHeight = fillHeight,
+                        tag = imageTags[imageType],
                     )
                 }
             }
@@ -193,6 +212,11 @@ class ImageUrlService
                     backdropTags = item.data.backdropImageTags.orEmpty(),
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
+                    seriesPrimaryTag = item.data.seriesPrimaryImageTag,
+                    parentLogoId = item.data.parentLogoItemId,
+                    parentLogoTag = item.data.parentLogoImageTag,
+                    parentThumbTag = item.data.parentThumbImageTag,
+                    parentBackdropTags = item.data.parentBackdropImageTags.orEmpty(),
                 )
             } else {
                 null

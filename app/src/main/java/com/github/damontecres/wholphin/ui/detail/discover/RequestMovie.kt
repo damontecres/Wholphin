@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 fun RequestMovieDialog(
     loading: LoadingState,
     data: SeerrRequestData,
+    requestEnabled: Boolean,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
@@ -54,10 +55,11 @@ fun RequestMovieDialog(
         RequestMovie(
             loading = loading,
             data = data,
+            requestEnabled = requestEnabled,
             request4kEnabled = request4kEnabled,
             movie = movie,
             onSubmit = onSubmit,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(24.dp),
         )
     }
 }
@@ -66,6 +68,7 @@ fun RequestMovieDialog(
 fun RequestMovie(
     loading: LoadingState,
     data: SeerrRequestData,
+    requestEnabled: Boolean,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
@@ -90,7 +93,8 @@ fun RequestMovie(
             if (data.profiles.isEmpty() && data.rootFolders.isEmpty() &&
                 data.profiles4k.isEmpty() && data.rootFolders4k.isEmpty()
             ) {
-                if (request4kEnabled) {
+                // Both enabled, show choice
+                if (requestEnabled && request4kEnabled) {
                     val items =
                         remember {
                             listOf(
@@ -118,12 +122,13 @@ fun RequestMovie(
                     )
                 } else {
                     LaunchedEffect(Unit) {
-                        onSubmit.invoke(MovieRequest(data, movie.id, false, null, null))
+                        onSubmit.invoke(MovieRequest(data, movie.id, request4kEnabled, null, null))
                     }
                 }
             } else {
                 RequestMovieWithOptions(
                     data = data,
+                    requestEnabled = requestEnabled,
                     request4kEnabled = request4kEnabled,
                     movie = movie,
                     onSubmit = onSubmit,
@@ -137,12 +142,13 @@ fun RequestMovie(
 @Composable
 private fun RequestMovieWithOptions(
     data: SeerrRequestData,
+    requestEnabled: Boolean,
     request4kEnabled: Boolean,
     movie: MovieDetails,
     onSubmit: (MovieRequest) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var is4k by remember { mutableStateOf(request4kEnabled) }
+    var is4k by remember { mutableStateOf(!requestEnabled) }
     var profile by remember(is4k) {
         mutableStateOf(
             if (is4k) {
@@ -185,7 +191,7 @@ private fun RequestMovieWithOptions(
                             .fillMaxWidth()
                             .padding(bottom = 8.dp),
                 ) {
-                    if (request4kEnabled) {
+                    if (requestEnabled && request4kEnabled) {
                         ClickSwitch(
                             label = stringResource(R.string.request_4k),
                             checked = is4k,
@@ -377,7 +383,7 @@ fun MovieRequestPreview() {
                         ),
                     profiles4k =
                         listOf(
-                            SeerrProfile(1, "HD", true),
+                            SeerrProfile(1, "4K", true),
                             SeerrProfile(2, "Ultra HD", false),
                         ),
                     rootFolders4k =
@@ -385,7 +391,8 @@ fun MovieRequestPreview() {
                             SeerrRootFolder(1, "/movies", "400GB", true),
                         ),
                 ),
-            request4kEnabled = false,
+            requestEnabled = true,
+            request4kEnabled = true,
             movie = MovieDetails(id = 1, title = "Movie Name", releaseDate = "2026"),
             onSubmit = {},
             modifier =

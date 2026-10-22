@@ -54,8 +54,8 @@ fun VideoStreamDetails(
 ) = VideoStreamDetails(
     chosenStreams?.source,
     chosenStreams?.videoStream,
-    chosenStreams?.audioStream,
-    chosenStreams?.subtitleStream,
+    chosenStreams?.audioStream?.stream,
+    chosenStreams?.subtitleStream?.stream,
     numberOfVersions,
     modifier,
 )

@@ -42,7 +42,7 @@ data class AudioItem(
                         ?.id,
                 title = item.title,
                 albumTitle = item.data.album,
-                artistNames = item.data.albumArtist,
+                artistNames = item.data.artists?.joinToString(", "),
                 runtime = item.data.runTimeTicks?.ticks,
                 imageUrl = imageUrl,
                 hasLyrics = item.data.hasLyrics == true,

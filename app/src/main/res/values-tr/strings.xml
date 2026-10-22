@@ -715,4 +715,7 @@
     <string name="season_number">Sezon %1$d</string>
     <string name="photo_albums">Fotoğraf Albümleri</string>
     <string name="no_favorites_found">Favori bulunamadı!</string>
+    <string name="remove_from_playlist">Oynatma listesinden kaldır</string>
+    <string name="login_credentials_expired">Oturum süresi doldu, lütfen tekrar giriş yapın</string>
+    <string name="login_not_authorized">Şu anda sunucuya erişim yetkiniz bulunmuyor</string>
 </resources>

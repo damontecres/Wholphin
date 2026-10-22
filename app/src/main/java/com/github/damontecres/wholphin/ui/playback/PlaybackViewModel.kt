@@ -5,6 +5,7 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.unit.Density
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -34,6 +35,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreference
@@ -198,7 +200,7 @@ class PlaybackViewModel
 
         val currentUserDto = serverRepository.currentUserDtoFlow
 
-        // Exposed for testing
+        @VisibleForTesting
         val initJob: Job
 
         init {
@@ -489,7 +491,16 @@ class PlaybackViewModel
                         null
                     }
 
-                val plc = streamChoiceService.getPlaybackLanguageChoice(base)
+                val audioStc =
+                    streamChoiceService.getSeriesTrackChoices(
+                        base,
+                        SeriesTrackChoiceType.AUDIO,
+                    )
+                val subtitleStc =
+                    streamChoiceService.getSeriesTrackChoices(
+                        base,
+                        SeriesTrackChoiceType.AUDIO,
+                    )
 
                 if (mediaSource == null && !isLiveTv) {
                     showToast(
@@ -518,30 +529,31 @@ class PlaybackViewModel
 
                 val subtitleStreams = mediaSource?.let { getSubtitleStreams(mediaSource) }.orEmpty()
                 val audioStreams = mediaSource?.let { getAudioStreams(mediaSource) }.orEmpty()
-                val audioStream =
+                val audioResult =
                     mediaSource?.let {
                         streamChoiceService
                             .chooseAudioStream(
                                 source = mediaSource,
-                                seriesId = base.seriesId,
+                                item = base,
                                 itemPlayback = itemPlayback,
-                                plc = plc,
+                                stc = audioStc,
                                 prefs = preferences,
                             )
                     }
-                val audioIndex = audioStream?.index
+                val audioIndex = audioResult?.stream?.index
 
                 val subtitleIndex =
                     mediaSource?.let {
                         streamChoiceService
                             .chooseSubtitleStream(
+                                item = base,
                                 source = mediaSource,
-                                audioStream = audioStream,
-                                seriesId = base.seriesId,
+                                audioStream = audioResult?.stream,
                                 itemPlayback = itemPlayback,
-                                plc = plc,
+                                stc = subtitleStc,
                                 prefs = preferences,
-                            )?.index
+                            )?.stream
+                            ?.index
                     }
                 Timber.d(
                     "Selected mediaSource=%s, audioIndex=%s, subtitleIndex=%s",
@@ -955,7 +967,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = currentPlayback.mediaSourceInfo,
                             audioStreamIndex = index,
-                            seriesId = currentItem.item.data.seriesId,
+                            item = currentItem.item.data,
                             subtitleIndex = currentPlayback.subtitleIndex,
                             prefs = preferences,
                         )
@@ -991,7 +1003,7 @@ class PlaybackViewModel
                         streamChoiceService.resolveSubtitleIndex(
                             source = currentPlayback.mediaSourceInfo,
                             audioStreamIndex = currentPlayback.audioIndex,
-                            seriesId = currentItem.item.data.seriesId,
+                            item = currentItem.item.data,
                             subtitleIndex = index,
                             prefs = preferences,
                         )
@@ -1110,7 +1122,7 @@ class PlaybackViewModel
         }
 
         // Variables for tracking segment state
-        // Exposed for testing
+        @VisibleForTesting
         internal var segmentJob: Job? = null
         private val autoSkippedSegments = mutableSetOf<UUID>()
         private val outroShownSegments = mutableSetOf<UUID>()

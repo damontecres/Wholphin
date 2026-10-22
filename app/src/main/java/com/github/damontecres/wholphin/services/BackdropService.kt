@@ -77,7 +77,7 @@ class BackdropService
             itemId: String,
             imageUrl: String?,
         ) = withContext(WholphinDispatchers.IO) {
-            if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
+            if (backdropFlow.firstOrNull()?.imageUrl != imageUrl || imageUrl == null) {
                 _backdropFlow.update {
                     it.copy(
                         itemId = itemId,
@@ -110,7 +110,7 @@ class BackdropService
             val dynamicEnabled =
                 backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR ||
                     backdropStyle == BackdropStyle.UNRECOGNIZED
-            val (primaryColor, secondaryColor, tertiaryColor) =
+            val colors =
                 if (dynamicEnabled) {
                     extractColorsFromBackdrop(imageUrl)
                 } else {
@@ -121,9 +121,9 @@ class BackdropService
                     BackdropResult(
                         itemId = itemId,
                         imageUrl = imageUrl,
-                        primaryColor = primaryColor,
-                        secondaryColor = secondaryColor,
-                        tertiaryColor = tertiaryColor,
+                        primaryColor = colors?.primary ?: it.primaryColor,
+                        secondaryColor = colors?.secondary ?: it.secondaryColor,
+                        tertiaryColor = colors?.tertiary ?: it.tertiaryColor,
                     )
                 } else {
                     it
@@ -131,10 +131,10 @@ class BackdropService
             }
         }
 
-        suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
+        suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors? =
             withContext(WholphinDispatchers.IO) {
                 if (imageUrl.isNullOrBlank()) {
-                    return@withContext ExtractedColors.DEFAULT
+                    return@withContext null
                 }
                 extractedColorCache.get(imageUrl)?.let {
                     return@withContext it

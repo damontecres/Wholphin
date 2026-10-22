@@ -244,12 +244,15 @@ class CollectionViewModel
                         }
                     jobs.forEach { job ->
                         val (type, row) = job.await()
-                        _state.update {
-                            val separateItems =
-                                it.separateItems.toMutableMap().apply {
-                                    put(type, row)
-                                }
-                            it.copy(separateItems = separateItems)
+                        // Only include Success if non-empty
+                        if (row !is HomeRowLoadingState.Success || row.items.isNotEmpty()) {
+                            _state.update {
+                                val separateItems =
+                                    it.separateItems.toMutableMap().apply {
+                                        put(type, row)
+                                    }
+                                it.copy(separateItems = separateItems)
+                            }
                         }
                     }
                 }
