@@ -12,6 +12,7 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -25,6 +26,7 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setup.ServerVersionSupported
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -33,6 +35,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
@@ -75,6 +78,23 @@ class PreferencesViewModel
         val releaseNotes = MutableStateFlow<DataLoadingState<Release>>(DataLoadingState.Pending)
 
         val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
+
+        val serverSupported =
+            serverRepository.currentServerFlow
+                .map {
+                    val serverVersion = it?.serverVersion
+                    serverVersion to
+                        when {
+                            serverVersion == null -> ServerVersionSupported.NOT_SUPPORTED
+                            serverVersion < WholphinApplication.minimumServerVersion -> ServerVersionSupported.NOT_SUPPORTED
+                            serverVersion < WholphinApplication.newMinimumServerVersion -> ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE
+                            else -> ServerVersionSupported.SUPPORTED
+                        }
+                }.stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    null to ServerVersionSupported.SUPPORTED,
+                )
 
         init {
             viewModelScope.launchIO {

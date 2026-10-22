@@ -31,7 +31,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -50,6 +49,7 @@ import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.serverSupportedMessage
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -186,45 +186,12 @@ fun SwitchUserContent(
                 val resources = LocalResources.current
                 val message =
                     remember(resources, state.serverVersionSupported) {
-                        val errorMsg =
-                            when (state.serverVersionSupported) {
-                                ServerVersionSupported.SUPPORTED -> {
-                                    null
-                                }
-
-                                ServerVersionSupported.NOT_SUPPORTED,
-                                ServerVersionSupported.UNKNOWN,
-                                -> {
-                                    resources.getString(R.string.server_version_not_supported)
-                                }
-
-                                ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE -> {
-                                    resources.getString(R.string.server_version_not_supported_future)
-                                }
-                            }
-                        errorMsg?.let {
-                            if (state.serverVersion.isNotNullOrBlank()) {
-                                it + ": ${state.serverVersion}"
-                            } else {
-                                it + ": " + resources.getString(R.string.unknown)
-                            }
-                        }
+                        resources.serverSupportedMessage(
+                            state.serverVersionSupported,
+                            state.serverVersion,
+                        )
                     }
-                message?.let {
-                    Text(
-                        text = message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
-                                .align(Alignment.BottomCenter),
-                    )
-                }
+                SwitchErrorMessage(message)
             }
         }
     }

@@ -123,6 +123,6 @@ class WholphinApplication :
 
         val minimumServerVersion: ServerVersion = Jellyfin.minimumVersion
 
-        val newMinimumServerVersion: ServerVersion = ServerVersion(12, 0, 0)
+        val newMinimumServerVersion: ServerVersion = ServerVersion(13, 0, 0)
     }
 }
