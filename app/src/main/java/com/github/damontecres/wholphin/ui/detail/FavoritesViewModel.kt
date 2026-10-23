@@ -692,6 +692,9 @@ class FavoritesViewModel
                     }
                 }
 
+            // Favorites keep the full alphabet: the per-letter counts are only wired for library folders
+            override suspend fun presentLetters(letters: String): String? = null
+
             override fun saveViewOptions(viewOptions: ViewOptions) {
                 saveViewOptions(type, viewOptions)
             }

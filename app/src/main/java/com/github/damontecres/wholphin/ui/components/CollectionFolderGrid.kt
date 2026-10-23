@@ -67,6 +67,7 @@ fun CollectionFolderGrid(
     initialPosition: Int,
     gridFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
+    jumpLetters: String? = null,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     Box(modifier = modifier) {
@@ -97,6 +98,7 @@ fun CollectionFolderGrid(
                 showJumpButtons = false, // TODO add preference
                 showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
                 modifier = Modifier.fillMaxSize(),
+                jumpLetters = jumpLetters,
                 initialPosition = initialPosition,
                 positionCallback = positionCallback,
                 cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
