@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.aboutLibraries)
     alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val isCI = providers.environmentVariable("CI").orElse("false").map { it.toBoolean() }
@@ -227,6 +228,20 @@ androidComponents {
     }
 }
 
+baselineProfile {
+    // Write the generated profile to app/src/main/generated/baselineProfiles so it can be committed
+    mergeIntoMain = true
+    saveInSrc = true
+    // The plugin does not filter startup profiles, which would add all of the AndroidX rules back
+    dexLayoutOptimization = false
+
+    // AndroidX libraries ship their own profiles that AGP merges in, and j$ is desugared code
+    filter {
+        exclude("androidx.**")
+        exclude("j$.**")
+    }
+}
+
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -306,6 +321,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
