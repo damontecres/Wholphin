@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -32,7 +33,11 @@ import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.util.BitstreamFilter
 import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
+import com.github.damontecres.wholphin.util.DolbyVisionProfile7Conversion
+import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
+import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -57,6 +62,7 @@ class PlayerFactory
     constructor(
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
+        private val deviceProfileService: DeviceProfileService,
     ) {
         @Volatile
         var currentPlayer: Player? = null
@@ -94,6 +100,11 @@ class PlayerFactory
                         val preferDolbyVision =
                             appPreferences.experimentalPreferences
                                 .get { preferDolbyVisionOverHdr10Plus } ?: false
+                        val convertDolbyVisionProfile7 =
+                            DolbyVisionProfile7Conversion.isWanted(
+                                appPreferences.experimentalPreferences,
+                                deviceProfileService.mediaCodecCapabilitiesTest,
+                            )
                         Timber.v(
                             "extensions=%s, assPlaybackMode=%s",
                             extensions,
@@ -108,9 +119,18 @@ class PlayerFactory
                             }
                         val dataSourceFactory = DefaultDataSource.Factory(context)
                         val extractorsFactory = createExtractorsFactory()
+
+                        // Applied outermost so that a profile 7 track is advertised as 8.1 whichever
+                        // extractor, media3's own or libass's Matroska replacement, produced it
+                        fun ExtractorsFactory.forDolbyVision(): ExtractorsFactory =
+                            if (convertDolbyVisionProfile7) DolbyVisionProfile7ExtractorsFactory(this) else this
                         var renderersFactory: RenderersFactory =
-                            WholphinRenderersFactory(context, decodeAv1, preferDolbyVision)
-                                .setEnableDecoderFallback(true)
+                            WholphinRenderersFactory(
+                                context,
+                                decodeAv1,
+                                preferDolbyVision,
+                                convertDolbyVisionProfile7,
+                            ).setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
                         val mediaSourceFactory =
@@ -126,15 +146,16 @@ class PlayerFactory
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)
                                 DefaultMediaSourceFactory(
                                     dataSourceFactory,
-                                    extractorsFactory.withAssMkvSupport(
-                                        assSubtitleParserFactory,
-                                        assHandler,
-                                    ),
+                                    extractorsFactory
+                                        .withAssMkvSupport(
+                                            assSubtitleParserFactory,
+                                            assHandler,
+                                        ).forDolbyVision(),
                                 ).setSubtitleParserFactory(assSubtitleParserFactory)
                             } else {
                                 DefaultMediaSourceFactory(
                                     dataSourceFactory,
-                                    extractorsFactory,
+                                    extractorsFactory.forDolbyVision(),
                                 )
                             }
                         val disableAudioOffload =
@@ -268,6 +289,7 @@ class WholphinRenderersFactory(
     context: Context,
     private val av1Enabled: Boolean,
     private val preferDolbyVisionOverHdr10Plus: Boolean = false,
+    private val convertDolbyVisionProfile7: Boolean = false,
 ) : DefaultRenderersFactory(context) {
     @OptIn(ExperimentalApi::class)
     override fun buildVideoRenderers(
@@ -280,12 +302,16 @@ class WholphinRenderersFactory(
         allowedVideoJoiningTimeMs: Long,
         out: ArrayList<Renderer>,
     ) {
+        // The conversion goes first: it may shorten the access unit, and the masking then only
+        // has to walk what is left of it
+        val bitstreamFilters =
+            buildList<BitstreamFilter> {
+                if (convertDolbyVisionProfile7) add(DolbyVisionProfile7Filter())
+                if (preferDolbyVisionOverHdr10Plus) add(Hdr10PlusMaskingFilter())
+            }
         val videoCodecAdapterFactory =
-            if (preferDolbyVisionOverHdr10Plus) {
-                BitstreamFilteringCodecAdapterFactory(
-                    codecAdapterFactory,
-                    listOf(Hdr10PlusMaskingFilter()),
-                )
+            if (bitstreamFilters.isNotEmpty()) {
+                BitstreamFilteringCodecAdapterFactory(codecAdapterFactory, bitstreamFilters)
             } else {
                 codecAdapterFactory
             }
