@@ -402,6 +402,7 @@ fun RecommendedContent(
                         onClearChosenStreams = {
                             // Not supported on this page
                         },
+                        onClickPlayMusic = playlistViewModel::playMusic,
                     )
                 }
 

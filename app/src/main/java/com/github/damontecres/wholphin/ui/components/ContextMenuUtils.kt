@@ -91,6 +91,7 @@ class ContextMenuUtils(
                             // Not supported on this page
                         },
                         onClickAddToQueue = playlistViewModel::addToQueue,
+                        onClickPlayMusic = playlistViewModel::playMusic,
                     )
                 }
             val contextMenu =

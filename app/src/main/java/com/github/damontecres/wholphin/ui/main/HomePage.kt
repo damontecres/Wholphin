@@ -194,6 +194,7 @@ fun HomePage(
                                         },
                                         onClearChosenStreams = {},
                                         onClickRemoveFromNextUp = viewModel::removeFromNextUp,
+                                        onClickPlayMusic = playlistViewModel::playMusic,
                                     ),
                             )
                     }

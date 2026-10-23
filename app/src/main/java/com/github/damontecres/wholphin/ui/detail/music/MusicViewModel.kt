@@ -42,35 +42,7 @@ abstract class MusicViewModel(
         item: BaseItem,
         startIndex: Int = 0,
         shuffled: Boolean = false,
-    ) {
-        viewModelScope.launchIO {
-            Timber.v("Playing %s %s", item.type, item.id)
-            when (item.type) {
-                BaseItemKind.AUDIO -> {
-                    musicService.setQueue(listOf(item), shuffled)
-                }
-
-                BaseItemKind.MUSIC_ALBUM -> {
-                    val pager = getPagerForAlbum(api, item.id)
-                    musicService.setQueue(pager, startIndex, shuffled)
-                }
-
-                BaseItemKind.MUSIC_ARTIST -> {
-                    val pager = getPagerForArtist(api, item.id)
-                    musicService.setQueue(pager, startIndex, shuffled)
-                }
-
-                BaseItemKind.PLAYLIST -> {
-                    val pager = getPagerForPlaylist(api, item.id)
-                    musicService.setQueue(pager, startIndex, shuffled)
-                }
-
-                else -> {
-                    Timber.w("Unknown item type to play for music: %s", item.type)
-                }
-            }
-        }
-    }
+    ) = playMusic(api, musicService, item, startIndex, shuffled)
 
     fun playNext(song: BaseItem) {
         viewModelScope.launchDefault {
@@ -111,6 +83,42 @@ abstract class MusicViewModel(
     }
 
     internal abstract fun init()
+}
+
+fun ViewModel.playMusic(
+    api: ApiClient,
+    musicService: MusicService,
+    item: BaseItem,
+    startIndex: Int = 0,
+    shuffled: Boolean = false,
+) {
+    viewModelScope.launchIO {
+        Timber.v("Playing %s %s", item.type, item.id)
+        when (item.type) {
+            BaseItemKind.AUDIO -> {
+                musicService.setQueue(listOf(item), shuffled)
+            }
+
+            BaseItemKind.MUSIC_ALBUM -> {
+                val pager = getPagerForAlbum(api, item.id)
+                musicService.setQueue(pager, startIndex, shuffled)
+            }
+
+            BaseItemKind.MUSIC_ARTIST -> {
+                val pager = getPagerForArtist(api, item.id)
+                musicService.setQueue(pager, startIndex, shuffled)
+            }
+
+            BaseItemKind.PLAYLIST -> {
+                val pager = getPagerForPlaylist(api, item.id)
+                musicService.setQueue(pager, startIndex, shuffled)
+            }
+
+            else -> {
+                Timber.w("Unknown item type to play for music: %s", item.type)
+            }
+        }
+    }
 }
 
 fun ViewModel.addToQueue(
