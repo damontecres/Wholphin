@@ -522,9 +522,12 @@ fun ListItemAlbum(
         }
     val supportingContent =
         remember(item, dense) {
-            if (!dense && item?.subtitle != null) {
+            // Album artist is already shown as the overline
+            val subtitle =
+                if (item?.type == BaseItemKind.MUSIC_ALBUM) item.data.productionYear?.toString() else item?.subtitle
+            if (!dense && subtitle != null) {
                 @Composable {
-                    Text(item.subtitle ?: "")
+                    Text(subtitle)
                 }
             } else {
                 null
