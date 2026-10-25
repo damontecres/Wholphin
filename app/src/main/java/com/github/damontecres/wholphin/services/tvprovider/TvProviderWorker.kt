@@ -112,9 +112,11 @@ class TvProviderWorker
                 val userRemoved = currentItems.filterNot { it.isBrowsable }
                 val userRemovedIds = userRemoved.map { it.internalProviderId }
                 Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
-                val toAdd =
-                    potentialItemsToAdd.filter { it.id.toString() !in currentItemIds && it.id.toString() !in userRemovedIds }
+                val wanted = potentialItemsToAdd.filterNot { it.id.toString() in userRemovedIds }
+                val toAdd = wanted.filterNot { it.id.toString() in currentItemIds }
+                val toUpdate = wanted.filter { it.id.toString() in currentItemIds }
                 Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
+                Timber.v("toUpdate (%s)=%s", toUpdate.size, toUpdate.map { it.id })
 
                 // Remove existing items if they are no longer in the next up from server
                 (toRemove + userRemoved)
@@ -122,6 +124,34 @@ class TvProviderWorker
                     .forEach {
                         context.contentResolver.delete(it, null, null)
                     }
+
+                // Refresh existing items and drop any duplicates of the same item
+                val survivingByItemId =
+                    currentItems
+                        .filter { it.isBrowsable }
+                        .groupBy { it.internalProviderId }
+                var updatedCount = 0
+                var duplicateCount = 0
+                toUpdate.forEach { item ->
+                    val rows = survivingByItemId[item.id.toString()].orEmpty()
+                    val primary = rows.firstOrNull() ?: return@forEach
+                    updatedCount +=
+                        context.contentResolver.update(
+                            TvContractCompat.buildWatchNextProgramUri(primary.id),
+                            convert(item).toContentValues(),
+                            null,
+                            null,
+                        )
+                    rows.drop(1).forEach { duplicate ->
+                        duplicateCount +=
+                            context.contentResolver.delete(
+                                TvContractCompat.buildWatchNextProgramUri(duplicate.id),
+                                null,
+                                null,
+                            )
+                    }
+                }
+                Timber.v("Updated %s, removed %s duplicates", updatedCount, duplicateCount)
 
                 // Add new ones
                 val addedCount =
