@@ -55,6 +55,7 @@ fun ViewOptionsDialog(
     onDismissRequest: () -> Unit,
     onViewOptionsChange: (ViewOptions) -> Unit,
     defaultViewOptions: ViewOptions = ViewOptions(),
+    showArtistSource: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -72,12 +73,12 @@ fun ViewOptionsDialog(
             window.setDimAmount(0f)
         }
         val options =
-            remember(viewOptions.type) {
+            remember(viewOptions.type, showArtistSource) {
                 when (viewOptions.type) {
                     ViewOptionsType.GRID -> ViewOptions.GRID_OPTIONS
                     ViewOptionsType.LIST -> ViewOptions.LIST_OPTIONS
                     ViewOptionsType.DENSE_LIST -> ViewOptions.LIST_OPTIONS
-                }
+                }.filter { showArtistSource || it != ViewOptions.ViewOptionsArtistSource }
             }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -130,6 +131,12 @@ fun ViewOptionsDialog(
     }
 }
 
+/** Which Jellyfin artists list backs the Music > Artists tab */
+enum class ArtistSource {
+    ARTIST,
+    ALBUM_ARTIST,
+}
+
 /**
  * Stores the customizable view changes from the user
  *
@@ -146,6 +153,7 @@ data class ViewOptions(
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     val showTitles: Boolean = true,
     val type: ViewOptionsType = ViewOptionsType.GRID,
+    val artistSource: ArtistSource = ArtistSource.ARTIST,
 ) {
     companion object {
         val ViewOptionsColumns =
@@ -250,6 +258,17 @@ data class ViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        val ViewOptionsArtistSource =
+            AppChoicePreference<ViewOptions, ArtistSource>(
+                title = R.string.artist_source,
+                defaultValue = ArtistSource.ARTIST,
+                displayValues = R.array.artist_sources,
+                getter = { it.artistSource },
+                setter = { viewOptions, value -> viewOptions.copy(artistSource = value) },
+                indexToValue = { ArtistSource.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
+
         val ViewOptionsReset =
             AppClickablePreference<ViewOptions>(
                 title = R.string.reset,
@@ -266,6 +285,7 @@ data class ViewOptions(
                 ViewOptionsColumns,
                 ViewOptionsSpacing,
                 ViewOptionsContentScale,
+                ViewOptionsArtistSource,
                 ViewOptionsReset,
             )
 
@@ -275,6 +295,7 @@ data class ViewOptions(
                 ViewOptionsDetailHeader,
                 ViewOptionsBackdrop,
                 ViewOptionsSpacing,
+                ViewOptionsArtistSource,
                 ViewOptionsReset,
             )
     }
