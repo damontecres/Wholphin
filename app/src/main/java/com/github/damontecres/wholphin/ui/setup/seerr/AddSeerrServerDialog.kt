@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.setup.seerr
 
 import android.widget.Toast
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.preferences.rememberSeerrDialogBody
 import com.github.damontecres.wholphin.util.LoadingState
 
@@ -44,10 +46,12 @@ fun SeerrDialog(
         is SeerrDialogMode.Remove -> {
             val body = rememberSeerrDialogBody(mode.current.user, mode.current.server, seerrConnection.pluginProvided)
             if (seerrConnection.pluginProvided) {
-                BasicDialog(
+                ScrollableDialog(
                     onDismissRequest = onDismissRequest,
                 ) {
-                    Text(body)
+                    item {
+                        Text(body)
+                    }
                 }
             } else {
                 ConfirmDialog(
@@ -81,7 +85,7 @@ fun SeerrDialog(
                     BasicDialog(
                         onDismissRequest = onDismissRequest,
                     ) {
-                        LoadingPage()
+                        LoadingPage(Modifier.padding(16.dp))
                     }
                 }
 
@@ -101,11 +105,18 @@ fun SeerrDialog(
         is SeerrDialogMode.Error -> {
             val body = rememberSeerrDialogBody(mode.user, mode.server, seerrConnection.pluginProvided, mode.ex)
             if (seerrConnection.pluginProvided) {
-                BasicDialog(
-                    onDismissRequest = onDismissRequest,
-                ) {
-                    Text(body)
-                }
+                ConfirmDialog(
+                    title = stringResource(R.string.error),
+                    body = body,
+                    onCancel = onDismissRequest,
+                    onConfirm = {
+                        seerrVm.retryServerFromPlugin()
+                        onDismissRequest.invoke()
+                    },
+                    bodyColor = MaterialTheme.colorScheme.error,
+                    elevation = 3.dp,
+                    confirmStringRes = R.string.retry,
+                )
             } else {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),

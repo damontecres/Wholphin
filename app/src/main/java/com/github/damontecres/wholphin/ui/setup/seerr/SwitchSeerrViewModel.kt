@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.setup.seerr
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
@@ -145,6 +146,20 @@ class SwitchSeerrViewModel
                 val result = seerrServerRepository.removeServerForCurrentUser()
                 if (!result) {
                     showToast(context, "Could not remove server")
+                }
+            }
+        }
+
+        fun retryServerFromPlugin() {
+            viewModelScope.launchIO {
+                val settings = serverPluginApi.fetchSeerrSettings()
+                if (settings != null) {
+                    val result = seerrServerRepository.usePluginProvidedServer(settings)
+                    if (!result) {
+                        showToast(context, context.getString(R.string.voice_error_server))
+                    }
+                } else {
+                    seerrServerRepository.clear()
                 }
             }
         }

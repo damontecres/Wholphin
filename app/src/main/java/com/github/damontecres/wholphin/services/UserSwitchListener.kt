@@ -91,13 +91,16 @@ class UserSwitchListener
                         launchIO {
                             if (serverPluginInstalled) {
                                 serverPluginApi.fetchSeerrSettings()?.let {
-                                    val result = seerrServerRepository.maybeAddPluginServer(it)
+                                    Timber.d("Trying seerr auto login")
+                                    val result = seerrServerRepository.usePluginProvidedServer(it)
                                     if (result) {
                                         // Successfully used server plugin provided seerr
+                                        Timber.i("Seerr auto login succeeded")
                                         return@launchIO
                                     }
                                 }
                             }
+                            Timber.v("Checking for existing configured seerr server")
                             // Either no server plugin seerr or there was an issue with it
                             seerrServerDao
                                 .getUsersByJellyfinUser(user.rowId)

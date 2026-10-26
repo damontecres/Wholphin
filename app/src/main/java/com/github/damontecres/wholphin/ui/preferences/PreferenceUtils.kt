@@ -88,7 +88,7 @@ fun rememberSeerrDialogBody(
                 ""
             } +
             if (ex != null) {
-                "\n\n${stringResource(R.string.voice_error_server)}: ${ex.localizedMessage}"
+                "\n\n${stringResource(R.string.error)}: ${ex.localizedMessage}"
             } else {
                 ""
             }

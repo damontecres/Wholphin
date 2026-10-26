@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -187,18 +188,42 @@ class SeerrServerRepository
          *
          * @return true if successfully updated the SeerrApi and logged in
          */
-        suspend fun maybeAddPluginServer(settings: SeerrPluginSettings): Boolean {
+        suspend fun usePluginProvidedServer(settings: SeerrPluginSettings): Boolean {
             val currentUser = serverRepository.currentUser ?: return false
-            if (settings.serverUrl.isNotNullOrBlank() && settings.login != null) {
+            if (settings.serverUrl.isNotNullOrBlank() && settings.login != null && settings.login != SeerrPluginLogin.None) {
+                val server =
+                    SeerrServer(
+                        id = -1,
+                        url = settings.serverUrl,
+                    )
+                val user =
+                    SeerrUser(
+                        jellyfinUserRowId = currentUser.rowId,
+                        serverId = server.id,
+                        authMethod =
+                            when (settings.login) {
+                                is SeerrPluginLogin.ApiKey -> SeerrAuthMethod.API_KEY
+                                is SeerrPluginLogin.Local -> SeerrAuthMethod.LOCAL
+                            },
+                        username =
+                            when (settings.login) {
+                                is SeerrPluginLogin.ApiKey -> null
+                                is SeerrPluginLogin.Local -> settings.login.local.username
+                            },
+                        password = null,
+                        credential = null,
+                    )
                 try {
                     val userConfig =
                         when (settings.login) {
                             is SeerrPluginLogin.ApiKey -> {
+                                Timber.v("maybeAddPluginServer, using API key")
                                 seerrApi.update(settings.serverUrl, settings.login.apiKey)
                                 seerrLogin(seerrApi.api, SeerrAuthMethod.API_KEY, null, null)
                             }
 
                             is SeerrPluginLogin.Local -> {
+                                Timber.v("maybeAddPluginServer, using local user")
                                 seerrApi.update(settings.serverUrl, null)
                                 seerrLogin(
                                     seerrApi.api,
@@ -213,30 +238,20 @@ class SeerrServerRepository
                             }
                         }
                     // Success
-                    val server =
-                        SeerrServer(
-                            id = -1,
-                            url = settings.serverUrl,
-                        )
-                    val user =
-                        SeerrUser(
-                            jellyfinUserRowId = currentUser.rowId,
-                            serverId = server.id,
-                            authMethod =
-                                when (settings.login) {
-                                    is SeerrPluginLogin.ApiKey -> SeerrAuthMethod.API_KEY
-                                    is SeerrPluginLogin.Local -> SeerrAuthMethod.LOCAL
-                                },
-                            username = null,
-                            password = null,
-                            credential = null,
-                        )
                     _connection.update { it.copy(pluginProvided = true) }
                     set(server, user, userConfig)
                     return true
+                } catch (ex: CancellationException) {
+                    throw ex
                 } catch (ex: Exception) {
                     clear()
                     Timber.w(ex, "Error adding plugin provided seerr")
+                    _connection.update {
+                        it.copy(
+                            pluginProvided = true,
+                            connection = SeerrConnectionStatus.Error(server, user, ex),
+                        )
+                    }
                     return false
                 }
             }
