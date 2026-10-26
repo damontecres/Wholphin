@@ -756,4 +756,25 @@
         <item quantity="many">%1$d Épisodes</item>
         <item quantity="other">%1$d Épisode</item>
     </plurals>
+    <string name="top_rated">Les mieux notés</string>
+    <string name="hdr_formats">Formats HDR</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">Dolby Vision Profile 5</string>
+    <string name="dovi_profile_7">Dolby Vision Profile 7</string>
+    <string name="dovi_profile_8">Dolby Vision Profile 8</string>
+    <string name="force_enable">Activation forcée</string>
+    <string name="force_disable">Désactivation forcée</string>
+    <string name="server_version_not_supported_future">La version du serveur ne sera bientôt plus prise en charge</string>
+    <string name="server_version_required">Version requise du serveur : %1$s</string>
+    <string name="chosen_by">Sélectionné par %1$s</string>
+    <string name="user">Utilisateur</string>
+    <string name="series">Séries</string>
+    <string name="load_from_server_plugin">Charger les paramètres par défaut depuis le serveur</string>
+    <string name="save_to_local">Enregistrer uniquement sur cet appareil</string>
+    <string name="home_settings_source_unset">Défaut</string>
+    <string name="home_settings_source_local">Spécifique à l\'appareil</string>
+    <string name="home_settings_source_server_profile">Profil utilisateur du serveur</string>
+    <string name="home_settings_source_plugin">Paramètres par défaut du serveur</string>
+    <string name="home_settings_source_web">Client Web utilisateur</string>
 </resources>
