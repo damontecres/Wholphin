@@ -60,7 +60,13 @@ fun AddSeerrServerApiKey(
 
         val focusRequester = remember { FocusRequester() }
         val passwordFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        LaunchedEffect(Unit) {
+            if (initialUrl.isBlank()) {
+                focusRequester.tryRequestFocus()
+            } else {
+                passwordFocusRequester.tryRequestFocus()
+            }
+        }
         Text(
             text = stringResource(R.string.enter_url_api_key),
             style = MaterialTheme.typography.titleMedium,
@@ -175,7 +181,15 @@ fun AddSeerrServerUsername(
         val focusRequester = remember { FocusRequester() }
         val usernameFocusRequester = remember { FocusRequester() }
         val passwordFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        LaunchedEffect(Unit) {
+            val focusRequesterToUse =
+                when {
+                    url.isNotNullOrBlank() && username.isNotNullOrBlank() -> passwordFocusRequester
+                    url.isNotNullOrBlank() -> usernameFocusRequester
+                    else -> focusRequester
+                }
+            focusRequesterToUse.tryRequestFocus()
+        }
         Text(
             text = stringResource(R.string.username_or_password),
             style = MaterialTheme.typography.titleMedium,
