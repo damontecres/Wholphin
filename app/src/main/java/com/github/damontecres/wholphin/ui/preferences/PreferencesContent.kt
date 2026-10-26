@@ -70,6 +70,7 @@ import com.github.damontecres.wholphin.services.CurrentSeerr
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -743,21 +744,37 @@ fun PreferencesContent(
 
             SeerrDialogMode.Add -> {
                 val currentUser by seerrVm.currentUser.collectAsState(null)
-                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                val state by seerrVm.state.collectAsState()
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
-                LaunchedEffect(status) {
-                    if (status == LoadingState.Success) {
+                LaunchedEffect(state.serverConnectionStatus) {
+                    if (state.serverConnectionStatus == LoadingState.Success) {
                         Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()
                         seerrDialogMode = SeerrDialogMode.None
                     }
                 }
-                AddSeerServerDialog(
-                    currentUsername = currentUser?.name,
-                    status = status,
-                    onSubmit = seerrVm::submitServer,
-                    onResetStatus = seerrVm::resetStatus,
-                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
-                )
+                when (state.loading) {
+                    is LoadingState.Error,
+                    LoadingState.Loading,
+                    LoadingState.Pending,
+                    -> {
+                        BasicDialog(
+                            onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                        ) {
+                            LoadingPage()
+                        }
+                    }
+
+                    LoadingState.Success -> {
+                        AddSeerServerDialog(
+                            initialUrl = state.initialUrl,
+                            currentUsername = currentUser?.name,
+                            status = state.serverConnectionStatus,
+                            onSubmit = seerrVm::submitServer,
+                            onResetStatus = seerrVm::resetStatus,
+                            onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                        )
+                    }
+                }
             }
 
             is SeerrDialogMode.Error -> {

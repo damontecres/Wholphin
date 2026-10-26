@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 @Composable
 fun AddSeerServerDialog(
     currentUsername: String?,
+    initialUrl: String?,
     status: LoadingState,
     onSubmit: (url: String, username: String, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
     onResetStatus: () -> Unit,
@@ -42,6 +43,7 @@ fun AddSeerServerDialog(
                 properties = DialogProperties(usePlatformDefaultWidth = false),
             ) {
                 AddSeerrServerUsername(
+                    initialUrl = initialUrl ?: "",
                     onSubmit = { url, username, password ->
                         onSubmit.invoke(url, username, password, auth)
                     },
@@ -57,6 +59,7 @@ fun AddSeerServerDialog(
                 onDismissRequest = { authMethod = null },
             ) {
                 AddSeerrServerApiKey(
+                    initialUrl = initialUrl ?: "",
                     onSubmit = { url, apiKey ->
                         onSubmit.invoke(url, "", apiKey, SeerrAuthMethod.API_KEY)
                     },

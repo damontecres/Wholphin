@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.model.HomePageSettings
+import com.github.damontecres.wholphin.data.model.SeerrPluginSettings
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
@@ -32,6 +33,7 @@ class ServerPluginApi
 
         companion object {
             private const val HOME_CONFIG_PATH = "homesettings"
+            private const val SEERR_CONFIG_PATH = "seerrsettings"
         }
 
         /**
@@ -79,6 +81,28 @@ class ServerPluginApi
                             .takeIf { it.rows.isNotEmpty() }
                     } else if (res.code == 404) {
                         Timber.w("fetchHomePageSettings returned 404")
+                        null
+                    } else {
+                        throw ApiClientException(res.code.toString() + " " + res.body.string())
+                    }
+                }
+            }
+
+        @OptIn(ExperimentalSerializationApi::class)
+        suspend fun fetchSeerrSettings(): SeerrPluginSettings? =
+            withContext(WholphinDispatchers.IO) {
+                val url = createUrl(SEERR_CONFIG_PATH) ?: return@withContext null
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .build()
+                okHttpClient.newCall(request).execute().use { res ->
+                    if (res.isSuccessful) {
+                        json.decodeFromStream<SeerrPluginSettings>(res.body.byteStream())
+                    } else if (res.code == 404) {
+                        Timber.d("fetchSeerrSettings: plugin not configured (404)")
                         null
                     } else {
                         throw ApiClientException(res.code.toString() + " " + res.body.string())

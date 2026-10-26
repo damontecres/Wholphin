@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.services.ServerPluginApi
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
@@ -15,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -28,11 +30,29 @@ class SwitchSeerrViewModel
         private val seerrServerRepository: SeerrServerRepository,
         private val seerrService: SeerrService,
         private val serverRepository: ServerRepository,
+        private val serverPluginApi: ServerPluginApi,
     ) : ViewModel() {
         val currentUser = serverRepository.currentUserFlow
         val currentSeerrServer = seerrServerRepository.currentServer
 
-        val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
+        private val _state = MutableStateFlow<SwitchSeerrState>(SwitchSeerrState())
+        val state: StateFlow<SwitchSeerrState> = _state
+
+        init {
+            if (serverRepository.serverPluginInstalled.value) {
+                viewModelScope.launchIO {
+                    try {
+                        serverPluginApi.fetchSeerrSettings()?.serverUrl?.let { serverUrl ->
+                            _state.update { it.copy(initialUrl = serverUrl) }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error fetching seerr settings")
+                    } finally {
+                        _state.update { it.copy(loading = LoadingState.Success) }
+                    }
+                }
+            }
+        }
 
         fun submitServer(
             url: String,
@@ -41,13 +61,21 @@ class SwitchSeerrViewModel
             authMethod: SeerrAuthMethod,
         ) {
             viewModelScope.launchIO {
-                serverConnectionStatus.update { LoadingState.Loading }
+                _state.update { it.copy(serverConnectionStatus = LoadingState.Loading) }
                 val urls =
                     try {
                         createUrls(url)
                     } catch (ex: IllegalArgumentException) {
                         showToast(context, "Invalid URL")
-                        serverConnectionStatus.update { LoadingState.Error("Invalid URL", ex) }
+                        _state.update {
+                            it.copy(
+                                serverConnectionStatus =
+                                    LoadingState.Error(
+                                        "Invalid URL",
+                                        ex,
+                                    ),
+                            )
+                        }
                         return@launchIO
                     }
                 Timber.v("Urls to try: %s", urls)
@@ -98,7 +126,7 @@ class SwitchSeerrViewModel
                             )
                         }
                     }
-                    serverConnectionStatus.update { LoadingState.Success }
+                    _state.update { it.copy(serverConnectionStatus = LoadingState.Success) }
                 } else {
                     val message =
                         results
@@ -107,7 +135,7 @@ class SwitchSeerrViewModel
                                 "$url - ${s?.localizedMessage}"
                             }.joinToString("\n")
                     showToast(context, "Could not connect")
-                    serverConnectionStatus.update { LoadingState.Error(message) }
+                    _state.update { it.copy(serverConnectionStatus = LoadingState.Error(message)) }
                 }
             }
         }
@@ -122,9 +150,15 @@ class SwitchSeerrViewModel
         }
 
         fun resetStatus() {
-            serverConnectionStatus.update { LoadingState.Pending }
+            _state.update { it.copy(serverConnectionStatus = LoadingState.Pending) }
         }
     }
+
+data class SwitchSeerrState(
+    val loading: LoadingState = LoadingState.Pending,
+    val serverConnectionStatus: LoadingState = LoadingState.Pending,
+    val initialUrl: String? = null,
+)
 
 fun createUrls(url: String): List<HttpUrl> {
     val urls = mutableListOf<HttpUrl>()

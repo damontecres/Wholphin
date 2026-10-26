@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
 fun AddSeerrServerApiKey(
+    initialUrl: String,
     onSubmit: (url: String, apiKey: String) -> Unit,
     status: LoadingState,
     modifier: Modifier = Modifier,
@@ -54,7 +55,7 @@ fun AddSeerrServerApiKey(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl) }
         var apiKey by remember { mutableStateOf("") }
 
         val focusRequester = remember { FocusRequester() }
@@ -152,6 +153,7 @@ fun AddSeerrServerApiKey(
 
 @Composable
 fun AddSeerrServerUsername(
+    initialUrl: String,
     onSubmit: (url: String, username: String, password: String) -> Unit,
     username: String,
     status: LoadingState,
@@ -166,7 +168,7 @@ fun AddSeerrServerUsername(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl) }
         var username by remember { mutableStateOf(username) }
         var password by remember { mutableStateOf("") }
 
@@ -317,6 +319,7 @@ fun AddSeerrServerUsername(
 private fun AddSeerrServerUsernamePreview() {
     WholphinTheme {
         AddSeerrServerUsername(
+            initialUrl = "",
             onSubmit = { string: String, string1: String, string2: String -> },
             username = "test",
             status = LoadingState.Pending,
