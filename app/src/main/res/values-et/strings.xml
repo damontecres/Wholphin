@@ -733,4 +733,25 @@
         <item quantity="one">%1$d osa</item>
         <item quantity="other">%1$d osa</item>
     </plurals>
+    <string name="top_rated">Parima hinnanguga</string>
+    <string name="hdr_formats">HDR-vormingud</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">Dolby Vision Profile 5</string>
+    <string name="dovi_profile_7">Dolby Vision Profile 7</string>
+    <string name="dovi_profile_8">Dolby Vision Profile 8</string>
+    <string name="server_version_required">Vajalik serveriversioon: %1$s</string>
+    <string name="server_version_not_supported_future">Serveriversioon ei saa lähitulevikus olema toetatud</string>
+    <string name="user">Kasutaja</string>
+    <string name="series">Sai</string>
+    <string name="load_from_server_plugin">Vaikimisi laadi serverist</string>
+    <string name="save_to_local">Salvesta vaid siia seadmesse</string>
+    <string name="home_settings_source_unset">Vaikimisi</string>
+    <string name="home_settings_source_local">Seadmekohane</string>
+    <string name="home_settings_source_server_profile">Kasutajaprofiil serveris</string>
+    <string name="home_settings_source_plugin">Vaikimisi väärtus serveris</string>
+    <string name="home_settings_source_web">Kasutaja veebiklient</string>
+    <string name="chosen_by">Valija: %1$s</string>
+    <string name="force_enable">Jõusta sundkorras</string>
+    <string name="force_disable">Lõpeta sundkorras jõustamine</string>
 </resources>
