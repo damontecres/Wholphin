@@ -1,7 +1,11 @@
+@file:OptIn(UnstableApi::class)
+
 package com.github.damontecres.wholphin.util
 
+import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.enabled
 import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
@@ -26,10 +30,10 @@ import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
  */
 object DolbyVisionProfile7Conversion {
     /**
-     * True when the user asked for the conversion and this device is one it helps: its Dolby
+     * True when both the user has enabled the setting and this device is one it helps: its Dolby
      * Vision decoder lists profile 8 but not profile 7. A device which decodes profile 7 itself
      * is left alone, since it can use the enhancement layer the conversion would throw away, and
-     * a device without a profile 8 decoder has nothing to hand the converted stream to.
+     * a device without a profile 8 decoder has nothing to handle the converted stream
      */
     fun isWanted(
         experimental: ExperimentalPreferences,

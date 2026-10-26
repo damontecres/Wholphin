@@ -106,9 +106,10 @@ class PlayerFactory
                                 deviceProfileService.mediaCodecCapabilitiesTest,
                             )
                         Timber.v(
-                            "extensions=%s, assPlaybackMode=%s",
+                            "extensions=%s, assPlaybackMode=%s, convertDolbyVisionProfile7=%s",
                             extensions,
                             prefs.overrides.assPlaybackMode,
+                            convertDolbyVisionProfile7,
                         )
                         val rendererMode =
                             when (extensions) {
