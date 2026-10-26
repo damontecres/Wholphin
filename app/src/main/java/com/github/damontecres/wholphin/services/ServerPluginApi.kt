@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
@@ -59,28 +60,20 @@ class ServerPluginApi
                 }
             }
 
-        /**
-         * Get the default home page settings from the plugin
-         *
-         * @return the home page settings or null if no rows are configured or the server isn't installed
-         */
+        private suspend inline fun <reified T> executeRequest(path: String): T? {
+            val url = createUrl(path) ?: return null
+            val request = Request(url.toHttpUrl())
+            return executeRequest<T>(request)
+        }
+
         @OptIn(ExperimentalSerializationApi::class)
-        suspend fun fetchHomePageSettings(): HomePageSettings? =
+        private suspend inline fun <reified T> executeRequest(request: Request): T? =
             withContext(WholphinDispatchers.IO) {
-                val url = createUrl(HOME_CONFIG_PATH) ?: return@withContext null
-                val request =
-                    Request
-                        .Builder()
-                        .url(url)
-                        .get()
-                        .build()
-                return@withContext okHttpClient.newCall(request).execute().use { res ->
+                okHttpClient.newCall(request).execute().use { res ->
                     if (res.isSuccessful) {
-                        json
-                            .decodeFromStream<HomePageSettings>(res.body.byteStream())
-                            .takeIf { it.rows.isNotEmpty() }
+                        json.decodeFromStream<T>(res.body.byteStream())
                     } else if (res.code == 404) {
-                        Timber.w("fetchHomePageSettings returned 404")
+                        Timber.w("Plugin 404: %s", request.url.encodedPath)
                         null
                     } else {
                         throw ApiClientException(res.code.toString() + " " + res.body.string())
@@ -88,25 +81,16 @@ class ServerPluginApi
                 }
             }
 
-        @OptIn(ExperimentalSerializationApi::class)
-        suspend fun fetchSeerrSettings(): SeerrPluginSettings? =
-            withContext(WholphinDispatchers.IO) {
-                val url = createUrl(SEERR_CONFIG_PATH) ?: return@withContext null
-                val request =
-                    Request
-                        .Builder()
-                        .url(url)
-                        .get()
-                        .build()
-                okHttpClient.newCall(request).execute().use { res ->
-                    if (res.isSuccessful) {
-                        json.decodeFromStream<SeerrPluginSettings>(res.body.byteStream())
-                    } else if (res.code == 404) {
-                        Timber.d("fetchSeerrSettings: plugin not configured (404)")
-                        null
-                    } else {
-                        throw ApiClientException(res.code.toString() + " " + res.body.string())
-                    }
-                }
-            }
+        /**
+         * Get the default home page settings from the plugin
+         *
+         * @return the home page settings or null if no rows are configured or the server isn't installed
+         */
+        suspend fun fetchHomePageSettings(): HomePageSettings? =
+            executeRequest<HomePageSettings>(HOME_CONFIG_PATH)?.takeIf { it.rows.isNotEmpty() }
+
+        /**
+         * Get the [SeerrPluginSettings] as configured by teh server plugin, or null if none are configured
+         */
+        suspend fun fetchSeerrSettings(): SeerrPluginSettings? = executeRequest(SEERR_CONFIG_PATH)
     }

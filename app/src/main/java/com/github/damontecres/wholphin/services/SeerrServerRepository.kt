@@ -9,10 +9,13 @@ import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
+import com.github.damontecres.wholphin.data.model.SeerrPluginLogin
+import com.github.damontecres.wholphin.data.model.SeerrPluginSettings
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.ImageType
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -177,6 +181,66 @@ class SeerrServerRepository
             val rows = seerrServerDao.deleteUser(user)
             clear()
             return rows > 0
+        }
+
+        /**
+         * Given the [SeerrPluginSettings], try to connect to the Seerr server
+         *
+         * @return true if successfully updated the SeerrApi and logged in
+         */
+        suspend fun maybeAddPluginServer(settings: SeerrPluginSettings): Boolean {
+            val currentUser = serverRepository.currentUser ?: return false
+            if (settings.serverUrl.isNotNullOrBlank() && settings.login != null) {
+                try {
+                    val userConfig =
+                        when (settings.login) {
+                            is SeerrPluginLogin.ApiKey -> {
+                                seerrApi.update(settings.serverUrl, settings.login.apiKey)
+                                seerrLogin(seerrApi.api, SeerrAuthMethod.API_KEY, null, null)
+                            }
+
+                            is SeerrPluginLogin.Local -> {
+                                seerrApi.update(settings.serverUrl, null)
+                                seerrLogin(
+                                    seerrApi.api,
+                                    SeerrAuthMethod.LOCAL,
+                                    settings.login.local.username,
+                                    settings.login.local.password,
+                                )
+                            }
+
+                            SeerrPluginLogin.None -> {
+                                return false
+                            }
+                        }
+                    // Success
+                    val server =
+                        SeerrServer(
+                            id = -1,
+                            url = settings.serverUrl,
+                        )
+                    val user =
+                        SeerrUser(
+                            jellyfinUserRowId = currentUser.rowId,
+                            serverId = server.id,
+                            authMethod =
+                                when (settings.login) {
+                                    is SeerrPluginLogin.ApiKey -> SeerrAuthMethod.API_KEY
+                                    is SeerrPluginLogin.Local -> SeerrAuthMethod.LOCAL
+                                },
+                            username = null,
+                            password = null,
+                            credential = null,
+                        )
+                    set(server, user, userConfig)
+                    return true
+                } catch (ex: Exception) {
+                    clear()
+                    Timber.w(ex, "Error adding plugin provided seerr")
+                    return false
+                }
+            }
+            return false
         }
     }
 
