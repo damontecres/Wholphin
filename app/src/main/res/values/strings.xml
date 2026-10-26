@@ -154,6 +154,7 @@
     <string name="switch_user">Switch</string>
     <string name="time_left">%1$s left</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
+    <string name="top_rated">Top Rated</string>
     <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
     <string name="tv_guide">Guide</string>
