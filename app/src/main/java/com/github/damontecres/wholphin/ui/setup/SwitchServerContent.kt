@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -69,8 +70,10 @@ import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.serverSupportedMessage
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import org.jellyfin.sdk.model.ServerVersion
 import timber.log.Timber
 
 @Composable
@@ -235,20 +238,7 @@ private fun SwitchServerContentInternal(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
         ) { message ->
-
-            Text(
-                text = message ?: "",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
-                        .align(Alignment.BottomCenter),
-            )
+            SwitchErrorMessage(message ?: "")
         }
 
         // Delete server dialog
@@ -491,21 +481,38 @@ fun serverErrorMessage(
     server: ServerState?,
     resources: Resources,
 ): String? =
-    when {
-        server?.status is ServerConnectionStatus.Error -> {
-            server.status.message
-        }
-
-        server?.status is ServerConnectionStatus.Success &&
-            server.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
-            resources.getString(R.string.server_version_not_supported) + ": ${server.status.systemInfo.version}"
-        }
-
-        server?.versionSupported == ServerVersionSupported.NOT_SUPPORTED -> {
-            resources.getString(R.string.server_version_not_supported)
-        }
-
-        else -> {
-            null
-        }
+    if (server == null || server.status == ServerConnectionStatus.Pending) {
+        null
+    } else if (server.status is ServerConnectionStatus.Success) {
+        resources.serverSupportedMessage(
+            server.versionSupported,
+            server.status.systemInfo.version
+                ?.let { ServerVersion.fromString(it) },
+        )
+    } else if (server.status is ServerConnectionStatus.Error) {
+        server.status.message
+    } else {
+        resources.serverSupportedMessage(
+            server.versionSupported,
+            null,
+        )
     }
+
+@Composable
+fun BoxScope.SwitchErrorMessage(message: String?) {
+    message?.let {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 32.dp, end = 32.dp, bottom = 32.dp)
+                    .align(Alignment.BottomCenter),
+        )
+    }
+}

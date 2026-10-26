@@ -54,12 +54,15 @@ import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
@@ -89,6 +92,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -168,15 +172,25 @@ class CollectionFolderViewModel
                             val id = collectionFilter.libraryDisplayInfoIdOverride ?: itemId
                             libraryDisplayInfoDao.getItem(user, id)
                         }
+                    val ancestorDisplayInfo =
+                        if (libraryDisplayInfo?.viewOptions == null && item != null) {
+                            getAncestorDisplayInfo(item)
+                        } else {
+                            null
+                        }
                     _state.update {
                         it.copy(
-                            viewOptions = libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
+                            viewOptions =
+                                libraryDisplayInfo?.viewOptions
+                                    ?: ancestorDisplayInfo?.viewOptions
+                                    ?: defaultViewOptions,
                         )
                     }
 
                     val sortAndDirection =
                         if (collectionFilter.useSavedLibraryDisplayInfo) {
                             libraryDisplayInfo?.sortAndDirection
+                                ?: ancestorDisplayInfo?.sortAndDirection
                         } else {
                             null
                         } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
@@ -229,6 +243,25 @@ class CollectionFolderViewModel
             } catch (ex: Exception) {
                 Timber.e(ex, "Error refreshing after deleted item %s", itemId)
                 showToast(context, "Error refreshing after item deleted")
+            }
+        }
+
+        /**
+         * For a sub-folder, returns the saved display info of the closest ancestor that has one
+         */
+        private suspend fun getAncestorDisplayInfo(item: BaseItem): LibraryDisplayInfo? {
+            if (item.type != BaseItemKind.FOLDER || collectionFilter.libraryDisplayInfoIdOverride != null) {
+                return null
+            }
+            val user = serverRepository.currentUser ?: return null
+            return try {
+                api.libraryApi
+                    .getAncestors(item.id, user.id)
+                    .content
+                    .firstNotNullOfOrNull { ancestor -> libraryDisplayInfoDao.getItem(user, ancestor.id) }
+            } catch (ex: Exception) {
+                Timber.w(ex, "Error getting ancestors for %s", item.id)
+                null
             }
         }
 
@@ -813,6 +846,33 @@ fun CollectionFolderViewContent(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
     focusRequesterOnEmpty: FocusRequester? = null,
+    gridCardContent: @Composable CollectionFolderViewScope.(
+        GridItemDetails<BaseItem>,
+    ) -> Unit = { (item, index, onClick, onLongClick, widthPx, mod) ->
+        GridCard(
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            imageContentScale = viewOptions.contentScale.scale,
+            imageAspectRatio = viewOptions.aspectRatio.ratio,
+            imageType = viewOptions.imageType,
+            showTitle = viewOptions.showTitles,
+            fillWidth = widthPx,
+            modifier = mod,
+        )
+    },
+    listItemContent: @Composable CollectionFolderViewScope.(
+        GridItemDetails<BaseItem>,
+    ) -> Unit = { (item, index, onClick, onLongClick, _, mod) ->
+        CollectionFolderListItem(
+            item = item,
+            dense = viewOptions.type == ViewOptionsType.DENSE_LIST,
+            collectionType = collectionType,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            modifier = mod,
+        )
+    },
 ) {
     var position by rememberInt(savedPosition)
 
@@ -975,11 +1035,22 @@ fun CollectionFolderViewContent(
                                 focusRequester?.tryRequestFocus()
                                 clickedRandom = false
                             }
+                            val scope =
+                                object : CollectionFolderViewScope {
+                                    override val viewOptions: ViewOptions
+                                        get() = state.viewOptions
+                                    override val collectionType: CollectionType?
+                                        get() = item?.data?.collectionType
+                                    override val sortAndDirection: SortAndDirection
+                                        get() = state.sortAndDirection
+                                    override val collectionSize: Int
+                                        get() = pager.data.size
+                                }
+
                             Box(Modifier.fillMaxSize()) {
                                 if (state.viewOptions.type == ViewOptionsType.GRID) {
-                                    CollectionFolderGrid(
+                                    scope.CollectionFolderGrid(
                                         preferences = preferences,
-                                        collectionType = item?.data?.collectionType,
                                         initialPosition = savedPosition,
                                         items = pager.data,
                                         sortAndDirection = state.sortAndDirection,
@@ -993,12 +1064,12 @@ fun CollectionFolderViewContent(
                                             positionCallback?.invoke(columns, pos)
                                         },
                                         letterPosition = { viewActions.positionOfLetter(it) ?: -1 },
-                                        viewOptions = state.viewOptions,
                                         onClickPlay = gridActions.onClickPlayRemoteButton!!,
                                         focusedItem = focusedItem,
+                                        cardContent = gridCardContent,
                                     )
                                 } else {
-                                    CollectionFolderList(
+                                    scope.CollectionFolderList(
                                         preferences = preferences,
                                         collectionType = item?.data?.collectionType,
                                         initialPosition = savedPosition,
@@ -1014,9 +1085,9 @@ fun CollectionFolderViewContent(
                                             positionCallback?.invoke(columns, pos)
                                         },
                                         letterPosition = { viewActions.positionOfLetter(it) ?: -1 },
-                                        viewOptions = state.viewOptions,
                                         onClickPlay = gridActions.onClickPlayRemoteButton!!,
                                         focusedItem = focusedItem,
+                                        itemContent = listItemContent,
                                     )
                                 }
                                 androidx.compose.animation.AnimatedVisibility(
@@ -1054,4 +1125,14 @@ fun CollectionFolderViewContent(
             onViewOptionsChange = viewActions::saveViewOptions,
         )
     }
+}
+
+/**
+ * Scope with global data for [CollectionFolderView], [CollectionFolderGrid], [CollectionFolderList], and individual items
+ */
+interface CollectionFolderViewScope {
+    val viewOptions: ViewOptions
+    val collectionType: CollectionType?
+    val sortAndDirection: SortAndDirection
+    val collectionSize: Int
 }

@@ -154,6 +154,7 @@
     <string name="switch_user">Switch</string>
     <string name="time_left">%1$s left</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
+    <string name="top_rated">Top Rated</string>
     <string name="trailers_title">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
     <string name="tv_guide">Guide</string>
@@ -933,6 +934,8 @@
     <string name="books">Books</string>
     <string name="audio_books">Audio books</string>
     <string name="server_version_not_supported">Server version not supported</string>
+    <string name="server_version_not_supported_future">Server version will not be supported soon</string>
+    <string name="server_version_required">Required server version: %1$s</string>
     <string name="appears_on">Appears on</string>
     <string name="dim_after_delay">Dim screen after delay</string>
     <string name="dim_percentage">Dim percentage</string>
@@ -966,4 +969,16 @@
         <item quantity="one">%1$d Episode</item>
         <item quantity="other">%1$d Episodes</item>
     </plurals>
+    <string name="chosen_by">Chosen by %1$s</string>
+    <string name="user">User</string>
+    <string name="series">Series</string>
+    <string name="load_from_server_plugin">Load default from server</string>
+    <string name="save_to_local">Save only to this device</string>
+    <string name="home_settings_source_unset">Default</string>
+    <string name="home_settings_source_local">Device specific</string>
+    <string name="home_settings_source_server_profile">Server user profile</string>
+    <string name="home_settings_source_plugin">Server default</string>
+    <string name="home_settings_source_web">User web client</string>
+    <string name="managed_by_server">Managed by server</string>
+    <string name="error">Error</string>
 </resources>
