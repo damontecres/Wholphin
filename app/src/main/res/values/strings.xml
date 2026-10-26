@@ -977,4 +977,7 @@
     <string name="home_settings_source_server_profile">Server user profile</string>
     <string name="home_settings_source_plugin">Server default</string>
     <string name="home_settings_source_web">User web client</string>
+    <string name="reduce_loud_sounds">Reduce Loud Sounds</string>
+    <string name="audio_track">Audio Track</string>
+    <string name="requires_exoplayer">Requires ExoPlayer</string>
 </resources>

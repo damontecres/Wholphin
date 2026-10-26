@@ -13,8 +13,10 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -53,6 +55,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -213,6 +216,8 @@ class PlaybackViewModelTests {
         } returns emptyList()
         coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
             PlayerCreation(mockPlayer)
+        every { mockPlayerFactory.setReduceLoudSounds(any()) } returns Unit
+        coEvery { mockPlayerFactory.tryEnableReduceLoudSoundsOnPcm() } returns false
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
 
         coEvery {
@@ -404,6 +409,231 @@ class PlaybackViewModelTests {
             }
             Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
             Assert.assertEquals(movie2.id.toString(), mediaItem2.captured.mediaId)
+        }
+
+    @Test
+    fun `enabling on an Off-created player rebuilds now and preserves position tracks and play intent`() =
+        runTest(testDispatcher) {
+            for (playing in listOf(false, true)) {
+                for (subtitles in listOf(false, true)) {
+                    io.mockk.clearMocks(mockPlayerFactory, mockPlayer, answers = false)
+                    setupForPlaylist()
+                    setupPreferences { }
+                    coEvery { mockStreamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns
+                        StreamChoiceResult(
+                            mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }.takeIf { subtitles },
+                            StreamChoiceReason.Unknown,
+                        )
+                    val oldSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
+                    val newSession = mockk<androidx.media3.session.MediaSession>(relaxed = true)
+                    every { mockPlayerFactory.createMediaSession(any()) } returnsMany listOf(oldSession, newSession)
+                    val replacement = mockk<Player>(relaxed = true)
+                    coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returnsMany
+                        listOf(PlayerCreation(mockPlayer), PlayerCreation(replacement))
+                    every { mockPlayer.currentPosition } returns 123456L
+                    every { mockPlayer.playWhenReady } returns playing
+                    every { mockPlayer.playbackParameters } returns androidx.media3.common.PlaybackParameters(1.25f)
+                    every { mockPlayer.volume } returns .7f
+                    val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+                    val before = checkNotNull(viewModel.state.value.currentPlayback)
+                    io.mockk.clearMocks(mockMediaInfoApi, answers = false)
+                    viewModel.setReduceLoudSounds(true)
+                    testScheduler.advanceUntilIdle()
+                    coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+                    verifyOrder {
+                        oldSession.release()
+                        mockPlayer.release()
+                    }
+                    verify(exactly = 0) { newSession.release() }
+                    verify(exactly = 2) { mockPlayerFactory.createMediaSession(any()) }
+                    verify { mockPlayer.removeListener(viewModel) }
+                    verify { replacement.addListener(viewModel) }
+                    verify { replacement.setMediaItem(any(), 123456L) }
+                    verify { replacement.prepare() }
+                    verify { replacement.playWhenReady = playing }
+                    verify { replacement.playbackParameters = androidx.media3.common.PlaybackParameters(1.25f) }
+                    verify { replacement.volume = .7f }
+                    val after = checkNotNull(viewModel.state.value.currentPlayback)
+                    Assert.assertEquals(before.item.id, after.item.id)
+                    Assert.assertEquals(before.mediaSourceInfo.id, after.mediaSourceInfo.id)
+                    Assert.assertEquals(before.audioIndex, after.audioIndex)
+                    Assert.assertEquals(before.subtitleIndex, after.subtitleIndex)
+                    Assert.assertEquals(if (subtitles) 2 else TrackIndex.DISABLED, after.subtitleIndex)
+                    coVerify(exactly = 1) {
+                        mockMediaInfoApi.getPostedPlaybackInfo(
+                            before.item.id,
+                            match {
+                                it.audioStreamIndex == before.audioIndex &&
+                                    it.subtitleStreamIndex == before.subtitleIndex &&
+                                    it.mediaSourceId == before.mediaSourceInfo.id
+                            },
+                        )
+                    }
+                    Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
+                    coVerify { mockUserPreferencesService.setReduceLoudSounds(true) }
+                    viewModel.setReduceLoudSounds(false)
+                    testScheduler.advanceUntilIdle()
+                    coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+                    verify { mockPlayerFactory.setReduceLoudSounds(false) }
+                    viewModel.release()
+                }
+            }
+        }
+
+    @Test
+    fun `delayed subtitle settings do not overwrite a different item after replacement`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            viewModel.updateCurrentPlayback { it?.copy(subtitleIndex = 2) }
+            val before = checkNotNull(viewModel.state.value.currentPlayback)
+            val pending = kotlinx.coroutines.CompletableDeferred<com.github.damontecres.wholphin.data.model.ItemTrackModification?>()
+            coEvery { mockItemPlaybackRepository.getTrackModifications(before.item.id, 2) } coAnswers { pending.await() }
+            val load = launch { viewModel.loadSubtitleDelay() }
+            testScheduler.runCurrent()
+            viewModel.updateCurrentPlayback { it?.copy(item = BaseItem(movie2), subtitleDelay = kotlin.time.Duration.ZERO) }
+            pending.complete(
+                com.github.damontecres.wholphin.data.model
+                    .ItemTrackModification(1, before.item.id, 2, 500),
+            )
+            load.join()
+            Assert.assertEquals(
+                kotlin.time.Duration.ZERO,
+                viewModel.state.value.currentPlayback!!
+                    .subtitleDelay,
+            )
+            viewModel.release()
+        }
+
+    @Test
+    fun `disconnect cancels old player callbacks and segment monitoring`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { showNextUpWhen = ShowNextUpWhen.DURING_CREDITS }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            val segmentJob =
+                kotlinx.coroutines.CoroutineScope(testDispatcher).launch {
+                    kotlinx.coroutines.awaitCancellation()
+                }
+            viewModel.segmentJob = segmentJob
+            viewModel.onPlaybackStateChanged(Player.STATE_ENDED)
+            viewModel.release()
+            testScheduler.runCurrent()
+            Assert.assertTrue("released player's segment loop must stop", segmentJob.isCancelled)
+            Assert.assertNull("queued old ENDED callback must not open next-up", viewModel.state.value.nextUp)
+            verify { mockPlayer.removeListener(viewModel) }
+        }
+
+    @Test
+    fun `confirmed PCM promotion preserves player source tracks position and pause without reloading`() =
+        runTest(testDispatcher) {
+            for (playing in listOf(false, true)) {
+                setupForPlaylist()
+                setupPreferences { }
+                coEvery { mockPlayerFactory.tryEnableReduceLoudSoundsOnPcm() } returns true
+                every { mockPlayer.currentPosition } returns 123456L
+                every { mockPlayer.playWhenReady } returns playing
+                val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+                val before = viewModel.state.value.currentPlayback
+                io.mockk.clearMocks(mockPlayer, mockMediaInfoApi, answers = false)
+                viewModel.setReduceLoudSounds(true)
+                testScheduler.advanceUntilIdle()
+                Assert.assertSame(mockPlayer, viewModel.currentPlayer.value!!.player)
+                Assert.assertSame(before, viewModel.state.value.currentPlayback)
+                Assert.assertTrue(viewModel.currentPlayer.value!!.levelingPcmOnly)
+                verify(exactly = 0) { mockPlayer.release() }
+                verify(exactly = 0) { mockPlayer.stop() }
+                verify(exactly = 0) { mockPlayer.prepare() }
+                verify(exactly = 0) { mockPlayer.setMediaItem(any(), any<Long>()) }
+                verify(exactly = 0) { mockPlayer.seekTo(any<Long>()) }
+                coVerify(exactly = 0) { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) }
+                viewModel.release()
+                io.mockk.clearMocks(mockPlayerFactory, answers = false)
+            }
+        }
+
+    @Test
+    fun `enabling on an On-created player uses live processing without rebuilding`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { reduceLoudSounds = true }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            viewModel.setReduceLoudSounds(false)
+            viewModel.setReduceLoudSounds(true)
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+            verify { mockPlayerFactory.setReduceLoudSounds(true) }
+        }
+
+    @Test
+    fun `Off selected while replacement is being built wins after construction`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { }
+            val replacement = mockk<Player>(relaxed = true)
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            var building = false
+            var latestChoice = false
+            every { mockPlayerFactory.setReduceLoudSounds(any()) } answers { latestChoice = firstArg() }
+            coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } coAnswers {
+                building = true
+                kotlinx.coroutines.delay(100)
+                // A suspended construction started with On; it must not overwrite a newer Off.
+                latestChoice = secondArg<AppPreferences>().playbackPreferences.reduceLoudSounds
+                PlayerCreation(replacement)
+            }
+            viewModel.setReduceLoudSounds(true)
+            testScheduler.runCurrent()
+            Assert.assertTrue(building)
+            viewModel.setReduceLoudSounds(false)
+            testScheduler.advanceUntilIdle()
+            Assert.assertFalse(latestChoice)
+            coVerify(exactly = 2) { mockPlayerFactory.createVideoPlayer(any(), any()) }
+            verify { replacement.prepare() }
+            viewModel.release()
+        }
+
+    @Test
+    fun `MPV playback saves the boolean without rebuilding its native player`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { playerBackend = PlayerBackend.MPV }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            viewModel.setReduceLoudSounds(true)
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(PlayerBackend.MPV, any()) }
+            coVerify { mockUserPreferencesService.setReduceLoudSounds(true) }
+            Assert.assertFalse(viewModel.currentPlayer.value!!.levelingPcmOnly)
+            viewModel.release()
+        }
+
+    @Test
+    fun `Rapid leveling choices save in selection order even when the first write is slow`() =
+        runTest(testDispatcher) {
+            setupForPlaylist()
+            setupPreferences { }
+            every { mockPlayerFactory.setReduceLoudSounds(any()) } returns Unit
+            val saved = mutableListOf<Boolean>()
+            coEvery { mockUserPreferencesService.setReduceLoudSounds(any()) } coAnswers {
+                val mode = firstArg<Boolean>()
+                if (mode == true) kotlinx.coroutines.delay(100)
+                saved.add(mode)
+            }
+            val viewModel = createViewModel(Destination.PlaybackList(playlist.id))
+            viewModel.setReduceLoudSounds(true)
+            viewModel.setReduceLoudSounds(false)
+            testScheduler.advanceUntilIdle()
+            Assert.assertEquals(
+                listOf(
+                    true,
+                    false,
+                ),
+                saved,
+            )
+            viewModel.playNextUp()
+            testScheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { mockPlayerFactory.createVideoPlayer(any(), any()) }
         }
 
     @Test

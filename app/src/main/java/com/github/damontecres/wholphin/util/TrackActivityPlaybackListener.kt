@@ -5,7 +5,10 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -33,7 +36,7 @@ class TrackActivityPlaybackListener(
     private val player: Player,
     private val getState: () -> PlaybackItemState?,
 ) : Player.Listener {
-    private val coroutineScope = CoroutineScope(WholphinDispatchers.Main)
+    private val coroutineScope = CoroutineScope(SupervisorJob() + WholphinDispatchers.Main)
     private val task: TimerTask =
         object : TimerTask() {
             override fun run() {
@@ -48,52 +51,74 @@ class TrackActivityPlaybackListener(
     @Volatile
     private var initialized = false
 
-    fun init() {
-        launch("reportPlaybackStart") {
-            getState.invoke()?.let { state ->
-                Timber.v("reportPlaybackStart for ${state.itemId}")
-                api.playStateApi.reportPlaybackStart(
-                    PlaybackStartInfo(
-                        canSeek = true,
-                        itemId = state.itemId,
-                        isPaused = withContext(WholphinDispatchers.Main) { !player.isPlaying },
-                        playMethod = state.playMethod,
-                        repeatMode = RepeatMode.REPEAT_NONE,
-                        playbackOrder = PlaybackOrder.DEFAULT,
-                        isMuted = false,
-                        audioStreamIndex = state.audioStreamIndex,
-                        subtitleStreamIndex = state.subtitleStreamIndex,
-                        playSessionId = state.playSessionId,
-                        liveStreamId = state.liveStreamId,
-                    ),
-                )
+    @Volatile private var released = false
 
-                val delay = 5.seconds.inWholeMilliseconds
-                // Every x seconds, check if the video is playing
-                TIMER.schedule(task, delay, delay)
-                initialized = true
+    @Volatile private var starting = false
+
+    fun init() {
+        synchronized(task) {
+            if (released || starting || initialized) return
+            starting = true
+        }
+        launch("reportPlaybackStart") {
+            try {
+                getState.invoke()?.let { state ->
+                    Timber.v("reportPlaybackStart for ${state.itemId}")
+                    api.playStateApi.reportPlaybackStart(
+                        PlaybackStartInfo(
+                            canSeek = true,
+                            itemId = state.itemId,
+                            isPaused = withContext(WholphinDispatchers.Main) { !player.isPlaying },
+                            playMethod = state.playMethod,
+                            repeatMode = RepeatMode.REPEAT_NONE,
+                            playbackOrder = PlaybackOrder.DEFAULT,
+                            isMuted = false,
+                            audioStreamIndex = state.audioStreamIndex,
+                            subtitleStreamIndex = state.subtitleStreamIndex,
+                            playSessionId = state.playSessionId,
+                            liveStreamId = state.liveStreamId,
+                        ),
+                    )
+
+                    val delay = 5.seconds.inWholeMilliseconds
+                    // Every x seconds, check if the video is playing
+                    synchronized(task) {
+                        if (!released) {
+                            TIMER.schedule(task, delay, delay)
+                            initialized = true
+                        }
+                    }
+                }
+            } finally {
+                starting = false
             }
         }
     }
 
     fun release() {
-//        player.removeListener(this)
-        task.cancel()
-        TIMER.purge()
+        synchronized(task) {
+            if (released) return
+            released = true
+            task.cancel()
+            TIMER.purge()
+        }
+        // Stop owns a snapshot, never a delayed read of a player whose thread was released.
+        val state = getState.invoke()
         val position = player.currentPosition.milliseconds
-        launch("reportPlaybackStopped") {
-            getState.invoke()?.let { state ->
-                Timber.v("reportPlaybackStopped for ${state.itemId} at $position")
+        coroutineScope.cancel()
+        launch("reportPlaybackStopped", CoroutineScope(WholphinDispatchers.Main)) {
+            state?.let {
+                Timber.v("reportPlaybackStopped for ${it.itemId} at $position")
                 if (position < Duration.ZERO) {
                     Timber.w("Negative position when reporting playback stopped: %s", position)
                 }
                 api.playStateApi.reportPlaybackStopped(
                     PlaybackStopInfo(
-                        itemId = state.itemId,
+                        itemId = it.itemId,
                         positionTicks = position.inWholeTicks.takeIf { it >= 0 },
                         failed = false,
-                        playSessionId = state.playSessionId,
-                        liveStreamId = state.liveStreamId,
+                        playSessionId = it.playSessionId,
+                        liveStreamId = it.liveStreamId,
                     ),
                 )
             }
@@ -101,6 +126,7 @@ class TrackActivityPlaybackListener(
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
+        if (released) return
         if (initialized) {
             saveActivity(-1)
         } else if (isPlaying) {
@@ -109,6 +135,7 @@ class TrackActivityPlaybackListener(
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
+        if (released) return
         if (playbackState == Player.STATE_ENDED) {
             Timber.v("onPlaybackStateChanged STATE_ENDED")
             saveActivity(player.duration)
@@ -116,6 +143,7 @@ class TrackActivityPlaybackListener(
     }
 
     private fun saveActivity(position: Long) {
+        if (released) return
         launch("saveActivity") {
             getState.invoke()?.let { state ->
                 val calcPosition =
@@ -148,11 +176,14 @@ class TrackActivityPlaybackListener(
 
     private fun launch(
         name: String,
+        scope: CoroutineScope = coroutineScope,
         block: suspend CoroutineScope.() -> Unit,
     ) {
-        coroutineScope.launchIO {
+        scope.launchIO {
             try {
                 block.invoke(this)
+            } catch (ex: CancellationException) {
+                throw ex
             } catch (ex: Exception) {
                 Timber.w(ex, "Exception during %s", name)
             }

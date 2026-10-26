@@ -41,6 +41,7 @@ data class PlayerInstance(
     val player: Player,
     val backend: PlayerBackend,
     val assHandler: AssHandler?,
+    val levelingPcmOnly: Boolean = false,
 )
 
 data class MediaSegmentState(

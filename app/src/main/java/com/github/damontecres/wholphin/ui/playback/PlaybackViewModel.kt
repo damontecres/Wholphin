@@ -38,12 +38,15 @@ import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
+import com.github.damontecres.wholphin.playback.leveling.PlaybackRouteTrace
+import com.github.damontecres.wholphin.playback.leveling.VolumeLevelingPolicy
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.enabled
+import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
@@ -83,7 +86,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -166,6 +172,70 @@ class PlaybackViewModel
             fun create(destination: Destination): PlaybackViewModel
         }
 
+        private var volumeChangeJob: Job? = null
+        private val playbackMutex = Mutex()
+        val reduceLoudSounds get() = playerFactory.reduceLoudSounds
+
+        fun setReduceLoudSounds(value: Boolean) {
+            PlaybackRouteTrace.mark("request enabled=$value")
+            playerFactory.setReduceLoudSounds(value)
+            preferences =
+                preferences.copy(
+                    appPreferences = preferences.appPreferences.updatePlaybackPreferences { reduceLoudSounds = value },
+                )
+            val previousChange = volumeChangeJob
+            volumeChangeJob =
+                viewModelScope.launchIO(ExceptionHandler()) {
+                    // Keep rapid remote-control selections ordered, including their persisted values.
+                    previousChange?.join()
+                    userPreferencesService.setReduceLoudSounds(value)
+                    PlaybackRouteTrace.mark("preference-saved")
+                    playbackMutex.withLock {
+                        applyReduceLoudSounds()
+                    }
+                }
+        }
+
+        private suspend fun applyReduceLoudSounds() {
+            val current = currentPlayer.value ?: return
+            if (!preferences.appPreferences.playbackPreferences.reduceLoudSounds ||
+                current.backend != PlayerBackend.EXO_PLAYER || current.levelingPcmOnly
+            ) {
+                return
+            }
+            val playback = state.value.currentPlayback ?: return
+            if (playerFactory.tryEnableReduceLoudSoundsOnPcm()) {
+                currentPlayer.update { if (it === current) it.copy(levelingPcmOnly = true) else it }
+                return
+            }
+            if (!preferences.appPreferences.playbackPreferences.reduceLoudSounds) return
+            PlaybackRouteTrace.mark("rebuild-fallback")
+            val video = state.value.currentMediaInfo.videoStream
+            val position = onMain { player.currentPosition.coerceAtLeast(0) }
+            val playWhenReady = onMain { player.playWhenReady }
+            val playbackParameters = onMain { player.playbackParameters }
+            val volume = onMain { player.volume }
+            if (createPlayer(video?.hdr == true, video?.is4k == true)) {
+                // Reuse normal stream setup (including external/disabled subtitles) but never its
+                // fast track-only shortcut: this is a fresh player with no media loaded yet.
+                changeStreams(
+                    item = playback.item,
+                    sourceId = playback.mediaSourceInfo.id,
+                    audioIndex = playback.audioIndex,
+                    subtitleIndex = playback.subtitleIndex,
+                    positionMs = position,
+                    forceReload = true,
+                )
+                withContext(WholphinDispatchers.Main) {
+                    player.playbackParameters = playbackParameters
+                    player.volume = volume
+                    player.prepare()
+                    player.playWhenReady = playWhenReady
+                }
+                listenForSegments(playback.item.id)
+            }
+        }
+
         val currentPlayer = MutableStateFlow<PlayerInstance?>(null)
 
         internal lateinit var player: Player
@@ -192,6 +262,13 @@ class PlaybackViewModel
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
+
+        // Callback work belongs to one player; queued old callbacks cannot act on a replacement.
+        private var playerCallbackScope = newPlayerCallbackScope()
+
+        private fun newPlayerCallbackScope() =
+            CoroutineScope(viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]))
+
         private var subscribeJob: Job? = null
 
         private val isPlaylist = destination is Destination.PlaybackList
@@ -215,6 +292,11 @@ class PlaybackViewModel
         }
 
         private fun disconnectPlayer() {
+            playerCallbackScope.cancel()
+            segmentJob?.cancel()
+            segmentJob = null
+            subscribeJob?.cancel()
+            subscribeJob = null
             if (this@PlaybackViewModel::player.isInitialized) {
                 player.removeListener(this@PlaybackViewModel)
                 (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel)
@@ -226,21 +308,26 @@ class PlaybackViewModel
                 this@PlaybackViewModel.trackChangeListener?.let {
                     player.removeListener(it)
                 }
-                player.release()
                 mediaSession?.release()
+                mediaSession = null
+                player.release()
             }
+            activityListener = null
+            trackChangeListener = null
             jobs.forEach { it.cancel() }
+            jobs.clear()
         }
 
         private suspend fun createPlayer(
             isHdr: Boolean,
             is4k: Boolean,
-        ) {
+        ): Boolean {
+            val appPreferences = preferences.appPreferences
             val softwareDecoding =
-                !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
+                !appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val requestBackend =
                 (destination as? Destination.Playback)?.backend
-                    ?: preferences.appPreferences.playbackPreferences.playerBackend
+                    ?: appPreferences.playbackPreferences.playerBackend
             val playerBackend =
                 when (requestBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -255,26 +342,35 @@ class PlaybackViewModel
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
-            if (currentPlayer.value?.backend != playerBackend) {
+            val levelingPolicy = VolumeLevelingPolicy(playerBackend, appPreferences.playbackPreferences.reduceLoudSounds)
+            if (currentPlayer.value?.backend != playerBackend || currentPlayer.value?.levelingPcmOnly != levelingPolicy.pcmOnly) {
                 Timber.i("Switching player backend to %s", playerBackend)
                 withContext(WholphinDispatchers.Main) {
+                    PlaybackRouteTrace.mark("release-start")
                     disconnectPlayer()
+                    PlaybackRouteTrace.mark("release-end")
                 }
 
                 val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
-                        preferences.appPreferences,
+                        appPreferences,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
-                    PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler)
+                    PlayerInstance(playerCreation.player, playerBackend, playerCreation.assHandler, levelingPolicy.pcmOnly)
                 }
                 configurePlayer()
+                PlaybackRouteTrace.mark("player-created")
+                // A later toggle may have arrived while construction suspended. Its choice wins.
+                playerFactory.setReduceLoudSounds(preferences.appPreferences.playbackPreferences.reduceLoudSounds)
+                return true
             }
+            return false
         }
 
         private fun configurePlayer() {
+            playerCallbackScope = newPlayerCallbackScope()
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
             subscribeToWebSocket()
@@ -294,6 +390,7 @@ class PlaybackViewModel
             musicService.stop()
             _state.update { it.copy(nextUp = null) }
             this.preferences = userPreferencesService.getCurrent()
+            playerFactory.setReduceLoudSounds(preferences.appPreferences.playbackPreferences.reduceLoudSounds)
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                 addCloseable { refreshRateService.resetRefreshRate() }
             }
@@ -436,6 +533,12 @@ class PlaybackViewModel
          * @param forceTranscoding whether the user has requested to force playback via transcoding
          */
         private suspend fun play(
+            playlistItem: PlaylistItem,
+            positionMs: Long,
+            forceTranscoding: Boolean = this.forceTranscoding,
+        ): Boolean = playbackMutex.withLock { loadAndPlay(playlistItem, positionMs, forceTranscoding) }
+
+        private suspend fun loadAndPlay(
             playlistItem: PlaylistItem,
             positionMs: Long,
             forceTranscoding: Boolean = this.forceTranscoding,
@@ -628,6 +731,7 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            forceReload: Boolean = false,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -638,7 +742,7 @@ class PlaybackViewModel
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                        enableDirectPlay
+                        enableDirectPlay && !forceReload
                     ) {
                         val wasSuccessful =
                             changeStreamsDirectPlay(
@@ -1081,7 +1185,7 @@ class PlaybackViewModel
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
                 Timber.v("Playback state is STATE_ENDED")
-                viewModelScope.launchDefault {
+                playerCallbackScope.launchDefault {
                     when (val nextItem = state.value.nextItem()) {
                         is PlaylistItem.Intro -> {
                             Timber.v("Next item is intro, so playing immediately")
@@ -1387,7 +1491,7 @@ class PlaybackViewModel
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e(error, "Playback error")
-            viewModelScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
+            playerCallbackScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
                 state.value.currentPlayback?.let {
                     when (it.playMethod) {
                         PlayMethod.TRANSCODE -> {
@@ -1525,7 +1629,7 @@ class PlaybackViewModel
             decoderName: String,
             type: MediaType,
         ) {
-            viewModelScope.launchDefault {
+            playerCallbackScope.launchDefault {
                 val codecInfo =
                     MediaCodecList(MediaCodecList.ALL_CODECS)
                         .codecInfos
@@ -1649,7 +1753,13 @@ class PlaybackViewModel
                             it.subtitleIndex,
                             it.item.id,
                         )
-                        updateCurrentPlayback { it?.copy(subtitleDelay = result.delayMs.milliseconds) }
+                        updateCurrentPlayback { current ->
+                            if (current?.item?.id == it.item.id && current.subtitleIndex == it.subtitleIndex) {
+                                current.copy(subtitleDelay = result.delayMs.milliseconds)
+                            } else {
+                                current
+                            }
+                        }
                     }
                 }
             }
@@ -1664,7 +1774,7 @@ class PlaybackViewModel
             if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
                 // MpvPlayer is initialized, so configure subtitles
                 Timber.i("Applying subtitle config to MPV")
-                viewModelScope.launchDefault {
+                playerCallbackScope.launchDefault {
                     val configuration = context.resources.configuration
                     val density = Density(context.resources.displayMetrics.density)
                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
@@ -1677,7 +1787,7 @@ class PlaybackViewModel
 
         fun updateDensity(density: Density) {
             Timber.d("Density changed")
-            viewModelScope.launchDefault {
+            playerCallbackScope.launchDefault {
                 val availableCommands = onMain { player.availableCommands }
                 if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
                     Timber.i("Applying density change for subtitle config to MPV")
