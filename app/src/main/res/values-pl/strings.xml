@@ -779,4 +779,25 @@
     <string name="max_resolution">Maksymalna rozdzielczość przed transkodowaniem</string>
     <string name="prefer_dovi_over_hdr10_plus">Preferuj Dolby Vision nad HDR10+</string>
     <string name="prefer_dovi_over_hdr10_plus_summary">Usuwa metadane HDR10+ z filmów Dolby Vision, dla telewizorów, które w przeciwnym razie odtwarzają je jako HDR10+</string>
+    <string name="top_rated">Najlepiej oceniane</string>
+    <string name="hdr_formats">Formaty HDR</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">Dolby Vision P5</string>
+    <string name="dovi_profile_7">Dolby Vision P7</string>
+    <string name="dovi_profile_8">Dolby Vision P8</string>
+    <string name="force_enable">Wymuś włączenie</string>
+    <string name="force_disable">Wymuś wyłączenie</string>
+    <string name="server_version_not_supported_future">Wersja serwera wkrótce przestanie być wspierana</string>
+    <string name="server_version_required">Wymagana wersja serwera: %1$s</string>
+    <string name="chosen_by">Wybrane przez %1$s</string>
+    <string name="user">Użytkownik</string>
+    <string name="series">Seriale</string>
+    <string name="load_from_server_plugin">Załaduj domyślne z serwera</string>
+    <string name="save_to_local">Zapisuj tylko na tym urządzeniu</string>
+    <string name="home_settings_source_unset">Domyślnie</string>
+    <string name="home_settings_source_local">Zależne od urządzenia</string>
+    <string name="home_settings_source_server_profile">Profil użytkownika na serwerze</string>
+    <string name="home_settings_source_plugin">Domyślnie z serwera</string>
+    <string name="home_settings_source_web">Użytkownik klienta webowego</string>
 </resources>
