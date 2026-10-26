@@ -9,12 +9,15 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.services.StreamChoiceReason
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
@@ -46,6 +49,7 @@ import org.jellyfin.sdk.api.operations.PlayStateApi
 import org.jellyfin.sdk.api.operations.SubtitleApi
 import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.api.operations.VideosApi
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
@@ -112,8 +116,9 @@ class PlayExternalViewModelTest {
         every { serverRepository.currentUser } returns null
         coEvery { userLibraryApi.getItem(movie.id) } returns successResponse(movie)
         coEvery { streamChoiceService.chooseSource(any(), any()) } returns mediaSource
-        coEvery { streamChoiceService.getPlaybackLanguageChoice(any()) } returns null
-        coEvery { streamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns subtitle
+        coEvery { streamChoiceService.chooseSubtitleStream(any(), any(), any(), any(), any(), any()) } returns
+            StreamChoiceResult(subtitle, StreamChoiceReason.Unknown)
+        coEvery { streamChoiceService.getSeriesTrackChoices(any<BaseItemDto>(), SeriesTrackChoiceType.SUBTITLE) } returns emptyList()
         every {
             videosApi.getVideoStreamUrl(
                 itemId = movie.id,
