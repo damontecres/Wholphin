@@ -9,6 +9,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.ui.setup.ServerVersionSupported
+import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentType
@@ -319,3 +321,55 @@ fun Resources.formatDuration(duration: Duration): String =
             else -> getString(R.string.duration_seconds, seconds)
         }
     }
+
+fun Resources.serverSupportedMessage(
+    serverVersionSupported: ServerVersionSupported,
+    serverVersion: ServerVersion?,
+): String? {
+    val errorMsg =
+        when (serverVersionSupported) {
+            ServerVersionSupported.SUPPORTED -> {
+                null
+            }
+
+            ServerVersionSupported.NOT_SUPPORTED,
+            ServerVersionSupported.UNKNOWN,
+            -> {
+                getString(R.string.server_version_not_supported)
+            }
+
+            ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE -> {
+                getString(R.string.server_version_not_supported_future)
+            }
+        }
+    return errorMsg?.let {
+        val msg =
+            if (serverVersion != null) {
+                "$it: $serverVersion"
+            } else {
+                it + ": " + getString(R.string.unknown)
+            }
+        msg + "\n" +
+            when (serverVersionSupported) {
+                ServerVersionSupported.SUPPORTED -> {
+                    ""
+                }
+
+                ServerVersionSupported.NOT_SUPPORTED,
+                ServerVersionSupported.UNKNOWN,
+                -> {
+                    getString(
+                        R.string.server_version_required,
+                        WholphinApplication.minimumServerVersion.toString(),
+                    )
+                }
+
+                ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE -> {
+                    getString(
+                        R.string.server_version_required,
+                        WholphinApplication.newMinimumServerVersion.toString(),
+                    )
+                }
+            }
+    }
+}
