@@ -710,4 +710,21 @@
     <string name="resolution_576">576</string>
     <string name="resolution_480">480</string>
     <string name="resolution_360">360</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">杜比視界 Profile 5</string>
+    <string name="dovi_profile_7">杜比視界 Profile 7</string>
+    <string name="dovi_profile_8">杜比視界 Profile 8</string>
+    <string name="force_enable">強制啟用</string>
+    <string name="force_disable">強制停用</string>
+    <string name="server_version_not_supported_future">伺服器版本即將停止支援</string>
+    <string name="server_version_required">伺服器版本需為：%1$s</string>
+    <string name="user">使用者</string>
+    <string name="series">劇集</string>
+    <string name="load_from_server_plugin">從伺服器載入預設值</string>
+    <string name="save_to_local">僅儲存於此裝置</string>
+    <string name="home_settings_source_unset">預設</string>
+    <string name="top_rated">高評分</string>
+    <string name="hdr_formats">HDR 格式</string>
+    <string name="chosen_by">由 %1$s 精選</string>
 </resources>
