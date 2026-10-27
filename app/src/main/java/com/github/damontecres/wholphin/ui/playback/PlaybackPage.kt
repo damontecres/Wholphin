@@ -334,7 +334,8 @@ fun PlaybackPageContent(
 
     Box(
         modifier
-            .background(if (state.nextUp == null) Color.Black else MaterialTheme.colorScheme.background),
+            // Opaque UI black can produce raised letterbox levels during Dolby Vision output.
+            .background(if (state.nextUp == null) Color.Transparent else MaterialTheme.colorScheme.background),
     ) {
         val playerSize by animateFloatAsState(if (state.nextUp == null) 1f else .6f)
         Box(
