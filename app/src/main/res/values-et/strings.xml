@@ -754,4 +754,6 @@
     <string name="chosen_by">Valija: %1$s</string>
     <string name="force_enable">Jõusta sundkorras</string>
     <string name="force_disable">Lõpeta sundkorras jõustamine</string>
+    <string name="managed_by_server">Hallatud serveri poolt</string>
+    <string name="error">Viga</string>
 </resources>
