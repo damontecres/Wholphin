@@ -9,6 +9,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.preferences.AppPreference.Companion.MEGA_BIT
 import com.github.damontecres.wholphin.ui.setup.ServerVersionSupported
 import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -207,6 +208,13 @@ fun formatBytes(
 }
 
 fun formatBitrate(bitrate: Int) = formatBytes(bitrate.toLong(), byteRateSuffixes, 1000)
+
+fun formatMaxBitrate(bitrate: Long) =
+    if (bitrate < MEGA_BIT) {
+        "${bitrate / 1024} kbps"
+    } else {
+        "${bitrate / MEGA_BIT} Mbps"
+    }
 
 @get:StringRes
 val MediaSegmentType.stringRes: Int
