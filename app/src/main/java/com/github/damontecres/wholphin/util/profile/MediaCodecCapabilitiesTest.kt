@@ -209,6 +209,15 @@ class MediaCodecCapabilitiesTest(
             ) &&
             supportsMultiInstance(MediaFormat.MIMETYPE_VIDEO_HEVC)
 
+    // Checks for single-layer Dolby Vision Profile 8, which the Profile 7 conversion produces
+    fun supportsHevcDolbyVisionProfile8(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
+            hasDecoder(
+                MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
+                DolbyVisionProfiles.Profile8,
+                CodecProfileLevel.DolbyVisionLevelHd24,
+            )
+
     fun supportsHevcHDR10(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
             hasDecoder(
