@@ -9,11 +9,16 @@ import android.media.AudioManager
 import android.os.Build
 import android.util.Log
 import android.view.Display
+import android.view.Display.HdrCapabilities
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
+import androidx.compose.foundation.layout.GridFlow
+import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,6 +37,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -44,6 +50,7 @@ import com.github.damontecres.wholphin.data.SeriesTrackChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -61,6 +68,7 @@ import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -73,15 +81,15 @@ class DebugViewModel
         val seriesTrackChoiceDao: SeriesTrackChoiceDao,
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
+        private val deviceProfileService: DeviceProfileService,
     ) : ViewModel() {
         val state = MutableStateFlow(DebugState())
         val itemPlaybacks = MutableStateFlow<List<ItemPlayback>>(emptyList())
         val logcat = MutableStateFlow<List<LogcatLine>>(emptyList())
 
-        val supportedModes by lazy {
+        val display: Display by lazy {
             val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-            val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
-            display.supportedModes.orEmpty()
+            displayManager.getDisplay(Display.DEFAULT_DISPLAY)
         }
 
         val av1Included by lazy {
@@ -162,7 +170,7 @@ class DebugViewModel
                 state.update {
                     it.copy(
                         deviceInfo = deviceInfoList,
-                        displayModes = supportedModes.map { it.toString() },
+                        displayModes = display.supportedModes.map { it.toDisplayMode(display) },
                     )
                 }
             }
@@ -215,6 +223,20 @@ class DebugViewModel
                     }
                 audioManager.registerAudioDeviceCallback(callback, null)
                 addCloseable { audioManager.unregisterAudioDeviceCallback(callback) }
+            }
+            viewModelScope.launchIO {
+                val hdrSupport =
+                    buildMap {
+                        put("HEVC HDR10", deviceProfileService.mediaCodecCapabilitiesTest.supportsHevcHDR10())
+                        put("HEVC HDR10+", deviceProfileService.mediaCodecCapabilitiesTest.supportsHevcHDR10Plus())
+                        put("DoVi single layer", deviceProfileService.mediaCodecCapabilitiesTest.supportsHevcDolbyVision())
+                        put("DoVi Profile 7 EL", deviceProfileService.mediaCodecCapabilitiesTest.supportsHevcDolbyVisionEL())
+                        put("DoVi Profile 8", deviceProfileService.mediaCodecCapabilitiesTest.supportsHevcDolbyVisionProfile8())
+                        put("AV1 HDR10", deviceProfileService.mediaCodecCapabilitiesTest.supportsAV1HDR10())
+                        put("AV1 HDR10+", deviceProfileService.mediaCodecCapabilitiesTest.supportsAV1HDR10Plus())
+                        put("AV1 DoVi", deviceProfileService.mediaCodecCapabilitiesTest.supportsAV1DolbyVision())
+                    }
+                state.update { it.copy(hdrSupport = hdrSupport) }
             }
         }
 
@@ -272,8 +294,9 @@ data class LogcatLine(
 data class DebugState(
     val appInfo: List<String> = emptyList(),
     val deviceInfo: List<String> = emptyList(),
-    val displayModes: List<String> = emptyList(),
+    val displayModes: List<DisplayMode> = emptyList(),
     val audioInfo: List<String> = emptyList(),
+    val hdrSupport: Map<String, Boolean> = emptyMap(),
 )
 
 val AudioDeviceInfo.details: String
@@ -393,6 +416,7 @@ val AudioDeviceInfo.details: String
             "productName=$productName, address=$addressStr)"
     }
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 fun DebugPage(
     preferences: UserPreferences,
@@ -476,14 +500,53 @@ fun DebugPage(
                     BodyText(it)
                 }
 
-                SubSectionTitle("Display Modes")
-                state.displayModes.forEach {
-                    BodyText(it)
-                }
-
                 SubSectionTitle("Audio Devices")
                 state.audioInfo.forEach {
                     BodyText(it)
+                }
+
+                SubSectionTitle("Display Modes")
+                Grid(
+                    config = {
+                        repeat(6) { column(GridTrackSize.Auto) }
+                        flow = GridFlow.Row
+                        columnGap(8.dp)
+                        rowGap(8.dp)
+                    },
+                ) {
+                    EmphasizedBodyText("ID")
+                    EmphasizedBodyText("Width")
+                    EmphasizedBodyText("Height")
+                    EmphasizedBodyText("FPS")
+                    EmphasizedBodyText("HDR")
+                    EmphasizedBodyText("Alt FPS")
+
+                    state.displayModes.forEachIndexed { index, mode ->
+                        BodyText(mode.id.toString())
+                        BodyText(mode.width.toString())
+                        BodyText(mode.height.toString())
+                        BodyText(mode.fps)
+                        BodyText(mode.hdr)
+                        BodyText(mode.altFps)
+                    }
+                }
+
+                SubSectionTitle("Detected HDR Support")
+                Grid(
+                    config = {
+                        column(GridTrackSize.Auto)
+                        column(GridTrackSize.Auto)
+                        flow = GridFlow.Row
+                        columnGap(8.dp)
+                        rowGap(4.dp)
+                    },
+                ) {
+                    EmphasizedBodyText("HDR Format")
+                    EmphasizedBodyText("Supported")
+                    state.hdrSupport.forEach { (name, supported) ->
+                        BodyText(name)
+                        BodyText(supported.toString())
+                    }
                 }
             }
         }
@@ -575,11 +638,29 @@ private fun SubSectionTitle(text: String) {
 }
 
 @Composable
-private fun BodyText(text: String) {
+private fun BodyText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun EmphasizedBodyText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier,
     )
 }
 
@@ -611,3 +692,45 @@ private val THIRD_PARTY_TAGS =
         "HardwareConfig:W",
         "DfltImageHeaderParser:W",
     )
+
+data class DisplayMode(
+    val id: Int,
+    val width: Int,
+    val height: Int,
+    val fps: String,
+    val hdr: String,
+    val altFps: String,
+)
+
+fun Display.Mode.toDisplayMode(display: Display): DisplayMode {
+    val fps = String.format(Locale.getDefault(), "%.3f", refreshRate)
+    val altFps =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alternativeRefreshRates.joinToString(", ") {
+                String.format(Locale.getDefault(), "%.3f", it)
+            }
+        } else {
+            "N/A"
+        }
+    val hdr =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            supportedHdrTypes.joinToString(", ") { hdrTypeToString(it) }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            display.hdrCapabilities?.supportedHdrTypes?.joinToString(", ") { hdrTypeToString(it) }
+                ?: "None found"
+        } else {
+            "N/A"
+        }
+    return DisplayMode(modeId, physicalWidth, physicalHeight, fps, hdr, altFps)
+}
+
+fun hdrTypeToString(type: Int): String =
+    when (type) {
+        HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
+        HdrCapabilities.HDR_TYPE_HDR10_PLUS -> "HDR10+"
+        HdrCapabilities.HDR_TYPE_HLG -> "HLG"
+        HdrCapabilities.HDR_TYPE_HLG_PLUS -> "HLG+"
+        HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "DoVi"
+        HdrCapabilities.HDR_TYPE_INVALID -> "Invalid"
+        else -> "Unknown ($type)"
+    }

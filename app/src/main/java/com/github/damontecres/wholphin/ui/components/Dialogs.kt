@@ -231,28 +231,35 @@ fun DialogPopup(
             onDismissRequest = onDismissRequest,
             properties = properties,
         ) {
+            val elevatedContainerColor =
+                MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
             DialogPopupContent(
                 title = title,
                 dialogItems = dialogItems,
                 waiting = waiting,
                 onDismissRequest = onDismissRequest,
                 dismissOnClick = dismissOnClick,
-                elevation = elevation,
                 modifier =
-                    Modifier.onKeyEvent { event ->
-                        val code = event.nativeKeyEvent.keyCode
-                        if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
-                            code in
-                            setOf(
-                                KeyEvent.KEYCODE_ENTER,
-                                KeyEvent.KEYCODE_DPAD_CENTER,
-                                KeyEvent.KEYCODE_NUMPAD_ENTER,
-                            )
-                        ) {
-                            waiting = false
-                        }
-                        false
-                    },
+                    Modifier
+                        .onKeyEvent { event ->
+                            val code = event.nativeKeyEvent.keyCode
+                            if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
+                                code in
+                                setOf(
+                                    KeyEvent.KEYCODE_ENTER,
+                                    KeyEvent.KEYCODE_DPAD_CENTER,
+                                    KeyEvent.KEYCODE_NUMPAD_ENTER,
+                                )
+                            ) {
+                                waiting = false
+                            }
+                            false
+                        }.shadow(elevation = elevation, shape = RoundedCornerShape(28.0.dp))
+                        .graphicsLayer {
+                            this.clip = true
+                            this.shape = RoundedCornerShape(28.0.dp)
+                        }.drawBehind { drawRect(color = elevatedContainerColor) }
+                        .padding(PaddingValues(24.dp)),
             )
         }
     }
@@ -266,20 +273,10 @@ fun DialogPopupContent(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     dismissOnClick: Boolean = true,
-    elevation: Dp = 8.dp,
 ) {
-    val elevatedContainerColor =
-        MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier =
-            modifier
-                .shadow(elevation = elevation, shape = RoundedCornerShape(28.0.dp))
-                .graphicsLayer {
-                    this.clip = true
-                    this.shape = RoundedCornerShape(28.0.dp)
-                }.drawBehind { drawRect(color = elevatedContainerColor) }
-                .padding(PaddingValues(24.dp)),
+        modifier = modifier,
     ) {
         Text(
             text = title,
@@ -453,12 +450,14 @@ fun ConfirmDialog(
     properties: DialogProperties = DialogProperties(),
     elevation: Dp = 1.dp,
     bodyColor: Color = MaterialTheme.colorScheme.onSurface,
+    @StringRes cancelStringRes: Int = R.string.cancel,
+    @StringRes confirmStringRes: Int = R.string.confirm,
 ) = BasicDialog(
     onDismissRequest = onCancel,
     properties = properties,
     elevation = elevation,
     content = {
-        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier, bodyColor)
+        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier, bodyColor, cancelStringRes, confirmStringRes)
     },
 )
 
@@ -473,6 +472,8 @@ fun ConfirmDialogContent(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
     bodyColor: Color = MaterialTheme.colorScheme.onSurface,
+    @StringRes cancelStringRes: Int = R.string.cancel,
+    @StringRes confirmStringRes: Int = R.string.confirm,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -503,11 +504,11 @@ fun ConfirmDialogContent(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 TextButton(
-                    stringRes = R.string.cancel,
+                    stringRes = cancelStringRes,
                     onClick = onCancel,
                 )
                 TextButton(
-                    stringRes = R.string.confirm,
+                    stringRes = confirmStringRes,
                     onClick = onConfirm,
                 )
             }

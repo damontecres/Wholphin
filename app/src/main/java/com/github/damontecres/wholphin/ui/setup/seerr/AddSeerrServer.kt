@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
 fun AddSeerrServerApiKey(
+    initialUrl: String,
     onSubmit: (url: String, apiKey: String) -> Unit,
     status: LoadingState,
     modifier: Modifier = Modifier,
@@ -54,12 +55,18 @@ fun AddSeerrServerApiKey(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl) }
         var apiKey by remember { mutableStateOf("") }
 
         val focusRequester = remember { FocusRequester() }
         val passwordFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        LaunchedEffect(Unit) {
+            if (initialUrl.isBlank()) {
+                focusRequester.tryRequestFocus()
+            } else {
+                passwordFocusRequester.tryRequestFocus()
+            }
+        }
         Text(
             text = stringResource(R.string.enter_url_api_key),
             style = MaterialTheme.typography.titleMedium,
@@ -152,6 +159,7 @@ fun AddSeerrServerApiKey(
 
 @Composable
 fun AddSeerrServerUsername(
+    initialUrl: String,
     onSubmit: (url: String, username: String, password: String) -> Unit,
     username: String,
     status: LoadingState,
@@ -166,14 +174,22 @@ fun AddSeerrServerUsername(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl) }
         var username by remember { mutableStateOf(username) }
         var password by remember { mutableStateOf("") }
 
         val focusRequester = remember { FocusRequester() }
         val usernameFocusRequester = remember { FocusRequester() }
         val passwordFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        LaunchedEffect(Unit) {
+            val focusRequesterToUse =
+                when {
+                    url.isNotNullOrBlank() && username.isNotNullOrBlank() -> passwordFocusRequester
+                    url.isNotNullOrBlank() -> usernameFocusRequester
+                    else -> focusRequester
+                }
+            focusRequesterToUse.tryRequestFocus()
+        }
         Text(
             text = stringResource(R.string.username_or_password),
             style = MaterialTheme.typography.titleMedium,
@@ -317,6 +333,7 @@ fun AddSeerrServerUsername(
 private fun AddSeerrServerUsernamePreview() {
     WholphinTheme {
         AddSeerrServerUsername(
+            initialUrl = "",
             onSubmit = { string: String, string1: String, string2: String -> },
             username = "test",
             status = LoadingState.Pending,

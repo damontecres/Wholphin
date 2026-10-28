@@ -72,6 +72,8 @@ class ServerRepository
                         }
                     }
 
+        val serverPluginInstalled = MutableStateFlow<Boolean>(false)
+
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
          *
