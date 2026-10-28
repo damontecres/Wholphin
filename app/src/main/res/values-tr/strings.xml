@@ -733,4 +733,27 @@
         <item quantity="other">%1$d Bölüm</item>
     </plurals>
     <string name="appears_on">Yer Aldığı</string>
+    <string name="top_rated">En Yüksek Puanlı</string>
+    <string name="hdr_formats">HDR Formatları</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">Dolby Vision Profile 5</string>
+    <string name="dovi_profile_7">Dolby Vision Profile 7</string>
+    <string name="dovi_profile_8">Dolby Vision Profile 8</string>
+    <string name="force_enable">Zorla Etkinleştir</string>
+    <string name="force_disable">Zorla Devre Dışı Bırak</string>
+    <string name="server_version_not_supported_future">Sunucu sürümü yakında desteklenmeyecek</string>
+    <string name="server_version_required">Gerekli sunucu sürümü: %1$s</string>
+    <string name="chosen_by">Seçen: %1$s</string>
+    <string name="user">Kullanıcı</string>
+    <string name="series">Diziler</string>
+    <string name="load_from_server_plugin">Sunucudan varsayılanları yükle</string>
+    <string name="save_to_local">Yalnızca bu cihaza kaydet</string>
+    <string name="home_settings_source_unset">Varsayılan</string>
+    <string name="home_settings_source_local">Cihaza özel</string>
+    <string name="home_settings_source_server_profile">Sunucu kullanıcı profili</string>
+    <string name="home_settings_source_plugin">Sunucu varsayılanı</string>
+    <string name="home_settings_source_web">Kullanıcı web istemcisi</string>
+    <string name="managed_by_server">Sunucu tarafından yönetiliyor</string>
+    <string name="error">Hata</string>
 </resources>
