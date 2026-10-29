@@ -727,4 +727,6 @@
     <string name="top_rated">高評分</string>
     <string name="hdr_formats">HDR 格式</string>
     <string name="chosen_by">由 %1$s 精選</string>
+    <string name="convert_dovi_profile_7">將杜比視界 Profile 7 轉換為 8.1</string>
+    <string name="convert_dovi_profile_7_summary">在解碼器處理前，將雙層 Profile 7 重新改寫為單層 Profile 8.1，讓不支援 Profile 7 但支援 Profile 8 的裝置能夠直接播放影片</string>
 </resources>
