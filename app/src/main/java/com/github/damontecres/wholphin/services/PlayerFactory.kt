@@ -183,7 +183,7 @@ class PlayerFactory
                                             .Builder()
                                             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                                             .build(),
-                                        false,
+                                        true,
                                     )
                                 }
                             }
