@@ -784,11 +784,13 @@
         <item>@string/official_rating</item>
         <item>@string/critic_rating</item>
         <item>@string/community_rating</item>
+        <item>@string/mdblist_ratings</item>
     </string-array>
     <string-array name="display_toggle_types_subtitles">
         <item></item><!-- Intentionally blank -->
         <item>@string/tomatoes</item>
         <item>@string/stars</item>
+        <item>@string/mdblist_ratings_subtitle</item>
     </string-array>
 
     <string name="search_for">Search %s</string>
@@ -847,6 +849,8 @@
     <string name="user_interface_language">User interface language</string>
     <string name="display_toggles_title">Ratings display</string>
     <string name="display_toggles_summary">Customize which to display</string>
+    <string name="mdblist_ratings">MDBList ratings</string>
+    <string name="mdblist_ratings_subtitle">Replaces critic &amp; community ratings on details pages. Requires the MDBList Ratings server plugin</string>
     <string name="profile_protection">Profile protection</string>
     <string name="continue_watching_click_behavior">Continue watching/Next up click behavior</string>
     <string name="continue_watching_click_summary_on">Play on click</string>
