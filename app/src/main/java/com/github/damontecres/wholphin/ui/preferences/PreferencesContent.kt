@@ -36,18 +36,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.SeerrServer
-import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
@@ -64,7 +64,6 @@ import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
-import com.github.damontecres.wholphin.services.CurrentSeerr
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -78,9 +77,11 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.serverSupportedMessage
 import com.github.damontecres.wholphin.ui.setup.ReleaseNotes
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
-import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
+import com.github.damontecres.wholphin.ui.setup.seerr.SeerrDialog
+import com.github.damontecres.wholphin.ui.setup.seerr.SeerrDialogMode
 import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -102,6 +103,7 @@ fun PreferencesContent(
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val firstFocusRequester = remember { FocusRequester() }
@@ -114,6 +116,11 @@ fun PreferencesContent(
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
     val players by viewModel.externalPlayers.collectAsState()
+    val serverSupported by viewModel.serverSupported.collectAsState()
+    val serverVersionMessage =
+        remember(resources, serverSupported) {
+            resources.serverSupportedMessage(serverSupported.second, serverSupported.first)
+        }
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrConnection by viewModel.seerrConnection.collectAsState()
@@ -230,6 +237,19 @@ fun PreferencesContent(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                serverVersionMessage?.let { message ->
+                    item {
+                        ListItem(
+                            selected = false,
+                            enabled = true,
+                            onClick = {},
+                            headlineContent = {
+                                PreferenceTitle(message, color = MaterialTheme.colorScheme.error)
+                            },
+                            modifier = Modifier,
+                        )
+                    }
+                }
                 if (showUpdate) {
                     item {
                         val interactionSource = remember { MutableInteractionSource() }
@@ -265,6 +285,7 @@ fun PreferencesContent(
                         )
                     }
                 }
+
                 prefList.forEachIndexed { groupIndex, group ->
                     item {
                         Text(
@@ -478,7 +499,7 @@ fun PreferencesContent(
                                         title = stringResource(pref.title),
                                         onClick = {
                                             seerrDialogMode =
-                                                when (val conn = seerrConnection) {
+                                                when (val conn = seerrConnection.connection) {
                                                     is SeerrConnectionStatus.Error -> {
                                                         SeerrDialogMode.Error(
                                                             conn.server,
@@ -500,15 +521,13 @@ fun PreferencesContent(
                                         },
                                         modifier = focusModifier,
                                         summary =
-                                            when (seerrConnection) {
+                                            when (seerrConnection.connection) {
                                                 is SeerrConnectionStatus.Error -> {
                                                     stringResource(R.string.voice_error_server)
                                                 }
 
                                                 SeerrConnectionStatus.NotConfigured -> {
-                                                    stringResource(
-                                                        R.string.add_server,
-                                                    )
+                                                    stringResource(R.string.add_server)
                                                 }
 
                                                 is SeerrConnectionStatus.Success -> {
@@ -703,58 +722,14 @@ fun PreferencesContent(
                 )
             }
         }
-        when (val mode = seerrDialogMode) {
-            is SeerrDialogMode.Remove -> {
-                val body = rememberSeerrDialogBody(mode.current.user, mode.current.server)
-                ConfirmDialog(
-                    title = stringResource(R.string.remove_seerr_server),
-                    body = body,
-                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
-                    onConfirm = {
-                        seerrVm.removeServer()
-                        seerrDialogMode = SeerrDialogMode.None
-                    },
-                    elevation = 3.dp,
-                )
-            }
-
-            SeerrDialogMode.Add -> {
-                val currentUser by seerrVm.currentUser.collectAsState(null)
-                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
-                val serverAddedMessage = stringResource(R.string.seerr_server_added)
-                LaunchedEffect(status) {
-                    if (status == LoadingState.Success) {
-                        Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()
-                        seerrDialogMode = SeerrDialogMode.None
-                    }
-                }
-                AddSeerServerDialog(
-                    currentUsername = currentUser?.name,
-                    status = status,
-                    onSubmit = seerrVm::submitServer,
-                    onResetStatus = seerrVm::resetStatus,
-                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
-                )
-            }
-
-            is SeerrDialogMode.Error -> {
-                val body = rememberSeerrDialogBody(mode.user, mode.server, mode.ex)
-                ConfirmDialog(
-                    title = stringResource(R.string.remove_seerr_server),
-                    body = body,
-                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
-                    onConfirm = {
-                        seerrVm.removeServer()
-                        seerrDialogMode = SeerrDialogMode.None
-                    },
-                    bodyColor = MaterialTheme.colorScheme.error,
-                    elevation = 3.dp,
-                )
-            }
-
-            SeerrDialogMode.None -> {}
-        }
     }
+
+    SeerrDialog(
+        seerrDialogMode = seerrDialogMode,
+        seerrConnection = seerrConnection,
+        onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+        seerrVm = seerrVm,
+    )
 
     if (showQuickConnectDialog) {
         val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
@@ -857,19 +832,3 @@ data class CacheUsage(
     val imageMemoryMax: Long,
     val imageDiskUsed: Long,
 )
-
-private sealed interface SeerrDialogMode {
-    data object None : SeerrDialogMode
-
-    data object Add : SeerrDialogMode
-
-    data class Remove(
-        val current: CurrentSeerr,
-    ) : SeerrDialogMode
-
-    data class Error(
-        val server: SeerrServer,
-        val user: SeerrUser,
-        val ex: Exception,
-    ) : SeerrDialogMode
-}

@@ -60,7 +60,7 @@ private fun getRecommendedRows(parentId: UUID) =
                 ),
         ),
         RecommendedRow(
-            title = R.string.top_unwatched,
+            title = R.string.top_rated,
             handler = GetItemsRequestHandler,
             request =
                 GetItemsRequest(
@@ -69,7 +69,6 @@ private fun getRecommendedRows(parentId: UUID) =
                     includeItemTypes = listOf(BaseItemKind.MUSIC_ALBUM),
                     recursive = true,
                     enableUserData = true,
-                    isPlayed = false,
                     sortBy = listOf(ItemSortBy.COMMUNITY_RATING),
                     sortOrder = listOf(SortOrder.DESCENDING),
                     enableTotalRecordCount = false,

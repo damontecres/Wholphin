@@ -300,16 +300,18 @@ class SwitchUserViewModel
                 knownUsers + publicUsers
             }
 
-        private suspend fun checkServerVersion(): Pair<String?, ServerVersionSupported> {
+        private suspend fun checkServerVersion(): Pair<ServerVersion?, ServerVersionSupported> {
             val api = jellyfin.createApi(server.url)
             val systemInfo by api.systemApi.getPublicSystemInfo()
             val serverVersion = systemInfo.version?.let { ServerVersion.fromString(it) }
             return if (serverVersion == null) {
-                systemInfo.version to ServerVersionSupported.UNKNOWN
+                serverVersion to ServerVersionSupported.UNKNOWN
             } else if (serverVersion < WholphinApplication.minimumServerVersion) {
-                systemInfo.version to ServerVersionSupported.NOT_SUPPORTED
+                serverVersion to ServerVersionSupported.NOT_SUPPORTED
+            } else if (serverVersion < WholphinApplication.newMinimumServerVersion) {
+                serverVersion to ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE
             } else {
-                systemInfo.version to ServerVersionSupported.SUPPORTED
+                serverVersion to ServerVersionSupported.SUPPORTED
             }
         }
 
@@ -341,7 +343,7 @@ data class SwitchUserState(
     // LoadingState for while adding/switching users
     val switchUserState: LoadingState = LoadingState.Pending,
     val loginAttempts: Int = 0,
-    val serverVersion: String? = null,
+    val serverVersion: ServerVersion? = null,
     val serverVersionSupported: ServerVersionSupported = ServerVersionSupported.UNKNOWN,
 )
 
