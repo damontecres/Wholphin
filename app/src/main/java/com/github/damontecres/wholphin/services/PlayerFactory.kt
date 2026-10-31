@@ -40,6 +40,8 @@ import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
@@ -269,8 +271,28 @@ class PlayerFactory
         fun createMediaSession(player: Player) =
             MediaSession
                 .Builder(context, player)
+                .setCallback(TrustAllControllersCallback)
                 .build()
     }
+
+/**
+ * Since media3 1.11, untrusted controllers (e.g. Google Home's Cast bridge, `com.google.android.apps.mediashell`)
+ * only get read-only player commands by default, so play/pause from them is silently dropped.
+ * Restore the pre-1.11 behavior of granting all player commands to every controller.
+ */
+@OptIn(UnstableApi::class)
+object TrustAllControllersCallback : MediaSession.Callback {
+    override fun onConnectAsync(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+    ): ListenableFuture<MediaSession.ConnectionResult> =
+        Futures.immediateFuture(
+            MediaSession.ConnectionResult
+                .AcceptedResultBuilder(session, controller)
+                .setAvailablePlayerCommands(MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS)
+                .build(),
+        )
+}
 
 val Player.isReleased: Boolean
     get() {
