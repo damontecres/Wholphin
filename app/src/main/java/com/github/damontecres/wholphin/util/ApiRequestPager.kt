@@ -417,7 +417,7 @@ object GetAlbumArtistsHandler : RequestHandler<GetAlbumArtistsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetAlbumArtistsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.artistsApi.getAlbumArtists(request)
+    ): Response<BaseItemDtoQueryResult> = api.artistApi.getAlbumArtists(request)
 }
 
 val requestSerializersModule =
