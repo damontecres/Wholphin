@@ -59,12 +59,15 @@ fun ApplicationContent(
         modifier = modifier,
     ) {
         val backdropStyle = preferences.appPreferences.interfacePreferences.backdropStyle
-        Backdrop(
-            drawerIsOpen = drawerState.isOpen,
-            backdropStyle = backdropStyle,
-            enableTopScrim = enableTopScrim,
-            viewModel = viewModel,
-        )
+        val destination = navigationManager.backStack.lastOrNull()
+        if (destination !is Destination.Playback && destination !is Destination.PlaybackList) {
+            Backdrop(
+                drawerIsOpen = drawerState.isOpen,
+                backdropStyle = backdropStyle,
+                enableTopScrim = enableTopScrim,
+                viewModel = viewModel,
+            )
+        }
         val navDrawerListState = rememberLazyListState()
         NavDisplay(
             backStack = navigationManager.backStack,
