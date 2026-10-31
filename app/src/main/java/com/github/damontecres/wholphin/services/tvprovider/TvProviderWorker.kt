@@ -40,8 +40,8 @@ import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Date
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
@@ -85,7 +85,7 @@ class TvProviderWorker
                         prefs.homePagePreferences.enableRewatchingNextUp,
                         prefs.homePagePreferences.maxDaysNextUp,
                     )
-                val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
+                val potentialItemsToAddIds = potentialItemsToAdd.map { it.first.id.toString() }
 
                 Timber.v("potentialItemsToAddIds=%s", potentialItemsToAddIds)
                 val currentItems = getCurrentTvChannelNextUp()
@@ -112,9 +112,13 @@ class TvProviderWorker
                 val userRemoved = currentItems.filterNot { it.isBrowsable }
                 val userRemovedIds = userRemoved.map { it.internalProviderId }
                 Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
-                val toAdd =
-                    potentialItemsToAdd.filter { it.id.toString() !in currentItemIds && it.id.toString() !in userRemovedIds }
-                Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
+
+                val wanted =
+                    potentialItemsToAdd.filterNot { (item, _) -> item.id.toString() in userRemovedIds }
+                val toAdd = wanted.filterNot { (item, _) -> item.id.toString() in currentItemIds }
+                val toUpdate = wanted.filter { (item, _) -> item.id.toString() in currentItemIds }
+                Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.first.id })
+                Timber.v("toUpdate (%s)=%s", toUpdate.size, toUpdate.map { it.first.id })
 
                 // Remove existing items if they are no longer in the next up from server
                 (toRemove + userRemoved)
@@ -123,12 +127,40 @@ class TvProviderWorker
                         context.contentResolver.delete(it, null, null)
                     }
 
+                // Refresh existing items and drop any duplicates of the same item
+                val survivingByItemId =
+                    currentItems
+                        .filter { it.isBrowsable }
+                        .groupBy { it.internalProviderId }
+                var updatedCount = 0
+                var duplicateCount = 0
+                toUpdate.forEach { (item, lastPlayed) ->
+                    val rows = survivingByItemId[item.id.toString()].orEmpty()
+                    val primary = rows.firstOrNull() ?: return@forEach
+                    updatedCount +=
+                        context.contentResolver.update(
+                            TvContractCompat.buildWatchNextProgramUri(primary.id),
+                            convert(item, lastPlayed).toContentValues(),
+                            null,
+                            null,
+                        )
+                    rows.drop(1).forEach { duplicate ->
+                        duplicateCount +=
+                            context.contentResolver.delete(
+                                TvContractCompat.buildWatchNextProgramUri(duplicate.id),
+                                null,
+                                null,
+                            )
+                    }
+                }
+                Timber.v("Updated %s, removed %s duplicates", updatedCount, duplicateCount)
+
                 // Add new ones
                 val addedCount =
                     context.contentResolver.bulkInsert(
                         WatchNextPrograms.CONTENT_URI,
                         toAdd
-                            .map { convert(it).toContentValues() }
+                            .map { (item, lastPlayed) -> convert(item, lastPlayed).toContentValues() }
                             .toTypedArray(),
                     )
                 Timber.v("Added %s", addedCount)
@@ -148,14 +180,14 @@ class TvProviderWorker
             userId: UUID,
             enableRewatching: Boolean,
             maxDaysNextUp: Int,
-        ): List<BaseItem> {
+        ): List<Pair<BaseItem, LocalDateTime?>> {
             val resumeItems = latestNextUpService.getResume(userId, 10, true)
             val seriesIds = resumeItems.mapNotNull { it.data.seriesId }
             val nextUpItems =
                 latestNextUpService
                     .getNextUp(userId, 10, enableRewatching, false, maxDaysNextUp)
                     .filter { it.data.seriesId != null && it.data.seriesId !in seriesIds }
-            return latestNextUpService.buildCombined(resumeItems, nextUpItems)
+            return latestNextUpService.buildCombinedWithLastPlayed(resumeItems, nextUpItems)
         }
 
         private suspend fun getCurrentTvChannelNextUp(): List<WatchNextProgram> =
@@ -169,7 +201,10 @@ class TvProviderWorker
                 )?.map(WatchNextProgram::fromCursor)
                 .orEmpty()
 
-        private fun convert(item: BaseItem): WatchNextProgram =
+        private fun convert(
+            item: BaseItem,
+            lastPlayed: LocalDateTime?,
+        ): WatchNextProgram =
             WatchNextProgram
                 .Builder()
                 .apply {
@@ -199,11 +234,11 @@ class TvProviderWorker
                         ?.let(::setDurationMillis)
 
                     setLastEngagementTimeUtcMillis(
-                        dto.userData
-                            ?.lastPlayedDate
+                        lastPlayed
                             ?.atZone(ZoneId.systemDefault())
-                            ?.toEpochSecond()
-                            ?: Date().time, // TODO
+                            ?.toInstant()
+                            ?.toEpochMilli()
+                            ?: 0L,
                     )
 
                     setTitle(item.title)
