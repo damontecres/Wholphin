@@ -806,6 +806,11 @@
     <string name="creator">Creator</string>
     <string name="artist">Artist</string>
     <string name="album_artist">Album artist</string>
+    <string name="artist_source">Artist source</string>
+    <string-array name="artist_sources">
+        <item>@string/artist</item>
+        <item>@string/album_artist</item>
+    </string-array>
     <string name="album">Album</string>
     <string name="popular_songs">Popular songs</string>
     <string name="play_next">Play next</string>
