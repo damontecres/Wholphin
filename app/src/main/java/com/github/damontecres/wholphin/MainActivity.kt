@@ -389,6 +389,10 @@ class MainActivity : AppCompatActivity() {
         viewModel.appStart(intent)
     }
 
+    internal fun handleRemotePlaybackIntent(intent: Intent) {
+        viewModel.appStart(intent)
+    }
+
     fun changeDisplayMode(modeId: Int) {
         lifecycleScope.launch(WholphinDispatchers.Main + ExceptionHandler(autoToast = true)) {
             try {

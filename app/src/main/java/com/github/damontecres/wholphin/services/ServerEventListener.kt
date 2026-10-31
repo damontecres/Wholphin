@@ -1,11 +1,13 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -22,12 +24,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.GeneralCommandMessage
 import org.jellyfin.sdk.model.api.GeneralCommandType
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.PlayMessage
 import org.jellyfin.sdk.model.api.UserUpdatedMessage
 import timber.log.Timber
 import javax.inject.Inject
@@ -87,6 +91,29 @@ class ServerEventListener
                         // Launch multiple listeners, but stop all if one fails
                         coroutineScope {
                             api.webSocket
+                                .subscribe<PlayMessage>()
+                                .onEach { message ->
+                                    val intent = message.toPlaybackIntent()
+                                    if (intent == null) {
+                                        Timber.w("Ignoring remote play message with no item IDs")
+                                    } else {
+                                        val itemId = intent.getStringExtra(IntentService.INTENT_ITEM_ID)
+                                        Timber.i(
+                                            "Received remote play command %s for item %s",
+                                            message.data?.playCommand,
+                                            itemId,
+                                        )
+                                        activity.lifecycleScope.launch {
+                                            (activity as? MainActivity)?.handleRemotePlaybackIntent(
+                                                intent,
+                                            )
+                                        }
+                                    }
+                                }.catch { ex ->
+                                    Timber.e(ex, "Error in remote play websocket subscription")
+                                }.launchIn(this@coroutineScope)
+
+                            api.webSocket
                                 .subscribe<GeneralCommandMessage>()
                                 .onEach { message ->
                                     Timber.v(
@@ -138,6 +165,20 @@ class ServerEventListener
                         }
                     }
                 }
+        }
+
+        private fun PlayMessage.toPlaybackIntent(): Intent? {
+            val request = data ?: return null
+            val itemIds = request.itemIds.orEmpty()
+            val startIndex = (request.startIndex ?: 0).coerceAtLeast(0)
+            val itemId = itemIds.getOrNull(startIndex) ?: itemIds.firstOrNull() ?: return null
+
+            return Intent(IntentService.ACTION_PLAYBACK).apply {
+                putExtra(IntentService.INTENT_ITEM_ID, itemId.toString())
+                request.startPositionTicks
+                    ?.coerceAtLeast(0L)
+                    ?.let { putExtra(IntentService.INTENT_POSITION, it / 10_000L) }
+            }
         }
 
         override fun onResume(owner: LifecycleOwner) {

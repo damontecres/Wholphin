@@ -199,6 +199,7 @@ class IntentService
             const val INTENT_SEASON_ID = "seaId"
             const val INTENT_SERVER_ID = "serverId"
             const val INTENT_USER_ID = "userId"
+            const val INTENT_POSITION = "position"
 
             const val ACTION_PLAYBACK = "com.github.damontecres.wholphin.PLAYBACK"
         }
