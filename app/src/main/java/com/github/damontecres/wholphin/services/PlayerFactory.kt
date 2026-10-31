@@ -182,6 +182,7 @@ class PlayerFactory
                                         AudioAttributes
                                             .Builder()
                                             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                                            .setUsage(C.USAGE_MEDIA)
                                             .build(),
                                         true,
                                     )
