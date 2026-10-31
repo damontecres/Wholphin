@@ -26,6 +26,7 @@ import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.mayakapps.kache.InMemoryKache
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -39,8 +40,10 @@ import org.jellyfin.sdk.api.client.extensions.studiosApi
 import org.jellyfin.sdk.api.client.extensions.yearsApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.TreeSet
 import javax.inject.Inject
@@ -74,12 +77,18 @@ class FilterOptionCache
         suspend fun getFilterOptionValues(
             parentId: UUID?,
             filterOption: FilterBy<*, *>,
+            fromItems: Boolean = false,
         ): List<FilterValueOption> {
-            val cacheKey = FilterOptionCacheKey(serverRepository.currentUser?.id, parentId, filterOption)
+            val cacheKey =
+                FilterOptionCacheKey(serverRepository.currentUser?.id, parentId, filterOption, fromItems)
             return try {
                 cache
-                    .getOrPut(cacheKey) { (userId, parentId, filterOption) ->
-                        getFilterOptionValues(userId, parentId, filterOption)
+                    .getOrPut(cacheKey) { (userId, parentId, filterOption, fromItems) ->
+                        if (fromItems && parentId != null) {
+                            getFilterOptionValuesFromItems(userId, parentId, filterOption)
+                        } else {
+                            getFilterOptionValues(userId, parentId, filterOption)
+                        }
                     }.orEmpty()
             } catch (ex: CancellationException) {
                 throw ex
@@ -191,6 +200,72 @@ class FilterOptionCache
             }
         }
 
+        /**
+         * Collects the values from the items of the parent itself
+         *
+         * The server returns no genres, years or ratings when the parent is a playlist,
+         * because its items are only linked to it
+         */
+        private suspend fun getFilterOptionValuesFromItems(
+            userId: UUID?,
+            parentId: UUID,
+            filterOption: FilterBy<*, *>,
+        ): List<FilterValueOption> {
+            if (filterOption !in setOf(GenreFilter, OfficialRatingFilter, YearFilter, DecadeFilter)) {
+                return getFilterOptionValues(userId, parentId, filterOption)
+            }
+            val request =
+                GetItemsRequest(
+                    userId = userId,
+                    parentId = parentId,
+                    fields = listOf(ItemFields.GENRES),
+                    enableImages = false,
+                    collapseBoxSetItems = false,
+                )
+            val items =
+                GetItemsRequestHandler
+                    .execute(api, request)
+                    .content.items
+            return when (filterOption) {
+                GenreFilter -> {
+                    items
+                        .flatMap { it.genreItems.orEmpty() }
+                        .distinctBy { it.id }
+                        .sortedBy { it.name?.lowercase() }
+                        .map { FilterValueOption(it.name ?: "", it.id) }
+                }
+
+                OfficialRatingFilter -> {
+                    val ratings =
+                        api.localizationApi
+                            .getParentalRatings()
+                            .content
+                            .associate { it.name to it.value }
+                    items
+                        .mapNotNull { it.officialRating }
+                        .distinct()
+                        .map { FilterValueOption(it, ratings[it] ?: 0) }
+                        .sortedBy { it.value as Int }
+                }
+
+                YearFilter -> {
+                    items
+                        .mapNotNull { it.productionYear }
+                        .distinct()
+                        .sorted()
+                        .map { FilterValueOption(it.toString(), it) }
+                }
+
+                else -> {
+                    items
+                        .mapNotNull { it.productionYear?.div(10)?.times(10) }
+                        .distinct()
+                        .sorted()
+                        .map { FilterValueOption("$it's", it) }
+                }
+            }
+        }
+
         private suspend fun getDiscoverFilterOptionValues(filterOption: DiscoverFilterBy<*>): List<FilterValueOption> {
             if (seerrService.active.firstOrNull() != true) {
                 return emptyList()
@@ -266,5 +341,6 @@ class FilterOptionCache
             val userId: UUID?,
             val parentId: UUID?,
             val filterOption: FilterBy<*, *>,
+            val fromItems: Boolean,
         )
     }
