@@ -395,6 +395,7 @@ sealed interface AppPreference<Pref, T> {
                     prefs.updatePlaybackOverrides { maxResolution = value.value }
                 },
                 displayValues = R.array.max_resolution_options,
+                subtitles = R.array.max_resolution_descriptions,
                 indexToValue = { MaxResolution.entries.getOrNull(it) ?: MaxResolution.NO_LIMIT },
                 valueToIndex = { it.ordinal },
             )

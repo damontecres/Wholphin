@@ -950,7 +950,9 @@
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="login_credentials_expired">Credentials expired, please login in again</string>
     <string name="login_not_authorized">You are not authorized to access the server at this time</string>
-    <string name="max_resolution">Max resolution before transcoding</string>
+    <string name="max_resolution">Maximum playback resolution</string>
+    <string name="max_resolution_limit_description">Videos play at this resolution or lower. The server reduces higher-resolution videos as needed.</string>
+    <string name="max_resolution_no_limit_description">Use the maximum resolution supported by your device.</string>
 
     <string name="resolution_8k">8K</string>
     <string name="resolution_4k">4K</string>
@@ -968,6 +970,16 @@
         <item>@string/resolution_576</item>
         <item>@string/resolution_480</item>
         <item>@string/resolution_360</item>
+    </string-array>
+    <string-array name="max_resolution_descriptions">
+        <item>@string/max_resolution_no_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
+        <item>@string/max_resolution_limit_description</item>
     </string-array>
     <plurals name="episodes_count">
         <item quantity="zero">%1$d Episodes</item>
