@@ -143,13 +143,16 @@ class SlideshowViewModel
                             ),
                         )
                     serverRepository.currentUser?.let { user ->
+
                         val filter =
-                            playbackEffectDao
-                                .getPlaybackEffect(
-                                    user.rowId,
-                                    slideshowSettings.parentId,
-                                    BaseItemKind.PHOTO_ALBUM,
-                                )?.videoFilter
+                            slideshowSettings.parentId?.let {
+                                playbackEffectDao
+                                    .getPlaybackEffect(
+                                        user.rowId,
+                                        slideshowSettings.parentId,
+                                        BaseItemKind.PHOTO_ALBUM,
+                                    )?.videoFilter
+                            }
                         if (filter != null) {
                             Timber.v("Got filter for album %s", slideshowSettings.parentId)
                             albumImageFilter = filter
@@ -441,7 +444,7 @@ class SlideshowViewModel
         fun saveGalleryFilter() {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                 val vf = _imageFilter.value
-                if (vf != null) {
+                if (slideshowSettings.parentId != null) {
                     albumImageFilter = vf
                     serverRepository.currentUser?.let { user ->
                         playbackEffectDao

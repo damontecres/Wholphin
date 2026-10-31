@@ -21,6 +21,7 @@ import org.jellyfin.sdk.api.client.extensions.studioApi
 import org.jellyfin.sdk.api.client.extensions.suggestionApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.GetProgramsDto
+import org.jellyfin.sdk.model.api.request.GetAlbumArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
@@ -400,6 +401,25 @@ object GetArtistsHandler : RequestHandler<GetArtistsRequest> {
     ): Response<BaseItemDtoQueryResult> = api.artistApi.getArtists((request))
 }
 
+@Serializable
+object GetAlbumArtistsHandler : RequestHandler<GetAlbumArtistsRequest> {
+    override fun prepare(
+        request: GetAlbumArtistsRequest,
+        startIndex: Int,
+        limit: Int,
+        enableTotalRecordCount: Boolean,
+    ): GetAlbumArtistsRequest =
+        request.copy(
+            startIndex = startIndex,
+            limit = limit,
+        )
+
+    override suspend fun execute(
+        api: ApiClient,
+        request: GetAlbumArtistsRequest,
+    ): Response<BaseItemDtoQueryResult> = api.artistsApi.getAlbumArtists(request)
+}
+
 val requestSerializersModule =
     SerializersModule {
         polymorphic(Any::class) {
@@ -416,5 +436,6 @@ val requestSerializersModule =
             subclass(GetRecordingsRequest::class)
             subclass(GetLiveTvChannelsRequest::class)
             subclass(GetArtistsHandler::class)
+            subclass(GetAlbumArtistsHandler::class)
         }
     }

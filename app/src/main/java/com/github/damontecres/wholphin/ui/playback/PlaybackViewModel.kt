@@ -292,8 +292,16 @@ class PlaybackViewModel
          */
         private suspend fun init() {
             musicService.stop()
-            _state.update { it.copy(nextUp = null) }
             this.preferences = userPreferencesService.getCurrent()
+            val maxBitrate =
+                preferences.appPreferences.playbackPreferences.maxBitrate
+                    .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
+            _state.update {
+                it.copy(
+                    nextUp = null,
+                    maxBitrate = maxBitrate,
+                )
+            }
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                 addCloseable { refreshRateService.resetRefreshRate() }
             }
@@ -628,6 +636,7 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            maxBitrate: Long = this.state.value.maxBitrate,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -638,7 +647,8 @@ class PlaybackViewModel
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                        enableDirectPlay
+                        enableDirectPlay &&
+                        state.value.maxBitrate == maxBitrate
                     ) {
                         val wasSuccessful =
                             changeStreamsDirectPlay(
@@ -651,18 +661,17 @@ class PlaybackViewModel
                 }
 
                 Timber.i(
-                    "changeStreams (%s): audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s",
+                    "changeStreams (%s): audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s, maxBitrate=%s",
                     itemId,
                     audioIndex,
                     subtitleIndex,
                     enableDirectPlay,
                     enableDirectStream,
                     positionMs,
+                    maxBitrate,
                 )
+                _state.update { it.copy(maxBitrate = maxBitrate) }
 
-                val maxBitrate =
-                    preferences.appPreferences.playbackPreferences.maxBitrate
-                        .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
                 val response by
                     api.mediaInfoApi
                         .getPostedPlaybackInfo(
@@ -1020,6 +1029,26 @@ class PlaybackViewModel
                     Timber.w("Trying to change subtitle, but currentPlayback is null")
                 }
             }
+
+        fun changeMaxBitrate(newMaxBitrate: Long) {
+            viewModelScope.launchIO {
+                val currentPlayback = state.value.currentPlayback
+                if (currentPlayback != null) {
+                    Timber.d("Changing bitrate to %s", newMaxBitrate)
+                    changeStreams(
+                        item = currentItem.item,
+                        sourceId = currentPlayback.mediaSourceInfo.id,
+                        audioIndex = currentPlayback.audioIndex,
+                        subtitleIndex = currentPlayback.subtitleIndex,
+                        positionMs = onMain { player.currentPosition },
+                        enableDirectPlay = true,
+                        maxBitrate = newMaxBitrate,
+                    )
+                } else {
+                    Timber.w("Trying to change bitrate, but currentPlayback is null")
+                }
+            }
+        }
 
         internal suspend fun saveTrackSelection(
             trackIndex: Int,

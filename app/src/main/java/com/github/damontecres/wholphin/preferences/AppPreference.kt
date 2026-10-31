@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.formatMaxBitrate
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
@@ -345,7 +346,7 @@ sealed interface AppPreference<Pref, T> {
 
         const val MEGA_BIT = 1024 * 1024L
         const val DEFAULT_BITRATE = 100 * MEGA_BIT
-        private val bitrateValues =
+        val bitrateValues =
             listOf(
                 500 * 1024L,
                 750 * 1024L,
@@ -378,11 +379,7 @@ sealed interface AppPreference<Pref, T> {
                 summarizer = { value ->
                     if (value != null) {
                         val v = bitrateValues.getOrNull(value.toInt()) ?: DEFAULT_BITRATE
-                        if (v < MEGA_BIT) {
-                            "${v / 1024} kbps"
-                        } else {
-                            "${v / MEGA_BIT} Mbps"
-                        }
+                        formatMaxBitrate(v)
                     } else {
                         null
                     }
