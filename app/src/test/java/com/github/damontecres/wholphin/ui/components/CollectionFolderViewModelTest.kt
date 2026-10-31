@@ -158,7 +158,7 @@ class CollectionFolderViewModelTest {
             val viewModel =
                 createViewModel(
                     GetItemsFilter(override = GetItemsFilterOverride.ARTIST),
-                    ViewOptionsSquare.copy(artistSource = ArtistSource.ALBUM_ARTIST),
+                    ViewOptionsSquare.copy(extras = ViewOptionsExtras.MusicLibrary(ArtistSource.ALBUM_ARTIST)),
                 )
             advanceUntilIdle()
 
@@ -177,7 +177,7 @@ class CollectionFolderViewModelTest {
             advanceUntilIdle()
             coVerify(exactly = 0) { GetAlbumArtistsHandler.execute(any(), any<GetAlbumArtistsRequest>()) }
 
-            viewModel.saveViewOptions(ViewOptionsSquare.copy(artistSource = ArtistSource.ALBUM_ARTIST))
+            viewModel.saveViewOptions(ViewOptionsSquare.copy(extras = ViewOptionsExtras.MusicLibrary(ArtistSource.ALBUM_ARTIST)))
             advanceUntilIdle()
 
             coVerify { GetAlbumArtistsHandler.execute(any(), any<GetAlbumArtistsRequest>()) }
