@@ -13,7 +13,7 @@
     <string name="cancel_series_recording">Dizi kaydını iptal et</string>
     <string name="cancel">İptal</string>
     <string name="chapters">Bölümler</string>
-    <string name="choose_stream">Seç: %1$s</string>
+    <string name="choose_stream">%1$s ögesini seçin</string>
     <string name="clear_image_cache">Resim önbelleğini temizle</string>
     <string name="collection">Koleksiyon</string>
     <string name="collections">Koleksiyonlar</string>
@@ -756,4 +756,7 @@
     <string name="home_settings_source_web">Kullanıcı web istemcisi</string>
     <string name="managed_by_server">Sunucu tarafından yönetiliyor</string>
     <string name="error">Hata</string>
+    <string name="convert_dovi_profile_7">Dolby Vision Profile 7\'yi 8.1\'e Dönüştür</string>
+    <string name="convert_dovi_profile_7_summary">Profil 8\'i destekleyen ancak Profil 7\'yi desteklemeyen çözücülere sahip cihazlar için; çift katmanlı Profil 7\'yi çözücüye ulaşmadan önce tek katmanlı Profil 8.1\'e dönüştürür ve doğrudan oynatır</string>
+    <string name="artist_source">Sanatçı Kaynağı</string>
 </resources>
