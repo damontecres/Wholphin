@@ -753,4 +753,10 @@
     <string name="error">Fehler</string>
     <string name="server_version_not_supported_future">Server Version wird bald nicht mehr unterstützt</string>
     <string name="chosen_by">Festgelegt von %1$s</string>
+    <string name="convert_dovi_profile_7">Dolby Vision Profile 7 zu 8.1 konvertieren</string>
+    <string name="convert_dovi_profile_7_summary">Für Geräte, die zwar Dolby Vision Profil 8, aber nicht Profil 7 dekodieren können, wird das zweischichtige Profil 7 vor der Wiedergabe in das einschichtige Profil 8.1 umgewandelt und dann direkt abgespielt</string>
+    <string name="artist_source">Interpreten Quelle</string>
+    <string name="series">Reihen</string>
+    <string name="force_enable">Aktivieren erzwingen</string>
+    <string name="force_disable">Deaktivieren erzwingen</string>
 </resources>
