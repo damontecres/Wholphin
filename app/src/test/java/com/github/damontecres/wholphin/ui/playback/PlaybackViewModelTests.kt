@@ -296,7 +296,8 @@ class PlaybackViewModelTests {
     fun `Direct play includes the opened live stream ID`() =
         runTest(testDispatcher) {
             setupPreferences { cinemaMode = false }
-            val liveSource = mediaSource.copy(liveStreamId = "opened-live-stream")
+            val liveStreamId = "opened-live-stream"
+            val liveSource = mediaSource.copy(liveStreamId = liveStreamId)
             coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
             coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
                 successResponse(
@@ -326,7 +327,7 @@ class PlaybackViewModelTests {
                 mockVideosApi.getVideoStreamUrl(
                     itemId = movie.id,
                     mediaSourceId = liveSource.id,
-                    liveStreamId = "opened-live-stream",
+                    liveStreamId = liveStreamId,
                     static = true,
                     tag = liveSource.eTag,
                     playSessionId = playSessionId,
