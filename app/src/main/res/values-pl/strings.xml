@@ -800,4 +800,9 @@
     <string name="home_settings_source_server_profile">Profil użytkownika na serwerze</string>
     <string name="home_settings_source_plugin">Domyślnie z serwera</string>
     <string name="home_settings_source_web">Użytkownik klienta webowego</string>
+    <string name="convert_dovi_profile_7">Konwertuj Dolby Vision 7 do 8.1</string>
+    <string name="convert_dovi_profile_7_summary">W przypadku urządzeń, których dekoder obsługuje profil 8, ale nie obsługuje profilu 7, system przekształca dwuwarstwowy profil 7 na jednowarstwowy profil 8.1 przed przekazaniem go do dekodera, umożliwiając bezpośrednie odtwarzanie</string>
+    <string name="artist_source">Źródło artysty</string>
+    <string name="managed_by_server">Zarządzane przez serwer</string>
+    <string name="error">Błąd</string>
 </resources>
