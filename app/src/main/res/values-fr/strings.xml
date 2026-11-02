@@ -777,4 +777,9 @@
     <string name="home_settings_source_server_profile">Profil utilisateur du serveur</string>
     <string name="home_settings_source_plugin">Paramètres par défaut du serveur</string>
     <string name="home_settings_source_web">Client Web utilisateur</string>
+    <string name="convert_dovi_profile_7">Convertir le profil Dolby Vision 7 en 8.1</string>
+    <string name="convert_dovi_profile_7_summary">Convertit le profil 7 double couche en profil 8.1 simple couche avant le décodeur et le lit directement, pour les appareils dont le décodeur prend en charge le profil 8 mais pas le profil 7</string>
+    <string name="artist_source">Source de l\'artiste</string>
+    <string name="managed_by_server">Géré par le serveur</string>
+    <string name="error">Erreur</string>
 </resources>
