@@ -758,4 +758,5 @@
     <string name="error">Viga</string>
     <string name="convert_dovi_profile_7">Teisenda Dolby Vision Profile 7 → 8.1</string>
     <string name="convert_dovi_profile_7_summary">Muudab kahekihilise „Profile 7“ enne dekooderit ühekihiliseks profiiliks 8.1 ja esitab seda seadmetel otse, mille dekooder toetab profiili 8, kuid mitte profiili 7</string>
+    <string name="artist_source">Esitaja allikas</string>
 </resources>
