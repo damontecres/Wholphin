@@ -172,6 +172,38 @@ object TrackSelectionUtils {
             }
         }.sortedWith(compareBy<Pair<Tracks.Group, List<Int>>> { it.second[0] }.thenBy { it.second[1] })
             .map { it.first }
+
+    /**
+     * Create a [TrackSelectionParameters] to activate a specific track identified by its ID
+     */
+    fun createTrackSelectionParametersForTrack(
+        trackSelectionParams: TrackSelectionParameters,
+        tracks: Tracks,
+        trackId: String,
+        type: MediaStreamType,
+    ): TrackSelectionParameters? {
+        val type =
+            when (type) {
+                MediaStreamType.AUDIO -> C.TRACK_TYPE_AUDIO
+                MediaStreamType.SUBTITLE -> C.TRACK_TYPE_TEXT
+                MediaStreamType.VIDEO -> C.TRACK_TYPE_VIDEO
+                else -> throw IllegalArgumentException("Type not supported: $type")
+            }
+        val group =
+            tracks.groups
+                .firstOrNull { group ->
+                    group.type == type && group.length >= 1 && group.trackFormats.any { it.id == trackId }
+                }
+        return group?.let {
+            trackSelectionParams
+                .buildUpon()
+                .clearOverridesOfType(type)
+                .setTrackTypeDisabled(type, false)
+                .setOverrideForType(
+                    TrackSelectionOverride(group.mediaTrackGroup, 0),
+                ).build()
+        }
+    }
 }
 
 /**

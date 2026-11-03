@@ -41,7 +41,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
@@ -67,10 +66,10 @@ enum class PlaybackDialogType {
 
 data class PlaybackSettings(
     val showDebugInfo: Boolean,
-    val audioIndex: Int?,
-    val audioStreams: List<SimpleMediaStream>,
-    val subtitleIndex: Int?,
-    val subtitleStreams: List<SimpleMediaStream>,
+    val audioIndex: String?,
+    val audioStreams: List<StreamTrack>,
+    val subtitleIndex: String?,
+    val subtitleStreams: List<StreamTrack>,
     val playbackSpeed: Float,
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
@@ -117,15 +116,9 @@ fun PlaybackDialog(
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
                 },
-                onSelectChoice = { subtitleIndex ->
+                onSelectChoice = { subtitle ->
                     onDismissRequest.invoke()
-                    if (subtitleIndex >= 0) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleIndex))
-                    } else if (subtitleIndex == TrackIndex.DISABLED) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
-                    } else if (subtitleIndex == TrackIndex.ONLY_FORCED) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.ONLY_FORCED))
-                    }
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitle))
                 },
                 onSelectSearch = {
                     onDismissRequest.invoke()
@@ -205,7 +198,7 @@ fun PlaybackDialog(
                     onDismissRequest.invoke()
                 },
                 onSelectChoice = { _, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice))
                 },
                 gravity = rightGravity,
             )
@@ -310,18 +303,18 @@ fun PlaybackDialog(
 
 @Composable
 fun SubtitleChoiceBottomDialog(
-    choices: List<SimpleMediaStream>,
+    choices: List<StreamTrack>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (Int) -> Unit,
+    onSelectChoice: (StreamTrack) -> Unit,
     onSelectSearch: () -> Unit,
     gravity: Int,
     hasDownloadPermission: Boolean,
-    currentChoice: Int? = null,
+    currentChoice: String? = null,
 ) {
     val numberBefore = 2
     val initialChoice =
         remember(choices) {
-            choices.indexOfFirstOrNull { it.index == currentChoice }
+            choices.indexOfFirstOrNull { it.id == currentChoice }
         }
     val scope = rememberCoroutineScope()
     val listState =
@@ -371,13 +364,13 @@ fun SubtitleChoiceBottomDialog(
                     val interactionSource = remember { MutableInteractionSource() }
                     val focused by interactionSource.collectIsFocusedAsState()
                     ListItem(
-                        selected = currentChoice == TrackIndex.DISABLED,
+                        selected = currentChoice == TrackDisabled.id,
                         interactionSource = interactionSource,
                         onClick = {
-                            onSelectChoice(TrackIndex.DISABLED)
+                            onSelectChoice(TrackDisabled)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(currentChoice == TrackIndex.DISABLED)
+                            SelectedLeadingContent(currentChoice == TrackDisabled.id)
                         },
                         headlineContent = {
                             Text(
@@ -402,12 +395,12 @@ fun SubtitleChoiceBottomDialog(
                 }
                 item {
                     ListItem(
-                        selected = currentChoice == TrackIndex.ONLY_FORCED,
+                        selected = currentChoice == TrackOnlyForced.id,
                         onClick = {
-                            onSelectChoice(TrackIndex.ONLY_FORCED)
+                            onSelectChoice(TrackOnlyForced)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(currentChoice == TrackIndex.ONLY_FORCED)
+                            SelectedLeadingContent(currentChoice == TrackOnlyForced.id)
                         },
                         headlineContent = {
                             Text(
@@ -423,12 +416,12 @@ fun SubtitleChoiceBottomDialog(
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
-                        selected = choice.index == currentChoice,
+                        selected = choice.id == currentChoice,
                         onClick = {
-                            onSelectChoice(choice.index)
+                            onSelectChoice(choice)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(choice.index == currentChoice)
+                            SelectedLeadingContent(choice.id == currentChoice)
                         },
                         headlineContent = {
                             Text(
@@ -480,16 +473,16 @@ fun SubtitleChoiceBottomDialog(
 
 @Composable
 fun StreamChoiceBottomDialog(
-    choices: List<SimpleMediaStream>,
+    choices: List<StreamTrack>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (Int, SimpleMediaStream) -> Unit,
+    onSelectChoice: (Int, StreamTrack) -> Unit,
     gravity: Int,
-    currentChoice: Int? = null,
+    currentChoice: String? = null,
 ) {
     val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
     if (currentChoice != null) {
         LaunchedEffect(Unit) {
-            choices.indexOfFirstOrNull { it.index == currentChoice }?.let {
+            choices.indexOfFirstOrNull { it.id == currentChoice }?.let {
                 focusRequesters.getOrNull(it)?.tryRequestFocus()
             }
         }
@@ -527,13 +520,13 @@ fun StreamChoiceBottomDialog(
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
-                        selected = choice.index == currentChoice,
+                        selected = choice.id == currentChoice,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(choice.index == currentChoice)
+                            SelectedLeadingContent(choice.id == currentChoice)
                         },
                         headlineContent = {
                             Text(
