@@ -298,7 +298,7 @@ class PlaybackViewModelTests {
             setupPreferences { cinemaMode = false }
             val liveStreamId = "opened-live-stream"
             val liveSource = mediaSource.copy(liveStreamId = liveStreamId)
-            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
             coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
                 successResponse(
                     PlaybackInfoResponse(
