@@ -293,6 +293,49 @@ class PlaybackViewModelTests {
     }
 
     @Test
+    fun `Direct play includes the opened live stream ID`() =
+        runTest(testDispatcher) {
+            setupPreferences { cinemaMode = false }
+            val liveStreamId = "opened-live-stream"
+            val liveSource = mediaSource.copy(liveStreamId = liveStreamId)
+            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
+                successResponse(
+                    PlaybackInfoResponse(
+                        mediaSources = listOf(liveSource),
+                        playSessionId = playSessionId,
+                    ),
+                )
+            every {
+                mockVideosApi.getVideoStreamUrl(
+                    itemId = movie.id,
+                    mediaSourceId = liveSource.id,
+                    liveStreamId = liveSource.liveStreamId,
+                    static = true,
+                    tag = liveSource.eTag,
+                    playSessionId = playSessionId,
+                )
+            } returns videoStreamUrl
+
+            createViewModel(Destination.Playback(movie.id, 0L))
+
+            val mediaItem = slot<MediaItem>()
+            verify(exactly = 1) { mockPlayer.setMediaItem(capture(mediaItem), any<Long>()) }
+            val playbackUri = mediaItem.captured.localConfiguration?.uri
+            Assert.assertEquals(videoStreamUrl, playbackUri.toString())
+            verify(exactly = 1) {
+                mockVideosApi.getVideoStreamUrl(
+                    itemId = movie.id,
+                    mediaSourceId = liveSource.id,
+                    liveStreamId = liveStreamId,
+                    static = true,
+                    tag = liveSource.eTag,
+                    playSessionId = playSessionId,
+                )
+            }
+        }
+
+    @Test
     fun `Play intro first`() =
         runTest(testDispatcher) {
             setupPreferences {

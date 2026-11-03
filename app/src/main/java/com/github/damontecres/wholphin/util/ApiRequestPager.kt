@@ -435,7 +435,7 @@ val requestSerializersModule =
             subclass(GetStudiosRequest::class)
             subclass(GetRecordingsRequest::class)
             subclass(GetLiveTvChannelsRequest::class)
-            subclass(GetArtistsHandler::class)
-            subclass(GetAlbumArtistsHandler::class)
+            subclass(GetArtistsRequest::class)
+            subclass(GetAlbumArtistsRequest::class)
         }
     }
