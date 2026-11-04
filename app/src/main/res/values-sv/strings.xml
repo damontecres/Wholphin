@@ -686,4 +686,9 @@
     <string name="user_views">Användarvisningar</string>
     <string name="genre_movies">%1$sfilmer</string>
     <string name="quality_profile">Kvalitetsprofil</string>
+    <string name="hdr_formats">HDR-format</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="force_enable">Tvinga aktivering</string>
+    <string name="force_disable">Tvinga avaktivering</string>
 </resources>

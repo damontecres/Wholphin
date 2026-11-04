@@ -697,4 +697,36 @@
     <string name="remove_from_playlist">從播放清單中移除</string>
     <string name="login_not_authorized">您目前無存取此伺服器的權限</string>
     <string name="login_credentials_expired">登入憑證已過期，請重新登入</string>
+    <plurals name="episodes_count">
+        <item quantity="other">%1$d 集</item>
+    </plurals>
+    <string name="prefer_dovi_over_hdr10_plus">Dolby Vision 優先於 HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">移除 Dolby Vision 影片中的 HDR10+ 中介資料，以解決部分電視誤播為 HDR10+</string>
+    <string name="max_resolution">最高解析度，超過將轉碼</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <string name="hdr10_override">HDR10</string>
+    <string name="hdr10_plus_override">HDR10+</string>
+    <string name="dovi_profile_5">杜比視界 Profile 5</string>
+    <string name="dovi_profile_7">杜比視界 Profile 7</string>
+    <string name="dovi_profile_8">杜比視界 Profile 8</string>
+    <string name="force_enable">強制啟用</string>
+    <string name="force_disable">強制停用</string>
+    <string name="server_version_not_supported_future">伺服器版本即將停止支援</string>
+    <string name="server_version_required">伺服器版本需為：%1$s</string>
+    <string name="user">使用者</string>
+    <string name="series">劇集</string>
+    <string name="load_from_server_plugin">從伺服器載入預設值</string>
+    <string name="save_to_local">僅儲存於此裝置</string>
+    <string name="home_settings_source_unset">預設</string>
+    <string name="top_rated">高評分</string>
+    <string name="hdr_formats">HDR 格式</string>
+    <string name="chosen_by">由 %1$s 精選</string>
+    <string name="convert_dovi_profile_7">將杜比視界 Profile 7 轉換為 8.1</string>
+    <string name="convert_dovi_profile_7_summary">在解碼器處理前，將雙層 Profile 7 重新改寫為單層 Profile 8.1，讓不支援 Profile 7 但支援 Profile 8 的裝置能夠直接播放影片</string>
 </resources>
