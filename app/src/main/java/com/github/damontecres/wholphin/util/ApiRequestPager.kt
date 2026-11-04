@@ -14,6 +14,7 @@ import org.jellyfin.sdk.api.client.extensions.artistsApi
 import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.personsApi
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.studiosApi
@@ -67,6 +68,56 @@ class ApiRequestPager<T>(
         val data = mutableListOf<BaseItem>()
         result.items.forEach { data.add(BaseItem(it, useSeriesForPrimary)) }
         return QueryResult(data, result.totalRecordCount)
+    }
+
+    /**
+     * Refresh an item's media sources using PlaybackInfo rather than the item DTO.
+     * Some Jellyfin-compatible servers expose the complete alternate-version list
+     * through PlaybackInfo but return a reduced MediaSources list in GetItem.
+     */
+    suspend fun refreshMediaSources(
+        position: Int,
+        itemId: UUID,
+    ): Boolean {
+        val pageNumber = position / pageSize
+        val index = position - pageNumber * pageSize
+        val itemBeforeRequest =
+            mutex.withLock {
+                cachedPages.getIfPresent(pageNumber)?.getOrNull(index)
+            }
+
+        // Keep the network call outside the pager mutex. Focus changes can trigger
+        // lookups for several episodes; serializing the HTTP calls here made the
+        // currently focused episode wait behind every earlier lookup.
+        val playbackInfo = api.mediaInfoApi.getPlaybackInfo(itemId).content
+        val mediaSources = playbackInfo.mediaSources
+        if (mediaSources.isEmpty()) {
+            return true
+        }
+
+        val (cacheUpdated, finalStoredSources) =
+            mutex.withLock {
+                val page = cachedPages.getIfPresent(pageNumber)
+                val currentItem = page?.getOrNull(index)
+                // A season/page can change while the request is in flight. Never write
+                // this response into a different episode that now occupies the index.
+                if (currentItem != null && currentItem.id == itemId) {
+                    page!![index] =
+                        currentItem.copy(
+                            data =
+                                currentItem.data.copy(
+                                    mediaSources = mediaSources,
+                                    mediaSourceCount = mediaSources.size,
+                                ),
+                        )
+                    cachedPages.put(pageNumber, page)
+                    items = ItemList(size, pageSize, cachedPages.asMap())
+                    true to page[index].data.mediaSources?.size
+                } else {
+                    false to null
+                }
+            }
+        return cacheUpdated
     }
 
     suspend fun refreshItem(

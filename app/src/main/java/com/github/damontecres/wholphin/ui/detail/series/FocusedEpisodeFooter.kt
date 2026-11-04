@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +17,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import kotlin.time.Duration
 
 @Composable
@@ -23,6 +25,7 @@ fun FocusedEpisodeFooter(
     preferences: UserPreferences,
     ep: BaseItem,
     chosenStreams: ChosenStreams?,
+    loadingVersions: Boolean,
     playOnClick: (Duration) -> Unit,
     moreOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -34,6 +37,7 @@ fun FocusedEpisodeFooter(
     buttonOnFocusChanged: (FocusState) -> Unit = {},
 ) {
     val dto = ep.data
+    val mediaSourceIds = dto.mediaSources.orEmpty().map { it.id ?: "<no-id>" }
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
     val firstFocus = remember { FocusRequester() }
     Row(
@@ -55,6 +59,7 @@ fun FocusedEpisodeFooter(
             trailerOnClick = {},
             canDelete = canDelete,
             onConfirmDelete = onConfirmDelete,
+            loadingVersions = loadingVersions,
             chooseVersionParams =
                 remember(chosenStreams, ep, onChooseVersion) {
                     ChooseVersionParams(

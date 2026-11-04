@@ -139,6 +139,17 @@ sealed interface AppPreference<Pref, T> {
                 },
             )
 
+        val ShowAllEpisodeVersions =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_all_episode_versions,
+                defaultValue = false,
+                getter = { it.playbackPreferences.showAllEpisodeVersions },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { showAllEpisodeVersions = value }
+                },
+                summary = R.string.show_all_episode_versions_summary,
+            )
+
         val SeekBarSteps =
             AppSliderPreference<AppPreferences>(
                 title = R.string.seek_bar_steps,
@@ -1324,6 +1335,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.OneClickPause,
+                        AppPreference.ShowAllEpisodeVersions,
                         AppPreference.ControllerTimeout,
                         AppPreference.CinemaMode,
                         AppPreference.GlobalContentScale,
