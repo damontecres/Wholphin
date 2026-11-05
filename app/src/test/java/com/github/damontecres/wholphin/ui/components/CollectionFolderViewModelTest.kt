@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.services.DeletedItem
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.ui.successQueryResult
 import com.github.damontecres.wholphin.ui.successResponse
+import com.github.damontecres.wholphin.util.GetAlbumArtistsHandler
 import com.github.damontecres.wholphin.util.GetArtistsHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
@@ -34,6 +35,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemFields
+import org.jellyfin.sdk.model.api.request.GetAlbumArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetArtistsRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.junit.After
@@ -57,6 +59,7 @@ class CollectionFolderViewModelTest {
     private val mockUserLibraryApi = mockk<UserLibraryApi>()
 
     private val artistsRequest = slot<GetArtistsRequest>()
+    private val albumArtistsRequest = slot<GetAlbumArtistsRequest>()
     private val itemsRequest = slot<GetItemsRequest>()
 
     private val libraryId = UUID.randomUUID()
@@ -83,11 +86,14 @@ class CollectionFolderViewModelTest {
         // against the relaxed ApiClient
         mockkObject(GetItemsRequestHandler)
         mockkObject(GetArtistsHandler)
+        mockkObject(GetAlbumArtistsHandler)
         mockkObject(GetPersonsHandler)
         coEvery { GetItemsRequestHandler.execute(mockApi, capture(itemsRequest)) } returns
             successQueryResult(totalRecordCount = LIBRARY_ITEM_COUNT)
         coEvery { GetArtistsHandler.execute(mockApi, capture(artistsRequest)) } returns
             successQueryResult(totalRecordCount = ARTIST_COUNT)
+        coEvery { GetAlbumArtistsHandler.execute(mockApi, capture(albumArtistsRequest)) } returns
+            successQueryResult(totalRecordCount = ALBUM_ARTIST_COUNT)
         coEvery { GetPersonsHandler.execute(mockApi, any()) } returns
             successQueryResult(totalRecordCount = PERSON_COUNT)
     }
@@ -97,33 +103,36 @@ class CollectionFolderViewModelTest {
         WholphinDispatchers.reset()
         unmockkObject(GetItemsRequestHandler)
         unmockkObject(GetArtistsHandler)
+        unmockkObject(GetAlbumArtistsHandler)
         unmockkObject(GetPersonsHandler)
     }
 
-    private fun createViewModel(filter: GetItemsFilter) =
-        CollectionFolderViewModel(
-            savedStateHandle = SavedStateHandle(),
-            api = mockApi,
-            context = mockk(relaxed = true),
-            serverRepository = mockServerRepository,
-            libraryDisplayInfoDao = mockk(relaxed = true),
-            favoriteWatchManager = mockk(relaxed = true),
-            backdropService = mockk(relaxed = true),
-            navigationManager = mockk(relaxed = true),
-            themeSongPlayer = mockk(relaxed = true),
-            userPreferencesService = mockk(relaxed = true),
-            mediaManagementService = mockMediaManagementService,
-            musicService = mockk(relaxed = true),
-            streamChoiceService = mockk(relaxed = true),
-            serverReportService = mockk(relaxed = true),
-            filterOptionCache = mockk(relaxed = true),
-            itemId = libraryId.toString(),
-            initialSortAndDirection = null,
-            recursive = true,
-            collectionFilter = CollectionFolderFilter(filter = filter),
-            useSeriesForPrimary = false,
-            defaultViewOptions = ViewOptionsSquare,
-        )
+    private fun createViewModel(
+        filter: GetItemsFilter,
+        viewOptions: ViewOptions = ViewOptionsSquare,
+    ) = CollectionFolderViewModel(
+        savedStateHandle = SavedStateHandle(),
+        api = mockApi,
+        context = mockk(relaxed = true),
+        serverRepository = mockServerRepository,
+        libraryDisplayInfoDao = mockk(relaxed = true),
+        favoriteWatchManager = mockk(relaxed = true),
+        backdropService = mockk(relaxed = true),
+        navigationManager = mockk(relaxed = true),
+        themeSongPlayer = mockk(relaxed = true),
+        userPreferencesService = mockk(relaxed = true),
+        mediaManagementService = mockMediaManagementService,
+        musicService = mockk(relaxed = true),
+        streamChoiceService = mockk(relaxed = true),
+        serverReportService = mockk(relaxed = true),
+        filterOptionCache = mockk(relaxed = true),
+        itemId = libraryId.toString(),
+        initialSortAndDirection = null,
+        recursive = true,
+        collectionFilter = CollectionFolderFilter(filter = filter),
+        useSeriesForPrimary = false,
+        defaultViewOptions = viewOptions,
+    )
 
     /** Counting via /Items would return every song and album, overshooting the artist grid */
     @Test
@@ -141,6 +150,37 @@ class CollectionFolderViewModelTest {
 
             // Counting library items rather than artists is the bug this guards against
             coVerify(exactly = 0) { GetItemsRequestHandler.execute(any(), any<GetItemsRequest>()) }
+        }
+
+    @Test
+    fun `positionOfLetter counts album artists for the ALBUM_ARTIST source`() =
+        runTest(testDispatcher) {
+            val viewModel =
+                createViewModel(
+                    GetItemsFilter(override = GetItemsFilterOverride.ARTIST),
+                    ViewOptionsSquare.copy(extras = ViewOptionsExtras.MusicLibrary(ArtistSource.ALBUM_ARTIST)),
+                )
+            advanceUntilIdle()
+
+            val position = viewModel.positionOfLetter('K')
+
+            assertEquals(ALBUM_ARTIST_COUNT, position)
+            assertEquals("K", albumArtistsRequest.captured.nameLessThan)
+            assertEquals(libraryId, albumArtistsRequest.captured.parentId)
+            coVerify(exactly = 0) { GetArtistsHandler.execute(any(), any<GetArtistsRequest>()) }
+        }
+
+    @Test
+    fun `changing the artist source reloads from the album artists endpoint`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(GetItemsFilter(override = GetItemsFilterOverride.ARTIST))
+            advanceUntilIdle()
+            coVerify(exactly = 0) { GetAlbumArtistsHandler.execute(any(), any<GetAlbumArtistsRequest>()) }
+
+            viewModel.saveViewOptions(ViewOptionsSquare.copy(extras = ViewOptionsExtras.MusicLibrary(ArtistSource.ALBUM_ARTIST)))
+            advanceUntilIdle()
+
+            coVerify { GetAlbumArtistsHandler.execute(any(), any<GetAlbumArtistsRequest>()) }
         }
 
     /**
@@ -197,6 +237,7 @@ class CollectionFolderViewModelTest {
     companion object {
         private const val LIBRARY_ITEM_COUNT = 7315
         private const val ARTIST_COUNT = 730
+        private const val ALBUM_ARTIST_COUNT = 215
         private const val PERSON_COUNT = 12
     }
 }

@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.util.goToRandom
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -700,11 +701,25 @@ class FavoritesViewModel
                 viewModelScope.launchIO {
                     try {
                         collectionStateFor(type)?.let { collectionState ->
-                            val random =
-                                (collectionState.items.successValue as? BlockingList<BaseItem?>)?.randomBlocking()
-                            Timber.d("Got random item: %s", random?.id)
-                            random?.destination()?.let {
-                                navigateTo(random.destination())
+                            val list =
+                                collectionState.items.successValue as? BlockingList<BaseItem?>
+                            if (list != null) {
+                                goToRandom(
+                                    navigateTo = ::navigateTo,
+                                    parentId = libraryDisplayItemId(type),
+                                    filter =
+                                        collectionState.filter.copy(
+                                            includeItemTypes = listOf(type),
+                                        ),
+                                    sortAndDirection = collectionState.sortAndDirection,
+                                    recursive = true,
+                                    list = list,
+                                )
+                            } else {
+                                Timber.w(
+                                    "state.value.items is not successful: %s",
+                                    collectionState.items,
+                                )
                             }
                         }
                     } catch (ex: CancellationException) {

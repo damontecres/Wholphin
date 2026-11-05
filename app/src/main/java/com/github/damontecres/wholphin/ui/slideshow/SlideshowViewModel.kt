@@ -20,6 +20,8 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.StreamChoiceReason
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
@@ -141,13 +143,16 @@ class SlideshowViewModel
                             ),
                         )
                     serverRepository.currentUser?.let { user ->
+
                         val filter =
-                            playbackEffectDao
-                                .getPlaybackEffect(
-                                    user.rowId,
-                                    slideshowSettings.parentId,
-                                    BaseItemKind.PHOTO_ALBUM,
-                                )?.videoFilter
+                            slideshowSettings.parentId?.let {
+                                playbackEffectDao
+                                    .getPlaybackEffect(
+                                        user.rowId,
+                                        slideshowSettings.parentId,
+                                        BaseItemKind.PHOTO_ALBUM,
+                                    )?.videoFilter
+                            }
                         if (filter != null) {
                             Timber.v("Got filter for album %s", slideshowSettings.parentId)
                             albumImageFilter = filter
@@ -229,12 +234,21 @@ class SlideshowViewModel
                                             source.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
                                         ChosenStreams(
                                             itemPlayback = null,
-                                            plc = null,
+                                            audioStc = emptyList(),
+                                            subtitleStc = emptyList(),
                                             itemId = image.id,
                                             source = source,
                                             videoStream = video,
-                                            audioStream = audio,
-                                            subtitleStream = null,
+                                            audioStream =
+                                                StreamChoiceResult(
+                                                    audio,
+                                                    StreamChoiceReason.Unknown,
+                                                ),
+                                            subtitleStream =
+                                                StreamChoiceResult(
+                                                    null,
+                                                    StreamChoiceReason.Unknown,
+                                                ),
                                             subtitlesDisabled = false,
                                         )
                                     }
@@ -430,7 +444,7 @@ class SlideshowViewModel
         fun saveGalleryFilter() {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                 val vf = _imageFilter.value
-                if (vf != null) {
+                if (slideshowSettings.parentId != null) {
                     albumImageFilter = vf
                     serverRepository.currentUser?.let { user ->
                         playbackEffectDao

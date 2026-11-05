@@ -64,6 +64,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -230,28 +231,35 @@ fun DialogPopup(
             onDismissRequest = onDismissRequest,
             properties = properties,
         ) {
+            val elevatedContainerColor =
+                MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
             DialogPopupContent(
                 title = title,
                 dialogItems = dialogItems,
                 waiting = waiting,
                 onDismissRequest = onDismissRequest,
                 dismissOnClick = dismissOnClick,
-                elevation = elevation,
                 modifier =
-                    Modifier.onKeyEvent { event ->
-                        val code = event.nativeKeyEvent.keyCode
-                        if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
-                            code in
-                            setOf(
-                                KeyEvent.KEYCODE_ENTER,
-                                KeyEvent.KEYCODE_DPAD_CENTER,
-                                KeyEvent.KEYCODE_NUMPAD_ENTER,
-                            )
-                        ) {
-                            waiting = false
-                        }
-                        false
-                    },
+                    Modifier
+                        .onKeyEvent { event ->
+                            val code = event.nativeKeyEvent.keyCode
+                            if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
+                                code in
+                                setOf(
+                                    KeyEvent.KEYCODE_ENTER,
+                                    KeyEvent.KEYCODE_DPAD_CENTER,
+                                    KeyEvent.KEYCODE_NUMPAD_ENTER,
+                                )
+                            ) {
+                                waiting = false
+                            }
+                            false
+                        }.shadow(elevation = elevation, shape = RoundedCornerShape(28.0.dp))
+                        .graphicsLayer {
+                            this.clip = true
+                            this.shape = RoundedCornerShape(28.0.dp)
+                        }.drawBehind { drawRect(color = elevatedContainerColor) }
+                        .padding(PaddingValues(24.dp)),
             )
         }
     }
@@ -265,20 +273,10 @@ fun DialogPopupContent(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     dismissOnClick: Boolean = true,
-    elevation: Dp = 8.dp,
 ) {
-    val elevatedContainerColor =
-        MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier =
-            modifier
-                .shadow(elevation = elevation, shape = RoundedCornerShape(28.0.dp))
-                .graphicsLayer {
-                    this.clip = true
-                    this.shape = RoundedCornerShape(28.0.dp)
-                }.drawBehind { drawRect(color = elevatedContainerColor) }
-                .padding(PaddingValues(24.dp)),
+        modifier = modifier,
     ) {
         Text(
             text = title,
@@ -452,12 +450,14 @@ fun ConfirmDialog(
     properties: DialogProperties = DialogProperties(),
     elevation: Dp = 1.dp,
     bodyColor: Color = MaterialTheme.colorScheme.onSurface,
+    @StringRes cancelStringRes: Int = R.string.cancel,
+    @StringRes confirmStringRes: Int = R.string.confirm,
 ) = BasicDialog(
     onDismissRequest = onCancel,
     properties = properties,
     elevation = elevation,
     content = {
-        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier, bodyColor)
+        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier, bodyColor, cancelStringRes, confirmStringRes)
     },
 )
 
@@ -472,6 +472,8 @@ fun ConfirmDialogContent(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
     bodyColor: Color = MaterialTheme.colorScheme.onSurface,
+    @StringRes cancelStringRes: Int = R.string.cancel,
+    @StringRes confirmStringRes: Int = R.string.confirm,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -502,11 +504,11 @@ fun ConfirmDialogContent(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 TextButton(
-                    stringRes = R.string.cancel,
+                    stringRes = cancelStringRes,
                     onClick = onCancel,
                 )
                 TextButton(
-                    stringRes = R.string.confirm,
+                    stringRes = confirmStringRes,
                     onClick = onConfirm,
                 )
             }
@@ -651,12 +653,13 @@ fun resourceFor(type: MediaStreamType): Int =
 fun chooseStream(
     resources: Resources,
     streams: List<MediaStream>,
-    currentIndex: Int?,
+    streamChoice: StreamChoiceResult?,
     type: MediaStreamType,
     preferredSubtitleLanguage: String?,
     onClick: (Int) -> Unit,
 ): DialogParams {
     val filteredStreams = streams.filter { it.type == type }
+    val currentIndex = streamChoice?.stream?.index
     return DialogParams(
         fromLongClick = false,
         title = resources.getString(R.string.choose_stream, resources.getString(resourceFor(type))),
@@ -674,6 +677,16 @@ fun chooseStream(
                             },
                             supportingContent = {
                             },
+                            trailingContent =
+                                if (currentIndex == null && streamChoice != null) {
+                                    {
+                                        Text(
+                                            text = streamChoice.reason.description.getString(),
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                             onClick = { onClick.invoke(TrackIndex.DISABLED) },
                         ),
                     )
@@ -719,6 +732,16 @@ fun chooseStream(
                                 supportingContent = {
                                     if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
                                 },
+                                trailingContent =
+                                    if (currentIndex == stream.index) {
+                                        {
+                                            Text(
+                                                text = streamChoice.reason.description.getString(),
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
                                 onClick = { onClick.invoke(stream.index) },
                             )
                         },

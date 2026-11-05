@@ -97,6 +97,8 @@ class SwitchServerViewModel
                         result.systemInfo.version?.let { ServerVersion.fromString(it) }
                     if (serverVersion == null || serverVersion < WholphinApplication.minimumServerVersion) {
                         ServerVersionSupported.NOT_SUPPORTED
+                    } else if (serverVersion < WholphinApplication.newMinimumServerVersion) {
+                        ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE
                     } else {
                         ServerVersionSupported.SUPPORTED
                     }
@@ -307,4 +309,5 @@ enum class ServerVersionSupported {
     SUPPORTED,
     NOT_SUPPORTED,
     UNKNOWN,
+    NOT_SUPPORTED_IN_FUTURE,
 }
