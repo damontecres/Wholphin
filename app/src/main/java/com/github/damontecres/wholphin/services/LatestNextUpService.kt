@@ -134,7 +134,17 @@ class LatestNextUpService
         suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
-        ): List<BaseItem> =
+        ): List<BaseItem> = buildCombinedWithLastPlayed(resume, nextUp).map { it.first }
+
+        /**
+         * Same as [buildCombined], but keeps the last played timestamp each item was sorted by
+         *
+         * @see [DatePlayedService]
+         */
+        suspend fun buildCombinedWithLastPlayed(
+            resume: List<BaseItem>,
+            nextUp: List<BaseItem>,
+        ): List<Pair<BaseItem, LocalDateTime?>> =
             withContext(WholphinDispatchers.IO) {
                 val start = System.currentTimeMillis()
                 val semaphore = Semaphore(3)
@@ -158,7 +168,10 @@ class LatestNextUpService
                 val timestamps = mutableMapOf<UUID, LocalDateTime?>()
                 nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
                 resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
-                val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
+                val result =
+                    (resume + nextUp)
+                        .sortedByDescending { timestamps[it.id] }
+                        .map { it to timestamps[it.id] }
                 val duration = (System.currentTimeMillis() - start).milliseconds
                 Timber.v("buildCombined took %s", duration)
                 return@withContext result
