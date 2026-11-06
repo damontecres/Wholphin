@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.HeaderUtils
@@ -23,6 +24,7 @@ fun FocusedEpisodeHeader(
     preferences: UserPreferences,
     ep: BaseItem?,
     chosenStreams: ChosenStreams?,
+    externalRatings: List<ExternalRating>,
     overviewOnClick: () -> Unit,
     overviewOnFocus: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
@@ -40,6 +42,7 @@ fun FocusedEpisodeHeader(
                 it,
                 ep.timeRemainingOrRuntime,
                 Modifier.padding(start = HeaderUtils.startPadding),
+                externalRatings = externalRatings,
             )
         }
 
