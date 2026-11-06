@@ -29,8 +29,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.audioApi
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -92,7 +92,7 @@ class ThemeSongPlayer
                             val themeSongs by api.libraryApi.getThemeSongs(itemId)
                             themeSongs.items.randomOrNull()?.let { theme ->
                                 val url =
-                                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                                    api.audioApi.getUniversalAudioStreamUrl(
                                         theme.id,
                                         container =
                                             listOf(

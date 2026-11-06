@@ -29,7 +29,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.api.client.extensions.userViewApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import timber.log.Timber
@@ -130,7 +130,7 @@ class NavDrawerService
             tvAccess: Boolean,
         ): List<Library> {
             val userViews =
-                api.userViewsApi
+                api.userViewApi
                     .getUserViews(userId = userId)
                     .content.items
             val recordingFolders =

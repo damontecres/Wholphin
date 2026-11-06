@@ -8,7 +8,7 @@ import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackOrder
 import org.jellyfin.sdk.model.api.PlaybackProgressInfo
@@ -52,7 +52,7 @@ class TrackActivityPlaybackListener(
         launch("reportPlaybackStart") {
             getState.invoke()?.let { state ->
                 Timber.v("reportPlaybackStart for ${state.itemId}")
-                api.playStateApi.reportPlaybackStart(
+                api.sessionApi.reportPlaybackStart(
                     PlaybackStartInfo(
                         canSeek = true,
                         itemId = state.itemId,
@@ -87,7 +87,7 @@ class TrackActivityPlaybackListener(
                 if (position < Duration.ZERO) {
                     Timber.w("Negative position when reporting playback stopped: %s", position)
                 }
-                api.playStateApi.reportPlaybackStopped(
+                api.sessionApi.reportPlaybackStopped(
                     PlaybackStopInfo(
                         itemId = state.itemId,
                         positionTicks = position.inWholeTicks.takeIf { it >= 0 },
@@ -125,7 +125,7 @@ class TrackActivityPlaybackListener(
                 if (calcPosition > 0) {
                     val isPaused = withContext(WholphinDispatchers.Main) { !player.isPlaying }
                     Timber.v("saveActivity: itemId=${state.itemId}, pos=$calcPosition")
-                    api.playStateApi.reportPlaybackProgress(
+                    api.sessionApi.reportPlaybackProgress(
                         PlaybackProgressInfo(
                             itemId = state.itemId,
                             positionTicks = calcPosition.milliseconds.inWholeTicks,

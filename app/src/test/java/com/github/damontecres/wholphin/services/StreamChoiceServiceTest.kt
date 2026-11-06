@@ -1011,6 +1011,7 @@ fun subtitle(
         isTextSubtitleStream = true,
         supportsExternalStream = true,
         title = title,
+        isOriginal = true,
     )
 
 fun audio(
@@ -1031,6 +1032,7 @@ fun audio(
         isTextSubtitleStream = true,
         supportsExternalStream = true,
         title = title,
+        isOriginal = true,
     )
 
 private fun itemPlayback(
