@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,6 +67,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -87,6 +89,7 @@ fun ExpandablePlayButtons(
     trailerOnClick: (Trailer) -> Unit,
     onConfirmDelete: () -> Unit,
     chooseVersionParams: ChooseVersionParams?,
+    loadingVersions: Boolean = false,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -101,7 +104,26 @@ fun ExpandablePlayButtons(
         }
     }
 
-    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var chooseVersionOpen by remember { mutableStateOf(false) }
+    val buildChooseVersionDialog = {
+        val versionParams = requireNotNull(chooseVersionParams)
+        val sources = versionParams.mediaSources
+        chooseVersionParams(
+            resources,
+            sources,
+            versionParams.chosenStreams
+                ?.source
+                ?.id
+                ?.toUUIDOrNull(),
+        ) { idx ->
+            val source = sources[idx]
+            versionParams.onChooseVersion.invoke(source)
+        }
+    }
+    // Rebuild the dialog from the latest episode data on every recomposition.
+    // This matters when PlaybackInfo finishes loading while the dialog is open.
+    val chooseVersionDialog =
+        if (chooseVersionOpen) buildChooseVersionDialog() else null
 
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -137,24 +159,17 @@ fun ExpandablePlayButtons(
             }
         }
 
-        if (chooseVersionParams != null && chooseVersionParams.mediaSources.size > 1) {
-            item {
+        if (loadingVersions || (chooseVersionParams != null && chooseVersionParams.mediaSources.size > 1)) {
+            item("version") {
                 ExpandableFaButton(
-                    title = R.string.version,
+                    title = if (loadingVersions) R.string.loading else R.string.version,
                     iconStringRes = R.string.fa_file_video,
+                    loading = loadingVersions,
+                    enabled = !loadingVersions,
                     onClick = {
-                        chooseVersion =
-                            chooseVersionParams(
-                                resources,
-                                chooseVersionParams.mediaSources.orEmpty(),
-                                chooseVersionParams.chosenStreams
-                                    ?.source
-                                    ?.id
-                                    ?.toUUIDOrNull(),
-                            ) { idx ->
-                                val source = chooseVersionParams.mediaSources[idx]
-                                chooseVersionParams.onChooseVersion.invoke(source)
-                            }
+                        val versionParams = requireNotNull(chooseVersionParams)
+                        val dialogParams = buildChooseVersionDialog()
+                        chooseVersionOpen = true
                     },
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                 )
@@ -214,12 +229,12 @@ fun ExpandablePlayButtons(
             )
         }
     }
-    chooseVersion?.let { params ->
+    chooseVersionDialog?.let { params ->
         DialogPopup(
             showDialog = true,
             title = params.title,
             dialogItems = params.items,
-            onDismissRequest = { chooseVersion = null },
+            onDismissRequest = { chooseVersionOpen = false },
             dismissOnClick = true,
             waitToLoad = params.fromLongClick,
         )
@@ -346,6 +361,7 @@ fun ExpandableFaButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     iconColor: Color = Color.Unspecified,
     enabled: Boolean = true,
+    loading: Boolean = false,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
@@ -365,15 +381,22 @@ fun ExpandableFaButton(
                 Modifier
                     .size(32.dp),
         ) {
-            Text(
-                text = stringResource(iconStringRes),
-                style = MaterialTheme.typography.titleSmall,
-                color = iconColor,
-                fontSize = 16.sp,
-                fontFamily = FontAwesome,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center),
-            )
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(18.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Text(
+                    text = stringResource(iconStringRes),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = iconColor,
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
         AnimatedVisibility(isFocused) {
             Text(

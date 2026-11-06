@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import timber.log.Timber
@@ -70,8 +71,11 @@ class EpisodeViewModel
 
         val canDelete = MutableStateFlow(false)
 
+        // LifecycleResumeEffect owns initialization. Reuse an in-flight request if
+        // the screen resumes again before the previous initialization completes.
+        private var initJob: Job? = null
+
         init {
-            init()
             viewModelScope.launchDefault {
                 mediaManagementService.collectCanDelete(
                     state.map { (it.episode as? DataLoadingState.Success<BaseItem?>)?.data },
@@ -81,13 +85,37 @@ class EpisodeViewModel
             }
         }
 
+        private suspend fun withFullEpisodeVersions(item: BaseItem): BaseItem {
+            if (!userPreferencesService.getCurrent().appPreferences.playbackPreferences.showAllEpisodeVersions) {
+                return item
+            }
+            return try {
+                val playbackInfo = api.mediaInfoApi.getPlaybackInfo(item.id).content
+                val mediaSources = playbackInfo.mediaSources
+                if (mediaSources.isEmpty()) {
+                    return item
+                }
+                val updatedItem = item.copy(
+                    data =
+                        item.data.copy(
+                            mediaSources = mediaSources,
+                            mediaSourceCount = mediaSources.size,
+                        ),
+                )
+                updatedItem
+            } catch (ex: Exception) {
+                Timber.w(ex, "Failed to load media sources for episode %s", item.id)
+                item
+            }
+        }
+
         private fun fetchAndSetItem() {
             viewModelScope.launchIO {
                 try {
                     val item =
                         api.userLibraryApi.getItem(itemId).content.let {
                             BaseItem.from(it, api)
-                        }
+                        }.let { withFullEpisodeVersions(it) }
                     _state.update { it.copy(episode = DataLoadingState.Success(item)) }
                 } catch (ex: CancellationException) {
                     throw ex
@@ -98,14 +126,19 @@ class EpisodeViewModel
             }
         }
 
-        fun init(): Job =
-            viewModelScope.launchIO {
+        fun init(): Job {
+            initJob?.takeIf { it.isActive }?.let {
+                Timber.d("Episode initialization already in progress for %s; reusing job", itemId)
+                return it
+            }
+            Timber.d("Starting episode initialization for %s", itemId)
+            return viewModelScope.launchIO {
                 try {
                     val prefs = userPreferencesService.getCurrent()
                     val item =
                         api.userLibraryApi.getItem(itemId).content.let {
                             BaseItem(it)
-                        }
+                        }.let { withFullEpisodeVersions(it) }
                     val chosenStreams =
                         itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
                     _state.update {
@@ -121,7 +154,8 @@ class EpisodeViewModel
                     Timber.e(ex, "Error getting episode %s", itemId)
                     _state.update { it.copy(episode = DataLoadingState.Error(ex)) }
                 }
-            }
+            }.also { initJob = it }
+        }
 
         fun setWatched(
             itemId: UUID,

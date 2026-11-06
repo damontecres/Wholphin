@@ -84,6 +84,7 @@ fun SeriesOverview(
     val extrasRowFocusRequester = remember { FocusRequester() }
 
     val state by viewModel.state.collectAsState()
+    val loadingEpisodeVersions by viewModel.loadingEpisodeVersions.collectAsState()
     val episodeList =
         remember(state.episodes) { (state.episodes as? EpisodeList.Success)?.episodes }
 
@@ -198,6 +199,7 @@ fun SeriesOverview(
                 series = st.data,
                 seasons = state.seasons,
                 episodes = state.episodes,
+                loadingEpisodeVersions = loadingEpisodeVersions,
                 chosenStreams = chosenStreams,
                 peopleInEpisode = state.peopleInEpisode.people,
                 seasonExtras = state.extras,
@@ -220,6 +222,9 @@ fun SeriesOverview(
                 onFocusEpisode = { episodeIndex ->
                     viewModel.position.update {
                         it.copy(episodeRowIndex = episodeIndex)
+                    }
+                    if (preferences.appPreferences.playbackPreferences.showAllEpisodeVersions) {
+                        viewModel.loadFullEpisodeVersions(episodeIndex)
                     }
                 },
                 onClick = {

@@ -80,6 +80,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @HiltViewModel(assistedFactory = SeriesViewModel.Factory::class)
 class SeriesViewModel
@@ -116,6 +117,9 @@ class SeriesViewModel
 
         private val _state = MutableStateFlow(SeriesState())
         val state: StateFlow<SeriesState> = _state
+        private val episodeVersionRefreshes = ConcurrentHashMap.newKeySet<UUID>()
+        private val _loadingEpisodeVersions = MutableStateFlow<Set<UUID>>(emptySet())
+        val loadingEpisodeVersions: StateFlow<Set<UUID>> = _loadingEpisodeVersions
 
         val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
 
@@ -488,6 +492,41 @@ class SeriesViewModel
             viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
                 favoriteWatchManager.setWatched(seriesId, played)
                 updateSeries()
+            }
+
+        /**
+         * When enabled, resolve the focused episode's complete media-source list through
+         * PlaybackInfo. Some Jellyfin-compatible servers return a reduced list in GetItem.
+         */
+        fun loadFullEpisodeVersions(listIndex: Int) =
+            viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+                val episodeList = state.value.episodes as? EpisodeList.Success ?: return@launch
+                val episode = episodeList.episodes.getOrNull(listIndex) ?: return@launch
+                // Do not rely on MediaSourceCount here; it may be truncated along with GetItem.
+                if (!episodeVersionRefreshes.add(episode.id)) return@launch
+                _loadingEpisodeVersions.update { it + episode.id }
+                try {
+                    val cacheUpdated =
+                        episodeList.episodes.refreshMediaSources(listIndex, episode.id)
+                    if (!cacheUpdated) {
+                        // The page may have been evicted or the season changed while
+                        // PlaybackInfo was loading; allow a later focus to retry it.
+                        episodeVersionRefreshes.remove(episode.id)
+                    }
+                    _state.update { current ->
+                        // Do not let a response for the previous season replace a newer list.
+                        if (current.episodes === episodeList) {
+                            current.copy(episodes = episodeList)
+                        } else {
+                            current
+                        }
+                    }
+                } catch (ex: Exception) {
+                    episodeVersionRefreshes.remove(episode.id)
+                    throw ex
+                } finally {
+                    _loadingEpisodeVersions.update { it - episode.id }
+                }
             }
 
         fun refreshEpisode(

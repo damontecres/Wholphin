@@ -56,6 +56,8 @@
     <string name="go_to_series">Go to series</string>
     <string name="go_to">Go To</string>
     <string name="hide_controller_timeout">Hide playback controls</string>
+    <string name="show_all_episode_versions">Show all episode versions</string>
+    <string name="show_all_episode_versions_summary">Load the complete available version list for TV episodes</string>
     <string name="hide_debug_info">Hide debug info</string>
     <string name="hide">Hide</string>
     <string name="home">Home</string>

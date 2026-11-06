@@ -78,6 +78,7 @@ fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
+    loadingEpisodeVersions: Set<java.util.UUID>,
     seasonExtras: List<ExtrasItem>,
     chosenStreams: ChosenStreams?,
     peopleInEpisode: List<Person>,
@@ -242,8 +243,11 @@ fun SeriesOverviewContent(
                         ) {
                             itemsIndexed(eps.episodes) { episodeIndex, episode ->
                                 val interactionSource = remember { MutableInteractionSource() }
-                                if (interactionSource.collectIsFocusedAsState().value) {
-                                    onFocusEpisode.invoke(episodeIndex)
+                                val isEpisodeFocused = interactionSource.collectIsFocusedAsState().value
+                                LaunchedEffect(isEpisodeFocused, episode?.id) {
+                                    if (isEpisodeFocused && episode != null) {
+                                        onFocusEpisode.invoke(episodeIndex)
+                                    }
                                 }
                                 BannerCard(
                                     name = episode?.name,
@@ -317,6 +321,7 @@ fun SeriesOverviewContent(
                         preferences = preferences,
                         ep = ep,
                         chosenStreams = chosenStreams,
+                        loadingVersions = ep.id in loadingEpisodeVersions,
                         playOnClick = playOnClick,
                         moreOnClick = moreOnClick,
                         watchOnClick = {
