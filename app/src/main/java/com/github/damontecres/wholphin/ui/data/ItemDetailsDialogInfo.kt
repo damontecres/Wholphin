@@ -22,6 +22,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
+import com.github.damontecres.wholphin.ui.components.WatchProvidersRow
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.formatDate
@@ -47,6 +49,7 @@ data class ItemDetailsDialogInfo(
     val files: List<MediaSourceInfo>,
     val studios: List<String> = emptyList(),
     val lastPlayed: LocalDateTime? = null,
+    val watchProviders: List<WatchProviderDisplay> = emptyList(),
 ) {
     constructor(item: BaseItem) : this(
         title = item.name ?: "",
@@ -108,6 +111,9 @@ fun ItemDetailsDialog(
                         text = info.overview,
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                }
+                if (info.watchProviders.isNotEmpty()) {
+                    WatchProvidersRow(providers = info.watchProviders)
                 }
                 val lastPlayed =
                     remember(info.lastPlayed) { info.lastPlayed?.let { formatDate(it) } }
