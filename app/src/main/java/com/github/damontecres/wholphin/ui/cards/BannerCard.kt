@@ -183,15 +183,9 @@ fun BannerCard(
                 )
             }
             if (playPercent > 0 && playPercent < 100) {
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .background(
-                                MaterialTheme.colorScheme.tertiary,
-                            ).clip(RectangleShape)
-                            .height(Cards.playedPercentHeight)
-                            .fillMaxWidth((playPercent / 100).toFloat()),
+                PlayedPercentBar(
+                    percent = playPercent,
+                    modifier = Modifier.align(Alignment.BottomStart),
                 )
             }
         }
