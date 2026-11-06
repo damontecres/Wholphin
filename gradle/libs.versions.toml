@@ -1,7 +1,7 @@
 [versions]
 aboutLibraries = "15.3.0"
 acra = "5.14.2"
-agp = "9.5.0"
+agp = "9.5.1"
 auto-service = "1.1.1"
 autoServiceKsp = "1.2.0"
 desugar_jdk_libs = "2.1.5"
