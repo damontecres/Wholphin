@@ -36,8 +36,17 @@ private val modelsWithHi10P52Support =
         "AFTMM", // Fire TV Stick 4K - 1st Gen (2018)
     )
 
+/**
+ * List of device models that support HEVC level 5.2, but only advertise 5.1 (high tier)
+ */
+private val modelsWithHevc52Support =
+    listOf(
+        "SHIELD Android TV", // Nvidia Shield TV
+    )
+
 object KnownDefects {
     val hevcDoviHdr10PlusBug = Build.MODEL in modelsWithDoViHdr10PlusBug
     val eac3HlsPassthroughBug = Build.MODEL in modelsWithEac3TsPassthroughBug
     val supportsHi10P52 = Build.MODEL in modelsWithHi10P52Support
+    val supportsHevc52 = Build.MODEL in modelsWithHevc52Support
 }
