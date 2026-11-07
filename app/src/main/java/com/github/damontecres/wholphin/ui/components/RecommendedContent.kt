@@ -113,42 +113,28 @@ class RecommendedViewModel
                                 listOf(HomeRowLoadingState.Loading(ResStringProvider(R.string.suggestions))),
                     )
                 }
-                val jobs =
-                    recommendedRows.mapIndexed { index, row ->
-                        val title = ResStringProvider(row.title)
-                        viewModelScope.launchIO {
-                            val result =
-                                try {
-                                    val items = execute(row, limit)
-                                    HomeRowLoadingState.Success(
-                                        title,
-                                        items,
-                                        viewOptions,
-                                        showViewMore = items.size >= limit,
-                                    )
-                                } catch (ex: Exception) {
-                                    Timber.e(ex, "Exception fetching %s", title)
-                                    HomeRowLoadingState.Error(title, null, ex)
-                                }
-                            _state.update {
-                                it.copy(
-                                    rows =
-                                        it.rows.toMutableList().apply {
-                                            set(index, result)
-                                        },
+                recommendedRows.forEachIndexed { index, row ->
+                    val title = ResStringProvider(row.title)
+                    viewModelScope.launchIO {
+                        val result =
+                            try {
+                                val items = execute(row, limit)
+                                HomeRowLoadingState.Success(
+                                    title,
+                                    items,
+                                    viewOptions,
+                                    showViewMore = items.size >= limit,
                                 )
+                            } catch (ex: CancellationException) {
+                                throw ex
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Exception fetching %s", title)
+                                HomeRowLoadingState.Error(title, null, ex)
                             }
-                        }
-                    }
-                fetchSuggestions()
-                jobs.forEachIndexed { index, job ->
-                    job.join()
-                    val row = state.value.rows[index]
-                    if (row is HomeRowLoadingState.Success && row.items.isNotEmpty()) {
-                        // Report loading success once the first non-empty row is ready
-                        _state.update { it.copy(loading = LoadingState.Success) }
+                        _state.update { it.withRow(index, result) }
                     }
                 }
+                fetchSuggestions()
             }
         }
 
@@ -206,27 +192,13 @@ class RecommendedViewModel
                                         )
                                     }
                                 }
-                            _state.update {
-                                it.copy(
-                                    rows =
-                                        it.rows.toMutableList().apply {
-                                            set(lastIndex, result)
-                                        },
-                                )
-                            }
+                            _state.update { it.withRow(it.rows.lastIndex, result) }
                         }
                 } catch (_: CancellationException) {
                     // no-op
                 } catch (ex: Exception) {
                     Timber.e(ex, "Failed to fetch suggestions")
-                    _state.update {
-                        it.copy(
-                            rows =
-                                it.rows.toMutableList().apply {
-                                    set(lastIndex, HomeRowLoadingState.Error(title, null, ex))
-                                },
-                        )
-                    }
+                    _state.update { it.withRow(it.rows.lastIndex, HomeRowLoadingState.Error(title, null, ex)) }
                 }
             }
         }
@@ -337,7 +309,29 @@ class RecommendedViewModel
 data class RecommendedState(
     val loading: LoadingState = LoadingState.Pending,
     val rows: List<HomeRowLoadingState> = emptyList(),
-)
+) {
+    internal fun withRow(
+        index: Int,
+        row: HomeRowLoadingState,
+    ): RecommendedState {
+        val updatedRows = rows.toMutableList().apply { set(index, row) }
+        return copy(
+            rows = updatedRows,
+            loading =
+                if (loading == LoadingState.Success) loading else recommendedLoadingState(updatedRows),
+        )
+    }
+}
+
+internal fun recommendedLoadingState(rows: List<HomeRowLoadingState>): LoadingState =
+    if (
+        rows.all { it.completed } ||
+        rows.any { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+    ) {
+        LoadingState.Success
+    } else {
+        LoadingState.Loading
+    }
 
 data class RecommendedRow<T>(
     val title: Int,
