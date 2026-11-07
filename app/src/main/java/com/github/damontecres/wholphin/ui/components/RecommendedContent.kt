@@ -369,6 +369,10 @@ fun RecommendedContent(
         }
 
         LoadingState.Success -> {
+            if (state.rows.all { it is HomeRowLoadingState.Success && it.items.isEmpty() }) {
+                EmptyState(modifier)
+                return
+            }
             var position by rememberPosition()
             val contextActions =
                 remember {
