@@ -44,7 +44,6 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
-import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -53,19 +52,18 @@ import kotlin.time.Duration
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CollectionFolderGrid(
+fun CollectionFolderViewScope.CollectionFolderGrid(
     preferences: UserPreferences,
-    collectionType: CollectionType?,
     focusedItem: BaseItem?,
     items: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
-    viewOptions: ViewOptions,
     onClickPlay: (Int, BaseItem) -> Unit,
     initialPosition: Int,
     gridFocusRequester: FocusRequester,
+    cardContent: @Composable CollectionFolderViewScope.(GridItemDetails<BaseItem>) -> Unit,
     modifier: Modifier = Modifier,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
@@ -99,18 +97,8 @@ fun CollectionFolderGrid(
                 modifier = Modifier.fillMaxSize(),
                 initialPosition = initialPosition,
                 positionCallback = positionCallback,
-                cardContent = { (item, index, onClick, onLongClick, widthPx, mod) ->
-                    GridCard(
-                        item = item,
-                        onClick = onClick,
-                        onLongClick = onLongClick,
-                        imageContentScale = viewOptions.contentScale.scale,
-                        imageAspectRatio = viewOptions.aspectRatio.ratio,
-                        imageType = viewOptions.imageType,
-                        showTitle = viewOptions.showTitles,
-                        fillWidth = widthPx,
-                        modifier = mod,
-                    )
+                cardContent = { details ->
+                    cardContent.invoke(this@CollectionFolderGrid, details)
                 },
                 columns = viewOptions.columns,
                 spacing = viewOptions.spacing.dp,
@@ -210,10 +198,10 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
                 listOf(BaseItemKind.SERIES, BaseItemKind.SEASON, BaseItemKind.EPISODE)
             }
 
-            CollectionType.HOMEVIDEOS -> {
-                listOf(BaseItemKind.VIDEO)
-                listOf(BaseItemKind.PHOTO)
-                listOf(BaseItemKind.PHOTO_ALBUM)
+            CollectionType.PHOTOS,
+            CollectionType.HOMEVIDEOS,
+            -> {
+                listOf(BaseItemKind.VIDEO, BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
             }
 
             CollectionType.MUSIC -> {
@@ -234,10 +222,6 @@ val CollectionType.baseItemKinds: List<BaseItemKind>
 
             CollectionType.PLAYLISTS -> {
                 listOf(BaseItemKind.PLAYLIST)
-            }
-
-            CollectionType.PHOTOS -> {
-                listOf(BaseItemKind.PHOTO, BaseItemKind.PHOTO_ALBUM)
             }
 
             CollectionType.LIVETV -> {

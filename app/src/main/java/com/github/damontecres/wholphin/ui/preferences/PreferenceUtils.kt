@@ -57,6 +57,7 @@ enum class PreferenceScreenOption {
 fun rememberSeerrDialogBody(
     user: SeerrUser,
     server: SeerrServer,
+    pluginProvided: Boolean,
     ex: Exception? = null,
 ): String {
     val username =
@@ -81,8 +82,13 @@ fun rememberSeerrDialogBody(
         ${stringResource(R.string.url)}: ${server.url}
         ${stringResource(R.string.username)}: $username$method
         """.trimIndent() +
+            if (pluginProvided) {
+                "\n\n${stringResource(R.string.managed_by_server)}"
+            } else {
+                ""
+            } +
             if (ex != null) {
-                "\n\n${stringResource(R.string.voice_error_server)}: ${ex.localizedMessage}"
+                "\n\n${stringResource(R.string.error)}: ${ex.localizedMessage}"
             } else {
                 ""
             }

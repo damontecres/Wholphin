@@ -42,8 +42,10 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
+import com.github.damontecres.wholphin.ui.formatMaxBitrate
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialog
 import com.github.damontecres.wholphin.ui.playback.overlay.BottomDialogItem
@@ -60,6 +62,7 @@ enum class PlaybackDialogType {
     PLAYBACK_SPEED,
     VIDEO_SCALE,
     SUBTITLE_DELAY,
+    BITRATE,
     AUDIO_TRACK,
 }
 
@@ -74,6 +77,7 @@ data class PlaybackSettings(
     val subtitleDelay: Duration,
     val hasSubtitleDownloadPermission: Boolean,
     val playbackSpeedEnabled: Boolean,
+    val maxBitrate: Long,
     val reduceLoudSounds: Boolean = false,
     val levelingSupported: Boolean = true,
 )
@@ -165,6 +169,13 @@ fun PlaybackDialog(
                             ),
                         )
                     }
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.BITRATE,
+                            headline = stringResource(R.string.max_bitrate),
+                            supporting = remember(settings.maxBitrate) { formatMaxBitrate(settings.maxBitrate) },
+                        ),
+                    )
                     add(
                         BottomDialogItem(
                             data = PlaybackDialogType.DEBUG,
@@ -306,6 +317,29 @@ fun PlaybackDialog(
                     )
                 }
             }
+        }
+
+        PlaybackDialogType.BITRATE -> {
+            val choices =
+                AppPreference.bitrateValues.map { bitrate ->
+                    BottomDialogItem(
+                        data = bitrate,
+                        headline = formatMaxBitrate(bitrate),
+                        supporting = null,
+                    )
+                }
+            BottomDialog(
+                choices = choices,
+                currentChoice = choices.firstOrNull { it.data == settings.maxBitrate },
+                onDismissRequest = {
+                    onControllerInteraction.invoke()
+                    onDismissRequest.invoke()
+                },
+                onSelectChoice = { _, choice ->
+                    onPlaybackActionClick.invoke(PlaybackAction.ChangeBitrate(choice.data))
+                },
+                gravity = leftGravity,
+            )
         }
     }
 }

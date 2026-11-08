@@ -741,4 +741,19 @@
     <string name="remove_from_playlist">Eliminar de la lista de reproducción</string>
     <string name="login_credentials_expired">Credenciales caducadas, vuelve a iniciar sesión</string>
     <string name="login_not_authorized">No tienes autorización para acceder al servidor en este momento</string>
+    <string name="prefer_dovi_over_hdr10_plus">Preferir Dolby Vision sobre HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Elimina los metadatos HDR10+ de vídeos en Dolby Vision para televisores que, de lo contrario, los reproducirían como HDR10+</string>
+    <string name="max_resolution">Resolución máxima antes de transcodificar</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <plurals name="episodes_count">
+        <item quantity="one">%1$d Episodio</item>
+        <item quantity="many">%1$d Episodios</item>
+        <item quantity="other">%1$d Episodios</item>
+    </plurals>
 </resources>

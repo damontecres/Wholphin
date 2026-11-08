@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.updateExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.WholphinRenderersFactory
 import com.github.damontecres.wholphin.util.WholphinDispatchers
@@ -190,7 +191,7 @@ class VolumeLevelingIntegrationTest {
         runTest {
             WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
             try {
-                val factory = PlayerFactory(context, OkHttpClient())
+                val factory = PlayerFactory(context, OkHttpClient(), mockk<DeviceProfileService>(relaxed = true))
                 val prefs = factoryPreferences(true)
                 val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
                 try {
@@ -226,7 +227,7 @@ class VolumeLevelingIntegrationTest {
             try {
                 for (disabled in listOf(false, true)) {
                     for (tunneled in listOf(false, true)) {
-                        val factory = PlayerFactory(context, OkHttpClient())
+                        val factory = PlayerFactory(context, OkHttpClient(), mockk<DeviceProfileService>(relaxed = true))
                         val prefs =
                             factoryPreferences(false).updateExperimentalPreferences {
                                 disableAudioOffload = disabled
@@ -378,7 +379,7 @@ class VolumeLevelingIntegrationTest {
         runTest {
             WholphinDispatchers.configure(StandardTestDispatcher(testScheduler))
             try {
-                val factory = PlayerFactory(context, OkHttpClient())
+                val factory = PlayerFactory(context, OkHttpClient(), mockk<DeviceProfileService>(relaxed = true))
                 val prefs = factoryPreferences(false).updateExperimentalPreferences { videoTunnelingEnabled = false }
                 val player = factory.createVideoPlayer(PlayerBackend.EXO_PLAYER, prefs).player as ExoPlayer
                 try {

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.requestFocus
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.ui.performClickEnter
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -56,6 +57,7 @@ class PlaybackAudioMenuTest {
                             subtitleDelay = Duration.ZERO,
                             hasSubtitleDownloadPermission = false,
                             playbackSpeedEnabled = true,
+                            maxBitrate = AppPreference.DEFAULT_BITRATE,
                             levelingSupported = supported,
                         ),
                     )
