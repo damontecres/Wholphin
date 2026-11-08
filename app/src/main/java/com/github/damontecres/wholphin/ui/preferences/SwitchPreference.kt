@@ -49,9 +49,7 @@ fun SwitchPreference(
         headlineContent = {
             PreferenceTitle(title)
         },
-        supportingContent = {
-            PreferenceSummary(summary)
-        },
+        supportingContent = summary?.let { { PreferenceSummary(it) } },
         trailingContent = {
             Switch(
                 checked = value,

@@ -63,6 +63,7 @@ enum class PlaybackDialogType {
     VIDEO_SCALE,
     SUBTITLE_DELAY,
     BITRATE,
+    AUDIO_TRACK,
 }
 
 data class PlaybackSettings(
@@ -77,6 +78,8 @@ data class PlaybackSettings(
     val hasSubtitleDownloadPermission: Boolean,
     val playbackSpeedEnabled: Boolean,
     val maxBitrate: Long,
+    val reduceLoudSounds: Boolean = false,
+    val levelingSupported: Boolean = true,
 )
 
 /**
@@ -197,15 +200,48 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.AUDIO -> {
+            val currentTrack = settings.audioStreams.firstOrNull { it.index == settings.audioIndex }
+            val choices =
+                listOf(
+                    BottomDialogItem(
+                        data = PlaybackDialogType.AUDIO_TRACK,
+                        headline = stringResource(R.string.audio_track),
+                        supporting = currentTrack?.let { it.streamTitle ?: it.displayTitle },
+                        dismissOnSelect = false,
+                    ),
+                    BottomDialogItem(
+                        data = PlaybackDialogType.AUDIO,
+                        headline = stringResource(R.string.reduce_loud_sounds),
+                        supporting = if (settings.levelingSupported) null else stringResource(R.string.requires_exoplayer),
+                        checked = settings.reduceLoudSounds,
+                        dismissOnSelect = false,
+                    ),
+                )
+            BottomDialog(
+                choices = choices,
+                onDismissRequest = onDismissRequest,
+                onSelectChoice = { _, choice ->
+                    onControllerInteraction()
+                    if (choice.data == PlaybackDialogType.AUDIO_TRACK) {
+                        onClickPlaybackDialogType(PlaybackDialogType.AUDIO_TRACK)
+                    } else {
+                        onPlaybackActionClick(PlaybackAction.SetReduceLoudSounds(!settings.reduceLoudSounds))
+                    }
+                },
+                gravity = rightGravity,
+            )
+        }
+
+        PlaybackDialogType.AUDIO_TRACK -> {
             StreamChoiceBottomDialog(
                 choices = settings.audioStreams,
                 currentChoice = settings.audioIndex,
                 onDismissRequest = {
-                    onControllerInteraction.invoke()
-                    onDismissRequest.invoke()
+                    onControllerInteraction()
+                    onDismissRequest()
                 },
                 onSelectChoice = { _, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
+                    onPlaybackActionClick(PlaybackAction.ToggleAudio(choice.index))
                 },
                 gravity = rightGravity,
             )

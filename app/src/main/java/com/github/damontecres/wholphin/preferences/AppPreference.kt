@@ -244,6 +244,14 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != ThemeSongVolume.UNRECOGNIZED) it.number else 0 },
             )
 
+        val ReduceLoudSounds =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.reduce_loud_sounds,
+                defaultValue = false,
+                getter = { it.playbackPreferences.reduceLoudSounds },
+                setter = { prefs, value -> prefs.updatePlaybackPreferences { reduceLoudSounds = value } },
+            )
+
         val PlaybackDebugInfo =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.playback_debug_info,
@@ -1185,6 +1193,7 @@ val basicPreferences =
             title = R.string.playback,
             preferences =
                 listOf(
+                    AppPreference.ReduceLoudSounds,
                     AppPreference.SkipForward,
                     AppPreference.SkipBack,
                     AppPreference.SkipBackOnResume,

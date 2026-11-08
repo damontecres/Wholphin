@@ -31,7 +31,8 @@ class PlaybackLifecycleObserver
         }
 
         override fun onPause(owner: LifecycleOwner) {
-            playerFactory.currentPlayer?.let {
+            wasPlaying = null
+            playerFactory.currentPlayer?.takeUnless { it.isReleased }?.let {
                 wasPlaying = it.isPlaying
                 it.pause()
             }

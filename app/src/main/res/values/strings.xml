@@ -986,4 +986,7 @@
     <string name="home_settings_source_web">User web client</string>
     <string name="managed_by_server">Managed by server</string>
     <string name="error">Error</string>
+    <string name="reduce_loud_sounds">Reduce Loud Sounds</string>
+    <string name="audio_track">Audio Track</string>
+    <string name="requires_exoplayer">Requires ExoPlayer</string>
 </resources>

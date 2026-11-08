@@ -94,6 +94,8 @@ message PlaybackPreferences {
   string external_player = 24;
   bool cinema_mode = 25;
   DpadSeekMode dpad_seek_mode = 26;
+  reserved 27; // Unreleased three-way volume setting; old values are ignored.
+  bool reduce_loud_sounds = 28;
 }
 
 enum DpadSeekMode {
