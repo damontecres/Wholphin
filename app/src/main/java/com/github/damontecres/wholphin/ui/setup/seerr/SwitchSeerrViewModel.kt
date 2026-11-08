@@ -52,6 +52,9 @@ class SwitchSeerrViewModel
                         _state.update { it.copy(loading = LoadingState.Success) }
                     }
                 }
+            } else {
+                // Nothing to check so set success
+                _state.update { it.copy(loading = LoadingState.Success) }
             }
         }
 
