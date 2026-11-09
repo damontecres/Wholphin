@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.res.Resources
+import androidx.annotation.VisibleForTesting
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -329,7 +330,8 @@ fun ContextMenu(
     }
 }
 
-private fun buildContextMenuItems(
+@VisibleForTesting
+internal fun buildContextMenuItems(
     resources: Resources,
     contextMenu: ContextMenu.ForBaseItem,
     item: BaseItem,
