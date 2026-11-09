@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceReason
 import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.StrmFileHandler
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
 import com.github.damontecres.wholphin.test.movie
@@ -107,6 +108,7 @@ class PlaybackViewModelTests {
     private val mockImageUrlService = mockk<ImageUrlService>(relaxed = true)
     private val mockScreensaverService = mockk<ScreensaverService>(relaxed = true)
     private val mockMusicService = mockk<MusicService>(relaxed = true)
+    private val mockStrmFileHandler = mockk<StrmFileHandler>(relaxed = true)
 
     private val mockLibraryApi = mockk<LibraryApi>()
     private val mockMediaInfoApi = mockk<MediaInfoApi>()
@@ -133,6 +135,7 @@ class PlaybackViewModelTests {
             imageUrlService = mockImageUrlService,
             screensaverService = mockScreensaverService,
             musicService = mockMusicService,
+            strmFileHandler = mockStrmFileHandler,
             destination = destination,
         )
 
@@ -243,6 +246,8 @@ class PlaybackViewModelTests {
                 mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE },
                 StreamChoiceReason.Unknown,
             )
+        val item = slot<BaseItem>()
+        coEvery { mockStrmFileHandler.resolveStrm(capture(item)) } answers { item.captured }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
