@@ -38,6 +38,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -181,91 +182,95 @@ class HomeViewModel
 
                 val semaphore = Semaphore(4)
 
-                val deferred =
-                    settings.rows
-                        .map { row ->
-                            viewModelScope.async(WholphinDispatchers.IO) {
-                                semaphore.withPermit {
-                                    Timber.v("Fetching row: %s", row)
-                                    try {
-                                        homeDataService.fetchDataForRow(
-                                            row = row.config,
-                                            scope = viewModelScope,
-                                            prefs = prefs,
-                                            userDto = userDto,
-                                            libraries = libraries,
-                                            limit = prefs.maxItemsPerRow,
-                                            isRefresh = refresh,
-                                        )
-                                    } catch (ex: InvalidStatusException) {
-                                        if (ex.status == 404) {
-                                            Timber.w(ex, "404 on row %s", row)
-                                            HomeRowLoadingState.Success(
-                                                row.title,
-                                                emptyList(),
+                coroutineScope {
+                    val deferred =
+                        settings.rows
+                            .map { row ->
+                                async(WholphinDispatchers.IO) {
+                                    semaphore.withPermit {
+                                        Timber.v("Fetching row: %s", row)
+                                        try {
+                                            homeDataService.fetchDataForRow(
+                                                row = row.config,
+                                                scope = viewModelScope,
+                                                prefs = prefs,
+                                                userDto = userDto,
+                                                libraries = libraries,
+                                                limit = prefs.maxItemsPerRow,
+                                                isRefresh = refresh,
                                             )
-                                        } else {
-                                            Timber.e(
-                                                ex,
-                                                "Error %s on row %s",
-                                                ex.status,
-                                                row,
-                                            )
+                                        } catch (ex: CancellationException) {
+                                            throw ex
+                                        } catch (ex: InvalidStatusException) {
+                                            if (ex.status == 404) {
+                                                Timber.w(ex, "404 on row %s", row)
+                                                HomeRowLoadingState.Success(
+                                                    row.title,
+                                                    emptyList(),
+                                                )
+                                            } else {
+                                                Timber.e(
+                                                    ex,
+                                                    "Error %s on row %s",
+                                                    ex.status,
+                                                    row,
+                                                )
+                                                HomeRowLoadingState.Error(
+                                                    row.title,
+                                                    exception = ex,
+                                                )
+                                            }
+                                        } catch (ex: Exception) {
+                                            Timber.e(ex, "Error on row %s", row)
                                             HomeRowLoadingState.Error(
                                                 row.title,
                                                 exception = ex,
                                             )
                                         }
-                                    } catch (ex: Exception) {
-                                        Timber.e(ex, "Error on row %s", row)
-                                        HomeRowLoadingState.Error(
-                                            row.title,
-                                            exception = ex,
-                                        )
                                     }
                                 }
+                            }
+
+                    if (refresh) {
+                        // Replace rows as they complete
+                        val remaining = deferred.withIndex().toMutableList()
+                        while (remaining.isNotEmpty()) {
+                            val (rowIndex, rowData) =
+                                select {
+                                    // "Return" the first remaining that is completed
+                                    remaining
+                                        .forEach { (rowIndex, deferred) ->
+                                            deferred.onAwait { rowIndex to it }
+                                        }
+                                }
+                            Timber.v("Got row data index=%s", rowIndex)
+                            remaining.removeIf { it.index == rowIndex }
+                            _state.update { state ->
+                                val newRows =
+                                    state.homeRows.toMutableList().apply {
+                                        set(rowIndex, rowData)
+                                    }
+                                state.copy(
+                                    homeRows = newRows,
+                                )
                             }
                         }
-
-                if (refresh) {
-                    // Replace rows as they complete
-                    val remaining = deferred.withIndex().toMutableList()
-                    while (remaining.isNotEmpty()) {
-                        val (rowIndex, rowData) =
-                            select {
-                                // "Return" the first remaining that is completed
-                                remaining
-                                    .forEach { (rowIndex, deferred) ->
-                                        deferred.onAwait { rowIndex to it }
-                                    }
-                            }
-                        Timber.v("Got row data index=%s", rowIndex)
-                        remaining.removeIf { it.index == rowIndex }
-                        _state.update { state ->
-                            val newRows =
-                                state.homeRows.toMutableList().apply {
-                                    set(rowIndex, rowData)
-                                }
-                            state.copy(
-                                homeRows = newRows,
+                        _state.update {
+                            it.copy(
+                                loadingState = LoadingState.Success,
+                                refreshState = LoadingState.Success,
                             )
                         }
-                    }
-                    _state.update {
-                        it.copy(
-                            loadingState = LoadingState.Success,
-                            refreshState = LoadingState.Success,
-                        )
-                    }
-                } else {
-                    val rows = deferred.awaitAll()
-                    Timber.v("Got all rows")
-                    _state.update {
-                        it.copy(
-                            loadingState = LoadingState.Success,
-                            refreshState = LoadingState.Success,
-                            homeRows = rows,
-                        )
+                    } else {
+                        val rows = deferred.awaitAll()
+                        Timber.v("Got all rows")
+                        _state.update {
+                            it.copy(
+                                loadingState = LoadingState.Success,
+                                refreshState = LoadingState.Success,
+                                homeRows = rows,
+                            )
+                        }
                     }
                 }
                 Timber.d("Home page load complete")
