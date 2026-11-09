@@ -61,7 +61,7 @@ import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import kotlin.time.Duration
 
 /**
@@ -90,7 +90,7 @@ fun PlaybackOverlay(
     analyticsState: AnalyticsState,
     queue: List<PlaylistItem>,
     modifier: Modifier = Modifier,
-    trickplayInfo: TrickplayInfo? = null,
+    trickplayInfo: TrickplayInfoDto? = null,
     trickplayUrlFor: (Int) -> String? = { null },
     onClickPlaylist: (BaseItem) -> Unit = {},
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },

@@ -8,7 +8,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import org.jellyfin.sdk.model.extensions.ticks
 
 /**
@@ -22,7 +22,7 @@ data class CurrentMediaInfo(
     val audioStreams: List<SimpleMediaStream>,
     val subtitleStreams: List<SimpleMediaStream>,
     val chapters: List<Chapter>,
-    val trickPlayInfo: TrickplayInfo?,
+    val trickPlayInfo: TrickplayInfoDto?,
 ) {
     companion object {
         val EMPTY = CurrentMediaInfo(null, null, listOf(), listOf(), listOf(), null)

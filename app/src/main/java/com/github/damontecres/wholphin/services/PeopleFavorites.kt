@@ -6,7 +6,7 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,7 +25,7 @@ class PeopleFavorites
                 val favorites =
                     chunks
                         .map {
-                            api.itemsApi
+                            api.libraryApi
                                 .getItems(ids = it)
                                 .content.items
                         }.flatten()

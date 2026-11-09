@@ -21,7 +21,6 @@ import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
-import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.ProgramItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ContextMenuProvider
@@ -51,10 +50,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.artistsApi
-import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.personsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.artistApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.personApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
@@ -243,11 +241,11 @@ class SearchViewModel
                                         limit = SEARCH_LIMIT,
                                         enableTotalRecordCount = false,
                                     )
-                                api.itemsApi.getItems(request).toBaseItems(api, false)
+                                api.libraryApi.getItems(request).toBaseItems(api, false)
                             }
 
                             BaseItemKind.MUSIC_ARTIST -> {
-                                api.artistsApi
+                                api.artistApi
                                     .getArtists(
                                         searchTerm = query,
                                         fields = SlimItemFields,
@@ -257,7 +255,7 @@ class SearchViewModel
                             }
 
                             BaseItemKind.PERSON -> {
-                                api.personsApi
+                                api.personApi
                                     .getPersons(
                                         searchTerm = query,
                                         fields = SlimItemFields,
@@ -275,7 +273,7 @@ class SearchViewModel
                                         limit = SEARCH_LIMIT,
                                         enableTotalRecordCount = false,
                                     )
-                                api.itemsApi.getItems(request).toBaseItems(api, false)
+                                api.libraryApi.getItems(request).toBaseItems(api, false)
                             }
                         }
                     val sorted =
@@ -306,7 +304,7 @@ class SearchViewModel
                             limit = SEARCH_LIMIT,
                         )
 
-                    val result = api.itemsApi.getItems(request).content
+                    val result = api.libraryApi.getItems(request).content
                     val items =
                         result.items.map {
                             BaseItem(it, false)
@@ -400,7 +398,7 @@ class SearchViewModel
                 // Exact item deleted (eg a movie) or deleted item was within the series
                 if (item != null && item.id == itemId) {
                     val newItem =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(item.id)
                             .content
                             .let { BaseItem(it) }

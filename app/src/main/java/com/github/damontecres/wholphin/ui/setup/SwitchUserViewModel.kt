@@ -35,8 +35,8 @@ import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.authenticateUserByName
+import org.jellyfin.sdk.api.client.extensions.authenticationApi
 import org.jellyfin.sdk.api.client.extensions.imageApi
-import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.ServerVersion
@@ -116,7 +116,7 @@ class SwitchUserViewModel
                                         connectTimeout = 6.seconds,
                                         socketTimeout = 6.seconds,
                                     ),
-                            ).quickConnectApi
+                            ).authenticationApi
                             .getQuickConnectEnabled()
                     _state.update { it.copy(quickConnectEnabled = quickConnect) }
                 } catch (_: CancellationException) {
@@ -174,7 +174,7 @@ class SwitchUserViewModel
             viewModelScope.launchIO {
                 try {
                     val api = jellyfin.createApi(baseUrl = server.url)
-                    val authenticationResult by api.userApi.authenticateUserByName(
+                    val authenticationResult by api.authenticationApi.authenticateUserByName(
                         username = username,
                         password = password,
                     )
@@ -203,7 +203,7 @@ class SwitchUserViewModel
                         val api = jellyfin.createApi(server.url)
                         var quickConnectStatus =
                             api
-                                .quickConnectApi
+                                .authenticationApi
                                 .initiateQuickConnect()
                                 .content
                         _state.update { it.copy(quickConnectStatus = quickConnectStatus) }
@@ -211,13 +211,13 @@ class SwitchUserViewModel
                         while (!quickConnectStatus.authenticated) {
                             delay(5_000L)
                             quickConnectStatus =
-                                api.quickConnectApi
+                                api.authenticationApi
                                     .getQuickConnectState(
                                         secret = quickConnectStatus.secret,
                                     ).content
                             _state.update { it.copy(quickConnectStatus = quickConnectStatus) }
                         }
-                        val authenticationResult by api.userApi.authenticateWithQuickConnect(
+                        val authenticationResult by api.authenticationApi.authenticateWithQuickConnect(
                             QuickConnectDto(secret = quickConnectStatus.secret),
                         )
                         val current =

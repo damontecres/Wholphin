@@ -217,6 +217,7 @@ class TestTracks(
                             isHearingImpaired = false,
                             isTextSubtitleStream = false,
                             supportsExternalStream = false,
+                            isOriginal = true,
                         )
                     }
             val source =

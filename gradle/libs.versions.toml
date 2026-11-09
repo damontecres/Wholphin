@@ -29,7 +29,7 @@ androidx-media3 = "1.11.1"
 # Dolby Vision profile 7 -> 8.1 RPU rewrite (libdovi behind JNI), MIT
 exoplayerhdrutils = "0.4.1"
 coil = "3.6.3"
-jellyfin-sdk = "1.7.1"
+jellyfin-sdk = "1.9.4"
 nav3Core = "1.1.7"
 lifecycleViewmodelNav3 = "2.11.0"
 material3AdaptiveNav3 = "1.3.0"
