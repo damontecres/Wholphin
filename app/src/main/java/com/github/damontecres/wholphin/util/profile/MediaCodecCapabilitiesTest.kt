@@ -125,7 +125,8 @@ class MediaCodecCapabilitiesTest(
             CodecProfileLevel.HEVCMainTierLevel62 to 186,
         )
 
-    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
+    // Ignore the platform's software AV1 decoder (c2.android.av1-dav1d), it is too slow on most TV boxes
+    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1, hardwareOnly = true)
 
     fun supportsAV1Main10(): Boolean =
         hasDecoder(
@@ -313,9 +314,13 @@ class MediaCodecCapabilitiesTest(
         return false
     }
 
-    private fun hasCodecForMime(mime: String): Boolean {
+    private fun hasCodecForMime(
+        mime: String,
+        hardwareOnly: Boolean = false,
+    ): Boolean {
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !info.isHardwareAccelerated) continue
 
             if (info.supportedTypes.any { it.equals(mime, ignoreCase = true) }) {
                 Timber.i("found codec %s for mime %s", info.name, mime)
