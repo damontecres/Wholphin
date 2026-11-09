@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.util.profile
 import android.media.MediaCodecInfo
 import android.util.Size
 import androidx.media3.common.MimeTypes
+import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHevc52
 import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
@@ -96,8 +97,10 @@ fun createDeviceProfile(
 
     val supportsHevc = mediaTest.supportsHevc()
     val supportsHevcMain10 = mediaTest.supportsHevcMain10()
-    val hevcMainLevel = mediaTest.getHevcMainLevel()
-    val hevcMain10Level = mediaTest.getHevcMain10Level()
+    
+    val hevcMinLevel = if (supportsHevc52) 156 else 0
+    val hevcMainLevel = maxOf(mediaTest.getHevcMainLevel(), hevcMinLevel)
+    val hevcMain10Level = maxOf(mediaTest.getHevcMain10Level(), hevcMinLevel)
     val supportsAVC = mediaTest.supportsAVC()
     val supportsAVCHigh10 = mediaTest.supportsAVCHigh10() || supportsHi10P52
     val avcMainLevel = mediaTest.getAVCMainLevel()
