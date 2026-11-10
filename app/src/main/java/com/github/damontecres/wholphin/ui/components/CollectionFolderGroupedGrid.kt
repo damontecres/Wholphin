@@ -236,7 +236,10 @@ fun CollectionFolderViewScope.CollectionFolderGroupedGrid(
                             jumpTo(focusedGroup - 1, 0)
                             true
                         } else if (it.nativeKeyEvent.keyCode in (KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z)) {
-                            val letter = it.nativeKeyEvent.unicodeChar.toChar().uppercaseChar()
+                            val letter =
+                                it.nativeKeyEvent.unicodeChar
+                                    .toChar()
+                                    .uppercaseChar()
                             val group =
                                 groups.indexOfFirst { g ->
                                     g.title?.firstOrNull()?.uppercaseChar() == letter
