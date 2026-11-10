@@ -2,7 +2,6 @@
 
 package com.github.damontecres.wholphin.ui.main
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
@@ -46,6 +46,7 @@ import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
@@ -58,15 +59,18 @@ import com.github.damontecres.wholphin.ui.components.rememberLogoUrl
 import com.github.damontecres.wholphin.ui.components.rememberQuickDetailsContentMap
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The full screen artwork shown while a showcase row is focused. It covers the rest of the page
- * until focus moves to another row.
+ * The details shown over the full screen artwork while a showcase row is focused. The artwork itself
+ * is drawn behind the nav drawer by [ShowcaseBackdrop], and the rest of the page is hidden until
+ * focus moves to another row.
  *
  * @param rowTitle the title of the showcase row, shown faintly so it's clear which row this is
  * @param index the position of [item] in the row
@@ -81,12 +85,7 @@ fun ShowcaseHero(
     count: Int,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
-        ShowcaseBackdrop(
-            item = item,
-            rotate = viewOptions.showcaseRotateArtwork,
-            modifier = Modifier.matchParentSize(),
-        )
+    Box(modifier = modifier) {
         Text(
             text = rowTitle,
             style = MaterialTheme.typography.titleMedium,
@@ -215,14 +214,25 @@ fun ShowcaseRowBanner(
 private val ROTATE_ARTWORK_INTERVAL = 8.seconds
 
 /**
+ * Provides the [BackdropService] so the home page can set the full screen showcase artwork
+ */
+@HiltViewModel
+class ShowcaseViewModel
+    @Inject
+    constructor(
+        val backdropService: BackdropService,
+    ) : ViewModel()
+
+/**
  * Shows the item's backdrop. If [rotate] is on and the item has more than one backdrop set in
- * Jellyfin, cycles through them in the order they are set.
+ * Jellyfin, cycles through them in the order they are set. Dimmed while the nav drawer is open.
  */
 @Composable
-private fun ShowcaseBackdrop(
+fun ShowcaseBackdrop(
     item: BaseItem?,
     rotate: Boolean,
     modifier: Modifier = Modifier,
+    drawerIsOpen: Boolean = false,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val imageUrls = remember(item) { imageUrlService.backdropUrls(item) }
@@ -270,6 +280,9 @@ private fun ShowcaseBackdrop(
                             endY = size.height,
                         ),
                 )
+                if (drawerIsOpen) {
+                    drawRect(Color.Black.copy(alpha = .75f))
+                }
             },
     )
 }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,26 +30,20 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -60,6 +55,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.ShowcaseArtwork
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
@@ -86,7 +82,6 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.nav.CollapsedDrawerItemWidth
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
@@ -101,7 +96,6 @@ import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
-import kotlin.math.roundToInt
 import kotlin.time.Duration
 
 @Composable
@@ -308,6 +302,7 @@ fun HomePageContent(
         )
     },
     onClickViewMore: (RowColumn, HomeRowLoadingState.Success) -> Unit = { _, _ -> },
+    showcaseViewModel: ShowcaseViewModel = hiltViewModel(),
 ) {
     val focusedItem =
         remember(homeRows, position) {
@@ -354,9 +349,17 @@ fun HomePageContent(
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
     }
-    // Where the page content is in the window, so the showcase artwork can extend past its padding
-    var contentBounds by remember { mutableStateOf<Rect?>(null) }
-    Box(modifier = modifier.onGloballyPositioned { contentBounds = it.boundsInWindow() }) {
+    // While a showcase row is focused, its artwork is drawn full screen behind the nav drawer
+    val showcaseItem = focusedShowcaseRow?.let { focusedItem }
+    val rotateShowcase = focusedShowcaseRow?.viewOptions?.showcaseRotateArtwork == true
+    LaunchedEffect(showcaseItem, rotateShowcase) {
+        showcaseViewModel.backdropService.setShowcase(showcaseItem?.let { ShowcaseArtwork(it, rotateShowcase) })
+    }
+    DisposableEffect(Unit) {
+        onDispose { showcaseViewModel.backdropService.setShowcase(null) }
+    }
+    Box(modifier = modifier) {
+        // The page is hidden (but still focusable) while the showcase artwork is shown
         Column(
             modifier =
                 Modifier
@@ -364,7 +367,8 @@ fun HomePageContent(
                         onEnter = {
                             rowFocusRequesters.getOrNull(currentPosition.row)?.tryRequestFocus()
                         }
-                    }.fillMaxSize(),
+                    }.fillMaxSize()
+                    .alpha(if (focusedShowcaseRow != null) 0f else 1f),
         ) {
             headerComposable.invoke(focusedItem)
 
@@ -563,27 +567,13 @@ fun HomePageContent(
             }
         }
         focusedShowcaseRow?.let { showcaseRow ->
-            // The page content is inset from the screen edges, so extend the artwork to the screen
-            // edge, and to the collapsed nav drawer on the other side so the drawer stays visible
-            val windowWidth = LocalWindowInfo.current.containerSize.width
-            val drawerWidthPx = with(LocalDensity.current) { CollapsedDrawerItemWidth.toPx() }
-            val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-            val (extendLeft, extendRight) =
-                contentBounds?.let { bounds ->
-                    val left = if (isRtl) bounds.left else bounds.left - drawerWidthPx
-                    val right = windowWidth - bounds.right - if (isRtl) drawerWidthPx else 0f
-                    left.coerceAtLeast(0f).roundToInt() to right.coerceAtLeast(0f).roundToInt()
-                } ?: (0 to 0)
             ShowcaseHero(
                 item = focusedItem,
                 rowTitle = showcaseRow.title.getString(),
                 viewOptions = showcaseRow.viewOptions,
                 index = position.column.coerceIn(0, showcaseRow.items.lastIndex),
                 count = showcaseRow.items.size,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .extendHorizontally(extendLeft, extendRight),
+                modifier = Modifier.fillMaxSize(),
             )
         }
         when (loadingState) {
@@ -827,19 +817,4 @@ fun HomePageViewMoreCard(
         size = DpSize(height = viewOptions.heightDp.dp, width = Dp.Unspecified),
         showTitle = viewOptions.showTitles,
     )
-}
-
-/**
- * Draws the content wider than its space by [left] and [right] pixels, without changing the
- * space it takes up
- */
-private fun Modifier.extendHorizontally(
-    left: Int,
-    right: Int,
-) = layout { measurable, constraints ->
-    val width = constraints.maxWidth + left + right
-    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
-    layout(constraints.maxWidth, placeable.height) {
-        placeable.place(-left, 0)
-    }
 }

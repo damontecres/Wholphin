@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -21,6 +23,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.ShowcaseBackdrop
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -65,6 +68,16 @@ fun ApplicationContent(
             enableTopScrim = enableTopScrim,
             viewModel = viewModel,
         )
+        // Full screen artwork for a focused showcase row, behind the nav drawer
+        val showcase by viewModel.backdropService.showcaseFlow.collectAsStateWithLifecycle()
+        showcase?.let {
+            ShowcaseBackdrop(
+                item = it.item,
+                rotate = it.rotate,
+                drawerIsOpen = drawerState.isOpen,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         val navDrawerListState = rememberLazyListState()
         NavDisplay(
             backStack = navigationManager.backStack,
