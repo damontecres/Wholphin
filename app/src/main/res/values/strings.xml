@@ -784,11 +784,15 @@
         <item>@string/official_rating</item>
         <item>@string/critic_rating</item>
         <item>@string/community_rating</item>
+        <item>@string/display_toggle_episode_count</item>
+        <item>@string/display_toggle_overview</item>
     </string-array>
     <string-array name="display_toggle_types_subtitles">
         <item></item><!-- Intentionally blank -->
         <item>@string/tomatoes</item>
         <item>@string/stars</item>
+        <item>@string/display_toggle_episode_count_subtitle</item>
+        <item>@string/display_toggle_overview_subtitle</item>
     </string-array>
 
     <string name="search_for">Search %s</string>
@@ -850,7 +854,11 @@
     <string name="play_with">Play with</string>
     <string name="transcoding">Transcoding</string>
     <string name="user_interface_language">User interface language</string>
-    <string name="display_toggles_title">Ratings display</string>
+    <string name="display_toggles_title">Information display</string>
+    <string name="display_toggle_episode_count">Episode counts</string>
+    <string name="display_toggle_episode_count_subtitle">Unwatched episodes on series and seasons</string>
+    <string name="display_toggle_overview">Overviews</string>
+    <string name="display_toggle_overview_subtitle">Plot descriptions</string>
     <string name="display_toggles_summary">Customize which to display</string>
     <string name="profile_protection">Profile protection</string>
     <string name="continue_watching_click_behavior">Continue watching/Next up click behavior</string>

@@ -93,6 +93,7 @@ import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
@@ -675,7 +676,7 @@ fun PlaybackPageContent(
                             it.data.seasonEpisode,
                             it.name,
                         ).joinToString(" - "),
-                    description = it.data.overview,
+                    description = it.data.overview.takeIf { LocalInterfaceCustomization.current.showOverviews },
                     imageUrl = LocalImageUrlService.current.rememberImageUrl(it),
                     aspectRatio = it.aspectRatio ?: AspectRatios.WIDE,
                     onClick = {

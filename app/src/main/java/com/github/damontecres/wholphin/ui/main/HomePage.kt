@@ -85,6 +85,7 @@ import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -617,7 +618,7 @@ fun HomePageHeader(
                     .padding(0.dp)
                     .height(48.dp + if (!overviewTwoLines) 12.dp else 0.dp)
                     .width(400.dp)
-            if (overview.isNotNullOrBlank()) {
+            if (overview.isNotNullOrBlank() && LocalInterfaceCustomization.current.showOverviews) {
                 Text(
                     text = overview,
                     style = MaterialTheme.typography.bodyMedium,
@@ -690,6 +691,12 @@ fun HomePageCardContent(
                         viewOptions.contentScale.scale
                     }
                 }
+            val showEpisodeCounts = LocalInterfaceCustomization.current.showEpisodeCounts
+            // For episodes this is the episode number, otherwise the unwatched count
+            val cornerText =
+                item?.ui?.episodeUnplayedCornerText?.takeIf {
+                    showEpisodeCounts || item?.type == BaseItemKind.EPISODE
+                }
             if (viewOptions.showTitles) {
                 BannerCardWithTitle(
                     title = item?.title,
@@ -698,7 +705,7 @@ fun HomePageCardContent(
                     aspectRatio = ratio,
                     imageType = imageType,
                     imageContentScale = scale,
-                    cornerText = item?.ui?.episodeUnplayedCornerText,
+                    cornerText = cornerText,
                     played = item?.data?.userData?.played ?: false,
                     favorite = item?.favorite ?: false,
                     playPercent =
@@ -717,7 +724,7 @@ fun HomePageCardContent(
                     aspectRatio = ratio,
                     imageType = imageType,
                     imageContentScale = scale,
-                    cornerText = item?.ui?.episodeUnplayedCornerText,
+                    cornerText = cornerText,
                     played = item?.data?.userData?.played ?: false,
                     favorite = item?.favorite ?: false,
                     playPercent =

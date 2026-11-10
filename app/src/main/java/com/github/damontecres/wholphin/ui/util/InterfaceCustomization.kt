@@ -20,6 +20,12 @@ data class InterfaceCustomization(
             }
         },
     )
+
+    /** Whether to show the number of unwatched episodes on series & seasons */
+    val showEpisodeCounts: Boolean get() = DisplayToggle.EPISODE_COUNT in enabledDisplayToggles
+
+    /** Whether to show overviews (plot descriptions) */
+    val showOverviews: Boolean get() = DisplayToggle.OVERVIEW in enabledDisplayToggles
 }
 
 val LocalInterfaceCustomization =

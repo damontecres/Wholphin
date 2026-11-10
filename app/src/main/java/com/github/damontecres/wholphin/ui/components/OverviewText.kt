@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 
 /**
  * Show the overview text for an item. Uses a fixed size and allows for clicking.
@@ -36,6 +38,11 @@ fun OverviewText(
     textBoxHeight: Dp = maxLines * 20.dp,
     enabled: Boolean = true,
 ) {
+    if (!LocalInterfaceCustomization.current.showOverviews) {
+        // Keep the same space so the page layout does not change
+        Spacer(modifier.height(textBoxHeight))
+        return
+    }
     val context = LocalContext.current
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val bgColor =

@@ -68,6 +68,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -469,10 +470,11 @@ fun ListItemSeries(
                 null
             }
         }
+    val showEpisodeCounts = LocalInterfaceCustomization.current.showEpisodeCounts
     val trailingContent =
-        remember(item) {
+        remember(item, showEpisodeCounts) {
             val unplayedItemCount = item?.data?.userData?.unplayedItemCount
-            if (unplayedItemCount != null && unplayedItemCount > 0) {
+            if (showEpisodeCounts && unplayedItemCount != null && unplayedItemCount > 0) {
                 @Composable { Text(unplayedItemCount.toString()) }
             } else if (item?.played == true) {
                 @Composable { WatchedIcon(padding = 0.dp) }

@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.DisplayToggle
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
@@ -487,6 +488,19 @@ class AppUpgradeHandler
                         }
                     } else {
                         it
+                    }
+                }
+            }
+
+            if (previous.isLessThan(Version.fromString("1.1.2"))) {
+                // New display toggles default to shown, so add them for existing users
+                appPreferences.updateData {
+                    val current = it.interfacePreferences.displayTogglesList
+                    val added = listOf(DisplayToggle.EPISODE_COUNT, DisplayToggle.OVERVIEW).filterNot { toggle -> toggle in current }
+                    if (added.isEmpty()) {
+                        it
+                    } else {
+                        it.updateInterfacePreferences { addAllDisplayToggles(added) }
                     }
                 }
             }

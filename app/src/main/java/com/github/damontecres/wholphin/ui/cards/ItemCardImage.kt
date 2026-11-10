@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -245,7 +246,7 @@ fun ItemCardImageOverlay(
             if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
                 WatchedIcon(Modifier.size(24.dp))
             }
-            if (unwatchedCount > 0) {
+            if (unwatchedCount > 0 && LocalInterfaceCustomization.current.showEpisodeCounts) {
                 Box(
                     modifier =
                         Modifier
