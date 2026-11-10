@@ -476,7 +476,7 @@ fun PlaybackPageContent(
                         .padding(WindowInsets.systemBars.asPaddingValues())
                         .fillMaxSize()
                         .background(Color.Transparent),
-                item = state.currentPlayback?.item,
+                displayInfo = state.currentPlayback?.displayInfo,
                 player = player,
                 controllerViewState = controllerViewState,
                 showPlay = playPauseState.showPlay,

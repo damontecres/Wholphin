@@ -32,10 +32,10 @@ import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.formatTime
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
+import com.github.damontecres.wholphin.ui.playback.PlaybackDisplayInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.MediaSegmentDto
@@ -46,7 +46,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlaybackController(
-    item: BaseItem?,
+    displayInfo: PlaybackDisplayInfo?,
     nextState: OverlayViewState?,
     player: Player,
     controllerViewState: ControllerViewState,
@@ -70,8 +70,8 @@ fun PlaybackController(
         modifier = modifier,
     ) {
         Controller(
-            title = item?.title,
-            subtitle = item?.subtitleLong,
+            title = displayInfo?.title,
+            subtitle = displayInfo?.subtitle,
             player = player,
             controllerViewState = controllerViewState,
             showPlay = showPlay,

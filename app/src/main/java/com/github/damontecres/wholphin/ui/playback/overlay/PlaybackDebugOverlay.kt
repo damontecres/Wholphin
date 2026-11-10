@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
+import com.github.damontecres.wholphin.ui.playback.PlaybackDisplayInfo
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.TrackSupportReason
@@ -213,6 +214,7 @@ fun PlaybackDebugOverlayPreview() {
                             type = BaseItemKind.EPISODE,
                         ),
                 ),
+            displayInfo = PlaybackDisplayInfo(null, null, null, null),
             backend = PlayerBackend.EXO_PLAYER,
             playMethod = PlayMethod.TRANSCODE,
             playSessionId = "123",

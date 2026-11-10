@@ -801,6 +801,7 @@ class PlaybackViewModel
                     val playback =
                         CurrentPlayback(
                             item = item,
+                            displayInfo = PlaybackDisplayInfo.from(item, imageUrlService),
                             tracks = listOf(),
                             backend = currentPlayer.value!!.backend,
                             playMethod = transcodeType,

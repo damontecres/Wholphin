@@ -74,15 +74,7 @@ data class BaseItem(
     }
 
     val subtitleLong: String? by lazy {
-        if (type == BaseItemKind.EPISODE) {
-            buildList {
-                add(data.seasonEpisodePadded)
-                add(data.name)
-                add(data.premiereDate?.let { formatDateTime(it) })
-            }.joinNotBlank(" - ")
-        } else {
-            data.productionYear?.toString()
-        }
+        data.subtitleLong()
     }
 
     val canDelete: Boolean get() = data.canDelete == true
@@ -435,3 +427,14 @@ fun createStudioDestination(
 )
 
 val BaseItem.studioNames get() = data.studios?.mapNotNull { it.name }.orEmpty()
+
+fun BaseItemDto.subtitleLong(treatAsEpisode: Boolean = type == BaseItemKind.EPISODE): String? =
+    if (treatAsEpisode) {
+        buildList {
+            add(seasonEpisodePadded)
+            add(name)
+            add(premiereDate?.let { formatDateTime(it) })
+        }.joinNotBlank(" - ")
+    } else {
+        productionYear?.toString()
+    }

@@ -52,14 +52,13 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import org.jellyfin.sdk.model.api.ImageType
+import com.github.damontecres.wholphin.ui.playback.PlaybackDisplayInfo
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import kotlin.time.Duration
@@ -69,7 +68,7 @@ import kotlin.time.Duration
  */
 @Composable
 fun PlaybackOverlay(
-    item: BaseItem?,
+    displayInfo: PlaybackDisplayInfo?,
     chapters: List<Chapter>,
     player: Player,
     controllerViewState: ControllerViewState,
@@ -103,12 +102,12 @@ fun PlaybackOverlay(
     val density = LocalDensity.current
 
     val titleHeight =
-        remember(item?.title, density) {
-            if (item?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
+        remember(displayInfo?.title, density) {
+            if (displayInfo?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
         }
     val subtitleHeight =
-        remember(item?.subtitleLong, density) {
-            if (item?.subtitleLong.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
+        remember(displayInfo?.subtitle, density) {
+            if (displayInfo?.subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
         }
 
     // This will be calculated after composition
@@ -187,7 +186,7 @@ fun PlaybackOverlay(
                             }
                         }
                     PlaybackController(
-                        item = item,
+                        displayInfo = displayInfo,
                         nextState = nextState,
                         player = player,
                         controllerViewState = controllerViewState,
@@ -297,9 +296,8 @@ fun PlaybackOverlay(
         }
 
         // Top
-        val logoImageUrl = LocalImageUrlService.current.rememberImageUrl(item, ImageType.LOGO)
         AnimatedVisibility(
-            visible = !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            visible = !showDebugInfo && displayInfo?.logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
             enter = slideIn { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeIn(),
             exit = slideOut { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeOut(),
             modifier =
@@ -307,7 +305,7 @@ fun PlaybackOverlay(
                     .align(Alignment.TopStart),
         ) {
             AsyncImage(
-                model = logoImageUrl,
+                model = displayInfo?.logoImageUrl,
                 contentDescription = "Logo",
                 alignment = Alignment.TopStart,
                 modifier =
