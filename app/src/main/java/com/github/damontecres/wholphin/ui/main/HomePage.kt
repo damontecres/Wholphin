@@ -34,14 +34,21 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -79,6 +86,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.nav.CollapsedDrawerItemWidth
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
@@ -93,6 +101,7 @@ import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.util.UUID
+import kotlin.math.roundToInt
 import kotlin.time.Duration
 
 @Composable
@@ -345,7 +354,9 @@ fun HomePageContent(
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
     }
-    Box(modifier = modifier) {
+    // Where the page content is in the window, so the showcase artwork can extend past its padding
+    var contentBounds by remember { mutableStateOf<Rect?>(null) }
+    Box(modifier = modifier.onGloballyPositioned { contentBounds = it.boundsInWindow() }) {
         Column(
             modifier =
                 Modifier
@@ -552,13 +563,27 @@ fun HomePageContent(
             }
         }
         focusedShowcaseRow?.let { showcaseRow ->
+            // The page content is inset from the screen edges, so extend the artwork to the screen
+            // edge, and to the collapsed nav drawer on the other side so the drawer stays visible
+            val windowWidth = LocalWindowInfo.current.containerSize.width
+            val drawerWidthPx = with(LocalDensity.current) { CollapsedDrawerItemWidth.toPx() }
+            val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+            val (extendLeft, extendRight) =
+                contentBounds?.let { bounds ->
+                    val left = if (isRtl) bounds.left else bounds.left - drawerWidthPx
+                    val right = windowWidth - bounds.right - if (isRtl) drawerWidthPx else 0f
+                    left.coerceAtLeast(0f).roundToInt() to right.coerceAtLeast(0f).roundToInt()
+                } ?: (0 to 0)
             ShowcaseHero(
                 item = focusedItem,
                 rowTitle = showcaseRow.title.getString(),
                 viewOptions = showcaseRow.viewOptions,
                 index = position.column.coerceIn(0, showcaseRow.items.lastIndex),
                 count = showcaseRow.items.size,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .extendHorizontally(extendLeft, extendRight),
             )
         }
         when (loadingState) {
@@ -802,4 +827,19 @@ fun HomePageViewMoreCard(
         size = DpSize(height = viewOptions.heightDp.dp, width = Dp.Unspecified),
         showTitle = viewOptions.showTitles,
     )
+}
+
+/**
+ * Draws the content wider than its space by [left] and [right] pixels, without changing the
+ * space it takes up
+ */
+private fun Modifier.extendHorizontally(
+    left: Int,
+    right: Int,
+) = layout { measurable, constraints ->
+    val width = constraints.maxWidth + left + right
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+    layout(constraints.maxWidth, placeable.height) {
+        placeable.place(-left, 0)
+    }
 }
