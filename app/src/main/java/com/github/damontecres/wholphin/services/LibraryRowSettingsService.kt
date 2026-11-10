@@ -34,8 +34,7 @@ class LibraryRowSettingsService
         fun flow(
             userId: UUID,
             libraryId: UUID,
-        ): Flow<Map<String, HomeRowViewOptions>> =
-            keyValueService.get(userId, key(libraryId), emptyMap<String, HomeRowViewOptions>())
+        ): Flow<Map<String, HomeRowViewOptions>> = keyValueService.get(userId, key(libraryId), emptyMap<String, HomeRowViewOptions>())
 
         suspend fun get(
             userId: UUID,
