@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,17 +46,22 @@ import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
+import com.github.damontecres.wholphin.ui.components.TimeRemaining
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.components.rememberLogoUrl
 import com.github.damontecres.wholphin.ui.components.rememberQuickDetailsContentMap
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * The full screen artwork shown while a showcase row is focused. It covers the rest of the page
@@ -76,6 +83,7 @@ fun ShowcaseHero(
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         ShowcaseBackdrop(
             item = item,
+            rotate = viewOptions.showcaseRotateArtwork,
             modifier = Modifier.matchParentSize(),
         )
         Text(
@@ -112,8 +120,8 @@ fun ShowcaseHero(
 
 /**
  * A home row in showcase mode. While focused, [ShowcaseHero] covers the page, and left/right moves
- * through the row's items. When not focused, the row shows a single wide banner of its current
- * item's artwork.
+ * through the row's items (with [infiniteScroll], right on the last item goes back to the first).
+ * When not focused, the row shows a single wide banner of its current item's artwork.
  *
  * Select opens the item, long press shows its menu, and the play button plays it.
  */
@@ -123,6 +131,7 @@ fun ShowcaseRowBanner(
     items: List<BaseItem?>,
     initialIndex: Int,
     height: Dp,
+    infiniteScroll: Boolean,
     onFocusIndex: (Int) -> Unit,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -163,6 +172,10 @@ fun ShowcaseRowBanner(
                             if (currentIndex < lastIndex) {
                                 index = currentIndex + 1
                                 onFocusIndex.invoke(index)
+                            } else if (infiniteScroll && lastIndex > 0) {
+                                // Go back to the first item
+                                index = 0
+                                onFocusIndex.invoke(index)
                             }
                             true
                         } else if (isPlayKeyUp(event)) {
@@ -176,6 +189,7 @@ fun ShowcaseRowBanner(
             Box(modifier = Modifier.fillMaxSize()) {
                 ShowcaseBackdrop(
                     item = item,
+                    rotate = false,
                     modifier = Modifier.matchParentSize(),
                 )
                 Text(
@@ -194,13 +208,33 @@ fun ShowcaseRowBanner(
     }
 }
 
+/**
+ * How long each backdrop is shown when rotating artwork
+ */
+private val ROTATE_ARTWORK_INTERVAL = 8.seconds
+
+/**
+ * Shows the item's backdrop. If [rotate] is on and the item has more than one backdrop set in
+ * Jellyfin, cycles through them in the order they are set.
+ */
 @Composable
 private fun ShowcaseBackdrop(
     item: BaseItem?,
+    rotate: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val imageUrlService = LocalImageUrlService.current
-    val imageUrl = imageUrlService.rememberImageUrl(item, ImageType.BACKDROP)
+    val imageUrls = remember(item) { imageUrlService.backdropUrls(item) }
+    var imageIndex by remember(item) { mutableIntStateOf(0) }
+    if (rotate && imageUrls.size > 1) {
+        LaunchedEffect(item, imageUrls.size) {
+            while (true) {
+                delay(ROTATE_ARTWORK_INTERVAL)
+                imageIndex = (imageIndex + 1) % imageUrls.size
+            }
+        }
+    }
+    val imageUrl = imageUrls.getOrNull(imageIndex)
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val background = MaterialTheme.colorScheme.background
     AsyncImage(
@@ -239,6 +273,25 @@ private fun ShowcaseBackdrop(
     )
 }
 
+/**
+ * All of the backdrop images set for the item in Jellyfin, in order. Episodes and seasons use their
+ * series' backdrops.
+ */
+private fun ImageUrlService.backdropUrls(item: BaseItem?): List<String> {
+    if (item == null) return emptyList()
+    val data = item.data
+    val useParent = item.type == BaseItemKind.EPISODE || item.type == BaseItemKind.SEASON
+    val itemId = if (useParent) data.parentBackdropItemId else item.id
+    val tags = if (useParent) data.parentBackdropImageTags.orEmpty() else data.backdropImageTags.orEmpty()
+    return if (itemId == null || tags.isEmpty()) {
+        listOfNotNull(getItemImageUrl(item, ImageType.BACKDROP))
+    } else {
+        tags.mapIndexedNotNull { index, tag ->
+            getItemImageUrl(itemId = itemId, imageType = ImageType.BACKDROP, tag = tag, imageIndex = index)
+        }
+    }
+}
+
 @Composable
 private fun ShowcaseDetails(
     item: BaseItem?,
@@ -257,12 +310,24 @@ private fun ShowcaseDetails(
             logoImageUrl = rememberLogoUrl(item),
             showLogo = viewOptions.showcaseShowLogo,
         )
-        if (details != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                QuickDetailsText(details.basic, Modifier, textStyle, inlineContentMap)
-                if (viewOptions.showcaseShowRating) {
+        val showDetails = viewOptions.showcaseShowDetails
+        val showRating = viewOptions.showcaseShowRating
+        if (details != null && (showDetails || showRating)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Episode number & date or year, runtime, etc
+                if (showDetails) {
+                    QuickDetailsText(details.basic, Modifier, textStyle, inlineContentMap)
+                }
+                if (showRating) {
                     QuickDetailsText(details.communityRating, Modifier, textStyle, inlineContentMap)
                     QuickDetailsText(details.criticRating, Modifier, textStyle, inlineContentMap)
+                }
+                // When it would end if started now, using the time remaining if partly watched
+                if (showDetails) {
+                    item?.timeRemainingOrRuntime?.let { TimeRemaining(it, textStyle = textStyle) }
                 }
             }
         }

@@ -417,6 +417,7 @@ fun HomePageContent(
                                                 items = row.items,
                                                 initialIndex = if (currentPosition.row == rowIndex) currentPosition.column else 0,
                                                 height = viewOptions.heightDp.dp,
+                                                infiniteScroll = viewOptions.showcaseInfiniteScroll,
                                                 onFocusIndex = { index ->
                                                     currentOnFocusPosition(RowColumn(rowIndex, index))
                                                 },

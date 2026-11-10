@@ -585,6 +585,10 @@
     <string name="show_logo">Show logo</string>
     <string name="show_rating">Show rating</string>
     <string name="show_overview">Show overview</string>
+    <string name="infinite_scroll">Infinite scroll</string>
+    <string name="infinite_scroll_summary">After the last item, go back to the first</string>
+    <string name="rotate_artwork">Rotate artwork</string>
+    <string name="rotate_artwork_summary">Cycle through the backdrop images set for each item in Jellyfin</string>
     <string name="settings_saved">Settings saved</string>
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>

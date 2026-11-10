@@ -367,6 +367,32 @@ internal object Options {
             setter = { vo, value -> vo.copy(showcaseShowOverview = value) },
         )
 
+    val ViewOptionsShowcaseDetails =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.show_details,
+            defaultValue = true,
+            getter = { it.showcaseShowDetails },
+            setter = { vo, value -> vo.copy(showcaseShowDetails = value) },
+        )
+
+    val ViewOptionsShowcaseInfiniteScroll =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.infinite_scroll,
+            defaultValue = true,
+            getter = { it.showcaseInfiniteScroll },
+            setter = { vo, value -> vo.copy(showcaseInfiniteScroll = value) },
+            summary = R.string.infinite_scroll_summary,
+        )
+
+    val ViewOptionsShowcaseRotateArtwork =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.rotate_artwork,
+            defaultValue = false,
+            getter = { it.showcaseRotateArtwork },
+            setter = { vo, value -> vo.copy(showcaseRotateArtwork = value) },
+            summary = R.string.rotate_artwork_summary,
+        )
+
     private val SHOWCASE_GROUP =
         PreferenceGroup(
             title = R.string.showcase,
@@ -376,6 +402,9 @@ internal object Options {
                     ViewOptionsShowcaseLogo,
                     ViewOptionsShowcaseRating,
                     ViewOptionsShowcaseOverview,
+                    ViewOptionsShowcaseDetails,
+                    ViewOptionsShowcaseInfiniteScroll,
+                    ViewOptionsShowcaseRotateArtwork,
                 ),
         )
 

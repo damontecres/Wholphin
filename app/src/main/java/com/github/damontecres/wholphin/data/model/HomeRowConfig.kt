@@ -262,6 +262,9 @@ data class HomeRowViewOptions(
     val showcaseShowLogo: Boolean = true,
     val showcaseShowRating: Boolean = true,
     val showcaseShowOverview: Boolean = true,
+    val showcaseShowDetails: Boolean = true,
+    val showcaseInfiniteScroll: Boolean = true,
+    val showcaseRotateArtwork: Boolean = false,
 ) {
     companion object {
         val genreDefault =
