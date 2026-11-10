@@ -106,11 +106,17 @@ fun ManageMetadataDialog(
                         Screen.Main
                     }
 
-                    Screen.Refresh, Screen.Identify, Screen.Images -> Screen.Main
+                    Screen.Refresh, Screen.Identify, Screen.Images -> {
+                        Screen.Main
+                    }
 
-                    is Screen.ImagesOfType -> Screen.Images
+                    is Screen.ImagesOfType -> {
+                        Screen.Images
+                    }
 
-                    is Screen.FindImages -> Screen.ImagesOfType(s.type)
+                    is Screen.FindImages -> {
+                        Screen.ImagesOfType(s.type)
+                    }
                 }
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -261,9 +267,13 @@ private fun IdentifyScreen(
         when (results) {
             ListState.NotLoaded -> {}
 
-            ListState.Loading -> item { StatusText(stringResource(R.string.loading)) }
+            ListState.Loading -> {
+                item { StatusText(stringResource(R.string.loading)) }
+            }
 
-            is ListState.Error -> item { StatusText(stringResource(R.string.error) + ": " + (results.message ?: "")) }
+            is ListState.Error -> {
+                item { StatusText(stringResource(R.string.error) + ": " + (results.message ?: "")) }
+            }
 
             is ListState.Success -> {
                 if (results.items.isEmpty()) {
