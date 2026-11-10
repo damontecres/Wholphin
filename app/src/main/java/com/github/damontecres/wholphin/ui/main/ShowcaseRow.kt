@@ -2,11 +2,14 @@
 
 package com.github.damontecres.wholphin.ui.main
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -53,29 +57,36 @@ import org.jellyfin.sdk.model.api.ImageType
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * How much of the page height the [ShowcaseHero] uses
- */
-const val SHOWCASE_HERO_HEIGHT_FRACTION = .62f
-
-/**
- * The large artwork panel shown at the top of the home page while a showcase row is focused. It
- * replaces the normal page header.
+ * The full screen artwork shown while a showcase row is focused. It covers the rest of the page
+ * until focus moves to another row.
  *
+ * @param rowTitle the title of the showcase row, shown faintly so it's clear which row this is
  * @param index the position of [item] in the row
  * @param count the number of items in the row
  */
 @Composable
 fun ShowcaseHero(
     item: BaseItem?,
+    rowTitle: String,
     viewOptions: HomeRowViewOptions,
     index: Int,
     count: Int,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         ShowcaseBackdrop(
             item = item,
             modifier = Modifier.matchParentSize(),
+        )
+        Text(
+            text = rowTitle,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 32.dp, top = 24.dp)
+                    .alpha(.7f),
         )
         ShowcaseDetails(
             item = item,
@@ -83,7 +94,7 @@ fun ShowcaseHero(
             modifier =
                 Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 16.dp, bottom = 16.dp)
+                    .padding(start = 32.dp, bottom = 32.dp)
                     .fillMaxWidth(.5f),
         )
         Text(
@@ -93,23 +104,25 @@ fun ShowcaseHero(
             modifier =
                 Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 32.dp, bottom = 16.dp),
+                    .padding(end = 32.dp, bottom = 32.dp)
+                    .alpha(.7f),
         )
     }
 }
 
 /**
- * A home row in showcase mode. Instead of cards, it is a single slim selector showing the current
- * item's name and position. Left/right moves through the row's items, and the artwork for the
- * current item is shown by [ShowcaseHero] at the top of the page.
+ * A home row in showcase mode. While focused, [ShowcaseHero] covers the page, and left/right moves
+ * through the row's items. When not focused, the row shows a single wide banner of its current
+ * item's artwork.
  *
  * Select opens the item, long press shows its menu, and the play button plays it.
  */
 @Composable
-fun ShowcaseRowStrip(
+fun ShowcaseRowBanner(
     title: String,
     items: List<BaseItem?>,
     initialIndex: Int,
+    height: Dp,
     onFocusIndex: (Int) -> Unit,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -133,6 +146,7 @@ fun ShowcaseRowStrip(
                 Modifier
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth()
+                    .height(height)
                     .onFocusChanged {
                         if (it.isFocused) onFocusIndex.invoke(currentIndex)
                     }.onKeyEvent { event ->
@@ -159,31 +173,21 @@ fun ShowcaseRowStrip(
                         }
                     },
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                Text(
-                    text = "‹",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.alpha(if (currentIndex > 0) 1f else .3f),
+            Box(modifier = Modifier.fillMaxSize()) {
+                ShowcaseBackdrop(
+                    item = item,
+                    modifier = Modifier.matchParentSize(),
                 )
                 Text(
-                    text = item?.title ?: "",
+                    text = item?.data?.seriesName ?: item?.title ?: "",
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = "${currentIndex + 1} / ${items.size}",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(
-                    text = "›",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.alpha(if (currentIndex < lastIndex) 1f else .3f),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(16.dp),
                 )
             }
         }
@@ -212,23 +216,22 @@ private fun ShowcaseBackdrop(
         modifier =
             modifier.drawWithContent {
                 drawContent()
-                // Fade toward the start edge so the details text stays readable
+                // Fade toward the start edge and the bottom so text on top stays readable
                 val start = if (isRtl) size.width else 0f
                 val end = if (isRtl) 0f else size.width
                 drawRect(
                     brush =
                         Brush.horizontalGradient(
-                            colors = listOf(background.copy(alpha = .85f), Color.Transparent),
+                            colors = listOf(background.copy(alpha = .75f), Color.Transparent),
                             startX = start,
-                            endX = start + (end - start) * .6f,
+                            endX = start + (end - start) * .55f,
                         ),
                 )
-                // Fade toward the bottom so the panel blends into the rows below
                 drawRect(
                     brush =
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, background),
-                            startY = size.height * .5f,
+                            colors = listOf(Color.Transparent, background.copy(alpha = .85f)),
+                            startY = size.height * .55f,
                             endY = size.height,
                         ),
                 )

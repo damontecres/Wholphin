@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -308,7 +307,7 @@ fun HomePageContent(
             )
         }
 
-    // When a showcase row is focused, its artwork panel replaces the header
+    // When a showcase row is focused, its artwork covers the page
     val focusedShowcaseRow =
         remember(homeRows, position.row) {
             (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)
@@ -356,21 +355,7 @@ fun HomePageContent(
                         }
                     }.fillMaxSize(),
         ) {
-            val showcaseRow = focusedShowcaseRow
-            if (showcaseRow != null) {
-                ShowcaseHero(
-                    item = focusedItem,
-                    viewOptions = showcaseRow.viewOptions,
-                    index = position.column.coerceIn(0, showcaseRow.items.lastIndex),
-                    count = showcaseRow.items.size,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(SHOWCASE_HERO_HEIGHT_FRACTION),
-                )
-            } else {
-                headerComposable.invoke(focusedItem)
-            }
+            headerComposable.invoke(focusedItem)
 
             val density = LocalDensity.current
             val spaceAbovePx =
@@ -427,10 +412,11 @@ fun HomePageContent(
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
                                         if (viewOptions.showcase) {
-                                            ShowcaseRowStrip(
+                                            ShowcaseRowBanner(
                                                 title = row.title.getString(),
                                                 items = row.items,
                                                 initialIndex = if (currentPosition.row == rowIndex) currentPosition.column else 0,
+                                                height = viewOptions.heightDp.dp,
                                                 onFocusIndex = { index ->
                                                     currentOnFocusPosition(RowColumn(rowIndex, index))
                                                 },
@@ -563,6 +549,16 @@ fun HomePageContent(
                     }
                 }
             }
+        }
+        focusedShowcaseRow?.let { showcaseRow ->
+            ShowcaseHero(
+                item = focusedItem,
+                rowTitle = showcaseRow.title.getString(),
+                viewOptions = showcaseRow.viewOptions,
+                index = position.column.coerceIn(0, showcaseRow.items.lastIndex),
+                count = showcaseRow.items.size,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
         when (loadingState) {
             LoadingState.Pending,
