@@ -1183,7 +1183,10 @@ fun CollectionFolderViewContent(
             viewOptions = state.viewOptions,
             defaultViewOptions = defaultViewOptions,
             showArtistSource = state.filter.override == GetItemsFilterOverride.ARTIST,
-            showPlaylistProgress = state.item.successValue?.data?.collectionType == CollectionType.PLAYLISTS,
+            showPlaylistProgress =
+                state.item.successValue
+                    ?.data
+                    ?.collectionType == CollectionType.PLAYLISTS,
             onDismissRequest = {
                 showViewOptions = false
                 viewActions.saveViewOptions(state.viewOptions)

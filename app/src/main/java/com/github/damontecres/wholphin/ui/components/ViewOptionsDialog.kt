@@ -349,6 +349,7 @@ val ViewOptionsWide =
         contentScale = PrefContentScale.CROP,
         aspectRatio = AspectRatio.WIDE,
     )
+
 /**
  * Default for the playlists library: three large wide tiles with full names
  */
