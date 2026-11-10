@@ -51,8 +51,12 @@ data class BaseItem(
 
     override val gridId get() = id.toString()
 
+    /**
+     * Whether the remote's play button plays this item from a grid. Playlists play as a whole, like
+     * the Play option in their context menu.
+     */
     override val playable: Boolean
-        get() = type.playable
+        get() = type.playable || type == BaseItemKind.PLAYLIST
 
     override val sortName: String
         get() = data.alphabetSortName
