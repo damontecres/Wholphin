@@ -272,6 +272,25 @@ data class ViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        /**
+         * Image type for the playlists library, which also picks a fitting tile size: wide images
+         * as three large tiles, or the square playlist images as six smaller tiles
+         */
+        val ViewOptionsPlaylistImageType =
+            ViewOptionsImageType.copy(
+                setter = { viewOptions, value ->
+                    when (value) {
+                        ViewOptionImageType.THUMB -> {
+                            viewOptions.copy(imageType = value, aspectRatio = AspectRatio.WIDE, columns = 3)
+                        }
+
+                        ViewOptionImageType.PRIMARY -> {
+                            viewOptions.copy(imageType = value, aspectRatio = AspectRatio.SQUARE, columns = 6)
+                        }
+                    }
+                },
+            )
+
         val ViewOptionsPlaylistProgress =
             AppChoicePreference<ViewOptions, PlaylistProgress>(
                 title = R.string.playlist_progress,
@@ -298,8 +317,12 @@ data class ViewOptions(
             showPlaylistProgress: Boolean = false,
         ) = buildList {
             if (showArtistSource) add(ViewOptionsArtistSource)
-            if (showPlaylistProgress) add(ViewOptionsPlaylistProgress)
-            addAll(GRID_OPTIONS)
+            if (showPlaylistProgress) {
+                add(ViewOptionsPlaylistProgress)
+                addAll(GRID_OPTIONS.map { if (it == ViewOptionsImageType) ViewOptionsPlaylistImageType else it })
+            } else {
+                addAll(GRID_OPTIONS)
+            }
         }
 
         private val GRID_OPTIONS =
