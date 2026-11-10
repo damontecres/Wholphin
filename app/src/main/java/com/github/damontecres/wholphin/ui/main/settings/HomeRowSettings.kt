@@ -334,6 +334,51 @@ internal object Options {
             valueToIndex = { it.ordinal },
         )
 
+    val ViewOptionsShowcase =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.showcase_view,
+            defaultValue = false,
+            getter = { it.showcase },
+            setter = { vo, value -> vo.copy(showcase = value) },
+            summary = R.string.showcase_view_summary,
+        )
+
+    val ViewOptionsShowcaseLogo =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.show_logo,
+            defaultValue = true,
+            getter = { it.showcaseShowLogo },
+            setter = { vo, value -> vo.copy(showcaseShowLogo = value) },
+        )
+
+    val ViewOptionsShowcaseRating =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.show_rating,
+            defaultValue = true,
+            getter = { it.showcaseShowRating },
+            setter = { vo, value -> vo.copy(showcaseShowRating = value) },
+        )
+
+    val ViewOptionsShowcaseOverview =
+        AppSwitchPreference<HomeRowViewOptions>(
+            title = R.string.show_overview,
+            defaultValue = true,
+            getter = { it.showcaseShowOverview },
+            setter = { vo, value -> vo.copy(showcaseShowOverview = value) },
+        )
+
+    private val SHOWCASE_GROUP =
+        PreferenceGroup(
+            title = R.string.showcase,
+            preferences =
+                listOf(
+                    ViewOptionsShowcase,
+                    ViewOptionsShowcaseLogo,
+                    ViewOptionsShowcaseRating,
+                    ViewOptionsShowcaseOverview,
+                ),
+        )
+
     val ViewOptionsApplyAll =
         AppClickablePreference<HomeRowViewOptions>(
             title = R.string.apply_all_rows,
@@ -404,6 +449,7 @@ internal object Options {
                         ViewOptionsUseSeries,
                     ),
             ),
+            SHOWCASE_GROUP,
             PreferenceGroup(
                 title = R.string.more,
                 preferences =
@@ -439,6 +485,7 @@ internal object Options {
                         ViewOptionsEpisodeContentScale,
                     ),
             ),
+            SHOWCASE_GROUP,
             PreferenceGroup(
                 title = R.string.more,
                 preferences =

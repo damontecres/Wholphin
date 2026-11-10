@@ -258,6 +258,10 @@ data class HomeRowViewOptions(
     val episodeContentScale: PrefContentScale = PrefContentScale.FILL,
     val episodeAspectRatio: AspectRatio = AspectRatio.TALL,
     val episodeImageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
+    val showcase: Boolean = false,
+    val showcaseShowLogo: Boolean = true,
+    val showcaseShowRating: Boolean = true,
+    val showcaseShowOverview: Boolean = true,
 ) {
     companion object {
         val genreDefault =
