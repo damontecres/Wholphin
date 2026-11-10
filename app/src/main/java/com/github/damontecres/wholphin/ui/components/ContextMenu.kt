@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.AudioItem
@@ -25,6 +27,8 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.detail.metadata.ManageMetadataDialog
+import com.github.damontecres.wholphin.ui.detail.metadata.ManageMetadataViewModel
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.supportedPlayableTypes
@@ -199,9 +203,13 @@ fun ContextMenu(
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPlayWithDialog by remember { mutableStateOf(false) }
+    var showManageMetadata by remember { mutableStateOf(false) }
+    val metadataViewModel: ManageMetadataViewModel = hiltViewModel()
+    // Only Jellyfin administrators can manage metadata
+    val canManageMetadata = remember { metadataViewModel.canManageMetadata() }
 
     val dialogItems =
-        remember(resources, item, chosenStreams) {
+        remember(resources, item, chosenStreams, canManageMetadata) {
             buildContextMenuItems(
                 resources = resources,
                 item = item,
@@ -267,6 +275,7 @@ fun ContextMenu(
                 },
                 onClickDelete = { showDeleteDialog = true },
                 onClickPlayWith = { showPlayWithDialog = true },
+                onClickManageMetadata = if (canManageMetadata) ({ showManageMetadata = true }) else null,
             )
         }
     DialogPopup(
@@ -326,6 +335,16 @@ fun ContextMenu(
             elevation = 3.dp,
         )
     }
+    if (showManageMetadata) {
+        ManageMetadataDialog(
+            item = item,
+            onDismissRequest = {
+                showManageMetadata = false
+                onDismissRequest.invoke()
+            },
+            viewModel = metadataViewModel,
+        )
+    }
 }
 
 private fun buildContextMenuItems(
@@ -344,6 +363,7 @@ private fun buildContextMenuItems(
     onClearChosenStreams: () -> Unit,
     onClickDelete: () -> Unit,
     onClickPlayWith: () -> Unit,
+    onClickManageMetadata: (() -> Unit)? = null,
 ): List<DialogItem> =
     buildList {
         // Songs should not show Go to
@@ -650,6 +670,16 @@ private fun buildContextMenuItems(
                 ) {
                     actions.onSendMediaInfo.invoke(item.id)
                 },
+            )
+        }
+        if (onClickManageMetadata != null) {
+            add(
+                DialogItem(
+                    resources.getString(R.string.manage_metadata),
+                    Icons.Default.Edit,
+                    dismissOnClick = false,
+                    onClick = onClickManageMetadata,
+                ),
             )
         }
     }
