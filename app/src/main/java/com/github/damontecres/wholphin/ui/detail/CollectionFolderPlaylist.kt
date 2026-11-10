@@ -9,10 +9,15 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.cards.PlaylistTile
 import com.github.damontecres.wholphin.ui.components.CollectionFolderView
-import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
+import com.github.damontecres.wholphin.ui.components.GridClickActions
+import com.github.damontecres.wholphin.ui.components.ViewOptionsPlaylists
+import com.github.damontecres.wholphin.ui.components.playlistProgress
 import com.github.damontecres.wholphin.ui.data.PlaylistSortOptions
+import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.toServerString
 import java.util.UUID
 
 @Composable
@@ -27,8 +32,11 @@ fun CollectionFolderPlaylist(
     var showHeader by rememberSaveable { mutableStateOf(true) }
     CollectionFolderView(
         preferences = preferences,
-        onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
-        itemId = itemId,
+        itemId = itemId.toServerString(),
+        actions =
+            GridClickActions(
+                onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
+            ),
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
@@ -37,7 +45,21 @@ fun CollectionFolderPlaylist(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        defaultViewOptions = ViewOptionsSquare,
+        defaultViewOptions = ViewOptionsPlaylists,
         playEnabled = false,
+        gridCardContent = { (item, _, onClick, onLongClick, widthPx, mod) ->
+            PlaylistTile(
+                item = item,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                progress = viewOptions.playlistProgress,
+                imageAspectRatio = viewOptions.aspectRatio.ratio,
+                imageContentScale = viewOptions.contentScale.scale,
+                imageType = viewOptions.imageType,
+                showTitle = viewOptions.showTitles,
+                fillWidth = widthPx,
+                modifier = mod,
+            )
+        },
     )
 }

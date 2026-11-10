@@ -807,6 +807,19 @@
     <string name="artist">Artist</string>
     <string name="album_artist">Album artist</string>
     <string name="artist_source">Artist source</string>
+    <string name="playlist_progress">Progress</string>
+    <string name="playlist_progress_count">Count</string>
+    <string name="playlist_progress_bar">Bar</string>
+    <plurals name="playlist_unwatched_count">
+        <item quantity="one">%d unwatched</item>
+        <item quantity="other">%d unwatched</item>
+    </plurals>
+    <string name="playlist_all_watched">All watched</string>
+    <string-array name="playlist_progress_styles">
+        <item>@string/none</item>
+        <item>@string/playlist_progress_count</item>
+        <item>@string/playlist_progress_bar</item>
+    </string-array>
     <string-array name="artist_sources">
         <item>@string/artist</item>
         <item>@string/album_artist</item>

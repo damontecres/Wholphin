@@ -56,6 +56,7 @@ fun ViewOptionsDialog(
     onViewOptionsChange: (ViewOptions) -> Unit,
     defaultViewOptions: ViewOptions = ViewOptions(),
     showArtistSource: Boolean = false,
+    showPlaylistProgress: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -73,9 +74,9 @@ fun ViewOptionsDialog(
             window.setDimAmount(0f)
         }
         val options =
-            remember(viewOptions.type, showArtistSource) {
+            remember(viewOptions.type, showArtistSource, showPlaylistProgress) {
                 when (viewOptions.type) {
-                    ViewOptionsType.GRID -> ViewOptions.buildGridOptions(showArtistSource)
+                    ViewOptionsType.GRID -> ViewOptions.buildGridOptions(showArtistSource, showPlaylistProgress)
                     ViewOptionsType.LIST -> ViewOptions.buildListOptions(showArtistSource)
                     ViewOptionsType.DENSE_LIST -> ViewOptions.buildListOptions(showArtistSource)
                 }
@@ -271,6 +272,19 @@ data class ViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        val ViewOptionsPlaylistProgress =
+            AppChoicePreference<ViewOptions, PlaylistProgress>(
+                title = R.string.playlist_progress,
+                defaultValue = PlaylistProgress.OFF,
+                displayValues = R.array.playlist_progress_styles,
+                getter = { it.playlistProgress },
+                setter = { viewOptions, value ->
+                    viewOptions.copy(extras = ViewOptionsExtras.Playlists(value))
+                },
+                indexToValue = { PlaylistProgress.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
+
         val ViewOptionsReset =
             AppClickablePreference<ViewOptions>(
                 title = R.string.reset,
@@ -279,11 +293,14 @@ data class ViewOptions(
         /**
          * Get the options for a grid [ViewOptions]
          */
-        fun buildGridOptions(showArtistSource: Boolean) =
-            buildList {
-                if (showArtistSource) add(ViewOptionsArtistSource)
-                addAll(GRID_OPTIONS)
-            }
+        fun buildGridOptions(
+            showArtistSource: Boolean,
+            showPlaylistProgress: Boolean = false,
+        ) = buildList {
+            if (showArtistSource) add(ViewOptionsArtistSource)
+            if (showPlaylistProgress) add(ViewOptionsPlaylistProgress)
+            addAll(GRID_OPTIONS)
+        }
 
         private val GRID_OPTIONS =
             listOf(
@@ -331,6 +348,19 @@ val ViewOptionsWide =
         spacing = 24,
         contentScale = PrefContentScale.CROP,
         aspectRatio = AspectRatio.WIDE,
+    )
+/**
+ * Default for the playlists library: three large wide tiles with full names
+ */
+val ViewOptionsPlaylists =
+    ViewOptions(
+        columns = 3,
+        spacing = 24,
+        contentScale = PrefContentScale.CROP,
+        aspectRatio = AspectRatio.WIDE,
+        imageType = ViewOptionImageType.THUMB,
+        showBackdrop = true,
+        extras = ViewOptionsExtras.Playlists(),
     )
 val ViewOptionsSquare =
     ViewOptions(
@@ -390,7 +420,25 @@ sealed interface ViewOptionsExtras {
     data class MusicLibrary(
         val artistSource: ArtistSource = ArtistSource.ARTIST,
     ) : ViewOptionsExtras
+
+    @Serializable
+    data class Playlists(
+        val progress: PlaylistProgress = PlaylistProgress.OFF,
+    ) : ViewOptionsExtras
 }
+
+/** How watch progress is shown on playlist tiles */
+enum class PlaylistProgress {
+    OFF,
+    COUNT,
+    BAR,
+}
+
+/**
+ * The [PlaylistProgress] if the [ViewOptions.extras] is a [ViewOptionsExtras.Playlists]
+ */
+val ViewOptions.playlistProgress: PlaylistProgress
+    get() = (extras as? ViewOptionsExtras.Playlists)?.progress ?: PlaylistProgress.OFF
 
 /**
  * The [ArtistSource] if the [ViewOptions.extras] is a [ViewOptionsExtras.MusicLibrary]

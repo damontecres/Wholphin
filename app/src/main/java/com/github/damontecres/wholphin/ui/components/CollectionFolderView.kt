@@ -825,6 +825,9 @@ fun CollectionFolderView(
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
     focusRequesterOnEmpty: FocusRequester? = null,
+    gridCardContent: @Composable CollectionFolderViewScope.(GridItemDetails<BaseItem>) -> Unit = {
+        DefaultGridCardContent(it)
+    },
     viewModel: CollectionFolderViewModel =
         hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
             key = viewModelKey,
@@ -868,6 +871,7 @@ fun CollectionFolderView(
         },
         filterOptions = filterOptions,
         focusRequesterOnEmpty = focusRequesterOnEmpty,
+        gridCardContent = gridCardContent,
     )
 }
 
@@ -920,19 +924,7 @@ fun CollectionFolderViewContent(
     focusRequesterOnEmpty: FocusRequester? = null,
     gridCardContent: @Composable CollectionFolderViewScope.(
         GridItemDetails<BaseItem>,
-    ) -> Unit = { (item, index, onClick, onLongClick, widthPx, mod) ->
-        GridCard(
-            item = item,
-            onClick = onClick,
-            onLongClick = onLongClick,
-            imageContentScale = viewOptions.contentScale.scale,
-            imageAspectRatio = viewOptions.aspectRatio.ratio,
-            imageType = viewOptions.imageType,
-            showTitle = viewOptions.showTitles,
-            fillWidth = widthPx,
-            modifier = mod,
-        )
-    },
+    ) -> Unit = { DefaultGridCardContent(it) },
     listItemContent: @Composable CollectionFolderViewScope.(
         GridItemDetails<BaseItem>,
     ) -> Unit = { (item, index, onClick, onLongClick, _, mod) ->
@@ -1191,6 +1183,7 @@ fun CollectionFolderViewContent(
             viewOptions = state.viewOptions,
             defaultViewOptions = defaultViewOptions,
             showArtistSource = state.filter.override == GetItemsFilterOverride.ARTIST,
+            showPlaylistProgress = state.item.successValue?.data?.collectionType == CollectionType.PLAYLISTS,
             onDismissRequest = {
                 showViewOptions = false
                 viewActions.saveViewOptions(state.viewOptions)
@@ -1198,6 +1191,25 @@ fun CollectionFolderViewContent(
             onViewOptionsChange = viewActions::saveViewOptions,
         )
     }
+}
+
+/**
+ * The default card for each item in a [CollectionFolderGrid]
+ */
+@Composable
+fun CollectionFolderViewScope.DefaultGridCardContent(details: GridItemDetails<BaseItem>) {
+    val (item, _, onClick, onLongClick, widthPx, mod) = details
+    GridCard(
+        item = item,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        imageContentScale = viewOptions.contentScale.scale,
+        imageAspectRatio = viewOptions.aspectRatio.ratio,
+        imageType = viewOptions.imageType,
+        showTitle = viewOptions.showTitles,
+        fillWidth = widthPx,
+        modifier = mod,
+    )
 }
 
 /**
