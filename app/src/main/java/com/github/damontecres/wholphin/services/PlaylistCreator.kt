@@ -88,6 +88,7 @@ class PlaylistCreator
             startIndex: Int?,
             sortAndDirection: SortAndDirection,
             filter: GetItemsFilter,
+            startAtNextUnwatched: Boolean = false,
         ): Playlist {
             val request =
                 filter.applyTo(
@@ -103,7 +104,14 @@ class PlaylistCreator
                     ),
                 )
             val items = GetItemsRequestHandler.execute(api, request).content.items
-            return Playlist(items.convertAndAddParts())
+            // Skip items already watched, unless everything has been watched
+            val firstUnwatched =
+                if (startAtNextUnwatched) {
+                    items.indexOfFirst { it.userData?.played != true }.coerceAtLeast(0)
+                } else {
+                    0
+                }
+            return Playlist(items.drop(firstUnwatched).convertAndAddParts())
         }
 
         private suspend fun createFromCollection(
@@ -161,6 +169,7 @@ class PlaylistCreator
             shuffled: Boolean = false,
             recursive: Boolean = false,
             filter: GetItemsFilter = GetItemsFilter(),
+            startAtNextUnwatched: Boolean = false,
         ): PlaylistCreationResult =
             when (item.type) {
                 BaseItemKind.BOX_SET,
@@ -284,6 +293,7 @@ class PlaylistCreator
                                     )
                                 },
                             filter = filter,
+                            startAtNextUnwatched = startAtNextUnwatched && !shuffled,
                         ),
                     )
                 }

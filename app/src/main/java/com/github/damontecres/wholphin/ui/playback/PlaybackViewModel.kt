@@ -362,6 +362,7 @@ class PlaybackViewModel
                                 // Play server playlists in their own order instead of sorted by name
                                 sortAndDirection =
                                     if (queriedItem.type == BaseItemKind.PLAYLIST) null else SortAndDirection.DEFAULT,
+                                startAtNextUnwatched = true,
                             )
                         }
                     when (val r = playlistResult) {
