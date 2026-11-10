@@ -672,35 +672,43 @@ class PlaybackViewModel
                 )
                 _state.update { it.copy(maxBitrate = maxBitrate) }
 
-                val response by
-                    api.mediaInfoApi
-                        .getPostedPlaybackInfo(
-                            itemId,
-                            PlaybackInfoDto(
-                                startTimeTicks = null,
-                                deviceProfile =
-                                    if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
-                                        deviceProfileService.getOrCreateDeviceProfile(
-                                            preferences.appPreferences,
-                                            serverRepository.currentServer?.serverVersion,
-                                        )
-                                    } else {
-                                        mpvDeviceProfile
-                                    },
-                                maxAudioChannels = null,
-                                audioStreamIndex = audioIndex,
-                                subtitleStreamIndex = subtitleIndex,
-                                mediaSourceId = sourceId,
-                                alwaysBurnInSubtitleWhenTranscoding = false,
-                                maxStreamingBitrate = maxBitrate.toInt(),
-                                enableDirectPlay = enableDirectPlay,
-                                enableDirectStream = enableDirectStream,
-                                allowVideoStreamCopy = enableDirectStream,
-                                allowAudioStreamCopy = enableDirectStream,
-                                enableTranscoding = true,
-                                autoOpenLiveStream = true,
-                            ),
-                        )
+                val response =
+                    try {
+                        api.mediaInfoApi
+                            .getPostedPlaybackInfo(
+                                itemId,
+                                PlaybackInfoDto(
+                                    startTimeTicks = null,
+                                    deviceProfile =
+                                        if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
+                                            deviceProfileService.getOrCreateDeviceProfile(
+                                                preferences.appPreferences,
+                                                serverRepository.currentServer?.serverVersion,
+                                            )
+                                        } else {
+                                            mpvDeviceProfile
+                                        },
+                                    maxAudioChannels = null,
+                                    audioStreamIndex = audioIndex,
+                                    subtitleStreamIndex = subtitleIndex,
+                                    mediaSourceId = sourceId,
+                                    alwaysBurnInSubtitleWhenTranscoding = false,
+                                    maxStreamingBitrate = maxBitrate.toInt(),
+                                    enableDirectPlay = enableDirectPlay,
+                                    enableDirectStream = enableDirectStream,
+                                    allowVideoStreamCopy = enableDirectStream,
+                                    allowAudioStreamCopy = enableDirectStream,
+                                    enableTranscoding = true,
+                                    autoOpenLiveStream = true,
+                                ),
+                            ).content
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error in getPostedPlaybackInfo")
+                        _state.update { it.copy(loading = LoadingState.Error(ex)) }
+                        return@withContext
+                    }
                 if (response.errorCode != null) {
                     Timber.e("Error in PostedPlaybackInfo: %s", response.errorCode)
                     _state.update { it.copy(loading = LoadingState.Error(response.errorCode?.serialName)) }
@@ -1110,7 +1118,7 @@ class PlaybackViewModel
             }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_ENDED) {
+            if (playbackState == Player.STATE_ENDED && state.value.loading !is LoadingState.Error) {
                 Timber.v("Playback state is STATE_ENDED")
                 viewModelScope.launchDefault {
                     when (val nextItem = state.value.nextItem()) {
@@ -1149,6 +1157,8 @@ class PlaybackViewModel
                         }
                     }
                 }
+            } else if (playbackState == Player.STATE_ENDED) {
+                Timber.i("Playback ended, but there is in error state")
             }
         }
 
