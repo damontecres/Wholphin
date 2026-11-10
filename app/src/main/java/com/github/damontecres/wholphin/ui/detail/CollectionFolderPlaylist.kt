@@ -7,12 +7,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.cards.PlaylistTile
 import com.github.damontecres.wholphin.ui.components.CollectionFolderView
 import com.github.damontecres.wholphin.ui.components.GridClickActions
+import com.github.damontecres.wholphin.ui.components.GroupEntry
+import com.github.damontecres.wholphin.ui.components.ItemGroup
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPlaylists
+import com.github.damontecres.wholphin.ui.components.playlistExtras
 import com.github.damontecres.wholphin.ui.components.playlistProgress
 import com.github.damontecres.wholphin.ui.data.PlaylistSortOptions
 import com.github.damontecres.wholphin.ui.playback.scale
@@ -61,5 +66,40 @@ fun CollectionFolderPlaylist(
                 modifier = mod,
             )
         },
+        groupItems = ::groupPlaylistsByTag,
     )
+}
+
+/**
+ * Groups playlists by their tags, sorted by tag name, with untagged playlists last. A playlist with
+ * several tags is shown in each of those groups.
+ *
+ * Returns null (show the normal grid) if grouping is off or no playlists have tags.
+ */
+private fun groupPlaylistsByTag(
+    viewOptions: ViewOptions,
+    items: List<BaseItem?>,
+): List<ItemGroup>? {
+    if (!viewOptions.playlistExtras.groupByTag) return null
+    val byTag = sortedMapOf<String, MutableList<GroupEntry>>(String.CASE_INSENSITIVE_ORDER)
+    val untagged = mutableListOf<GroupEntry>()
+    items.forEachIndexed { index, item ->
+        if (item != null) {
+            val entry = GroupEntry(index, item)
+            val tags =
+                item.data.tags
+                    .orEmpty()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .distinctBy { it.lowercase() }
+            if (tags.isEmpty()) {
+                untagged.add(entry)
+            } else {
+                tags.forEach { tag -> byTag.getOrPut(tag) { mutableListOf() }.add(entry) }
+            }
+        }
+    }
+    if (byTag.isEmpty()) return null
+    return byTag.map { (tag, entries) -> ItemGroup(tag, entries) } +
+        listOfNotNull(untagged.takeIf { it.isNotEmpty() }?.let { ItemGroup(null, it) })
 }

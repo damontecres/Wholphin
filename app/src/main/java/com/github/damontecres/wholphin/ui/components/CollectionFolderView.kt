@@ -98,6 +98,7 @@ import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetAlbumArtistsRequest
@@ -560,7 +561,13 @@ class CollectionFolderViewModel
                                     }
                                 }
                             },
-                        fields = SlimItemFields,
+                        fields =
+                            if (item?.data?.collectionType == CollectionType.PLAYLISTS) {
+                                // Tags are used to group playlists
+                                SlimItemFields + ItemFields.TAGS
+                            } else {
+                                SlimItemFields
+                            },
                     ),
                 )
             return request
@@ -828,6 +835,7 @@ fun CollectionFolderView(
     gridCardContent: @Composable CollectionFolderViewScope.(GridItemDetails<BaseItem>) -> Unit = {
         DefaultGridCardContent(it)
     },
+    groupItems: GroupItems? = null,
     viewModel: CollectionFolderViewModel =
         hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
             key = viewModelKey,
@@ -872,8 +880,15 @@ fun CollectionFolderView(
         filterOptions = filterOptions,
         focusRequesterOnEmpty = focusRequesterOnEmpty,
         gridCardContent = gridCardContent,
+        groupItems = groupItems,
     )
 }
+
+/**
+ * Splits the items into groups for [CollectionFolderGroupedGrid], or returns null to show the
+ * normal grid
+ */
+typealias GroupItems = (viewOptions: ViewOptions, items: List<BaseItem?>) -> List<ItemGroup>?
 
 interface CollectionFolderViewActions {
     fun navigateTo(destination: Destination)
@@ -925,6 +940,7 @@ fun CollectionFolderViewContent(
     gridCardContent: @Composable CollectionFolderViewScope.(
         GridItemDetails<BaseItem>,
     ) -> Unit = { DefaultGridCardContent(it) },
+    groupItems: GroupItems? = null,
     listItemContent: @Composable CollectionFolderViewScope.(
         GridItemDetails<BaseItem>,
     ) -> Unit = { (item, index, onClick, onLongClick, _, mod) ->
@@ -1111,8 +1127,32 @@ fun CollectionFolderViewContent(
                                         get() = pager.data.size
                                 }
 
+                            val groups =
+                                remember(pager.data, pager.data.size, state.viewOptions, groupItems) {
+                                    if (state.viewOptions.type == ViewOptionsType.GRID) {
+                                        groupItems?.invoke(state.viewOptions, pager.data)
+                                    } else {
+                                        null
+                                    }
+                                }
                             Box(Modifier.fillMaxSize()) {
-                                if (state.viewOptions.type == ViewOptionsType.GRID) {
+                                if (groups != null) {
+                                    scope.CollectionFolderGroupedGrid(
+                                        groups = groups,
+                                        initialPosition = savedPosition,
+                                        modifier = Modifier.fillMaxSize(),
+                                        gridFocusRequester = gridFocusRequester,
+                                        onClickItem = gridActions.onClickItem,
+                                        onLongClickItem = gridActions.onLongClickItem!!,
+                                        onClickPlay = gridActions.onClickPlayRemoteButton!!,
+                                        positionCallback = { columns, pos ->
+                                            showHeader = pos < columns
+                                            position = pos
+                                            positionCallback?.invoke(columns, pos)
+                                        },
+                                        cardContent = gridCardContent,
+                                    )
+                                } else if (state.viewOptions.type == ViewOptionsType.GRID) {
                                     scope.CollectionFolderGrid(
                                         preferences = preferences,
                                         initialPosition = savedPosition,
@@ -1183,7 +1223,7 @@ fun CollectionFolderViewContent(
             viewOptions = state.viewOptions,
             defaultViewOptions = defaultViewOptions,
             showArtistSource = state.filter.override == GetItemsFilterOverride.ARTIST,
-            showPlaylistProgress =
+            showPlaylistOptions =
                 state.item.successValue
                     ?.data
                     ?.collectionType == CollectionType.PLAYLISTS,

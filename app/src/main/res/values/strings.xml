@@ -815,6 +815,9 @@
         <item quantity="other">%d unwatched</item>
     </plurals>
     <string name="playlist_all_watched">All watched</string>
+    <string name="group_by_tag">Group by tag</string>
+    <string name="group_by_tag_summary">Show playlists under a heading for each of their tags</string>
+    <string name="playlist_group_other">Other</string>
     <string-array name="playlist_progress_styles">
         <item>@string/none</item>
         <item>@string/playlist_progress_count</item>

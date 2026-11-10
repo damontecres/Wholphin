@@ -56,7 +56,7 @@ fun ViewOptionsDialog(
     onViewOptionsChange: (ViewOptions) -> Unit,
     defaultViewOptions: ViewOptions = ViewOptions(),
     showArtistSource: Boolean = false,
-    showPlaylistProgress: Boolean = false,
+    showPlaylistOptions: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -74,9 +74,9 @@ fun ViewOptionsDialog(
             window.setDimAmount(0f)
         }
         val options =
-            remember(viewOptions.type, showArtistSource, showPlaylistProgress) {
+            remember(viewOptions.type, showArtistSource, showPlaylistOptions) {
                 when (viewOptions.type) {
-                    ViewOptionsType.GRID -> ViewOptions.buildGridOptions(showArtistSource, showPlaylistProgress)
+                    ViewOptionsType.GRID -> ViewOptions.buildGridOptions(showArtistSource, showPlaylistOptions)
                     ViewOptionsType.LIST -> ViewOptions.buildListOptions(showArtistSource)
                     ViewOptionsType.DENSE_LIST -> ViewOptions.buildListOptions(showArtistSource)
                 }
@@ -298,10 +298,19 @@ data class ViewOptions(
                 displayValues = R.array.playlist_progress_styles,
                 getter = { it.playlistProgress },
                 setter = { viewOptions, value ->
-                    viewOptions.copy(extras = ViewOptionsExtras.Playlists(value))
+                    viewOptions.copy(extras = viewOptions.playlistExtras.copy(progress = value))
                 },
                 indexToValue = { PlaylistProgress.entries[it] },
                 valueToIndex = { it.ordinal },
+            )
+
+        val ViewOptionsPlaylistGroupByTag =
+            AppSwitchPreference<ViewOptions>(
+                title = R.string.group_by_tag,
+                defaultValue = false,
+                getter = { it.playlistExtras.groupByTag },
+                setter = { vo, value -> vo.copy(extras = vo.playlistExtras.copy(groupByTag = value)) },
+                summary = R.string.group_by_tag_summary,
             )
 
         val ViewOptionsReset =
@@ -314,10 +323,11 @@ data class ViewOptions(
          */
         fun buildGridOptions(
             showArtistSource: Boolean,
-            showPlaylistProgress: Boolean = false,
+            showPlaylistOptions: Boolean = false,
         ) = buildList {
             if (showArtistSource) add(ViewOptionsArtistSource)
-            if (showPlaylistProgress) {
+            if (showPlaylistOptions) {
+                add(ViewOptionsPlaylistGroupByTag)
                 add(ViewOptionsPlaylistProgress)
                 addAll(GRID_OPTIONS.map { if (it == ViewOptionsImageType) ViewOptionsPlaylistImageType else it })
             } else {
@@ -448,6 +458,7 @@ sealed interface ViewOptionsExtras {
     @Serializable
     data class Playlists(
         val progress: PlaylistProgress = PlaylistProgress.OFF,
+        val groupByTag: Boolean = false,
     ) : ViewOptionsExtras
 }
 
@@ -459,10 +470,16 @@ enum class PlaylistProgress {
 }
 
 /**
+ * The [ViewOptionsExtras.Playlists] if the [ViewOptions.extras] is one, otherwise the defaults
+ */
+val ViewOptions.playlistExtras: ViewOptionsExtras.Playlists
+    get() = extras as? ViewOptionsExtras.Playlists ?: ViewOptionsExtras.Playlists()
+
+/**
  * The [PlaylistProgress] if the [ViewOptions.extras] is a [ViewOptionsExtras.Playlists]
  */
 val ViewOptions.playlistProgress: PlaylistProgress
-    get() = (extras as? ViewOptionsExtras.Playlists)?.progress ?: PlaylistProgress.OFF
+    get() = playlistExtras.progress
 
 /**
  * The [ArtistSource] if the [ViewOptions.extras] is a [ViewOptionsExtras.MusicLibrary]
