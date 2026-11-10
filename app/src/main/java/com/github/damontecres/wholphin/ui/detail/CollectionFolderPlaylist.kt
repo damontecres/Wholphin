@@ -74,7 +74,8 @@ fun CollectionFolderPlaylist(
  * Groups playlists by their tags, sorted by tag name, with untagged playlists last. A playlist with
  * several tags is shown in each of those groups.
  *
- * Returns null (show the normal grid) if grouping is off or no playlists have tags.
+ * Returns null (show the normal grid) if grouping is off. If grouping is on but no playlists have
+ * tags, every playlist is shown under "Other", which makes it clear that no tags were found.
  */
 private fun groupPlaylistsByTag(
     viewOptions: ViewOptions,
@@ -99,7 +100,6 @@ private fun groupPlaylistsByTag(
             }
         }
     }
-    if (byTag.isEmpty()) return null
     return byTag.map { (tag, entries) -> ItemGroup(tag, entries) } +
         listOfNotNull(untagged.takeIf { it.isNotEmpty() }?.let { ItemGroup(null, it) })
 }
