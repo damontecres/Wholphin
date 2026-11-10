@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -890,6 +892,38 @@ fun CollectionFolderView(
  */
 typealias GroupItems = (viewOptions: ViewOptions, items: List<BaseItem?>) -> List<ItemGroup>?
 
+/**
+ * Groups the items with [groupItems]. The first result uses the items already loaded, then all
+ * pages are loaded so that every item is grouped, not only the first page.
+ */
+@Composable
+private fun rememberGroups(
+    groupItems: GroupItems?,
+    viewOptions: ViewOptions,
+    items: List<BaseItem?>,
+): State<List<ItemGroup>?> {
+    val initial =
+        remember(groupItems, viewOptions, items) {
+            groupItems?.invoke(viewOptions, items)
+        }
+    return produceState(initial, groupItems, viewOptions, items) {
+        value = initial
+        if (groupItems != null && items is BlockingList<*> && items.any { it == null }) {
+            try {
+                val allItems = ArrayList<BaseItem?>(items.size)
+                for (index in items.indices) {
+                    allItems.add(items.getBlocking(index) as BaseItem?)
+                }
+                value = groupItems.invoke(viewOptions, allItems)
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error loading all items for grouping")
+            }
+        }
+    }
+}
+
 interface CollectionFolderViewActions {
     fun navigateTo(destination: Destination)
 
@@ -1127,18 +1161,18 @@ fun CollectionFolderViewContent(
                                         get() = pager.data.size
                                 }
 
-                            val groups =
-                                remember(pager.data, pager.data.size, state.viewOptions, groupItems) {
-                                    if (state.viewOptions.type == ViewOptionsType.GRID) {
-                                        groupItems?.invoke(state.viewOptions, pager.data)
-                                    } else {
-                                        null
-                                    }
-                                }
+                            val groups by rememberGroups(
+                                groupItems = groupItems.takeIf { state.viewOptions.type == ViewOptionsType.GRID },
+                                viewOptions = state.viewOptions,
+                                items = pager.data,
+                            )
+                            val currentGroups = groups
                             Box(Modifier.fillMaxSize()) {
-                                if (groups != null) {
+                                if (currentGroups != null) {
                                     scope.CollectionFolderGroupedGrid(
-                                        groups = groups,
+                                        preferences = preferences,
+                                        focusedItem = focusedItem,
+                                        groups = currentGroups,
                                         initialPosition = savedPosition,
                                         modifier = Modifier.fillMaxSize(),
                                         gridFocusRequester = gridFocusRequester,
