@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -308,10 +308,11 @@ fun HomePageContent(
             )
         }
 
-    // When a showcase row is focused, it shows the item details itself, so the header is hidden
-    val focusedRowIsShowcase =
+    // When a showcase row is focused, its artwork panel replaces the header
+    val focusedShowcaseRow =
         remember(homeRows, position.row) {
-            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)?.viewOptions?.showcase == true
+            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)
+                ?.takeIf { it.viewOptions.showcase && it.items.isNotEmpty() }
         }
 
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
@@ -355,7 +356,19 @@ fun HomePageContent(
                         }
                     }.fillMaxSize(),
         ) {
-            AnimatedVisibility(visible = !focusedRowIsShowcase) {
+            val showcaseRow = focusedShowcaseRow
+            if (showcaseRow != null) {
+                ShowcaseHero(
+                    item = focusedItem,
+                    viewOptions = showcaseRow.viewOptions,
+                    index = position.column.coerceIn(0, showcaseRow.items.lastIndex),
+                    count = showcaseRow.items.size,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(SHOWCASE_HERO_HEIGHT_FRACTION),
+                )
+            } else {
                 headerComposable.invoke(focusedItem)
             }
 
@@ -413,13 +426,29 @@ fun HomePageContent(
                                 is HomeRowLoadingState.Success -> {
                                     if (row.items.isNotEmpty()) {
                                         val viewOptions = row.viewOptions
-                                        ShowcaseRow(
-                                            enabled = viewOptions.showcase,
-                                            items = row.items,
-                                            focusedIndex = currentPosition.column.takeIf { currentPosition.row == rowIndex },
-                                            viewOptions = viewOptions,
-                                            modifier = rowModifier,
-                                        ) { itemRowModifier ->
+                                        if (viewOptions.showcase) {
+                                            ShowcaseRowStrip(
+                                                title = row.title.getString(),
+                                                items = row.items,
+                                                initialIndex = if (currentPosition.row == rowIndex) currentPosition.column else 0,
+                                                onFocusIndex = { index ->
+                                                    currentOnFocusPosition(RowColumn(rowIndex, index))
+                                                },
+                                                onClickItem = { index, item ->
+                                                    onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                                },
+                                                onLongClickItem = { index, item ->
+                                                    onLongClickItem.invoke(RowColumn(rowIndex, index), item)
+                                                },
+                                                onClickPlay = { index, item ->
+                                                    currentOnClickPlay(RowColumn(rowIndex, index), item)
+                                                },
+                                                modifier =
+                                                    rowModifier
+                                                        .fillMaxWidth()
+                                                        .focusRequester(rowFocusRequesters[rowIndex]),
+                                            )
+                                        } else {
                                             ItemRow(
                                                 title = row.title.getString(),
                                                 items = row.items,
@@ -445,7 +474,7 @@ fun HomePageContent(
                                                         }
                                                     },
                                                 modifier =
-                                                    itemRowModifier
+                                                    rowModifier
                                                         .fillMaxWidth()
                                                         .focusGroup()
                                                         .focusRequester(rowFocusRequesters[rowIndex]),
