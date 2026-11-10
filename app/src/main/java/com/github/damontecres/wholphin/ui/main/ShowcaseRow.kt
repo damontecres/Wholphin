@@ -2,19 +2,14 @@
 
 package com.github.damontecres.wholphin.ui.main
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -45,14 +40,16 @@ import org.jellyfin.sdk.model.api.ImageType
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Extra height added on top of the card height for the artwork and details area of a showcase row
+ * Extra height added above the cards for the artwork and details area of an expanded showcase row
  */
 private const val SHOWCASE_EXTRA_HEIGHT_DP = 220
 
 /**
- * Displays a home row in "showcase" mode: the focused item's backdrop art is shown large behind
- * the row, with optional logo, rating, and overview. The row of cards ([rowContent]) is anchored
- * to the bottom.
+ * Displays a home row that can expand into "showcase" mode.
+ *
+ * While focus is in this row, the focused item's backdrop art is shown large behind the row, with
+ * optional logo, rating, and overview, and the row of cards ([rowContent]) is anchored to the
+ * bottom. When focus leaves the row, it collapses back to a normal row.
  *
  * If not [enabled], only [rowContent] is shown.
  *
@@ -71,37 +68,37 @@ fun ShowcaseRow(
         rowContent.invoke(modifier)
         return
     }
-    // Keep showing the last focused item when focus moves to another row
-    var lastIndex by remember { mutableIntStateOf(0) }
-    val index =
-        if (focusedIndex != null && focusedIndex in items.indices) {
-            focusedIndex
-        } else {
-            lastIndex.coerceIn(0, items.lastIndex.coerceAtLeast(0))
-        }
-    SideEffect { lastIndex = index }
-    val item = items.getOrNull(index)
+    // The "view more" card has no item, so show the row's last item in that case
+    val item = focusedIndex?.let { items.getOrNull(it.coerceAtMost(items.lastIndex)) }
+    val expanded = item != null
 
+    // rowContent is always called in the same place so the row keeps focus when expanding/collapsing
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height((viewOptions.heightDp + SHOWCASE_EXTRA_HEIGHT_DP).dp),
+                .animateContentSize(),
     ) {
-        ShowcaseBackdrop(
-            item = item,
-            modifier = Modifier.matchParentSize(),
+        if (expanded) {
+            ShowcaseBackdrop(
+                item = item,
+                modifier = Modifier.matchParentSize(),
+            )
+            ShowcaseDetails(
+                item = item,
+                viewOptions = viewOptions,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 24.dp, top = 24.dp)
+                        .fillMaxWidth(.5f),
+            )
+        }
+        rowContent.invoke(
+            Modifier
+                .align(Alignment.BottomStart)
+                .padding(top = if (expanded) SHOWCASE_EXTRA_HEIGHT_DP.dp else 0.dp),
         )
-        ShowcaseDetails(
-            item = item,
-            viewOptions = viewOptions,
-            modifier =
-                Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 24.dp, top = 24.dp)
-                    .fillMaxWidth(.5f),
-        )
-        rowContent.invoke(Modifier.align(Alignment.BottomStart))
     }
 }
 
