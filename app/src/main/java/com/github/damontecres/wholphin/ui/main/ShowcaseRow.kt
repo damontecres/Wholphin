@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.ItemRowTitle
+import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.TimeRemaining
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
@@ -333,12 +334,12 @@ private fun ShowcaseDetails(
         }
         val overview = item?.data?.overview
         if (viewOptions.showcaseShowOverview && overview.isNotNullOrBlank()) {
-            Text(
-                text = overview,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+            // The shared overview component, so app-wide overview settings apply here too
+            OverviewText(
+                overview = overview,
                 maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
+                onClick = {},
+                enabled = false,
             )
         }
     }
