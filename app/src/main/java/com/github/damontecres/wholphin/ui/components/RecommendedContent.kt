@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,6 +22,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.LibraryRowSettingsService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -81,6 +83,7 @@ class RecommendedViewModel
         private val mediaManagementService: MediaManagementService,
         private val suggestionService: SuggestionService,
         val serverReportService: ServerReportService,
+        private val libraryRowSettingsService: LibraryRowSettingsService,
         @Assisted private val parentId: UUID,
         @Assisted private val suggestionsType: BaseItemKind,
         @Assisted private val recommendedRows: List<RecommendedRow<*>>,
@@ -99,12 +102,33 @@ class RecommendedViewModel
         private val _state = MutableStateFlow(RecommendedState())
         val state: StateFlow<RecommendedState> = _state
 
+        /**
+         * The user's saved settings for this library's rows, by row key
+         */
+        private var rowSettings: Map<String, HomeRowViewOptions> = emptyMap()
+
+        /**
+         * The display settings for a row: the user's saved settings, or the library's default
+         */
+        private fun viewOptionsFor(
+            @StringRes title: Int,
+        ): HomeRowViewOptions = rowSettings[libraryRowSettingsService.rowKey(title)] ?: viewOptions
+
         fun init() {
             viewModelScope.launchDefault {
                 val limit =
                     userPreferencesService.flow
                         .first()
                         .appPreferences.homePagePreferences.maxItemsPerRow
+                rowSettings =
+                    try {
+                        serverRepository.currentUser
+                            ?.let { libraryRowSettingsService.get(it.id, parentId) }
+                            .orEmpty()
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error loading row settings for %s", parentId)
+                        emptyMap()
+                    }
                 _state.update {
                     it.copy(
                         loading = LoadingState.Loading,
@@ -123,7 +147,7 @@ class RecommendedViewModel
                                     HomeRowLoadingState.Success(
                                         title,
                                         items,
-                                        viewOptions,
+                                        viewOptionsFor(row.title),
                                         showViewMore = items.size >= limit,
                                     )
                                 } catch (ex: Exception) {
@@ -192,7 +216,7 @@ class RecommendedViewModel
                                         HomeRowLoadingState.Success(
                                             title,
                                             resource.items,
-                                            viewOptions,
+                                            viewOptionsFor(R.string.suggestions),
                                             showViewMore = resource.items.size >= limit,
                                         )
                                     }
@@ -201,7 +225,7 @@ class RecommendedViewModel
                                         HomeRowLoadingState.Success(
                                             title,
                                             emptyList(),
-                                            viewOptions,
+                                            viewOptionsFor(R.string.suggestions),
                                             showViewMore = false,
                                         )
                                     }
@@ -309,7 +333,7 @@ class RecommendedViewModel
                         initialPosition = row.items.size,
                         viewOptions =
                             ViewOptions(
-                                aspectRatio = viewOptions.aspectRatio,
+                                aspectRatio = row.viewOptions.aspectRatio,
                             ),
                     ),
                 )
@@ -326,7 +350,7 @@ class RecommendedViewModel
                         initialPosition = row.items.size,
                         viewOptions =
                             ViewOptions(
-                                aspectRatio = viewOptions.aspectRatio,
+                                aspectRatio = row.viewOptions.aspectRatio,
                             ),
                     ),
                 )

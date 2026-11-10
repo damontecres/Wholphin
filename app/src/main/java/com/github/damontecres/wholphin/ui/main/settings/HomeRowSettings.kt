@@ -55,7 +55,7 @@ import org.jellyfin.sdk.model.api.SortOrder
 @Composable
 fun HomeRowSettings(
     title: String,
-    config: HomeRowConfig,
+    config: HomeRowConfig?,
     preferenceOptions: List<PreferenceGroup<HomeRowViewOptions>>,
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,
@@ -123,11 +123,14 @@ fun HomeRowSettings(
                     )
                 }
             }
-            addAdditionalConfig(
-                config = config,
-                onConfigChange = onConfigChange,
-                onConfigAction = onConfigAction,
-            )
+            // Home rows have extra settings, such as combining Continue Watching and Next Up
+            if (config != null) {
+                addAdditionalConfig(
+                    config = config,
+                    onConfigChange = onConfigChange,
+                    onConfigAction = onConfigAction,
+                )
+            }
         }
     }
 }

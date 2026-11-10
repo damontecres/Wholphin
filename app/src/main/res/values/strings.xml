@@ -341,6 +341,7 @@
     <string name="max_homepage_items">Max items on home page rows</string>
     <string name="nav_drawer_pins_summary">Choose the default items to show, others will be hidden</string>
     <string name="nav_drawer_pins">Customize Navigation Drawer Items</string>
+    <string name="customize_rows_for">Rows for %1$s</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
     <string name="nav_drawer_switch_on_focus">Switch nav drawer pages on focus</string>
     <string name="pass_out_protection">Passout Protection</string>

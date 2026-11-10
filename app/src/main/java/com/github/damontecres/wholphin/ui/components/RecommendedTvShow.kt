@@ -20,7 +20,7 @@ import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import java.time.LocalDateTime
 import java.util.UUID
 
-private fun getRecommendedRows(
+internal fun getRecommendedTvShowRows(
     parentId: UUID,
     enableRewatching: Boolean,
 ) = listOf(
@@ -125,7 +125,7 @@ fun RecommendedTvShow(
                     parentId = parentId,
                     suggestionsType = BaseItemKind.SERIES,
                     recommendedRows =
-                        getRecommendedRows(
+                        getRecommendedTvShowRows(
                             parentId,
                             preferences.appPreferences.homePagePreferences.enableRewatchingNextUp,
                         ),

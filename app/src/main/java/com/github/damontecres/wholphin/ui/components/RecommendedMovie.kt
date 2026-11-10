@@ -18,7 +18,7 @@ import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import java.time.LocalDateTime
 import java.util.UUID
 
-private fun getRecommendedRows(parentId: UUID) =
+internal fun getRecommendedMovieRows(parentId: UUID) =
     listOf(
         RecommendedRow(
             title = R.string.continue_watching,
@@ -104,7 +104,7 @@ fun RecommendedMovie(
                 it.create(
                     parentId = parentId,
                     suggestionsType = BaseItemKind.MOVIE,
-                    recommendedRows = getRecommendedRows(parentId),
+                    recommendedRows = getRecommendedMovieRows(parentId),
                     viewOptions = HomeRowViewOptions(),
                 )
             },

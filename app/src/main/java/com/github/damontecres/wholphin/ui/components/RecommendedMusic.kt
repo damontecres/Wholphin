@@ -4,21 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatio
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import java.time.LocalDateTime
 import java.util.UUID
 
-private fun getRecommendedRows(parentId: UUID) =
+internal fun getRecommendedMusicRows(parentId: UUID) =
     listOf(
         RecommendedRow(
             title = R.string.recently_released,
@@ -88,13 +86,8 @@ fun RecommendedMusic(
                 it.create(
                     parentId = parentId,
                     suggestionsType = BaseItemKind.MUSIC_ALBUM,
-                    recommendedRows = getRecommendedRows(parentId),
-                    viewOptions =
-                        HomeRowViewOptions(
-                            aspectRatio = AspectRatio.SQUARE,
-                            heightDp = Cards.HEIGHT_EPISODE,
-                            showTitles = true,
-                        ),
+                    recommendedRows = getRecommendedMusicRows(parentId),
+                    viewOptions = recommendedRowDefaultViewOptions(CollectionType.MUSIC),
                 )
             },
         ),

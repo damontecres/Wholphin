@@ -41,9 +41,11 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.LibraryRowSettingsService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
@@ -51,20 +53,25 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.components.recommendedRowTitles
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.settings.MoveDirection
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
+import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 data class NavDrawerPin(
@@ -113,6 +120,7 @@ fun NavDrawerPreference(
 ) {
     val items by viewModel.state.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+    var customizeRowsFor by remember { mutableStateOf<ServerNavDrawerItem?>(null) }
     ClickPreference(
         title = title,
         summary = summary,
@@ -140,6 +148,20 @@ fun NavDrawerPreference(
             onMoveDown = { index ->
                 viewModel.update(items.move(MoveDirection.DOWN, index))
             },
+            onCustomizeRows = { customizeRowsFor = it },
+        )
+    }
+    customizeRowsFor?.let { library ->
+        val rowSettings by remember(library.itemId) { viewModel.libraryRowSettings(library.itemId) }
+            .collectAsState(emptyMap())
+        LibraryRowsDialog(
+            library = library,
+            rowSettings = rowSettings,
+            rowKey = viewModel::rowKey,
+            onSave = { rowKey, viewOptions ->
+                viewModel.saveLibraryRowSettings(library.itemId, rowKey, viewOptions)
+            },
+            onDismissRequest = { customizeRowsFor = null },
         )
     }
 }
@@ -151,6 +173,7 @@ fun NavDrawerPreferenceDialog(
     onClick: (Int) -> Unit,
     onMoveUp: (Int) -> Unit,
     onMoveDown: (Int) -> Unit,
+    onCustomizeRows: (ServerNavDrawerItem) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val bringIntoViewRequesters = remember { List(items.size) { BringIntoViewRequester() } }
@@ -196,6 +219,11 @@ fun NavDrawerPreferenceDialog(
                             onMoveDown.invoke(index)
                             ensureVisible(index + 1)
                         },
+                        // Only libraries with a recommended tab have rows to customize
+                        onCustomizeRows =
+                            (item.item as? ServerNavDrawerItem)
+                                ?.takeIf { recommendedRowTitles(it.type).isNotEmpty() }
+                                ?.let { library -> { onCustomizeRows.invoke(library) } },
                         modifier =
                             Modifier
                                 .animateItem()
@@ -217,6 +245,7 @@ fun NavDrawerPreferenceListItem(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     modifier: Modifier = Modifier,
+    onCustomizeRows: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier,
@@ -251,6 +280,9 @@ fun NavDrawerPreferenceListItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.wrapContentWidth(),
             ) {
+                if (onCustomizeRows != null) {
+                    MoveButton(R.string.fa_sliders, true, onCustomizeRows)
+                }
                 MoveButton(R.string.fa_caret_up, moveUpAllowed, onMoveUp)
                 MoveButton(R.string.fa_caret_down, moveDownAllowed, onMoveDown)
             }
@@ -305,6 +337,7 @@ class NavDrawerPreferencesViewModel
         private val navDrawerService: NavDrawerService,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
+        private val libraryRowSettingsService: LibraryRowSettingsService,
     ) : ViewModel() {
         val state = MutableStateFlow<List<NavDrawerPin>>(listOf())
 
@@ -342,6 +375,24 @@ class NavDrawerPreferencesViewModel
                             }
                         }
                 this@NavDrawerPreferencesViewModel.state.value = pins
+            }
+        }
+
+        fun rowKey(title: Int): String = libraryRowSettingsService.rowKey(title)
+
+        fun libraryRowSettings(libraryId: UUID): Flow<Map<String, HomeRowViewOptions>> =
+            serverRepository.currentUser?.let { libraryRowSettingsService.flow(it.id, libraryId) }
+                ?: flowOf(emptyMap())
+
+        fun saveLibraryRowSettings(
+            libraryId: UUID,
+            rowKey: String,
+            viewOptions: HomeRowViewOptions?,
+        ) {
+            viewModelScope.launchIO(ExceptionHandler(true)) {
+                serverRepository.currentUser?.let {
+                    libraryRowSettingsService.save(it.id, libraryId, rowKey, viewOptions)
+                }
             }
         }
 
