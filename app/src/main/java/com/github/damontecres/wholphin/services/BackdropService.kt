@@ -254,9 +254,6 @@ class BackdropService
     }
 
 /**
- * The result from determining the backdrop URL and extracted colors for the dynamic backdrop
- */
-/**
  * The item whose artwork is shown full screen for a focused showcase row
  */
 data class ShowcaseArtwork(
@@ -264,6 +261,9 @@ data class ShowcaseArtwork(
     val rotate: Boolean,
 )
 
+/**
+ * The result from determining the backdrop URL and extracted colors for the dynamic backdrop
+ */
 data class BackdropResult(
     val itemId: String?,
     val imageUrl: String?,
