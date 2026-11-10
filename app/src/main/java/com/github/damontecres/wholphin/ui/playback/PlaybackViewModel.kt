@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -358,6 +359,9 @@ class PlaybackViewModel
                                 item = queriedItem,
                                 recursive = true,
                                 shuffled = shuffled,
+                                // Play server playlists in their own order instead of sorted by name
+                                sortAndDirection =
+                                    if (queriedItem.type == BaseItemKind.PLAYLIST) null else SortAndDirection.DEFAULT,
                             )
                         }
                     when (val r = playlistResult) {
