@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.detail.isInProgressRecording
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -477,7 +478,7 @@ class PlaybackViewModel
                 this@PlaybackViewModel.currentItem = playlistItem
                 this@PlaybackViewModel.itemId = item.id
 
-                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
+                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL || item.isInProgressRecording
                 val base = item.data
 
                 // Use the provided playback parameters or else check if the database has some

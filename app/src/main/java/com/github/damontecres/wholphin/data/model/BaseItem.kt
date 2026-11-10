@@ -326,6 +326,10 @@ data class BaseItem(
                     } ?: Destination.MediaItem(this)
                 }
 
+                BaseItemKind.RECORDING -> {
+                    Destination.Playback(id, 0)
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }
