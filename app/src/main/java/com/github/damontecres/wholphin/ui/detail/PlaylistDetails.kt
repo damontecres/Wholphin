@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,7 +22,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalResources
@@ -33,6 +38,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -41,7 +47,9 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.collectLatestIn
@@ -98,6 +106,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.playlistApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
@@ -650,6 +659,9 @@ fun CollectionFolderViewScope.PlaylistItem(
                             text = indexText,
                         )
                     }
+                    if (viewOptions.cinematic && !dense) {
+                        PlaylistItemThumbnail(item)
+                    }
                     if (item?.type == BaseItemKind.AUDIO) {
                         MusicQueueMarker(
                             isPlaying = isPlaying,
@@ -701,6 +713,32 @@ fun CollectionFolderViewScope.PlaylistItem(
             }
         }
     }
+}
+
+/**
+ * Small image shown at the start of a playlist row in cinematic mode
+ */
+@Composable
+private fun PlaylistItemThumbnail(
+    item: BaseItem?,
+    modifier: Modifier = Modifier,
+) {
+    val isAudio = item?.type == BaseItemKind.AUDIO
+    val imageUrlService = LocalImageUrlService.current
+    val imageUrl =
+        remember(item) {
+            imageUrlService.getItemImageUrl(item, if (isAudio) ImageType.PRIMARY else ImageType.THUMB)
+        }
+    AsyncImage(
+        model = imageUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier =
+            modifier
+                .height(48.dp)
+                .aspectRatio(if (isAudio) AspectRatio.SQUARE.ratio else AspectRatio.WIDE.ratio)
+                .clip(RoundedCornerShape(4.dp)),
+    )
 }
 
 @Composable

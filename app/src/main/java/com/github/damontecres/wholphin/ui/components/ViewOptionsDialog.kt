@@ -154,6 +154,7 @@ data class ViewOptions(
     val showTitles: Boolean = true,
     val type: ViewOptionsType = ViewOptionsType.GRID,
     val extras: ViewOptionsExtras = ViewOptionsExtras.None,
+    val cinematic: Boolean = false,
 ) {
     companion object {
         val ViewOptionsColumns =
@@ -212,6 +213,15 @@ data class ViewOptions(
                 defaultValue = false,
                 getter = { it.showBackdrop },
                 setter = { vo, value -> vo.copy(showBackdrop = value) },
+            )
+        val ViewOptionsCinematic =
+            AppSwitchPreference<ViewOptions>(
+                title = R.string.cinematic_view,
+                defaultValue = false,
+                getter = { it.cinematic },
+                // Cinematic uses the backdrop, so turn it on too
+                setter = { vo, value -> vo.copy(cinematic = value, showBackdrop = value || vo.showBackdrop) },
+                summary = R.string.cinematic_view_summary,
             )
         val ViewOptionsShowTitles =
             AppSwitchPreference<ViewOptions>(
@@ -311,6 +321,7 @@ data class ViewOptions(
         private val LIST_OPTIONS =
             listOf(
                 ViewOptionsTypePref,
+                ViewOptionsCinematic,
                 ViewOptionsDetailHeader,
                 ViewOptionsBackdrop,
                 ViewOptionsSpacing,

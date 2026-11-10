@@ -579,6 +579,8 @@
     <string name="increase_all_cards_size">Increase size for all cards</string>
     <string name="decrease_all_cards_size">Decrease size for all cards</string>
     <string name="use_thumb_images">Use thumb images</string>
+    <string name="cinematic_view">Cinematic</string>
+    <string name="cinematic_view_summary">Large artwork and details for the focused item above the list</string>
     <string name="settings_saved">Settings saved</string>
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>

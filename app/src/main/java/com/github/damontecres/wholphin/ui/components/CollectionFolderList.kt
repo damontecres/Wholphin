@@ -65,6 +65,7 @@ import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -128,17 +129,28 @@ fun CollectionFolderViewScope.CollectionFolderList(
                     else -> 48.dp
                 },
         )
+        if (viewOptions.cinematic) {
+            // Large details for the focused item, shown over the backdrop
+            HomePageHeader(
+                item = focusedItem,
+                showLogo = true,
+                modifier =
+                    Modifier
+                        .padding(start = HeaderUtils.startPadding, top = topPadding)
+                        .height(HeaderUtils.height),
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 Modifier
-                    .padding(top = topPadding, bottom = 16.dp)
+                    .padding(top = if (viewOptions.cinematic) 0.dp else topPadding, bottom = 16.dp)
                     .onFocusChanged {
                         contentHashFocus = it.hasFocus
                     },
         ) {
             AnimatedVisibility(
-                visible = viewOptions.showDetails,
+                visible = viewOptions.showDetails && !viewOptions.cinematic,
                 enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
                 exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),
             ) {
