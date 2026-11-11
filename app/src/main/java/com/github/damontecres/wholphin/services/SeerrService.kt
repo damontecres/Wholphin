@@ -13,10 +13,13 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.RequestStatus
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
+import com.github.damontecres.wholphin.data.model.SeerrDownloadItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.data.model.overallProgressPercent
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrProfile
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRequestData
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRootFolder
@@ -359,101 +362,110 @@ class SeerrService
                 else -> throw IllegalArgumentException("Unsupported type ${item::class.qualifiedName}")
             }
 
-        suspend fun createDiscoverItem(movie: MovieResult): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(movie: MovieResult): DiscoverItem {
+            val downloads = movie.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = movie.id,
                 type = SeerrItemType.MOVIE,
                 title = movie.title,
                 subtitle = null,
                 overview = movie.overview,
-                availability =
-                    SeerrAvailability.from(movie.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = movie.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
                 jellyfinItemId = movie.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(movie: MovieDetails): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(movie: MovieDetails): DiscoverItem {
+            val downloads = movie.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = movie.id ?: -1,
                 type = SeerrItemType.MOVIE,
                 title = movie.title,
                 subtitle = null,
                 overview = movie.overview,
-                availability =
-                    SeerrAvailability.from(movie.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = movie.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(movie.releaseDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, movie.posterPath, movie.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, movie.backdropPath, movie.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, movie.mediaInfo),
                 jellyfinItemId = movie.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(tv: TvResult): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(tv: TvResult): DiscoverItem {
+            val downloads = tv.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = tv.id!!,
                 type = SeerrItemType.TV,
                 title = tv.name,
                 subtitle = null,
                 overview = tv.overview,
-                availability =
-                    SeerrAvailability.from(tv.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = tv.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
                 jellyfinItemId = tv.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(tv: TvDetails): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(tv: TvDetails): DiscoverItem {
+            val downloads = tv.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = tv.id!!,
                 type = SeerrItemType.TV,
                 title = tv.name,
                 subtitle = null,
                 overview = tv.overview,
-                availability =
-                    SeerrAvailability.from(tv.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = tv.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(tv.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, tv.posterPath, tv.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, tv.backdropPath, tv.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, tv.mediaInfo),
                 jellyfinItemId = tv.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(search: SeerrSearchResult): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(search: SeerrSearchResult): DiscoverItem {
+            val downloads = search.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = search.id,
                 type = SeerrItemType.fromString(search.mediaType),
                 title = search.title ?: search.name,
                 subtitle = null,
                 overview = search.overview,
-                availability =
-                    SeerrAvailability.from(search.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = search.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(search.releaseDate ?: search.firstAirDate),
                 posterUrl = createImageUrl(ImageType.PRIMARY, search.posterPath, search.mediaInfo),
                 backDropUrl = createImageUrl(ImageType.BACKDROP, search.backdropPath, search.mediaInfo),
                 logoUrl = createImageUrl(ImageType.LOGO, null, search.mediaInfo),
                 jellyfinItemId = search.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(credit: CreditCast): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(credit: CreditCast): DiscoverItem {
+            val downloads = credit.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = credit.id!!,
                 type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
                 title = credit.name ?: credit.title,
                 subtitle = credit.character,
                 overview = credit.overview,
-                availability =
-                    SeerrAvailability.from(credit.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = credit.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
@@ -469,18 +481,20 @@ class SeerrService
                     ),
                 logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
                 jellyfinItemId = credit.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
 
-        suspend fun createDiscoverItem(credit: CreditCrew): DiscoverItem =
-            DiscoverItem(
+        suspend fun createDiscoverItem(credit: CreditCrew): DiscoverItem {
+            val downloads = credit.mediaInfo?.extractDownloads().orEmpty()
+            return DiscoverItem(
                 id = credit.id!!,
                 type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
                 title = credit.name ?: credit.title,
                 subtitle = credit.job,
                 overview = credit.overview,
-                availability =
-                    SeerrAvailability.from(credit.mediaInfo?.status)
-                        ?: SeerrAvailability.UNKNOWN,
+                availability = credit.mediaInfo.effectiveAvailability(),
                 releaseDate = toLocalDate(credit.releaseDate ?: credit.firstAirDate),
                 posterUrl =
                     createImageUrl(
@@ -496,7 +510,10 @@ class SeerrService
                     ),
                 logoUrl = createImageUrl(ImageType.LOGO, null, credit.mediaInfo),
                 jellyfinItemId = credit.mediaInfo?.jellyfinId,
+                downloadProgress = downloads.overallProgressPercent(),
+                downloads = downloads,
             )
+        }
     }
 
 val MediaInfo.jellyfinId: UUID?
@@ -504,3 +521,49 @@ val MediaInfo.jellyfinId: UUID?
 
 val MediaInfo.jellyfinIdAsString: String?
     get() = jellyfinMediaId4k ?: jellyfinMediaId
+
+fun MediaInfo?.effectiveAvailability(): SeerrAvailability {
+    if (this == null) return SeerrAvailability.UNKNOWN
+    val primary = SeerrAvailability.from(status) ?: SeerrAvailability.UNKNOWN
+    val fourK = SeerrAvailability.from(status4k) ?: SeerrAvailability.UNKNOWN
+    val base = if (fourK > primary) fourK else primary
+    if (base != SeerrAvailability.UNKNOWN) return base
+    val reqs = requests.orEmpty()
+    return when {
+        reqs.any { RequestStatus.from(it.status) == RequestStatus.APPROVED } -> SeerrAvailability.PROCESSING
+        reqs.any { RequestStatus.from(it.status) == RequestStatus.PENDING } -> SeerrAvailability.PENDING
+        else -> SeerrAvailability.UNKNOWN
+    }
+}
+
+fun MediaInfo.extractDownloads(): List<SeerrDownloadItem> {
+    val regular =
+        downloadStatus.orEmpty().map {
+            SeerrDownloadItem(
+                title = it.title,
+                status = it.status,
+                size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                timeLeft = it.timeLeft?.takeIf { t -> t.isNotNullOrBlank() },
+                estimatedCompletionTime = it.estimatedCompletionTime,
+                seasonNumber = it.episode?.seasonNumber,
+                episodeNumber = it.episode?.episodeNumber,
+                is4k = false,
+            )
+        }
+    val fourK =
+        downloadStatus4k.orEmpty().map {
+            SeerrDownloadItem(
+                title = it.title,
+                status = it.status,
+                size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                timeLeft = it.timeLeft?.takeIf { t -> t.isNotNullOrBlank() },
+                estimatedCompletionTime = it.estimatedCompletionTime,
+                seasonNumber = it.episode?.seasonNumber,
+                episodeNumber = it.episode?.episodeNumber,
+                is4k = true,
+            )
+        }
+    return regular + fourK
+}

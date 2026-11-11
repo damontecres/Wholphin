@@ -47,6 +47,8 @@ import com.github.damontecres.wholphin.data.model.canRequestMovies
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.services.effectiveAvailability
+import com.github.damontecres.wholphin.services.extractDownloads
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
@@ -57,11 +59,14 @@ import com.github.damontecres.wholphin.ui.components.HeaderUtils
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.discover.SeerrDownloadProgressBanner
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 
@@ -102,6 +107,19 @@ fun DiscoverMovieDetails(
 
         is DataLoadingState.Success<MovieDetails> -> {
             val movie = st.data
+            val downloads = remember(movie.mediaInfo) { movie.mediaInfo?.extractDownloads().orEmpty() }
+            val availability = remember(movie.mediaInfo) { movie.mediaInfo.effectiveAvailability() }
+            LaunchedEffect(movie.id, downloads.isNotEmpty(), availability) {
+                if (downloads.isNotEmpty() ||
+                    availability == SeerrAvailability.PENDING ||
+                    availability == SeerrAvailability.PROCESSING
+                ) {
+                    while (isActive) {
+                        delay(5_000L)
+                        viewModel.refreshStatus()
+                    }
+                }
+            }
             DiscoverMovieDetailsContent(
                 preferences = preferences,
                 movie = movie,
@@ -235,10 +253,18 @@ fun DiscoverMovieDetailsContent(
                                 .fillMaxWidth()
                                 .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                     )
+                    val downloads = remember(movie.mediaInfo) { movie.mediaInfo?.extractDownloads().orEmpty() }
+                    if (downloads.isNotEmpty()) {
+                        SeerrDownloadProgressBanner(
+                            downloads = downloads,
+                            modifier =
+                                Modifier
+                                    .padding(start = HeaderUtils.startPadding, bottom = 12.dp)
+                                    .fillMaxWidth(0.6f),
+                        )
+                    }
                     ExpandableDiscoverButtons(
-                        availability =
-                            SeerrAvailability.from(movie.mediaInfo?.status)
-                                ?: SeerrAvailability.UNKNOWN,
+                        availability = movie.mediaInfo.effectiveAvailability(),
                         requestOnClick = requestOnClick,
                         cancelOnClick = cancelOnClick,
                         moreOnClick = moreOnClick,

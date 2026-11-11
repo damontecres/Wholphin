@@ -139,6 +139,13 @@ class NavDrawerViewModel
                     )
                 }
 
+                NavDrawerItem.ActiveRequests -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(
+                        Destination.ActiveRequests,
+                    )
+                }
+
                 is ServerNavDrawerItem -> {
                     setIndex(index)
                     navigationManager.navigateToFromDrawer(item.destination)
@@ -170,6 +177,7 @@ class NavDrawerViewModel
                             is ServerNavDrawerItem -> it.destination
                             is NavDrawerItem.Favorites -> Destination.Favorites
                             is NavDrawerItem.Discover -> Destination.Discover
+                            is NavDrawerItem.ActiveRequests -> Destination.ActiveRequests
                             else -> null
                         }
                     }
@@ -243,6 +251,13 @@ sealed interface NavDrawerItem {
             get() = "a_discover"
 
         override fun name(context: Context): String = context.getString(R.string.discover)
+    }
+
+    object ActiveRequests : NavDrawerItem {
+        override val id: String
+            get() = "a_active_requests"
+
+        override fun name(context: Context): String = context.getString(R.string.active_requests)
     }
 }
 
@@ -674,6 +689,10 @@ fun NavigationDrawerScope.NavItem(
 
                 NavDrawerItem.Discover -> {
                     R.string.fa_magnifying_glass_plus
+                }
+
+                NavDrawerItem.ActiveRequests -> {
+                    R.string.fa_download
                 }
 
                 is ServerNavDrawerItem -> {

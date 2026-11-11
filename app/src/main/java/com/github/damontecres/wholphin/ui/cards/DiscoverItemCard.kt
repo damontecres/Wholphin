@@ -8,12 +8,16 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,7 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -47,6 +53,8 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @Composable
 fun DiscoverItemCard(
@@ -55,6 +63,7 @@ fun DiscoverItemCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     showOverlay: Boolean = true,
+    subtitleOverride: String? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     width: Dp = Cards.height2x3 * AspectRatios.TALL,
 ) {
@@ -112,31 +121,42 @@ fun DiscoverItemCard(
                         Modifier
                             .fillMaxSize(),
                 )
-                when (item?.availability) {
-                    SeerrAvailability.PENDING,
-                    SeerrAvailability.PROCESSING,
-                    -> {
-                        PendingIndicator(Modifier.align(Alignment.TopEnd))
-                    }
+                if (item?.isActivelyDownloading == true) {
+                    DownloadingIndicator(
+                        progressPercent = item.downloadProgress,
+                        modifier = Modifier.align(Alignment.TopEnd),
+                    )
+                } else {
+                    when (item?.availability) {
+                        SeerrAvailability.PENDING,
+                        SeerrAvailability.PROCESSING,
+                        -> {
+                            if (item.releaseDate?.isAfter(LocalDate.now()) == true) {
+                                FutureReleaseIndicator(Modifier.align(Alignment.TopEnd))
+                            } else {
+                                PendingIndicator(Modifier.align(Alignment.TopEnd))
+                            }
+                        }
 
-                    SeerrAvailability.PARTIALLY_AVAILABLE -> {
-                        PartiallyAvailableIndicator(Modifier.align(Alignment.TopEnd))
-                    }
+                        SeerrAvailability.PARTIALLY_AVAILABLE -> {
+                            PartiallyAvailableIndicator(Modifier.align(Alignment.TopEnd))
+                        }
 
-                    SeerrAvailability.AVAILABLE,
-                    -> {
-                        AvailableIndicator(Modifier.align(Alignment.TopEnd))
-                    }
+                        SeerrAvailability.AVAILABLE,
+                        -> {
+                            AvailableIndicator(Modifier.align(Alignment.TopEnd))
+                        }
 
-                    SeerrAvailability.BLOCKLISTED -> {
-                        // TODO handle block listed
+                        SeerrAvailability.BLOCKLISTED -> {
+                            // TODO handle block listed
 //                        BlocklistedIndicator(Modifier.align(Alignment.TopEnd))
-                    }
+                        }
 
-                    SeerrAvailability.UNKNOWN,
-                    SeerrAvailability.DELETED,
-                    null,
-                    -> {
+                        SeerrAvailability.UNKNOWN,
+                        SeerrAvailability.DELETED,
+                        null,
+                        -> {
+                        }
                     }
                 }
                 if (showOverlay) {
@@ -176,8 +196,41 @@ fun DiscoverItemCard(
                         )
                     }
                 }
+                if (item?.isActivelyDownloading == true) {
+                    val fraction =
+                        ((item.downloadProgress ?: 0.0) / 100.0)
+                            .toFloat()
+                            .coerceIn(0.05f, 1f)
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .background(Color.Black.copy(alpha = 0.65f))
+                                .clip(RectangleShape),
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterStart)
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(fraction)
+                                    .background(MaterialTheme.colorScheme.tertiary),
+                        )
+                    }
+                }
             }
         }
+        val secondaryText =
+            subtitleOverride
+                ?: if (item?.isActivelyDownloading == true && item.downloadProgress != null) {
+                    val pct = "${item.downloadProgress.roundToInt()}%"
+                    val year = item.releaseDate?.year?.toString()
+                    if (year != null) "$pct \u2022 $year" else pct
+                } else {
+                    item?.releaseDate?.year?.toString() ?: ""
+                }
         SlidingCardText(focused) {
             Text(
                 text = item?.title ?: "",
@@ -192,7 +245,7 @@ fun DiscoverItemCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.releaseDate?.year?.toString() ?: "",
+                text = secondaryText,
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall,
@@ -204,6 +257,68 @@ fun DiscoverItemCard(
                         .enableMarquee(focusedAfterDelay),
             )
         }
+    }
+}
+
+@Composable
+fun DownloadingIndicator(
+    progressPercent: Double?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = RoundedCornerShape(50),
+                ).background(
+                    color = AppColors.Discover.Blue.copy(alpha = .9f),
+                    shape = RoundedCornerShape(50),
+                ).padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_download),
+            fontFamily = FontAwesome,
+            fontSize = 9.sp,
+            color = Color.White,
+        )
+        if (progressPercent != null && progressPercent > 0.0) {
+            Text(
+                text = "${progressPercent.roundToInt()}%",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+            )
+        }
+    }
+}
+
+@Composable
+fun FutureReleaseIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = CircleShape,
+                ).background(
+                    color = AppColors.Discover.Purple.copy(alpha = .9f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_calendar_days),
+            fontFamily = FontAwesome,
+            fontSize = 9.sp,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.Center),
+        )
     }
 }
 

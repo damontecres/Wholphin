@@ -62,4 +62,7 @@
     <string name="fa_xmark" translatable="false">&#xf00d;</string>
     <string name="fa_dice" translatable="false">&#xf522;</string>
     <string name="fa_circle_xmark" translatable="false">&#xf057;</string>
+    <string name="fa_calendar" translatable="false">&#xf133;</string>
+    <string name="fa_calendar_days" translatable="false">&#xf073;</string>
+    <string name="fa_hourglass_half" translatable="false">&#xf252;</string>
 </resources>

@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.detail.music.NowPlayingPage
 import com.github.damontecres.wholphin.ui.detail.music.SongDetailsPage
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
+import com.github.damontecres.wholphin.ui.discover.ActiveRequestsPage
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
 import com.github.damontecres.wholphin.ui.discover.DiscoverRequestGrid
 import com.github.damontecres.wholphin.ui.main.HomePage
@@ -378,6 +379,14 @@ fun DestinationContent(
         Destination.Discover -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             DiscoverPage(
+                preferences = preferences,
+                modifier = modifier,
+            )
+        }
+
+        Destination.ActiveRequests -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+            ActiveRequestsPage(
                 preferences = preferences,
                 modifier = modifier,
             )

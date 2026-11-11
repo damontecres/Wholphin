@@ -44,13 +44,13 @@ val isBuildingBundle =
 
 val gitTags =
     providers
-        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
+        .exec { isIgnoreExitValue = true; commandLine("git", "tag", "--list", "v*", "p*") }
         .standardOutput.asText
         .get()
 
 val gitDescribe =
     providers
-        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
+        .exec { isIgnoreExitValue = true; commandLine("git", "describe", "--tags", "--long", "--match=v*") }
         .standardOutput.asText
         .getOrElse("v0.0.0")
 

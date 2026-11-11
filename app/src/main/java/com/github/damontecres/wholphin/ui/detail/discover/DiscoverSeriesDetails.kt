@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.data.model.canRequestTv
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.services.extractDownloads
 import com.github.damontecres.wholphin.services.jellyfinId
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
@@ -58,6 +59,7 @@ import com.github.damontecres.wholphin.ui.components.QuickDetailsText
 import com.github.damontecres.wholphin.ui.components.TitleOrLogo
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.discover.SeerrDownloadProgressBanner
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.listToDotString
@@ -68,6 +70,8 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.successValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -107,6 +111,18 @@ fun DiscoverSeriesDetails(
 
         is DataLoadingState.Success<TvDetails> -> {
             val item = st.data
+            val downloads = remember(item.mediaInfo) { item.mediaInfo?.extractDownloads().orEmpty() }
+            LaunchedEffect(item.id, downloads.isNotEmpty(), state.availability) {
+                if (downloads.isNotEmpty() ||
+                    state.availability == SeerrAvailability.PENDING ||
+                    state.availability == SeerrAvailability.PROCESSING
+                ) {
+                    while (isActive) {
+                        delay(5_000L)
+                        viewModel.refreshStatus()
+                    }
+                }
+            }
             val userConfig by viewModel.userConfig.collectAsState(null)
             DiscoverSeriesDetailsContent(
                 preferences = preferences,
@@ -276,6 +292,16 @@ fun DiscoverSeriesDetailsContent(
                                     .fillMaxWidth()
                                     .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                         )
+                        val downloads = remember(series.mediaInfo) { series.mediaInfo?.extractDownloads().orEmpty() }
+                        if (downloads.isNotEmpty()) {
+                            SeerrDownloadProgressBanner(
+                                downloads = downloads,
+                                modifier =
+                                    Modifier
+                                        .padding(start = HeaderUtils.startPadding, bottom = 12.dp)
+                                        .fillMaxWidth(0.6f),
+                            )
+                        }
                         ExpandableDiscoverButtons(
                             availability = availability,
                             requestOnClick = requestOnClick,

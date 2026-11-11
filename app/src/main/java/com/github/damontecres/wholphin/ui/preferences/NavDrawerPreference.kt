@@ -328,7 +328,7 @@ class NavDrawerPreferencesViewModel
                         .sortedBy {
                             navDrawerPins[it.id]?.order?.takeIf { it >= 0 } ?: Int.MAX_VALUE
                         }.mapNotNull {
-                            if (!seerr && it is NavDrawerItem.Discover) {
+                            if (!seerr && (it is NavDrawerItem.Discover || it is NavDrawerItem.ActiveRequests)) {
                                 null
                             } else {
                                 // Assume pinned if unknown

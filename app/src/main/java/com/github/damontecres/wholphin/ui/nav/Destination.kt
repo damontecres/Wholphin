@@ -149,6 +149,9 @@ sealed class Destination(
     data object Discover : Destination(false)
 
     @Serializable
+    data object ActiveRequests : Destination(false)
+
+    @Serializable
     data class DiscoveredItem(
         val item: DiscoverItem,
         // Index to scroll to on the person page grid

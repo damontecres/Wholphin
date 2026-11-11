@@ -1304,6 +1304,10 @@ components:
           type: integer
           example: 0
           description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
+        status4k:
+          type: integer
+          example: 0
+          description: Availability of the media in 4K. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
         seasons:
           type: array
           readOnly: true
@@ -1327,6 +1331,62 @@ components:
           type: string
         jellyfinMediaId4k:
           type: string
+        downloadStatus:
+          type: array
+          readOnly: true
+          nullable: true
+          items:
+            $ref: '#/components/schemas/DownloadingItem'
+        downloadStatus4k:
+          type: array
+          readOnly: true
+          nullable: true
+          items:
+            $ref: '#/components/schemas/DownloadingItem'
+    DownloadingItemEpisode:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+          nullable: true
+        episodeNumber:
+          type: integer
+          nullable: true
+        absoluteEpisodeNumber:
+          type: integer
+          nullable: true
+        id:
+          type: integer
+          nullable: true
+    DownloadingItem:
+      type: object
+      properties:
+        mediaType:
+          type: string
+          nullable: true
+        externalId:
+          type: integer
+          nullable: true
+        size:
+          type: number
+          nullable: true
+        sizeLeft:
+          type: number
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        timeLeft:
+          type: string
+          nullable: true
+        estimatedCompletionTime:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        episode:
+          $ref: '#/components/schemas/DownloadingItemEpisode'
     Cast:
       type: object
       properties:

@@ -95,6 +95,13 @@ class DiscoverMovieViewModel
                 }
             }
 
+        fun refreshStatus() {
+            viewModelScope.launchIO {
+                fetchAndSetItem().await()
+                updateCanCancel()
+            }
+        }
+
         fun init(): Job =
             viewModelScope.launchIO {
                 Timber.v("Init for movie %s", item.id)

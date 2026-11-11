@@ -89,6 +89,42 @@ enum class RequestStatus(
 }
 
 /**
+ * Represents an actively downloading item (movie or episode) from Seerr's download tracker
+ */
+@Stable
+@Serializable
+data class SeerrDownloadItem(
+    val title: String? = null,
+    val status: String? = null,
+    val size: Long = 0L,
+    val sizeLeft: Long = 0L,
+    val timeLeft: String? = null,
+    val estimatedCompletionTime: String? = null,
+    val seasonNumber: Int? = null,
+    val episodeNumber: Int? = null,
+    val is4k: Boolean = false,
+) {
+    val downloadedBytes: Long
+        get() = (size - sizeLeft).coerceIn(0L, size.coerceAtLeast(0L))
+
+    val progressPercent: Double?
+        get() =
+            if (size > 0L) {
+                ((downloadedBytes.toDouble() / size.toDouble()) * 100.0).coerceIn(0.0, 100.0)
+            } else {
+                null
+            }
+}
+
+fun List<SeerrDownloadItem>.overallProgressPercent(): Double? {
+    if (isEmpty()) return null
+    val totalSize = sumOf { it.size.coerceAtLeast(0L) }
+    if (totalSize <= 0L) return 0.0
+    val totalLeft = sumOf { it.sizeLeft.coerceIn(0L, it.size.coerceAtLeast(0L)) }
+    return (((totalSize - totalLeft).toDouble() / totalSize.toDouble()) * 100.0).coerceIn(0.0, 100.0)
+}
+
+/**
  * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well, see [availability].
  */
 @Stable
@@ -105,10 +141,15 @@ data class DiscoverItem(
     val backDropUrl: String?,
     val logoUrl: String?,
     val jellyfinItemId: UUID?,
+    val downloadProgress: Double? = null,
+    val downloads: List<SeerrDownloadItem> = emptyList(),
 ) : CardGridItem {
     override val gridId: String get() = id.toString()
     override val playable: Boolean = false
     override val sortName: String get() = title ?: ""
+
+    val isActivelyDownloading: Boolean
+        get() = downloads.isNotEmpty() || (downloadProgress != null && downloadProgress >= 0.0)
 
     val destination: Destination
         get() {

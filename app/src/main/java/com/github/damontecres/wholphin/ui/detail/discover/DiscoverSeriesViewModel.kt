@@ -99,6 +99,15 @@ class DiscoverSeriesViewModel
                 }
             }
 
+        fun refreshStatus() {
+            viewModelScope.launchIO {
+                fetchAndSetItem().await()?.let {
+                    updateSeasonStatus(it)
+                    updateAvailability()
+                }
+            }
+        }
+
         fun init(): Job =
             viewModelScope.launchIO {
                 Timber.v("Init for tv %s", item.id)
