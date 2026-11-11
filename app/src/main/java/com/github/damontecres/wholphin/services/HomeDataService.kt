@@ -41,8 +41,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.DateTime
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
@@ -279,7 +279,7 @@ class HomeDataService
                             isPlayed = null, // Server will handle user's preference
                         )
                     val latest =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getLatestMedia(request)
                             .content
                             .map { BaseItem(it, row.viewOptions.useSeries) }
@@ -387,7 +387,7 @@ class HomeDataService
 
                     // Not using getItemName because we want to throw the 404
                     val title =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(
                                 userId = serverRepository.currentUser?.id,
                                 itemId = row.parentId,
@@ -641,7 +641,7 @@ class HomeDataService
 
                 is HomeRowConfig.Suggestions -> {
                     val library =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(itemId = row.parentId)
                             .content
                     val title = ResArgStringProvider(R.string.suggestions_for, library.name ?: "")

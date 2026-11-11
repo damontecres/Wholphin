@@ -11,7 +11,7 @@ import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.nav.Destination
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,7 +65,7 @@ class TrailerService
             val localTrailerCount = item.data.localTrailerCount ?: return emptyList()
             val localTrailers =
                 if (localTrailerCount > 0) {
-                    api.userLibraryApi.getLocalTrailers(item.id).content.map {
+                    api.libraryApi.getLocalTrailers(item.id).content.map {
                         LocalTrailer(BaseItem.from(it, api))
                     }
                 } else {

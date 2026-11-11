@@ -99,9 +99,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -154,7 +152,7 @@ class AlbumViewModel
                 try {
                     val itemDeferred =
                         async {
-                            api.userLibraryApi
+                            api.libraryApi
                                 .getItem(itemId = itemId)
                                 .content
                                 .let { BaseItem(it, false) }
@@ -253,7 +251,7 @@ class AlbumViewModel
         ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             val album =
-                api.userLibraryApi
+                api.libraryApi
                     .getItem(itemId = itemId)
                     .content
                     .let { BaseItem(it, false) }
@@ -281,7 +279,7 @@ suspend fun getBackdropItemForAlbum(
                 ?.shuffled()
                 ?.take(50)
                 ?.map { it.id }
-        return api.itemsApi
+        return api.libraryApi
             .getItems(
                 ids = artistIds,
                 imageTypes = listOf(ImageType.BACKDROP),

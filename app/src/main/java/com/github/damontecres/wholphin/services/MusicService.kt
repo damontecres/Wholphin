@@ -44,8 +44,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.audioApi
 import org.jellyfin.sdk.api.client.extensions.instantMixApi
-import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -311,7 +311,7 @@ class MusicService
                         } == true
             val url =
                 if (needsAc3Transcode) {
-                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                    api.audioApi.getUniversalAudioStreamUrl(
                         itemId = audio.id,
                         container = listOf("mka"),
                         transcodingContainer = "mka",
@@ -320,7 +320,7 @@ class MusicService
                         audioCodec = Codec.Audio.AC3,
                     )
                 } else {
-                    api.universalAudioApi.getUniversalAudioStreamUrl(
+                    api.audioApi.getUniversalAudioStreamUrl(
                         itemId = audio.id,
                         container = audioFormats,
                     )

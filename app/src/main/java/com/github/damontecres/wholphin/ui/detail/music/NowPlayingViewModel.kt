@@ -48,8 +48,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.lyricsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.lyricApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.LyricDto
@@ -190,7 +190,7 @@ class NowPlayingViewModel
                     lyricCache.getOrPut(audio.id) {
                         // TODO remote lyrics?
                         try {
-                            api.lyricsApi.getLyrics(audio.id).content
+                            api.lyricApi.getLyrics(audio.id).content
                         } catch (ex: CancellationException) {
                             throw ex
                         } catch (ex: Exception) {
@@ -213,7 +213,7 @@ class NowPlayingViewModel
                         if (showBackdrop && audio != null) {
                             try {
                                 val song =
-                                    api.userLibraryApi
+                                    api.libraryApi
                                         .getItem(audio.id)
                                         .content
                                 val songBackdrops = song.backdropImageUrls()

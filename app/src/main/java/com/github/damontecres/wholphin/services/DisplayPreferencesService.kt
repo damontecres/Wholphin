@@ -6,7 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
+import org.jellyfin.sdk.api.client.extensions.displayPreferenceApi
 import org.jellyfin.sdk.model.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,7 +24,7 @@ class DisplayPreferencesService
             userId: UUID,
             displayPreferencesId: String = DEFAULT_DISPLAY_PREF_ID,
             client: String = DEFAULT_CLIENT,
-        ) = api.displayPreferencesApi
+        ) = api.displayPreferenceApi
             .getDisplayPreferences(
                 userId = userId,
                 displayPreferencesId = displayPreferencesId,
@@ -43,7 +43,7 @@ class DisplayPreferencesService
                     current.customPrefs.toMutableMap().apply {
                         block.invoke(this)
                     }
-                api.displayPreferencesApi.updateDisplayPreferences(
+                api.displayPreferenceApi.updateDisplayPreferences(
                     displayPreferencesId = displayPreferencesId,
                     userId = userId,
                     client = client,

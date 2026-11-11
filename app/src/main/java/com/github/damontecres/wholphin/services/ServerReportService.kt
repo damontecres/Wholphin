@@ -14,8 +14,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
@@ -50,7 +50,7 @@ class ServerReportService
          */
         fun sendMediaReportFor(itemId: UUID) {
             ioScope.launchIO(ExceptionHandler(autoToast = true)) {
-                val item = api.userLibraryApi.getItem(itemId = itemId).content
+                val item = api.libraryApi.getItem(itemId = itemId).content
                 sendMediaReportFor(item)
             }
         }
@@ -60,7 +60,7 @@ class ServerReportService
          */
         suspend fun sendMediaReportFor(item: BaseItemDto) {
             val sources =
-                item.mediaSources ?: api.userLibraryApi
+                item.mediaSources ?: api.libraryApi
                     .getItem(itemId = item.id)
                     .content.mediaSources
             val sourcesJson = json.encodeToString(sources)
@@ -82,7 +82,8 @@ class ServerReportService
                     """.trimIndent()
             body.chunked(2048).forEach { Timber.w(it) }
             Timber.w("End send media info")
-            val response by api.clientLogApi.logFile(body)
+
+            val response by api.systemApi.logFile(body)
             showToast(context, "Sent! Filename=${response.fileName}")
         }
 
@@ -104,7 +105,7 @@ class ServerReportService
             val logcat = getLogCatLines().joinToString("\n") { it.text }
             val header = buildLogHeader("Send App Logs")
             Timber.w(header)
-            val response by api.clientLogApi.logFile(header + "\n\n" + logcat)
+            val response by api.systemApi.logFile(header + "\n\n" + logcat)
             showToast(context, "Sent! Filename=${response.fileName}")
         }
     }

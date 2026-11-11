@@ -18,7 +18,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -56,7 +56,7 @@ class SearchForViewModel
                             sortOrder = listOf(SortOrder.DESCENDING),
                             limit = 25,
                         )
-                    val recent = api.itemsApi.getItems(request).toBaseItems(api, false)
+                    val recent = api.libraryApi.getItems(request).toBaseItems(api, false)
                     state.update {
                         it.copy(recent = SearchResult.Success(recent))
                     }

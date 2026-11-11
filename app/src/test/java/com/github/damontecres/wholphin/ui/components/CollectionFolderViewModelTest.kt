@@ -29,8 +29,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.operations.UserLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -56,7 +56,7 @@ class CollectionFolderViewModelTest {
     private val mockApi = mockk<ApiClient>(relaxed = true)
     private val mockServerRepository = mockk<ServerRepository>(relaxed = true)
     private val mockMediaManagementService = mockk<MediaManagementService>(relaxed = true)
-    private val mockUserLibraryApi = mockk<UserLibraryApi>()
+    private val mockLibraryApi = mockk<LibraryApi>()
 
     private val artistsRequest = slot<GetArtistsRequest>()
     private val albumArtistsRequest = slot<GetAlbumArtistsRequest>()
@@ -75,8 +75,8 @@ class CollectionFolderViewModelTest {
     fun setUp() {
         WholphinDispatchers.configure(testDispatcher)
 
-        every { mockApi.userLibraryApi } returns mockUserLibraryApi
-        coEvery { mockUserLibraryApi.getItem(libraryId) } returns successResponse(library)
+        every { mockApi.libraryApi } returns mockLibraryApi
+        coEvery { mockLibraryApi.getItem(libraryId) } returns successResponse(library)
 
         // No current user, so no saved LibraryDisplayInfo is consulted
         every { mockServerRepository.currentUser } returns null

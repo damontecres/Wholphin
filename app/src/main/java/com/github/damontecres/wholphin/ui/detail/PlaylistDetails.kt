@@ -96,7 +96,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
-import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.playlistApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
@@ -149,7 +149,7 @@ class PlaylistViewModel
                     val canEdit =
                         user?.let { user ->
                             try {
-                                val permission by api.playlistsApi.getPlaylistUser(itemId, user.id)
+                                val permission by api.playlistApi.getPlaylistUser(itemId, user.id)
                                 permission.canEdit
                             } catch (ex: CancellationException) {
                                 throw ex
@@ -243,7 +243,7 @@ class PlaylistViewModel
         ) {
             viewModelScope.launchIO {
                 try {
-                    api.playlistsApi.removeItemFromPlaylist(
+                    api.playlistApi.removeItemFromPlaylist(
                         this@PlaylistViewModel.itemId.toServerString(),
                         listOf(itemId.toServerString()),
                     )
@@ -270,7 +270,7 @@ class PlaylistViewModel
         ) {
             viewModelScope.launchIO {
                 val newIndex = index + if (direction == MoveDirection.UP) -1 else 1
-                api.playlistsApi.moveItem(
+                api.playlistApi.moveItem(
                     playlistId = this@PlaylistViewModel.itemId.toServerString(),
                     itemId = itemId.toServerString(),
                     newIndex = newIndex,

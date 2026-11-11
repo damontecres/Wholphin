@@ -20,9 +20,9 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
-import org.jellyfin.sdk.api.client.extensions.playlistsApi
-import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.playlistApi
+import org.jellyfin.sdk.api.client.extensions.showApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
@@ -202,7 +202,7 @@ class PlaylistCreator
                     val seriesId = item.seriesId
                     if (seriesId != null) {
                         if (shuffled) {
-                            api.tvShowsApi
+                            api.showApi
                                 .getEpisodes(
                                     seriesId = seriesId,
                                     seasonId = item.id,
@@ -231,7 +231,7 @@ class PlaylistCreator
 
                 BaseItemKind.SERIES -> {
                     if (shuffled) {
-                        api.tvShowsApi
+                        api.showApi
                             .getEpisodes(
                                 seriesId = item.id,
                                 limit = Playlist.MAX_SIZE,
@@ -243,9 +243,9 @@ class PlaylistCreator
                                 PlaylistCreationResult.Success(Playlist(it))
                             }
                     } else {
-                        val result by api.tvShowsApi.getNextUp(seriesId = item.id)
+                        val result by api.showApi.getNextUp(seriesId = item.id)
                         val nextUp =
-                            result.items.firstOrNull() ?: api.tvShowsApi
+                            result.items.firstOrNull() ?: api.showApi
                                 .getEpisodes(
                                     item.id,
                                     limit = 1,
@@ -298,7 +298,7 @@ class PlaylistCreator
                             add(PlaylistItem.Media(BaseItem(item, false)))
 
                             if (item.partCount.gt(1)) {
-                                api.videosApi
+                                api.videoApi
                                     .getAdditionalPart(item.id)
                                     .content.items
                                     .map {
@@ -330,7 +330,7 @@ class PlaylistCreator
                         add(PlaylistItem.Media(BaseItem(ep, useSeriesForPrimary)))
                         if (ep.partCount.gt(1)) {
                             val parts =
-                                api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
+                                api.videoApi.getAdditionalPart(ep.id).content.items.map { part ->
                                     PlaylistItem.Media(BaseItem(part, useSeriesForPrimary))
                                 }
                             addAll(parts)
@@ -361,7 +361,7 @@ class PlaylistCreator
             return playlists
                 .mapNotNull { playlist ->
                     try {
-                        val response = api.playlistsApi.getPlaylistUser(playlist.id, userId).content
+                        val response = api.playlistApi.getPlaylistUser(playlist.id, userId).content
                         if (response.canEdit) {
                             PlaylistInfo(
                                 id = playlist.id,
@@ -392,7 +392,7 @@ class PlaylistCreator
             initialItems: List<UUID>,
         ): UUID? =
             serverRepository.currentUser?.let { user ->
-                api.playlistsApi
+                api.playlistApi
                     .createPlaylist(
                         CreatePlaylistDto(
                             name = name,
@@ -408,14 +408,14 @@ class PlaylistCreator
             playlistId: UUID,
             itemId: UUID,
         ) {
-            api.playlistsApi.addItemToPlaylist(playlistId, listOf(itemId))
+            api.playlistApi.addItemToPlaylist(playlistId, listOf(itemId))
         }
 
         suspend fun removeFromServerPlaylist(
             playlistId: UUID,
             itemId: UUID,
         ) {
-            api.playlistsApi.removeItemFromPlaylist(
+            api.playlistApi.removeItemFromPlaylist(
                 playlistId.toServerString(),
                 listOf(itemId.toServerString()),
             )

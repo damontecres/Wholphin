@@ -1016,4 +1016,5 @@
     <string name="movie_release">Movie Release</string>
     <string name="digital_release">Digital Release</string>
     <string name="released_searching">Released \u2022 Searching indexers</string>
+    <string name="dolby_vision_invalid">Invalid Dolby Vision</string>
 </resources>

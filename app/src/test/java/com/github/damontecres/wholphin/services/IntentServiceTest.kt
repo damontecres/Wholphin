@@ -24,8 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.operations.UserLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.model.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -42,7 +42,7 @@ class IntentServiceTest {
     private val api: ApiClient = mockk()
     private val serverRepository: ServerRepository = mockk()
     private val userPreferencesService: UserPreferencesService = mockk()
-    private val userLibraryApi: UserLibraryApi = mockk()
+    private val libraryApi: LibraryApi = mockk()
 
     lateinit var intentService: IntentService
 
@@ -60,8 +60,8 @@ class IntentServiceTest {
     @Before
     fun setup() {
         intentService = IntentService(api, serverRepository, userPreferencesService)
-        every { api.userLibraryApi } returns userLibraryApi
-        coEvery { userLibraryApi.getItem(itemId) } returns successResponse(movie(itemId))
+        every { api.libraryApi } returns libraryApi
+        coEvery { libraryApi.getItem(itemId) } returns successResponse(movie(itemId))
     }
 
     private fun setupPreferences(block: AppPreferences.Builder.() -> Unit) {
@@ -254,7 +254,7 @@ class IntentServiceTest {
 
             assertEquals(itemId, first.itemId)
 
-            coVerify { userLibraryApi.getItem(itemId) }
+            coVerify { libraryApi.getItem(itemId) }
         }
 
     @Test
@@ -273,7 +273,7 @@ class IntentServiceTest {
             assertEquals(0, destinations.size)
             assertTrue(result.addHomeToBackStack)
 
-            coVerify(exactly = 0) { userLibraryApi.getItem(itemId) }
+            coVerify(exactly = 0) { libraryApi.getItem(itemId) }
         }
 
     @Test
@@ -308,7 +308,7 @@ class IntentServiceTest {
 
             coVerify(exactly = 0) { serverRepository.tryChangeUser(serverId, userId) }
             coVerify { serverRepository.tryChangeUser(newServerId, newUserId) }
-            coVerify(exactly = 0) { userLibraryApi.getItem(itemId) }
+            coVerify(exactly = 0) { libraryApi.getItem(itemId) }
         }
 
     @Test
@@ -348,7 +348,7 @@ class IntentServiceTest {
 
             coVerify(exactly = 0) { serverRepository.tryChangeUser(serverId, userId) }
             coVerify { serverRepository.tryChangeUser(newServerId, newUserId) }
-            coVerify { userLibraryApi.getItem(itemId) }
+            coVerify { libraryApi.getItem(itemId) }
         }
 
     @Test
@@ -432,7 +432,7 @@ class IntentServiceTest {
             assertEquals(itemId, first.itemId)
             assertEquals(itemId, second.itemId)
 
-            coVerify { userLibraryApi.getItem(itemId) }
+            coVerify { libraryApi.getItem(itemId) }
         }
 
     @Test
@@ -465,6 +465,6 @@ class IntentServiceTest {
             assertEquals(shuffle, second.shuffle)
             assertEquals(position, second.positionMs)
 
-            coVerify { userLibraryApi.getItem(itemId) }
+            coVerify { libraryApi.getItem(itemId) }
         }
 }

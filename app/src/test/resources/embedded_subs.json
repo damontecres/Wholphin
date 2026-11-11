@@ -55,7 +55,8 @@
       "SupportsExternalStream": false,
       "PixelFormat": "yuv420p10le",
       "Level": 120,
-      "IsAnamorphic": false
+      "IsAnamorphic": false,
+      "IsOriginal": true
     },
     {
       "Codec": "opus",
@@ -82,7 +83,8 @@
       "IsExternal": false,
       "IsTextSubtitleStream": false,
       "SupportsExternalStream": false,
-      "Level": 0
+      "Level": 0,
+      "IsOriginal": true
     },
     {
       "Codec": "aac",
@@ -110,7 +112,8 @@
       "IsExternal": false,
       "IsTextSubtitleStream": false,
       "SupportsExternalStream": false,
-      "Level": 0
+      "Level": 0,
+      "IsOriginal": true
     },
     {
       "Codec": "eac3",
@@ -137,7 +140,8 @@
       "IsExternal": false,
       "IsTextSubtitleStream": false,
       "SupportsExternalStream": false,
-      "Level": 0
+      "Level": 0,
+      "IsOriginal": true
     },
     {
       "Codec": "ass",
@@ -166,7 +170,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Level": 0,
-      "DeliveryMethod": "Embed"
+      "DeliveryMethod": "Embed",
+      "IsOriginal": true
     },
     {
       "Codec": "ass",
@@ -195,7 +200,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Level": 0,
-      "DeliveryMethod": "Embed"
+      "DeliveryMethod": "Embed",
+      "IsOriginal": true
     },
     {
       "Codec": "ass",
@@ -224,7 +230,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Level": 0,
-      "DeliveryMethod": "Embed"
+      "DeliveryMethod": "Embed",
+      "IsOriginal": true
     }
   ],
   "MediaAttachments": [],

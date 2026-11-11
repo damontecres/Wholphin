@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.request.GetStudiosRequest
@@ -77,7 +77,7 @@ class StudioViewModel
             viewModelScope.launchIO {
                 try {
                     val item =
-                        api.userLibraryApi.getItem(itemId = itemId).content.let {
+                        api.libraryApi.getItem(itemId = itemId).content.let {
                             BaseItem(it, false)
                         }
                     val request =

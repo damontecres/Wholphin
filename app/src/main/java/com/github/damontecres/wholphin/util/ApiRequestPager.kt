@@ -10,16 +10,15 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
-import org.jellyfin.sdk.api.client.extensions.artistsApi
-import org.jellyfin.sdk.api.client.extensions.genresApi
-import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.artistApi
+import org.jellyfin.sdk.api.client.extensions.genreApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.personsApi
-import org.jellyfin.sdk.api.client.extensions.playlistsApi
-import org.jellyfin.sdk.api.client.extensions.studiosApi
-import org.jellyfin.sdk.api.client.extensions.suggestionsApi
-import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.personApi
+import org.jellyfin.sdk.api.client.extensions.playlistApi
+import org.jellyfin.sdk.api.client.extensions.showApi
+import org.jellyfin.sdk.api.client.extensions.studioApi
+import org.jellyfin.sdk.api.client.extensions.suggestionApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.request.GetAlbumArtistsRequest
@@ -75,7 +74,7 @@ class ApiRequestPager<T>(
     ) {
         mutex.withLock {
             val item =
-                api.userLibraryApi.getItem(itemId).content.let {
+                api.libraryApi.getItem(itemId).content.let {
                     BaseItem.from(
                         it,
                         api,
@@ -164,7 +163,7 @@ object GetItemsRequestHandler : RequestHandler<GetItemsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetItemsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.itemsApi.getItems(request)
+    ): Response<BaseItemDtoQueryResult> = api.libraryApi.getItems(request)
 }
 
 @Serializable
@@ -183,7 +182,7 @@ object GetEpisodesRequestHandler : RequestHandler<GetEpisodesRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetEpisodesRequest,
-    ): Response<BaseItemDtoQueryResult> = api.tvShowsApi.getEpisodes(request)
+    ): Response<BaseItemDtoQueryResult> = api.showApi.getEpisodes(request)
 }
 
 @Serializable
@@ -203,7 +202,7 @@ object GetResumeItemsRequestHandler : RequestHandler<GetResumeItemsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetResumeItemsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.itemsApi.getResumeItems(request)
+    ): Response<BaseItemDtoQueryResult> = api.libraryApi.getResumeItems(request)
 }
 
 @Serializable
@@ -223,7 +222,7 @@ object GetNextUpRequestHandler : RequestHandler<GetNextUpRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetNextUpRequest,
-    ): Response<BaseItemDtoQueryResult> = api.tvShowsApi.getNextUp(request)
+    ): Response<BaseItemDtoQueryResult> = api.showApi.getNextUp(request)
 }
 
 @Serializable
@@ -243,7 +242,7 @@ object GetSuggestionsRequestHandler : RequestHandler<GetSuggestionsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetSuggestionsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.suggestionsApi.getSuggestions(request)
+    ): Response<BaseItemDtoQueryResult> = api.suggestionApi.getSuggestions(request)
 }
 
 @Serializable
@@ -262,7 +261,7 @@ object GetPlaylistItemsRequestHandler : RequestHandler<GetPlaylistItemsRequest> 
     override suspend fun execute(
         api: ApiClient,
         request: GetPlaylistItemsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.playlistsApi.getPlaylistItems(request)
+    ): Response<BaseItemDtoQueryResult> = api.playlistApi.getPlaylistItems(request)
 }
 
 @Serializable
@@ -282,7 +281,7 @@ object GetGenresRequestHandler : RequestHandler<GetGenresRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetGenresRequest,
-    ): Response<BaseItemDtoQueryResult> = api.genresApi.getGenres(request)
+    ): Response<BaseItemDtoQueryResult> = api.genreApi.getGenres(request)
 }
 
 @Serializable
@@ -320,7 +319,7 @@ object GetPersonsHandler : RequestHandler<GetPersonsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetPersonsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.personsApi.getPersons((request))
+    ): Response<BaseItemDtoQueryResult> = api.personApi.getPersons((request))
 }
 
 @Serializable
@@ -340,7 +339,7 @@ object GetStudiosRequestHandler : RequestHandler<GetStudiosRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetStudiosRequest,
-    ): Response<BaseItemDtoQueryResult> = api.studiosApi.getStudios(request)
+    ): Response<BaseItemDtoQueryResult> = api.studioApi.getStudios(request)
 }
 
 @Serializable
@@ -399,7 +398,7 @@ object GetArtistsHandler : RequestHandler<GetArtistsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetArtistsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.artistsApi.getArtists((request))
+    ): Response<BaseItemDtoQueryResult> = api.artistApi.getArtists((request))
 }
 
 @Serializable
@@ -418,7 +417,7 @@ object GetAlbumArtistsHandler : RequestHandler<GetAlbumArtistsRequest> {
     override suspend fun execute(
         api: ApiClient,
         request: GetAlbumArtistsRequest,
-    ): Response<BaseItemDtoQueryResult> = api.artistsApi.getAlbumArtists(request)
+    ): Response<BaseItemDtoQueryResult> = api.artistApi.getAlbumArtists(request)
 }
 
 val requestSerializersModule =
