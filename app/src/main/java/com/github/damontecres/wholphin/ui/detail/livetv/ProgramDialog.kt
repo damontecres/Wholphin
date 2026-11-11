@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import android.content.Context
 import android.text.format.DateUtils
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -34,20 +36,25 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
+import org.jellyfin.sdk.model.api.BaseItemKind
+import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Composable
 fun ProgramDialog(
-    state: DataLoadingState<BaseItem>,
+    state: ProgramDialogState,
     canRecord: Boolean,
     onDismissRequest: () -> Unit,
     onWatch: (BaseItem) -> Unit,
@@ -73,7 +80,7 @@ fun ProgramDialog(
                     Modifier
                         .padding(16.dp),
             ) {
-                when (val st = state) {
+                when (val st = state.loading) {
                     is DataLoadingState.Error -> {
                         ErrorMessage(st)
                     }
@@ -95,6 +102,9 @@ fun ProgramDialog(
                         val isRecording = dto.timerId.isNotNullOrBlank()
                         val isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank()
                         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                        LaunchedEffect(item) {
+                            Timber.v("item.id=%s, item.type=%s", item.id, item.type)
+                        }
                         Text(
                             text = item.name ?: "",
                             color = MaterialTheme.colorScheme.onSurface,
@@ -148,22 +158,24 @@ fun ProgramDialog(
                                     .fillMaxWidth(),
                         ) {
                             if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
-                                TextButton(
-                                    onClick = { onWatch.invoke(item) },
-                                    modifier = Modifier,
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = stringResource(R.string.delete),
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.watch_live),
+                                    state.recording?.let { recording ->
+                                        FaIconButton(
+                                            text = stringResource(R.string.play_from_start),
+                                            iconStringRes = R.string.fa_rotate_left,
+                                            onClick = { onWatch.invoke(recording) },
+                                            modifier = Modifier,
                                         )
                                     }
+                                    FaIconButton(
+                                        text = stringResource(R.string.watch_live),
+                                        iconStringRes = R.string.fa_play,
+                                        onClick = { onWatch.invoke(item) },
+                                        modifier = Modifier,
+                                    )
                                 }
                             }
                             if (canRecord) {
@@ -275,6 +287,62 @@ fun ProgramDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Handles the onWatch for [ProgramDialog]
+ */
+fun onWatch(
+    context: Context,
+    navigationManager: NavigationManager,
+    item: BaseItem,
+) {
+    val channelId = item.data.channelId
+    if (channelId != null) {
+        navigationManager.navigateTo(
+            Destination.Playback(
+                itemId = channelId,
+                positionMs = 0L,
+            ),
+        )
+    } else if (item.type == BaseItemKind.RECORDING) {
+        navigationManager.navigateTo(
+            Destination.Playback(
+                itemId = item.id,
+                positionMs = 0L,
+            ),
+        )
+    } else {
+        Toast
+            .makeText(context, "Program has no channel ID", Toast.LENGTH_LONG)
+            .show()
+    }
+}
+
+@Composable
+fun FaIconButton(
+    text: String,
+    @StringRes iconStringRes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(iconStringRes),
+                fontFamily = FontAwesome,
+            )
+            Text(
+                text = text,
+            )
         }
     }
 }

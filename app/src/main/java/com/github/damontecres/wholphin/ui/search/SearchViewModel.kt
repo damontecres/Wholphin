@@ -457,7 +457,14 @@ class SearchViewModel
             viewModelScope.launchDefault {
                 try {
                     val result = liveTvService.fetchProgramForDialog(programId)
-                    _programDialogState.update { it.copy(loading = DataLoadingState.Success(result)) }
+                    val recording = liveTvService.fetchRecordingForProgram(result)
+                    Timber.d("Got recording %s for program %s", recording?.id, programId)
+                    _programDialogState.update {
+                        it.copy(
+                            loading = DataLoadingState.Success(result),
+                            recording = recording,
+                        )
+                    }
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {

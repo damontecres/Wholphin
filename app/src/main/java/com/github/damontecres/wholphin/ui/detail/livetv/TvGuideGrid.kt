@@ -100,10 +100,7 @@ fun TvGuideGrid(
         LoadingState.Success,
         -> {
             val context = LocalContext.current
-            val programDialogState =
-                viewModel.programDialogState
-                    .collectAsState()
-                    .value.loading
+            val programDialogState by viewModel.programDialogState.collectAsState()
 
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
             val focusRequester = remember { FocusRequester() }
@@ -211,19 +208,7 @@ fun TvGuideGrid(
                     onDismissRequest = onDismissRequest,
                     onWatch = {
                         onDismissRequest.invoke()
-                        val channelId = it.data.channelId
-                        if (channelId != null) {
-                            viewModel.navigationManager.navigateTo(
-                                Destination.Playback(
-                                    itemId = channelId,
-                                    positionMs = 0L,
-                                ),
-                            )
-                        } else {
-                            Toast
-                                .makeText(context, "Program has no channel ID", Toast.LENGTH_LONG)
-                                .show()
-                        }
+                        onWatch(context, viewModel.navigationManager, it)
                     },
                     onRecord = { program, series ->
                         viewModel.record(
