@@ -1535,14 +1535,16 @@ fun SeerrDownloadProgressBanner(
     overallProgress: Double? = downloads.overallProgressPercent(),
     modifier: Modifier = Modifier,
 ) {
-    val pct = (overallProgress ?: 0.0).coerceIn(0.0, 100.0)
+    val activeDownloads = remember(downloads) { downloads.filterNot { it.isCompleted } }
+    val pct = (overallProgress ?: 0.0).coerceIn(0.0, 99.9)
+    val displayPct = pct.roundToInt().coerceAtMost(99)
     val animatedFraction by animateFloatAsState(
         targetValue = (pct / 100.0).toFloat().coerceIn(0.02f, 1f),
         label = "seerrDownloadProgress",
     )
-    val totalSize = downloads.sumOf { it.size.coerceAtLeast(0L) }
-    val downloadedSize = downloads.sumOf { it.downloadedBytes }
-    val firstTimeLeft = downloads.firstNotNullOfOrNull { it.timeLeft }
+    val totalSize = activeDownloads.sumOf { it.size.coerceAtLeast(0L) }
+    val downloadedSize = activeDownloads.sumOf { it.downloadedBytes }
+    val firstTimeLeft = activeDownloads.firstNotNullOfOrNull { it.timeLeft }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -1571,8 +1573,8 @@ fun SeerrDownloadProgressBanner(
                 )
                 Text(
                     text =
-                        if (pct > 0.0) {
-                            stringResource(R.string.downloading_progress, pct.roundToInt())
+                        if (displayPct > 0) {
+                            stringResource(R.string.downloading_progress, displayPct)
                         } else {
                             stringResource(R.string.queued)
                         },
@@ -1616,8 +1618,8 @@ fun SeerrDownloadProgressBanner(
             )
         }
 
-        if (downloads.size > 1 || downloads.any { it.seasonNumber != null && it.episodeNumber != null }) {
-            downloads.take(2).forEach { dl ->
+        if (activeDownloads.size > 1 || activeDownloads.any { it.seasonNumber != null && it.episodeNumber != null }) {
+            activeDownloads.take(2).forEach { dl ->
                 val epLabel = formatSeasonEpisode(dl.seasonNumber, dl.episodeNumber, padded = true)
                 val label =
                     listOfNotNull(
@@ -1625,7 +1627,7 @@ fun SeerrDownloadProgressBanner(
                         epLabel,
                         dl.title?.takeIf { it.isNotNullOrBlank() },
                     ).joinToString(" \u2022 ")
-                val itemPct = dl.progressPercent?.roundToInt()
+                val itemPct = dl.progressPercent?.roundToInt()?.coerceAtMost(99)
                 val itemRight =
                     listOfNotNull(
                         itemPct?.let { "$it%" },

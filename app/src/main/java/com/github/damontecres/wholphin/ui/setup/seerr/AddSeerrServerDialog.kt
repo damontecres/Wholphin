@@ -95,6 +95,7 @@ fun SeerrDialog(
                         currentUsername = currentUser?.name,
                         status = state.serverConnectionStatus,
                         onSubmit = seerrVm::submitServer,
+                        onAutoConnect = seerrVm::autoConnect,
                         onResetStatus = seerrVm::resetStatus,
                         onDismissRequest = onDismissRequest,
                     )
@@ -160,6 +161,7 @@ fun AddSeerServerDialog(
     onSubmit: (url: String, username: String, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
     onResetStatus: () -> Unit,
     onDismissRequest: () -> Unit,
+    onAutoConnect: (() -> Unit)? = null,
 ) {
     var authMethod by remember { mutableStateOf<SeerrAuthMethod?>(null) }
     LaunchedEffect(status) {
@@ -205,6 +207,7 @@ fun AddSeerServerDialog(
         null -> {
             ChooseSeerrLoginType(
                 onDismissRequest = onDismissRequest,
+                onAutoConnect = onAutoConnect,
                 onChoose = {
                     onResetStatus.invoke()
                     authMethod = it
@@ -218,26 +221,42 @@ fun AddSeerServerDialog(
 fun ChooseSeerrLoginType(
     onDismissRequest: () -> Unit,
     onChoose: (SeerrAuthMethod) -> Unit,
+    onAutoConnect: (() -> Unit)? = null,
 ) {
+    val items =
+        buildList {
+            if (onAutoConnect != null) {
+                add(
+                    DialogItem(
+                        text = stringResource(R.string.seerr_auto_connect),
+                        onClick = onAutoConnect,
+                    ),
+                )
+            }
+            add(
+                DialogItem(
+                    text = stringResource(R.string.api_key),
+                    onClick = { onChoose.invoke(SeerrAuthMethod.API_KEY) },
+                ),
+            )
+            add(
+                DialogItem(
+                    text = stringResource(R.string.seerr_jellyfin_user),
+                    onClick = { onChoose.invoke(SeerrAuthMethod.JELLYFIN) },
+                ),
+            )
+            add(
+                DialogItem(
+                    text = stringResource(R.string.seerr_local_user),
+                    onClick = { onChoose.invoke(SeerrAuthMethod.LOCAL) },
+                ),
+            )
+        }
     val params =
         DialogParams(
             fromLongClick = false,
             title = stringResource(R.string.seerr_login),
-            items =
-                listOf(
-                    DialogItem(
-                        text = stringResource(R.string.api_key),
-                        onClick = { onChoose.invoke(SeerrAuthMethod.API_KEY) },
-                    ),
-                    DialogItem(
-                        text = stringResource(R.string.seerr_jellyfin_user),
-                        onClick = { onChoose.invoke(SeerrAuthMethod.JELLYFIN) },
-                    ),
-                    DialogItem(
-                        text = stringResource(R.string.seerr_local_user),
-                        onClick = { onChoose.invoke(SeerrAuthMethod.LOCAL) },
-                    ),
-                ),
+            items = items,
         )
 
     DialogPopup(

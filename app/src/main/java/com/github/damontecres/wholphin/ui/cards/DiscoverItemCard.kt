@@ -225,7 +225,7 @@ fun DiscoverItemCard(
         val secondaryText =
             subtitleOverride
                 ?: if (item?.isActivelyDownloading == true && item.downloadProgress != null) {
-                    val pct = "${item.downloadProgress.roundToInt()}%"
+                    val pct = "${item.downloadProgress.roundToInt().coerceAtMost(99)}%"
                     val year = item.releaseDate?.year?.toString()
                     if (year != null) "$pct \u2022 $year" else pct
                 } else {
@@ -288,7 +288,7 @@ fun DownloadingIndicator(
         )
         if (progressPercent != null && progressPercent > 0.0) {
             Text(
-                text = "${progressPercent.roundToInt()}%",
+                text = "${progressPercent.roundToInt().coerceAtMost(99)}%",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White,

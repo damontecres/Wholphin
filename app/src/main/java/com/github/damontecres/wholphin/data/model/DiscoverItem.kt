@@ -88,6 +88,14 @@ enum class RequestStatus(
     }
 }
 
+private val COMPLETED_DOWNLOAD_STATUSES =
+    setOf(
+        "completed",
+        "seeding",
+        "failed",
+        "error",
+    )
+
 /**
  * Represents an actively downloading item (movie or episode) from Seerr's download tracker
  */
@@ -104,6 +112,11 @@ data class SeerrDownloadItem(
     val episodeNumber: Int? = null,
     val is4k: Boolean = false,
 ) {
+    val isCompleted: Boolean
+        get() =
+            (size > 0L && sizeLeft <= 0L) ||
+                status?.trim()?.lowercase() in COMPLETED_DOWNLOAD_STATUSES
+
     val downloadedBytes: Long
         get() = (size - sizeLeft).coerceIn(0L, size.coerceAtLeast(0L))
 
@@ -117,11 +130,13 @@ data class SeerrDownloadItem(
 }
 
 fun List<SeerrDownloadItem>.overallProgressPercent(): Double? {
-    if (isEmpty()) return null
-    val totalSize = sumOf { it.size.coerceAtLeast(0L) }
+    val active = filterNot { it.isCompleted }
+    if (active.isEmpty()) return null
+    val totalSize = active.sumOf { it.size.coerceAtLeast(0L) }
     if (totalSize <= 0L) return 0.0
-    val totalLeft = sumOf { it.sizeLeft.coerceIn(0L, it.size.coerceAtLeast(0L)) }
-    return (((totalSize - totalLeft).toDouble() / totalSize.toDouble()) * 100.0).coerceIn(0.0, 100.0)
+    val totalLeft = active.sumOf { it.sizeLeft.coerceIn(0L, it.size.coerceAtLeast(0L)) }
+    if (totalLeft <= 0L) return null
+    return (((totalSize - totalLeft).toDouble() / totalSize.toDouble()) * 100.0).coerceIn(0.0, 99.9)
 }
 
 /**
@@ -149,7 +164,9 @@ data class DiscoverItem(
     override val sortName: String get() = title ?: ""
 
     val isActivelyDownloading: Boolean
-        get() = downloads.isNotEmpty() || (downloadProgress != null && downloadProgress >= 0.0)
+        get() =
+            downloads.any { !it.isCompleted } ||
+                (downloadProgress != null && downloadProgress >= 0.0 && downloadProgress < 100.0)
 
     val destination: Destination
         get() {

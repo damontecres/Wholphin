@@ -706,11 +706,17 @@ components:
         initialized:
           type: boolean
           example: false
+        applicationTitle:
+          type: string
         movie4kEnabled:
           type: boolean
         series4kEnabled:
           type: boolean
         cacheImages:
+          type: boolean
+        mediaServerType:
+          type: integer
+        jellyfinQuickConnect:
           type: boolean
     MovieResult:
       type: object
@@ -4090,6 +4096,76 @@ paths:
               required:
                 - username
                 - password
+  /auth/jellyfin/quickconnect/initiate:
+    post:
+      summary: Initiate a Jellyfin Quick Connect session
+      description: Initiates a Quick Connect session with the configured Jellyfin server and returns a code and secret.
+      security: []
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Quick Connect session initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  secret:
+                    type: string
+                required:
+                  - code
+                  - secret
+  /auth/jellyfin/quickconnect/check:
+    get:
+      summary: Check Jellyfin Quick Connect authorization status
+      description: Checks the authorization status of a Jellyfin Quick Connect session.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: secret
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quick Connect status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticated:
+                    type: boolean
+  /auth/jellyfin/quickconnect/authenticate:
+    post:
+      summary: Authenticate using Jellyfin Quick Connect
+      description: Completes the Jellyfin Quick Connect authentication flow and generates a session cookie.
+      security: []
+      tags:
+        - auth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret:
+                  type: string
+              required:
+                - secret
   /auth/local:
     post:
       summary: Sign in using a local account

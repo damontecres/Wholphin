@@ -760,6 +760,7 @@
     <string name="enter_url_api_key"><![CDATA[Enter URL & API Key]]></string>
     <string name="api_key">API Key</string>
     <string name="seerr_login">Login to Seerr server</string>
+    <string name="seerr_auto_connect">Auto-connect (Jellyfin)</string>
     <string name="seerr_jellyfin_user">Jellyfin user</string>
     <string name="seerr_local_user">Local user</string>
     <string name="search_and_download_subtitles"><![CDATA[Search & download subtitles]]></string>

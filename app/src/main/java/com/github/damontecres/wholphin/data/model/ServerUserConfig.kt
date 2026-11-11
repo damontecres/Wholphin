@@ -13,6 +13,7 @@ data class ServerUserConfig(
     val id: UUID,
     val name: String? = null,
     val serverId: UUID? = null,
+    val hasPassword: Boolean = true,
     val configuration: UserConfiguration? = null,
     val policy: UserPolicy? = null,
 ) {
@@ -20,6 +21,7 @@ data class ServerUserConfig(
         id = userDto.id,
         name = userDto.name,
         serverId = userDto.serverId?.toUUIDOrNull(),
+        hasPassword = userDto.hasPassword ?: true,
         configuration = userDto.configuration,
         policy = userDto.policy,
     )

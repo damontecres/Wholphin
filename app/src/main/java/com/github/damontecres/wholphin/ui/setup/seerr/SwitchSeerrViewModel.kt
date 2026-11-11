@@ -40,21 +40,56 @@ class SwitchSeerrViewModel
         val state: StateFlow<SwitchSeerrState> = _state
 
         init {
-            if (serverRepository.serverPluginInstalled.value) {
-                viewModelScope.launchIO {
-                    try {
-                        serverPluginApi.fetchSeerrSettings()?.serverUrl?.let { serverUrl ->
-                            _state.update { it.copy(initialUrl = serverUrl) }
+            viewModelScope.launchIO {
+                try {
+                    val pluginUrl =
+                        if (serverRepository.serverPluginInstalled.value) {
+                            serverPluginApi.fetchSeerrSettings()?.serverUrl
+                        } else {
+                            null
                         }
-                    } catch (ex: Exception) {
-                        Timber.e(ex, "Error fetching seerr settings")
-                    } finally {
-                        _state.update { it.copy(loading = LoadingState.Success) }
+                    val initialUrl =
+                        pluginUrl
+                            ?: seerrServerRepository
+                                .discoverSeerrServers(includeSubnetScan = false)
+                                .firstOrNull()
+                                ?.url
+                    if (initialUrl != null) {
+                        _state.update { it.copy(initialUrl = initialUrl) }
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error fetching or discovering seerr settings")
+                } finally {
+                    _state.update { it.copy(loading = LoadingState.Success) }
+                }
+            }
+        }
+
+        fun autoConnect() {
+            viewModelScope.launchIO {
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        serverConnectionStatus = LoadingState.Loading,
+                    )
+                }
+                val connected = seerrServerRepository.autoDiscoverAndLogin()
+                if (connected) {
+                    _state.update {
+                        it.copy(
+                            loading = LoadingState.Success,
+                            serverConnectionStatus = LoadingState.Success,
+                        )
+                    }
+                } else {
+                    showToast(context, "Could not auto-connect to Seerr server")
+                    _state.update {
+                        it.copy(
+                            loading = LoadingState.Success,
+                            serverConnectionStatus = LoadingState.Error("Could not auto-connect to Seerr server"),
+                        )
                     }
                 }
-            } else {
-                // Nothing to check so set success
-                _state.update { it.copy(loading = LoadingState.Success) }
             }
         }
 

@@ -536,34 +536,73 @@ fun MediaInfo?.effectiveAvailability(): SeerrAvailability {
     }
 }
 
+internal fun String?.normalizeTimeLeft(): String? {
+    val trimmed = this?.trim() ?: return null
+    if (trimmed.isEmpty()) return null
+    return if (trimmed.any { it in '1'..'9' }) trimmed else null
+}
+
 fun MediaInfo.extractDownloads(): List<SeerrDownloadItem> {
+    val regularOverallAvailable = SeerrAvailability.from(status) == SeerrAvailability.AVAILABLE
+    val fourKOverallAvailable = SeerrAvailability.from(status4k) == SeerrAvailability.AVAILABLE
+    val availableRegularSeasons =
+        seasons
+            .orEmpty()
+            .filter { SeerrAvailability.from(it.status) == SeerrAvailability.AVAILABLE }
+            .mapNotNull { it.seasonNumber }
+            .toSet()
+    val availableFourKSeasons =
+        seasons
+            .orEmpty()
+            .filter { SeerrAvailability.from(it.status4k) == SeerrAvailability.AVAILABLE }
+            .mapNotNull { it.seasonNumber }
+            .toSet()
+
     val regular =
-        downloadStatus.orEmpty().map {
-            SeerrDownloadItem(
-                title = it.title,
-                status = it.status,
-                size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
-                sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
-                timeLeft = it.timeLeft?.takeIf { t -> t.isNotNullOrBlank() },
-                estimatedCompletionTime = it.estimatedCompletionTime,
-                seasonNumber = it.episode?.seasonNumber,
-                episodeNumber = it.episode?.episodeNumber,
-                is4k = false,
-            )
+        if (regularOverallAvailable) {
+            emptyList()
+        } else {
+            downloadStatus
+                .orEmpty()
+                .map {
+                    SeerrDownloadItem(
+                        title = it.title,
+                        status = it.status,
+                        size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                        sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                        timeLeft = it.timeLeft.normalizeTimeLeft(),
+                        estimatedCompletionTime = it.estimatedCompletionTime,
+                        seasonNumber = it.episode?.seasonNumber,
+                        episodeNumber = it.episode?.episodeNumber,
+                        is4k = false,
+                    )
+                }.filterNot { dl ->
+                    dl.isCompleted ||
+                        (dl.seasonNumber != null && dl.seasonNumber in availableRegularSeasons)
+                }
         }
     val fourK =
-        downloadStatus4k.orEmpty().map {
-            SeerrDownloadItem(
-                title = it.title,
-                status = it.status,
-                size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
-                sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
-                timeLeft = it.timeLeft?.takeIf { t -> t.isNotNullOrBlank() },
-                estimatedCompletionTime = it.estimatedCompletionTime,
-                seasonNumber = it.episode?.seasonNumber,
-                episodeNumber = it.episode?.episodeNumber,
-                is4k = true,
-            )
+        if (fourKOverallAvailable) {
+            emptyList()
+        } else {
+            downloadStatus4k
+                .orEmpty()
+                .map {
+                    SeerrDownloadItem(
+                        title = it.title,
+                        status = it.status,
+                        size = it.propertySize?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                        sizeLeft = it.sizeLeft?.toLong()?.coerceAtLeast(0L) ?: 0L,
+                        timeLeft = it.timeLeft.normalizeTimeLeft(),
+                        estimatedCompletionTime = it.estimatedCompletionTime,
+                        seasonNumber = it.episode?.seasonNumber,
+                        episodeNumber = it.episode?.episodeNumber,
+                        is4k = true,
+                    )
+                }.filterNot { dl ->
+                    dl.isCompleted ||
+                        (dl.seasonNumber != null && dl.seasonNumber in availableFourKSeasons)
+                }
         }
     return regular + fourK
 }

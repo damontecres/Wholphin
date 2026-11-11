@@ -30,6 +30,7 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.time.ZonedDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -73,6 +74,10 @@ class ServerRepository
                     }
 
         val serverPluginInstalled = MutableStateFlow<Boolean>(false)
+
+        private val sessionPasswords = ConcurrentHashMap<UUID, String>()
+
+        fun getLastLoginPassword(userId: UUID): String? = sessionPasswords[userId]
 
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
@@ -220,6 +225,7 @@ class ServerRepository
             serverUrl: String,
             authenticationResult: AuthenticationResult,
             existingUser: JellyfinUser?,
+            password: String? = null,
         ) = withContext(ioDispatcher) {
             val accessToken = authenticationResult.accessToken
             if (accessToken != null) {
@@ -256,6 +262,9 @@ class ServerRepository
                             }
                         }
                     if (user != null) {
+                        if (password != null) {
+                            sessionPasswords[user.id] = password
+                        }
                         return@withContext changeUser(server, user)
                     } else {
                         throw IllegalArgumentException("Authentication result's user was null")
@@ -269,6 +278,7 @@ class ServerRepository
         }
 
         suspend fun removeUser(user: JellyfinUser) {
+            sessionPasswords.remove(user.id)
             if (current.value?.user?.id == user.id) {
                 withContext(WholphinDispatchers.Main) {
                     _current.value = null

@@ -21,6 +21,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.api.seerr.model.MediaInfo
 import com.github.damontecres.wholphin.api.seerr.model.MediaRequest
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.Season
@@ -182,6 +183,65 @@ private fun evaluateMovieReleaseSchedule(
     }
 }
 
+internal fun resolveSeasonAvailability(
+    seasonNumber: Int,
+    is4k: Boolean,
+    tv: TvDetails?,
+    requestMedia: MediaInfo?,
+    requestSeasonStatus: Int?,
+): SeerrAvailability {
+    val reqSeasonStatus = RequestStatus.from(requestSeasonStatus)
+    if (reqSeasonStatus == RequestStatus.COMPLETED) {
+        return SeerrAvailability.AVAILABLE
+    }
+    val candidates =
+        listOfNotNull(
+            tv
+                ?.mediaInfo
+                ?.seasons
+                ?.firstOrNull { it.seasonNumber == seasonNumber }
+                ?.let { if (is4k) it.status4k else it.status }
+                ?.let { SeerrAvailability.from(it) },
+            requestMedia
+                ?.seasons
+                ?.firstOrNull { it.seasonNumber == seasonNumber }
+                ?.let { if (is4k) it.status4k else it.status }
+                ?.let { SeerrAvailability.from(it) },
+            tv
+                ?.seasons
+                ?.firstOrNull { it.seasonNumber == seasonNumber }
+                ?.let { if (is4k) it.status4k else it.status }
+                ?.let { SeerrAvailability.from(it) },
+        )
+    val bestMediaAvail = candidates.maxOrNull() ?: SeerrAvailability.UNKNOWN
+    if (bestMediaAvail != SeerrAvailability.UNKNOWN) {
+        return bestMediaAvail
+    }
+    return when (reqSeasonStatus) {
+        RequestStatus.APPROVED -> SeerrAvailability.PROCESSING
+        RequestStatus.PENDING -> SeerrAvailability.PENDING
+        else -> SeerrAvailability.UNKNOWN
+    }
+}
+
+internal fun extractUnavailableRequestedSeasons(
+    request: MediaRequest,
+    tv: TvDetails?,
+): List<Int> {
+    val is4k = request.is4k == true
+    val reqSeasons = request.seasons.orEmpty()
+    return reqSeasons
+        .filter { s ->
+            val seasonNum = s.seasonNumber ?: return@filter false
+            val reqStatus = RequestStatus.from(s.status)
+            if (reqStatus == RequestStatus.DECLINED || reqStatus == RequestStatus.FAILURE) {
+                return@filter false
+            }
+            val avail = resolveSeasonAvailability(seasonNum, is4k, tv, request.media, s.status)
+            avail != SeerrAvailability.AVAILABLE
+        }.mapNotNull { it.seasonNumber }
+}
+
 private fun evaluateTvReleaseSchedule(
     today: LocalDate,
     tv: TvDetails,
@@ -190,23 +250,20 @@ private fun evaluateTvReleaseSchedule(
 ): ReleaseScheduleEvaluation {
     val scheduled = mutableListOf<ScheduledRelease>()
     var hasAiredMissing = false
+    val is4k = request.is4k == true
 
-    val unavailableRequestedSeasons =
-        request.seasons
-            ?.filter { s ->
-                val sAvail = SeerrAvailability.from(s.status) ?: SeerrAvailability.UNKNOWN
-                val sAvail4k = SeerrAvailability.from(s.status4k) ?: SeerrAvailability.UNKNOWN
-                val eff = if (request.is4k == true) sAvail4k else sAvail
-                eff != SeerrAvailability.AVAILABLE
-            }?.mapNotNull { it.seasonNumber }
-            .orEmpty()
+    val unavailableRequestedSeasons = extractUnavailableRequestedSeasons(request, tv)
 
     val targetSeasons =
-        unavailableRequestedSeasons.ifEmpty {
+        if (!request.seasons.isNullOrEmpty()) {
+            unavailableRequestedSeasons
+        } else {
             tv.seasons
-                ?.mapNotNull { it.seasonNumber }
-                ?.filter { it > 0 }
-                .orEmpty()
+                ?.mapNotNull { s ->
+                    val num = s.seasonNumber?.takeIf { it > 0 } ?: return@mapNotNull null
+                    val avail = resolveSeasonAvailability(num, is4k, tv, request.media, null)
+                    num.takeIf { avail != SeerrAvailability.AVAILABLE }
+                }.orEmpty()
         }
 
     targetSeasons.forEach { seasonNum ->
@@ -277,7 +334,7 @@ private fun evaluateTvReleaseSchedule(
         }
     }
 
-    if (scheduled.isEmpty()) {
+    if (scheduled.isEmpty() && targetSeasons.isNotEmpty()) {
         val nextEp = tv.nextEpisodeToAir
         val nextEpDate = toLocalDate(nextEp?.airDate?.take(10))
         val firstAirDate = toLocalDate(tv.firstAirDate?.take(10))
@@ -313,7 +370,7 @@ private fun evaluateTvReleaseSchedule(
 
     return ReleaseScheduleEvaluation(
         scheduledReleases = scheduled.distinct().sorted(),
-        hasReleasedMissingContent = hasAiredMissing || scheduled.isEmpty(),
+        hasReleasedMissingContent = hasAiredMissing || (targetSeasons.isNotEmpty() && scheduled.isEmpty()),
     )
 }
 
@@ -362,14 +419,7 @@ suspend fun fetchRequestGridItems(
                                         mediaRequests
                                             .filter { it.media?.tmdbId == tmdbId }
                                             .flatMap { req ->
-                                                req.seasons
-                                                    ?.filter { s ->
-                                                        val sAvail = SeerrAvailability.from(s.status) ?: SeerrAvailability.UNKNOWN
-                                                        val sAvail4k = SeerrAvailability.from(s.status4k) ?: SeerrAvailability.UNKNOWN
-                                                        val eff = if (req.is4k == true) sAvail4k else sAvail
-                                                        eff != SeerrAvailability.AVAILABLE
-                                                    }?.mapNotNull { it.seasonNumber }
-                                                    .orEmpty()
+                                                extractUnavailableRequestedSeasons(req, tv)
                                             }.distinct()
                                             .sorted()
                                             .take(4)
@@ -409,19 +459,37 @@ suspend fun fetchRequestGridItems(
             val type = SeerrItemType.fromString(request.type)
             val targetData = targetCache[type to tmdbId] ?: return@mapNotNull null
             val baseItem = targetData.item
+            val is4k = request.is4k == true
+            val requestedSeasonNums =
+                request.seasons
+                    ?.mapNotNull { it.seasonNumber }
+                    ?.toSet()
+                    .orEmpty()
             val fallbackDownloads = request.media.extractDownloads()
-            val downloads = baseItem.downloads.ifEmpty { fallbackDownloads }
+            val rawDownloads = baseItem.downloads.ifEmpty { fallbackDownloads }
+            val downloads =
+                rawDownloads.filter { dl ->
+                    !dl.isCompleted &&
+                        dl.is4k == is4k &&
+                        (requestedSeasonNums.isEmpty() || dl.seasonNumber == null || dl.seasonNumber in requestedSeasonNums)
+                }
             val reqStatus = RequestStatus.from(request.status)
+            val allRequestedSeasonsAvailable =
+                targetData.tvDetails != null &&
+                    !request.seasons.isNullOrEmpty() &&
+                    extractUnavailableRequestedSeasons(request, targetData.tvDetails).isEmpty()
             val resolvedAvailability =
-                if (baseItem.availability == SeerrAvailability.UNKNOWN) {
-                    when (reqStatus) {
-                        RequestStatus.PENDING -> SeerrAvailability.PENDING
-                        RequestStatus.APPROVED -> SeerrAvailability.PROCESSING
-                        RequestStatus.COMPLETED -> SeerrAvailability.AVAILABLE
-                        else -> baseItem.availability
+                when {
+                    allRequestedSeasonsAvailable -> SeerrAvailability.AVAILABLE
+                    baseItem.availability == SeerrAvailability.UNKNOWN -> {
+                        when (reqStatus) {
+                            RequestStatus.PENDING -> SeerrAvailability.PENDING
+                            RequestStatus.APPROVED -> SeerrAvailability.PROCESSING
+                            RequestStatus.COMPLETED -> SeerrAvailability.AVAILABLE
+                            else -> baseItem.availability
+                        }
                     }
-                } else {
-                    baseItem.availability
+                    else -> baseItem.availability
                 }
 
             val scheduleEval =
@@ -553,30 +621,27 @@ data class RequestGridItem(
 
     val isActiveRequest: Boolean
         get() {
-            if (item.isActivelyDownloading) return true
             if (requestStatus == RequestStatus.DECLINED || requestStatus == RequestStatus.FAILURE) {
                 return false
             }
-            if (item.availability != SeerrAvailability.AVAILABLE) {
-                if (item.availability == SeerrAvailability.PARTIALLY_AVAILABLE && request.seasons != null) {
-                    val hasUnavailableRequestedSeason =
-                        request.seasons.any { season ->
-                            val sAvail = SeerrAvailability.from(season.status) ?: SeerrAvailability.UNKNOWN
-                            val sAvail4k = SeerrAvailability.from(season.status4k) ?: SeerrAvailability.UNKNOWN
-                            val effective = if (request.is4k == true) sAvail4k else sAvail
-                            effective != SeerrAvailability.AVAILABLE
-                        }
-                    if (hasUnavailableRequestedSeason) return true
-                    return requestStatus == RequestStatus.PENDING || requestStatus == RequestStatus.APPROVED
-                }
-                return true
+            if (item.availability == SeerrAvailability.AVAILABLE ||
+                item.availability == SeerrAvailability.DELETED ||
+                item.availability == SeerrAvailability.BLOCKLISTED
+            ) {
+                return false
             }
-            return false
+            if (item.isActivelyDownloading) return true
+            if (item.availability == SeerrAvailability.PARTIALLY_AVAILABLE && !request.seasons.isNullOrEmpty()) {
+                val unavailableSeasons = extractUnavailableRequestedSeasons(request, null)
+                if (unavailableSeasons.isNotEmpty()) return true
+                return requestStatus == RequestStatus.PENDING || requestStatus == RequestStatus.APPROVED
+            }
+            return true
         }
 
     fun statusSubtitle(context: Context): String {
         if (item.isActivelyDownloading) {
-            val pct = item.downloadProgress?.roundToInt()
+            val pct = item.downloadProgress?.roundToInt()?.coerceAtMost(99)
             val firstTimeLeft = item.downloads.firstNotNullOfOrNull { it.timeLeft }
             return when {
                 pct != null && pct > 0 && firstTimeLeft != null -> "$pct% \u2022 $firstTimeLeft"

@@ -102,42 +102,38 @@ class UserSwitchListener
                             }
                             Timber.v("Checking for existing configured seerr server")
                             // Either no server plugin seerr or there was an issue with it
-                            seerrServerDao
-                                .getUsersByJellyfinUser(user.rowId)
-                                .lastOrNull()
-                                ?.let { seerrUser ->
-                                    val server =
-                                        seerrServerDao.getServer(seerrUser.serverId)?.server
-                                    if (server != null) {
-                                        Timber.i("Found a seerr user & server")
-                                        try {
-                                            seerrApi.update(server.url, seerrUser.credential)
-                                            val userConfig =
-                                                if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
-                                                    seerrLogin(
-                                                        seerrApi.api,
-                                                        seerrUser.authMethod,
-                                                        seerrUser.username,
-                                                        seerrUser.password,
-                                                    )
-                                                } else {
-                                                    seerrApi.api.usersApi.authMeGet()
-                                                }
-                                            seerrServerRepository.set(
-                                                server,
-                                                seerrUser,
-                                                userConfig,
+                            val existingSeerrUser =
+                                seerrServerDao
+                                    .getUsersByJellyfinUser(user.rowId)
+                                    .lastOrNull()
+                            if (existingSeerrUser != null) {
+                                val server =
+                                    seerrServerDao.getServer(existingSeerrUser.serverId)?.server
+                                if (server != null) {
+                                    Timber.i("Found a seerr user & server")
+                                    val connected =
+                                        seerrServerRepository.connectExistingUser(
+                                            server = server,
+                                            seerrUser = existingSeerrUser,
+                                            jellyfinUser = user,
+                                            recordError = true,
+                                        )
+                                    if (!connected && existingSeerrUser.authMethod == SeerrAuthMethod.JELLYFIN) {
+                                        val previousState = seerrServerRepository.connection.value
+                                        val autoDiscovered = seerrServerRepository.autoDiscoverAndLogin(user)
+                                        if (!autoDiscovered && previousState.connection is SeerrConnectionStatus.Error) {
+                                            seerrServerRepository.error(
+                                                previousState.connection.server,
+                                                previousState.connection.user,
+                                                previousState.connection.ex,
                                             )
-                                        } catch (ex: Exception) {
-                                            Timber.w(
-                                                ex,
-                                                "Error logging into %s",
-                                                server.url,
-                                            )
-                                            seerrServerRepository.error(server, seerrUser, ex)
                                         }
                                     }
+                                    return@launchIO
                                 }
+                            }
+                            Timber.d("Attempting Seerr automatic discovery and Jellyfin login")
+                            seerrServerRepository.autoDiscoverAndLogin(user)
                         }
                     }
                 }

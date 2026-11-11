@@ -179,7 +179,12 @@ class SwitchUserViewModel
                         password = password,
                     )
                     val current =
-                        serverRepository.changeUser(server.url, authenticationResult, existingUser)
+                        serverRepository.changeUser(
+                            serverUrl = server.url,
+                            authenticationResult = authenticationResult,
+                            existingUser = existingUser,
+                            password = password,
+                        )
                     setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
