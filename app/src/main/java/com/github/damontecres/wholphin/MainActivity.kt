@@ -64,7 +64,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.PlayExternalViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
-import com.github.damontecres.wholphin.ui.theme.colors.PurpleThemeColors
+import com.github.damontecres.wholphin.ui.theme.colors.OrangeThemeColors
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.appStart(intent)
         setContent {
-            MaterialTheme(colorScheme = PurpleThemeColors.darkScheme) {
+            MaterialTheme(colorScheme = OrangeThemeColors.darkScheme) {
                 Surface(Modifier.fillMaxSize()) {
                     val userPreferences by userPreferencesService.flow.collectAsState(null)
                     if (userPreferences == null) {

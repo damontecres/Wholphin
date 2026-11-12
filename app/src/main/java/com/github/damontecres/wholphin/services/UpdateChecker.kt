@@ -57,7 +57,7 @@ class UpdateChecker
         @param:StandardOkHttpClient private val okHttpClient: OkHttpClient,
     ) {
         companion object {
-            const val ASSET_NAME = "Wholphin"
+            const val ASSET_NAME = "AxiomTV"
             const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
@@ -129,7 +129,7 @@ class UpdateChecker
 
         suspend fun getRelease(version: Version): Release? {
             val url =
-                "https://api.github.com/repos/damontecres/Wholphin/releases/tags/v${version.major}.${version.minor}.${version.patch}"
+                "https://api.github.com/repos/FiTH-g1gGLe/AxiomTV/releases/tags/v${version.major}.${version.minor}.${version.patch}"
             return withContext(WholphinDispatchers.IO) {
                 val request =
                     Request

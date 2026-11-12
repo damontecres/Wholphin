@@ -1,3 +1,13 @@
+# AxiomTV
+
+A personal IPTV player for Android TV and Fire Stick: Plex-style look, TiviMate-style live TV guide, and a hybrid ExoPlayer + mpv playback engine.
+
+AxiomTV is based on [Wholphin](https://github.com/damontecres/Wholphin) by damontecres, licensed under GPL-2.0. The original Wholphin README follows below.
+
+**Install on a Fire Stick (Downloader):** `https://github.com/FiTH-g1gGLe/AxiomTV/releases/latest/download/AxiomTV.apk`
+
+---
+
 # Wholphin - an OSS Android TV client for Jellyfin
 
 > "Never half-phin two jellies. Always wholphin one jelly."

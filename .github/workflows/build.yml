@@ -1,0 +1,88 @@
+name: Build AxiomTV
+
+# Builds the app on every push and publishes it as a GitHub release.
+# Install on a Fire Stick with Downloader using:
+#   https://github.com/FiTH-g1gGLe/AxiomTV/releases/latest/download/AxiomTV.apk
+
+on:
+  push:
+    branches:
+      - main
+      - "phase-*"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=1024m'"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build the app
+        env:
+          # Optional: a GitHub token with read:packages lets the build pull in the
+          # real mpv engine and FFmpeg decoders. Without it, mpv is a placeholder.
+          EXTENSIONS_TOKEN: ${{ secrets.EXTENSIONS_TOKEN }}
+        run: |
+          if [[ -n "$EXTENSIONS_TOKEN" ]]; then
+            echo "Using real mpv + FFmpeg from wholphin-extensions"
+            export ORG_GRADLE_PROJECT_WholphinExtensionsUsername="${{ github.repository_owner }}"
+            export ORG_GRADLE_PROJECT_WholphinExtensionsPassword="$EXTENSIONS_TOKEN"
+          else
+            echo "::warning::EXTENSIONS_TOKEN secret not set - mpv will be a placeholder in this build"
+          fi
+          ./gradlew assembleDefaultRelease
+
+      - name: Rename APKs
+        run: |
+          mkdir -p dist
+          for f in app/build/outputs/apk/default/release/*.apk; do
+            name="$(basename "$f" | sed 's/-default//')"
+            cp "$f" "dist/$name"
+          done
+          cp dist/AxiomTV-release.apk dist/AxiomTV.apk
+          ls -la dist
+          sha256sum dist/*.apk
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: AxiomTV-${{ github.run_number }}
+          path: dist/*.apk
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: 0.1.${{ github.run_number }}
+        run: |
+          echo "AxiomTV build ${VERSION} from \`${{ github.ref_name }}\` (${GITHUB_SHA::7})." > notes.txt
+          echo "" >> notes.txt
+          echo "Fire Stick (Downloader): https://github.com/${{ github.repository }}/releases/latest/download/AxiomTV.apk" >> notes.txt
+          gh release create "v${VERSION}" dist/*.apk \
+            --title "${VERSION}" --notes-file notes.txt --target "${GITHUB_SHA}" --latest
+
+      - name: Keep only the newest 5 releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 100 --json tagName,createdAt \
+            --jq 'sort_by(.createdAt) | reverse | .[5:] | .[].tagName' |
+            while read -r tag; do
+              gh release delete "$tag" --cleanup-tag -y || true
+            done

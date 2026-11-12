@@ -42,17 +42,13 @@ val isBuildingBundle =
         gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
     }
 
-val gitTags =
+// AxiomTV versioning: every GitHub build gets a new version 0.1.<run number>,
+// which the in-app updater compares against the latest GitHub release.
+val buildNumber =
     providers
-        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
-        .standardOutput.asText
-        .get()
-
-val gitDescribe =
-    providers
-        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
-        .standardOutput.asText
-        .getOrElse("v0.0.0")
+        .environmentVariable("GITHUB_RUN_NUMBER")
+        .orElse("0")
+        .map { it.toInt() }
 
 kotlin {
     compilerOptions {
@@ -72,17 +68,27 @@ configure<ApplicationExtension> {
     compileSdk = libs.versions.compileSdk.getInt()
 
     defaultConfig {
-        applicationId = "com.github.damontecres.wholphin"
+        applicationId = "com.fithg1ggle.axiomtv"
         minSdk = libs.versions.minSdk.getInt()
         targetSdk = libs.versions.targetSdk.getInt()
-        versionCode = gitTags.trim().lines().size
-        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
+        versionCode = 100 + buildNumber.get()
+        versionName = "0.1.${buildNumber.get()}"
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
 
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
     }
 
     signingConfigs {
+        // Stable AxiomTV key so every new build installs over the last one.
+        // Swap to the "ci" config (repo secrets) later for a private key.
+        create("axiom") {
+            storeFile = file("axiomtv.keystore")
+            storePassword = "axiomtv-sideload"
+            keyAlias = "axiomtv"
+            keyPassword = "axiomtv-sideload"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
         if (shouldSign.get()) {
             create("ci") {
                 file("ci.keystore").writeBytes(
@@ -112,6 +118,7 @@ configure<ApplicationExtension> {
             if (shouldSign.get()) {
                 signingConfig = signingConfigs.getByName("ci")
             } else {
+                signingConfig = signingConfigs.getByName("axiom")
                 val localPropertiesFile = project.rootProject.file("local.properties")
                 if (localPropertiesFile.exists()) {
                     val properties = Properties()
@@ -221,7 +228,7 @@ androidComponents {
                         .getFilter(FilterConfiguration.FilterType.ABI)
                         .let { if (it != null) "-${it.identifier}" else "" }
                 val outputFileName =
-                    "Wholphin-${variant.flavorName}-${variant.buildType}-${output.versionName.get()}-${output.versionCode.get()}$abi.apk"
+                    "AxiomTV-${variant.flavorName}-${variant.buildType}$abi.apk"
                 output.outputFileName = outputFileName
             }
     }
