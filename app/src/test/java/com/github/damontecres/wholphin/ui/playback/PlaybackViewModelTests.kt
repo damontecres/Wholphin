@@ -211,7 +211,7 @@ class PlaybackViewModelTests {
                 any<SeriesTrackChoiceType>(),
             )
         } returns emptyList()
-        coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
+        coEvery { mockPlayerFactory.createVideoPlayer(any(), any(), any()) } returns
             PlayerCreation(mockPlayer)
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
 
