@@ -507,7 +507,7 @@ class PlaybackViewModel
                 val subtitleStc =
                     streamChoiceService.getSeriesTrackChoices(
                         base,
-                        SeriesTrackChoiceType.AUDIO,
+                        SeriesTrackChoiceType.SUBTITLE,
                     )
 
                 if (mediaSource == null && !isLiveTv) {
