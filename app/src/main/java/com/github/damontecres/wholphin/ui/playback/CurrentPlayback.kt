@@ -18,6 +18,7 @@ import kotlin.time.Duration
  */
 data class CurrentPlayback(
     val item: BaseItem,
+    val displayInfo: PlaybackDisplayInfo,
     val tracks: List<TrackSupport>,
     val backend: PlayerBackend,
     val playMethod: PlayMethod,

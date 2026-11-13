@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.detail.isInProgressRecording
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -71,6 +72,8 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.wholphin.util.TrackSupportReason
+import com.github.damontecres.wholphin.util.TrackType
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -477,7 +480,7 @@ class PlaybackViewModel
                 this@PlaybackViewModel.currentItem = playlistItem
                 this@PlaybackViewModel.itemId = item.id
 
-                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
+                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL || item.isInProgressRecording
                 val base = item.data
 
                 // Use the provided playback parameters or else check if the database has some
@@ -672,35 +675,43 @@ class PlaybackViewModel
                 )
                 _state.update { it.copy(maxBitrate = maxBitrate) }
 
-                val response by
-                    api.mediaInfoApi
-                        .getPostedPlaybackInfo(
-                            itemId,
-                            PlaybackInfoDto(
-                                startTimeTicks = null,
-                                deviceProfile =
-                                    if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
-                                        deviceProfileService.getOrCreateDeviceProfile(
-                                            preferences.appPreferences,
-                                            serverRepository.currentServer?.serverVersion,
-                                        )
-                                    } else {
-                                        mpvDeviceProfile
-                                    },
-                                maxAudioChannels = null,
-                                audioStreamIndex = audioIndex,
-                                subtitleStreamIndex = subtitleIndex,
-                                mediaSourceId = sourceId,
-                                alwaysBurnInSubtitleWhenTranscoding = false,
-                                maxStreamingBitrate = maxBitrate.toInt(),
-                                enableDirectPlay = enableDirectPlay,
-                                enableDirectStream = enableDirectStream,
-                                allowVideoStreamCopy = enableDirectStream,
-                                allowAudioStreamCopy = enableDirectStream,
-                                enableTranscoding = true,
-                                autoOpenLiveStream = true,
-                            ),
-                        )
+                val response =
+                    try {
+                        api.mediaInfoApi
+                            .getPostedPlaybackInfo(
+                                itemId,
+                                PlaybackInfoDto(
+                                    startTimeTicks = null,
+                                    deviceProfile =
+                                        if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
+                                            deviceProfileService.getOrCreateDeviceProfile(
+                                                preferences.appPreferences,
+                                                serverRepository.currentServer?.serverVersion,
+                                            )
+                                        } else {
+                                            mpvDeviceProfile
+                                        },
+                                    maxAudioChannels = null,
+                                    audioStreamIndex = audioIndex,
+                                    subtitleStreamIndex = subtitleIndex,
+                                    mediaSourceId = sourceId,
+                                    alwaysBurnInSubtitleWhenTranscoding = false,
+                                    maxStreamingBitrate = maxBitrate.toInt(),
+                                    enableDirectPlay = enableDirectPlay,
+                                    enableDirectStream = enableDirectStream,
+                                    allowVideoStreamCopy = enableDirectStream,
+                                    allowAudioStreamCopy = enableDirectStream,
+                                    enableTranscoding = true,
+                                    autoOpenLiveStream = true,
+                                ),
+                            ).content
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error in getPostedPlaybackInfo")
+                        _state.update { it.copy(loading = LoadingState.Error(ex)) }
+                        return@withContext
+                    }
                 if (response.errorCode != null) {
                     Timber.e("Error in PostedPlaybackInfo: %s", response.errorCode)
                     _state.update { it.copy(loading = LoadingState.Error(response.errorCode?.serialName)) }
@@ -801,6 +812,7 @@ class PlaybackViewModel
                     val playback =
                         CurrentPlayback(
                             item = item,
+                            displayInfo = PlaybackDisplayInfo.from(item, imageUrlService),
                             tracks = listOf(),
                             backend = currentPlayer.value!!.backend,
                             playMethod = transcodeType,
@@ -1031,6 +1043,29 @@ class PlaybackViewModel
                 }
             }
 
+        fun activateTrack(
+            id: String,
+            type: MediaStreamType,
+        ) {
+            viewModelScope.launchDefault {
+                val result =
+                    TrackSelectionUtils.createTrackSelectionParametersForTrack(
+                        trackSelectionParams = onMain { player.trackSelectionParameters },
+                        tracks = onMain { player.currentTracks },
+                        trackId = id,
+                        type = type,
+                    )
+                if (result != null) {
+                    updateCurrentPlayback {
+                        it?.copy(subtitleIndex = TrackIndex.UNSPECIFIED)
+                    }
+                    onMain { player.trackSelectionParameters = result }
+                } else {
+                    // TODO, show message?
+                }
+            }
+        }
+
         fun changeMaxBitrate(newMaxBitrate: Long) {
             viewModelScope.launchIO {
                 val currentPlayback = state.value.currentPlayback
@@ -1109,7 +1144,7 @@ class PlaybackViewModel
             }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_ENDED) {
+            if (playbackState == Player.STATE_ENDED && state.value.loading !is LoadingState.Error) {
                 Timber.v("Playback state is STATE_ENDED")
                 viewModelScope.launchDefault {
                     when (val nextItem = state.value.nextItem()) {
@@ -1148,6 +1183,8 @@ class PlaybackViewModel
                         }
                     }
                 }
+            } else if (playbackState == Player.STATE_ENDED) {
+                Timber.i("Playback ended, but there is in error state")
             }
         }
 
@@ -1404,10 +1441,41 @@ class PlaybackViewModel
         }
 
         override fun onTracksChanged(tracks: Tracks) {
+            val support = checkForSupport(tracks)
             updateCurrentPlayback {
-                it?.copy(
-                    tracks = checkForSupport(tracks),
-                )
+                it?.copy(tracks = support)
+            }
+            viewModelScope.launchDefault {
+                state.value.currentPlayback?.let { currentPlayback ->
+                    if (currentPlayback.item.type == BaseItemKind.TV_CHANNEL && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+                        // Direct playing live tv, so grab the tracks from the actual video
+                        val audioTracks =
+                            support
+                                .filter {
+                                    it.id.isNotNullOrBlank() &&
+                                        it.supported == TrackSupportReason.HANDLED &&
+                                        it.type == TrackType.AUDIO
+                                }.mapNotNull {
+                                    PlaybackMediaTrack.from(it)
+                                }
+
+                        val subtitleTracks =
+                            support
+                                .filter {
+                                    it.id.isNotNullOrBlank() &&
+                                        it.supported == TrackSupportReason.HANDLED &&
+                                        it.type == TrackType.TEXT
+                                }.mapNotNull {
+                                    PlaybackMediaTrack.from(it)
+                                }
+                        updateCurrentMedia {
+                            it.copy(
+                                audioStreams = audioTracks,
+                                subtitleStreams = subtitleTracks,
+                            )
+                        }
+                    }
+                }
             }
         }
 

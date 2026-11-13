@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import android.content.Context
 import android.text.format.DateUtils
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,11 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -21,33 +20,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Composable
 fun ProgramDialog(
-    state: DataLoadingState<BaseItem>,
+    state: ProgramDialogState,
     canRecord: Boolean,
     onDismissRequest: () -> Unit,
     onWatch: (BaseItem) -> Unit,
@@ -73,7 +74,7 @@ fun ProgramDialog(
                     Modifier
                         .padding(16.dp),
             ) {
-                when (val st = state) {
+                when (val st = state.loading) {
                     is DataLoadingState.Error -> {
                         ErrorMessage(st)
                     }
@@ -92,6 +93,7 @@ fun ProgramDialog(
                         val item = st.data
                         val now = LocalDateTime.now()
                         val dto = item.data
+                        val isSeries = item.data.isSeries ?: false
                         val isRecording = dto.timerId.isNotNullOrBlank()
                         val isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank()
                         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -148,126 +150,67 @@ fun ProgramDialog(
                                     .fillMaxWidth(),
                         ) {
                             if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
-                                TextButton(
-                                    onClick = { onWatch.invoke(item) },
-                                    modifier = Modifier,
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = stringResource(R.string.delete),
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.watch_live),
+                                    state.recording?.let { recording ->
+                                        FaIconButton(
+                                            text = stringResource(R.string.play_from_start),
+                                            iconStringRes = R.string.fa_rotate_left,
+                                            onClick = { onWatch.invoke(recording) },
+                                            modifier = Modifier,
                                         )
                                     }
+                                    FaIconButton(
+                                        text = stringResource(R.string.watch_live),
+                                        iconStringRes = R.string.fa_play,
+                                        onClick = { onWatch.invoke(item) },
+                                        modifier = Modifier,
+                                    )
                                 }
                             }
                             if (canRecord) {
                                 val recordFocusRequester = remember { FocusRequester() }
-                                LazyRow(
-                                    horizontalArrangement =
-                                        Arrangement.spacedBy(
-                                            16.dp,
-                                            Alignment.CenterHorizontally,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .focusRestorer(recordFocusRequester),
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier,
                                 ) {
-                                    if (dto.isSeries ?: false) {
-                                        item {
-                                            TextButton(
-                                                onClick = {
-                                                    if (isSeriesRecording) {
-                                                        onCancelRecord.invoke(item, true)
-                                                    } else {
-                                                        onRecord.invoke(item, true)
-                                                    }
-                                                },
-                                                modifier =
-                                                    Modifier.focusRequester(recordFocusRequester),
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement =
-                                                        Arrangement.spacedBy(
-                                                            4.dp,
-                                                        ),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                ) {
-                                                    if (isSeriesRecording) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Close,
-                                                            contentDescription = null,
-                                                            tint = Color.Red,
-                                                        )
-                                                    }
-                                                    Text(
-                                                        text =
-                                                            if (isSeriesRecording) {
-                                                                stringResource(
-                                                                    R.string.cancel_series_recording,
-                                                                )
-                                                            } else {
-                                                                stringResource(R.string.record_series)
-                                                            },
-                                                    )
+                                    if (isSeries) {
+                                        RecordButton(
+                                            isRecording = isSeriesRecording,
+                                            isSeries = true,
+                                            onClick = {
+                                                if (isSeriesRecording) {
+                                                    onCancelRecord.invoke(item, true)
+                                                } else {
+                                                    onRecord.invoke(item, true)
                                                 }
-                                            }
-                                        }
+                                            },
+                                            modifier = Modifier.focusRequester(recordFocusRequester),
+                                        )
                                     }
                                     if (dto.endDate?.isAfter(LocalDateTime.now()) ?: true) {
                                         // Only show program specific recording button if it hasn't finished yet
-                                        item {
-                                            TextButton(
-                                                onClick = {
-                                                    if (isRecording) {
-                                                        onCancelRecord.invoke(item, false)
-                                                    } else {
-                                                        onRecord.invoke(item, false)
-                                                    }
-                                                },
-                                                modifier =
-                                                    Modifier.ifElse(
-                                                        !(dto.isSeries ?: false),
-                                                        Modifier.focusRequester(
-                                                            recordFocusRequester,
-                                                        ),
-                                                    ),
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement =
-                                                        Arrangement.spacedBy(
-                                                            4.dp,
-                                                        ),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                ) {
-                                                    if (isRecording) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Close,
-                                                            contentDescription = null,
-                                                            tint = Color.Red,
-                                                        )
-                                                    }
-                                                    Text(
-                                                        text =
-                                                            if (isRecording) {
-                                                                stringResource(
-                                                                    R.string.cancel_recording,
-                                                                )
-                                                            } else {
-                                                                stringResource(
-                                                                    R.string.record_program,
-                                                                )
-                                                            },
-                                                    )
+                                        RecordButton(
+                                            isRecording = isRecording,
+                                            isSeries = false,
+                                            onClick = {
+                                                if (isRecording) {
+                                                    onCancelRecord.invoke(item, false)
+                                                } else {
+                                                    onRecord.invoke(item, false)
                                                 }
-                                            }
-                                        }
+                                            },
+                                            modifier =
+                                                Modifier.ifElse(
+                                                    !isSeries,
+                                                    Modifier.focusRequester(
+                                                        recordFocusRequester,
+                                                    ),
+                                                ),
+                                        )
                                     }
                                 }
                             }
@@ -275,6 +218,105 @@ fun ProgramDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Handles the onWatch for [ProgramDialog]
+ */
+fun onWatch(
+    context: Context,
+    navigationManager: NavigationManager,
+    item: BaseItem,
+) {
+    val channelId = item.data.channelId
+    if (channelId != null) {
+        navigationManager.navigateTo(
+            Destination.Playback(
+                itemId = channelId,
+                positionMs = 0L,
+            ),
+        )
+    } else if (item.type == BaseItemKind.RECORDING) {
+        navigationManager.navigateTo(
+            Destination.Playback(
+                itemId = item.id,
+                positionMs = 0L,
+            ),
+        )
+    } else {
+        Toast
+            .makeText(context, "Program has no channel ID", Toast.LENGTH_LONG)
+            .show()
+    }
+}
+
+@Composable
+fun FaIconButton(
+    text: String,
+    @StringRes iconStringRes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    iconColor: Color = Color.Unspecified,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(iconStringRes),
+                fontFamily = FontAwesome,
+                color = iconColor,
+            )
+            Text(
+                text = text,
+            )
+        }
+    }
+}
+
+@Composable
+fun RecordButton(
+    isRecording: Boolean,
+    isSeries: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Row(
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    4.dp,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (isRecording) {
+                Text(
+                    text = stringResource(R.string.fa_xmark),
+                    fontFamily = FontAwesome,
+                    color = Color.Red,
+                )
+            } else {
+                RecordingMarker(true, isSeries)
+            }
+            val str =
+                when {
+                    isRecording && isSeries -> R.string.cancel_series_recording
+                    isRecording && !isSeries -> R.string.cancel_recording
+                    isSeries -> R.string.record_series
+                    else -> R.string.record_program
+                }
+            Text(
+                text = stringResource(str),
+            )
         }
     }
 }

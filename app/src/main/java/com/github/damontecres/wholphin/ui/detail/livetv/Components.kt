@@ -41,7 +41,7 @@ fun Program(
     onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val startedBeforeGuide = program.start.isBefore(guideStart)
+    val startedBeforeGuide = remember(program.start, guideStart) { program.start.isBefore(guideStart) }
     val shape =
         remember(startedBeforeGuide) {
             val cornerSize = 4.dp
@@ -110,13 +110,13 @@ fun Program(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier,
                 )
-                val seasonEpisodeLabel =
-                    formatSeasonEpisode(
-                        program.seasonEpisode?.season,
-                        program.seasonEpisode?.episode,
-                    )
                 val subtitle =
-                    remember(program, seasonEpisodeLabel) {
+                    remember(program.id) {
+                        val seasonEpisodeLabel =
+                            formatSeasonEpisode(
+                                program.seasonEpisode?.season,
+                                program.seasonEpisode?.episode,
+                            )
                         listOfNotNull(
                             seasonEpisodeLabel,
                             program.subtitle,
