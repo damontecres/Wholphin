@@ -255,8 +255,16 @@ class PlaybackViewModel
                 }
 
             Timber.d("Selected backend: %s", playerBackend)
-            if (currentPlayer.value?.backend != playerBackend) {
-                Timber.i("Switching player backend to %s", playerBackend)
+            val current = currentPlayer.value
+            // libass draws subtitles differently for HDR videos, so the player must be rebuilt if that changes
+            val assRenderTypeChanged =
+                current?.assHandler?.let { it.renderType != playerFactory.assRenderType(isHdr) } == true
+            if (currentPlayer.value?.backend != playerBackend || assRenderTypeChanged) {
+                Timber.i(
+                    "Creating player: backend=%s, assRenderTypeChanged=%s",
+                    playerBackend,
+                    assRenderTypeChanged,
+                )
                 withContext(WholphinDispatchers.Main) {
                     disconnectPlayer()
                 }
@@ -265,6 +273,7 @@ class PlaybackViewModel
                     playerFactory.createVideoPlayer(
                         playerBackend,
                         preferences.appPreferences,
+                        isHdr,
                     )
                 this.player = playerCreation.player
                 currentPlayer.update {
