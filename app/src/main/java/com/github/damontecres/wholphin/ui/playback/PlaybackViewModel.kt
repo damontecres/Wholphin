@@ -84,6 +84,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,7 +112,9 @@ import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaAttachment
 import org.jellyfin.sdk.model.api.MediaSegmentType
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlayMethod
@@ -193,6 +197,18 @@ class PlaybackViewModel
         private var trackChangeListener: TracksChangedListener? = null
         private val jobs = mutableListOf<Job>()
         private var subscribeJob: Job? = null
+
+        /**
+         * Fonts downloaded for the last played source, reused when only the streams change (audio track, bitrate, etc)
+         */
+        @Volatile
+        private var assFontCache: AssFontCache? = null
+
+        private class AssFontCache(
+            val itemId: UUID,
+            val sourceId: String,
+            val fonts: List<Pair<String, ByteArray>>,
+        )
 
         private val isPlaylist = destination is Destination.PlaybackList
 
@@ -625,6 +641,59 @@ class PlaybackViewModel
             }
 
         /**
+         * Downloads the fonts attached to [source] if the selected subtitle is ASS/SSA
+         */
+        private suspend fun fetchAssFonts(
+            itemId: UUID,
+            source: MediaSourceInfo,
+            subtitleIndex: Int?,
+        ): List<Pair<String, ByteArray>> {
+            val sourceId = source.id ?: return emptyList()
+            val subtitleCodec =
+                source.mediaStreams
+                    ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.index == subtitleIndex }
+                    ?.codec
+                    ?.lowercase()
+            if (subtitleCodec != Codec.Subtitle.ASS && subtitleCodec != Codec.Subtitle.SSA)
+            {
+                return emptyList()
+            }
+
+            assFontCache
+                ?.takeIf { it.itemId == itemId && it.sourceId == sourceId }
+                ?.let {
+                    Timber.d("Reusing %s cached font attachments for ASS subtitles", it.fonts.size)
+                    return it.fonts
+                }
+
+            val fonts = source.mediaAttachments.orEmpty().filter { it.isFont }
+            Timber.d("Downloading %s font attachments for ASS subtitles", fonts.size)
+            val downloaded =
+                coroutineScope {
+                    fonts
+                        .map { attachment ->
+                            async {
+                                try {
+                                    val data = api.videoApi.getAttachment(itemId, sourceId, attachment.index).content
+                                    (attachment.fileName ?: "attachment${attachment.index}") to data
+                                } catch (ex: CancellationException) {
+                                    throw ex
+                                } catch (ex: Exception) {
+                                    Timber.w(ex, "Failed to download font attachment %s", attachment.fileName)
+                                    null
+                                }
+                            }
+                        }.awaitAll()
+                        .filterNotNull()
+                }
+            // Only cache a complete download so a transient failure is retried on the next stream change
+            if (downloaded.size == fonts.size) {
+                assFontCache = AssFontCache(itemId, sourceId, downloaded)
+            }
+            return downloaded
+        }
+
+        /**
          * Change which streams (ie audio or subtitle) are active
          */
         @OptIn(UnstableApi::class)
@@ -798,6 +867,21 @@ class PlaybackViewModel
                                 }
                             }.build()
 
+                    // Drop fonts from a previous item/source so they aren't kept in memory for the rest of the session
+                    if (assFontCache?.let { it.itemId != itemId || it.sourceId != source.id } == true) {
+                        assFontCache = null
+                    }
+
+                    // libass only finds the fonts in the Matroska attachments, which are missing unless
+                    // the original file is played, so fetch them from the server instead
+                    val assHandler = currentPlayer.value?.assHandler
+                    val assFonts =
+                        if (assHandler != null && transcodeType != PlayMethod.DIRECT_PLAY) {
+                            fetchAssFonts(itemId, source, subtitleIndex)
+                        } else {
+                            emptyList()
+                        }
+
                     val playback =
                         CurrentPlayback(
                             item = item,
@@ -849,6 +933,12 @@ class PlaybackViewModel
                             mediaItem,
                             positionMs,
                         )
+                        // Must happen after setMediaItem, since AssHandler drops its buffered fonts on a media item transition.
+                        // libass keeps the fonts that were already added though, so clear them to avoid piling up copies.
+                        if (assHandler != null && assFonts.isNotEmpty()) {
+                            assHandler.ass.clearFont()
+                            assFonts.forEach { (name, data) -> assHandler.addFont(name, data) }
+                        }
                         val onFailure: () -> Unit = {
                             if (player is MpvPlayer && externalSubtitle != null) {
                                 // MpvPlayer may change tracks more than once to add external subtitles
@@ -1759,4 +1849,34 @@ class PlaybackViewModel
                 )
             }
         }
+    }
+
+// Detect fonts like the spec says: https://github.com/ietf-wg-cellar/matroska-specification/blob/1a943ead9bb4c67b02b966cebafe51c8c074e703/cellar-matroska/attachments.md?plain=1#L87-L111
+private val fontMimeTypes =
+    setOf(
+        "font/collection",
+        "font/ttf",
+        "font/otf",
+        "font/sfnt",
+        "font/woff",
+        "font/woff2",
+        "application/font-sfnt",
+        "application/font-woff",
+        "application/x-truetype-font",
+        "application/vnd.ms-opentype",
+        "application/x-font",
+        "application/x-font-ttf",
+        "application/x-font-otf",
+    )
+
+private val fontExtensions = listOf(".ttf", ".otf", ".ttc", ".otc")
+
+private val MediaAttachment.isFont: Boolean
+    get() {
+        val mime = mimeType?.lowercase() ?: return false
+        return mime in fontMimeTypes ||
+            (
+                mime == "application/octet-stream" &&
+                    fileName?.lowercase()?.let { name -> fontExtensions.any { name.endsWith(it) } } == true
+            )
     }

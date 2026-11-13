@@ -315,6 +315,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.ui.compose)
     implementation(libs.ass.media)
+    implementation(libs.ass.kt)
     implementation(libs.exoplayerhdrutils)
 
     implementation(libs.coil.core)
