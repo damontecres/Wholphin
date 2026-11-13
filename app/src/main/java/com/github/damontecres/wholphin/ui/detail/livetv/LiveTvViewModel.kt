@@ -36,6 +36,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
@@ -63,6 +65,7 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.min
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -109,6 +112,18 @@ class LiveTvViewModel
                         _state.update { LiveTvState() }
                         init(it.first, it.second)
                     }
+            }
+            viewModelScope.launchDefault {
+                // This loop refreshes the guide every ~30 minutes if the user sits idle on the EPG
+                val now = LocalDateTime.now()
+                val future = now.roundDownToHalfHour().plusMinutes(30 + 10)
+                val hours = hoursBetween(now, future)
+                // Waits until 10 minutes after the half hour, eg 8:10 or 8:40, then every 30 minutes
+                delay(hours.toDouble().hours)
+                while (isActive) {
+                    refreshIfTimeChanged()
+                    delay(30.minutes)
+                }
             }
         }
 
@@ -183,6 +198,26 @@ class LiveTvViewModel
         }
 
         /**
+         * Refreshes the guide data if the guide start time has changed
+         */
+        private fun refreshIfTimeChanged() {
+            val state = state.value
+            // Don't run during the initialization
+            if (state.loading is LoadingState.Success) {
+                viewModelScope.launchDefault {
+                    val startGuideTime = LocalDateTime.now().roundDownToHalfHour()
+                    val currentStartGuideTime = state.guideTimes.firstOrNull()
+                    Timber.v("refreshIfTimeChanged: startGuideTime=%s, currentStartGuideTime=%s", startGuideTime, currentStartGuideTime)
+                    if (currentStartGuideTime != startGuideTime) {
+                        val newGuideTimes = buildGuideTimes()
+                        _state.update { it.copy(guideTimes = newGuideTimes) }
+                        refreshPrograms(state.channels, state.programs.range)
+                    }
+                }
+            }
+        }
+
+        /**
          * Creates a list of [LocalDateTime] for each hour from now
          */
         private fun buildGuideTimes() =
@@ -229,7 +264,7 @@ class LiveTvViewModel
             val maxStartDate = guideStart.plusHours(MAX_HOURS).minusMinutes(1)
             val minEndDate = guideStart.plusMinutes(1L)
             val channelsToFetch = channels.subList(channelIndices.first, channelIndices.last + 1)
-            Timber.v("Fetching programs for $channelIndices channels ${channelsToFetch.size}")
+            Timber.v("Fetching programs for %s channels of %s @ %s", channelIndices, channelsToFetch.size, guideStart)
             val request =
                 GetProgramsDto(
                     maxStartDate = maxStartDate,
