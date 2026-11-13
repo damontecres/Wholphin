@@ -72,6 +72,8 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.wholphin.util.TrackSupportReason
+import com.github.damontecres.wholphin.util.TrackType
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
@@ -1041,6 +1043,29 @@ class PlaybackViewModel
                 }
             }
 
+        fun activateTrack(
+            id: String,
+            type: MediaStreamType,
+        ) {
+            viewModelScope.launchDefault {
+                val result =
+                    TrackSelectionUtils.createTrackSelectionParametersForTrack(
+                        trackSelectionParams = onMain { player.trackSelectionParameters },
+                        tracks = onMain { player.currentTracks },
+                        trackId = id,
+                        type = type,
+                    )
+                if (result != null) {
+                    updateCurrentPlayback {
+                        it?.copy(subtitleIndex = TrackIndex.UNSPECIFIED)
+                    }
+                    onMain { player.trackSelectionParameters = result }
+                } else {
+                    // TODO, show message?
+                }
+            }
+        }
+
         fun changeMaxBitrate(newMaxBitrate: Long) {
             viewModelScope.launchIO {
                 val currentPlayback = state.value.currentPlayback
@@ -1416,10 +1441,41 @@ class PlaybackViewModel
         }
 
         override fun onTracksChanged(tracks: Tracks) {
+            val support = checkForSupport(tracks)
             updateCurrentPlayback {
-                it?.copy(
-                    tracks = checkForSupport(tracks),
-                )
+                it?.copy(tracks = support)
+            }
+            viewModelScope.launchDefault {
+                state.value.currentPlayback?.let { currentPlayback ->
+                    if (currentPlayback.item.type == BaseItemKind.TV_CHANNEL && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+                        // Direct playing live tv, so grab the tracks from the actual video
+                        val audioTracks =
+                            support
+                                .filter {
+                                    it.id.isNotNullOrBlank() &&
+                                        it.supported == TrackSupportReason.HANDLED &&
+                                        it.type == TrackType.AUDIO
+                                }.mapNotNull {
+                                    PlaybackMediaTrack.from(it)
+                                }
+
+                        val subtitleTracks =
+                            support
+                                .filter {
+                                    it.id.isNotNullOrBlank() &&
+                                        it.supported == TrackSupportReason.HANDLED &&
+                                        it.type == TrackType.TEXT
+                                }.mapNotNull {
+                                    PlaybackMediaTrack.from(it)
+                                }
+                        updateCurrentMedia {
+                            it.copy(
+                                audioStreams = audioTracks,
+                                subtitleStreams = subtitleTracks,
+                            )
+                        }
+                    }
+                }
             }
         }
 

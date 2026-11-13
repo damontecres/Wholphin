@@ -69,6 +69,7 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.DpadSeekMode
@@ -99,6 +100,7 @@ import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.time.Duration
@@ -297,11 +299,21 @@ fun PlaybackPageContent(
             }
 
             is PlaybackAction.ToggleAudio -> {
-                viewModel.changeAudioStream(it.index)
+                when (it.track) {
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.AUDIO)
+                    is SimpleMediaStream -> viewModel.changeAudioStream(it.track.index)
+                    MediaTrackDisabled -> viewModel.changeAudioStream(TrackIndex.DISABLED)
+                    StreamTrackOnlyForced -> throw IllegalArgumentException("Only forced not support for audio")
+                }
             }
 
             is PlaybackAction.ToggleCaptions -> {
-                viewModel.changeSubtitleStream(it.index)
+                when (it.track) {
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.SUBTITLE)
+                    is SimpleMediaStream -> viewModel.changeSubtitleStream(it.track.index)
+                    MediaTrackDisabled -> viewModel.changeSubtitleStream(TrackIndex.DISABLED)
+                    StreamTrackOnlyForced -> viewModel.changeSubtitleStream(TrackIndex.ONLY_FORCED)
+                }
             }
 
             PlaybackAction.SearchCaptions -> {
@@ -744,9 +756,9 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = state.currentPlayback?.audioIndex,
+                    audioIndex = state.currentPlayback?.audioIndex?.toString(),
                     audioStreams = state.currentMediaInfo.audioStreams,
-                    subtitleIndex = state.currentPlayback?.subtitleIndex,
+                    subtitleIndex = state.currentPlayback?.subtitleIndex?.toString(),
                     subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,
