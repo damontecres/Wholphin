@@ -326,7 +326,6 @@ fun TvGuideGridContent(
                         }.sum()
                 val programIndex = focusedProgramIndex - programsBefore
                 focusedItem = RowColumn(channelIndex, programIndex)
-                onFocus.invoke(focusedItem)
             }
         }
     }
@@ -379,7 +378,7 @@ fun TvGuideGridContent(
                     colors =
                         SurfaceDefaults.colors(
                             MaterialTheme.colorScheme.tertiary.copy(
-                                alpha = .25f,
+                                alpha = .4f,
                             ),
                         ),
                     modifier = Modifier,
@@ -402,6 +401,7 @@ fun TvGuideGridContent(
                         endHour = hoursBetween(guideStart, end),
                     )
                 },
+                key = { index -> guideTimes[index].toInstant(OffsetDateTime.now().offset).epochSecond },
             ) { index ->
                 Box(
                     modifier =
@@ -417,18 +417,21 @@ fun TvGuideGridContent(
                                 shape = RoundedCornerShape(4.dp),
                             ),
                 ) {
-                    val guideTime = guideTimes[index]
-                    val differentDay = guideTime.toLocalDate() != guideStart.toLocalDate()
                     val time =
-                        DateUtils.formatDateTime(
-                            context,
-                            guideTime
-                                .toInstant(OffsetDateTime.now().offset)
-                                .epochSecond * 1000,
-                            DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
-                        )
+                        remember(index, guideStart) {
+                            val guideTime = guideTimes[index]
+                            val differentDay = guideTime.toLocalDate() != guideStart.toLocalDate()
+                            DateUtils
+                                .formatDateTime(
+                                    context,
+                                    guideTime
+                                        .toInstant(OffsetDateTime.now().offset)
+                                        .epochSecond * 1000,
+                                    DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
+                                ).toString()
+                        }
                     Text(
-                        text = time.toString(),
+                        text = time,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(2.dp),
                     )
@@ -448,6 +451,7 @@ fun TvGuideGridContent(
                         program.startHours + duration,
                     )
                 },
+                key = { programIndex -> programs.programs[programIndex].id.toString() },
             ) { programIndex ->
                 val program = programs.programs[programIndex]
                 Program(
@@ -490,6 +494,7 @@ fun TvGuideGridContent(
                 layoutInfo = { channelIndex ->
                     ProgramGuideItem.Channel(channelIndex)
                 },
+                key = { channelIndex -> channels[channelIndex].id.toString() },
             ) { channelIndex ->
                 val channel = channels[channelIndex]
                 Channel(
