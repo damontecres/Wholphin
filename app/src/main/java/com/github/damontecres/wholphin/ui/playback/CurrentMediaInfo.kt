@@ -19,8 +19,8 @@ import org.jellyfin.sdk.model.extensions.ticks
 data class CurrentMediaInfo(
     val sourceId: String?,
     val videoStream: SimpleVideoStream?,
-    val audioStreams: List<StreamTrack>,
-    val subtitleStreams: List<StreamTrack>,
+    val audioStreams: List<MediaTrack>,
+    val subtitleStreams: List<MediaTrack>,
     val chapters: List<Chapter>,
     val trickPlayInfo: TrickplayInfo?,
 ) {

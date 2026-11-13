@@ -300,19 +300,19 @@ fun PlaybackPageContent(
 
             is PlaybackAction.ToggleAudio -> {
                 when (it.track) {
-                    is PlayerStream -> viewModel.activateTrack(it.track.id, MediaStreamType.AUDIO)
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.AUDIO)
                     is SimpleMediaStream -> viewModel.changeAudioStream(it.track.index)
-                    TrackDisabled -> viewModel.changeAudioStream(TrackIndex.DISABLED)
-                    TrackOnlyForced -> throw IllegalArgumentException("Only forced not support for audio")
+                    MediaTrackDisabled -> viewModel.changeAudioStream(TrackIndex.DISABLED)
+                    StreamTrackOnlyForced -> throw IllegalArgumentException("Only forced not support for audio")
                 }
             }
 
             is PlaybackAction.ToggleCaptions -> {
                 when (it.track) {
-                    is PlayerStream -> viewModel.activateTrack(it.track.id, MediaStreamType.SUBTITLE)
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.SUBTITLE)
                     is SimpleMediaStream -> viewModel.changeSubtitleStream(it.track.index)
-                    TrackDisabled -> viewModel.changeSubtitleStream(TrackIndex.DISABLED)
-                    TrackOnlyForced -> viewModel.changeSubtitleStream(TrackIndex.ONLY_FORCED)
+                    MediaTrackDisabled -> viewModel.changeSubtitleStream(TrackIndex.DISABLED)
+                    StreamTrackOnlyForced -> viewModel.changeSubtitleStream(TrackIndex.ONLY_FORCED)
                 }
             }
 

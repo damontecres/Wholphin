@@ -67,9 +67,9 @@ enum class PlaybackDialogType {
 data class PlaybackSettings(
     val showDebugInfo: Boolean,
     val audioIndex: String?,
-    val audioStreams: List<StreamTrack>,
+    val audioStreams: List<MediaTrack>,
     val subtitleIndex: String?,
-    val subtitleStreams: List<StreamTrack>,
+    val subtitleStreams: List<MediaTrack>,
     val playbackSpeed: Float,
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
@@ -110,7 +110,7 @@ fun PlaybackDialog(
         PlaybackDialogType.CAPTIONS -> {
             SubtitleChoiceBottomDialog(
                 choices = settings.subtitleStreams,
-                currentChoice = settings.subtitleIndex,
+                currentChoiceId = settings.subtitleIndex,
                 hasDownloadPermission = settings.hasSubtitleDownloadPermission,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
@@ -192,7 +192,7 @@ fun PlaybackDialog(
         PlaybackDialogType.AUDIO -> {
             StreamChoiceBottomDialog(
                 choices = settings.audioStreams,
-                currentChoice = settings.audioIndex,
+                currentChoiceId = settings.audioIndex,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -303,18 +303,18 @@ fun PlaybackDialog(
 
 @Composable
 fun SubtitleChoiceBottomDialog(
-    choices: List<StreamTrack>,
+    choices: List<MediaTrack>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (StreamTrack) -> Unit,
+    onSelectChoice: (MediaTrack) -> Unit,
     onSelectSearch: () -> Unit,
     gravity: Int,
     hasDownloadPermission: Boolean,
-    currentChoice: String? = null,
+    currentChoiceId: String? = null,
 ) {
     val numberBefore = 2
     val initialChoice =
         remember(choices) {
-            choices.indexOfFirstOrNull { it.id == currentChoice }
+            choices.indexOfFirstOrNull { it.id == currentChoiceId }
         }
     val scope = rememberCoroutineScope()
     val listState =
@@ -364,13 +364,13 @@ fun SubtitleChoiceBottomDialog(
                     val interactionSource = remember { MutableInteractionSource() }
                     val focused by interactionSource.collectIsFocusedAsState()
                     ListItem(
-                        selected = currentChoice == TrackDisabled.id,
+                        selected = currentChoiceId == MediaTrackDisabled.id,
                         interactionSource = interactionSource,
                         onClick = {
-                            onSelectChoice(TrackDisabled)
+                            onSelectChoice(MediaTrackDisabled)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(currentChoice == TrackDisabled.id)
+                            SelectedLeadingContent(currentChoiceId == MediaTrackDisabled.id)
                         },
                         headlineContent = {
                             Text(
@@ -395,12 +395,12 @@ fun SubtitleChoiceBottomDialog(
                 }
                 item {
                     ListItem(
-                        selected = currentChoice == TrackOnlyForced.id,
+                        selected = currentChoiceId == StreamTrackOnlyForced.id,
                         onClick = {
-                            onSelectChoice(TrackOnlyForced)
+                            onSelectChoice(StreamTrackOnlyForced)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(currentChoice == TrackOnlyForced.id)
+                            SelectedLeadingContent(currentChoiceId == StreamTrackOnlyForced.id)
                         },
                         headlineContent = {
                             Text(
@@ -416,12 +416,12 @@ fun SubtitleChoiceBottomDialog(
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
-                        selected = choice.id == currentChoice,
+                        selected = choice.id == currentChoiceId,
                         onClick = {
                             onSelectChoice(choice)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(choice.id == currentChoice)
+                            SelectedLeadingContent(choice.id == currentChoiceId)
                         },
                         headlineContent = {
                             Text(
@@ -473,16 +473,16 @@ fun SubtitleChoiceBottomDialog(
 
 @Composable
 fun StreamChoiceBottomDialog(
-    choices: List<StreamTrack>,
+    choices: List<MediaTrack>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (Int, StreamTrack) -> Unit,
+    onSelectChoice: (Int, MediaTrack) -> Unit,
     gravity: Int,
-    currentChoice: String? = null,
+    currentChoiceId: String? = null,
 ) {
     val focusRequesters = remember(choices.size) { List(choices.size) { FocusRequester() } }
-    if (currentChoice != null) {
+    if (currentChoiceId != null) {
         LaunchedEffect(Unit) {
-            choices.indexOfFirstOrNull { it.id == currentChoice }?.let {
+            choices.indexOfFirstOrNull { it.id == currentChoiceId }?.let {
                 focusRequesters.getOrNull(it)?.tryRequestFocus()
             }
         }
@@ -520,13 +520,13 @@ fun StreamChoiceBottomDialog(
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     ListItem(
-                        selected = choice.id == currentChoice,
+                        selected = choice.id == currentChoiceId,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
                         },
                         leadingContent = {
-                            SelectedLeadingContent(choice.id == currentChoice)
+                            SelectedLeadingContent(choice.id == currentChoiceId)
                         },
                         headlineContent = {
                             Text(

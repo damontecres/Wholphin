@@ -76,8 +76,8 @@ import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.MediaTrack
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import com.github.damontecres.wholphin.ui.playback.StreamTrack
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
@@ -106,11 +106,11 @@ sealed interface PlaybackAction {
     data object SearchCaptions : PlaybackAction
 
     data class ToggleCaptions(
-        val track: StreamTrack,
+        val track: MediaTrack,
     ) : PlaybackAction
 
     data class ToggleAudio(
-        val track: StreamTrack,
+        val track: MediaTrack,
     ) : PlaybackAction
 
     data class PlaybackSpeed(

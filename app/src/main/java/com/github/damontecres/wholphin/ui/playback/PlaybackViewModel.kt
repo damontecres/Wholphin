@@ -1444,7 +1444,7 @@ class PlaybackViewModel
                                         it.supported == TrackSupportReason.HANDLED &&
                                         it.type == TrackType.AUDIO
                                 }.mapNotNull {
-                                    PlayerStream.from(it)
+                                    PlaybackMediaTrack.from(it)
                                 }
 
                         val subtitleTracks =
@@ -1454,7 +1454,7 @@ class PlaybackViewModel
                                         it.supported == TrackSupportReason.HANDLED &&
                                         it.type == TrackType.TEXT
                                 }.mapNotNull {
-                                    PlayerStream.from(it)
+                                    PlaybackMediaTrack.from(it)
                                 }
                         updateCurrentMedia {
                             it.copy(
