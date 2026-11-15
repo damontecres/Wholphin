@@ -146,6 +146,9 @@ class BackdropService
                         ImageRequest
                             .Builder(context)
                             .data(imageUrl)
+                            // Palette only looks at a small version of the image anyway, so don't decode the
+                            // full size backdrop a second time just to pick colors
+                            .size(PALETTE_IMAGE_SIZE)
                             .allowHardware(false)
                             .bitmapConfig(Bitmap.Config.ARGB_8888)
                             .build()
@@ -277,3 +280,6 @@ data class ExtractedColors(
         val DEFAULT = ExtractedColors(Color.Unspecified, Color.Unspecified, Color.Unspecified)
     }
 }
+
+/** Longest side in pixels of the image decoded for color extraction */
+private const val PALETTE_IMAGE_SIZE = 256
