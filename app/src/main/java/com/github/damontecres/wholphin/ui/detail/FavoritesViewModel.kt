@@ -771,6 +771,7 @@ val favoriteOptions =
     listOf(
         BaseItemKind.MOVIE,
         BaseItemKind.SERIES,
+        BaseItemKind.SEASON,
         BaseItemKind.EPISODE,
         BaseItemKind.BOX_SET,
         BaseItemKind.PERSON,
