@@ -33,8 +33,10 @@ import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.mpv.MpvPlayer
@@ -111,6 +113,7 @@ import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentType
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PlayMethod
@@ -620,6 +623,18 @@ class PlaybackViewModel
                     player.prepare()
                     player.play()
                 }
+                if (mediaSource != null) {
+                    applySubtitlesFromPlaybackInfo(
+                        item = item,
+                        knownSubtitleStreams = subtitleStreams,
+                        audioStream = audioResult?.stream,
+                        audioIndex = audioIndex,
+                        subtitleIndex = subtitleIndex,
+                        itemPlayback = itemPlayback,
+                        subtitleStc = subtitleStc,
+                        positionMs = if (positionMs > 0) positionMs else C.TIME_UNSET,
+                    )
+                }
                 listenForSegments(item.id)
                 return@withContext true
             }
@@ -898,6 +913,59 @@ class PlaybackViewModel
                     }
                 }
             }
+
+        /**
+         * Some servers only list subtitle streams in the PlaybackInfo response, not in the item's media
+         * sources (e.g. remote/streamed sources that are only probed when playback starts). If the
+         * PlaybackInfo source has subtitle streams the item did not have, offer those in the player and,
+         * if nothing was chosen yet, pick one according to the user's preferences.
+         */
+        private suspend fun applySubtitlesFromPlaybackInfo(
+            item: BaseItem,
+            knownSubtitleStreams: List<SimpleMediaStream>,
+            audioStream: MediaStream?,
+            audioIndex: Int?,
+            subtitleIndex: Int?,
+            itemPlayback: ItemPlayback?,
+            subtitleStc: List<SeriesTrackChoice>,
+            positionMs: Long,
+        ) {
+            val playback = state.value.currentPlayback ?: return
+            if (playback.item.id != item.id) return
+            val playbackSource = playback.mediaSourceInfo
+            val knownIndexes = knownSubtitleStreams.map { it.index }.toSet()
+            val hasNewSubtitles =
+                playbackSource.mediaStreams.orEmpty().any {
+                    it.type == MediaStreamType.SUBTITLE && it.index !in knownIndexes
+                }
+            if (!hasNewSubtitles) return
+
+            Timber.i("Using subtitle streams from PlaybackInfo for %s", item.id)
+            updateCurrentMedia { it.copy(subtitleStreams = getSubtitleStreams(playbackSource)) }
+
+            if (subtitleIndex != null) return
+            val chosenIndex =
+                streamChoiceService
+                    .chooseSubtitleStream(
+                        item = item.data,
+                        source = playbackSource,
+                        audioStream = audioStream,
+                        itemPlayback = itemPlayback,
+                        stc = subtitleStc,
+                        prefs = preferences,
+                    )?.stream
+                    ?.index ?: return
+            Timber.d("Selecting subtitle %s from PlaybackInfo", chosenIndex)
+            withContext(WholphinDispatchers.Main) {
+                changeStreams(
+                    item = item,
+                    sourceId = playbackSource.id,
+                    audioIndex = audioIndex,
+                    subtitleIndex = chosenIndex,
+                    positionMs = positionMs,
+                )
+            }
+        }
 
         /**
          * If direct playing, can try to switch tracks without playback restarting
