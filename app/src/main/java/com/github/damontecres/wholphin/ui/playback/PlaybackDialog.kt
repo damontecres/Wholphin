@@ -66,9 +66,9 @@ enum class PlaybackDialogType {
 
 data class PlaybackSettings(
     val showDebugInfo: Boolean,
-    val audioIndex: String?,
+    val audioStreamId: String?,
     val audioStreams: List<MediaTrack>,
-    val subtitleIndex: String?,
+    val subtitleStreamId: String?,
     val subtitleStreams: List<MediaTrack>,
     val playbackSpeed: Float,
     val contentScale: ContentScale,
@@ -110,7 +110,7 @@ fun PlaybackDialog(
         PlaybackDialogType.CAPTIONS -> {
             SubtitleChoiceBottomDialog(
                 choices = settings.subtitleStreams,
-                currentChoiceId = settings.subtitleIndex,
+                currentChoiceId = settings.subtitleStreamId,
                 hasDownloadPermission = settings.hasSubtitleDownloadPermission,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
@@ -192,7 +192,7 @@ fun PlaybackDialog(
         PlaybackDialogType.AUDIO -> {
             StreamChoiceBottomDialog(
                 choices = settings.audioStreams,
-                currentChoiceId = settings.audioIndex,
+                currentChoiceId = settings.audioStreamId,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()

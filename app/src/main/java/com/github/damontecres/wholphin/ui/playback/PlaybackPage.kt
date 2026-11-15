@@ -300,7 +300,7 @@ fun PlaybackPageContent(
 
             is PlaybackAction.ToggleAudio -> {
                 when (it.track) {
-                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.AUDIO)
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.trackId, MediaStreamType.AUDIO)
                     is SimpleMediaStream -> viewModel.changeAudioStream(it.track.index)
                     MediaTrackDisabled -> viewModel.changeAudioStream(TrackIndex.DISABLED)
                     StreamTrackOnlyForced -> throw IllegalArgumentException("Only forced not support for audio")
@@ -309,7 +309,7 @@ fun PlaybackPageContent(
 
             is PlaybackAction.ToggleCaptions -> {
                 when (it.track) {
-                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.id, MediaStreamType.SUBTITLE)
+                    is PlaybackMediaTrack -> viewModel.activateTrack(it.track.trackId, MediaStreamType.SUBTITLE)
                     is SimpleMediaStream -> viewModel.changeSubtitleStream(it.track.index)
                     MediaTrackDisabled -> viewModel.changeSubtitleStream(TrackIndex.DISABLED)
                     StreamTrackOnlyForced -> viewModel.changeSubtitleStream(TrackIndex.ONLY_FORCED)
@@ -756,9 +756,9 @@ fun PlaybackPageContent(
             settings =
                 PlaybackSettings(
                     showDebugInfo = showDebugInfo,
-                    audioIndex = state.currentPlayback?.audioIndex?.toString(),
+                    audioStreamId = state.currentPlayback?.audioIndex?.toString(),
                     audioStreams = state.currentMediaInfo.audioStreams,
-                    subtitleIndex = state.currentPlayback?.subtitleIndex?.toString(),
+                    subtitleStreamId = state.currentPlayback?.subtitleIndex?.toString(),
                     subtitleStreams = state.currentMediaInfo.subtitleStreams,
                     playbackSpeed = playbackSpeed,
                     contentScale = contentScale,

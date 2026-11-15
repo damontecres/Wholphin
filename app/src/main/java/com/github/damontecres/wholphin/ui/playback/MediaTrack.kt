@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.util.TrackSupport
@@ -18,6 +20,7 @@ sealed interface MediaTrack {
  */
 data class PlaybackMediaTrack(
     override val id: String,
+    val trackId: String,
     override val streamTitle: String?,
     override val displayTitle: String,
 ) : MediaTrack {
@@ -29,8 +32,8 @@ data class PlaybackMediaTrack(
                         track.format.codecs,
                         track.format.label,
                         track.format.language,
-                    ).joinNotBlank(" - ") ?: "Unknown"
-                return PlaybackMediaTrack(track.id, null, displayTitle)
+                    ).joinNotBlank(" - ") ?: WholphinApplication.instance.getString(R.string.unknown)
+                return PlaybackMediaTrack("m_${track.id}", track.id, null, displayTitle)
             }
         }
     }
