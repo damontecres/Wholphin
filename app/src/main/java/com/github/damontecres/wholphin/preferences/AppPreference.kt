@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 import com.github.damontecres.wholphin.util.DebugLogTree
+import com.github.damontecres.wholphin.util.PlayerBufferSize
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -384,6 +385,37 @@ sealed interface AppPreference<Pref, T> {
                         null
                     }
                 },
+            )
+
+        val AutoBufferSize =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.auto_buffer_size,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.maxBufferMb == PlayerBufferSize.AUTO },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides {
+                        maxBufferMb = if (value) PlayerBufferSize.AUTO else PlayerBufferSize.LOW_MEMORY_BUFFER_MB
+                    }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val BufferSize =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.buffer_size,
+                defaultValue = PlayerBufferSize.LOW_MEMORY_BUFFER_MB.toLong(),
+                min = PlayerBufferSize.MANUAL_MIN_MB.toLong(),
+                max = PlayerBufferSize.MANUAL_MAX_MB.toLong(),
+                interval = PlayerBufferSize.MANUAL_STEP_MB,
+                getter = {
+                    it.playbackPreferences.overrides.maxBufferMb
+                        .toLong()
+                },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { maxBufferMb = value.toInt() }
+                },
+                summarizer = { value -> value?.let { "$it MB" } },
             )
 
         val MaxResolutionPref =
@@ -1242,6 +1274,14 @@ private val ExoPlayerSettings =
         AppPreference.DirectPlayPgs,
         AppPreference.DecodeAv1,
         AppPreference.HdrFormatSettings,
+        AppPreference.AutoBufferSize,
+    )
+
+/** Shown below [AppPreference.AutoBufferSize] while it is off */
+private val ManualBufferSize =
+    ConditionalPreferences<AppPreferences>(
+        { it.playbackPreferences.overrides.maxBufferMb != PlayerBufferSize.AUTO },
+        listOf(AppPreference.BufferSize),
     )
 
 private val HdrFormatSettings =
@@ -1258,6 +1298,7 @@ val ExoPlayerPreferences =
         PreferenceGroup(
             title = R.string.exoplayer_options,
             preferences = ExoPlayerSettings,
+            conditionalPreferences = listOf(ManualBufferSize),
         ),
     )
 
@@ -1346,6 +1387,13 @@ val advancedPreferences =
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
                             ExoPlayerSettings,
+                        ),
+                        ConditionalPreferences(
+                            {
+                                it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER &&
+                                    ManualBufferSize.condition(it)
+                            },
+                            ManualBufferSize.preferences,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
