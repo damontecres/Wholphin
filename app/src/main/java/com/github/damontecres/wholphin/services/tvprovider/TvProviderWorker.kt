@@ -133,7 +133,7 @@ class TvProviderWorker
                     )
                 Timber.v("Added %s", addedCount)
 
-                addOtherChannels()
+                addOtherChannels(potentialItemsToAdd)
 
                 Timber.d("Completed successfully")
             } catch (_: ApiClientException) {
@@ -253,9 +253,8 @@ class TvProviderWorker
                     )
                 }.build()
 
-        private suspend fun addOtherChannels() {
+        private suspend fun addOtherChannels(nextUp: List<BaseItem>) {
             val preferences = preferences.data.firstOrNull()
-            val channelsPrefs = context.getSharedPreferences("channels", Context.MODE_PRIVATE)
 
             val latest =
                 api.libraryApi
@@ -274,14 +273,24 @@ class TvProviderWorker
                     ).content
                     .map { BaseItem(it, true) }
 
-            var channelId = channelsPrefs.getString("latest", null)?.toUri()
+            updateChannel("next_up", R.string.next_up, nextUp)
+            updateChannel("latest", R.string.recently_added, latest)
+        }
+
+        private fun updateChannel(
+            key: String,
+            displayName: Int,
+            items: List<BaseItem>,
+        ) {
+            val channelsPrefs = context.getSharedPreferences("channels", Context.MODE_PRIVATE)
+            var channelId = channelsPrefs.getString(key, null)?.toUri()
             if (channelId == null) {
-                Timber.d("channelId for latest is null")
+                Timber.d("channelId for $key is null")
                 val channel =
                     Channel
                         .Builder()
                         .apply {
-                            setDisplayName(context.getString(R.string.recently_added))
+                            setDisplayName(context.getString(displayName))
                             setType(Channels.TYPE_PREVIEW)
                             setAppLinkIntent(Intent(context, MainActivity::class.java))
                         }.build()
@@ -292,7 +301,7 @@ class TvProviderWorker
                     )
                 if (channelId != null) {
                     channelsPrefs.edit(true) {
-                        putString("latest", channelId.toString())
+                        putString(key, channelId.toString())
                     }
                     TvContractCompat.requestChannelBrowsable(
                         context,
@@ -303,16 +312,16 @@ class TvProviderWorker
                     throw IllegalStateException("channelId was null")
                 }
             }
-            val programs = latest.map { convert(channelId, it).toContentValues() }.toTypedArray()
+            val programs = items.map { convert(channelId, it).toContentValues() }.toTypedArray()
 
             // Delete & replace
-            context.contentResolver.delete(TvContractCompat.PreviewPrograms.CONTENT_URI, null, null)
+            context.contentResolver.delete(TvContractCompat.buildPreviewProgramsUriForChannel(ContentUris.parseId(channelId)), null, null)
             val count =
                 context.contentResolver.bulkInsert(
                     TvContractCompat.PreviewPrograms.CONTENT_URI,
                     programs,
                 )
-            Timber.v("Inserted $count records")
+            Timber.v("Inserted $count records into $key")
         }
 
         private fun convert(
