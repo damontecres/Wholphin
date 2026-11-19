@@ -3,21 +3,22 @@ package com.github.damontecres.wholphin.services.tvprovider
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.ParcelFileDescriptor
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.net.toUri
-import coil3.ImageLoader
-import coil3.asDrawable
-import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.BuildConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.IOException
 
 class ImageProvider : ContentProvider() {
-    private val imageLoader by lazy { context?.let { ImageLoader(it) } }
-
     override fun onCreate() = true
 
     override fun getType(uri: Uri) = null
@@ -48,61 +49,52 @@ class ImageProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
     ) = 0
 
+    private val okHttpClient = OkHttpClient()
+
+    suspend fun loadBitmap(url: String): Bitmap? =
+        withContext(Dispatchers.IO) {
+            val call = okHttpClient.newCall(Request.Builder().url(url).build())
+            coroutineContext.job.invokeOnCompletion { call.cancel() }
+
+            call.execute().use { response ->
+                if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+                BitmapFactory.decodeStream(response.body.byteStream())
+            }
+        }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun openFile(
         uri: Uri,
         mode: String,
     ): ParcelFileDescriptor? {
-        val src = requireNotNull(uri.getQueryParameter("src")).toUri()
+        val src = requireNotNull(uri.getQueryParameter("src"))
+        val (read, write) = ParcelFileDescriptor.createReliablePipe()
 
-        val (read, write) = ParcelFileDescriptor.createPipe()
-        val outputStream = ParcelFileDescriptor.AutoCloseOutputStream(write)
-        context?.let { safeContext ->
-            imageLoader?.enqueue(
-                ImageRequest
-                    .Builder(safeContext)
-                    .apply {
-                        data(src)
-                        target(
-                            onSuccess = { image ->
-                                writeDrawable(
-                                    image.asDrawable(safeContext.resources),
-                                    outputStream,
-                                )
-                            },
-                            onError = { image ->
-                                writeDrawable(
-                                    requireNotNull(image?.asDrawable(safeContext.resources)),
-                                    outputStream,
-                                )
-                            },
-                        )
-                    }.build(),
-            )
+        scope.launch {
+            try {
+                val bitmap =
+                    loadBitmap(src)
+                        ?: throw IOException("Undecodable image")
+                ParcelFileDescriptor.AutoCloseOutputStream(write).use { out ->
+                    bitmap.compress(webpFormat, COMPRESSION_QUALITY, out)
+                }
+                bitmap.recycle()
+            } catch (e: Throwable) {
+                // Throwable on purpose: also catches OutOfMemoryError
+                runCatching { write.closeWithError(e.message) }
+            }
         }
         return read
     }
 
-    private fun writeDrawable(
-        drawable: Drawable,
-        outputStream: ParcelFileDescriptor.AutoCloseOutputStream,
-    ) {
-        @Suppress("DEPRECATION")
-        val format =
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                -> Bitmap.CompressFormat.WEBP_LOSSY
-
-                else -> Bitmap.CompressFormat.WEBP
-            }
-
-        try {
-            outputStream.use {
-                drawable.toBitmap().compress(format, COMPRESSION_QUALITY, outputStream)
-            }
-        } catch (_: IOException) {
-            // Ignore IOException as this is commonly thrown when the load request is cancelled
+    @Suppress("DEPRECATION")
+    private val webpFormat =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            Bitmap.CompressFormat.WEBP
         }
-    }
 
     companion object {
         private const val COMPRESSION_QUALITY = 95
