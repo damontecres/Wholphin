@@ -765,7 +765,11 @@ class PlaybackViewModel
                                     .Builder(
                                         api.createUrl(deliveryUrl).toUri(),
                                     ).setId("e:${it.index}")
-                                    .setMimeType(subtitleMimeTypes[it.codec])
+                                    // Server may convert the subtitle (e.g. mov_text -> vtt), so prefer the delivery URL extension
+                                    .setMimeType(
+                                        subtitleMimeTypes[deliveryUrl.substringBefore('?').substringAfterLast('.').lowercase()]
+                                            ?: subtitleMimeTypes[it.codec],
+                                    )
                                     .setLanguage(it.language)
                                     .setLabel(it.title)
                                     .setSelectionFlags(flags)
@@ -853,6 +857,9 @@ class PlaybackViewModel
                             if (player is MpvPlayer && externalSubtitle != null) {
                                 // MpvPlayer may change tracks more than once to add external subtitles
                                 trackChangeListener?.let { player.addListener(it) }
+                            } else if (transcodeType != PlayMethod.DIRECT_PLAY) {
+                                // Already transcoding/direct streaming, retrying would give the same result and loop forever
+                                Timber.w("Failed to select tracks during %s, not retrying", transcodeType)
                             } else {
                                 viewModelScope.launchIO {
                                     changeStreams(
