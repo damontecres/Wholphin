@@ -43,6 +43,8 @@ import timber.log.Timber
 import java.time.ZoneId
 import java.util.Date
 import java.util.UUID
+import kotlin.collections.contains
+import kotlin.collections.orEmpty
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -62,6 +64,26 @@ class TvProviderWorker
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
     ) : CoroutineWorker(context, workerParams) {
+        fun BaseItem.getLocalImage(imageType: ImageType? = null): Uri? {
+            val imageType =
+                imageType
+                    ?: when (this.type) {
+                        BaseItemKind.EPISODE -> {
+                            ImageType.THUMB
+                        }
+
+                        else -> {
+                            if (ImageType.THUMB in this.data.imageTags.orEmpty()) {
+                                ImageType.THUMB
+                            } else {
+                                ImageType.PRIMARY
+                            }
+                        }
+                    }
+            val serverUri = imageUrlService.getItemImageUrl(this, imageType) ?: return null
+            return ImageProvider.getImageUri(serverUri)
+        }
+
         override suspend fun doWork(): Result {
             Timber.d("Start")
             val serverId =
@@ -215,12 +237,8 @@ class TvProviderWorker
                     }
 
                     setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_16_9)
-                    val imageType =
-                        when (item.type) {
-                            BaseItemKind.EPISODE -> ImageType.THUMB
-                            else -> if (ImageType.THUMB in item.data.imageTags.orEmpty()) ImageType.THUMB else ImageType.PRIMARY
-                        }
-                    setPosterArtUri(imageUrlService.getItemImageUrl(item, imageType)!!.toUri())
+
+                    setPosterArtUri(item.getLocalImage())
 
                     setIntent(
                         Intent(context, MainActivity::class.java)
@@ -357,7 +375,7 @@ class TvProviderWorker
                     }
 
                     setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_16_9)
-                    setPosterArtUri(imageUrlService.getItemImageUrl(item, ImageType.THUMB)!!.toUri())
+                    setPosterArtUri(item.getLocalImage(ImageType.THUMB))
 
                     setIntent(
                         Intent(context, MainActivity::class.java)
