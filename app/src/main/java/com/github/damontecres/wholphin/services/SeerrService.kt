@@ -11,12 +11,14 @@ import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResul
 import com.github.damontecres.wholphin.api.seerr.model.ServiceProfile
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
+import com.github.damontecres.wholphin.api.seerr.model.WatchProviders
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.ui.components.WatchProviderDisplay
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrProfile
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRequestData
 import com.github.damontecres.wholphin.ui.detail.discover.SeerrRootFolder
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -225,6 +228,18 @@ class SeerrService
                     }
                 return "${base}${prefix}$path"
             }
+        }
+
+        suspend fun createWatchProviderDisplays(providers: List<WatchProviders>?): List<WatchProviderDisplay> {
+            val current = seerrServerRepository.current.firstOrNull() ?: return emptyList()
+            val base =
+                if (current.serverConfig.cacheImages == true) {
+                    current.server.url.removeSuffix("/") + "/imageproxy/tmdb"
+                } else {
+                    "https://image.tmdb.org"
+                }
+
+            return mapWatchProviderDisplays(providers, base)
         }
 
         suspend fun getProfilesAndFolders(type: SeerrItemType): SeerrRequestData {
@@ -498,6 +513,39 @@ class SeerrService
                 jellyfinItemId = credit.mediaInfo?.jellyfinId,
             )
     }
+
+/**
+ * Select the most appropriate watch-provider region for the supplied locale.
+ *
+ * The locale's country is preferred, followed by the US region and then the first available
+ * region. Returns null when no watch-provider regions are available.
+ */
+internal fun mapWatchProviderDisplays(
+    providers: List<WatchProviders>?,
+    imageBaseUrl: String,
+): List<WatchProviderDisplay> =
+    providers
+        .selectWatchProviderRegion()
+        ?.flatrate
+        .orEmpty()
+        .mapNotNull { provider ->
+            val logoPath =
+                provider.logoPath?.takeIf { it.isNotBlank() }
+                    ?: return@mapNotNull null
+            WatchProviderDisplay(
+                name = provider.name,
+                logoUrl = "$imageBaseUrl/t/p/w92$logoPath",
+            )
+        }.distinctBy { it.logoUrl }
+
+fun List<WatchProviders>?.selectWatchProviderRegion(locale: Locale = Locale.getDefault()): WatchProviders? {
+    val regions = orEmpty()
+    val country = locale.country.takeIf { it.isNotBlank() }
+
+    return regions.firstOrNull { it.iso31661.equals(country, ignoreCase = true) }
+        ?: regions.firstOrNull { it.iso31661.equals(Locale.US.country, ignoreCase = true) }
+        ?: regions.firstOrNull()
+}
 
 val MediaInfo.jellyfinId: UUID?
     get() = jellyfinMediaId4k?.toUUIDOrNull() ?: jellyfinMediaId?.toUUIDOrNull()
