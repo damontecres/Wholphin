@@ -238,6 +238,26 @@ fun <T> ComposablePreference(
                 onChange = { onValueChange(it as T) },
                 summaryBelow = false,
                 interactionSource = interactionSource,
+                labelWidth =
+                    remember(preference) {
+                        when (preference) {
+                            AppPreference.ControllerTimeout -> 40.dp
+
+                            AppPreference.ImageDiskCacheSize,
+                            AppPreference.MaxBitrate,
+                            AppPreference.PassOutProtection,
+                            -> 64.dp
+
+                            AppPreference.SkipForward,
+                            AppPreference.SkipBack,
+                            AppPreference.AutoPlayNextDelay,
+                            -> 72.dp
+
+                            AppPreference.SlideshowDuration -> 84.dp
+
+                            else -> 72.dp // Dp.Unspecified
+                        }
+                    },
                 modifier = modifier,
             )
         }
