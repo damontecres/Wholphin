@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import timber.log.Timber
 import java.util.UUID
@@ -85,7 +85,7 @@ class EpisodeViewModel
             viewModelScope.launchIO {
                 try {
                     val item =
-                        api.userLibraryApi.getItem(itemId).content.let {
+                        api.libraryApi.getItem(itemId).content.let {
                             BaseItem.from(it, api)
                         }
                     _state.update { it.copy(episode = DataLoadingState.Success(item)) }
@@ -103,7 +103,7 @@ class EpisodeViewModel
                 try {
                     val prefs = userPreferencesService.getCurrent()
                     val item =
-                        api.userLibraryApi.getItem(itemId).content.let {
+                        api.libraryApi.getItem(itemId).content.let {
                             BaseItem(it)
                         }
                     val chosenStreams =
@@ -145,11 +145,10 @@ class EpisodeViewModel
         ) {
             viewModelScope.launchIO {
                 val prefs = userPreferencesService.getCurrent()
-                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, prefs)
                     }
                 _state.update { it.copy(chosenStreams = chosen) }
             }
@@ -163,7 +162,6 @@ class EpisodeViewModel
         ) {
             viewModelScope.launchIO {
                 val prefs = userPreferencesService.getCurrent()
-                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
@@ -171,10 +169,7 @@ class EpisodeViewModel
                         trackIndex = trackIndex,
                         type = type,
                     )
-                val chosen =
-                    result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
-                    }
+                val chosen = itemPlaybackRepository.getChosenItemFromPlayback(item, result, prefs)
                 _state.update { it.copy(chosenStreams = chosen) }
             }
         }

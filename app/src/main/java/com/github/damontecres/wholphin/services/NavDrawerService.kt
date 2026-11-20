@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -28,7 +29,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.api.client.extensions.userViewApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import timber.log.Timber
@@ -129,7 +130,7 @@ class NavDrawerService
             tvAccess: Boolean,
         ): List<Library> {
             val userViews =
-                api.userViewsApi
+                api.userViewApi
                     .getUserViews(userId = userId)
                     .content.items
             val recordingFolders =
@@ -188,7 +189,7 @@ class NavDrawerService
          */
         suspend fun updateNavDrawer(
             user: JellyfinUser,
-            userDto: UserDto,
+            userDto: ServerUserConfig,
             discoverActive: Boolean,
         ) {
             val builtins =

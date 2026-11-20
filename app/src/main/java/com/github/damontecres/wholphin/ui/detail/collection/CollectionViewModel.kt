@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -139,7 +139,7 @@ class CollectionViewModel
             viewModelScope.launchDefault {
                 try {
                     val collection =
-                        api.userLibraryApi
+                        api.libraryApi
                             .getItem(itemId)
                             .content
                             .let { BaseItem(it, false) }
@@ -244,12 +244,15 @@ class CollectionViewModel
                         }
                     jobs.forEach { job ->
                         val (type, row) = job.await()
-                        _state.update {
-                            val separateItems =
-                                it.separateItems.toMutableMap().apply {
-                                    put(type, row)
-                                }
-                            it.copy(separateItems = separateItems)
+                        // Only include Success if non-empty
+                        if (row !is HomeRowLoadingState.Success || row.items.isNotEmpty()) {
+                            _state.update {
+                                val separateItems =
+                                    it.separateItems.toMutableMap().apply {
+                                        put(type, row)
+                                    }
+                                it.copy(separateItems = separateItems)
+                            }
                         }
                     }
                 }
@@ -422,7 +425,7 @@ class CollectionViewModel
         private fun refreshCollection() {
             viewModelScope.launchDefault {
                 val collection =
-                    api.userLibraryApi
+                    api.libraryApi
                         .getItem(itemId)
                         .content
                         .let { BaseItem(it, false) }

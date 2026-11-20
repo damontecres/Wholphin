@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -21,7 +22,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.api.client.extensions.userViewApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -63,12 +64,8 @@ class SuggestionsWorker
             }
 
             if (api.baseUrl.isNullOrBlank() || api.accessToken.isNullOrBlank()) {
-                var currentUser = serverRepository.current.value
-                if (currentUser == null) {
-                    serverRepository.restoreSession(serverId, userId)
-                    currentUser = serverRepository.current.value
-                }
-                if (currentUser == null) {
+                val result = serverRepository.restoreLastSession()
+                if (result !is RestoredSession.Success) {
                     Timber.w("No user found during run")
                     return Result.failure()
                 }
@@ -104,7 +101,7 @@ class SuggestionsWorker
                 }
 
                 val views =
-                    api.userViewsApi
+                    api.userViewApi
                         .getUserViews(userId = userId)
                         .content.items
                         .orEmpty()

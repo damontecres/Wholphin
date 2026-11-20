@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +60,7 @@ import com.github.damontecres.wholphin.ui.cards.FavoriteIndicator
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.AlphabetButtons
+import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.ifElse
@@ -75,7 +77,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
-fun CollectionFolderList(
+fun CollectionFolderViewScope.CollectionFolderList(
     preferences: UserPreferences,
     collectionType: CollectionType?,
     focusedItem: BaseItem?,
@@ -84,10 +86,10 @@ fun CollectionFolderList(
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
-    viewOptions: ViewOptions,
     onClickPlay: (Int, BaseItem) -> Unit,
     initialPosition: Int,
     gridFocusRequester: FocusRequester,
+    itemContent: @Composable CollectionFolderViewScope.(GridItemDetails<BaseItem>) -> Unit,
     modifier: Modifier = Modifier,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
@@ -153,10 +155,8 @@ fun CollectionFolderList(
                             ).padding(8.dp),
                 )
             }
-            CollectionFolderContent(
+            this@CollectionFolderList.CollectionFolderListContent(
                 items = items,
-                viewOptions = viewOptions,
-                collectionType = collectionType,
                 listState = listState,
                 position = position,
                 positionFocusRequester = positionFocusRequester,
@@ -167,6 +167,7 @@ fun CollectionFolderList(
                 },
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
+                itemContent = itemContent,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -266,44 +267,43 @@ fun CollectionFolderListDetails(
 }
 
 @Composable
-fun CollectionFolderContent(
+fun CollectionFolderViewScope.CollectionFolderListContent(
     items: List<BaseItem?>,
-    viewOptions: ViewOptions,
-    collectionType: CollectionType?,
     listState: LazyListState,
     position: Int,
     positionFocusRequester: FocusRequester,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     onPositionChange: (Int) -> Unit,
+    itemContent: @Composable CollectionFolderViewScope.(GridItemDetails<BaseItem>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentPosition by rememberUpdatedState(position)
     LazyColumn(
         state = listState,
         verticalArrangement = Arrangement.spacedBy(viewOptions.spacing.dp),
         modifier = modifier.focusRestorer(positionFocusRequester),
     ) {
         itemsIndexed(items) { index, item ->
-            val onClick: () -> Unit =
-                remember(index, item) {
-                    { item?.let { onClickItem.invoke(index, item) } }
+            val details =
+                remember(item, index, onClickItem, onLongClickItem, onPositionChange) {
+                    GridItemDetails(
+                        item = item,
+                        index = index,
+                        onClick = { item?.let { onClickItem.invoke(index, item) } },
+                        onLongClick = { item?.let { onLongClickItem.invoke(index, item) } },
+                        widthPx = -1,
+                        mod =
+                            Modifier
+                                .onFocusChanged {
+                                    if (it.isFocused) onPositionChange.invoke(index)
+                                }.ifElse(
+                                    index == currentPosition,
+                                    Modifier.focusRequester(positionFocusRequester),
+                                ),
+                    )
                 }
-            val onLongClick: () -> Unit =
-                remember(index, item) {
-                    { item?.let { onLongClickItem.invoke(index, item) } }
-                }
-            CollectionFolderListItem(
-                item = item,
-                dense = viewOptions.type == ViewOptionsType.DENSE_LIST,
-                collectionType = collectionType,
-                onClick = onClick,
-                onLongClick = onLongClick,
-                modifier =
-                    Modifier
-                        .onFocusChanged {
-                            if (it.isFocused) onPositionChange.invoke(index)
-                        }.ifElse(index == position, Modifier.focusRequester(positionFocusRequester)),
-            )
+            itemContent.invoke(this@CollectionFolderListContent, details)
         }
     }
 }
@@ -522,9 +522,12 @@ fun ListItemAlbum(
         }
     val supportingContent =
         remember(item, dense) {
-            if (!dense && item?.subtitle != null) {
+            // Album artist is already shown as the overline
+            val subtitle =
+                if (item?.type == BaseItemKind.MUSIC_ALBUM) item.data.productionYear?.toString() else item?.subtitle
+            if (!dense && subtitle != null) {
                 @Composable {
-                    Text(item.subtitle ?: "")
+                    Text(subtitle)
                 }
             } else {
                 null

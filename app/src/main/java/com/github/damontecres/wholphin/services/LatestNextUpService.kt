@@ -18,8 +18,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.tvShowsApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.showApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
@@ -65,7 +65,7 @@ class LatestNextUpService
                     enableTotalRecordCount = false,
                 )
             val items =
-                api.itemsApi
+                api.libraryApi
                     .getResumeItems(request)
                     .content
                     .items
@@ -101,7 +101,7 @@ class LatestNextUpService
                     enableTotalRecordCount = false,
                 )
             val nextUp =
-                api.tvShowsApi
+                api.showApi
                     .getNextUp(request)
                     .content
                     .items
@@ -228,7 +228,7 @@ class LatestNextUpService
             var changed = false
             removed.forEach { (seriesId, timestamp) ->
                 val item =
-                    api.itemsApi
+                    api.libraryApi
                         .getItems(
                             userId = userId,
                             parentId = seriesId,

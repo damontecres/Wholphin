@@ -84,7 +84,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -114,7 +114,7 @@ class PersonViewModel
 
         private suspend fun updatePerson(): BaseItem {
             val person =
-                api.userLibraryApi
+                api.libraryApi
                     .getItem(itemId)
                     .content
                     .let { BaseItem(it) }
@@ -257,6 +257,7 @@ fun PersonPage(
                     imageUrlService.getItemImageUrl(
                         itemId = person.id,
                         imageType = ImageType.PRIMARY,
+                        tag = person.data.imageTags?.get(ImageType.PRIMARY),
                     )
                 }
             // A long filmography is hard to navigate as a row, so it is cut at the same

@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.HomeDataService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.LatestNextUpService
@@ -19,7 +21,6 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
-import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.combinePair
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -48,7 +49,6 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.UserDto
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -63,6 +63,7 @@ class HomeViewModel
         val serverReportService: ServerReportService,
         private val navDrawerService: NavDrawerService,
         private val homeSettingsService: HomeSettingsService,
+        private val homeDataService: HomeDataService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val datePlayedService: DatePlayedService,
         private val backdropService: BackdropService,
@@ -85,19 +86,26 @@ class HomeViewModel
                         userDto?.id,
                         settings != HomePageResolvedSettings.EMPTY,
                     )
-                    _state.update { HomeState.EMPTY }
+//                    Timber.v("userDto=%s", userDto)
                     dataLoadingJob?.cancel()
                     if (userDto == null) {
                         Timber.d("UserDto is null")
+                        _state.update { HomeState.EMPTY }
                         return@collectLatestIn
                     }
                     if (settings == HomePageResolvedSettings.EMPTY) {
                         Timber.d("Home settings are empty")
+                        _state.update { HomeState.EMPTY }
                         return@collectLatestIn
                     }
                     if (userDto.id != settings.userId) {
                         Timber.d("User IDs don't match: %s vs %s", userDto?.id, settings.userId)
+                        _state.update { HomeState.EMPTY }
                         return@collectLatestIn
+                    }
+                    if (state.value.settings.userId != settings.userId) {
+                        Timber.d("User changed")
+                        _state.update { HomeState.EMPTY }
                     }
                     dataLoadingJob =
                         viewModelScope.launchIO {
@@ -133,7 +141,7 @@ class HomeViewModel
         }
 
         suspend fun loadHomeRows(
-            userDto: UserDto,
+            userDto: ServerUserConfig,
             settings: HomePageResolvedSettings,
         ) {
             Timber.i("Starting loadHomeRows")
@@ -180,7 +188,7 @@ class HomeViewModel
                                 semaphore.withPermit {
                                     Timber.v("Fetching row: %s", row)
                                     try {
-                                        homeSettingsService.fetchDataForRow(
+                                        homeDataService.fetchDataForRow(
                                             row = row.config,
                                             scope = viewModelScope,
                                             prefs = prefs,

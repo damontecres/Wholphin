@@ -54,3 +54,11 @@ fun SeerrUserConfig?.hasPermission(permission: SeerrPermission): Boolean {
         permission.parents.any { hasPermission(it) } ||
         SeerrPermission.ADMIN.hasPermission(permissions)
 }
+
+val SeerrUserConfig?.canRequestMovies: Boolean
+    get() =
+        hasPermission(SeerrPermission.REQUEST_MOVIE) || hasPermission(SeerrPermission.REQUEST_4K_MOVIE)
+
+val SeerrUserConfig?.canRequestTv: Boolean
+    get() =
+        hasPermission(SeerrPermission.REQUEST_TV) || hasPermission(SeerrPermission.REQUEST_4K_TV)

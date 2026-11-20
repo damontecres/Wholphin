@@ -11,7 +11,6 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.NameGuidPair
 import org.jellyfin.sdk.model.api.UserDto
-import org.junit.Assert.assertNotNull
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -148,4 +147,17 @@ inline fun <reified T : Any> assertIs(obj: Any?) {
     if (!result) {
         Assert.fail("Expected type=${T::class.qualifiedName}, actual type= ${obj!!::class.qualifiedName} ")
     }
+}
+
+/**
+ * Asserts that the object is not null
+ *
+ * Includes a [contract] to smart-cast the object to T
+ */
+@OptIn(ExperimentalContracts::class)
+fun assertNotNull(obj: Any?) {
+    contract {
+        returns() implies (obj != null)
+    }
+    org.junit.Assert.assertNotNull(obj)
 }

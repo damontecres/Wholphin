@@ -33,6 +33,8 @@ class PlaybackKeyHandler(
     private val isDpadSeekVisible: () -> Boolean = { false },
     private val onDpadSeek: (Long) -> Unit = { },
     private val dpadSeekMode: DpadSeekMode,
+    private val onSeekToNext: () -> Unit,
+    private val onPSeekToPrevious: () -> Unit,
 ) {
     private var leftHandledByRepeat = false
     private var rightHandledByRepeat = false
@@ -89,11 +91,11 @@ class PlaybackKeyHandler(
                 }
 
                 Key.MediaNext -> {
-                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()
+                    onSeekToNext.invoke()
                 }
 
                 Key.MediaPrevious -> {
-                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) player.seekToPrevious()
+                    onPSeekToPrevious.invoke()
                 }
 
                 Key.Captions -> {

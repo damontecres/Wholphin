@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.InterfacePreferences
 import com.github.damontecres.wholphin.ui.successResponse
@@ -26,7 +27,6 @@ import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.UserPolicy
 import org.junit.After
 import org.junit.Assert
@@ -87,11 +87,8 @@ class MediaManagementServiceTest {
         )
 
     private val userWithLiveTv =
-        UserDto(
+        ServerUserConfig(
             id = UUID.randomUUID(),
-            hasPassword = true,
-            hasConfiguredPassword = true,
-            hasConfiguredEasyPassword = false,
             policy =
                 mockk<UserPolicy> {
                     every { enableLiveTvManagement } returns true
@@ -99,11 +96,8 @@ class MediaManagementServiceTest {
         )
 
     private val userWithoutLiveTv =
-        UserDto(
+        ServerUserConfig(
             id = UUID.randomUUID(),
-            hasPassword = true,
-            hasConfiguredPassword = true,
-            hasConfiguredEasyPassword = false,
             policy =
                 mockk<UserPolicy> {
                     every { enableLiveTvManagement } returns false
