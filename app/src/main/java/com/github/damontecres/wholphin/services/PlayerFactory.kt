@@ -70,9 +70,22 @@ class PlayerFactory
         var currentPlayer: Player? = null
             private set
 
+        /**
+         * Chooses how libass subtitles are drawn for a video. [AssRenderType.EFFECTS_ATLAS] composites them
+         * through media3's video effects, which do not support HDR, so HDR & Dolby Vision videos use
+         * [AssRenderType.OVERLAY_OPEN_GL] instead.
+         */
+        fun assRenderType(isHdr: Boolean): AssRenderType =
+            when {
+                Build.VERSION.SDK_INT <= Build.VERSION_CODES.P -> AssRenderType.OVERLAY_CANVAS
+                isHdr -> AssRenderType.OVERLAY_OPEN_GL
+                else -> AssRenderType.EFFECTS_ATLAS
+            }
+
         suspend fun createVideoPlayer(
             backend: PlayerBackend,
             appPreferences: AppPreferences,
+            isHdr: Boolean = false,
         ): PlayerCreation {
             val prefs = appPreferences.playbackPreferences
             withContext(WholphinDispatchers.Main) {
@@ -138,12 +151,7 @@ class PlayerFactory
 
                         val mediaSourceFactory =
                             if (useLibAss) {
-                                val renderType =
-                                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                                        AssRenderType.OVERLAY_CANVAS
-                                    } else {
-                                        AssRenderType.OVERLAY_OPEN_GL
-                                    }
+                                val renderType = assRenderType(isHdr)
                                 assHandler = AssHandler(renderType)
                                 val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)
@@ -178,8 +186,8 @@ class PlayerFactory
                             .setTrackSelector(trackSelector)
                             .build()
                             .apply {
-                                assHandler?.init(this)
                                 withContext(WholphinDispatchers.Main) {
+                                    assHandler?.init(this@apply)
                                     setAudioAttributes(
                                         AudioAttributes
                                             .Builder()
