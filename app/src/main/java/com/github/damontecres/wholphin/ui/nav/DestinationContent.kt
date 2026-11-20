@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
 import com.github.damontecres.wholphin.ui.playback.PlayExternalPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
+import com.github.damontecres.wholphin.ui.preferences.card.CardInterfacePreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.preferences.user.UserProfilePreferencesPage
 import com.github.damontecres.wholphin.ui.search.SearchPage
@@ -126,6 +127,13 @@ fun DestinationContent(
             SubtitleStylePage(
                 preferences.appPreferences,
                 destination.hdr,
+                modifier,
+            )
+        }
+
+        Destination.CardSettings -> {
+            CardInterfacePreferencesPage(
+                preferences.appPreferences,
                 modifier,
             )
         }

@@ -191,6 +191,7 @@ fun BannerCard(
                         when (item?.type) {
                             BaseItemKind.SEASON -> prefs.seasonProgress
                             BaseItemKind.SERIES -> prefs.seriesProgress
+                            BaseItemKind.BOX_SET -> prefs.collectionProgress
                             else -> true
                         }
                     prefs.watchProgress && enabled && playPercent > 0 && playPercent < 100

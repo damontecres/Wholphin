@@ -21,16 +21,6 @@ data class InterfaceCustomization(
     val versionIndicator: Boolean = true,
     val unwatchedCount: Boolean = true,
 ) {
-    constructor(prefs: AppPreferences) : this(
-        prefs.interfacePreferences.displayTogglesList.let {
-            if (it.isEmpty()) {
-                EnumSet.noneOf(DisplayToggle::class.java)
-            } else {
-                EnumSet.copyOf(it)
-            }
-        },
-    )
-
     companion object {
         fun from(prefs: AppPreferences): InterfaceCustomization =
             prefs.interfacePreferences.let { p ->
@@ -40,7 +30,19 @@ data class InterfaceCustomization(
                     } else {
                         EnumSet.copyOf(p.displayTogglesList)
                     }
-                InterfaceCustomization(enabledDisplayToggles)
+                val c = p.cardInterfacePreferences
+                InterfaceCustomization(
+                    enabledDisplayToggles = enabledDisplayToggles,
+                    watchProgress = c.watchedProgress,
+                    watchedIndicator = c.watchedIndicator,
+                    seasonProgress = c.seasonWatchedProgress,
+                    seriesProgress = c.seriesWatchedProgress,
+                    collectionProgress = c.collectionWatchedProgress,
+                    upperRightEpisodeNumber = true, // TODO
+                    favoriteIndicator = c.favoriteIndicator,
+                    versionIndicator = c.versionsIndicator,
+                    unwatchedCount = c.watchedCount,
+                )
             }
     }
 }

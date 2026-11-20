@@ -59,7 +59,9 @@ fun MainContent(
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
         val interfaceCustomization =
-            remember(userPreferences.appPreferences) { InterfaceCustomization(userPreferences.appPreferences) }
+            remember(preferences.appPreferences) {
+                InterfaceCustomization.from(userPreferences.appPreferences)
+            }
         CompositionLocalProvider(LocalInterfaceCustomization provides interfaceCustomization) {
             NavDisplay(
                 backStack = backStack,
