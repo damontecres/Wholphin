@@ -306,13 +306,9 @@ class TvProviderWorker
                     throw IllegalStateException("channelId was null")
                 }
             }
-            if (!channelsPrefs.getBoolean("latest_logo", false)) {
-                val stored = storeChannelLogo(ContentUris.parseId(channelId))
-                if (stored) {
-                    channelsPrefs.edit(true) {
-                        putBoolean("latest_logo", true)
-                    }
-                }
+            val channelIdLong = ContentUris.parseId(channelId)
+            if (ChannelLogoUtils.loadChannelLogo(context, channelIdLong) == null) {
+                storeChannelLogo(channelIdLong)
             }
             val programs = latest.map { convert(channelId, it).toContentValues() }.toTypedArray()
 
@@ -326,17 +322,19 @@ class TvProviderWorker
             Timber.v("Inserted $count records")
         }
 
-        private fun storeChannelLogo(channelId: Long): Boolean =
+        private fun storeChannelLogo(channelId: Long) {
             try {
                 val logo =
                     ContextCompat
                         .getDrawable(context, R.mipmap.ic_launcher)!!
                         .toBitmap(CHANNEL_LOGO_SIZE, CHANNEL_LOGO_SIZE)
-                ChannelLogoUtils.storeChannelLogo(context, channelId, logo)
+                if (!ChannelLogoUtils.storeChannelLogo(context, channelId, logo)) {
+                    Timber.w("Failed to store channel logo")
+                }
             } catch (ex: Exception) {
                 Timber.w(ex, "Failed to store channel logo")
-                false
             }
+        }
 
         private fun convert(
             channelId: Uri,
