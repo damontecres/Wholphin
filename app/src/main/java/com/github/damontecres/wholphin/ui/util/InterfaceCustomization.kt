@@ -15,8 +15,6 @@ data class InterfaceCustomization(
     val seasonProgress: Boolean = true,
     val seriesProgress: Boolean = true,
     val collectionProgress: Boolean = true,
-//    val upperRightSeasonNumber: Boolean = false,
-    val upperRightEpisodeNumber: Boolean = true,
     val favoriteIndicator: Boolean = true,
     val versionIndicator: Boolean = true,
     val unwatchedCount: Boolean = true,
@@ -38,10 +36,9 @@ data class InterfaceCustomization(
                     seasonProgress = c.seasonWatchedProgress,
                     seriesProgress = c.seriesWatchedProgress,
                     collectionProgress = c.collectionWatchedProgress,
-                    upperRightEpisodeNumber = true, // TODO
                     favoriteIndicator = c.favoriteIndicator,
                     versionIndicator = c.versionsIndicator,
-                    unwatchedCount = c.watchedCount,
+                    unwatchedCount = c.unwatchedCount,
                 )
             }
     }

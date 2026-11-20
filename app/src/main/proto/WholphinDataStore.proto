@@ -231,7 +231,7 @@ message CardInterfacePreferences {
   // Other
   bool favorite_indicator = 8;
   bool versions_indicator = 9;
-  bool watched_count = 10;
+  bool unwatched_count = 10;
 
 }
 

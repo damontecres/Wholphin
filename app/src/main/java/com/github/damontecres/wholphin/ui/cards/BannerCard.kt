@@ -154,7 +154,10 @@ fun BannerCard(
                     if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
-                    if (cornerText != null && prefs.upperRightEpisodeNumber) {
+
+                    if (cornerText != null &&
+                        (item?.type == BaseItemKind.EPISODE || prefs.unwatchedCount) // TODO this is based on episodeUnplayedCornerText
+                    ) {
                         Box(
                             modifier =
                                 Modifier

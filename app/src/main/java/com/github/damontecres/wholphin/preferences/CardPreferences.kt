@@ -77,9 +77,9 @@ object CardPreferences {
         AppSwitchPreference<CardInterfacePreferences>(
             title = R.string.unwatched_count,
             defaultValue = true,
-            getter = { it.watchedCount },
+            getter = { it.unwatchedCount },
             setter = { prefs, value ->
-                prefs.update { watchedCount = value }
+                prefs.update { unwatchedCount = value }
             },
             summaryOn = R.string.show,
             summaryOff = R.string.hide,
