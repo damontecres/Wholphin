@@ -46,8 +46,8 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.LocalInterfacePreferences
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
@@ -72,7 +72,7 @@ fun BannerCard(
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = true,
 ) {
-    val prefs = LocalInterfacePreferences.current
+    val prefs = LocalInterfaceCustomization.current
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val fillHeight =

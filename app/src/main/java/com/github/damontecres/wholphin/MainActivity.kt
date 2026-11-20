@@ -56,9 +56,7 @@ import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
-import com.github.damontecres.wholphin.ui.InterfacePreferences
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.LocalInterfacePreferences
 import com.github.damontecres.wholphin.ui.collectLatestIn
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -264,10 +262,7 @@ class MainActivity : AppCompatActivity() {
                             LaunchedEffect(appPreferences.debugLogging) {
                                 DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
                             }
-                            CompositionLocalProvider(
-                                LocalImageUrlService provides imageUrlService,
-                                LocalInterfacePreferences provides InterfacePreferences.NONE,
-                            ) {
+                            CompositionLocalProvider(LocalImageUrlService provides imageUrlService) {
                                 WholphinTheme(
                                     true,
                                     appThemeColors = appPreferences.interfacePreferences.appThemeColors,

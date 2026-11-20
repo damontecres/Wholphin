@@ -9,7 +9,17 @@ import java.util.EnumSet
  * Represents various UI preferences made available via [LocalInterfaceCustomization]
  */
 data class InterfaceCustomization(
-    val enabledDisplayToggles: EnumSet<DisplayToggle>,
+    val enabledDisplayToggles: EnumSet<DisplayToggle> = EnumSet.allOf(DisplayToggle::class.java),
+    val watchProgress: Boolean = true,
+    val watchedIndicator: Boolean = true,
+    val seasonProgress: Boolean = true,
+    val seriesProgress: Boolean = true,
+    val collectionProgress: Boolean = true,
+//    val upperRightSeasonNumber: Boolean = false,
+    val upperRightEpisodeNumber: Boolean = true,
+    val favoriteIndicator: Boolean = true,
+    val versionIndicator: Boolean = true,
+    val unwatchedCount: Boolean = true,
 ) {
     constructor(prefs: AppPreferences) : this(
         prefs.interfacePreferences.displayTogglesList.let {
@@ -20,9 +30,19 @@ data class InterfaceCustomization(
             }
         },
     )
+
+    companion object {
+        fun from(prefs: AppPreferences): InterfaceCustomization =
+            prefs.interfacePreferences.let { p ->
+                val enabledDisplayToggles =
+                    if (p.displayTogglesList.isEmpty()) {
+                        EnumSet.noneOf(DisplayToggle::class.java)
+                    } else {
+                        EnumSet.copyOf(p.displayTogglesList)
+                    }
+                InterfaceCustomization(enabledDisplayToggles)
+            }
+    }
 }
 
-val LocalInterfaceCustomization =
-    staticCompositionLocalOf<InterfaceCustomization> {
-        InterfaceCustomization(EnumSet.allOf(DisplayToggle::class.java))
-    }
+val LocalInterfaceCustomization = staticCompositionLocalOf<InterfaceCustomization> { InterfaceCustomization() }

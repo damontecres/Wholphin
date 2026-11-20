@@ -39,10 +39,10 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.LocalInterfacePreferences
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -204,7 +204,7 @@ fun ItemCardImageOverlay(
     numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) {
-    val prefs = LocalInterfacePreferences.current
+    val prefs = LocalInterfaceCustomization.current
     Box(modifier = modifier.fillMaxSize()) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
