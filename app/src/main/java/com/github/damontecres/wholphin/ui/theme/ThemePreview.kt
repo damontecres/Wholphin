@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.cards.ItemCardImageType
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
@@ -116,6 +117,7 @@ private fun ThemeExample(theme: AppThemeColors) {
 //                            interactionSource = source,
 //                        )
                         SeasonCard(
+                            type = ItemCardImageType.UNKNOWN,
                             title = "Card",
                             subtitle = "2025",
                             name = "N/A",
@@ -133,6 +135,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             aspectRatio = AspectRatios.TALL,
                         )
                         SeasonCard(
+                            type = ItemCardImageType.UNKNOWN,
                             title = "Watched",
                             subtitle = "2025",
                             name = "N/A",

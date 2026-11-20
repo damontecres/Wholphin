@@ -53,6 +53,7 @@ fun SeasonCard(
 ) {
     val imageUrl = rememberImageUrl(item, imageHeight, imageWidth)
     SeasonCard(
+        type = ItemCardImageType.from(item?.type),
         title = item?.title,
         subtitle = item?.subtitle,
         name = item?.name,
@@ -119,6 +120,7 @@ private val spaceBetweenUnfocused = 12.dp
  */
 @Composable
 fun SeasonCard(
+    type: ItemCardImageType,
     title: String?,
     subtitle: String?,
     name: String?,
@@ -173,6 +175,7 @@ fun SeasonCard(
                         .fillMaxSize(),
             ) {
                 ItemCardImage(
+                    type = type,
                     imageUrl = imageUrl,
                     name = name,
                     showOverlay = showImageOverlay,

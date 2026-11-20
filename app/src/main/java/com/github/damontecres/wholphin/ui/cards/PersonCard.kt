@@ -123,6 +123,7 @@ fun PersonCard(
                 ),
         ) {
             ItemCardImage(
+                type = ItemCardImageType.PERSON,
                 imageUrl = imageUrl,
                 name = name,
                 showOverlay = false,

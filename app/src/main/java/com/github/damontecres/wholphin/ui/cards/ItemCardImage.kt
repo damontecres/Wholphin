@@ -35,6 +35,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -43,6 +44,7 @@ import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
 import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -82,6 +84,7 @@ fun ItemCardImage(
             }
         }
     ItemCardImage(
+        type = ItemCardImageType.from(item?.type),
         imageUrl = imageUrl,
         name = name,
         showOverlay = showOverlay,
@@ -98,6 +101,7 @@ fun ItemCardImage(
 
 @Composable
 fun ItemCardImage(
+    type: ItemCardImageType,
     imageUrl: String?,
     name: String?,
     showOverlay: Boolean,
@@ -141,6 +145,7 @@ fun ItemCardImage(
         }
         if (showOverlay) {
             ItemCardImageOverlay(
+                type = type,
                 favorite = favorite,
                 watched = watched,
                 unwatchedCount = unwatchedCount,
@@ -197,6 +202,7 @@ fun BoxScope.ItemCardImageFallback(
 
 @Composable
 fun ItemCardImageOverlay(
+    type: ItemCardImageType,
     favorite: Boolean,
     watched: Boolean,
     unwatchedCount: Int,
@@ -204,7 +210,7 @@ fun ItemCardImageOverlay(
     numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) {
-    val prefs = LocalInterfaceCustomization.current
+    val ic = LocalInterfaceCustomization.current
     Box(modifier = modifier.fillMaxSize()) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -214,7 +220,7 @@ fun ItemCardImageOverlay(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
         ) {
-            if (numberOfVersions > 1 && prefs.versionIndicator) {
+            if (numberOfVersions > 1 && ic.versionIndicator) {
                 Box(
                     modifier =
                         Modifier
@@ -232,7 +238,7 @@ fun ItemCardImageOverlay(
                     )
                 }
             }
-            if (favorite && prefs.favoriteIndicator) {
+            if (favorite && ic.favoriteIndicator) {
                 FavoriteIndicator()
             }
         }
@@ -244,10 +250,10 @@ fun ItemCardImageOverlay(
                     .padding(4.dp)
                     .align(Alignment.TopEnd),
         ) {
-            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) && prefs.watchedIndicator) {
+            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) && ic.watchedIndicator) {
                 WatchedIcon(Modifier.size(24.dp))
             }
-            if (unwatchedCount > 0 && prefs.unwatchedCount) {
+            if (unwatchedCount > 0 && ic.unwatchedCount) {
                 Box(
                     modifier =
                         Modifier
@@ -266,8 +272,16 @@ fun ItemCardImageOverlay(
                 }
             }
         }
-
-        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && prefs.watchProgress) {
+        val showWatchProgress =
+            remember(type, ic) {
+                when (type) {
+                    ItemCardImageType.TV_SHOW -> ic.seriesProgress
+                    ItemCardImageType.TV_SEASON -> ic.seasonProgress
+                    ItemCardImageType.COLLECTION -> ic.collectionProgress
+                    else -> ic.watchProgress
+                }
+            }
+        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && showWatchProgress) {
             Box(
                 modifier =
                     Modifier
@@ -293,3 +307,37 @@ fun FavoriteIndicator(
     fontFamily = FontAwesome,
     modifier = modifier,
 )
+
+enum class ItemCardImageType {
+    MOVIE,
+    TV_SHOW,
+    TV_SEASON,
+    EPISODE,
+    COLLECTION,
+    PERSON,
+    DISCOVER_MOVIE,
+    DISCOVER_SERIES,
+    UNKNOWN,
+    ;
+
+    companion object {
+        fun from(type: BaseItemKind?): ItemCardImageType =
+            when (type) {
+                BaseItemKind.MOVIE -> MOVIE
+                BaseItemKind.SERIES -> TV_SHOW
+                BaseItemKind.SEASON -> TV_SEASON
+                BaseItemKind.EPISODE -> EPISODE
+                BaseItemKind.BOX_SET -> COLLECTION
+                else -> UNKNOWN
+            }
+
+        fun from(type: SeerrItemType?): ItemCardImageType =
+            when (type) {
+                SeerrItemType.MOVIE -> DISCOVER_MOVIE
+                SeerrItemType.TV -> DISCOVER_SERIES
+                SeerrItemType.PERSON -> UNKNOWN
+                SeerrItemType.UNKNOWN -> UNKNOWN
+                null -> UNKNOWN
+            }
+    }
+}
