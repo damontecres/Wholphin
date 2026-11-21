@@ -35,8 +35,17 @@ private val modelsWithHi10P52Support =
         "AFTMM", // Fire TV Stick 4K - 1st Gen (2018)
     )
 
+/**
+ * List of device models whose H.264 (AVC) hardware decoder is capped at Level 5.1 (4K@30fps).
+ */
+private val modelsWithAvcLevel51Cap =
+    listOf(
+        "Box R 4K Plus", // Homatics Box R 4K Plus (Amlogic S905X4-K)
+    )
+
 object KnownDefects {
     val hevcDoviHdr10PlusBug = Build.MODEL in modelsWithDoViHdr10PlusBug
     val eac3HlsPassthroughBug = Build.MODEL in modelsWithEac3TsPassthroughBug
     val supportsHi10P52 = Build.MODEL in modelsWithHi10P52Support
+    val avcLevel51Cap = Build.MODEL in modelsWithAvcLevel51Cap
 }
