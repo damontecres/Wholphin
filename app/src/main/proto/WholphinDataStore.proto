@@ -63,6 +63,8 @@ message PlaybackOverrides{
   HdrOverrideMode dovi_profile_8_override = 12;
   HdrOverrideMode hdr10_override = 13;
   HdrOverrideMode hdr10_plus_override = 14;
+  // ExoPlayer's buffer target in MiB, 0 picks one from the device's memory
+  int32 max_buffer_mb = 15;
 }
 
 message PlaybackPreferences {

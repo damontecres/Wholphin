@@ -14,6 +14,7 @@ import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
@@ -39,6 +40,7 @@ import com.github.damontecres.wholphin.util.DolbyVisionProfile7Conversion
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
+import com.github.damontecres.wholphin.util.PlayerBufferSize
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -171,12 +173,29 @@ class PlayerFactory
                                 disableAudioOffload = disableAudioOffload,
                             )
 
+                        val targetBufferBytes =
+                            PlayerBufferSize.targetBufferBytes(context, prefs.overrides.maxBufferMb)
+                        Timber.i(
+                            "maxBufferMb=%s, targetBufferBytes=%s",
+                            prefs.overrides.maxBufferMb,
+                            targetBufferBytes,
+                        )
                         ExoPlayer
                             .Builder(context)
                             .setMediaSourceFactory(mediaSourceFactory)
                             .setRenderersFactory(renderersFactory)
                             .setTrackSelector(trackSelector)
-                            .build()
+                            .apply {
+                                // Unset = keep ExoPlayer's own default load control untouched
+                                if (targetBufferBytes != C.LENGTH_UNSET) {
+                                    setLoadControl(
+                                        DefaultLoadControl
+                                            .Builder()
+                                            .setTargetBufferBytes(targetBufferBytes)
+                                            .build(),
+                                    )
+                                }
+                            }.build()
                             .apply {
                                 assHandler?.init(this)
                                 withContext(WholphinDispatchers.Main) {
