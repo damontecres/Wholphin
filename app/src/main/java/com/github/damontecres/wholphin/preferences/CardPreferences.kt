@@ -30,35 +30,35 @@ object CardPreferences {
 
     val ShowCollectionWatchProgress =
         AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.watch_progress,
+            title = R.string.collections,
             defaultValue = true,
             getter = { it.collectionWatchedProgress },
             setter = { prefs, value ->
                 prefs.update { collectionWatchedProgress = value }
             },
-            summary = R.string.collections,
+//            summary = R.string.collections,
         )
 
     val ShowSeriesWatchProgress =
         AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.watch_progress,
+            title = R.string.tv_shows_title,
             defaultValue = true,
             getter = { it.seriesWatchedProgress },
             setter = { prefs, value ->
                 prefs.update { seriesWatchedProgress = value }
             },
-            summary = R.string.tv_shows_title,
+//            summary = R.string.tv_shows_title,
         )
 
     val ShowSeasonWatchProgress =
         AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.watch_progress,
+            title = R.string.tv_seasons,
             defaultValue = true,
             getter = { it.seasonWatchedProgress },
             setter = { prefs, value ->
                 prefs.update { seasonWatchedProgress = value }
             },
-            summary = R.string.tv_seasons,
+//            summary = R.string.tv_seasons,
         )
 
     val ShowFavoritesIndicator =
@@ -92,12 +92,18 @@ object CardPreferences {
                 preferences =
                     listOf(
                         ShowWatchIndicator,
+                        ShowFavoritesIndicator,
+                        ShowUnwatchedCount,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.watch_progress,
+                preferences =
+                    listOf(
                         ShowWatchProgress,
                         ShowCollectionWatchProgress,
                         ShowSeriesWatchProgress,
                         ShowSeasonWatchProgress,
-                        ShowFavoritesIndicator,
-                        ShowUnwatchedCount,
                     ),
             ),
         )

@@ -72,11 +72,10 @@ fun CardInterfacePreferencesPage(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        val prefList = CardPreferences.Preferences
         CardInterfacePreferencesContent(
             title = stringResource(R.string.ui_interface),
             preferences = preferences.interfacePreferences.cardInterfacePreferences,
-            prefList = prefList,
+            prefList = CardPreferences.Preferences,
             onPreferenceChange = { newPrefs ->
                 viewModel.preferenceDataStore.updateData {
                     it.updateInterfacePreferences {
