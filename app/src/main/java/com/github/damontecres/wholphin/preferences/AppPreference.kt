@@ -399,6 +399,19 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.ordinal },
             )
 
+        val MaxAvcLevelPref =
+            AppChoicePreference<AppPreferences, MaxAvcLevel>(
+                title = R.string.max_avc_level,
+                defaultValue = MaxAvcLevel.AUTO,
+                getter = { MaxAvcLevel.fromValue(it.playbackPreferences.overrides.maxAvcLevel) },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { maxAvcLevel = value.value }
+                },
+                displayValues = R.array.max_avc_level_options,
+                indexToValue = { MaxAvcLevel.entries.getOrNull(it) ?: MaxAvcLevel.AUTO },
+                valueToIndex = { it.ordinal },
+            )
+
         val Ac3Supported =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.ac3_supported,
@@ -1241,6 +1254,7 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DecodeAv1,
+        AppPreference.MaxAvcLevelPref,
         AppPreference.HdrFormatSettings,
     )
 

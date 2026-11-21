@@ -77,6 +77,7 @@ fun createDeviceProfile(
     forceEnabledHdr: Set<String>,
     forceDisabledHdr: Set<String>,
     maxResolution: Int,
+    maxAvcLevel: Int = 0,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -105,6 +106,7 @@ fun createDeviceProfile(
     val avcMainLevel =
         when {
             detectedAvcMainLevel <= 0 -> detectedAvcMainLevel
+            maxAvcLevel > 0 -> minOf(detectedAvcMainLevel, maxAvcLevel)
             avcLevel51Cap -> minOf(detectedAvcMainLevel, 51)
             else -> detectedAvcMainLevel
         }

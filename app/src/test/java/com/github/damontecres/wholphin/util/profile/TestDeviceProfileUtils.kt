@@ -53,6 +53,7 @@ class TestDeviceProfileUtils {
         decodeAv1: Boolean = false,
         forceEnabledHdr: Set<String> = emptySet(),
         forceDisabledHdr: Set<String> = emptySet(),
+        maxAvcLevel: Int = 0,
     ): DeviceProfile =
         createDeviceProfile(
             mediaTest = mediaTest,
@@ -67,6 +68,7 @@ class TestDeviceProfileUtils {
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
             maxResolution = 0,
+            maxAvcLevel = maxAvcLevel,
         )
 
     @Test
@@ -155,6 +157,31 @@ class TestDeviceProfileUtils {
                 forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI.serialName),
             )
         Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
+    }
+
+    @Test
+    fun `Test maxAvcLevel caps detected H264 level without affecting HEVC`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsAVC() } returns true
+        every { mediaTest.getAVCMainLevel() } returns 52
+        every { mediaTest.supportsHevc() } returns true
+        every { mediaTest.getHevcMainLevel() } returns 153
+
+        val profile = buildProfile(mediaTest, maxAvcLevel = 51)
+
+        Assert.assertEquals("51", videoLevelForCodec(profile, Codec.Video.H264, "main"))
+        Assert.assertEquals("153", videoLevelForCodec(profile, Codec.Video.HEVC, "main"))
+    }
+
+    @Test
+    fun `Test maxAvcLevel does not inflate lower detected H264 level`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsAVC() } returns true
+        every { mediaTest.getAVCMainLevel() } returns 41
+
+        val profile = buildProfile(mediaTest, maxAvcLevel = 51)
+
+        Assert.assertEquals("41", videoLevelForCodec(profile, Codec.Video.H264, "main"))
     }
 
     @Test

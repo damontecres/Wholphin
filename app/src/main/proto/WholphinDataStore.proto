@@ -63,6 +63,7 @@ message PlaybackOverrides{
   HdrOverrideMode dovi_profile_8_override = 12;
   HdrOverrideMode hdr10_override = 13;
   HdrOverrideMode hdr10_plus_override = 14;
+  int32 max_avc_level = 15;
 }
 
 message PlaybackPreferences {
