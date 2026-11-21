@@ -8,13 +8,17 @@ import org.jellyfin.sdk.model.api.MediaStream
 /**
  * A slimmer [MediaStream] with minimal data for UI purposes
  *
+ * This is also a [MediaTrack] provided by the server's media source
+ *
  * @see SimpleVideoStream
  */
 data class SimpleMediaStream(
     val index: Int,
-    val streamTitle: String?,
-    val displayTitle: String,
-) {
+    override val streamTitle: String?,
+    override val displayTitle: String,
+) : MediaTrack {
+    override val id: String get() = index.toString()
+
     companion object {
         fun from(
             resources: Resources,

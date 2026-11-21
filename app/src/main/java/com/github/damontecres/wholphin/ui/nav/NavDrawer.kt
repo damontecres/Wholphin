@@ -534,7 +534,10 @@ fun NavDrawer(
                                         ),
                                     )
                                 },
-                                modifier = Modifier,
+                                modifier =
+                                    Modifier.focusProperties {
+                                        down = FocusRequester.Cancel
+                                    },
                             )
                         }
                     }

@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.text.format.DateUtils
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,6 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -181,25 +179,14 @@ fun DvrSchedule(
             showDialog?.let { item ->
                 val context = LocalContext.current
                 ProgramDialog(
-                    state = DataLoadingState.Success(item),
+                    state = ProgramDialogState(DataLoadingState.Success(item), item),
                     canRecord = true,
                     onDismissRequest = {
                         showDialog = null
                     },
                     onWatch = { program ->
-                        val channelId = program.data.channelId
-                        if (channelId != null) {
-                            viewModel.navigationManager.navigateTo(
-                                Destination.Playback(
-                                    itemId = channelId,
-                                    positionMs = 0L,
-                                ),
-                            )
-                        } else {
-                            Toast
-                                .makeText(context, "Program has no channel ID", Toast.LENGTH_LONG)
-                                .show()
-                        }
+                        showDialog = null
+                        onWatch(context, viewModel.navigationManager, program)
                     },
                     onRecord = { _, _ ->
                         // no-op
