@@ -149,6 +149,19 @@ class AppPreferencesSerializer
                                             addItemTypes(BaseItemKind.MOVIE.serialName)
                                             addItemTypes(BaseItemKind.SERIES.serialName)
                                         }.build()
+
+                                cardInterfacePreferences =
+                                    CardInterfacePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            watchedIndicator = CardPreferences.ShowWatchIndicator.defaultValue
+                                            watchedProgress = CardPreferences.ShowWatchProgress.defaultValue
+                                            seasonWatchedProgress = CardPreferences.ShowSeasonWatchProgress.defaultValue
+                                            seriesWatchedProgress = CardPreferences.ShowSeriesWatchProgress.defaultValue
+                                            collectionWatchedProgress = CardPreferences.ShowCollectionWatchProgress.defaultValue
+                                            favoriteIndicator = CardPreferences.ShowFavoritesIndicator.defaultValue
+                                            unwatchedCount = CardPreferences.ShowUnwatchedCount.defaultValue
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
