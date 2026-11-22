@@ -171,6 +171,7 @@ private fun Card(
                     imageType = ImageType.PRIMARY,
                     imageContentScale = ContentScale.FillBounds,
                     cornerText = item.ui.episodeUnplayedCornerText,
+                    cornerTextAlt = item.ui.seasonText,
                     played = item.data.userData?.played ?: false,
                     favorite = item.favorite,
                     playPercent = item.data.userData?.playedPercentage ?: 0.0,

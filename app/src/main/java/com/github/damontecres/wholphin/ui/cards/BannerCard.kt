@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -62,6 +63,7 @@ fun BannerCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cornerText: String? = null,
+    cornerTextAlt: String? = null,
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
@@ -142,7 +144,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText != null) {
+            if (played || cornerText != null || cornerTextAlt != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -154,10 +156,21 @@ fun BannerCard(
                     if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
-
-                    if (cornerText != null &&
-                        (item?.type == BaseItemKind.EPISODE || prefs.unwatchedCount) // TODO this is based on episodeUnplayedCornerText
-                    ) {
+                    val text =
+                        if (item?.type == BaseItemKind.EPISODE) {
+                            when {
+                                prefs.seasonNum && prefs.episodeNum -> listOf(cornerTextAlt, cornerText).joinNotBlank(" ")
+                                prefs.seasonNum -> cornerTextAlt
+                                prefs.episodeNum -> cornerText
+                                else -> null
+                            }
+                        } else if (prefs.unwatchedCount) {
+                            // TODO this is based on episodeUnplayedCornerText
+                            cornerText
+                        } else {
+                            null
+                        }
+                    if (text != null) {
                         Box(
                             modifier =
                                 Modifier
@@ -167,7 +180,7 @@ fun BannerCard(
                                     ),
                         ) {
                             Text(
-                                text = cornerText,
+                                text = text,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(4.dp),
@@ -224,6 +237,7 @@ fun BannerCardWithTitle(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cornerText: String? = null,
+    cornerTextAlt: String? = null,
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
@@ -249,6 +263,7 @@ fun BannerCardWithTitle(
             onLongClick = onLongClick,
             modifier = Modifier,
             cornerText = cornerText,
+            cornerTextAlt = cornerTextAlt,
             played = played,
             favorite = favorite,
             playPercent = playPercent,

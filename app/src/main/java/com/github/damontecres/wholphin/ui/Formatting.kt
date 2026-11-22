@@ -128,6 +128,9 @@ fun formatEpisodeNumber(episode: Int): String = formatStringWithFallback(R.strin
 /** Fallback season title when the library has no season name, e.g. `Season 2`. */
 fun formatSeasonNumber(season: Int): String = formatStringWithFallback(R.string.season_number, "Season %1\$d", season)
 
+/** Compact season label, e.g. `S2` */
+fun formatSeasonNumberShort(season: Int): String = formatStringWithFallback(R.string.season_number_short, "S%1\$d", season)
+
 /**
  * If the item has season & episode info, format as localized `S# E#`
  */

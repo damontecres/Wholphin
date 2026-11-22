@@ -18,6 +18,8 @@ data class InterfaceCustomization(
     val favoriteIndicator: Boolean = true,
     val versionIndicator: Boolean = true,
     val unwatchedCount: Boolean = true,
+    val episodeNum: Boolean = true,
+    val seasonNum: Boolean = false,
 ) {
     companion object {
         fun from(prefs: AppPreferences): InterfaceCustomization =
@@ -37,8 +39,9 @@ data class InterfaceCustomization(
                     seriesProgress = c.seriesWatchedProgress,
                     collectionProgress = c.collectionWatchedProgress,
                     favoriteIndicator = c.favoriteIndicator,
-                    versionIndicator = c.versionsIndicator,
                     unwatchedCount = c.unwatchedCount,
+                    episodeNum = c.episodeEpisodeNumber,
+                    seasonNum = c.episodeSeasonNumber,
                 )
             }
     }

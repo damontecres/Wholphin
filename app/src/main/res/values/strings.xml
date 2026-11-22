@@ -166,6 +166,7 @@
     <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
     <string name="episode_number_short">E%1$d</string>
     <string name="season_number">Season %1$d</string>
+    <string name="season_number_short">S%1$d</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
@@ -991,4 +992,6 @@
     <string name="watch_progress">Watched progress</string>
     <string name="unwatched_count">Unwatched count</string>
     <string name="card_customization">Card customization</string>
+    <string name="episode_number_text">Episode number</string>
+    <string name="season_number_text">Season number</string>
 </resources>

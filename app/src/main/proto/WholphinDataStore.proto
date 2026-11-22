@@ -224,15 +224,13 @@ message CardInterfacePreferences {
   bool series_watched_progress = 4;
   bool collection_watched_progress = 5;
 
-  // Episode cards
-  bool episode_season_number = 6;
-  bool episode_episode_number = 7;
-
   // Other
-  bool favorite_indicator = 8;
-  bool versions_indicator = 9;
-  bool unwatched_count = 10;
+  bool favorite_indicator = 6;
+  bool unwatched_count = 7;
 
+  bool episode_season_number = 8;
+  bool episode_episode_number = 9;
+  //  bool versions_indicator = 10;
 }
 
 message AdvancedPreferences {

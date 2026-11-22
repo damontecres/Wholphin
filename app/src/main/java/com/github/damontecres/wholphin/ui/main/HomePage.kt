@@ -699,6 +699,7 @@ fun HomePageCardContent(
                     imageType = imageType,
                     imageContentScale = scale,
                     cornerText = item?.ui?.episodeUnplayedCornerText,
+                    cornerTextAlt = item?.ui?.seasonText,
                     played = item?.data?.userData?.played ?: false,
                     favorite = item?.favorite ?: false,
                     playPercent =
@@ -718,6 +719,7 @@ fun HomePageCardContent(
                     imageType = imageType,
                     imageContentScale = scale,
                     cornerText = item?.ui?.episodeUnplayedCornerText,
+                    cornerTextAlt = item?.ui?.seasonText,
                     played = item?.data?.userData?.played ?: false,
                     favorite = item?.favorite ?: false,
                     playPercent =

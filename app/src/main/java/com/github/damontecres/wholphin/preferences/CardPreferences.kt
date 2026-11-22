@@ -88,6 +88,30 @@ object CardPreferences {
             summaryOff = R.string.hide,
         )
 
+    val ShowEpisodeNumber =
+        AppSwitchPreference<CardInterfacePreferences>(
+            title = R.string.episode_number_text,
+            defaultValue = true,
+            getter = { it.episodeEpisodeNumber },
+            setter = { prefs, value ->
+                prefs.update { episodeEpisodeNumber = value }
+            },
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
+        )
+
+    val ShowSeasonNumber =
+        AppSwitchPreference<CardInterfacePreferences>(
+            title = R.string.season_number_text,
+            defaultValue = false,
+            getter = { it.episodeSeasonNumber },
+            setter = { prefs, value ->
+                prefs.update { episodeSeasonNumber = value }
+            },
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
+        )
+
     val Preferences =
         listOf(
             PreferenceGroup(
@@ -107,6 +131,14 @@ object CardPreferences {
                         ShowCollectionWatchProgress,
                         ShowSeriesWatchProgress,
                         ShowSeasonWatchProgress,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.episodes,
+                preferences =
+                    listOf(
+                        ShowEpisodeNumber,
+                        ShowSeasonNumber,
                     ),
             ),
         )

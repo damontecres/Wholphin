@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.formatEpisodeNumber
+import com.github.damontecres.wholphin.ui.formatSeasonNumberShort
 import com.github.damontecres.wholphin.ui.getDateFormatter
 import com.github.damontecres.wholphin.ui.joinNotBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -116,6 +117,12 @@ data class BaseItem(
                 if (type == BaseItemKind.EPISODE) {
                     data.indexNumber?.let { formatEpisodeNumber(it) }
                         ?: data.premiereDate?.let(::formatDateTime)
+                } else {
+                    null
+                },
+            seasonText =
+                if (type == BaseItemKind.EPISODE) {
+                    data.parentIndexNumber?.let(::formatSeasonNumberShort)
                 } else {
                     null
                 },
@@ -364,6 +371,7 @@ val BaseItemDto.alphabetSortName: String get() = sortName ?: name ?: ""
 data class BaseItemUi(
     val episodeCornerText: String?,
     val episodeUnplayedCornerText: String?,
+    val seasonText: String?,
     val quickDetails: QuickDetailsData,
 )
 
