@@ -18,7 +18,7 @@ object CardPreferences {
 
     val ShowWatchProgress =
         AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.watch_progress,
+            title = androidx.compose.ui.R.string.in_progress,
             defaultValue = true,
             getter = { it.watchedProgress },
             setter = { prefs, value ->
@@ -36,7 +36,8 @@ object CardPreferences {
             setter = { prefs, value ->
                 prefs.update { collectionWatchedProgress = value }
             },
-//            summary = R.string.collections,
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
         )
 
     val ShowSeriesWatchProgress =
@@ -47,7 +48,8 @@ object CardPreferences {
             setter = { prefs, value ->
                 prefs.update { seriesWatchedProgress = value }
             },
-//            summary = R.string.tv_shows_title,
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
         )
 
     val ShowSeasonWatchProgress =
@@ -58,7 +60,8 @@ object CardPreferences {
             setter = { prefs, value ->
                 prefs.update { seasonWatchedProgress = value }
             },
-//            summary = R.string.tv_seasons,
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
         )
 
     val ShowFavoritesIndicator =
@@ -88,7 +91,7 @@ object CardPreferences {
     val Preferences =
         listOf(
             PreferenceGroup(
-                title = R.string.ui_interface,
+                title = R.string.general,
                 preferences =
                     listOf(
                         ShowWatchIndicator,

@@ -905,7 +905,7 @@ sealed interface AppPreference<Pref, T> {
 
         val CardInterface =
             AppDestinationPreference<AppPreferences>(
-                title = R.string.ui_interface,
+                title = R.string.card_customization,
                 destination = Destination.CardSettings,
             )
 

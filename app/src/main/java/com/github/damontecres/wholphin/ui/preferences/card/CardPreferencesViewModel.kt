@@ -21,6 +21,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.UserItemDataDto
 import javax.inject.Inject
@@ -61,7 +62,7 @@ class CardPreferencesViewModel
         private fun CoroutineScope.getExample(
             type: BaseItemKind,
             imageType: ImageType? = ImageType.PRIMARY,
-            playedPercentage: Double = Random.nextDouble(33.0, 80.0),
+            playedPercentage: Double = Random.nextDouble(66.0, 80.0),
         ): Deferred<BaseItem?> =
             async {
                 api.libraryApi
@@ -69,6 +70,7 @@ class CardPreferencesViewModel
                         includeItemTypes = listOf(type),
                         imageTypes = imageType?.let { listOf(imageType) },
                         sortBy = listOf(ItemSortBy.RANDOM),
+                        fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
                         limit = 1,
                     ).content.items
                     .firstOrNull()

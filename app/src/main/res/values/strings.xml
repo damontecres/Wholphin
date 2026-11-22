@@ -990,4 +990,5 @@
     <string name="watch_indicator">Watched indicator</string>
     <string name="watch_progress">Watched progress</string>
     <string name="unwatched_count">Unwatched count</string>
+    <string name="card_customization">Card customization</string>
 </resources>
