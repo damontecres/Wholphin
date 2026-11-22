@@ -220,7 +220,7 @@ fun ItemCardImageOverlay(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
         ) {
-            if (numberOfVersions > 1 && ic.versionIndicator) {
+            if (numberOfVersions > 1 && ic.versionsIndicator) {
                 Box(
                     modifier =
                         Modifier

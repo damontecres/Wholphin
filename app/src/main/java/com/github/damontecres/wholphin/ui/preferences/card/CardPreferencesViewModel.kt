@@ -43,11 +43,11 @@ class CardPreferencesViewModel
             viewModelScope.launchIO {
                 _state.update { it.copy(loading = LoadingState.Loading) }
                 val movieJob = getExample(BaseItemKind.MOVIE, playedPercentage = -1.0)
-                val movie2Job = getExample(BaseItemKind.MOVIE)
+                val movie2Job = getExample(BaseItemKind.MOVIE, versions = 3, favorite = false)
                 val tvShowJob = getExample(BaseItemKind.SERIES)
-                val tvSeasonJob = getExample(BaseItemKind.SEASON)
+                val tvSeasonJob = getExample(BaseItemKind.SEASON, favorite = false)
                 val collectionJob = getExample(BaseItemKind.BOX_SET, null)
-                val episode = getExample(BaseItemKind.EPISODE)
+                val episode = getExample(BaseItemKind.EPISODE, favorite = false)
 
                 movieJob.await()?.let { item -> _state.update { it.copy(movie = item) } }
                 movie2Job.await()?.let { item -> _state.update { it.copy(movie2 = item) } }
@@ -63,6 +63,8 @@ class CardPreferencesViewModel
             type: BaseItemKind,
             imageType: ImageType? = ImageType.PRIMARY,
             playedPercentage: Double = Random.nextDouble(66.0, 80.0),
+            favorite: Boolean = true,
+            versions: Int = 1,
         ): Deferred<BaseItem?> =
             async {
                 api.libraryApi
@@ -77,12 +79,13 @@ class CardPreferencesViewModel
                     ?.let {
                         val newItem =
                             it.copy(
+                                mediaSourceCount = versions,
                                 userData =
                                     UserItemDataDto(
                                         playedPercentage = playedPercentage,
                                         playbackPositionTicks = 0L,
                                         playCount = 2,
-                                        isFavorite = true,
+                                        isFavorite = favorite,
                                         played = true,
                                         key = it.id.toString(),
                                         itemId = it.id,

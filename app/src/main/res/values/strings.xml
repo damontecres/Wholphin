@@ -994,4 +994,5 @@
     <string name="card_customization">Card customization</string>
     <string name="episode_number_text">Episode number</string>
     <string name="season_number_text">Season number</string>
+    <string name="versions">Versions</string>
 </resources>

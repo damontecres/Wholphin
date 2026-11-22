@@ -524,6 +524,9 @@ class AppUpgradeHandler
                                     collectionWatchedProgress = CardPreferences.ShowCollectionWatchProgress.defaultValue
                                     favoriteIndicator = CardPreferences.ShowFavoritesIndicator.defaultValue
                                     unwatchedCount = CardPreferences.ShowUnwatchedCount.defaultValue
+                                    episodeEpisodeNumber = CardPreferences.ShowEpisodeNumber.defaultValue
+                                    episodeSeasonNumber = CardPreferences.ShowSeasonNumber.defaultValue
+                                    versionsIndicator = CardPreferences.ShowVersions.defaultValue
                                 }.build()
                     }
                 }

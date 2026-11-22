@@ -88,6 +88,18 @@ object CardPreferences {
             summaryOff = R.string.hide,
         )
 
+    val ShowVersions =
+        AppSwitchPreference<CardInterfacePreferences>(
+            title = R.string.versions,
+            defaultValue = true,
+            getter = { it.versionsIndicator },
+            setter = { prefs, value ->
+                prefs.update { versionsIndicator = value }
+            },
+            summaryOn = R.string.show,
+            summaryOff = R.string.hide,
+        )
+
     val ShowEpisodeNumber =
         AppSwitchPreference<CardInterfacePreferences>(
             title = R.string.episode_number_text,
@@ -121,6 +133,7 @@ object CardPreferences {
                         ShowWatchIndicator,
                         ShowFavoritesIndicator,
                         ShowUnwatchedCount,
+                        ShowVersions,
                     ),
             ),
             PreferenceGroup(

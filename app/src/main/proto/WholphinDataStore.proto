@@ -227,10 +227,11 @@ message CardInterfacePreferences {
   // Other
   bool favorite_indicator = 6;
   bool unwatched_count = 7;
+  bool versions_indicator = 8;
 
-  bool episode_season_number = 8;
-  bool episode_episode_number = 9;
-  //  bool versions_indicator = 10;
+  // Episodes
+  bool episode_season_number = 9;
+  bool episode_episode_number = 10;
 }
 
 message AdvancedPreferences {

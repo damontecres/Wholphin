@@ -26,25 +26,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.joinNotBlank
@@ -73,6 +68,7 @@ fun BannerCard(
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = true,
+    numberOfVersions: Int = 0,
 ) {
     val prefs = LocalInterfaceCustomization.current
     val imageUrlService = LocalImageUrlService.current
@@ -189,17 +185,35 @@ fun BannerCard(
                     }
                 }
             }
-            if (favorite && prefs.favoriteIndicator) {
-                Text(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp),
-                    color = colorResource(android.R.color.holo_red_light),
-                    text = stringResource(R.string.fa_heart),
-                    fontSize = 16.sp,
-                    fontFamily = FontAwesome,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp),
+            ) {
+                if (numberOfVersions > 1 && prefs.versionsIndicator) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(
+                                    AppColors.TransparentBlack50,
+                                    shape = RoundedCornerShape(25),
+                                ),
+                    ) {
+                        Text(
+                            text = numberOfVersions.toString(),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium,
+//                            fontSize = 16.sp,
+                            modifier = Modifier.padding(4.dp),
+                        )
+                    }
+                }
+                if (favorite && prefs.favoriteIndicator) {
+                    FavoriteIndicator()
+                }
             }
             val showProgress =
                 remember(playPercent, prefs, item?.type) {
@@ -247,6 +261,7 @@ fun BannerCardWithTitle(
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = item?.useSeriesForPrimary ?: true,
+    numberOfVersions: Int = 0,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
@@ -273,6 +288,7 @@ fun BannerCardWithTitle(
             imageType = imageType,
             imageContentScale = imageContentScale,
             useSeriesForPrimary = useSeriesForPrimary,
+            numberOfVersions = numberOfVersions,
         )
         SlidingCardText(focused) {
             Text(

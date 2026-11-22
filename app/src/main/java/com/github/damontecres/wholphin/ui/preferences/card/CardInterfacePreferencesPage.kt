@@ -180,6 +180,7 @@ private fun Card(
                     modifier = Modifier,
                     cardHeight = cardHeight,
                     useSeriesForPrimary = false,
+                    numberOfVersions = item.data.mediaSourceCount ?: 0,
                 )
             } else {
                 Text(
