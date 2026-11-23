@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.preferences.AppThemeColors
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 
@@ -38,27 +41,24 @@ fun PlayedPercentBar(
                 .padding(horizontal = 6.dp, vertical = 6.dp)
                 .height(Cards.playedPercentHeight)
                 .clip(shape)
-                .background(Color.Black)
-                .padding(1.dp),
+                .border(1.dp, SolidColor(Color.Black), shape)
+                .background(AppColors.TransparentBlack75),
     ) {
         Box(
             modifier =
                 Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(fraction)
-                    .clip(shape)
-                    .background(PlayedPercentColor()),
+                    .background(playedPercentColor()),
         )
     }
 }
 
 /**
- * The fill colour: the same colour as the watched badge, so both marks on a card agree
- * and follow the theme. Where that colour is too dark to read on the black track, the
- * theme's own light accent is used instead.
+ * The fill color, typically [MaterialTheme.colorScheme.tertiary]
  */
 @Composable
-fun PlayedPercentColor(): Color =
+private fun playedPercentColor(): Color =
     when (LocalTheme.current) {
         AppThemeColors.UNRECOGNIZED,
         AppThemeColors.PURPLE,
@@ -66,13 +66,9 @@ fun PlayedPercentColor(): Color =
         AppThemeColors.GREEN,
         AppThemeColors.ORANGE,
         AppThemeColors.RED,
-        -> WatchedIconBackground()
-
-        // The badge colour is dark brown here, almost invisible on black
-        AppThemeColors.BROWN -> MaterialTheme.colorScheme.primary
-
-        // The badge colour is dark navy / dark grey here; tertiary already matches the theme
         AppThemeColors.BOLD_BLUE,
         AppThemeColors.OLED_BLACK,
         -> MaterialTheme.colorScheme.tertiary
+
+        AppThemeColors.BROWN -> MaterialTheme.colorScheme.primary
     }
