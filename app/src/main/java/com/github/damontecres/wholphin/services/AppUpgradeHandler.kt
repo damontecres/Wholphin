@@ -517,7 +517,8 @@ class AppUpgradeHandler
                             CardInterfacePreferences
                                 .newBuilder()
                                 .apply {
-                                    watchedIndicator = CardPreferences.ShowWatchIndicator.defaultValue
+                                    clearWatchedIndicator()
+                                    addAllWatchedIndicator(CardPreferences.ShowWatchIndicator.defaultValue)
                                     watchedProgress = CardPreferences.ShowWatchProgress.defaultValue
                                     seasonWatchedProgress = CardPreferences.ShowSeasonWatchProgress.defaultValue
                                     seriesWatchedProgress = CardPreferences.ShowSeriesWatchProgress.defaultValue

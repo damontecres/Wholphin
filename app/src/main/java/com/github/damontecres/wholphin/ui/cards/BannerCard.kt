@@ -104,6 +104,8 @@ fun BannerCard(
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
 
+    val cardImageType = ItemCardImageType.from(item?.type)
+
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = { currentOnClick() },
@@ -149,7 +151,7 @@ fun BannerCard(
                             .align(Alignment.TopEnd)
                             .padding(4.dp),
                 ) {
-                    if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator) {
+                    if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator.contains(cardImageType)) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
                     val text =

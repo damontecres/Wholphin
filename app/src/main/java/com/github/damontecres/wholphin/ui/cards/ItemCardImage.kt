@@ -36,6 +36,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.preferences.WatchedIndicatorType
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -250,7 +251,10 @@ fun ItemCardImageOverlay(
                     .padding(4.dp)
                     .align(Alignment.TopEnd),
         ) {
-            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) && ic.watchedIndicator) {
+            if (watched &&
+                (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) &&
+                ic.watchedIndicator.contains(type)
+            ) {
                 WatchedIcon(Modifier.size(24.dp))
             }
             if (unwatchedCount > 0 && ic.unwatchedCount) {
@@ -308,16 +312,18 @@ fun FavoriteIndicator(
     modifier = modifier,
 )
 
-enum class ItemCardImageType {
-    MOVIE,
-    TV_SHOW,
-    TV_SEASON,
-    EPISODE,
-    COLLECTION,
-    PERSON,
-    DISCOVER_MOVIE,
-    DISCOVER_SERIES,
-    UNKNOWN,
+enum class ItemCardImageType(
+    val watchedIndicatorType: WatchedIndicatorType,
+) {
+    MOVIE(WatchedIndicatorType.MOVIE),
+    TV_SHOW(WatchedIndicatorType.TV_SHOW),
+    TV_SEASON(WatchedIndicatorType.TV_SEASON),
+    EPISODE(WatchedIndicatorType.EPISODE),
+    COLLECTION(WatchedIndicatorType.COLLECTION),
+    PERSON(WatchedIndicatorType.OTHER),
+    DISCOVER_MOVIE(WatchedIndicatorType.OTHER),
+    DISCOVER_SERIES(WatchedIndicatorType.OTHER),
+    UNKNOWN(WatchedIndicatorType.OTHER),
     ;
 
     companion object {
@@ -328,6 +334,7 @@ enum class ItemCardImageType {
                 BaseItemKind.SEASON -> TV_SEASON
                 BaseItemKind.EPISODE -> EPISODE
                 BaseItemKind.BOX_SET -> COLLECTION
+                BaseItemKind.PERSON -> PERSON
                 else -> UNKNOWN
             }
 

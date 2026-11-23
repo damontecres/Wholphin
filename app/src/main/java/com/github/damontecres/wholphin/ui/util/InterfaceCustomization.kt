@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.util
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DisplayToggle
+import com.github.damontecres.wholphin.ui.cards.ItemCardImageType
 import java.util.EnumSet
 
 /**
@@ -10,8 +11,8 @@ import java.util.EnumSet
  */
 data class InterfaceCustomization(
     val enabledDisplayToggles: EnumSet<DisplayToggle> = EnumSet.allOf(DisplayToggle::class.java),
+    val watchedIndicator: EnumSet<ItemCardImageType> = EnumSet.allOf(ItemCardImageType::class.java),
     val watchProgress: Boolean = true,
-    val watchedIndicator: Boolean = true,
     val seasonProgress: Boolean = true,
     val seriesProgress: Boolean = true,
     val collectionProgress: Boolean = true,
@@ -31,10 +32,16 @@ data class InterfaceCustomization(
                         EnumSet.copyOf(p.displayTogglesList)
                     }
                 val c = p.cardInterfacePreferences
+                val watchedIndicator =
+                    c.watchedIndicatorList
+                        .map { type ->
+                            ItemCardImageType.entries.firstOrNull { it.watchedIndicatorType == type }
+                                ?: ItemCardImageType.UNKNOWN
+                        }.let { EnumSet.copyOf(it) }
                 InterfaceCustomization(
                     enabledDisplayToggles = enabledDisplayToggles,
                     watchProgress = c.watchedProgress,
-                    watchedIndicator = c.watchedIndicator,
+                    watchedIndicator = watchedIndicator,
                     seasonProgress = c.seasonWatchedProgress,
                     seriesProgress = c.seriesWatchedProgress,
                     collectionProgress = c.collectionWatchedProgress,

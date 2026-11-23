@@ -216,7 +216,7 @@ message InterfacePreferences {
 }
 
 message CardInterfacePreferences {
-  bool watched_indicator = 1;
+  repeated WatchedIndicatorType watched_indicator = 1;
 
   // Progress
   bool watched_progress = 2;
@@ -232,6 +232,15 @@ message CardInterfacePreferences {
   // Episodes
   bool episode_season_number = 9;
   bool episode_episode_number = 10;
+}
+
+enum WatchedIndicatorType {
+  MOVIE = 0;
+  TV_SHOW = 1;
+  TV_SEASON = 2;
+  EPISODE = 3;
+  COLLECTION = 4;
+  OTHER = 5;
 }
 
 message AdvancedPreferences {

@@ -154,7 +154,7 @@ class AppPreferencesSerializer
                                     CardInterfacePreferences
                                         .newBuilder()
                                         .apply {
-                                            watchedIndicator = CardPreferences.ShowWatchIndicator.defaultValue
+                                            addAllWatchedIndicator(CardPreferences.ShowWatchIndicator.defaultValue)
                                             watchedProgress = CardPreferences.ShowWatchProgress.defaultValue
                                             seasonWatchedProgress = CardPreferences.ShowSeasonWatchProgress.defaultValue
                                             seriesWatchedProgress = CardPreferences.ShowSeriesWatchProgress.defaultValue

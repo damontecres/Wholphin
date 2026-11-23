@@ -9,15 +9,21 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
  */
 object CardPreferences {
     val ShowWatchIndicator =
-        AppSwitchPreference<CardInterfacePreferences>(
+        AppMultiChoicePreference<CardInterfacePreferences, WatchedIndicatorType>(
             title = R.string.watch_indicator,
-            defaultValue = true,
-            getter = { it.watchedIndicator },
-            setter = { prefs, value ->
-                prefs.update { watchedIndicator = value }
+//            summary = R.string.display_toggles_summary,
+            defaultValue = WatchedIndicatorType.entries.filterNot { it == WatchedIndicatorType.UNRECOGNIZED },
+            allValues = WatchedIndicatorType.entries.filterNot { it == WatchedIndicatorType.UNRECOGNIZED },
+            displayValues = R.array.watch_indicator_types,
+            getter = {
+                it.watchedIndicatorList
             },
-            summaryOn = R.string.show,
-            summaryOff = R.string.hide,
+            setter = { prefs, value ->
+                prefs.update {
+                    clearWatchedIndicator()
+                    addAllWatchedIndicator(value)
+                }
+            },
         )
 
     @SuppressLint("PrivateResource")

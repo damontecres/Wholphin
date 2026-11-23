@@ -989,6 +989,14 @@
     <string name="error">Error</string>
     <string name="dolby_vision_invalid">Invalid Dolby Vision</string>
     <string name="watch_indicator">Watched indicator</string>
+    <string-array name="watch_indicator_types">
+        <item>@string/movies_title</item>
+        <item>@string/tv_shows_title</item>
+        <item>@string/tv_seasons</item>
+        <item>@string/episodes</item>
+        <item>@string/collections</item>
+        <item>@string/other_extras_title</item>
+    </string-array>
     <string name="watch_progress">Watched progress</string>
     <string name="unwatched_count">Unwatched count</string>
     <string name="card_customization">Card customization</string>
