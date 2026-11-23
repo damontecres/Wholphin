@@ -18,12 +18,6 @@ class MediaCodecCapabilitiesTest(
     private val display by lazy { ContextCompat.getDisplayOrDefault(context) }
     private val mediaCodecList by lazy { MediaCodecList(MediaCodecList.REGULAR_CODECS) }
 
-    // A MediaCodecInfo is considered a software codec when the platform can report it (API 29+)
-    // and the codec is marked as software-only. On older APIs we cannot distinguish, so the
-    // caller should treat every decoder as potentially hardware.
-    private val MediaCodecInfo.isSoftwareCodec: Boolean
-        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && isSoftwareOnly
-
     // Map common Dolby Vision Profiles to their corresponding CodecProfileLevel constant
     private object DolbyVisionProfiles {
         val Profile5: Int by lazy {
@@ -360,44 +354,43 @@ class MediaCodecCapabilitiesTest(
     /**
      * Returns the maximum resolution advertised for [mime].
      *
-     * Some devices expose a software-only decoder that advertises a higher resolution than
-     * the available hardware decoder (e.g. the XGIMI MoGo 3 Pro reports 1920x1088 for the
-     * hardware HEVC decoder but 2048x2048 for `c2.android.hevc.decoder`). When the server
-     * picks a transcoding profile based on this number, it produces a stream the hardware
-     * decoder cannot play.
+     * Some devices have software-only decoders that advertise a higher resolution than the
+     * available hardware decoder. We want to prefer the capabilities of hardware decoding when
+     * reporting to the server
      *
-     * To avoid that, we first compute the max over hardware decoders only. If no hardware
-     * decoder exists for [mime], we fall back to software decoders so formats that only have
-     * a software path are still reported.
+     * So, first compute the max using hardware decoders only. If no hardware decoder exists for
+     * [mime], fall back to software decoders.
      */
     fun getMaxResolution(mime: String): Size {
         // First pass: hardware decoders only.
-        var (maxWidth, maxHeight) = collectMaxResolution(mime, includeSoftware = false)
+        var hardware = true
+        var (maxWidth, maxHeight) = getMaxResolution(mime, hardwareOnly = true)
 
         // Fall back to software decoders when no hardware decoder reported any size.
         if (maxWidth == 0 || maxHeight == 0) {
-            val (swWidth, swHeight) = collectMaxResolution(mime, includeSoftware = true)
+            val (swWidth, swHeight) = getMaxResolution(mime, hardwareOnly = false)
             if (swWidth > 0 && swHeight > 0) {
                 maxWidth = swWidth
                 maxHeight = swHeight
+                hardware = false
             }
         }
 
-        Timber.d("Computed max resolution for %s: %dx%d", mime, maxWidth, maxHeight)
+        Timber.v("Computed max resolution (hardware=%s) for %s: %dx%d", hardware, mime, maxWidth, maxHeight)
 
         return Size(maxWidth, maxHeight)
     }
 
-    private fun collectMaxResolution(
+    private fun getMaxResolution(
         mime: String,
-        includeSoftware: Boolean,
+        hardwareOnly: Boolean,
     ): Pair<Int, Int> {
         var maxWidth = 0
         var maxHeight = 0
 
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
-            if (!includeSoftware && info.isSoftwareCodec) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && info.isSoftwareOnly) continue
 
             try {
                 val capabilities = info.getCapabilitiesForType(mime)
