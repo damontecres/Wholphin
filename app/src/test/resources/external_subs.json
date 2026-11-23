@@ -51,7 +51,8 @@
       "SupportsExternalStream": true,
       "Path": "",
       "Level": 0,
-      "DeliveryMethod": "External"
+      "DeliveryMethod": "External",
+      "IsOriginal": true
     },
     {
       "Codec": "subrip",
@@ -81,7 +82,8 @@
       "SupportsExternalStream": true,
       "Path": "",
       "Level": 0,
-      "DeliveryMethod": "External"
+      "DeliveryMethod": "External",
+      "IsOriginal": true
     },
     {
       "Codec": "subrip",
@@ -110,7 +112,8 @@
       "SupportsExternalStream": true,
       "Path": "",
       "Level": 0,
-      "DeliveryMethod": "External"
+      "DeliveryMethod": "External",
+      "IsOriginal": true
     },
     {
       "Codec": "eac3",
@@ -136,7 +139,8 @@
       "IsExternal": false,
       "IsTextSubtitleStream": false,
       "SupportsExternalStream": false,
-      "Level": 0
+      "Level": 0,
+      "IsOriginal": true
     },
     {
       "Codec": "h264",
@@ -171,7 +175,8 @@
       "SupportsExternalStream": false,
       "PixelFormat": "yuv420p",
       "Level": 40,
-      "IsAnamorphic": false
+      "IsAnamorphic": false,
+      "IsOriginal": true
     },
     {
       "Codec": "subrip",
@@ -198,7 +203,8 @@
       "IsTextSubtitleStream": true,
       "SupportsExternalStream": true,
       "Level": 0,
-      "DeliveryMethod": "Embed"
+      "DeliveryMethod": "Embed",
+      "IsOriginal": true
     }
   ],
   "MediaAttachments": [],

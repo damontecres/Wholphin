@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -47,10 +48,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackOrder
@@ -105,7 +106,7 @@ class PlayExternalViewModel
                         }
                     }
                 try {
-                    val queriedItem = api.userLibraryApi.getItem(itemId).content
+                    val queriedItem = api.libraryApi.getItem(itemId).content
                     val playlistItem =
                         if (queriedItem.type.playable) {
                             PlaylistItem.Media(BaseItem(queriedItem))
@@ -158,7 +159,11 @@ class PlayExternalViewModel
                             is PlaylistItem.Media -> playlistItem.item
                         }
                     val mediaSource = streamChoiceService.chooseSource(item.data, playbackConfig)
-                    val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
+                    val subtitleStc =
+                        streamChoiceService.getSeriesTrackChoices(
+                            item.data,
+                            SeriesTrackChoiceType.SUBTITLE,
+                        )
                     if (mediaSource == null) {
                         Timber.w("Media source is null")
                         return@launchDefault
@@ -168,13 +173,14 @@ class PlayExternalViewModel
                     val subtitleIndex =
                         streamChoiceService
                             .chooseSubtitleStream(
+                                item = item.data,
                                 source = mediaSource,
                                 audioStream = null,
-                                seriesId = item.data.seriesId,
                                 itemPlayback = playbackConfig,
-                                plc = plc,
+                                stc = subtitleStc,
                                 prefs = prefs,
-                            )?.index
+                            )?.stream
+                            ?.index
                     val externalSubtitles =
                         mediaSource.mediaStreams
                             ?.filter { it.isExternal }
@@ -193,7 +199,7 @@ class PlayExternalViewModel
                         }
 
                     val uri =
-                        api.videosApi
+                        api.videoApi
                             .getVideoStreamUrl(
                                 itemId = item.id,
                                 mediaSourceId = mediaSource.id,
@@ -237,6 +243,8 @@ class PlayExternalViewModel
                             }
 
                             // VLC
+                            // A zero position alone does not override VLC's saved resume position.
+                            putExtra("from_start", positionMs == 0L)
                             if (subtitleUrls.isNotEmpty()) {
                                 putExtra("subtitles_location", subtitleUrls.first().toString())
                             }
@@ -254,7 +262,7 @@ class PlayExternalViewModel
                                     putExtra("forcedsrt", subtitleUrls[it])
                                 }
                         }
-                    api.playStateApi.reportPlaybackStart(
+                    api.sessionApi.reportPlaybackStart(
                         PlaybackStartInfo(
                             canSeek = false,
                             itemId = itemId,
@@ -342,7 +350,7 @@ class PlayExternalViewModel
                             Timber.w("Unknown stop position for external playback")
                         }
                         if (position != null || result.data?.action != null) {
-                            api.playStateApi.reportPlaybackStopped(
+                            api.sessionApi.reportPlaybackStopped(
                                 PlaybackStopInfo(
                                     itemId = itemId,
                                     mediaSourceId = mediaSourceId,

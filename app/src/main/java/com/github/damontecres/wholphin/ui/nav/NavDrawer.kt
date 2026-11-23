@@ -80,6 +80,7 @@ import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
+import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -573,6 +574,7 @@ fun NavigationDrawerScope.ProfileIcon(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val focused by interactionSource.collectIsFocusedAsState()
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
@@ -595,7 +597,7 @@ fun NavigationDrawerScope.ProfileIcon(
         interactionSource = interactionSource,
     ) {
         Text(
-            modifier = Modifier,
+            modifier = Modifier.enableMarquee(focused),
             text = user.name ?: user.id.toString(),
             maxLines = 1,
         )
@@ -639,7 +641,7 @@ fun NavigationDrawerScope.IconNavItem(
         interactionSource = interactionSource,
     ) {
         Text(
-            modifier = Modifier,
+            modifier = Modifier.enableMarquee(focused),
             text = text,
             maxLines = 1,
         )
@@ -733,7 +735,7 @@ fun NavigationDrawerScope.NavItem(
         interactionSource = interactionSource,
     ) {
         Text(
-            modifier = Modifier,
+            modifier = Modifier.enableMarquee(focused),
             text = library.name(context),
             maxLines = 1,
         )

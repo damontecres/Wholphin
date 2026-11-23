@@ -35,7 +35,7 @@ data class Person(
                 name = dto.name,
                 role = personRole(context, dto.role, dto.type),
                 type = dto.type,
-                imageUrl = api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY),
+                imageUrl = api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY, tag = dto.primaryImageTag),
                 favorite = false,
             )
 
@@ -50,7 +50,7 @@ data class Person(
                 name = dto.name,
                 role = personRole(context, dto.role, dto.type),
                 type = dto.type,
-                imageUrl = api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY),
+                imageUrl = api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY, tag = dto.primaryImageTag),
                 favorite = favorite,
             )
     }

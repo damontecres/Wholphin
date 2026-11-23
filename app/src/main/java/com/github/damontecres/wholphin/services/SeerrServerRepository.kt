@@ -9,20 +9,24 @@ import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
+import com.github.damontecres.wholphin.data.model.SeerrPluginLogin
+import com.github.damontecres.wholphin.data.model.SeerrPluginSettings
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.setup.seerr.createSeerrApiUrl
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.ImageType
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -39,26 +43,25 @@ class SeerrServerRepository
         private val serverRepository: ServerRepository,
         @param:StandardOkHttpClient private val okHttpClient: OkHttpClient,
     ) {
-        private val _connection =
-            MutableStateFlow<SeerrConnectionStatus>(SeerrConnectionStatus.NotConfigured)
-        val connection: StateFlow<SeerrConnectionStatus> = _connection
+        private val _connection = MutableStateFlow<SeerrState>(SeerrState())
+        val connection: StateFlow<SeerrState> = _connection
 
         val current: Flow<CurrentSeerr?> =
-            _connection.map { (it as? SeerrConnectionStatus.Success)?.current }
+            _connection.map { (it.connection as? SeerrConnectionStatus.Success)?.current }
         val currentServer: Flow<SeerrServer?> =
-            connection.map { (it as? SeerrConnectionStatus.Success)?.current?.server }
+            connection.map { (it.connection as? SeerrConnectionStatus.Success)?.current?.server }
         val currentUser: Flow<SeerrUser?> =
-            connection.map { (it as? SeerrConnectionStatus.Success)?.current?.user }
+            connection.map { (it.connection as? SeerrConnectionStatus.Success)?.current?.user }
         val currentUserId: Flow<Int?> = current.map { it?.config?.id }
 
         /**
          * Whether Seerr integration is currently active of not
          */
         val active: Flow<Boolean> =
-            connection.map { it is SeerrConnectionStatus.Success && seerrApi.active }
+            connection.map { it.connection is SeerrConnectionStatus.Success && seerrApi.active }
 
         fun clear() {
-            _connection.update { SeerrConnectionStatus.NotConfigured }
+            _connection.update { SeerrState() }
             seerrApi.update("", null)
         }
 
@@ -67,7 +70,7 @@ class SeerrServerRepository
             user: SeerrUser,
             exception: Exception,
         ) {
-            _connection.update { SeerrConnectionStatus.Error(server, user, exception) }
+            _connection.update { it.copy(connection = SeerrConnectionStatus.Error(server, user, exception)) }
             seerrApi.update("", null)
         }
 
@@ -78,8 +81,9 @@ class SeerrServerRepository
         ) {
             val publicSettings = seerrApi.api.settingsApi.settingsPublicGet()
             _connection.update {
-                SeerrConnectionStatus.Success(
-                    CurrentSeerr(server, user, userConfig, publicSettings),
+                it.copy(
+                    connection =
+                        SeerrConnectionStatus.Success(CurrentSeerr(server, user, userConfig, publicSettings)),
                 )
             }
         }
@@ -169,7 +173,7 @@ class SeerrServerRepository
 
         suspend fun removeServerForCurrentUser(): Boolean {
             val user =
-                when (val conn = connection.first()) {
+                when (val conn = connection.value.connection) {
                     SeerrConnectionStatus.NotConfigured -> return false
                     is SeerrConnectionStatus.Error -> conn.user
                     is SeerrConnectionStatus.Success -> conn.current.user
@@ -178,12 +182,92 @@ class SeerrServerRepository
             clear()
             return rows > 0
         }
+
+        /**
+         * Given the [SeerrPluginSettings], try to connect to the Seerr server
+         *
+         * @return true if successfully updated the SeerrApi and logged in
+         */
+        suspend fun usePluginProvidedServer(settings: SeerrPluginSettings): Boolean {
+            val currentUser = serverRepository.currentUser ?: return false
+            if (settings.serverUrl.isNotNullOrBlank() && settings.login != null && settings.login != SeerrPluginLogin.None) {
+                val server =
+                    SeerrServer(
+                        id = -1,
+                        url = settings.serverUrl,
+                    )
+                val user =
+                    SeerrUser(
+                        jellyfinUserRowId = currentUser.rowId,
+                        serverId = server.id,
+                        authMethod =
+                            when (settings.login) {
+                                is SeerrPluginLogin.ApiKey -> SeerrAuthMethod.API_KEY
+                                is SeerrPluginLogin.Local -> SeerrAuthMethod.LOCAL
+                            },
+                        username =
+                            when (settings.login) {
+                                is SeerrPluginLogin.ApiKey -> null
+                                is SeerrPluginLogin.Local -> settings.login.local.username
+                            },
+                        password = null,
+                        credential = null,
+                    )
+                try {
+                    val userConfig =
+                        when (settings.login) {
+                            is SeerrPluginLogin.ApiKey -> {
+                                Timber.v("maybeAddPluginServer, using API key")
+                                seerrApi.update(settings.serverUrl, settings.login.apiKey)
+                                seerrLogin(seerrApi.api, SeerrAuthMethod.API_KEY, null, null)
+                            }
+
+                            is SeerrPluginLogin.Local -> {
+                                Timber.v("maybeAddPluginServer, using local user")
+                                seerrApi.update(settings.serverUrl, null)
+                                seerrLogin(
+                                    seerrApi.api,
+                                    SeerrAuthMethod.LOCAL,
+                                    settings.login.local.username,
+                                    settings.login.local.password,
+                                )
+                            }
+
+                            SeerrPluginLogin.None -> {
+                                return false
+                            }
+                        }
+                    // Success
+                    _connection.update { it.copy(pluginProvided = true) }
+                    set(server, user, userConfig)
+                    return true
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    clear()
+                    Timber.w(ex, "Error adding plugin provided seerr")
+                    _connection.update {
+                        it.copy(
+                            pluginProvided = true,
+                            connection = SeerrConnectionStatus.Error(server, user, ex),
+                        )
+                    }
+                    return false
+                }
+            }
+            return false
+        }
     }
 
 /**
  * A [SeerrUser] config
  */
 typealias SeerrUserConfig = User
+
+data class SeerrState(
+    val connection: SeerrConnectionStatus = SeerrConnectionStatus.NotConfigured,
+    val pluginProvided: Boolean = false,
+)
 
 sealed interface SeerrConnectionStatus {
     data object NotConfigured : SeerrConnectionStatus
@@ -205,11 +289,15 @@ data class CurrentSeerr(
     val config: SeerrUserConfig,
     val serverConfig: PublicSettings,
 ) {
+    val requestMovieEnabled: Boolean
+        get() = config.hasPermission(SeerrPermission.REQUEST_MOVIE)
     val request4kMovieEnabled: Boolean
         get() =
             (serverConfig.movie4kEnabled ?: false) &&
                 config.hasPermission(SeerrPermission.REQUEST_4K_MOVIE)
 
+    val requestTvEnabled: Boolean
+        get() = config.hasPermission(SeerrPermission.REQUEST_TV)
     val request4kTvEnabled: Boolean
         get() =
             (serverConfig.series4kEnabled ?: false) &&

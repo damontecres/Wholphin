@@ -68,6 +68,7 @@ data class BaseItem(
             BaseItemKind.EPISODE -> listOf(data.seasonEpisode, name).joinNotBlank(" - ")
             BaseItemKind.SERIES -> data.seriesProductionYears
             BaseItemKind.AUDIO -> listOf(data.album, artistsString).joinNotBlank(" - ")
+            BaseItemKind.MUSIC_ALBUM -> listOf(data.albumArtist ?: artistsString, data.productionYear?.toString()).joinNotBlank(" - ")
             else -> data.productionYear?.toString()
         }
     }

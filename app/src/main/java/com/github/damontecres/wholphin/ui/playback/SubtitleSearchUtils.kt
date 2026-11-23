@@ -16,8 +16,8 @@ import com.github.damontecres.wholphin.util.WholphinDispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
@@ -134,7 +134,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                         maxAttempts--
                         delay(1500.milliseconds)
                         val base =
-                            BaseItem(api.userLibraryApi.getItem(itemId = currentPlayback.itemId).content)
+                            BaseItem(api.libraryApi.getItem(itemId = currentPlayback.itemId).content)
                         currentItem =
                             when (currentItem) {
                                 is PlaylistItem.Intro -> PlaylistItem.Intro(base)

@@ -36,9 +36,8 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
-import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.data.model.hasPermission
+import com.github.damontecres.wholphin.data.model.canRequestTv
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
@@ -87,6 +86,7 @@ fun DiscoverSeriesDetails(
     val context = LocalContext.current
     val resources = LocalResources.current
     val state by viewModel.state.collectAsState()
+    val requestEnabled by viewModel.requestEnabled.collectAsState()
     val request4kEnabled by viewModel.request4kEnabled.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
@@ -111,6 +111,7 @@ fun DiscoverSeriesDetails(
             DiscoverSeriesDetailsContent(
                 preferences = preferences,
                 series = item,
+                availability = state.availability,
                 userConfig = userConfig,
                 rating = state.rating,
                 canCancel = state.canCancelRequest,
@@ -187,6 +188,7 @@ fun DiscoverSeriesDetails(
             title = state.tvSeries.successValue?.name ?: "",
             seasons = state.seasons,
             seasons4k = state.seasons4k,
+            requestEnabled = requestEnabled,
             request4kEnabled = request4kEnabled,
             onSubmit = {
                 showRequestSeasonDialog = false
@@ -211,6 +213,7 @@ fun DiscoverSeriesDetailsContent(
     preferences: UserPreferences,
     userConfig: SeerrUserConfig?,
     series: TvDetails,
+    availability: SeerrAvailability,
     rating: DiscoverRating?,
     canCancel: Boolean,
     seasons: List<RequestSeason>,
@@ -274,9 +277,7 @@ fun DiscoverSeriesDetailsContent(
                                     .padding(top = HeaderUtils.topPadding, bottom = 16.dp),
                         )
                         ExpandableDiscoverButtons(
-                            availability =
-                                SeerrAvailability.from(series.mediaInfo?.status)
-                                    ?: SeerrAvailability.UNKNOWN,
+                            availability = availability,
                             requestOnClick = requestOnClick,
                             pendingOnClick = requestOnClick,
                             cancelOnClick = cancelOnClick,
@@ -290,7 +291,7 @@ fun DiscoverSeriesDetailsContent(
                                     }
                                 }
                             },
-                            canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                            canRequest = userConfig.canRequestTv,
                             canCancel = canCancel,
                             trailers = trailers,
                             trailerOnClick = trailerOnClick,

@@ -55,6 +55,7 @@ fun ViewOptionsDialog(
     onDismissRequest: () -> Unit,
     onViewOptionsChange: (ViewOptions) -> Unit,
     defaultViewOptions: ViewOptions = ViewOptions(),
+    showArtistSource: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -72,11 +73,11 @@ fun ViewOptionsDialog(
             window.setDimAmount(0f)
         }
         val options =
-            remember(viewOptions.type) {
+            remember(viewOptions.type, showArtistSource) {
                 when (viewOptions.type) {
-                    ViewOptionsType.GRID -> ViewOptions.GRID_OPTIONS
-                    ViewOptionsType.LIST -> ViewOptions.LIST_OPTIONS
-                    ViewOptionsType.DENSE_LIST -> ViewOptions.LIST_OPTIONS
+                    ViewOptionsType.GRID -> ViewOptions.buildGridOptions(showArtistSource)
+                    ViewOptionsType.LIST -> ViewOptions.buildListOptions(showArtistSource)
+                    ViewOptionsType.DENSE_LIST -> ViewOptions.buildListOptions(showArtistSource)
                 }
             }
         Column(
@@ -130,6 +131,12 @@ fun ViewOptionsDialog(
     }
 }
 
+/** Which Jellyfin artists list backs the Music > Artists tab */
+enum class ArtistSource {
+    ARTIST,
+    ALBUM_ARTIST,
+}
+
 /**
  * Stores the customizable view changes from the user
  *
@@ -146,6 +153,7 @@ data class ViewOptions(
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     val showTitles: Boolean = true,
     val type: ViewOptionsType = ViewOptionsType.GRID,
+    val extras: ViewOptionsExtras = ViewOptionsExtras.None,
 ) {
     companion object {
         val ViewOptionsColumns =
@@ -250,12 +258,34 @@ data class ViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        val ViewOptionsArtistSource =
+            AppChoicePreference<ViewOptions, ArtistSource>(
+                title = R.string.artist_source,
+                defaultValue = ArtistSource.ARTIST,
+                displayValues = R.array.artist_sources,
+                getter = { it.artistSource },
+                setter = { viewOptions, value ->
+                    viewOptions.copy(extras = ViewOptionsExtras.MusicLibrary(value))
+                },
+                indexToValue = { ArtistSource.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
+
         val ViewOptionsReset =
             AppClickablePreference<ViewOptions>(
                 title = R.string.reset,
             )
 
-        val GRID_OPTIONS =
+        /**
+         * Get the options for a grid [ViewOptions]
+         */
+        fun buildGridOptions(showArtistSource: Boolean) =
+            buildList {
+                if (showArtistSource) add(ViewOptionsArtistSource)
+                addAll(GRID_OPTIONS)
+            }
+
+        private val GRID_OPTIONS =
             listOf(
                 ViewOptionsTypePref,
                 ViewOptionsImageType,
@@ -269,7 +299,16 @@ data class ViewOptions(
                 ViewOptionsReset,
             )
 
-        val LIST_OPTIONS =
+        /**
+         * Get the options for a list [ViewOptions]
+         */
+        fun buildListOptions(showArtistSource: Boolean) =
+            buildList {
+                if (showArtistSource) add(ViewOptionsArtistSource)
+                addAll(LIST_OPTIONS)
+            }
+
+        private val LIST_OPTIONS =
             listOf(
                 ViewOptionsTypePref,
                 ViewOptionsDetailHeader,
@@ -338,3 +377,22 @@ val BaseItemKind.defaultViewOptions: ViewOptions
 
             else -> ViewOptionsPoster
         }
+
+/**
+ * Extras [ViewOptions] info that is context or library specific
+ */
+@Serializable
+sealed interface ViewOptionsExtras {
+    @Serializable
+    data object None : ViewOptionsExtras
+
+    @Serializable
+    data class MusicLibrary(
+        val artistSource: ArtistSource = ArtistSource.ARTIST,
+    ) : ViewOptionsExtras
+}
+
+/**
+ * The [ArtistSource] if the [ViewOptions.extras] is a [ViewOptionsExtras.MusicLibrary]
+ */
+val ViewOptions.artistSource: ArtistSource get() = (extras as? ViewOptionsExtras.MusicLibrary)?.artistSource ?: ArtistSource.ARTIST

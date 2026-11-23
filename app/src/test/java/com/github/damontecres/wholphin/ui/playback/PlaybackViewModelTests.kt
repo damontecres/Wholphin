@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackPreferences
@@ -29,6 +30,8 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.StreamChoiceReason
+import com.github.damontecres.wholphin.services.StreamChoiceResult
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.test.TestTracks
@@ -54,16 +57,17 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
-import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.mediaSegmentApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
+import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.api.operations.MediaInfoApi
-import org.jellyfin.sdk.api.operations.MediaSegmentsApi
-import org.jellyfin.sdk.api.operations.UserLibraryApi
-import org.jellyfin.sdk.api.operations.VideosApi
+import org.jellyfin.sdk.api.operations.MediaSegmentApi
+import org.jellyfin.sdk.api.operations.VideoApi
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentDtoQueryResult
 import org.jellyfin.sdk.model.api.MediaSegmentType
@@ -104,10 +108,10 @@ class PlaybackViewModelTests {
     private val mockScreensaverService = mockk<ScreensaverService>(relaxed = true)
     private val mockMusicService = mockk<MusicService>(relaxed = true)
 
-    private val mockUserLibraryApi = mockk<UserLibraryApi>()
+    private val mockLibraryApi = mockk<LibraryApi>()
     private val mockMediaInfoApi = mockk<MediaInfoApi>()
-    private val mockVideosApi = mockk<VideosApi>()
-    private val mockMediaSegmentsApi = mockk<MediaSegmentsApi>()
+    private val mockVideosApi = mockk<VideoApi>()
+    private val mockMediaSegmentsApi = mockk<MediaSegmentApi>()
     private val mockPlayer = mockk<Player>(relaxed = true)
 
     fun create(destination: Destination): PlaybackViewModel =
@@ -173,10 +177,10 @@ class PlaybackViewModelTests {
     fun setUp() {
         WholphinDispatchers.configure(testDispatcher)
 
-        every { mockApi.userLibraryApi } returns mockUserLibraryApi
+        every { mockApi.libraryApi } returns mockLibraryApi
         every { mockApi.mediaInfoApi } returns mockMediaInfoApi
-        every { mockApi.videosApi } returns mockVideosApi
-        every { mockApi.mediaSegmentsApi } returns mockMediaSegmentsApi
+        every { mockApi.videoApi } returns mockVideosApi
+        every { mockApi.mediaSegmentApi } returns mockMediaSegmentsApi
 
         coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
             successResponse(
@@ -201,7 +205,12 @@ class PlaybackViewModelTests {
 
         coEvery { mockItemPlaybackDao.getItem(user, any()) } returns null
         coEvery { mockStreamChoiceService.chooseSource(any(), any()) } returns mediaSource
-        coEvery { mockStreamChoiceService.getPlaybackLanguageChoice(any()) } returns null
+        coEvery {
+            mockStreamChoiceService.getSeriesTrackChoices(
+                any<BaseItemDto>(),
+                any<SeriesTrackChoiceType>(),
+            )
+        } returns emptyList()
         coEvery { mockPlayerFactory.createVideoPlayer(any(), any()) } returns
             PlayerCreation(mockPlayer)
         every { mockPlayerFactory.createMediaSession(any()) } returns mockk(relaxed = true)
@@ -214,18 +223,26 @@ class PlaybackViewModelTests {
                 any(),
                 any(),
             )
-        } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.AUDIO }
+        } returns
+            StreamChoiceResult(
+                mediaSource.mediaStreams!!.first { it.type == MediaStreamType.AUDIO },
+                StreamChoiceReason.Unknown,
+            )
 
         coEvery {
             mockStreamChoiceService.chooseSubtitleStream(
+                item = any(),
                 source = mediaSource,
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
+                audioStream = any(),
+                itemPlayback = any(),
+                stc = any(),
+                prefs = any(),
             )
-        } returns mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE }
+        } returns
+            StreamChoiceResult(
+                mediaSource.mediaStreams!!.first { it.type == MediaStreamType.SUBTITLE },
+                StreamChoiceReason.Unknown,
+            )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -276,13 +293,56 @@ class PlaybackViewModelTests {
     }
 
     @Test
+    fun `Direct play includes the opened live stream ID`() =
+        runTest(testDispatcher) {
+            setupPreferences { cinemaMode = false }
+            val liveStreamId = "opened-live-stream"
+            val liveSource = mediaSource.copy(liveStreamId = liveStreamId)
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockMediaInfoApi.getPostedPlaybackInfo(any(), any()) } returns
+                successResponse(
+                    PlaybackInfoResponse(
+                        mediaSources = listOf(liveSource),
+                        playSessionId = playSessionId,
+                    ),
+                )
+            every {
+                mockVideosApi.getVideoStreamUrl(
+                    itemId = movie.id,
+                    mediaSourceId = liveSource.id,
+                    liveStreamId = liveSource.liveStreamId,
+                    static = true,
+                    tag = liveSource.eTag,
+                    playSessionId = playSessionId,
+                )
+            } returns videoStreamUrl
+
+            createViewModel(Destination.Playback(movie.id, 0L))
+
+            val mediaItem = slot<MediaItem>()
+            verify(exactly = 1) { mockPlayer.setMediaItem(capture(mediaItem), any<Long>()) }
+            val playbackUri = mediaItem.captured.localConfiguration?.uri
+            Assert.assertEquals(videoStreamUrl, playbackUri.toString())
+            verify(exactly = 1) {
+                mockVideosApi.getVideoStreamUrl(
+                    itemId = movie.id,
+                    mediaSourceId = liveSource.id,
+                    liveStreamId = liveStreamId,
+                    static = true,
+                    tag = liveSource.eTag,
+                    playSessionId = playSessionId,
+                )
+            }
+        }
+
+    @Test
     fun `Play intro first`() =
         runTest(testDispatcher) {
             setupPreferences {
                 cinemaMode = true
             }
-            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
-            coEvery { mockUserLibraryApi.getIntros(movie.id, any()) } returns
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockLibraryApi.getIntros(movie.id, any()) } returns
                 successQueryResult(listOf(intro))
 
             val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
@@ -305,8 +365,8 @@ class PlaybackViewModelTests {
             setupPreferences {
                 cinemaMode = true
             }
-            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
-            coEvery { mockUserLibraryApi.getIntros(movie.id, any()) } returns
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockLibraryApi.getIntros(movie.id, any()) } returns
                 successQueryResult(listOf(intro, intro2))
 
             val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
@@ -331,11 +391,11 @@ class PlaybackViewModelTests {
             setupPreferences {
                 cinemaMode = false
             }
-            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
 
             val viewModel = createViewModel(Destination.Playback(movie.id, 0L))
 
-            coVerify(exactly = 0) { mockUserLibraryApi.getIntros(any(), any()) }
+            coVerify(exactly = 0) { mockLibraryApi.getIntros(any(), any()) }
             val mediaItem = slot<MediaItem>()
             verify(exactly = 1) { mockPlayer.setMediaItem(capture(mediaItem), any<Long>()) }
             Assert.assertEquals(movie.id.toString(), mediaItem.captured.mediaId)
@@ -346,7 +406,7 @@ class PlaybackViewModelTests {
         }
 
     private fun setupForPlaylist() {
-        coEvery { mockUserLibraryApi.getItem(playlist.id, any()) } returns
+        coEvery { mockLibraryApi.getItem(playlist.id, any()) } returns
             successResponse(playlist)
         coEvery {
             mockPlaylistCreator.createFrom(
@@ -546,8 +606,8 @@ class PlaybackViewModelTests {
                 autoPlayNext = false
             }
             setupForPlaylist()
-            coEvery { mockUserLibraryApi.getItem(movie.id) } returns successResponse(movie)
-            coEvery { mockUserLibraryApi.getIntros(movie.id, any()) } returns
+            coEvery { mockLibraryApi.getItem(movie.id) } returns successResponse(movie)
+            coEvery { mockLibraryApi.getIntros(movie.id, any()) } returns
                 successQueryResult(listOf(intro))
 
             val viewModel = createViewModel(Destination.PlaybackList(playlist.id))

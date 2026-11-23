@@ -16,7 +16,7 @@ import java.util.UUID
 /**
  * Represents the status of the most recently used server
  *
- * This can be read/written to shared preferences
+ * This can be saved/retrieved from a [MostRecentServerProvider]
  */
 sealed interface MostRecentServer {
     /**
@@ -58,12 +58,12 @@ sealed interface MostRecentServer {
 
 interface MostRecentServerProvider {
     /**
-     * Get the [MostRecentServer] from the shared preferences in [context]
+     * Get the [MostRecentServer] from this provider
      */
     fun get(): MostRecentServer
 
     /**
-     * Save the [CurrentUser] as the most recent server into the shared preferences in [context]
+     * Save the [CurrentUser] as the most recent server
      */
     suspend fun save(current: CurrentUser)
 
@@ -86,9 +86,6 @@ class MostRecentServerSharedPreferences(
 ) : MostRecentServerProvider {
     private val prefs = getServerSharedPreferences(context)
 
-    /**
-     * Get the [MostRecentServer] from the shared preferences in [context]
-     */
     override fun get(): MostRecentServer {
         val serverId = prefs.getString(SERVER_ID_KEY, null)?.toUUIDOrNull()
         val serverUrl = prefs.getString(SERVER_URL_KEY, null)
@@ -103,9 +100,6 @@ class MostRecentServerSharedPreferences(
         }
     }
 
-    /**
-     * Save the [CurrentUser] as the most recent server into the shared preferences in [context]
-     */
     override suspend fun save(current: CurrentUser) {
         prefs.edit(true) {
             putString(SERVER_ID_KEY, current.server.id.toServerString())

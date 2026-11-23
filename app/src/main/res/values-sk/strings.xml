@@ -763,4 +763,20 @@
     <string name="remove_from_playlist">Odstrániť z playlistu</string>
     <string name="login_credentials_expired">Platnosť prihlasovacích údajov vypršala, prihláste sa znova</string>
     <string name="login_not_authorized">Momentálne nemáte oprávnenie na prístup k serveru</string>
+    <string name="prefer_dovi_over_hdr10_plus">Preferovať Dolby Vision pred HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Odstraňuje HDR10+ metadáta z Dolby Vision videí, aby ich televízory namiesto HDR10+ prehrávali v režime Dolby Vision</string>
+    <string name="max_resolution">Maximálne rozlíšenie pred prekódovaním</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <plurals name="episodes_count">
+        <item quantity="one">%1$d epizóda</item>
+        <item quantity="few">%1$d epizódy</item>
+        <item quantity="many">%1$d epizód</item>
+        <item quantity="other">%1$d epizód</item>
+    </plurals>
 </resources>

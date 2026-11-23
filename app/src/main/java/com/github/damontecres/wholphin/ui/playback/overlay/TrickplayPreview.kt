@@ -15,13 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.formatDuration
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun TrickplayPreview(
     seekProgressMs: Long,
-    trickplayInfo: TrickplayInfo?,
+    trickplayInfo: TrickplayInfoDto?,
     trickplayUrlFor: (Int) -> String?,
     modifier: Modifier = Modifier,
 ) {
