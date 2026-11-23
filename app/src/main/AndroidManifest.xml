@@ -108,6 +108,12 @@
                 android:name="autoStoreLocales"
                 android:value="false" />
         </service>
+
+        <provider
+            android:name=".services.tvprovider.ImageProvider"
+            android:authorities="${applicationId}.services.tvprovider.ImageProvider"
+            android:exported="true"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>
