@@ -10,9 +10,9 @@ import java.util.EnumSet
  * Represents various UI preferences made available via [LocalInterfaceCustomization]
  */
 data class InterfaceCustomization(
-    val enabledDisplayToggles: EnumSet<DisplayToggle> = EnumSet.allOf(DisplayToggle::class.java),
-    val watchedIndicator: EnumSet<ItemCardImageType> = EnumSet.allOf(ItemCardImageType::class.java),
-    val watchProgress: EnumSet<ItemCardImageType> = EnumSet.allOf(ItemCardImageType::class.java),
+    val enabledDisplayToggles: EnumSet<DisplayToggle> = allOf(),
+    val watchedIndicator: EnumSet<ItemCardImageType> = allOf(),
+    val watchProgress: EnumSet<ItemCardImageType> = allOf(),
     val favoriteIndicator: Boolean = true,
     val versionsIndicator: Boolean = true,
     val unwatchedCount: Boolean = true,
@@ -22,17 +22,11 @@ data class InterfaceCustomization(
     companion object {
         fun from(prefs: AppPreferences): InterfaceCustomization =
             prefs.interfacePreferences.let { p ->
-                val enabledDisplayToggles =
-                    if (p.displayTogglesList.isEmpty()) {
-                        EnumSet.noneOf(DisplayToggle::class.java)
-                    } else {
-                        EnumSet.copyOf(p.displayTogglesList)
-                    }
+                val enabledDisplayToggles = p.displayTogglesList.toEnumSet()
+
                 val c = p.cardInterfacePreferences
-                val watchedIndicator =
-                    c.watchedIndicatorList.map { ItemCardImageType.from(it) }.let { EnumSet.copyOf(it) }
-                val watchProgress =
-                    c.watchedProgressList.map { ItemCardImageType.from(it) }.let { EnumSet.copyOf(it) }
+                val watchedIndicator = c.watchedIndicatorList.map { ItemCardImageType.from(it) }.toEnumSet()
+                val watchProgress = c.watchedProgressList.map { ItemCardImageType.from(it) }.toEnumSet()
 
                 InterfaceCustomization(
                     enabledDisplayToggles = enabledDisplayToggles,
@@ -49,3 +43,14 @@ data class InterfaceCustomization(
 }
 
 val LocalInterfaceCustomization = staticCompositionLocalOf<InterfaceCustomization> { InterfaceCustomization() }
+
+/**
+ * Return an [EnumSet] that contains all enums in this [Collection]
+ */
+inline fun <reified T : Enum<T>> Collection<T>.toEnumSet(): EnumSet<T> =
+    if (isEmpty()) EnumSet.noneOf(T::class.java) else EnumSet.copyOf(this)
+
+/**
+ * Return an [EnumSet] that contains all enums for the enum type
+ */
+inline fun <reified T : Enum<T>> allOf(): EnumSet<T> = EnumSet.allOf(T::class.java)
