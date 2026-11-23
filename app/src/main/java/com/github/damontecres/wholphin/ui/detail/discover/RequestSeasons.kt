@@ -65,11 +65,12 @@ fun RequestSeasons(
     seasons: List<RequestSeason>,
     seasons4k: List<RequestSeason>,
     data: SeerrRequestData,
+    requestEnabled: Boolean,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var is4k by remember { mutableStateOf(request4kEnabled) }
+    var is4k by remember { mutableStateOf(!requestEnabled) }
     val seasons = remember(is4k, seasons, seasons4k) { if (is4k) seasons4k else seasons }
 
     val allSeasonNumbers =
@@ -161,7 +162,7 @@ fun RequestSeasons(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
                 ) {
-                    if (request4kEnabled) {
+                    if (requestEnabled && request4kEnabled) {
                         ClickSwitch(
                             label = stringResource(R.string.request_4k),
                             checked = is4k,
@@ -391,6 +392,7 @@ fun RequestSeasonsDialog(
     data: SeerrRequestData,
     seasons: List<RequestSeason>,
     seasons4k: List<RequestSeason>,
+    requestEnabled: Boolean,
     request4kEnabled: Boolean,
     onSubmit: (TvRequest) -> Unit,
     onDismissRequest: () -> Unit,
@@ -418,6 +420,7 @@ fun RequestSeasonsDialog(
                     data = data,
                     seasons = seasons,
                     seasons4k = seasons4k,
+                    requestEnabled = requestEnabled,
                     request4kEnabled = request4kEnabled,
                     onSubmit = onSubmit,
                     modifier =
@@ -475,6 +478,7 @@ fun RequestSeasonsPreview() {
                             SeerrRootFolder(1, "/tv", "400GB", true),
                         ),
                 ),
+            requestEnabled = true,
             request4kEnabled = true,
             onSubmit = { },
             modifier = Modifier.width(400.dp),

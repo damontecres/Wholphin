@@ -49,6 +49,11 @@ enum class MoveDirection {
     DOWN,
 }
 
+private const val POS_ADD_ROW = 0
+private const val POS_SOURCE = POS_ADD_ROW + 1
+private const val POS_SETTINGS = POS_SOURCE + 1
+private const val POS_PRESETS = POS_SETTINGS + 1
+
 @Composable
 fun HomeSettingsRowList(
     state: HomePageSettingsState,
@@ -58,13 +63,14 @@ fun HomeSettingsRowList(
     onClickPresets: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
+    onClickSourceSettings: () -> Unit,
     modifier: Modifier,
 ) {
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val itemsBeforeRows = 4
+    val itemsBeforeRows = POS_PRESETS + 1 // +1 for divider
     val focusRequesters =
         remember(state.rows.size) { List(itemsBeforeRows + state.rows.size) { FocusRequester() } }
 
@@ -80,7 +86,7 @@ fun HomeSettingsRowList(
             modifier =
                 modifier
                     .fillMaxHeight()
-                    .focusRestorer(focusRequesters[0]),
+                    .focusRestorer(focusRequesters[POS_ADD_ROW]),
         ) {
             item {
                 HomeSettingsListItem(
@@ -93,10 +99,30 @@ fun HomeSettingsRowList(
                         )
                     },
                     onClick = {
-                        position = 0
+                        position = POS_ADD_ROW
                         onClickAdd.invoke()
                     },
-                    modifier = Modifier.focusRequester(focusRequesters[0]),
+                    modifier = Modifier.focusRequester(focusRequesters[POS_ADD_ROW]),
+                )
+            }
+            item {
+                HomeSettingsListItem(
+                    selected = false,
+                    headlineText = "Source",
+                    leadingContent = {
+                        Text(
+                            text = stringResource(R.string.fa_download),
+                            fontFamily = FontAwesome,
+                        )
+                    },
+                    supportingContent = {
+                        Text(text = stringResource(state.source.stringResId))
+                    },
+                    onClick = {
+                        position = POS_SOURCE
+                        onClickSourceSettings.invoke()
+                    },
+                    modifier = Modifier.focusRequester(focusRequesters[POS_SOURCE]),
                 )
             }
             item {
@@ -110,10 +136,10 @@ fun HomeSettingsRowList(
                         )
                     },
                     onClick = {
-                        position = 1
+                        position = POS_SETTINGS
                         onClickSettings.invoke()
                     },
-                    modifier = Modifier.focusRequester(focusRequesters[1]),
+                    modifier = Modifier.focusRequester(focusRequesters[POS_SETTINGS]),
                 )
             }
             item {
@@ -132,10 +158,10 @@ fun HomeSettingsRowList(
                         )
                     },
                     onClick = {
-                        position = 2
+                        position = POS_PRESETS
                         onClickPresets.invoke()
                     },
-                    modifier = Modifier.focusRequester(focusRequesters[2]),
+                    modifier = Modifier.focusRequester(focusRequesters[POS_PRESETS]),
                 )
             }
             item {

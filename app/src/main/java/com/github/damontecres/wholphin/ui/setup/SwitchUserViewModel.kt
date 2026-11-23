@@ -35,8 +35,8 @@ import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.authenticateUserByName
+import org.jellyfin.sdk.api.client.extensions.authenticationApi
 import org.jellyfin.sdk.api.client.extensions.imageApi
-import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.ServerVersion
@@ -116,7 +116,7 @@ class SwitchUserViewModel
                                         connectTimeout = 6.seconds,
                                         socketTimeout = 6.seconds,
                                     ),
-                            ).quickConnectApi
+                            ).authenticationApi
                             .getQuickConnectEnabled()
                     _state.update { it.copy(quickConnectEnabled = quickConnect) }
                 } catch (_: CancellationException) {
@@ -174,7 +174,7 @@ class SwitchUserViewModel
             viewModelScope.launchIO {
                 try {
                     val api = jellyfin.createApi(baseUrl = server.url)
-                    val authenticationResult by api.userApi.authenticateUserByName(
+                    val authenticationResult by api.authenticationApi.authenticateUserByName(
                         username = username,
                         password = password,
                     )
@@ -203,7 +203,7 @@ class SwitchUserViewModel
                         val api = jellyfin.createApi(server.url)
                         var quickConnectStatus =
                             api
-                                .quickConnectApi
+                                .authenticationApi
                                 .initiateQuickConnect()
                                 .content
                         _state.update { it.copy(quickConnectStatus = quickConnectStatus) }
@@ -211,13 +211,13 @@ class SwitchUserViewModel
                         while (!quickConnectStatus.authenticated) {
                             delay(5_000L)
                             quickConnectStatus =
-                                api.quickConnectApi
+                                api.authenticationApi
                                     .getQuickConnectState(
                                         secret = quickConnectStatus.secret,
                                     ).content
                             _state.update { it.copy(quickConnectStatus = quickConnectStatus) }
                         }
-                        val authenticationResult by api.userApi.authenticateWithQuickConnect(
+                        val authenticationResult by api.authenticationApi.authenticateWithQuickConnect(
                             QuickConnectDto(secret = quickConnectStatus.secret),
                         )
                         val current =
@@ -300,16 +300,18 @@ class SwitchUserViewModel
                 knownUsers + publicUsers
             }
 
-        private suspend fun checkServerVersion(): Pair<String?, ServerVersionSupported> {
+        private suspend fun checkServerVersion(): Pair<ServerVersion?, ServerVersionSupported> {
             val api = jellyfin.createApi(server.url)
             val systemInfo by api.systemApi.getPublicSystemInfo()
             val serverVersion = systemInfo.version?.let { ServerVersion.fromString(it) }
             return if (serverVersion == null) {
-                systemInfo.version to ServerVersionSupported.UNKNOWN
+                serverVersion to ServerVersionSupported.UNKNOWN
             } else if (serverVersion < WholphinApplication.minimumServerVersion) {
-                systemInfo.version to ServerVersionSupported.NOT_SUPPORTED
+                serverVersion to ServerVersionSupported.NOT_SUPPORTED
+            } else if (serverVersion < WholphinApplication.newMinimumServerVersion) {
+                serverVersion to ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE
             } else {
-                systemInfo.version to ServerVersionSupported.SUPPORTED
+                serverVersion to ServerVersionSupported.SUPPORTED
             }
         }
 
@@ -341,7 +343,7 @@ data class SwitchUserState(
     // LoadingState for while adding/switching users
     val switchUserState: LoadingState = LoadingState.Pending,
     val loginAttempts: Int = 0,
-    val serverVersion: String? = null,
+    val serverVersion: ServerVersion? = null,
     val serverVersionSupported: ServerVersionSupported = ServerVersionSupported.UNKNOWN,
 )
 

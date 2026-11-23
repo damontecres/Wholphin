@@ -33,10 +33,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.filterApi
-import org.jellyfin.sdk.api.client.extensions.genresApi
+import org.jellyfin.sdk.api.client.extensions.genreApi
 import org.jellyfin.sdk.api.client.extensions.localizationApi
-import org.jellyfin.sdk.api.client.extensions.studiosApi
-import org.jellyfin.sdk.api.client.extensions.yearsApi
+import org.jellyfin.sdk.api.client.extensions.studioApi
+import org.jellyfin.sdk.api.client.extensions.yearApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -96,7 +96,7 @@ class FilterOptionCache
             filterOption: FilterBy<*, *>,
         ) = when (filterOption) {
             GenreFilter -> {
-                api.genresApi
+                api.genreApi
                     .getGenres(
                         parentId = parentId,
                         userId = userId,
@@ -105,7 +105,7 @@ class FilterOptionCache
             }
 
             StudioFilter -> {
-                api.studiosApi
+                api.studioApi
                     .getStudios(
                         parentId = parentId,
                         userId = userId,
@@ -150,7 +150,7 @@ class FilterOptionCache
             }
 
             YearFilter -> {
-                api.yearsApi
+                api.yearApi
                     .getYears(
                         parentId = parentId,
                         userId = userId,
@@ -164,7 +164,7 @@ class FilterOptionCache
 
             DecadeFilter -> {
                 val items = TreeSet<Int>()
-                api.yearsApi
+                api.yearApi
                     .getYears(
                         parentId = parentId,
                         userId = userId,

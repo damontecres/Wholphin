@@ -131,7 +131,8 @@ class MediaCodecCapabilitiesTest(
             CodecProfileLevel.HEVCMainTierLevel62 to 186,
         )
 
-    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
+    // Ignore the platform's software AV1 decoder (c2.android.av1-dav1d), it is too slow on most TV boxes
+    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1, hardwareOnly = true)
 
     fun supportsAV1Main10(): Boolean =
         hasDecoder(
@@ -214,6 +215,15 @@ class MediaCodecCapabilitiesTest(
                 CodecProfileLevel.DolbyVisionLevelHd24,
             ) &&
             supportsMultiInstance(MediaFormat.MIMETYPE_VIDEO_HEVC)
+
+    // Checks for single-layer Dolby Vision Profile 8, which the Profile 7 conversion produces
+    fun supportsHevcDolbyVisionProfile8(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
+            hasDecoder(
+                MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
+                DolbyVisionProfiles.Profile8,
+                CodecProfileLevel.DolbyVisionLevelHd24,
+            )
 
     fun supportsHevcHDR10(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
@@ -310,9 +320,13 @@ class MediaCodecCapabilitiesTest(
         return false
     }
 
-    private fun hasCodecForMime(mime: String): Boolean {
+    private fun hasCodecForMime(
+        mime: String,
+        hardwareOnly: Boolean = false,
+    ): Boolean {
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !info.isHardwareAccelerated) continue
 
             if (info.supportedTypes.any { it.equals(mime, ignoreCase = true) }) {
                 Timber.i("found codec %s for mime %s", info.name, mime)

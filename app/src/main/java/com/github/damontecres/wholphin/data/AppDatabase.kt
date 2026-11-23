@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
+import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -48,8 +49,9 @@ import java.util.UUID
         SeerrServer::class,
         SeerrUser::class,
         RememberedTab::class,
+        SeriesTrackChoice::class,
     ],
-    version = 35,
+    version = 41,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -68,6 +70,8 @@ import java.util.UUID
         AutoMigration(32, 33),
         AutoMigration(33, 34),
         AutoMigration(34, 35),
+        AutoMigration(35, 40),
+        AutoMigration(40, 41),
     ],
 )
 @TypeConverters(Converters::class)
@@ -87,6 +91,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playbackEffectDao(): PlaybackEffectDao
 
     abstract fun rememberedTabDao(): RememberedTabDao
+
+    abstract fun seriesTrackChoiceDao(): SeriesTrackChoiceDao
 }
 
 class Converters {

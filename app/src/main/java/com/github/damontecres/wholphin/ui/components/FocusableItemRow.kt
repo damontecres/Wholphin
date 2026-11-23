@@ -60,7 +60,7 @@ fun FocusableItemRow(
         if (focused) {
             MaterialTheme.colorScheme.border.copy(alpha = .25f)
         } else {
-            Color.Unspecified
+            Color.Transparent
         },
     )
     Column(
