@@ -1,8 +1,12 @@
 package com.github.damontecres.wholphin.preferences
 
+import android.annotation.SuppressLint
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 
+/**
+ * Preferences related to card overlays
+ */
 object CardPreferences {
     val ShowWatchIndicator =
         AppSwitchPreference<CardInterfacePreferences>(
@@ -16,6 +20,7 @@ object CardPreferences {
             summaryOff = R.string.hide,
         )
 
+    @SuppressLint("PrivateResource")
     val ShowWatchProgress =
         AppSwitchPreference<CardInterfacePreferences>(
             title = androidx.compose.ui.R.string.in_progress,
@@ -156,6 +161,3 @@ object CardPreferences {
             ),
         )
 }
-
-inline fun CardInterfacePreferences.update(block: CardInterfacePreferences.Builder.() -> Unit): CardInterfacePreferences =
-    toBuilder().apply(block).build()

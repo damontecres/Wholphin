@@ -288,6 +288,9 @@ inline fun AppPreferences.updateExperimentalPreferences(block: ExperimentalPrefe
         experimentalPreferences = experimentalPreferences.toBuilder().apply(block).build()
     }
 
+inline fun CardInterfacePreferences.update(block: CardInterfacePreferences.Builder.() -> Unit): CardInterfacePreferences =
+    toBuilder().apply(block).build()
+
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()

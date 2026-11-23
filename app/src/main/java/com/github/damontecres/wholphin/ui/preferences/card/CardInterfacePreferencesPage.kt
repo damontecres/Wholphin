@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.preferences.card
 
+import android.annotation.SuppressLint
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -41,7 +41,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.util.LoadingState
 import org.jellyfin.sdk.model.api.ImageType
-import timber.log.Timber
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -50,7 +49,6 @@ fun CardInterfacePreferencesPage(
     modifier: Modifier = Modifier,
     viewModel: CardPreferencesViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     LaunchedEffect(Unit) {
@@ -84,9 +82,6 @@ fun CardInterfacePreferencesPage(
                         cardInterfacePreferences = newPrefs
                     }
                 }
-                Timber.v("Card prefs: %s", preferences.interfacePreferences.cardInterfacePreferences)
-            },
-            onFocus = { groupIndex, prefIndex ->
             },
             modifier =
                 Modifier
@@ -96,6 +91,7 @@ fun CardInterfacePreferencesPage(
     }
 }
 
+@SuppressLint("PrivateResource")
 @kotlin.OptIn(ExperimentalGridApi::class)
 @Composable
 fun CardExamples(

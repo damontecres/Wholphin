@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
+// TODO this is a copy of SubtitlePreferencesContent.kt
 @Composable
 fun CardInterfacePreferencesContent(
     title: String,
