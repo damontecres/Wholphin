@@ -276,15 +276,7 @@ fun ItemCardImageOverlay(
                 }
             }
         }
-        val showWatchProgress =
-            remember(type, ic) {
-                when (type) {
-                    ItemCardImageType.TV_SHOW -> ic.seriesProgress
-                    ItemCardImageType.TV_SEASON -> ic.seasonProgress
-                    ItemCardImageType.COLLECTION -> ic.collectionProgress
-                    else -> ic.watchProgress
-                }
-            }
+        val showWatchProgress = ic.watchProgress.contains(type)
         if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && showWatchProgress) {
             Box(
                 modifier =
@@ -312,18 +304,17 @@ fun FavoriteIndicator(
     modifier = modifier,
 )
 
-enum class ItemCardImageType(
-    val watchedIndicatorType: WatchedIndicatorType,
-) {
-    MOVIE(WatchedIndicatorType.MOVIE),
-    TV_SHOW(WatchedIndicatorType.TV_SHOW),
-    TV_SEASON(WatchedIndicatorType.TV_SEASON),
-    EPISODE(WatchedIndicatorType.EPISODE),
-    COLLECTION(WatchedIndicatorType.COLLECTION),
-    PERSON(WatchedIndicatorType.OTHER),
-    DISCOVER_MOVIE(WatchedIndicatorType.OTHER),
-    DISCOVER_SERIES(WatchedIndicatorType.OTHER),
-    UNKNOWN(WatchedIndicatorType.OTHER),
+enum class ItemCardImageType {
+    MOVIE,
+    TV_SHOW,
+    TV_SEASON,
+    EPISODE,
+    COLLECTION,
+    PERSON,
+    PLAYLIST,
+    DISCOVER_MOVIE,
+    DISCOVER_SERIES,
+    UNKNOWN,
     ;
 
     companion object {
@@ -335,6 +326,7 @@ enum class ItemCardImageType(
                 BaseItemKind.EPISODE -> EPISODE
                 BaseItemKind.BOX_SET -> COLLECTION
                 BaseItemKind.PERSON -> PERSON
+                BaseItemKind.PLAYLIST -> PLAYLIST
                 else -> UNKNOWN
             }
 
@@ -345,6 +337,18 @@ enum class ItemCardImageType(
                 SeerrItemType.PERSON -> UNKNOWN
                 SeerrItemType.UNKNOWN -> UNKNOWN
                 null -> UNKNOWN
+            }
+
+        fun from(type: WatchedIndicatorType): ItemCardImageType =
+            when (type) {
+                WatchedIndicatorType.MOVIE -> MOVIE
+                WatchedIndicatorType.TV_SHOW -> TV_SHOW
+                WatchedIndicatorType.TV_SEASON -> TV_SEASON
+                WatchedIndicatorType.EPISODE -> EPISODE
+                WatchedIndicatorType.COLLECTION -> COLLECTION
+                WatchedIndicatorType.PLAYLIST -> PLAYLIST
+                WatchedIndicatorType.OTHER -> UNKNOWN
+                WatchedIndicatorType.UNRECOGNIZED -> UNKNOWN
             }
     }
 }

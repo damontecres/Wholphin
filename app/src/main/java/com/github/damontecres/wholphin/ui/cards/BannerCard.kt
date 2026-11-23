@@ -218,14 +218,8 @@ fun BannerCard(
                 }
             }
             val showProgress =
-                remember(playPercent, prefs, item?.type) {
-                    val enabled =
-                        when (item?.type) {
-                            BaseItemKind.SEASON -> prefs.seasonProgress
-                            BaseItemKind.SERIES -> prefs.seriesProgress
-                            BaseItemKind.BOX_SET -> prefs.collectionProgress
-                            else -> prefs.watchProgress
-                        }
+                remember(playPercent, prefs, cardImageType) {
+                    val enabled = prefs.watchProgress.contains(cardImageType)
                     enabled && playPercent > 0 && playPercent < 100
                 }
             if (showProgress) {

@@ -12,7 +12,13 @@ object CardPreferences {
         AppMultiChoicePreference<CardInterfacePreferences, WatchedIndicatorType>(
             title = R.string.watch_indicator,
 //            summary = R.string.display_toggles_summary,
-            defaultValue = WatchedIndicatorType.entries.filterNot { it == WatchedIndicatorType.UNRECOGNIZED },
+            defaultValue =
+                listOf(
+                    WatchedIndicatorType.MOVIE,
+                    WatchedIndicatorType.EPISODE,
+                    WatchedIndicatorType.TV_SHOW,
+                    WatchedIndicatorType.TV_SEASON,
+                ),
             allValues = WatchedIndicatorType.entries.filterNot { it == WatchedIndicatorType.UNRECOGNIZED },
             displayValues = R.array.watch_indicator_types,
             getter = {
@@ -28,51 +34,28 @@ object CardPreferences {
 
     @SuppressLint("PrivateResource")
     val ShowWatchProgress =
-        AppSwitchPreference<CardInterfacePreferences>(
-            title = androidx.compose.ui.R.string.in_progress,
-            defaultValue = true,
-            getter = { it.watchedProgress },
-            setter = { prefs, value ->
-                prefs.update { watchedProgress = value }
+        AppMultiChoicePreference<CardInterfacePreferences, WatchedIndicatorType>(
+            title = R.string.watch_progress,
+//            summary = R.string.display_toggles_summary,
+            defaultValue =
+                listOf(
+                    WatchedIndicatorType.MOVIE,
+                    WatchedIndicatorType.EPISODE,
+                    WatchedIndicatorType.TV_SHOW,
+                    WatchedIndicatorType.TV_SEASON,
+                ),
+            allValues = WatchedIndicatorType.entries.filterNot { it == WatchedIndicatorType.UNRECOGNIZED },
+            displayValues = R.array.watch_indicator_types,
+            displayValuesSubtitles = R.array.watch_progress_subtitles,
+            getter = {
+                it.watchedProgressList
             },
-            summaryOn = R.string.show,
-            summaryOff = R.string.hide,
-        )
-
-    val ShowCollectionWatchProgress =
-        AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.collections,
-            defaultValue = true,
-            getter = { it.collectionWatchedProgress },
             setter = { prefs, value ->
-                prefs.update { collectionWatchedProgress = value }
+                prefs.update {
+                    clearWatchedProgress()
+                    addAllWatchedProgress(value)
+                }
             },
-            summaryOn = R.string.show,
-            summaryOff = R.string.hide,
-        )
-
-    val ShowSeriesWatchProgress =
-        AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.tv_shows_title,
-            defaultValue = true,
-            getter = { it.seriesWatchedProgress },
-            setter = { prefs, value ->
-                prefs.update { seriesWatchedProgress = value }
-            },
-            summaryOn = R.string.show,
-            summaryOff = R.string.hide,
-        )
-
-    val ShowSeasonWatchProgress =
-        AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.tv_seasons,
-            defaultValue = true,
-            getter = { it.seasonWatchedProgress },
-            setter = { prefs, value ->
-                prefs.update { seasonWatchedProgress = value }
-            },
-            summaryOn = R.string.show,
-            summaryOff = R.string.hide,
         )
 
     val ShowFavoritesIndicator =
@@ -101,7 +84,7 @@ object CardPreferences {
 
     val ShowVersions =
         AppSwitchPreference<CardInterfacePreferences>(
-            title = R.string.versions,
+            title = R.string.versions_title,
             defaultValue = true,
             getter = { it.versionsIndicator },
             setter = { prefs, value ->
@@ -142,19 +125,10 @@ object CardPreferences {
                 preferences =
                     listOf(
                         ShowWatchIndicator,
+                        ShowWatchProgress,
                         ShowFavoritesIndicator,
                         ShowUnwatchedCount,
                         ShowVersions,
-                    ),
-            ),
-            PreferenceGroup(
-                title = R.string.watch_progress,
-                preferences =
-                    listOf(
-                        ShowWatchProgress,
-                        ShowCollectionWatchProgress,
-                        ShowSeriesWatchProgress,
-                        ShowSeasonWatchProgress,
                     ),
             ),
             PreferenceGroup(

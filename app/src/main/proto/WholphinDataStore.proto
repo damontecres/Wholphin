@@ -216,22 +216,18 @@ message InterfacePreferences {
 }
 
 message CardInterfacePreferences {
-  repeated WatchedIndicatorType watched_indicator = 1;
-
   // Progress
-  bool watched_progress = 2;
-  bool season_watched_progress = 3;
-  bool series_watched_progress = 4;
-  bool collection_watched_progress = 5;
+  repeated WatchedIndicatorType watched_indicator = 1;
+  repeated WatchedIndicatorType watched_progress = 2;
 
-  // Other
-  bool favorite_indicator = 6;
-  bool unwatched_count = 7;
-  bool versions_indicator = 8;
+  // Other indicators
+  bool favorite_indicator = 3;
+  bool unwatched_count = 4;
+  bool versions_indicator = 5;
 
   // Episodes
-  bool episode_season_number = 9;
-  bool episode_episode_number = 10;
+  bool episode_season_number = 6;
+  bool episode_episode_number = 7;
 }
 
 enum WatchedIndicatorType {
@@ -240,7 +236,9 @@ enum WatchedIndicatorType {
   TV_SEASON = 2;
   EPISODE = 3;
   COLLECTION = 4;
-  OTHER = 5;
+  PLAYLIST = 5;
+  // Gap to add more later
+  OTHER = 100;
 }
 
 message AdvancedPreferences {

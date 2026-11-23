@@ -12,10 +12,7 @@ import java.util.EnumSet
 data class InterfaceCustomization(
     val enabledDisplayToggles: EnumSet<DisplayToggle> = EnumSet.allOf(DisplayToggle::class.java),
     val watchedIndicator: EnumSet<ItemCardImageType> = EnumSet.allOf(ItemCardImageType::class.java),
-    val watchProgress: Boolean = true,
-    val seasonProgress: Boolean = true,
-    val seriesProgress: Boolean = true,
-    val collectionProgress: Boolean = true,
+    val watchProgress: EnumSet<ItemCardImageType> = EnumSet.allOf(ItemCardImageType::class.java),
     val favoriteIndicator: Boolean = true,
     val versionsIndicator: Boolean = true,
     val unwatchedCount: Boolean = true,
@@ -33,18 +30,14 @@ data class InterfaceCustomization(
                     }
                 val c = p.cardInterfacePreferences
                 val watchedIndicator =
-                    c.watchedIndicatorList
-                        .map { type ->
-                            ItemCardImageType.entries.firstOrNull { it.watchedIndicatorType == type }
-                                ?: ItemCardImageType.UNKNOWN
-                        }.let { EnumSet.copyOf(it) }
+                    c.watchedIndicatorList.map { ItemCardImageType.from(it) }.let { EnumSet.copyOf(it) }
+                val watchProgress =
+                    c.watchedProgressList.map { ItemCardImageType.from(it) }.let { EnumSet.copyOf(it) }
+
                 InterfaceCustomization(
                     enabledDisplayToggles = enabledDisplayToggles,
-                    watchProgress = c.watchedProgress,
+                    watchProgress = watchProgress,
                     watchedIndicator = watchedIndicator,
-                    seasonProgress = c.seasonWatchedProgress,
-                    seriesProgress = c.seriesWatchedProgress,
-                    collectionProgress = c.collectionWatchedProgress,
                     favoriteIndicator = c.favoriteIndicator,
                     unwatchedCount = c.unwatchedCount,
                     episodeNum = c.episodeEpisodeNumber,

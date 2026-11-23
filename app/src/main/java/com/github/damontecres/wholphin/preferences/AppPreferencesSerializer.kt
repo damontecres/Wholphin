@@ -155,10 +155,7 @@ class AppPreferencesSerializer
                                         .newBuilder()
                                         .apply {
                                             addAllWatchedIndicator(CardPreferences.ShowWatchIndicator.defaultValue)
-                                            watchedProgress = CardPreferences.ShowWatchProgress.defaultValue
-                                            seasonWatchedProgress = CardPreferences.ShowSeasonWatchProgress.defaultValue
-                                            seriesWatchedProgress = CardPreferences.ShowSeriesWatchProgress.defaultValue
-                                            collectionWatchedProgress = CardPreferences.ShowCollectionWatchProgress.defaultValue
+                                            addAllWatchedProgress(CardPreferences.ShowWatchIndicator.defaultValue)
                                             favoriteIndicator = CardPreferences.ShowFavoritesIndicator.defaultValue
                                             unwatchedCount = CardPreferences.ShowUnwatchedCount.defaultValue
                                             episodeEpisodeNumber = CardPreferences.ShowEpisodeNumber.defaultValue

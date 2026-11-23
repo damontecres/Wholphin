@@ -995,12 +995,22 @@
         <item>@string/tv_seasons</item>
         <item>@string/episodes</item>
         <item>@string/collections</item>
+        <item>@string/playlists</item>
         <item>@string/other_extras_title</item>
+    </string-array>
+    <string-array name="watch_progress_subtitles">
+        <item>@string/in_progress</item>
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
+        <item>@string/in_progress</item>
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
     </string-array>
     <string name="watch_progress">Watched progress</string>
     <string name="unwatched_count">Unwatched count</string>
     <string name="card_customization">Card customization</string>
     <string name="episode_number_text">Episode number</string>
     <string name="season_number_text">Season number</string>
-    <string name="versions">Versions</string>
+    <string name="versions_title">Versions</string>
 </resources>
