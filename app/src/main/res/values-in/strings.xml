@@ -694,4 +694,20 @@
     <string name="dim_screen">Redupkan layar</string>
     <string name="photo_albums">Album foto</string>
     <string name="no_favorites_found">Favorit tidak ditemukan!</string>
+    <plurals name="episodes_count">
+        <item quantity="other">%1$d episode</item>
+    </plurals>
+    <string name="prefer_dovi_over_hdr10_plus">Utamakan Dolby Vision dibanding HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">Hapus metadata HDR10+ dari video Dolby Vision, untuk TV yang dapat memutarnya sebagai HDR10+</string>
+    <string name="remove_from_playlist">Hapus dari playlist</string>
+    <string name="login_credentials_expired">Kredensial kedaluwarsa, silakan login kembali</string>
+    <string name="login_not_authorized">Kamu tidak diizinkan mengakses server saat ini</string>
+    <string name="max_resolution">Resolusi maksimum sebelum transkode</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
 </resources>

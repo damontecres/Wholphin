@@ -65,7 +65,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -709,7 +709,7 @@ class HomeSettingsViewModel
                         state.libraries
                             .firstOrNull { it.itemId == itemId }
                             ?.collectionType
-                            ?: api.userLibraryApi
+                            ?: api.libraryApi
                                 .getItem(itemId)
                                 .content.collectionType ?: CollectionType.UNKNOWN
                     } ?: CollectionType.UNKNOWN

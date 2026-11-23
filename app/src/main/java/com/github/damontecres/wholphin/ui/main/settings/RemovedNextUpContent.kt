@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -84,7 +84,7 @@ class RemovedNextUpContentViewModel
                         val series = mutableListOf<RemovedItem>()
                         removed.keys.chunked(50).forEach { ids ->
                             val results =
-                                api.itemsApi
+                                api.libraryApi
                                     .getItems(
                                         userId = user.id,
                                         ids = ids,

@@ -21,8 +21,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
-import org.jellyfin.sdk.api.operations.UserViewsApi
+import org.jellyfin.sdk.api.client.extensions.userViewApi
+import org.jellyfin.sdk.api.operations.UserViewApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -41,11 +41,11 @@ class SuggestionsWorkerTest {
     private val mockPreferences = mockk<DataStore<AppPreferences>>(relaxed = true)
     private val mockApi = mockk<ApiClient>(relaxed = true)
     private val mockCache = mockk<SuggestionsCache>(relaxed = true)
-    private val mockUserViewsApi = mockk<UserViewsApi>(relaxed = true)
+    private val mockuserViewApi = mockk<UserViewApi>(relaxed = true)
 
     @Before
     fun setUp() {
-        every { mockApi.userViewsApi } returns mockUserViewsApi
+        every { mockApi.userViewApi } returns mockuserViewApi
         every { mockApi.baseUrl } returns "http://localhost"
         every { mockApi.accessToken } returns "test-token"
         coEvery { mockCache.get(any(), any(), any()) } returns null
@@ -120,7 +120,7 @@ class SuggestionsWorkerTest {
                 RestoredSession.Success(currentUser())
             }
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult()
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult()
 
             val result = createWorker().doWork()
 
@@ -139,7 +139,7 @@ class SuggestionsWorkerTest {
             val result = createWorker(parentId = parentId, itemKind = BaseItemKind.MOVIE).doWork()
 
             assertEquals(ListenableWorker.Result.success(), result)
-            coVerify(exactly = 0) { mockUserViewsApi.getUserViews(userId = any()) }
+            coVerify(exactly = 0) { mockuserViewApi.getUserViews(userId = any()) }
             coVerify { mockCache.put(testUserId, parentId, BaseItemKind.MOVIE, emptyList()) }
         }
 
@@ -157,7 +157,7 @@ class SuggestionsWorkerTest {
                         every { this@mockk.collectionType } returns collectionType
                     }
                 every { mockPreferences.data } returns flowOf(mockPrefs())
-                coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+                coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
                 mockkObject(GetItemsRequestHandler)
                 coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(mockk(relaxed = true)))
 
@@ -178,7 +178,7 @@ class SuggestionsWorkerTest {
                     every { this@mockk.collectionType } returns CollectionType.MOVIES
                 }
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
             mockkObject(GetItemsRequestHandler)
             coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(emptyList())
 
@@ -197,7 +197,7 @@ class SuggestionsWorkerTest {
                     every { this@mockk.collectionType } returns CollectionType.MUSIC
                 }
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
 
             val result = createWorker().doWork()
 
@@ -215,7 +215,7 @@ class SuggestionsWorkerTest {
                     every { this@mockk.collectionType } returns CollectionType.MOVIES
                 }
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
             mockkObject(GetItemsRequestHandler)
 
             val genreId = UUID.randomUUID()
@@ -256,7 +256,7 @@ class SuggestionsWorkerTest {
                     every { this@mockk.collectionType } returns CollectionType.MOVIES
                 }
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
             mockkObject(GetItemsRequestHandler)
 
             val historyItem =
@@ -288,7 +288,7 @@ class SuggestionsWorkerTest {
     fun returns_retry_on_network_error() =
         runTest {
             every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } throws ApiClientException("Network error")
+            coEvery { mockuserViewApi.getUserViews(userId = testUserId) } throws ApiClientException("Network error")
 
             val result = createWorker().doWork()
 

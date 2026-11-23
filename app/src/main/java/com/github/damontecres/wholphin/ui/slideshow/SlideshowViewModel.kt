@@ -49,7 +49,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -143,13 +143,16 @@ class SlideshowViewModel
                             ),
                         )
                     serverRepository.currentUser?.let { user ->
+
                         val filter =
-                            playbackEffectDao
-                                .getPlaybackEffect(
-                                    user.rowId,
-                                    slideshowSettings.parentId,
-                                    BaseItemKind.PHOTO_ALBUM,
-                                )?.videoFilter
+                            slideshowSettings.parentId?.let {
+                                playbackEffectDao
+                                    .getPlaybackEffect(
+                                        user.rowId,
+                                        slideshowSettings.parentId,
+                                        BaseItemKind.PHOTO_ALBUM,
+                                    )?.videoFilter
+                            }
                         if (filter != null) {
                             Timber.v("Got filter for album %s", slideshowSettings.parentId)
                             albumImageFilter = filter
@@ -216,7 +219,7 @@ class SlideshowViewModel
                             val url =
                                 if (image.data.mediaType == MediaType.VIDEO) {
                                     // TODO this assumes direct play
-                                    api.videosApi.getVideoStreamUrl(
+                                    api.videoApi.getVideoStreamUrl(
                                         itemId = image.id,
                                     )
                                 } else {
@@ -441,7 +444,7 @@ class SlideshowViewModel
         fun saveGalleryFilter() {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                 val vf = _imageFilter.value
-                if (vf != null) {
+                if (slideshowSettings.parentId != null) {
                     albumImageFilter = vf
                     serverRepository.currentUser?.let { user ->
                         playbackEffectDao

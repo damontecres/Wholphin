@@ -100,12 +100,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
-import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
+import org.jellyfin.sdk.api.client.extensions.mediaSegmentApi
 import org.jellyfin.sdk.api.client.extensions.sessionApi
-import org.jellyfin.sdk.api.client.extensions.trickplayApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.client.extensions.trickPlayApi
+import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -118,7 +118,7 @@ import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
 import org.jellyfin.sdk.model.api.PlaystateRequest
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.extensions.inWholeTicks
@@ -292,8 +292,16 @@ class PlaybackViewModel
          */
         private suspend fun init() {
             musicService.stop()
-            _state.update { it.copy(nextUp = null) }
             this.preferences = userPreferencesService.getCurrent()
+            val maxBitrate =
+                preferences.appPreferences.playbackPreferences.maxBitrate
+                    .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
+            _state.update {
+                it.copy(
+                    nextUp = null,
+                    maxBitrate = maxBitrate,
+                )
+            }
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                 addCloseable { refreshRateService.resetRefreshRate() }
             }
@@ -323,7 +331,7 @@ class PlaybackViewModel
                     }
                 }
             this.itemId = itemId
-            val queriedItem = api.userLibraryApi.getItem(itemId).content
+            val queriedItem = api.libraryApi.getItem(itemId).content
             val playlistItem =
                 if (queriedItem.type.playable) {
                     PlaylistItem.Media(BaseItem(queriedItem, false))
@@ -377,7 +385,7 @@ class PlaybackViewModel
             val intros =
                 // If not resuming playback & cinema mode is enabled, get potential intros
                 if (positionMs == 0L && preferences.appPreferences.playbackPreferences.cinemaMode) {
-                    api.userLibraryApi
+                    api.libraryApi
                         .getIntros(
                             itemId = playlistItem.id,
                             userId = serverRepository.currentUser?.id,
@@ -499,7 +507,7 @@ class PlaybackViewModel
                 val subtitleStc =
                     streamChoiceService.getSeriesTrackChoices(
                         base,
-                        SeriesTrackChoiceType.AUDIO,
+                        SeriesTrackChoiceType.SUBTITLE,
                     )
 
                 if (mediaSource == null && !isLiveTv) {
@@ -628,6 +636,7 @@ class PlaybackViewModel
             positionMs: Long = 0,
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
+            maxBitrate: Long = this.state.value.maxBitrate,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -638,7 +647,8 @@ class PlaybackViewModel
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
-                        enableDirectPlay
+                        enableDirectPlay &&
+                        state.value.maxBitrate == maxBitrate
                     ) {
                         val wasSuccessful =
                             changeStreamsDirectPlay(
@@ -651,18 +661,17 @@ class PlaybackViewModel
                 }
 
                 Timber.i(
-                    "changeStreams (%s): audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s",
+                    "changeStreams (%s): audioIndex=%s, subtitleIndex=%s, enableDirectPlay=%s, enableDirectStream=%s, positionMs=%s, maxBitrate=%s",
                     itemId,
                     audioIndex,
                     subtitleIndex,
                     enableDirectPlay,
                     enableDirectStream,
                     positionMs,
+                    maxBitrate,
                 )
+                _state.update { it.copy(maxBitrate = maxBitrate) }
 
-                val maxBitrate =
-                    preferences.appPreferences.playbackPreferences.maxBitrate
-                        .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
                 val response by
                     api.mediaInfoApi
                         .getPostedPlaybackInfo(
@@ -705,9 +714,10 @@ class PlaybackViewModel
                                 Timber.i("Playback is remote for source: %s", source.id)
                                 source.path
                             } else {
-                                api.videosApi.getVideoStreamUrl(
+                                api.videoApi.getVideoStreamUrl(
                                     itemId = itemId,
                                     mediaSourceId = source.id,
+                                    liveStreamId = source.liveStreamId,
                                     static = true,
                                     tag = source.eTag,
                                     playSessionId = response.playSessionId,
@@ -1021,6 +1031,26 @@ class PlaybackViewModel
                 }
             }
 
+        fun changeMaxBitrate(newMaxBitrate: Long) {
+            viewModelScope.launchIO {
+                val currentPlayback = state.value.currentPlayback
+                if (currentPlayback != null) {
+                    Timber.d("Changing bitrate to %s", newMaxBitrate)
+                    changeStreams(
+                        item = currentItem.item,
+                        sourceId = currentPlayback.mediaSourceInfo.id,
+                        audioIndex = currentPlayback.audioIndex,
+                        subtitleIndex = currentPlayback.subtitleIndex,
+                        positionMs = onMain { player.currentPosition },
+                        enableDirectPlay = true,
+                        maxBitrate = newMaxBitrate,
+                    )
+                } else {
+                    Timber.w("Trying to change bitrate, but currentPlayback is null")
+                }
+            }
+        }
+
         internal suspend fun saveTrackSelection(
             trackIndex: Int,
             type: MediaStreamType,
@@ -1041,7 +1071,7 @@ class PlaybackViewModel
 
         private suspend fun prefetchTrickplay(
             duration: Duration,
-            trickplayInfo: TrickplayInfo,
+            trickplayInfo: TrickplayInfoDto,
             mediaSourceId: UUID?,
         ) {
             val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
@@ -1061,7 +1091,7 @@ class PlaybackViewModel
 
         fun getTrickplayUrl(
             index: Int,
-            trickPlayInfo: TrickplayInfo? = state.value.currentMediaInfo.trickPlayInfo,
+            trickPlayInfo: TrickplayInfoDto? = state.value.currentMediaInfo.trickPlayInfo,
             mediaSourceId: UUID? =
                 state.value.currentPlayback
                     ?.mediaSourceInfo
@@ -1070,7 +1100,7 @@ class PlaybackViewModel
         ): String? =
             trickPlayInfo?.let {
                 val itemId = currentItem.id
-                return api.trickplayApi.getTrickplayTileImageUrl(
+                return api.trickPlayApi.getTrickplayTileImageUrl(
                     itemId,
                     trickPlayInfo.width,
                     index,
@@ -1145,7 +1175,7 @@ class PlaybackViewModel
             segmentJob =
                 viewModelScope.launchIO {
                     val prefs = preferences.appPreferences.playbackPreferences
-                    val segments by api.mediaSegmentsApi.getItemSegments(itemId)
+                    val segments by api.mediaSegmentApi.getItemSegments(itemId)
                     if (segments.items.isNotEmpty()) {
                         while (isActive) {
                             delay(500L)

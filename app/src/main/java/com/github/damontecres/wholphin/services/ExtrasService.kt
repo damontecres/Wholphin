@@ -9,7 +9,7 @@ import com.github.damontecres.wholphin.data.stringRes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.ExtraType
 import org.jellyfin.sdk.model.api.ImageType
 import java.util.UUID
@@ -34,7 +34,7 @@ class ExtrasService
          */
         suspend fun getExtras(itemId: UUID): List<ExtrasItem> {
             val extrasMap =
-                api.userLibraryApi
+                api.libraryApi
                     .getSpecialFeatures(itemId)
                     .content
                     .filterNot {

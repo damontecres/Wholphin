@@ -32,6 +32,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import org.jellyfin.sdk.model.api.PublicSystemInfo
@@ -177,7 +178,12 @@ fun ServerIconCard(
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = (connectionStatus as? ServerConnectionStatus.Error)?.message,
-                                tint = MaterialTheme.colorScheme.errorContainer,
+                                tint =
+                                    if (serverVersionSupported == ServerVersionSupported.NOT_SUPPORTED_IN_FUTURE) {
+                                        AppColors.GoldenYellow
+                                    } else {
+                                        MaterialTheme.colorScheme.errorContainer
+                                    },
                                 modifier = Modifier.size(cardSize * 0.3f),
                             )
                             Text(

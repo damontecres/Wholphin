@@ -322,6 +322,10 @@ fun PlaybackPageContent(
                     player.seekToPrevious()
                 }
             }
+
+            is PlaybackAction.ChangeBitrate -> {
+                viewModel.changeMaxBitrate(it.maxBitrate)
+            }
         }
     }
 
@@ -752,6 +756,7 @@ fun PlaybackPageContent(
                     // TODO Passing through audio prevents changing playback speed
                     // See https://github.com/damontecres/Wholphin/issues/164
                     playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || state.currentPlayback?.audioDecoder != null,
+                    maxBitrate = state.maxBitrate,
                 ),
             onDismissRequest = {
                 playbackDialog =
