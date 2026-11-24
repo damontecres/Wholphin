@@ -28,6 +28,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
+import androidx.tv.material3.SurfaceDefaults
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -35,6 +36,7 @@ import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import com.github.damontecres.wholphin.ui.util.InterfaceCustomization
@@ -50,11 +52,19 @@ fun MainContent(
     modifier: Modifier = Modifier,
 ) {
     val preferences by rememberUpdatedState(userPreferences)
+    val destination = navigationManager.backStack.lastOrNull()
+    val videoPlayback =
+        backStack.lastOrNull() is SetupDestination.AppContent &&
+            (destination is Destination.Playback || destination is Destination.PlaybackList)
     Surface(
-        modifier =
-            modifier
-                .background(MaterialTheme.colorScheme.background),
+        modifier = modifier,
         shape = RectangleShape,
+        // Leave letterboxing to the display compositor, not an SDR UI background.
+        colors =
+            SurfaceDefaults.colors(
+                containerColor = if (videoPlayback) Color.Transparent else MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
     ) {
 //                            val backStack = rememberNavBackStack(SetupDestination.Loading)
 //                            setupNavigationManager.backStack = backStack
