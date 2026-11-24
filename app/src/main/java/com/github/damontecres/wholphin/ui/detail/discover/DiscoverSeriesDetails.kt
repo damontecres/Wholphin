@@ -136,6 +136,7 @@ fun DiscoverSeriesDetails(
                             overview = item.overview,
                             genres = item.genres?.mapNotNull { it.name }.orEmpty(),
                             files = listOf(),
+                            watchProviders = state.watchProviders,
                         )
                 },
                 trailerOnClick = {
