@@ -499,6 +499,7 @@ class CollectionViewModel
                 listOf(
                     BaseItemKind.MOVIE,
                     BaseItemKind.SERIES,
+                    BaseItemKind.SEASON,
                     BaseItemKind.EPISODE,
                     BaseItemKind.VIDEO,
                     BaseItemKind.BOX_SET,
