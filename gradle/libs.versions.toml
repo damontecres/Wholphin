@@ -152,6 +152,7 @@ androidx-core-testing = { module = "androidx.arch.core:core-testing", version.re
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 
 ass-media = { group = "io.github.peerless2012", name = "ass-media", version.ref = "libass-android" }
+ass-kt = { group = "io.github.peerless2012", name = "ass-kt", version.ref = "libass-android" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
