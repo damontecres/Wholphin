@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.search
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -71,6 +70,7 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialog
+import com.github.damontecres.wholphin.ui.detail.livetv.onWatch
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.titleStringRes
@@ -500,22 +500,12 @@ fun SearchPage(
         val context = LocalContext.current
         val onDismissRequest = { showProgramDialog = false }
         ProgramDialog(
-            state = programDialogState.loading,
+            state = programDialogState,
             canRecord = true,
             onDismissRequest = onDismissRequest,
             onWatch = {
                 onDismissRequest.invoke()
-                val channelId = it.data.channelId
-                if (channelId != null) {
-                    viewModel.navigationManager.navigateTo(
-                        Destination.Playback(
-                            itemId = channelId,
-                            positionMs = 0L,
-                        ),
-                    )
-                } else {
-                    Toast.makeText(context, "Program has no channel ID", Toast.LENGTH_LONG).show()
-                }
+                onWatch(context, viewModel.navigationManager, it)
             },
             onRecord = { program, series ->
                 viewModel.record(

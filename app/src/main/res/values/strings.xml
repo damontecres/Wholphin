@@ -987,4 +987,5 @@
     <string name="managed_by_server">Managed by server</string>
     <string name="error">Error</string>
     <string name="dolby_vision_invalid">Invalid Dolby Vision</string>
+    <string name="play_from_start">Watch from start</string>
 </resources>

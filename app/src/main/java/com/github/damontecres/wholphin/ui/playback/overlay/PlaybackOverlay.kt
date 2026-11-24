@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -42,24 +43,27 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.logCoilError
 import com.github.damontecres.wholphin.ui.playback.AnalyticsState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import com.github.damontecres.wholphin.ui.playback.PlaybackDialogType
-import org.jellyfin.sdk.model.api.ImageType
+import com.github.damontecres.wholphin.ui.playback.PlaybackDisplayInfo
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfoDto
 import kotlin.time.Duration
@@ -69,7 +73,7 @@ import kotlin.time.Duration
  */
 @Composable
 fun PlaybackOverlay(
-    item: BaseItem?,
+    displayInfo: PlaybackDisplayInfo?,
     chapters: List<Chapter>,
     player: Player,
     controllerViewState: ControllerViewState,
@@ -103,12 +107,12 @@ fun PlaybackOverlay(
     val density = LocalDensity.current
 
     val titleHeight =
-        remember(item?.title, density) {
-            if (item?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
+        remember(displayInfo?.title, density) {
+            if (displayInfo?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
         }
     val subtitleHeight =
-        remember(item?.subtitleLong, density) {
-            if (item?.subtitleLong.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
+        remember(displayInfo?.subtitle, density) {
+            if (displayInfo?.subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
         }
 
     // This will be calculated after composition
@@ -187,7 +191,7 @@ fun PlaybackOverlay(
                             }
                         }
                     PlaybackController(
-                        item = item,
+                        displayInfo = displayInfo,
                         nextState = nextState,
                         player = player,
                         controllerViewState = controllerViewState,
@@ -296,25 +300,46 @@ fun PlaybackOverlay(
             }
         }
 
+        var logoImageError by remember(displayInfo?.logoImageUrl) { mutableStateOf(displayInfo?.logoImageUrl.isNullOrBlank()) }
         // Top
-        val logoImageUrl = LocalImageUrlService.current.rememberImageUrl(item, ImageType.LOGO)
         AnimatedVisibility(
-            visible = !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            visible = !showDebugInfo && controllerViewState.controlsVisible,
             enter = slideIn { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeIn(),
             exit = slideOut { IntOffset(x = -it.width / 2, y = -it.height / 2) } + fadeOut(),
             modifier =
                 Modifier
                     .align(Alignment.TopStart),
         ) {
-            AsyncImage(
-                model = logoImageUrl,
-                contentDescription = "Logo",
-                alignment = Alignment.TopStart,
-                modifier =
-                    Modifier
-                        .size(width = 240.dp, height = 120.dp)
-                        .padding(16.dp),
-            )
+            if (!logoImageError) {
+                AsyncImage(
+                    model = displayInfo?.logoImageUrl,
+                    contentDescription = "Logo",
+                    alignment = Alignment.TopStart,
+                    onError = {
+                        logCoilError(displayInfo?.logoImageUrl, it.result)
+                        logoImageError = true
+                    },
+                    modifier =
+                        Modifier
+                            .size(width = 240.dp, height = 120.dp)
+                            .padding(16.dp),
+                )
+            } else {
+                displayInfo?.logoText?.let {
+                    // Fallback to displaying the logo as text
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = titleTextSize,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .widthIn(max = 240.dp)
+                                .padding(16.dp),
+                    )
+                }
+            }
         }
         AnimatedVisibility(
             visible = !showDebugInfo && showClock && controllerViewState.controlsVisible,

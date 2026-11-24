@@ -4,6 +4,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.toServerString
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.model.api.RecordingStatus
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import java.util.UUID
 import javax.inject.Inject
@@ -28,6 +29,24 @@ class LiveTvService
                     .content
                     .let { BaseItem(it) }
             return result
+        }
+
+        suspend fun fetchRecordingForProgram(program: BaseItem): BaseItem? {
+            val timerId = program.data.timerId
+            val channelId = program.data.channelId
+            return if (program.data.status == RecordingStatus.IN_PROGRESS.serialName &&
+                timerId != null &&
+                channelId != null
+            ) {
+                // Active recording
+                val recordings by api.liveTvApi.getRecordings(
+                    channelId = channelId.toString(),
+                    isInProgress = true,
+                )
+                recordings.items.firstOrNull { it.timerId == timerId }?.let { BaseItem(it) }
+            } else {
+                null
+            }
         }
 
         /**
