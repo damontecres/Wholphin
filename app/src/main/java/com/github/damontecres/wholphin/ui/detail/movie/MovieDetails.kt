@@ -210,7 +210,7 @@ fun MovieDetails(
                                 ),
                         )
                 },
-                onLongClickSimilar = { _, similar ->
+                onLongClickItem = { _, similar ->
                     showContextMenu =
                         ContextMenu.ForBaseItem(
                             fromLongClick = true,
@@ -301,7 +301,7 @@ fun MovieDetailsContent(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickPerson: (Int, Person) -> Unit,
-    onLongClickSimilar: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
@@ -441,14 +441,6 @@ fun MovieDetailsContent(
             }
             state.collections.letNotEmpty { collections ->
                 item {
-                    val imageHeight =
-                        remember(movie.type) {
-                            if (movie.type == BaseItemKind.MOVIE) {
-                                Cards.height2x3
-                            } else {
-                                Cards.heightEpisode
-                            }
-                        }
                     ItemRow(
                         title = stringResource(R.string.collections),
                         items = collections,
@@ -458,7 +450,7 @@ fun MovieDetailsContent(
                         },
                         onLongClickItem = { index, item ->
                             position = COLLECTIONS_ROW
-                            onLongClickSimilar.invoke(index, item)
+                            onLongClickItem.invoke(index, item)
                         },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
@@ -467,7 +459,7 @@ fun MovieDetailsContent(
                                 onLongClick = onLongClick,
                                 modifier = mod,
                                 showImageOverlay = true,
-                                imageHeight = imageHeight,
+                                imageHeight = Cards.height2x3,
                                 imageWidth = Dp.Unspecified,
                             )
                         },
@@ -497,7 +489,7 @@ fun MovieDetailsContent(
                         },
                         onLongClickItem = { index, similar ->
                             position = SIMILAR_ROW
-                            onLongClickSimilar.invoke(index, similar)
+                            onLongClickItem.invoke(index, similar)
                         },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(

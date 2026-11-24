@@ -26,8 +26,8 @@ import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
-import com.github.damontecres.wholphin.ui.DetailItemFields
 import com.github.damontecres.wholphin.ui.ItemRowFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -169,7 +169,7 @@ class MovieViewModel
                             api.libraryApi
                                 .getItemCollections(
                                     itemId = itemId,
-                                    fields = DetailItemFields,
+                                    fields = SlimItemFields,
                                 ).toBaseItems()
                         _state.update { it.copy(collections = collections) }
                     } catch (ex: CancellationException) {

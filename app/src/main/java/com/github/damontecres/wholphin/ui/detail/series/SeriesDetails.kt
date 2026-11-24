@@ -190,6 +190,7 @@ fun SeriesDetails(
                 trailers = state.trailers,
                 extras = state.extras,
                 people = state.people,
+                collections = state.collections,
                 similar = state.similar,
                 played = played,
                 favorite = series.data.userData?.isFavorite ?: false,
@@ -317,7 +318,8 @@ private const val SEASONS_ROW = HEADER_ROW + 1
 private const val PEOPLE_ROW = SEASONS_ROW + 1
 private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val EXTRAS_ROW = TRAILER_ROW + 1
-private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val COLLECTIONS_ROW = EXTRAS_ROW + 1
+private const val SIMILAR_ROW = COLLECTIONS_ROW + 1
 private const val DISCOVER_ROW = SIMILAR_ROW + 1
 
 @Composable
@@ -325,6 +327,7 @@ fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
     seasons: List<BaseItem?>,
+    collections: List<BaseItem>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
@@ -577,6 +580,49 @@ fun SeriesDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[EXTRAS_ROW]),
+                        )
+                    }
+                }
+                if (collections.isNotEmpty()) {
+                    item {
+                        ItemRow(
+                            title = stringResource(R.string.collections),
+                            items = collections,
+                            onClickItem = { index, item ->
+                                position = COLLECTIONS_ROW
+                                onClickItem.invoke(index, item)
+                            },
+                            onLongClickItem = { index, item ->
+                                position = COLLECTIONS_ROW
+                                onShowContextMenu.invoke(
+                                    ContextMenu.ForBaseItem(
+                                        fromLongClick = true,
+                                        item = item,
+                                        chosenStreams = null,
+                                        showGoTo = true,
+                                        showStreamChoices = false,
+                                        canDelete = false,
+                                        canRemoveContinueWatching = false,
+                                        canRemoveNextUp = false,
+                                        actions = actions,
+                                    ),
+                                )
+                            },
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                SeasonCard(
+                                    item = item,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    modifier = mod,
+                                    showImageOverlay = true,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                )
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequesters[COLLECTIONS_ROW]),
                         )
                     }
                 }
