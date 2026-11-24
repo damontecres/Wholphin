@@ -10,20 +10,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +43,7 @@ import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -97,54 +105,79 @@ fun Backdrop(
             animationSpec = tween(1250),
             label = "dynamic_backdrop_tertiary",
         )
+        // Reused while the colors animate, so a new bitmap isn't allocated every frame
+        val gradientBitmap = remember { GradientBitmap() }
         Box(
             modifier =
                 modifier
                     .fillMaxSize()
-                    .drawBehind {
-                        drawRect(color = baseBackgroundColor)
-                        val start = if (isRtl) size.width else 0f
-                        val end = if (isRtl) 0f else size.width
-                        // Top Left (Vibrant/Muted)
-                        drawRect(
-                            brush =
-                                Brush.radialGradient(
-                                    colors = listOf(animSecondary, Color.Transparent),
-                                    center = Offset(start, 0f),
-                                    radius = size.width * 0.8f,
-                                ),
-                        )
-                        // Bottom Right (DarkVibrant/DarkMuted)
-                        drawRect(
-                            brush =
-                                Brush.radialGradient(
-                                    colors = listOf(animPrimary, Color.Transparent),
-                                    center = Offset(end, size.height),
-                                    radius = size.width * 0.8f,
-                                ),
-                        )
-                        // Bottom Left (Dark / Bridge)
-                        drawRect(
-                            brush =
-                                Brush.radialGradient(
-                                    colors =
-                                        listOf(
-                                            baseBackgroundColor,
-                                            Color.Transparent,
-                                        ),
-                                    center = Offset(start, size.height),
-                                    radius = size.width * 0.8f,
-                                ),
-                        )
-                        // Top Right (Under Image - Vibrant/Bright)
-                        drawRect(
-                            brush =
-                                Brush.radialGradient(
-                                    colors = listOf(animTertiary, Color.Transparent),
-                                    center = Offset(end, 0f),
-                                    radius = size.width * 0.8f,
-                                ),
-                        )
+                    .drawWithCache {
+                        // The gradients are smooth, so render them into a small bitmap and scale it up.
+                        // Drawing four full screen radial gradients every frame is too slow for low end
+                        // TV GPUs while anything on screen animates.
+                        val bitmapWidth = (size.width / GRADIENT_SCALE).roundToInt().coerceAtLeast(1)
+                        val bitmapHeight = (size.height / GRADIENT_SCALE).roundToInt().coerceAtLeast(1)
+                        val bitmap =
+                            gradientBitmap.bitmap
+                                ?.takeIf { it.width == bitmapWidth && it.height == bitmapHeight }
+                                ?: ImageBitmap(bitmapWidth, bitmapHeight).also { gradientBitmap.bitmap = it }
+                        CanvasDrawScope().draw(
+                            density = this,
+                            layoutDirection = layoutDirection,
+                            canvas = Canvas(bitmap),
+                            size = Size(bitmapWidth.toFloat(), bitmapHeight.toFloat()),
+                        ) {
+                            drawRect(color = baseBackgroundColor)
+                            val start = if (isRtl) size.width else 0f
+                            val end = if (isRtl) 0f else size.width
+                            // Top Left (Vibrant/Muted)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animSecondary, Color.Transparent),
+                                        center = Offset(start, 0f),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Bottom Right (DarkVibrant/DarkMuted)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animPrimary, Color.Transparent),
+                                        center = Offset(end, size.height),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Bottom Left (Dark / Bridge)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors =
+                                            listOf(
+                                                baseBackgroundColor,
+                                                Color.Transparent,
+                                            ),
+                                        center = Offset(start, size.height),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Top Right (Under Image - Vibrant/Bright)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animTertiary, Color.Transparent),
+                                        center = Offset(end, 0f),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                        }
+                        onDrawBehind {
+                            drawImage(
+                                image = bitmap,
+                                dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                                filterQuality = FilterQuality.Low,
+                            )
+                        }
                     },
         )
     }
@@ -214,4 +247,11 @@ fun Backdrop(
             )
         }
     }
+}
+
+/** Factor by which the dynamic color gradients are rendered smaller than the screen */
+private const val GRADIENT_SCALE = 8f
+
+private class GradientBitmap {
+    var bitmap: ImageBitmap? = null
 }
