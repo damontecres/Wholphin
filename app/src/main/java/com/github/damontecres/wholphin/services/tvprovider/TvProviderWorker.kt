@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.hilt.work.HiltWorker
 import androidx.tvprovider.media.tv.Channel
+import androidx.tvprovider.media.tv.ChannelLogoUtils
 import androidx.tvprovider.media.tv.PreviewProgram
 import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.tvprovider.media.tv.TvContractCompat.Channels
@@ -303,6 +306,10 @@ class TvProviderWorker
                     throw IllegalStateException("channelId was null")
                 }
             }
+            val channelIdLong = ContentUris.parseId(channelId)
+            if (ChannelLogoUtils.loadChannelLogo(context, channelIdLong) == null) {
+                storeChannelLogo(channelIdLong)
+            }
             val programs = latest.map { convert(channelId, it).toContentValues() }.toTypedArray()
 
             // Delete & replace
@@ -313,6 +320,20 @@ class TvProviderWorker
                     programs,
                 )
             Timber.v("Inserted $count records")
+        }
+
+        private fun storeChannelLogo(channelId: Long) {
+            try {
+                val logo =
+                    ContextCompat
+                        .getDrawable(context, R.mipmap.ic_launcher)!!
+                        .toBitmap(CHANNEL_LOGO_SIZE, CHANNEL_LOGO_SIZE)
+                if (!ChannelLogoUtils.storeChannelLogo(context, channelId, logo)) {
+                    Timber.w("Failed to store channel logo")
+                }
+            } catch (ex: Exception) {
+                Timber.w(ex, "Failed to store channel logo")
+            }
         }
 
         private fun convert(
@@ -394,6 +415,7 @@ class TvProviderWorker
             const val WORK_NAME = "com.github.damontecres.wholphin.services.tvprovider.TvProviderWorker"
             const val PARAM_USER_ID = "userId"
             const val PARAM_SERVER_ID = "serverId"
+            private const val CHANNEL_LOGO_SIZE = 256
         }
     }
 
