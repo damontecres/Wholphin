@@ -26,7 +26,7 @@ import androidx.tv.material3.MaterialTheme
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 
 fun Modifier.offsetByPercent(
     xPercentage: Float,
@@ -78,7 +78,7 @@ fun Modifier.offsetByPercent(
 fun SeekPreviewImage(
     previewImageUrl: String,
     seekProgressMs: Long,
-    trickPlayInfo: TrickplayInfo,
+    trickPlayInfo: TrickplayInfoDto,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current

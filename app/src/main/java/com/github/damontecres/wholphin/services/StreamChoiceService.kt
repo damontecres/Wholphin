@@ -140,7 +140,7 @@ class StreamChoiceService
             stc: List<SeriesTrackChoice>?,
             prefs: UserPreferences,
         ): StreamChoiceResult? {
-            val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.SUBTITLE)
+            val stc = stc ?: getSeriesTrackChoices(item, SeriesTrackChoiceType.AUDIO)
             return source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.AUDIO }
                 chooseAudioStream(candidates, itemPlayback, stc, prefs)

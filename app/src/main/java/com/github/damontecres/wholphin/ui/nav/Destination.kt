@@ -134,7 +134,7 @@ sealed class Destination(
 
     @Serializable
     data class Slideshow(
-        val parentId: UUID,
+        val parentId: UUID?,
         val index: Int,
         val filter: CollectionFolderFilter,
         val sortAndDirection: SortAndDirection,

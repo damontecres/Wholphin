@@ -50,7 +50,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -90,7 +90,7 @@ class GenreViewModel
             viewModelScope.launchIO {
                 try {
                     val item =
-                        api.userLibraryApi.getItem(itemId = itemId).content.let {
+                        api.libraryApi.getItem(itemId = itemId).content.let {
                             BaseItem(it, false)
                         }
                     val request =

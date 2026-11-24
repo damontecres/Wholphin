@@ -125,7 +125,8 @@ class MediaCodecCapabilitiesTest(
             CodecProfileLevel.HEVCMainTierLevel62 to 186,
         )
 
-    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
+    // Ignore the platform's software AV1 decoder (c2.android.av1-dav1d), it is too slow on most TV boxes
+    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1, hardwareOnly = true)
 
     fun supportsAV1Main10(): Boolean =
         hasDecoder(
@@ -313,9 +314,13 @@ class MediaCodecCapabilitiesTest(
         return false
     }
 
-    private fun hasCodecForMime(mime: String): Boolean {
+    private fun hasCodecForMime(
+        mime: String,
+        hardwareOnly: Boolean = false,
+    ): Boolean {
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !info.isHardwareAccelerated) continue
 
             if (info.supportedTypes.any { it.equals(mime, ignoreCase = true) }) {
                 Timber.i("found codec %s for mime %s", info.name, mime)
@@ -346,12 +351,46 @@ class MediaCodecCapabilitiesTest(
         return false
     }
 
+    /**
+     * Returns the maximum resolution advertised for [mime].
+     *
+     * Some devices have software-only decoders that advertise a higher resolution than the
+     * available hardware decoder. We want to prefer the capabilities of hardware decoding when
+     * reporting to the server
+     *
+     * So, first compute the max using hardware decoders only. If no hardware decoder exists for
+     * [mime], fall back to software decoders.
+     */
     fun getMaxResolution(mime: String): Size {
+        // First pass: hardware decoders only.
+        var hardware = true
+        var (maxWidth, maxHeight) = getMaxResolution(mime, hardwareOnly = true)
+
+        // Fall back to software decoders when no hardware decoder reported any size.
+        if (maxWidth == 0 || maxHeight == 0) {
+            val (swWidth, swHeight) = getMaxResolution(mime, hardwareOnly = false)
+            if (swWidth > 0 && swHeight > 0) {
+                maxWidth = swWidth
+                maxHeight = swHeight
+                hardware = false
+            }
+        }
+
+        Timber.v("Computed max resolution (hardware=%s) for %s: %dx%d", hardware, mime, maxWidth, maxHeight)
+
+        return Size(maxWidth, maxHeight)
+    }
+
+    private fun getMaxResolution(
+        mime: String,
+        hardwareOnly: Boolean,
+    ): Pair<Int, Int> {
         var maxWidth = 0
         var maxHeight = 0
 
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && info.isSoftwareOnly) continue
 
             try {
                 val capabilities = info.getCapabilitiesForType(mime)
@@ -366,8 +405,6 @@ class MediaCodecCapabilitiesTest(
             }
         }
 
-        Timber.d("Computed max resolution for %s: %dx%d", mime, maxWidth, maxHeight)
-
-        return Size(maxWidth, maxHeight)
+        return maxWidth to maxHeight
     }
 }

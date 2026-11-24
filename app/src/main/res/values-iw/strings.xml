@@ -220,7 +220,7 @@
         <item quantity="two">בגיל שנתיים</item>
         <item quantity="other">בגיל %1$d</item>
     </plurals>
-    <string name="play_with_transcoding">נגן עם המרת קידוד</string>
+    <string name="play_with_transcoding">נגן עם המרת־קידוד</string>
     <string name="media_information">פרטי המדיה</string>
     <string name="show_clock">הצג שעון</string>
     <string name="aired_episode_order">סדר שידור הפרקים</string>
@@ -613,7 +613,7 @@
     <string name="skip_behavior">התנהגות דילוג</string>
     <string name="skip_behavior_summary">עבור פתיחים, כתוביות סיום וכו\'</string>
     <string name="play_with">נגן עם</string>
-    <string name="transcoding">המרת קידוד</string>
+    <string name="transcoding">המרת־קידוד</string>
     <string name="nal">NAL</string>
     <string name="avc">AVC</string>
     <string name="sdr">SDR</string>
@@ -738,4 +738,22 @@
     <string name="season_episode_number_padded_range">עונה %1$02d פרקים %2$02d-%3$02d</string>
     <string name="episode_number_short">פרק %1$d</string>
     <string name="season_number">עונה %1$d</string>
+    <string name="prefer_dovi_over_hdr10_plus">העדפת Dolby Vision על פני HDR10+</string>
+    <string name="prefer_dovi_over_hdr10_plus_summary">מחיקת מטא-נתונים של HDR10+ ממדיה מסוג Dolby Vision עבור טלוויזיות שמעדיפות לנגן HDR10+ במצב זה</string>
+    <string name="remove_from_playlist">מחיקה מרשימת־השמעה</string>
+    <string name="login_credentials_expired">פרטי ההתחברות פגו, נא להתחבר מחדש</string>
+    <string name="login_not_authorized">אינך מורשה לגשת לשרת בשלב זה</string>
+    <string name="max_resolution">רזולוציה מירבית לפני המרת־קידוד</string>
+    <string name="resolution_8k">8K</string>
+    <string name="resolution_4k">4K</string>
+    <string name="resolution_1080">1080</string>
+    <string name="resolution_720">720</string>
+    <string name="resolution_576">576</string>
+    <string name="resolution_480">480</string>
+    <string name="resolution_360">360</string>
+    <plurals name="episodes_count">
+        <item quantity="one">פרק %1$d</item>
+        <item quantity="two">%1$d פרקים</item>
+        <item quantity="other">%1$d פרקים</item>
+    </plurals>
 </resources>

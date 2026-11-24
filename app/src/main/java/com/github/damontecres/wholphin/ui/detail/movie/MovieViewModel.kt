@@ -45,7 +45,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import timber.log.Timber
@@ -94,7 +93,7 @@ class MovieViewModel
 
         private suspend fun getMovie(): BaseItem {
             val item =
-                api.userLibraryApi.getItem(itemId).content.let {
+                api.libraryApi.getItem(itemId).content.let {
                     BaseItem(it)
                 }
             return item
