@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ExternalRatings
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -80,6 +81,7 @@ fun SeriesOverviewContent(
     episodes: EpisodeList,
     seasonExtras: List<ExtrasItem>,
     chosenStreams: ChosenStreams?,
+    episodeRatings: ExternalRatings,
     peopleInEpisode: List<Person>,
     position: SeriesOverviewPosition,
     firstItemFocusRequester: FocusRequester,
@@ -197,6 +199,8 @@ fun SeriesOverviewContent(
                     preferences = preferences,
                     ep = focusedEpisode,
                     chosenStreams = chosenStreams,
+                    externalRatings =
+                        episodeRatings.ratings.takeIf { episodeRatings.itemId == focusedEpisode?.id }.orEmpty(),
                     overviewOnClick = overviewOnClick,
                     overviewOnFocus = {
                         if (it.isFocused) {

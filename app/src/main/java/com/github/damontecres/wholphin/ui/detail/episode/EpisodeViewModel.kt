@@ -7,9 +7,11 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ExternalRating
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MdbListRatingsService
 import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ServerReportService
@@ -58,6 +60,7 @@ class EpisodeViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val mediaManagementService: MediaManagementService,
+        private val mdbListRatingsService: MdbListRatingsService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -115,6 +118,8 @@ class EpisodeViewModel
                         )
                     }
                     backdropService.submit(item)
+                    val externalRatings = mdbListRatingsService.getRatings(item.id)
+                    _state.update { it.copy(externalRatings = externalRatings) }
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (ex: Exception) {
@@ -216,4 +221,5 @@ class EpisodeViewModel
 data class EpisodeState(
     val episode: DataLoadingState<BaseItem> = DataLoadingState.Pending,
     val chosenStreams: ChosenStreams? = null,
+    val externalRatings: List<ExternalRating> = emptyList(),
 )
