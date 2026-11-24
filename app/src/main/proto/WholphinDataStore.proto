@@ -242,6 +242,7 @@ message ExperimentalPreferences {
   bool disable_audio_offload = 4;
   bool prefer_dolby_vision_over_hdr10_plus = 5;
   bool convert_dolby_vision_profile_7 = 6;
+  bool direct_play_invalid_dolby_vision = 7;
 }
 
 message AppPreferences {

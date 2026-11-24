@@ -188,6 +188,8 @@ class AppPreferencesSerializer
                                     ExperimentalPreference.PreferDolbyVisionOverHdr10Plus.defaultValue
                                 convertDolbyVisionProfile7 =
                                     ExperimentalPreference.ConvertDolbyVisionProfile7.defaultValue
+                                directPlayInvalidDolbyVision =
+                                    ExperimentalPreference.DirectPlayInvalidDolbyVision.defaultValue
                             }.build()
                 }.build()
 

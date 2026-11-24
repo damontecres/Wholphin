@@ -81,6 +81,8 @@ class DeviceProfileService
                                     },
                                 forceDisabledHdr =
                                     appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, newConfig.jellyfinTenEleven),
+                                directPlayInvalidDolbyVision =
+                                    appPrefs.experimentalPreferences.enabled { directPlayInvalidDolbyVision },
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                                 maxResolution = newConfig.overrides.maxResolution,
                             )
