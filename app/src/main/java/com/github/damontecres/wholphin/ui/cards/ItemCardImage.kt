@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,10 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -38,7 +34,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.WatchedIndicatorType
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.gt
@@ -278,15 +273,9 @@ fun ItemCardImageOverlay(
         }
         val showWatchProgress = ic.watchProgress.contains(type)
         if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && showWatchProgress) {
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .background(
-                            MaterialTheme.colorScheme.tertiary,
-                        ).clip(RectangleShape)
-                        .height(Cards.playedPercentHeight)
-                        .fillMaxWidth((watchedPercent / 100.0).toFloat()),
+            PlayedPercentBar(
+                percent = watchedPercent,
+                modifier = Modifier.align(Alignment.BottomStart),
             )
         }
     }

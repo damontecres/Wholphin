@@ -282,25 +282,11 @@ class CollectionViewModel
             filter: GetItemsFilter?,
             types: List<BaseItemKind>,
         ): GetItemsRequest {
-            val includeItemTypes: List<BaseItemKind>?
-            val excludeItemTypes: List<BaseItemKind>?
-            // Workaround for https://github.com/jellyfin/jellyfin/issues/16454
-            if (types.size == 1 && types.first() == BaseItemKind.BOX_SET) {
-                includeItemTypes = null
-                excludeItemTypes =
-                    BaseItemKind.entries
-                        .toMutableList()
-                        .apply { remove(BaseItemKind.BOX_SET) }
-            } else {
-                includeItemTypes = types
-                excludeItemTypes = null
-            }
             val request =
                 GetItemsRequest(
                     userId = serverRepository.currentUser?.id,
                     parentId = itemId,
-                    includeItemTypes = includeItemTypes,
-                    excludeItemTypes = excludeItemTypes,
+                    includeItemTypes = types,
                     recursive = false,
                     sortBy = sort?.let { listOf(sort.sort) },
                     sortOrder = sort?.let { listOf(sort.direction) },
@@ -499,6 +485,7 @@ class CollectionViewModel
                 listOf(
                     BaseItemKind.MOVIE,
                     BaseItemKind.SERIES,
+                    BaseItemKind.SEASON,
                     BaseItemKind.EPISODE,
                     BaseItemKind.VIDEO,
                     BaseItemKind.BOX_SET,
