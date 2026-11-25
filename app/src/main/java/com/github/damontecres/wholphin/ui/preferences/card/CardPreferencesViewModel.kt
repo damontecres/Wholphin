@@ -97,7 +97,8 @@ class CardPreferencesViewModel
                                 )
                             }
                         }
-                val item1 = items[0].copy(userData = unwatchedUserData())
+                val mediaSourceCount = if (type == BaseItemKind.MOVIE || type == BaseItemKind.EPISODE) 2 else null
+                val item1 = items[0].copy(userData = unwatchedUserData(), mediaSourceCount = mediaSourceCount)
                 val item2 = items[1].copy(userData = inProgressUserData())
                 val item3 = items[2].copy(userData = watchedUserData())
                 listOf(
