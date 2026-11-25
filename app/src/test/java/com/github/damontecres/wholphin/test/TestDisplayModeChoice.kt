@@ -140,6 +140,119 @@ class TestDisplayModeChoice {
         Assert.assertEquals(HD_30.modeId, result2?.modeId)
     }
 
+    @Test
+    fun `23 976 fps switches to 4K 24 Hz when the display only offers integer rates`() {
+        val modes =
+            listOf(
+                UHD_24.copy(refreshRate = 24.000002f),
+                DisplayMode(9, 3840, 2160, 25f),
+                UHD_30.copy(refreshRate = 30.000002f),
+            )
+
+        for (resolutionSwitch in listOf(false, true)) {
+            for (frameRate in listOf(24000f / 1001, 24f)) {
+                Assert.assertEquals(UHD_24.modeId, chooseMode(modes, frameRate, resolutionSwitch)?.modeId)
+            }
+        }
+    }
+
+    @Test
+    fun `fractional rates can fall back to integer refresh rates`() {
+        for (rate in listOf(24f, 25f, 30f, 60f, 120f)) {
+            val integerMode = UHD_24.copy(refreshRate = rate)
+            val fractionalMode = UHD_30.copy(refreshRate = rate * 1000 / 1001)
+
+            for (resolutionSwitch in listOf(false, true)) {
+                Assert.assertEquals(integerMode, chooseMode(listOf(integerMode), fractionalMode.refreshRate, resolutionSwitch))
+                val modes = listOf(fractionalMode, integerMode)
+                Assert.assertEquals(fractionalMode, chooseMode(modes, fractionalMode.refreshRate, resolutionSwitch))
+                Assert.assertEquals(integerMode, chooseMode(modes, rate, resolutionSwitch))
+            }
+        }
+    }
+
+    @Test
+    fun `prefer the closest rate within the chosen resolution`() {
+        val fractional24 = UHD_24.copy(refreshRate = 23.976f)
+        val closer24 = UHD_30.copy(refreshRate = 23.99f)
+        val modes = listOf(fractional24, closer24, HD_24)
+
+        for ((resolutionSwitch, expected) in listOf(false to closer24, true to HD_24)) {
+            val result =
+                RefreshRateService.findDisplayMode(
+                    displayModes = modes,
+                    streamWidth = 1920,
+                    streamHeight = 1080,
+                    targetFrameRate = 24f,
+                    refreshRateSwitch = true,
+                    resolutionSwitch = resolutionSwitch,
+                )
+            Assert.assertEquals(expected, result)
+        }
+    }
+
+    @Test
+    fun `prefer a near 1x match over multiples and an exact multiple over its fallback`() {
+        val fractional60 = UHD_60.copy(modeId = 9, refreshRate = 59.94f)
+        val modes = listOf(UHD_24, fractional60, UHD_60)
+
+        for (resolutionSwitch in listOf(false, true)) {
+            Assert.assertEquals(UHD_24, chooseMode(modes, 23.976f, resolutionSwitch))
+            for (frameRate in listOf(23.976f, 29.97f)) {
+                Assert.assertEquals(UHD_60, chooseMode(listOf(UHD_60), frameRate, resolutionSwitch))
+                Assert.assertEquals(fractional60, chooseMode(modes.drop(1), frameRate, resolutionSwitch))
+            }
+        }
+    }
+
+    @Test
+    fun `tolerance accepts 120 Hz doubles on either side of the target`() {
+        val integer120 = UHD_60.copy(refreshRate = 120f)
+        val fractional120 = UHD_60.copy(refreshRate = 119.88f)
+        Assert.assertEquals(integer120, chooseMode(listOf(integer120), 59.94f, resolutionSwitch = true))
+        Assert.assertEquals(fractional120, chooseMode(listOf(fractional120), 60f, resolutionSwitch = true))
+    }
+
+    @Test
+    fun `reject unrelated rates and nonpositive or nonfinite stream rates`() {
+        val modes = listOf(UHD_24.copy(refreshRate = 25f), UHD_30)
+        Assert.assertNull(chooseMode(modes, 24f, resolutionSwitch = false))
+        Assert.assertNull(chooseMode(modes, 24.95f, resolutionSwitch = false))
+        for (frameRate in listOf(0f, -24f, Float.NaN, Float.POSITIVE_INFINITY)) {
+            Assert.assertNull(chooseMode(modes, frameRate, resolutionSwitch = true))
+        }
+    }
+
+    @Test
+    fun `keep exact refresh rate matching when only switching resolution`() {
+        val near25 = HD_24.copy(refreshRate = 24.975f)
+        val exact25 = UHD_24.copy(refreshRate = 25f)
+        val result =
+            RefreshRateService.findDisplayMode(
+                displayModes = listOf(exact25, near25),
+                streamWidth = 1920,
+                streamHeight = 1080,
+                targetFrameRate = 25f,
+                refreshRateSwitch = false,
+                resolutionSwitch = true,
+            )
+        Assert.assertEquals(exact25, result)
+    }
+
+    private fun chooseMode(
+        modes: List<DisplayMode>,
+        frameRate: Float,
+        resolutionSwitch: Boolean,
+    ): DisplayMode? =
+        RefreshRateService.findDisplayMode(
+            displayModes = modes,
+            streamWidth = 3840,
+            streamHeight = 2160,
+            targetFrameRate = frameRate,
+            refreshRateSwitch = true,
+            resolutionSwitch = resolutionSwitch,
+        )
+
     private fun test(
         expected: DisplayMode,
         streamWidth: Int,
