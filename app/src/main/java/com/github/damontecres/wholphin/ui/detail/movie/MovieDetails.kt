@@ -225,7 +225,12 @@ fun MovieDetails(
                         )
                 },
                 trailerOnClick = {
-                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                    TrailerService.onClick(
+                        context,
+                        it,
+                        viewModel::navigateTo,
+                        preferences.appPreferences.interfacePreferences.trailerApp,
+                    )
                 },
                 onClickExtra = { index, extra ->
                     viewModel.navigateTo(extra.destination)

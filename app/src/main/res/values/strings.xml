@@ -491,6 +491,8 @@
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
+    <string name="trailer_app">Trailer app</string>
+    <string name="no_trailer_app">No app found to play this trailer</string>
     <string name="clear_track_choices">Clear track choices</string>
     <string name="dts_x">DTS:X</string>
     <string name="dts_hd">DTS:HD</string>

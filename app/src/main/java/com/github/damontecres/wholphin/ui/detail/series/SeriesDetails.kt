@@ -241,7 +241,12 @@ fun SeriesDetails(
                     viewModel.setFavorite(series.id, !favorite, null)
                 },
                 trailerOnClick = {
-                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                    TrailerService.onClick(
+                        context,
+                        it,
+                        viewModel::navigateTo,
+                        preferences.appPreferences.interfacePreferences.trailerApp,
+                    )
                 },
                 onClickExtra = { _, extra ->
                     viewModel.navigateTo(extra.destination)

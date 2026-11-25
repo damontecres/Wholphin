@@ -116,6 +116,7 @@ fun PreferencesContent(
     var showPinFlow by remember { mutableStateOf(false) }
     var showVersionDialog by remember { mutableStateOf(false) }
     val players by viewModel.externalPlayers.collectAsState()
+    val trailerApps by viewModel.trailerApps.collectAsState()
     val serverSupported by viewModel.serverSupported.collectAsState()
     val serverVersionMessage =
         remember(resources, serverSupported) {
@@ -568,22 +569,24 @@ fun PreferencesContent(
                                     )
                                 }
 
-                                AppPreference.ExternalPlayerApp -> {
+                                AppPreference.ExternalPlayerApp, AppPreference.TrailerApp -> {
+                                    val apps =
+                                        if (pref == AppPreference.TrailerApp) trailerApps else players
                                     val value = pref.getter.invoke(preferences).toString()
                                     val selectedIndex =
-                                        remember(value, players) {
-                                            players.indexOfFirstOrNull { it.identifier == value }
+                                        remember(value, apps) {
+                                            apps.indexOfFirstOrNull { it.identifier == value }
                                         } ?: 0
                                     ChoicePreference(
                                         title = stringResource(pref.title),
-                                        summary = players[selectedIndex].name,
+                                        summary = apps.getOrNull(selectedIndex)?.name,
                                         interactionSource = interactionSource,
-                                        possibleValues = players,
+                                        possibleValues = apps,
                                         selectedIndex = selectedIndex,
                                         onValueChange = { index ->
                                             scope.launch(ExceptionHandler()) {
                                                 val newValue =
-                                                    players.getOrNull(index)?.identifier ?: ""
+                                                    apps.getOrNull(index)?.identifier ?: ""
                                                 preferences =
                                                     viewModel.preferenceDataStore.updateData { prefs ->
                                                         pref.setter.invoke(prefs, newValue)

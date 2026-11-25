@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.ServerReportService
+import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setup.ServerVersionSupported
@@ -79,6 +80,8 @@ class PreferencesViewModel
 
         val externalPlayers = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
 
+        val trailerApps = MutableStateFlow<List<ExternalPlayerApp>>(emptyList())
+
         val serverSupported =
             serverRepository.currentServerFlow
                 .map {
@@ -110,6 +113,7 @@ class PreferencesViewModel
                         identifier = "",
                     )
                 this@PreferencesViewModel.externalPlayers.update { listOf(systemDefault) + externalPlayers }
+                this@PreferencesViewModel.trailerApps.update { listOf(systemDefault) + getTrailerApps(context) }
             }
         }
 
@@ -204,25 +208,36 @@ fun getExternalPlayers(context: Context): List<ExternalPlayerApp> {
         Intent(Intent.ACTION_VIEW).apply {
             setDataAndType("https://damontecres.com/video.mp4".toUri(), "video/*")
         }
-    val externalPlayers =
-        context.packageManager
-            .queryIntentActivities(fakeIntent, PackageManager.MATCH_ALL)
-            .filter { it.priority >= 0 }
-            .map {
-                val component =
-                    ComponentName(
-                        it.activityInfo.packageName,
-                        it.activityInfo.name,
-                    )
-                ExternalPlayerApp(
-                    name = it.loadLabel(context.packageManager).toString(),
-                    icon =
-                        it
-                            .loadIcon(context.packageManager)
-                            .toBitmap()
-                            .asImageBitmap(),
-                    identifier = component.flattenToString(),
-                )
-            }
-    return externalPlayers
+    return queryApps(context, fakeIntent)
 }
+
+/**
+ * Lists the apps that handle `vnd.youtube` links, which includes third party clients such as SmartTube
+ *
+ * See [TrailerService.youTubeIntent] for why this queries that scheme
+ */
+fun getTrailerApps(context: Context): List<ExternalPlayerApp> = queryApps(context, TrailerService.youTubeIntent("dQw4w9WgXcQ"))
+
+private fun queryApps(
+    context: Context,
+    intent: Intent,
+): List<ExternalPlayerApp> =
+    context.packageManager
+        .queryIntentActivities(intent, PackageManager.MATCH_ALL)
+        .filter { it.priority >= 0 }
+        .map {
+            val component =
+                ComponentName(
+                    it.activityInfo.packageName,
+                    it.activityInfo.name,
+                )
+            ExternalPlayerApp(
+                name = it.loadLabel(context.packageManager).toString(),
+                icon =
+                    it
+                        .loadIcon(context.packageManager)
+                        .toBitmap()
+                        .asImageBitmap(),
+                identifier = component.flattenToString(),
+            )
+        }

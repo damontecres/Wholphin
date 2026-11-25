@@ -142,7 +142,12 @@ fun DiscoverMovieDetails(
                 onLongClickSimilar = { index, similar ->
                 },
                 trailerOnClick = {
-                    TrailerService.onClick(context, it, viewModel::navigateTo)
+                    TrailerService.onClick(
+                        context,
+                        it,
+                        viewModel::navigateTo,
+                        preferences.appPreferences.interfacePreferences.trailerApp,
+                    )
                 },
                 modifier = modifier,
             )

@@ -958,6 +958,17 @@ sealed interface AppPreference<Pref, T> {
                 summary = null,
             )
 
+        val TrailerApp =
+            AppStringPreference<AppPreferences>(
+                title = R.string.trailer_app,
+                defaultValue = "",
+                getter = { it.interfacePreferences.trailerApp },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { trailerApp = value }
+                },
+                summary = null,
+            )
+
         val ExoPlayerSettings =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.exoplayer_options,
@@ -1176,6 +1187,7 @@ val basicPreferences =
                     AppPreference.SignInAuto,
                     AppPreference.RememberSelectedTab,
                     AppPreference.PlayThemeMusic,
+                    AppPreference.TrailerApp,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
                     AppPreference.ScreensaverSettings,
