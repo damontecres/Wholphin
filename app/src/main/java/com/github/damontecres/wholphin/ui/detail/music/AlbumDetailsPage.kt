@@ -79,6 +79,7 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -106,6 +107,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.UserItemDataDto
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import timber.log.Timber
@@ -271,13 +273,17 @@ class AlbumViewModel
             itemId: UUID,
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
-            favoriteWatchManager.setFavorite(itemId, favorite)
-            val album =
-                api.libraryApi
-                    .getItem(itemId = itemId)
-                    .content
-                    .let { BaseItem(it, false) }
-            _state.update { it.copy(album = album) }
+            val result = favoriteWatchManager.setFavorite(itemId, favorite)
+            if (itemId == this@AlbumViewModel.itemId) {
+                val album =
+                    api.libraryApi
+                        .getItem(itemId = itemId)
+                        .content
+                        .let { BaseItem(it, false) }
+                _state.update { it.copy(album = album) }
+            } else {
+                updateUserData(itemId, result)
+            }
         }
 
         fun play(
@@ -292,8 +298,70 @@ class AlbumViewModel
             itemId: UUID,
             played: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
-            favoriteWatchManager.setWatched(itemId, played)
-            // TODO update?
+            val result = favoriteWatchManager.setWatched(itemId, played)
+            updateUserData(itemId, result)
+        }
+
+        private fun updateUserData(
+            itemId: UUID,
+            userData: UserItemDataDto,
+        ) {
+            state.value.let { state ->
+                // TODO better way to determine which list needs to be updated
+                // TODO this code is duplicated in ArtistViewModel too
+                val similar = state.similar.indexOfFirstOrNull { it.id == itemId }
+                if (similar != null) {
+                    Timber.v("Found %s in similar", itemId)
+                    val newItem =
+                        state.similar[similar].let {
+                            it.copy(data = it.data.copy(userData = userData))
+                        }
+                    _state.update {
+                        it.copy(
+                            similar =
+                                it.similar.toMutableList().apply {
+                                    set(similar, newItem)
+                                },
+                        )
+                    }
+                } else {
+                    val collection = state.collections.indexOfFirstOrNull { it.id == itemId }
+                    if (collection != null) {
+                        Timber.v("Found %s in collections", itemId)
+                        val newItem =
+                            state.collections[collection].let {
+                                it.copy(data = it.data.copy(userData = userData))
+                            }
+                        _state.update {
+                            it.copy(
+                                collections =
+                                    it.collections.toMutableList().apply {
+                                        set(collection, newItem)
+                                    },
+                            )
+                        }
+                    } else {
+                        val video = state.musicVideos.indexOfFirstOrNull { it.id == itemId }
+                        if (video != null) {
+                            Timber.v("Found %s in music videos", itemId)
+                            val newItem =
+                                state.musicVideos[video].let {
+                                    it.copy(data = it.data.copy(userData = userData))
+                                }
+                            _state.update {
+                                it.copy(
+                                    musicVideos =
+                                        it.musicVideos.toMutableList().apply {
+                                            set(video, newItem)
+                                        },
+                                )
+                            }
+                        } else {
+                            Timber.w("Could not find item to update: %s", itemId)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -328,7 +396,7 @@ data class AlbumState(
     val similar: List<BaseItem> = emptyList(),
     val loading: LoadingState = LoadingState.Pending,
     val initialSongIndex: Int? = null,
-    val musicVideos: List<BaseItem?> = emptyList(),
+    val musicVideos: List<BaseItem> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
 )
