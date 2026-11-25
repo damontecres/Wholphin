@@ -36,6 +36,10 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="video/*" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="vnd.youtube" />
+        </intent>
     </queries>
 
     <application

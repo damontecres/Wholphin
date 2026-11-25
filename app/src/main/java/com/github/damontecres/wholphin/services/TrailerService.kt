@@ -1,7 +1,10 @@
 package com.github.damontecres.wholphin.services
 
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -12,6 +15,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -85,6 +89,7 @@ class TrailerService
                 context: Context,
                 trailer: Trailer,
                 navigateTo: (Destination) -> Unit,
+                trailerApp: String? = null,
             ) {
                 when (trailer) {
                     is LocalTrailer -> {
@@ -97,10 +102,55 @@ class TrailerService
                     }
 
                     is RemoteTrailer -> {
-                        val intent = Intent(Intent.ACTION_VIEW, trailer.url.toUri())
-                        context.startActivity(intent)
+                        val intents =
+                            buildList {
+                                youTubeVideoId(trailer.url)?.let { videoId ->
+                                    val intent = youTubeIntent(videoId)
+                                    // Try the chosen app first, then whichever app Android picks for YouTube links
+                                    trailerApp
+                                        ?.let { ComponentName.unflattenFromString(it) }
+                                        ?.let { add(Intent(intent).setComponent(it)) }
+                                    add(intent)
+                                }
+                                add(Intent(Intent.ACTION_VIEW, trailer.url.toUri()))
+                            }
+                        val started =
+                            intents.any {
+                                try {
+                                    context.startActivity(it)
+                                    true
+                                } catch (ex: ActivityNotFoundException) {
+                                    Timber.w(ex, "Could not start %s", it)
+                                    false
+                                }
+                            }
+                        if (!started) {
+                            Toast
+                                .makeText(context, R.string.no_trailer_app, Toast.LENGTH_LONG)
+                                .show()
+                        }
                     }
                 }
             }
+
+            /**
+             * Extracts the video ID from a YouTube watch or youtu.be URL, returning null for any other URL
+             */
+            fun youTubeVideoId(url: String): String? {
+                val uri = url.toUri()
+                return when (uri.host?.removePrefix("www.")?.removePrefix("m.")) {
+                    "youtube.com" -> uri.getQueryParameter("v")
+                    "youtu.be" -> uri.pathSegments.firstOrNull()
+                    else -> null
+                }?.takeIf { it.isNotBlank() }
+            }
+
+            /**
+             * Opens a video in any YouTube client, such as YouTube or SmartTube
+             *
+             * Android 12+ offers a web link only to browsers and apps with approved domains, which hides SmartTube
+             * from an https chooser: the `vnd.youtube` scheme skips that approval, so every client that registers it appears
+             */
+            fun youTubeIntent(videoId: String) = Intent(Intent.ACTION_VIEW, "vnd.youtube://$videoId".toUri())
         }
     }
