@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.preferences.card
+package com.github.damontecres.wholphin.ui.preferences
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -39,27 +39,35 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.CardInterfacePreferences
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.ui.ifElse
-import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
-import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
-import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
-import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
-// TODO this is a copy of SubtitlePreferencesContent.kt
+/**
+ * Display a simple list of [PreferenceGroup] preferences
+ *
+ * [preferenceContent] is invoked for each preference with the default using [ComposablePreference]
+ */
 @Composable
-fun CardInterfacePreferencesContent(
+fun <T : Any> SimplePreferencesContent(
     title: String,
-    preferences: CardInterfacePreferences,
-    prefList: List<PreferenceGroup<CardInterfacePreferences>>,
-    onPreferenceChange: suspend (CardInterfacePreferences) -> Unit,
+    preferences: T,
+    prefList: List<PreferenceGroup<T>>,
+    onPreferenceChange: suspend (T) -> AppPreferences,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
+    preferenceContent: @Composable (
+        AppPreference<T, Any>,
+        MutableInteractionSource,
+        Modifier,
+        @Composable () -> Unit,
+    ) -> Unit = { _, _, _, defaultContent ->
+        defaultContent.invoke()
+    },
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -123,7 +131,7 @@ fun CardInterfacePreferencesContent(
                                 .map { it.preferences }
                                 .flatten()
                     groupPreferences.forEachIndexed { prefIndex, pref ->
-                        pref as AppPreference<CardInterfacePreferences, Any>
+                        pref as AppPreference<T, Any>
                         item {
                             val isFirst = groupIndex == 0 && prefIndex == 0
                             val isLast =
@@ -152,8 +160,11 @@ fun CardInterfacePreferencesContent(
                                         lastFocusRequester,
                                     )
 
-                            when (pref) {
-                                else -> {
+                            preferenceContent.invoke(
+                                pref,
+                                interactionSource,
+                                focusModifier,
+                                {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
                                         preference = pref,
@@ -187,8 +198,8 @@ fun CardInterfacePreferencesContent(
                                         interactionSource = interactionSource,
                                         modifier = focusModifier,
                                     )
-                                }
-                            }
+                                },
+                            )
                         }
                     }
                 }

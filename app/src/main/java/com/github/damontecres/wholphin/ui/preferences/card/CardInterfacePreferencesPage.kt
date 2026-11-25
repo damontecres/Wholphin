@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.preferences.SimplePreferencesContent
 import com.github.damontecres.wholphin.ui.titleStringRes
 import com.github.damontecres.wholphin.util.LoadingState
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -81,7 +82,7 @@ fun CardInterfacePreferencesPage(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        CardInterfacePreferencesContent(
+        SimplePreferencesContent(
             title = stringResource(R.string.card_customization),
             preferences = preferences.interfacePreferences.cardInterfacePreferences,
             prefList = CardPreferences.Preferences,

@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,10 +42,14 @@ import com.github.damontecres.wholphin.preferences.SubtitlePreferences
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.ui.findActivity
+import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.preferences.SimplePreferencesContent
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(UnstableApi::class)
@@ -57,6 +62,7 @@ fun SubtitleStylePage(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
     var preferences by remember { mutableStateOf(initialPreferences) }
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -200,7 +206,19 @@ fun SubtitleStylePage(
                     SubtitleSettings.preferences
                 }
             }
-        SubtitlePreferencesContent(
+        val onPreferenceChange =
+            suspend { newSubtitlePrefs: SubtitlePreferences ->
+                viewModel.preferenceDataStore.updateData {
+                    it.updateInterfacePreferences {
+                        if (isPageForHdrSettings) {
+                            hdrSubtitlesPreferences = newSubtitlePrefs
+                        } else {
+                            subtitlesPreferences = newSubtitlePrefs
+                        }
+                    }
+                }
+            }
+        SimplePreferencesContent(
             title =
                 if (isPageForHdrSettings) {
                     stringResource(R.string.hdr_subtitle_style)
@@ -214,17 +232,7 @@ fun SubtitleStylePage(
                     preferences.interfacePreferences.subtitlesPreferences
                 },
             prefList = prefList,
-            onPreferenceChange = { newSubtitlePrefs ->
-                viewModel.preferenceDataStore.updateData {
-                    it.updateInterfacePreferences {
-                        if (isPageForHdrSettings) {
-                            hdrSubtitlesPreferences = newSubtitlePrefs
-                        } else {
-                            subtitlesPreferences = newSubtitlePrefs
-                        }
-                    }
-                }
-            },
+            onPreferenceChange = onPreferenceChange,
             onFocus = { groupIndex, prefIndex ->
                 val focusedPref =
                     SubtitleSettings.preferences
@@ -238,6 +246,31 @@ fun SubtitleStylePage(
                 Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(.25f),
+            preferenceContent = @Composable { pref, interactionSource, mod, defaultContent ->
+                when (pref) {
+                    SubtitleSettings.Reset -> {
+                        ClickPreference(
+                            title = stringResource(pref.title),
+                            onClick = {
+                                scope.launch(ExceptionHandler()) {
+                                    val newValue =
+                                        SubtitlePreferences
+                                            .newBuilder()
+                                            .apply { resetSubtitles() }
+                                            .build()
+                                    onPreferenceChange.invoke(newValue)
+                                }
+                            },
+                            interactionSource = interactionSource,
+                            modifier = mod,
+                        )
+                    }
+
+                    else -> {
+                        defaultContent.invoke()
+                    }
+                }
+            },
         )
     }
 }
