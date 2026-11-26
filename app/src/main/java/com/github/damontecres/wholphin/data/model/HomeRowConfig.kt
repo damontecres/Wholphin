@@ -175,6 +175,7 @@ sealed interface HomeRowConfig {
         val parentId: UUID,
         val recursive: Boolean = false,
         val sort: SortAndDirection? = null,
+        val filter: GetItemsFilter = GetItemsFilter(),
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ByParent = this.copy(viewOptions = viewOptions)

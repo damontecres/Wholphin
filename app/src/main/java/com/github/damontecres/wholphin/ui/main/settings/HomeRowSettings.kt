@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -26,6 +27,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.filterOptionsFor
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
@@ -217,20 +219,34 @@ private fun LazyListScope.addAdditionalConfig(
             }
             item {
                 var showDialog by remember { mutableStateOf(false) }
+                val filterOptions = filterOptionsFor(library?.collectionType)
+                val filterCount = config.filter.countFilters(filterOptions)
                 ListItem(
                     selected = false,
                     onClick = { showDialog = true },
                     headlineContent = {
-                        PreferenceTitle(stringResource(R.string.sort))
+                        PreferenceTitle(stringResource(R.string.filter))
                     },
                     supportingContent = {
                         Text(
-                            text = sortAndDirection.toAnnotatedString(),
+                            text =
+                                if (filterCount > 0) {
+                                    pluralStringResource(R.plurals.filters, filterCount, filterCount)
+                                } else {
+                                    stringResource(R.string.none)
+                                },
                         )
                     },
                 )
-                if (showDialog) {
-                }
+                ByParentFilterDialog(
+                    show = showDialog,
+                    library = library,
+                    current = config.filter,
+                    onDismissRequest = { showDialog = false },
+                    onFilterChange = { newFilter ->
+                        onConfigChange.invoke(config.copy(filter = newFilter))
+                    },
+                )
             }
         }
 

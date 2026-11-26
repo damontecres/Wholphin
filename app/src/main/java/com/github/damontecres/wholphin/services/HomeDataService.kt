@@ -4,6 +4,7 @@ import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.createGenreDestination
@@ -348,41 +349,44 @@ class HomeDataService
 
                 is HomeRowConfig.ByParent -> {
                     val library = libraries.firstOrNull { it.itemId == row.parentId }
+                    // TODO handle filter.override
                     val request =
-                        GetItemsRequest(
-                            userId = userDto.id,
-                            parentId = row.parentId,
-                            recursive = row.recursive,
-                            sortBy =
-                                row.sort?.let {
-                                    buildList {
-                                        if (it.sort == ItemSortBy.RANDOM) {
-                                            add(ItemSortBy.SORT_NAME)
-                                            add(ItemSortBy.RANDOM)
-                                        } else {
-                                            add(it.sort)
-                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                        row.filter.applyTo(
+                            GetItemsRequest(
+                                userId = userDto.id,
+                                parentId = row.parentId,
+                                recursive = row.recursive,
+                                sortBy =
+                                    row.sort?.let {
+                                        buildList {
+                                            if (it.sort == ItemSortBy.RANDOM) {
                                                 add(ItemSortBy.SORT_NAME)
+                                                add(ItemSortBy.RANDOM)
+                                            } else {
+                                                add(it.sort)
+                                                if (it.sort != ItemSortBy.SORT_NAME) {
+                                                    add(ItemSortBy.SORT_NAME)
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                            sortOrder =
-                                row.sort?.let {
-                                    buildList {
-                                        if (it.sort == ItemSortBy.RANDOM) {
-                                            add(SortOrder.ASCENDING)
-                                            add(it.direction)
-                                        } else {
-                                            add(it.direction)
-                                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                    },
+                                sortOrder =
+                                    row.sort?.let {
+                                        buildList {
+                                            if (it.sort == ItemSortBy.RANDOM) {
                                                 add(SortOrder.ASCENDING)
+                                                add(it.direction)
+                                            } else {
+                                                add(it.direction)
+                                                if (it.sort != ItemSortBy.SORT_NAME) {
+                                                    add(SortOrder.ASCENDING)
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                            limit = limit,
-                            fields = library.itemFields,
+                                    },
+                                limit = limit,
+                                fields = library.itemFields,
+                            ),
                         )
 
                     // Not using getItemName because we want to throw the 404
@@ -420,11 +424,26 @@ class HomeDataService
 
                 is HomeRowConfig.GetItems -> {
                     val request =
-                        row.filter.asGetItemsRequest().copy(
-                            userId = userDto.id,
-                            limit = limit,
-                            fields = HomeItemFieldsBoxSets,
-                        )
+                        when (row.filter.override) {
+                            GetItemsFilterOverride.NONE -> {
+                                row.filter.applyTo(
+                                    GetItemsRequest(
+                                        userId = userDto.id,
+                                        limit = limit,
+                                        fields = HomeItemFieldsBoxSets,
+                                    ),
+                                    overwriteIncludeTypes = true,
+                                )
+                            }
+
+                            GetItemsFilterOverride.PERSON -> {
+                                TODO()
+                            }
+
+                            GetItemsFilterOverride.ARTIST -> {
+                                TODO()
+                            }
+                        }
                     if (usePaging) {
                         ApiRequestPager(
                             api,

@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.components.isFilterOptionSelected
 import com.github.damontecres.wholphin.ui.components.updateFilter
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.util.DataLoadingState
+import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,18 +44,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
-import javax.inject.Inject
 
 @HiltViewModel(assistedFactory = ByParentFilterViewModel.Factory::class)
 class ByParentFilterViewModel
     @AssistedInject
     constructor(
         private val filterOptionCache: FilterOptionCache,
-        @Inject private val library: Library,
+        @Assisted private val library: Library?,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
-            fun create(library: Library): ByParentFilterViewModel
+            fun create(library: Library?): ByParentFilterViewModel
         }
 
         private val _state = MutableStateFlow(ByParentFilterState())
@@ -64,7 +64,7 @@ class ByParentFilterViewModel
             _state.update { it.copy(possibleFilterValues = DataLoadingState.Loading) }
             viewModelScope.launchDefault {
                 try {
-                    val result = filterOptionCache.getFilterOptionValues(library.itemId, filterBy)
+                    val result = filterOptionCache.getFilterOptionValues(library?.itemId, filterBy)
                     _state.update { it.copy(possibleFilterValues = DataLoadingState.Success(result)) }
                 } catch (ex: CancellationException) {
                     throw ex
@@ -81,9 +81,9 @@ data class ByParentFilterState(
 )
 
 @Composable
-fun GetItemsFilterDialog(
+fun ByParentFilterDialog(
     show: Boolean,
-    library: Library,
+    library: Library?,
     current: GetItemsFilter,
     onDismissRequest: () -> Unit,
     onFilterChange: (GetItemsFilter) -> Unit,
@@ -91,9 +91,9 @@ fun GetItemsFilterDialog(
     if (show) {
         BasicDialog(
             onDismissRequest = onDismissRequest,
-            elevation = 1.dp,
+            elevation = 3.dp,
         ) {
-            GetItemsFilterDialogContent(
+            ByParentFilterDialogContent(
                 library = library,
                 current = current,
                 onFilterChange = onFilterChange,
@@ -103,8 +103,8 @@ fun GetItemsFilterDialog(
 }
 
 @Composable
-fun GetItemsFilterDialogContent(
-    library: Library,
+fun ByParentFilterDialogContent(
+    library: Library?,
     current: GetItemsFilter,
     onFilterChange: (GetItemsFilter) -> Unit,
     modifier: Modifier = Modifier,
@@ -114,7 +114,7 @@ fun GetItemsFilterDialogContent(
         ),
 ) {
     val state by viewModel.state.collectAsState()
-    val filterOptions = filterOptionsFor(library.collectionType)
+    val filterOptions = filterOptionsFor(library?.collectionType)
     var showSubMenu by remember { mutableStateOf<ItemFilterBy<out Any>?>(null) }
 
     LazyColumn(
@@ -143,7 +143,7 @@ fun GetItemsFilterDialogContent(
     showSubMenu?.let { filterOption ->
         BasicDialog(
             onDismissRequest = { showSubMenu = null },
-            elevation = 3.dp,
+            elevation = 5.dp,
         ) {
             filterOption as ItemFilterBy<Any>
             val currentValue = remember(current) { filterOption.get(current) }
