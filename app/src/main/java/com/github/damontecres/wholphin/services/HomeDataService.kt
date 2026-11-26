@@ -4,7 +4,6 @@ import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.createGenreDestination
@@ -424,26 +423,11 @@ class HomeDataService
 
                 is HomeRowConfig.GetItems -> {
                     val request =
-                        when (row.filter.override) {
-                            GetItemsFilterOverride.NONE -> {
-                                row.filter.applyTo(
-                                    GetItemsRequest(
-                                        userId = userDto.id,
-                                        limit = limit,
-                                        fields = HomeItemFieldsBoxSets,
-                                    ),
-                                    overwriteIncludeTypes = true,
-                                )
-                            }
-
-                            GetItemsFilterOverride.PERSON -> {
-                                TODO()
-                            }
-
-                            GetItemsFilterOverride.ARTIST -> {
-                                TODO()
-                            }
-                        }
+                        row.filter.asGetItemsRequest().copy(
+                            userId = userDto.id,
+                            limit = limit,
+                            fields = HomeItemFieldsBoxSets,
+                        )
                     if (usePaging) {
                         ApiRequestPager(
                             api,
