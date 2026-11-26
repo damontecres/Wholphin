@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -14,13 +16,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.filter.filterOptionsFor
@@ -115,12 +121,41 @@ fun ByParentFilterDialogContent(
 ) {
     val state by viewModel.state.collectAsState()
     val filterOptions = filterOptionsFor(library?.collectionType)
+    val filterCount = current.countFilters(filterOptions)
+
     var showSubMenu by remember { mutableStateOf<ItemFilterBy<out Any>?>(null) }
 
     LazyColumn(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier,
     ) {
+        if (filterCount > 0) {
+            item {
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused by interactionSource.collectIsFocusedAsState()
+                ListItem(
+                    selected = false,
+                    onClick = {
+                        onFilterChange.invoke(current.delete(filterOptions))
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = Color.Red.copy(alpha = .8f),
+                        )
+                    },
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.remove),
+                            color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    interactionSource = interactionSource,
+                )
+                HorizontalDivider()
+            }
+        }
         items(filterOptions) { filterOption ->
             val currentValue = filterOption.get(current)
             ListItem(
@@ -160,14 +195,35 @@ fun ByParentFilterDialogContent(
                 }
 
                 is DataLoadingState.Success<List<FilterValueOption>> -> {
-                    val filterCount = current.countFilters(filterOptions)
                     LazyColumn(
                         contentPadding = PaddingValues(8.dp),
                         modifier = modifier,
                     ) {
-                        if (filterCount > 0) {
+                        if (currentValue != null) {
                             item {
-                                // TODO list item to clear filters
+                                val interactionSource = remember { MutableInteractionSource() }
+                                val focused by interactionSource.collectIsFocusedAsState()
+                                ListItem(
+                                    selected = false,
+                                    onClick = {
+                                        onFilterChange.invoke(filterOption.set(null, current))
+                                        showSubMenu = null
+                                    },
+                                    leadingContent = {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = Color.Red.copy(alpha = .8f),
+                                        )
+                                    },
+                                    headlineContent = {
+                                        Text(
+                                            text = stringResource(R.string.remove),
+                                            color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
+                                        )
+                                    },
+                                    interactionSource = interactionSource,
+                                )
                                 HorizontalDivider()
                             }
                         }
