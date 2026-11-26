@@ -235,6 +235,7 @@ fun HomeSettingsPage(
                                     preferenceOptions = preferenceOptions,
                                     viewOptions = row.config.viewOptions,
                                     defaultViewOptions = defaultViewOptions,
+                                    libraries = state.libraries,
                                     onViewOptionsChange = {
                                         viewModel.updateViewOptions(dest.rowId, it)
                                     },

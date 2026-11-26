@@ -181,13 +181,14 @@ sealed interface HomeRowConfig {
     }
 
     /**
-     * An arbitrary [HomeGetItemsFilter] allowing to query for most anything
+     * An arbitrary [GetItemsFilter] allowing to query for most anything
      */
     @Serializable
     @SerialName("GetItems")
     data class GetItems(
         val name: String,
-        val filter: HomeGetItemsFilter,
+        val sort: SortAndDirection,
+        val filter: GetItemsFilter,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)

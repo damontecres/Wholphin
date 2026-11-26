@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
             }
             navigationManager.backStack = NavBackStack(*backStack.toTypedArray())
         } else {
-            navigationManager.backStack = NavBackStack(Destination.Home())
+            navigationManager.backStack = NavBackStack(Destination.Home(), Destination.HomeSettings) // TODO revert before merge
         }
 
         viewModel.serverRepository.currentUserFlow

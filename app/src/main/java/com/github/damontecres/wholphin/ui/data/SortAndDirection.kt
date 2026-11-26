@@ -196,7 +196,7 @@ fun getStringRes(sort: ItemSortBy): Int =
     }
 
 @Composable
-fun rememberSortOptions(collectionType: CollectionType): List<ItemSortBy> =
+fun rememberSortOptions(collectionType: CollectionType?): List<ItemSortBy> =
     remember(collectionType) {
         when (collectionType) {
             CollectionType.MOVIES -> MovieSortOptions

@@ -397,6 +397,14 @@ class HomeSettingsViewModel
                             )
                         }
 
+                        LibraryRowType.BY_PARENT -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = StringStringProvider(library.name),
+                                config = HomeRowConfig.ByParent(library.itemId),
+                            )
+                        }
+
                         LibraryRowType.COLLECTION,
                         LibraryRowType.PLAYLIST,
                         -> {

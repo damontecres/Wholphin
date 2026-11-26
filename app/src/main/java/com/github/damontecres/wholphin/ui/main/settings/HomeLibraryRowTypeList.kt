@@ -16,7 +16,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.services.SuggestionsWorker
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.CollectionType
@@ -57,9 +56,8 @@ fun HomeLibraryRowTypeList(
     }
 }
 
-fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
-    val supportsSuggestions = SuggestionsWorker.getTypeForCollection(library.collectionType) != null
-    return when {
+fun getSupportedRowTypes(library: Library): List<LibraryRowType> =
+    when {
         library.isRecordingFolder -> {
             listOf(
                 LibraryRowType.RECENTLY_RECORDED,
@@ -81,15 +79,17 @@ fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
                 LibraryRowType.SUGGESTIONS,
                 LibraryRowType.GENRES,
                 LibraryRowType.STUDIOS,
+                LibraryRowType.BY_PARENT,
             )
         }
 
-        supportsSuggestions -> {
+        library.collectionType == CollectionType.MOVIES -> {
             listOf(
                 LibraryRowType.RECENTLY_ADDED,
                 LibraryRowType.RECENTLY_RELEASED,
                 LibraryRowType.SUGGESTIONS,
                 LibraryRowType.GENRES,
+                LibraryRowType.BY_PARENT,
             )
         }
 
@@ -99,6 +99,7 @@ fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
                 LibraryRowType.RECENTLY_RELEASED,
                 LibraryRowType.GENRES,
                 LibraryRowType.COLLECTION,
+                LibraryRowType.BY_PARENT,
             )
         }
 
@@ -108,6 +109,7 @@ fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
                 LibraryRowType.RECENTLY_RELEASED,
                 LibraryRowType.GENRES,
                 LibraryRowType.PLAYLIST,
+                LibraryRowType.BY_PARENT,
             )
         }
 
@@ -116,10 +118,10 @@ fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
                 LibraryRowType.RECENTLY_ADDED,
                 LibraryRowType.RECENTLY_RELEASED,
                 LibraryRowType.GENRES,
+                LibraryRowType.BY_PARENT,
             )
         }
     }
-}
 
 enum class LibraryRowType(
     @param:StringRes val stringId: Int,
@@ -134,4 +136,5 @@ enum class LibraryRowType(
     RECENTLY_RECORDED(R.string.recently_recorded),
     COLLECTION(R.string.collection),
     PLAYLIST(R.string.playlist),
+    BY_PARENT(R.string.library),
 }

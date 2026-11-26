@@ -37,7 +37,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvShowStatus
 import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
@@ -52,6 +51,7 @@ import com.github.damontecres.wholphin.data.filter.DiscoverTvGenreFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStatusFilter
 import com.github.damontecres.wholphin.data.filter.DiscoverTvStudiosFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
+import com.github.damontecres.wholphin.data.filter.FilterBy
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.FilterVideoType
 import com.github.damontecres.wholphin.data.filter.GenreFilter
@@ -220,49 +220,11 @@ fun FilterByButton(
                         if (index == 0) {
                             LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                         }
-
                         val isSelected =
-                            remember(currentValue) {
-                                when (filterOption) {
-                                    GenreFilter,
-                                    StudioFilter,
-                                    -> {
-                                        (currentValue as? List<UUID>)
-                                            .orEmpty()
-                                            .contains(value.value)
-                                    }
-
-                                    FavoriteFilter,
-                                    PlayedFilter,
-                                    -> {
-                                        (currentValue as? Boolean) == value.name.toBoolean()
-                                    }
-
-                                    OfficialRatingFilter -> {
-                                        (currentValue as? List<String>)
-                                            .orEmpty()
-                                            .contains(value.name)
-                                    }
-
-                                    VideoTypeFilter -> {
-                                        (currentValue as? List<FilterVideoType>)
-                                            .orEmpty()
-                                            .contains(value.value)
-                                    }
-
-                                    YearFilter,
-                                    DecadeFilter,
-                                    -> {
-                                        (currentValue as? List<Int>)
-                                            .orEmpty()
-                                            .contains(value.value)
-                                    }
-
-                                    CommunityRatingFilter -> {
-                                        (currentValue as? Int) == value.value
-                                    }
-                                }
+                            remember(filterOption, value, currentValue) {
+                                isFilterOptionSelected(filterOption, value, currentValue)
                             }
+
                         val interactionSource = remember { MutableInteractionSource() }
                         val focused by interactionSource.collectIsFocusedAsState()
                         TvDropdownMenuItem(
@@ -277,101 +239,21 @@ fun FilterByButton(
                                 }
                             },
                             text = {
-                                if (filterOption == CommunityRatingFilter) {
-                                    SimpleStarRating(
-                                        "${value.name}+",
-                                        starColor = if (focused) EmptyStarColor else FilledStarColor,
-                                    )
-                                } else {
-                                    Text(
-                                        text = value.name,
-                                    )
-                                }
+                                FilterOptionTitle(
+                                    filterOption = filterOption,
+                                    value = value,
+                                    focused = focused,
+                                )
                             },
                             onClick = {
                                 val newFilter =
-                                    when (filterOption) {
-                                        GenreFilter,
-                                        StudioFilter,
-                                        -> {
-                                            val list = (currentValue as? List<UUID>).orEmpty()
-                                            val newValue =
-                                                list
-                                                    .toMutableList()
-                                                    .apply {
-                                                        if (isSelected) {
-                                                            remove(value.value!!)
-                                                        } else {
-                                                            add(value.value!! as UUID)
-                                                        }
-                                                    }.takeIf { it.isNotEmpty() }
-                                            filterOption.set(newValue, current)
-                                        }
-
-                                        FavoriteFilter,
-                                        PlayedFilter,
-                                        -> {
-                                            val played = value.name.toBoolean()
-                                            filterOption.set(played, current)
-                                        }
-
-                                        OfficialRatingFilter -> {
-                                            val list = (currentValue as? List<String>).orEmpty()
-                                            val newValue =
-                                                list
-                                                    .toMutableList()
-                                                    .apply {
-                                                        if (isSelected) {
-                                                            remove(value.name)
-                                                        } else {
-                                                            add(value.name)
-                                                        }
-                                                    }.takeIf { it.isNotEmpty() }
-                                            filterOption.set(newValue, current)
-                                        }
-
-                                        VideoTypeFilter -> {
-                                            val list =
-                                                (currentValue as? List<FilterVideoType>).orEmpty()
-                                            val newValue =
-                                                list
-                                                    .toMutableList()
-                                                    .apply {
-                                                        if (isSelected) {
-                                                            remove(value.value)
-                                                        } else {
-                                                            add(value.value as FilterVideoType)
-                                                        }
-                                                    }.takeIf { it.isNotEmpty() }
-                                            filterOption.set(newValue, current)
-                                        }
-
-                                        YearFilter,
-                                        DecadeFilter,
-                                        -> {
-                                            val list =
-                                                (currentValue as? List<Int>).orEmpty()
-                                            val newValue =
-                                                list
-                                                    .toMutableList()
-                                                    .apply {
-                                                        if (isSelected) {
-                                                            remove(value.value)
-                                                        } else {
-                                                            add(value.value as Int)
-                                                        }
-                                                    }.takeIf { it.isNotEmpty() }
-                                            filterOption.set(newValue, current)
-                                        }
-
-                                        CommunityRatingFilter -> {
-                                            filterOption.set(
-                                                value.value as? Int,
-                                                current,
-                                            )
-                                        }
-                                    }
-
+                                    updateFilter(
+                                        current = current,
+                                        filterOption = filterOption,
+                                        isSelected = isSelected,
+                                        value = value,
+                                        currentValue = currentValue,
+                                    )
                                 onFilterChange.invoke(newFilter)
                                 if (!filterOption.supportMultiple) {
                                     nestedDropDown = null
@@ -718,6 +600,161 @@ fun DiscoverFilterByButton(
         }
     }
 }
+
+@Composable
+fun FilterOptionTitle(
+    filterOption: FilterBy<*, *>,
+    value: FilterValueOption,
+    focused: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    if (filterOption == CommunityRatingFilter) {
+        SimpleStarRating(
+            "${value.name}+",
+            starColor = if (focused) EmptyStarColor else FilledStarColor,
+            modifier = modifier,
+        )
+    } else {
+        Text(
+            text = value.name,
+            modifier = modifier,
+        )
+    }
+}
+
+fun isFilterOptionSelected(
+    filterOption: ItemFilterBy<*>,
+    option: FilterValueOption,
+    currentValue: Any?,
+): Boolean =
+    when (filterOption) {
+        GenreFilter,
+        StudioFilter,
+        -> {
+            (currentValue as? List<UUID>)
+                .orEmpty()
+                .contains(option.value)
+        }
+
+        FavoriteFilter,
+        PlayedFilter,
+        -> {
+            (currentValue as? Boolean) == option.name.toBoolean()
+        }
+
+        OfficialRatingFilter -> {
+            (currentValue as? List<String>)
+                .orEmpty()
+                .contains(option.name)
+        }
+
+        VideoTypeFilter -> {
+            (currentValue as? List<FilterVideoType>)
+                .orEmpty()
+                .contains(option.value)
+        }
+
+        YearFilter,
+        DecadeFilter,
+        -> {
+            (currentValue as? List<Int>)
+                .orEmpty()
+                .contains(option.value)
+        }
+
+        CommunityRatingFilter -> {
+            (currentValue as? Int) == option.value
+        }
+    }
+
+fun updateFilter(
+    current: GetItemsFilter,
+    filterOption: ItemFilterBy<Any>,
+    isSelected: Boolean,
+    value: FilterValueOption,
+    currentValue: Any?,
+): GetItemsFilter =
+    when (filterOption) {
+        GenreFilter,
+        StudioFilter,
+        -> {
+            val list = (currentValue as? List<UUID>).orEmpty()
+            val newValue =
+                list
+                    .toMutableList()
+                    .apply {
+                        if (isSelected) {
+                            remove(value.value!!)
+                        } else {
+                            add(value.value!! as UUID)
+                        }
+                    }.takeIf { it.isNotEmpty() }
+            filterOption.set(newValue, current)
+        }
+
+        FavoriteFilter,
+        PlayedFilter,
+        -> {
+            val played = value.name.toBoolean()
+            filterOption.set(played, current)
+        }
+
+        OfficialRatingFilter -> {
+            val list = (currentValue as? List<String>).orEmpty()
+            val newValue =
+                list
+                    .toMutableList()
+                    .apply {
+                        if (isSelected) {
+                            remove(value.name)
+                        } else {
+                            add(value.name)
+                        }
+                    }.takeIf { it.isNotEmpty() }
+            filterOption.set(newValue, current)
+        }
+
+        VideoTypeFilter -> {
+            val list =
+                (currentValue as? List<FilterVideoType>).orEmpty()
+            val newValue =
+                list
+                    .toMutableList()
+                    .apply {
+                        if (isSelected) {
+                            remove(value.value)
+                        } else {
+                            add(value.value as FilterVideoType)
+                        }
+                    }.takeIf { it.isNotEmpty() }
+            filterOption.set(newValue, current)
+        }
+
+        YearFilter,
+        DecadeFilter,
+        -> {
+            val list =
+                (currentValue as? List<Int>).orEmpty()
+            val newValue =
+                list
+                    .toMutableList()
+                    .apply {
+                        if (isSelected) {
+                            remove(value.value)
+                        } else {
+                            add(value.value as Int)
+                        }
+                    }.takeIf { it.isNotEmpty() }
+            filterOption.set(newValue, current)
+        }
+
+        CommunityRatingFilter -> {
+            filterOption.set(
+                value.value as? Int,
+                current,
+            )
+        }
+    }
 
 @PreviewTvSpec
 @Composable

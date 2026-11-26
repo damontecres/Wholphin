@@ -40,9 +40,9 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.components.toAnnotatedString
-import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.getStringRes
+import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
@@ -62,6 +62,7 @@ fun HomeRowSettings(
     onConfigChange: (HomeRowConfig) -> Unit,
     onConfigAction: (HomeRowConfigAction) -> Unit,
     onApplyApplyAll: () -> Unit,
+    libraries: List<Library>,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
@@ -125,6 +126,7 @@ fun HomeRowSettings(
             }
             addAdditionalConfig(
                 config = config,
+                libraries = libraries,
                 onConfigChange = onConfigChange,
                 onConfigAction = onConfigAction,
             )
@@ -134,6 +136,7 @@ fun HomeRowSettings(
 
 private fun LazyListScope.addAdditionalConfig(
     config: HomeRowConfig,
+    libraries: List<Library>,
     onConfigChange: (HomeRowConfig) -> Unit,
     onConfigAction: (HomeRowConfigAction) -> Unit,
 ) {
@@ -159,7 +162,9 @@ private fun LazyListScope.addAdditionalConfig(
         }
 
         is HomeRowConfig.ByParent -> {
+            val library = libraries.firstOrNull { it.itemId == config.parentId }
             item {
+                val sortOptions = rememberSortOptions(library?.collectionType)
                 val sortAndDirection =
                     remember(config) {
                         config.sort ?: SortAndDirection(
@@ -192,6 +197,7 @@ private fun LazyListScope.addAdditionalConfig(
                         }
                         ByParentSortDialogContent(
                             current = sortAndDirection,
+                            sortOptions = sortOptions,
                             onClick = {
                                 val newSort =
                                     if (config.sort?.sort == it) {
@@ -209,6 +215,23 @@ private fun LazyListScope.addAdditionalConfig(
                     }
                 }
             }
+            item {
+                var showDialog by remember { mutableStateOf(false) }
+                ListItem(
+                    selected = false,
+                    onClick = { showDialog = true },
+                    headlineContent = {
+                        PreferenceTitle(stringResource(R.string.sort))
+                    },
+                    supportingContent = {
+                        Text(
+                            text = sortAndDirection.toAnnotatedString(),
+                        )
+                    },
+                )
+                if (showDialog) {
+                }
+            }
         }
 
         else -> {}
@@ -218,6 +241,7 @@ private fun LazyListScope.addAdditionalConfig(
 @Composable
 fun ByParentSortDialogContent(
     current: SortAndDirection,
+    sortOptions: List<ItemSortBy>,
     onClick: (ItemSortBy) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -225,7 +249,7 @@ fun ByParentSortDialogContent(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier,
     ) {
-        items(BoxSetSortOptions) { sort ->
+        items(sortOptions) { sort ->
             ListItem(
                 selected = sort == current.sort,
                 onClick = { onClick.invoke(sort) },
