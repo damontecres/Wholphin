@@ -191,6 +191,7 @@ class PlaybackViewModel
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
         private var trackChangeListener: TracksChangedListener? = null
+        private val displayModeLease = refreshRateService.openDisplayModeLease().also { addCloseable(it) }
         private val jobs = mutableListOf<Job>()
         private var subscribeJob: Job? = null
 
@@ -301,9 +302,6 @@ class PlaybackViewModel
                     nextUp = null,
                     maxBitrate = maxBitrate,
                 )
-            }
-            if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
-                addCloseable { refreshRateService.resetRefreshRate() }
             }
             controllerViewState.hideMilliseconds =
                 preferences.appPreferences.playbackPreferences.controllerTimeoutMs
@@ -816,6 +814,7 @@ class PlaybackViewModel
                             ?.firstOrNull { it.type == MediaStreamType.VIDEO }
                             ?.let { stream ->
                                 refreshRateService.changeRefreshRate(
+                                    lease = displayModeLease,
                                     stream = stream,
                                     switchRefreshRate = prefs.refreshRateSwitching,
                                     switchResolution = prefs.resolutionSwitching,
