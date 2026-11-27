@@ -449,7 +449,12 @@ class HomeSettingsService
         ): HomeRowConfigDisplay =
             when (config) {
                 is HomeRowConfig.ByParent -> {
-                    val name = getItemName(null, config.parentId)
+                    val name =
+                        if (config.title != null) {
+                            StringStringProvider(config.title)
+                        } else {
+                            getItemName(null, config.parentId)
+                        }
                     HomeRowConfigDisplay(
                         id,
                         name,
@@ -492,7 +497,7 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.GetItems -> {
-                    HomeRowConfigDisplay(id, StringStringProvider(config.name), config)
+                    HomeRowConfigDisplay(id, StringStringProvider(config.title), config)
                 }
 
                 is HomeRowConfig.NextUp -> {

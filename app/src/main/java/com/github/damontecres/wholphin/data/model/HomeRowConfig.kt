@@ -176,8 +176,10 @@ sealed interface HomeRowConfig {
         val recursive: Boolean = false,
         val sort: SortAndDirection? = null,
         val filter: GetItemsFilter = GetItemsFilter(),
+        override val title: String? = null,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
-    ) : HomeRowConfig {
+    ) : HomeRowConfig,
+        HasHomeRowTitle {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ByParent = this.copy(viewOptions = viewOptions)
     }
 
@@ -187,10 +189,11 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("GetItems")
     data class GetItems(
-        val name: String,
+        override val title: String,
         val filter: HomeGetItemsFilter,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
-    ) : HomeRowConfig {
+    ) : HomeRowConfig,
+        HasHomeRowTitle {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
     }
 
@@ -206,11 +209,12 @@ sealed interface HomeRowConfig {
     @SerialName("CustomEndpoint")
     data class CustomEndpoint(
         val endpoint: String,
-        val title: String,
+        override val title: String,
         val headers: List<KeyValueEntry>? = null,
         val query: List<KeyValueEntry>? = null,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
-    ) : HomeRowConfig {
+    ) : HomeRowConfig,
+        HasHomeRowTitle {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): CustomEndpoint = this.copy(viewOptions = viewOptions)
     }
 }
@@ -325,4 +329,11 @@ data class HomeGetItemsFilter(
             studioIds = studioIds,
             genreIds = genreIds,
         )
+}
+
+/**
+ * Marks that a [HomeRowConfig] has a specific title instead of a predefined one
+ */
+interface HasHomeRowTitle {
+    val title: String?
 }

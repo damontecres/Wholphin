@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HasHomeRowTitle
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatching
@@ -401,7 +402,11 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = StringStringProvider(library.name),
-                                config = HomeRowConfig.ByParent(library.itemId),
+                                config =
+                                    HomeRowConfig.ByParent(
+                                        parentId = library.itemId,
+                                        title = library.name,
+                                    ),
                             )
                         }
 
@@ -926,6 +931,12 @@ class HomeSettingsViewModel
                     state.value.rows
                         .indexOf(row)
                         .coerceAtLeast(0)
+                val title =
+                    if (config is HasHomeRowTitle) {
+                        config.title?.let(::StringStringProvider)
+                    } else {
+                        row.title
+                    } ?: row.title
                 updateState {
                     it.copy(
                         loading = LoadingState.Loading,
@@ -933,7 +944,10 @@ class HomeSettingsViewModel
                             it.rows.toMutableList().apply {
                                 set(
                                     index,
-                                    row.copy(config = config),
+                                    row.copy(
+                                        title = title,
+                                        config = config,
+                                    ),
                                 )
                             },
                     )

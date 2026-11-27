@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +22,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -50,6 +53,8 @@ import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceTitle
+import com.github.damontecres.wholphin.ui.preferences.StringInput
+import com.github.damontecres.wholphin.ui.preferences.StringInputDialog
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -165,6 +170,49 @@ private fun LazyListScope.addAdditionalConfig(
 
         is HomeRowConfig.ByParent -> {
             val library = libraries.firstOrNull { it.itemId == config.parentId }
+            item {
+                var showDialog by remember { mutableStateOf(false) }
+                val title = config.title ?: library?.name ?: stringResource(R.string.unknown)
+                ListItem(
+                    selected = false,
+                    onClick = { showDialog = true },
+                    headlineContent = {
+                        PreferenceTitle(stringResource(R.string.title))
+                    },
+                    supportingContent = {
+                        Text(
+                            text = title,
+                        )
+                    },
+                )
+                if (showDialog) {
+                    StringInputDialog(
+                        input =
+                            StringInput(
+                                title = stringResource(R.string.title),
+                                value = title,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Words,
+                                        autoCorrectEnabled = true,
+                                        keyboardType = KeyboardType.Text,
+                                    ),
+                                onSubmit = { title ->
+                                    onConfigChange.invoke(config.copy(title = title))
+                                    showDialog = false
+                                },
+                                maxLines = 1,
+                                confirmDiscard = false,
+                            ),
+                        onSave = { title ->
+                            onConfigChange.invoke(config.copy(title = title))
+                            showDialog = false
+                        },
+                        onDismissRequest = { showDialog = false },
+                        elevation = 3.dp,
+                    )
+                }
+            }
             item {
                 val sortOptions = rememberSortOptions(library?.collectionType)
                 val sortAndDirection =

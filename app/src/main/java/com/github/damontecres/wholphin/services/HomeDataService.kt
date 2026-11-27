@@ -390,13 +390,16 @@ class HomeDataService
 
                     // Not using getItemName because we want to throw the 404
                     val title =
-                        api.libraryApi
-                            .getItem(
-                                userId = serverRepository.currentUser?.id,
-                                itemId = row.parentId,
-                            ).content.name
-                            ?.let { StringStringProvider(it) }
-                            ?: ResStringProvider(R.string.collection)
+                        if (row.title != null) {
+                            StringStringProvider(row.title)
+                        } else {
+                            api.libraryApi
+                                .getItem(
+                                    userId = serverRepository.currentUser?.id,
+                                    itemId = row.parentId,
+                                ).content.name
+                                ?.let { StringStringProvider(it) }
+                        } ?: ResStringProvider(R.string.unknown)
                     if (usePaging) {
                         ApiRequestPager(
                             api,
@@ -443,7 +446,7 @@ class HomeDataService
                             .map { BaseItem(it, row.viewOptions.useSeries) }
                     }.let {
                         Success(
-                            StringStringProvider(row.name),
+                            StringStringProvider(row.title),
                             it,
                             row.viewOptions,
                             rowType = row,
