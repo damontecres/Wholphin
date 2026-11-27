@@ -5,16 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.IntentService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PendingResult
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import dagger.assisted.Assisted
@@ -56,6 +60,7 @@ class SwitchUserViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val imageUrlService: ImageUrlService,
+        private val intentService: IntentService,
         @Assisted val server: JellyfinServer,
     ) : ViewModel() {
         @AssistedFactory
@@ -132,8 +137,7 @@ class SwitchUserViewModel
             viewModelScope.async(WholphinDispatchers.IO) {
                 try {
                     val current = serverRepository.changeUser(server, user)
-                    navigationManager.reloadHome()
-                    setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                    navigateToAppContent(current)
                     SwitchUserResult.Success
                 } catch (ex: InvalidStatusException) {
                     when (ex.status) {
@@ -180,7 +184,7 @@ class SwitchUserViewModel
                     )
                     val current =
                         serverRepository.changeUser(server.url, authenticationResult, existingUser)
-                    setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                    navigateToAppContent(current)
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
                     if (ex is InvalidStatusException && ex.status == 401) {
@@ -226,7 +230,7 @@ class SwitchUserViewModel
                                 authenticationResult,
                                 existingUser,
                             )
-                        setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                        navigateToAppContent(current)
                     } catch (_: CancellationException) {
                         // no-op, user may have canceled
                     } catch (ex: Exception) {
@@ -242,6 +246,28 @@ class SwitchUserViewModel
                         setError("Error with Quick Connect", ex)
                     }
                 }
+        }
+
+        /**
+         * Navigate into the app after a successful sign in, opening a pending launcher channel item if the user can access it
+         */
+        private suspend fun navigateToAppContent(current: CurrentUser) {
+            when (val pending = intentService.consumePending()) {
+                is PendingResult.Allowed -> {
+                    navigationManager.backStack.clear()
+                    navigationManager.backStack.addAll(pending.destinations)
+                }
+
+                PendingResult.Denied -> {
+                    navigationManager.reloadHome()
+                    showToast(context, context.getString(R.string.requested_item_not_accessible))
+                }
+
+                PendingResult.None -> {
+                    navigationManager.reloadHome()
+                }
+            }
+            setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
         }
 
         fun cancelQuickConnect() {

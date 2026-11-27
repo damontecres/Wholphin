@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.IntentResult
 import com.github.damontecres.wholphin.services.IntentService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PendingChannelTarget
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.test.currentUser
@@ -92,6 +93,7 @@ class TestMainActivityViewModel {
         val mockToast = mockk<Toast>()
         every { Toast.makeText(any(), any<CharSequence>(), any()) } returns mockToast
         every { mockToast.show() } returns Unit
+        every { intentService.clearPending() } returns Unit
     }
 
     @After
@@ -398,6 +400,66 @@ class TestMainActivityViewModel {
                     destination is Destination.Favorites,
                 )
             }
+        }
+
+    @Test
+    fun `Test intent result requires sign in`() =
+        runTest(testDispatcher) {
+            setupPreferences {
+                signInAutomatically = false
+            }
+            every { serverRepository.current } returns MutableStateFlow(null)
+            coEvery { serverRepository.getMostRecentServer() } returns
+                RestoredSession.ServerOnly(server)
+            every { context.getString(R.string.sign_in_to_open_item) } returns "Sign in"
+            val pending =
+                PendingChannelTarget(
+                    UUID.randomUUID(),
+                    listOf(Destination.Favorites),
+                )
+            coEvery { intentService.parseIntent(any()) } returns IntentResult.RequiresSignIn(pending)
+            every { intentService.setPending(pending) } returns Unit
+
+            val result = viewModel.handleIntent(Intent())
+            assertTrue(result)
+
+            verify { intentService.setPending(pending) }
+            verify(exactly = 0) { intentService.clearPending() }
+            val slot = slot<SetupDestination>()
+            verify { setupNavigationManager.navigateTo(capture(slot)) }
+            slot.captured.let { destination ->
+                Assert.assertTrue(
+                    "destination is ${destination::class}",
+                    destination is SetupDestination.UserList,
+                )
+                destination as SetupDestination.UserList
+                Assert.assertEquals(server, destination.server)
+            }
+        }
+
+    @Test
+    fun `Test activity recreated in foreground does not restart`() =
+        runTest(testDispatcher) {
+            every { serverRepository.current } returns MutableStateFlow(currentUser)
+            every { deviceProfileService.mediaCodecCapabilitiesTest } returns mockk(relaxed = true)
+            coEvery { intentService.parseIntent(any()) } returns IntentResult.Error("Error")
+            val intent = Intent()
+
+            viewModel.activityCreated(intent)
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { intentService.parseIntent(intent) }
+
+            // Configuration change, such as a locale switch, while in the foreground
+            viewModel.activityStopped(changingConfigurations = true)
+            viewModel.activityCreated(intent)
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { intentService.parseIntent(intent) }
+
+            // App went to the background, then the activity was recreated
+            viewModel.activityStopped(changingConfigurations = false)
+            viewModel.activityCreated(intent)
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 2) { intentService.parseIntent(intent) }
         }
 
     @Test
