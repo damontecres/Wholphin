@@ -360,7 +360,7 @@ fun HomeSettingsPage(
             listState = listState,
             takeFocus = false,
             showEmptyRows = true,
-            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+            showLogo = preferences.showLogos,
             showViewMore = false,
             modifier =
                 Modifier

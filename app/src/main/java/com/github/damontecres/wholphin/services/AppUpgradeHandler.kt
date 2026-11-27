@@ -506,5 +506,22 @@ class AppUpgradeHandler
                     }
                 }
             }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.1.2-11-g0"))) {
+                // showLogos moved from a global setting to a per-user one, so copy the global value to existing users
+                val showLogos =
+                    appPreferences.data
+                        .first()
+                        .interfacePreferences.showLogos
+                serverDao
+                    .getServers()
+                    .flatMap { it.users }
+                    .filter { it.appPreferences.showLogos == null }
+                    .forEach { user ->
+                        serverDao.updateUser(
+                            user.copy(appPreferences = user.appPreferences.copy(showLogos = showLogos)),
+                        )
+                    }
+            }
         }
     }

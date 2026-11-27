@@ -144,6 +144,18 @@ class PreferencesViewModel
             }
         }
 
+        fun setShowLogos(
+            user: JellyfinUser,
+            showLogos: Boolean,
+        ) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.updateUserPreferences(
+                    user,
+                    user.appPreferences.copy(showLogos = showLogos),
+                )
+            }
+        }
+
         fun resetQuickConnectStatus() {
             _quickConnectStatus.value = LoadingState.Pending
         }

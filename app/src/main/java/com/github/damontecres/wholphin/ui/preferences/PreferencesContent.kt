@@ -627,6 +627,22 @@ fun PreferencesContent(
                                     )
                                 }
 
+                                AppPreference.ShowLogos -> {
+                                    pref as AppSwitchPreference<AppPreferences>
+                                    val value = currentUser?.appPreferences?.showLogos ?: pref.defaultValue
+                                    SwitchPreference(
+                                        title = stringResource(pref.title),
+                                        value = value,
+                                        onClick = {
+                                            currentUser?.let { viewModel.setShowLogos(it, !value) }
+                                        },
+                                        summaryOn = pref.summaryOn?.let { stringResource(pref.summaryOn) },
+                                        summaryOff = pref.summaryOff?.let { stringResource(pref.summaryOff) },
+                                        interactionSource = interactionSource,
+                                        modifier = focusModifier,
+                                    )
+                                }
+
                                 ExperimentalPreference.Enable -> {
                                     var showConfirm by remember { mutableStateOf(false) }
                                     pref as AppSwitchPreference<AppPreferences>

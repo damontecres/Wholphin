@@ -54,6 +54,7 @@ import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
@@ -92,16 +93,18 @@ sealed interface ScreensaverItem {
 
 @Composable
 fun AppScreensaver(
-    prefs: AppPreferences,
+    preferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: ScreensaverViewModel = hiltViewModel(),
 ) {
     val currentItem by viewModel.currentItem.collectAsState(null)
+    val prefs = preferences.appPreferences
     AppScreensaverContent(
         currentItem = currentItem,
         showClock = prefs.interfacePreferences.screensaverPreference.showClock,
         duration = prefs.interfacePreferences.screensaverPreference.duration.milliseconds,
         animate = prefs.interfacePreferences.screensaverPreference.animate,
+        showLogo = preferences.showLogos,
         modifier = modifier,
     )
 }
@@ -113,6 +116,7 @@ fun AppScreensaverContent(
     showClock: Boolean,
     duration: Duration,
     animate: Boolean,
+    showLogo: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -171,7 +175,7 @@ fun AppScreensaverContent(
                 )
 
                 var logoError by remember(currentItem) { mutableStateOf(false) }
-                if (!logoError) {
+                if (showLogo && !logoError) {
                     AsyncImage(
                         model =
                             ImageRequest

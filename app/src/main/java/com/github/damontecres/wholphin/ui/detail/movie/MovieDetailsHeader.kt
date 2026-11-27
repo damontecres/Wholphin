@@ -52,7 +52,7 @@ fun MovieDetailsHeader(
         // Title
         TitleOrLogo(
             item = movie,
-            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+            showLogo = preferences.showLogos,
             modifier =
                 Modifier
                     .fillMaxWidth(.75f)

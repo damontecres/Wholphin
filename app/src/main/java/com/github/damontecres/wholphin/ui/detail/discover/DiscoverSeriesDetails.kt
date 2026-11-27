@@ -270,7 +270,7 @@ fun DiscoverSeriesDetailsContent(
                             series = series,
                             rating = rating,
                             overviewOnClick = overviewOnClick,
-                            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                            showLogo = preferences.showLogos,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()

@@ -25,6 +25,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.github.damontecres.wholphin.data.RestoredSession
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.CoilConfig
@@ -114,6 +115,7 @@ class WholphinDreamService :
                                             showClock = screensaverPrefs.showClock,
                                             duration = screensaverPrefs.duration.milliseconds,
                                             animate = screensaverPrefs.animate,
+                                            showLogo = UserPreferences(prefs, user?.appPreferences).showLogos,
                                             modifier = Modifier.fillMaxSize(),
                                         )
                                         if (screensaverPrefs.dimEnabled) {

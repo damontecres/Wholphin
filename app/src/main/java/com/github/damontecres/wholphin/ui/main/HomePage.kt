@@ -223,7 +223,7 @@ fun HomePage(
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
-                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                showLogo = preferences.showLogos,
                 showViewMore = true,
                 onClickViewMore = onClickViewMore,
                 modifier = modifier,

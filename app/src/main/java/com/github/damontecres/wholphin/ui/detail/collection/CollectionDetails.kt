@@ -339,7 +339,7 @@ fun CollectionDetailsContent(
                         if (state.viewOptions.cardViewOptions.showDetails) {
                             HomePageHeader(
                                 item = focusedItem,
-                                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                                showLogo = preferences.showLogos,
                                 modifier =
                                     Modifier
                                         .padding(
@@ -375,7 +375,7 @@ fun CollectionDetailsContent(
                     ) {
                         CollectionDetailsHeader(
                             collection = state.collection!!,
-                            showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                            showLogo = preferences.showLogos,
                             logoImageUrl = state.logoImageUrl,
                             overviewOnClick = overviewOnClick,
                             bringIntoViewRequester = bringIntoViewRequester,

@@ -237,6 +237,21 @@ class ServerRepositoryTest {
         }
 
     @Test
+    fun `Test updateUserPreferences updates current user`() =
+        runTest {
+            val newPrefs = user.appPreferences.copy(showLogos = false)
+            val updatedUser = user.copy(appPreferences = newPrefs)
+            every { mockJellyfinServerDao.addOrUpdateUser(updatedUser) } returns updatedUser
+
+            val serverRepository = create()
+            setUpCurrentUser(serverRepository)
+            serverRepository.updateUserPreferences(user, newPrefs)
+
+            verify(exactly = 1) { mockJellyfinServerDao.addOrUpdateUser(updatedUser) }
+            Assert.assertEquals(false, serverRepository.currentUser?.appPreferences?.showLogos)
+        }
+
+    @Test
     fun `Test remove user`() =
         runTest {
             coEvery { mockJellyfinServerDao.deleteUser(any(), any()) } just Runs

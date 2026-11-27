@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.data
 import android.content.Context
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.services.hilt.IoDispatcher
 import com.github.damontecres.wholphin.util.WholphinDispatchers
@@ -304,7 +305,18 @@ class ServerRepository
             requireLogin: Boolean,
         ) {
             val newUser = user.copy(pin = pin, requireLogin = requireLogin)
-            val updatedUser = serverDao.addOrUpdateUser(newUser)
+            saveUser(newUser)
+        }
+
+        suspend fun updateUserPreferences(
+            user: JellyfinUser,
+            appPreferences: JellyfinUserPreferences,
+        ) {
+            saveUser(user.copy(appPreferences = appPreferences))
+        }
+
+        private fun saveUser(user: JellyfinUser) {
+            val updatedUser = serverDao.addOrUpdateUser(user)
             val cur = current.value
             if (cur?.user?.id == updatedUser.id && cur.server?.id == user.serverId) {
                 // Updating current user, so push out the change

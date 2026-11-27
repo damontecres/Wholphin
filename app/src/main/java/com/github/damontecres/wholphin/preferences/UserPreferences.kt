@@ -10,7 +10,10 @@ import org.jellyfin.sdk.model.api.UserConfiguration
 data class UserPreferences(
     val appPreferences: AppPreferences,
     val userPreferences: JellyfinUserPreferences?,
-)
+) {
+    val showLogos: Boolean
+        get() = userPreferences?.showLogos ?: AppPreference.ShowLogos.defaultValue
+}
 
 val DefaultUserConfiguration =
     UserConfiguration(

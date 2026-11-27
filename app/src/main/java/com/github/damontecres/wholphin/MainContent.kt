@@ -142,7 +142,7 @@ fun MainContent(
                     exit = ScreensaverService.exitAnimation,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    AppScreensaver(userPreferences.appPreferences, Modifier.fillMaxSize())
+                    AppScreensaver(userPreferences, Modifier.fillMaxSize())
                 }
             }
             AnimatedVisibility(

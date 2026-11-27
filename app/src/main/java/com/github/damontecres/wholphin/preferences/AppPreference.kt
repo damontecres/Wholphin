@@ -571,10 +571,9 @@ sealed interface AppPreference<Pref, T> {
             AppSwitchPreference<AppPreferences>(
                 title = R.string.prefer_logos,
                 defaultValue = true,
-                getter = { it.interfacePreferences.showLogos },
-                setter = { prefs, value ->
-                    prefs.updateInterfacePreferences { showLogos = value }
-                },
+                // Stored per user in JellyfinUserPreferences.showLogos
+                getter = { true },
+                setter = { prefs, _ -> prefs },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )

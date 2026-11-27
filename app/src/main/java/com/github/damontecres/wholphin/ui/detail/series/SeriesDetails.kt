@@ -374,7 +374,7 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
-                        showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                        showLogo = preferences.showLogos,
                         overviewOnClick = overviewOnClick,
                         bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
