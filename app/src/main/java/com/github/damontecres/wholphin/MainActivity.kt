@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
             playerBackend = prefs.playbackPreferences.playerBackend
         }
 
-        viewModel.appStart(intent)
+        viewModel.activityCreated(intent)
         setContent {
             MaterialTheme(colorScheme = PurpleThemeColors.darkScheme) {
                 Surface(Modifier.fillMaxSize()) {
@@ -323,6 +323,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        viewModel.activityStopped(isChangingConfigurations)
         screensaverService.stop(true)
         tvProviderSchedulerService.launchOneTimeRefresh()
     }
@@ -431,7 +432,31 @@ class MainActivityViewModel
     ) : ViewModel() {
         private val mutex = Mutex()
 
+        private var started = false
+        private var stoppedSinceStart = false
+
+        /**
+         * Called from [MainActivity.onCreate]. Skips [appStart] if the activity is only being recreated due to a
+         * configuration change (such as switching to a user with a different UI language) while in the foreground,
+         * so the already signed-in state isn't reset. If the app was in the background, sign in is still required.
+         */
+        fun activityCreated(intent: Intent?) {
+            if (started && !stoppedSinceStart) {
+                Timber.i("Activity recreated in the foreground, keeping current state")
+                return
+            }
+            appStart(intent)
+        }
+
+        fun activityStopped(changingConfigurations: Boolean) {
+            if (!changingConfigurations) {
+                stoppedSinceStart = true
+            }
+        }
+
         fun appStart(intent: Intent?) {
+            started = true
+            stoppedSinceStart = false
             viewModelScope.launchDefault {
                 mutex.withLock {
                     try {
@@ -489,7 +514,19 @@ class MainActivityViewModel
         @VisibleForTesting
         internal suspend fun handleIntent(intent: Intent?): Boolean {
             val result = intent?.let { intentService.parseIntent(intent) }
+            if (result != null && result !is IntentResult.RequiresSignIn) {
+                intentService.clearPending()
+            }
             when (result) {
+                is IntentResult.RequiresSignIn -> {
+                    intentService.setPending(result.pending)
+                    val destination = serverRepository.getMostRecentServer().destination
+                    setupNavigationManager.navigateTo(destination)
+                    Timber.i("Intent requires sign in, deferring until a user signs in")
+                    showToast(context, context.getString(R.string.sign_in_to_open_item))
+                    return true
+                }
+
                 is IntentResult.Error -> {
                     val current = serverRepository.current.value
                     val destination =

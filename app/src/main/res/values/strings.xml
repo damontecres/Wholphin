@@ -950,6 +950,8 @@
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="login_credentials_expired">Credentials expired, please login in again</string>
     <string name="login_not_authorized">You are not authorized to access the server at this time</string>
+    <string name="sign_in_to_open_item">Sign in to open this item</string>
+    <string name="requested_item_not_accessible">Requested item isn\'t accessible with the signed-in user</string>
     <string name="max_resolution">Max resolution before transcoding</string>
 
     <string name="resolution_8k">8K</string>

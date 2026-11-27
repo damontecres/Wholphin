@@ -8,12 +8,15 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.nav.Destination
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,6 +28,8 @@ class IntentService
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
     ) {
+        private val pendingChannelTarget = AtomicReference<PendingChannelTarget?>(null)
+
         suspend fun parseIntent(intent: Intent): IntentResult {
             Timber.v("Parsing intent %s", intent)
             Timber.v("Intent extras: %s", intent.extras)
@@ -38,13 +43,24 @@ class IntentService
                 return IntentResult.NoOp
             }
 
+            val isChannelIntent = intent.getStringParam(INTENT_ITEM_TYPE) != null
+
             val result = prepare(intent)
             if (result != null) {
+                if (isChannelIntent && result is IntentResult.Error && result.requiresSignIn) {
+                    val itemId = intent.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
+                    val destination = getDestinationFromChannel(intent)
+                    if (itemId != null && destination != null) {
+                        return IntentResult.RequiresSignIn(
+                            PendingChannelTarget(itemId, listOf(destination)),
+                        )
+                    }
+                }
                 return result
             }
 
             // Existence of this key implies launching from Play Next channel
-            if (intent.getStringParam(INTENT_ITEM_TYPE) != null) {
+            if (isChannelIntent) {
                 return getDestinationFromChannel(intent)?.let {
                     IntentResult.Target(
                         destinations = listOf(it),
@@ -135,22 +151,56 @@ class IntentService
                 val result = serverRepository.restoreLastSession()
                 Timber.v("Restored result=%s", result)
                 when (result) {
-                    RestoredSession.None,
-                    is RestoredSession.ServerOnly,
-                    -> {
+                    RestoredSession.None -> {
                         IntentResult.Error("Could not auto sign-in, specify a server & user")
+                    }
+
+                    is RestoredSession.ServerOnly -> {
+                        IntentResult.Error(
+                            "Could not auto sign-in, specify a server & user",
+                            requiresSignIn = true,
+                        )
                     }
 
                     is RestoredSession.Success -> {
                         if (result.currentUser.user.isProtected) {
-                            IntentResult.Error("Could not auto sign-in, user is protected")
+                            IntentResult.Error(
+                                "Could not auto sign-in, user is protected",
+                                requiresSignIn = true,
+                            )
                         } else {
                             null
                         }
                     }
                 }
             } else {
-                IntentResult.Error("Auto sign-in not enabled")
+                IntentResult.Error("Auto sign-in not enabled", requiresSignIn = true)
+            }
+        }
+
+        fun setPending(target: PendingChannelTarget) {
+            pendingChannelTarget.set(target)
+        }
+
+        fun clearPending() {
+            pendingChannelTarget.set(null)
+        }
+
+        /**
+         * Take the item stored by [setPending], if any, and check whether the now signed-in user can access it
+         *
+         * The pending item is cleared, so subsequent calls return [PendingResult.None]
+         */
+        suspend fun consumePending(): PendingResult {
+            val pending = pendingChannelTarget.getAndSet(null) ?: return PendingResult.None
+            return try {
+                api.libraryApi.getItem(pending.itemId)
+                PendingResult.Allowed(pending.destinations)
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (ex: Exception) {
+                Timber.w(ex, "Pending item %s is not accessible", pending.itemId)
+                PendingResult.Denied
             }
         }
 
@@ -205,8 +255,12 @@ class IntentService
     }
 
 sealed interface IntentResult {
+    /**
+     * @param requiresSignIn true if the intent could be handled once a user signs in manually
+     */
     data class Error(
         val message: String,
+        val requiresSignIn: Boolean = false,
     ) : IntentResult
 
     data object NoOp : IntentResult
@@ -215,4 +269,26 @@ sealed interface IntentResult {
         val destinations: List<Destination>,
         val addHomeToBackStack: Boolean = true,
     ) : IntentResult
+
+    /**
+     * A launcher channel item was requested, but a user must sign in before it can be opened
+     */
+    data class RequiresSignIn(
+        val pending: PendingChannelTarget,
+    ) : IntentResult
+}
+
+data class PendingChannelTarget(
+    val itemId: UUID,
+    val destinations: List<Destination>,
+)
+
+sealed interface PendingResult {
+    data object None : PendingResult
+
+    data object Denied : PendingResult
+
+    data class Allowed(
+        val destinations: List<Destination>,
+    ) : PendingResult
 }

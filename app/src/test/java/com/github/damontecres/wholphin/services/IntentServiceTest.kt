@@ -27,6 +27,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.operations.LibraryApi
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -466,5 +467,134 @@ class IntentServiceTest {
             assertEquals(position, second.positionMs)
 
             coVerify { libraryApi.getItem(itemId) }
+        }
+
+    private fun channelIntent() =
+        Intent().apply {
+            putExtra(IntentService.INTENT_ITEM_ID, itemId.toString())
+            putExtra(IntentService.INTENT_ITEM_TYPE, BaseItemKind.MOVIE.serialName)
+        }
+
+    @Test
+    fun `Test channel intent with auto sign in disabled requires sign in`() =
+        runTest {
+            setupPreferences {
+                signInAutomatically = false
+            }
+
+            val result = intentService.parseIntent(channelIntent())
+            assertIs<IntentResult.RequiresSignIn>(result)
+
+            assertEquals(itemId, result.pending.itemId)
+            assertEquals(1, result.pending.destinations.size)
+            val first = result.pending.destinations.first()
+            assertIs<Destination.MediaItem>(first)
+            assertEquals(itemId, first.itemId)
+
+            coVerify(exactly = 0) { serverRepository.tryChangeUser(any(), any()) }
+            coVerify(exactly = 0) { libraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test channel episode intent with auto sign in disabled requires sign in`() =
+        runTest {
+            setupPreferences {
+                signInAutomatically = false
+            }
+            val seriesId = UUID.randomUUID()
+            val seasonId = UUID.randomUUID()
+            val intent =
+                Intent().apply {
+                    putExtra(IntentService.INTENT_ITEM_ID, itemId.toString())
+                    putExtra(IntentService.INTENT_ITEM_TYPE, BaseItemKind.EPISODE.serialName)
+                    putExtra(IntentService.INTENT_SERIES_ID, seriesId.toString())
+                    putExtra(IntentService.INTENT_SEASON_ID, seasonId.toString())
+                    putExtra(IntentService.INTENT_SEASON_NUMBER, 2)
+                    putExtra(IntentService.INTENT_EPISODE_NUMBER, 5)
+                }
+
+            val result = intentService.parseIntent(intent)
+            assertIs<IntentResult.RequiresSignIn>(result)
+
+            assertEquals(itemId, result.pending.itemId)
+            val first = result.pending.destinations.single()
+            assertIs<Destination.SeriesOverview>(first)
+            assertEquals(seriesId, first.itemId)
+            assertEquals(itemId, first.seasonEpisode?.episodeId)
+            assertEquals(seasonId, first.seasonEpisode?.seasonId)
+        }
+
+    @Test
+    fun `Test channel intent with protected profile requires sign in`() =
+        runTest {
+            setupPreferences {
+                signInAutomatically = true
+            }
+            every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
+            coEvery { serverRepository.restoreLastSession() } returns
+                RestoredSession.ServerOnly(protectedCurrentUser.server)
+
+            val result = intentService.parseIntent(channelIntent())
+            assertIs<IntentResult.RequiresSignIn>(result)
+            assertEquals(itemId, result.pending.itemId)
+        }
+
+    @Test
+    fun `Test channel intent with no server is an error`() =
+        runTest {
+            setupPreferences {
+                signInAutomatically = true
+            }
+            every { serverRepository.current } returns MutableStateFlow<CurrentUser?>(null)
+            coEvery { serverRepository.restoreLastSession() } returns RestoredSession.None
+
+            val result = intentService.parseIntent(channelIntent())
+            assertIs<IntentResult.Error>(result)
+        }
+
+    @Test
+    fun `Test consumePending allowed`() =
+        runTest {
+            val destination = Destination.MediaItem(itemId, BaseItemKind.MOVIE)
+            intentService.setPending(PendingChannelTarget(itemId, listOf(destination)))
+
+            val result = intentService.consumePending()
+            assertIs<PendingResult.Allowed>(result)
+            assertEquals(listOf(destination), result.destinations)
+
+            coVerify(exactly = 1) { libraryApi.getItem(itemId) }
+        }
+
+    @Test
+    fun `Test consumePending denied`() =
+        runTest {
+            val otherId = UUID.randomUUID()
+            coEvery { libraryApi.getItem(otherId) } throws RuntimeException("Not found")
+            intentService.setPending(
+                PendingChannelTarget(otherId, listOf(Destination.MediaItem(otherId, BaseItemKind.MOVIE))),
+            )
+
+            val result = intentService.consumePending()
+            assertIs<PendingResult.Denied>(result)
+        }
+
+    @Test
+    fun `Test consumePending none`() =
+        runTest {
+            assertIs<PendingResult.None>(intentService.consumePending())
+
+            intentService.setPending(
+                PendingChannelTarget(itemId, listOf(Destination.MediaItem(itemId, BaseItemKind.MOVIE))),
+            )
+            assertIs<PendingResult.Allowed>(intentService.consumePending())
+            assertIs<PendingResult.None>(intentService.consumePending())
+
+            intentService.setPending(
+                PendingChannelTarget(itemId, listOf(Destination.MediaItem(itemId, BaseItemKind.MOVIE))),
+            )
+            intentService.clearPending()
+            assertIs<PendingResult.None>(intentService.consumePending())
+
+            coVerify(exactly = 1) { libraryApi.getItem(itemId) }
         }
 }
