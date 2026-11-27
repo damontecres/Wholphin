@@ -4,6 +4,7 @@ import androidx.core.net.toUri
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.ServerUserConfig
 import com.github.damontecres.wholphin.data.model.createGenreDestination
@@ -347,81 +348,14 @@ class HomeDataService
                 }
 
                 is HomeRowConfig.ByParent -> {
-                    val library = libraries.firstOrNull { it.itemId == row.parentId }
-                    // TODO handle filter.override
-                    val request =
-                        row.filter.applyTo(
-                            GetItemsRequest(
-                                userId = userDto.id,
-                                parentId = row.parentId,
-                                recursive = row.recursive,
-                                sortBy =
-                                    row.sort?.let {
-                                        buildList {
-                                            if (it.sort == ItemSortBy.RANDOM) {
-                                                add(ItemSortBy.SORT_NAME)
-                                                add(ItemSortBy.RANDOM)
-                                            } else {
-                                                add(it.sort)
-                                                if (it.sort != ItemSortBy.SORT_NAME) {
-                                                    add(ItemSortBy.SORT_NAME)
-                                                }
-                                            }
-                                        }
-                                    },
-                                sortOrder =
-                                    row.sort?.let {
-                                        buildList {
-                                            if (it.sort == ItemSortBy.RANDOM) {
-                                                add(SortOrder.ASCENDING)
-                                                add(it.direction)
-                                            } else {
-                                                add(it.direction)
-                                                if (it.sort != ItemSortBy.SORT_NAME) {
-                                                    add(SortOrder.ASCENDING)
-                                                }
-                                            }
-                                        }
-                                    },
-                                limit = limit,
-                                fields = library.itemFields,
-                            ),
-                        )
-
-                    // Not using getItemName because we want to throw the 404
-                    val title =
-                        if (row.title != null) {
-                            StringStringProvider(row.title)
-                        } else {
-                            api.libraryApi
-                                .getItem(
-                                    userId = serverRepository.currentUser?.id,
-                                    itemId = row.parentId,
-                                ).content.name
-                                ?.let { StringStringProvider(it) }
-                        } ?: ResStringProvider(R.string.unknown)
-                    if (usePaging) {
-                        ApiRequestPager(
-                            api,
-                            request,
-                            GetItemsRequestHandler,
-                            scope,
-                            useSeriesForPrimary = row.viewOptions.useSeries,
-                        ).init()
-                    } else {
-                        GetItemsRequestHandler
-                            .execute(api, request)
-                            .content.items
-                            .map { BaseItem(it, row.viewOptions.useSeries) }
-                    }.let {
-                        Success(
-                            title,
-                            it,
-                            row.viewOptions,
-                            rowType = row,
-                            showViewMore = it.size >= limit,
-                        )
-                    }
+                    fetchDataForByParent(
+                        row = row,
+                        scope = scope,
+                        userDto = userDto,
+                        libraries = libraries,
+                        limit = limit,
+                        usePaging = usePaging,
+                    )
                 }
 
                 is HomeRowConfig.GetItems -> {
@@ -750,6 +684,151 @@ class HomeDataService
                 Timber.v("Got %s items from custom endpoint", queryResult.items.size)
                 queryResult.items
             }
+        }
+
+        private suspend fun fetchDataForByParent(
+            row: HomeRowConfig.ByParent,
+            scope: CoroutineScope,
+            userDto: ServerUserConfig,
+            libraries: List<Library>,
+            limit: Int,
+            usePaging: Boolean,
+        ): HomeRowLoadingState {
+            val library = libraries.firstOrNull { it.itemId == row.parentId }
+            val sortBy =
+                row.sort?.let {
+                    buildList {
+                        if (it.sort == ItemSortBy.RANDOM) {
+                            add(ItemSortBy.SORT_NAME)
+                            add(ItemSortBy.RANDOM)
+                        } else {
+                            add(it.sort)
+                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                add(ItemSortBy.SORT_NAME)
+                            }
+                        }
+                    }
+                }
+            val sortOrder =
+                row.sort?.let {
+                    buildList {
+                        if (it.sort == ItemSortBy.RANDOM) {
+                            add(SortOrder.ASCENDING)
+                            add(it.direction)
+                        } else {
+                            add(it.direction)
+                            if (it.sort != ItemSortBy.SORT_NAME) {
+                                add(SortOrder.ASCENDING)
+                            }
+                        }
+                    }
+                }
+
+            val items =
+                when (row.filter.override) {
+                    GetItemsFilterOverride.NONE -> {
+                        val request =
+                            row.filter.applyTo(
+                                GetItemsRequest(
+                                    userId = userDto.id,
+                                    parentId = row.parentId,
+                                    recursive = row.recursive,
+                                    sortBy = sortBy,
+                                    sortOrder = sortOrder,
+                                    limit = limit,
+                                    fields = library.itemFields,
+                                ),
+                            )
+                        if (usePaging) {
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetItemsRequestHandler,
+                                scope,
+                                useSeriesForPrimary = row.viewOptions.useSeries,
+                            ).init()
+                        } else {
+                            GetItemsRequestHandler
+                                .execute(api, request)
+                                .content.items
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        }
+                    }
+
+                    GetItemsFilterOverride.PERSON -> {
+                        val request =
+                            row.filter.applyTo(
+                                GetPersonsRequest(
+                                    userId = userDto.id,
+                                    parentId = row.parentId,
+                                    limit = limit,
+                                    fields = library.itemFields,
+                                ),
+                            )
+                        if (usePaging) {
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetPersonsHandler,
+                                scope,
+                                useSeriesForPrimary = row.viewOptions.useSeries,
+                            ).init()
+                        } else {
+                            GetPersonsHandler
+                                .execute(api, request)
+                                .content.items
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        }
+                    }
+
+                    GetItemsFilterOverride.ARTIST -> {
+                        val request =
+                            row.filter.applyTo(
+                                GetArtistsRequest(
+                                    userId = userDto.id,
+                                    parentId = row.parentId,
+                                    sortBy = sortBy,
+                                    sortOrder = sortOrder,
+                                    limit = limit,
+                                    fields = library.itemFields,
+                                ),
+                            )
+                        if (usePaging) {
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetArtistsHandler,
+                                scope,
+                                useSeriesForPrimary = row.viewOptions.useSeries,
+                            ).init()
+                        } else {
+                            GetArtistsHandler
+                                .execute(api, request)
+                                .content.items
+                                .map { BaseItem(it, row.viewOptions.useSeries) }
+                        }
+                    }
+                }
+
+            // Not using getItemName because we want to throw the 404
+            val title =
+                if (row.title != null) {
+                    StringStringProvider(row.title)
+                } else {
+                    api.libraryApi
+                        .getItem(
+                            userId = serverRepository.currentUser?.id,
+                            itemId = row.parentId,
+                        ).content.name
+                        ?.let { StringStringProvider(it) }
+                } ?: ResStringProvider(R.string.unknown)
+            return Success(
+                title,
+                items,
+                row.viewOptions,
+                rowType = row,
+                showViewMore = items.size >= limit,
+            )
         }
     }
 
