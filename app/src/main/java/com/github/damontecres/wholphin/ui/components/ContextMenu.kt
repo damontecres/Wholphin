@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.res.Resources
+import androidx.annotation.VisibleForTesting
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -95,6 +96,7 @@ data class ContextMenuActions(
     val onClickGoTo: (BaseItem) -> Unit = { navigateTo(it.destination()) },
     val onClickRemoveFromNextUp: (BaseItem) -> Unit = {},
     val onClickAddToQueue: (BaseItem) -> Unit = {},
+    val onClickPlayMusic: ((BaseItem) -> Unit)? = null,
     val onRemoveFromPlaylist: (Int, UUID) -> Unit = { _, _ -> },
 )
 
@@ -328,7 +330,8 @@ fun ContextMenu(
     }
 }
 
-private fun buildContextMenuItems(
+@VisibleForTesting
+internal fun buildContextMenuItems(
     resources: Resources,
     contextMenu: ContextMenu.ForBaseItem,
     item: BaseItem,
@@ -475,6 +478,17 @@ private fun buildContextMenuItems(
             }
         }
         if (item.type == BaseItemKind.MUSIC_ALBUM || item.type == BaseItemKind.AUDIO) {
+            actions.onClickPlayMusic?.let { onClickPlayMusic ->
+                add(
+                    DialogItem(
+                        resources.getString(R.string.play),
+                        Icons.Default.PlayArrow,
+                        dismissOnClick = true,
+                    ) {
+                        onClickPlayMusic(item)
+                    },
+                )
+            }
             add(
                 DialogItem(
                     resources.getString(R.string.add_to_queue),

@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
+import com.github.damontecres.wholphin.ui.detail.music.playMusic
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
@@ -84,4 +85,6 @@ class AddPlaylistViewModel
                 addToQueue(api, musicService, item, -1)
             }
         }
+
+        fun playMusic(item: BaseItem) = playMusic(api, musicService, item)
     }
