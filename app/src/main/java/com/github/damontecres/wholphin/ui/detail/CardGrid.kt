@@ -131,6 +131,7 @@ fun <T : CardGridItem> CardGrid(
             initialFirstVisibleItemIndex = focusedIndex,
         )
     val scope = rememberCoroutineScope()
+    var pageFocusTarget by remember { mutableStateOf<Int?>(null) }
     val firstFocus = remember { FocusRequester() }
     val zeroFocus = remember { FocusRequester() }
     var previouslyFocusedIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -193,6 +194,7 @@ fun <T : CardGridItem> CardGrid(
                     if (DEBUG) Timber.d("newPosition=$newPosition")
                     focusOn(newPosition)
                     gridState.scrollToItem(newPosition, 0)
+                    pageFocusTarget = newPosition
                 }
             }
         }
@@ -345,7 +347,7 @@ fun <T : CardGridItem> CardGrid(
                         items(pager.size) { index ->
                             val item = pager[index]
                             val details =
-                                remember(index, item, cardWidthPx, columns) {
+                                remember(index, item, cardWidthPx, columns, currentFocusedIndex) {
                                     val mod =
                                         if ((index == currentFocusedIndex) or (currentFocusedIndex < 0 && index == 0)) {
                                             if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
@@ -390,6 +392,12 @@ fun <T : CardGridItem> CardGrid(
                                                 },
                                     )
                                 }
+                            if (index == pageFocusTarget) {
+                                LaunchedEffect(index) {
+                                    firstFocus.tryRequestFocus()
+                                    pageFocusTarget = null
+                                }
+                            }
                             cardContent.invoke(details)
                         }
                     }
