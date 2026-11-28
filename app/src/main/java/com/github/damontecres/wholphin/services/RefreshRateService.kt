@@ -19,7 +19,9 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -145,10 +147,13 @@ class RefreshRateService
         }
 
         companion object {
+            // Slightly wider than the difference between integer and 1000/1001 rates.
+            private const val FRAME_RATE_TOLERANCE = 0.0011
+
             /**
              * Find the best display mode for the given stream & preferences
              *
-             * @param displayModes candidates that are sorted by resolution and frame rate descending
+             * @param displayModes candidates sorted by descending pixel count and ascending refresh rate
              */
             fun findDisplayMode(
                 displayModes: List<DisplayMode>,
@@ -158,63 +163,79 @@ class RefreshRateService
                 refreshRateSwitch: Boolean,
                 resolutionSwitch: Boolean,
             ): DisplayMode? {
+                if (!targetFrameRate.isFinite()) return null
                 val streamRate = targetFrameRate.times(1000).roundToInt()
-//                Timber.v("display modes: %s", displayModes.joinToString("\n"))
-                val candidates =
+                if (streamRate <= 0) return null
+                val tolerance = if (refreshRateSwitch) FRAME_RATE_TOLERANCE else 0.0
+                val candidates = displayModes.filter { it.physicalWidth >= streamWidth && it.physicalHeight >= streamHeight }
+
+                fun oneToOneError(mode: DisplayMode) = frameRateError(mode.refreshRateRounded, streamRate.toDouble(), tolerance)
+
+                fun cadenceError(mode: DisplayMode) = cadenceError(mode.refreshRateRounded, streamRate, tolerance)
+
+                val oneToOne = candidates.filter { oneToOneError(it).isFinite() }
+                val compatible =
                     if (refreshRateSwitch) {
-                        displayModes
-                            .filterNot { it.physicalHeight < streamHeight || it.physicalWidth < streamWidth }
-                            .filter { frameRateMatches(it.refreshRateRounded, streamRate) }
+                        candidates.filter { frameRateMatches(it.refreshRateRounded, streamRate) }
                     } else {
-                        displayModes
-                            .filterNot { it.physicalHeight < streamHeight || it.physicalWidth < streamWidth }
+                        candidates.filter { cadenceError(it).isFinite() }
                     }
-//                Timber.v("display modes candidates: %s", candidates.joinToString("\n"))
-                return if (!resolutionSwitch) {
-                    candidates
-                        .filter { it.refreshRateRounded == streamRate }
-                        .maxByOrNull { it.physicalWidth * it.physicalHeight }
-                        ?: candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
-                } else {
-                    // Exact resolution & frame rate
-                    candidates.firstOrNull {
-                        it.physicalWidth == streamWidth &&
-                            it.physicalHeight == streamHeight &&
-                            it.refreshRateRounded == streamRate
-                    }
-                        // Next highest resolution, exact frame rate
-                        ?: candidates.lastOrNull {
-                            it.physicalWidth >= streamWidth &&
-                                it.physicalHeight >= streamHeight &&
-                                it.refreshRateRounded == streamRate
+                if (!resolutionSwitch) {
+                    return oneToOne.closestAtResolution(oneToOne.largestMode(), ::oneToOneError)
+                        ?: if (refreshRateSwitch) {
+                            compatible.closestAtResolution(compatible.largestMode(), ::cadenceError)
+                        } else {
+                            candidates.largestMode()
                         }
-                        // Exact resolution, acceptable frame rate
-                        ?: candidates.lastOrNull {
-                            it.physicalWidth == streamWidth &&
-                                it.physicalHeight == streamHeight &&
-                                frameRateMatches(it.refreshRateRounded, streamRate)
-                        }
-                        // Next highest resolution, acceptable frame rate
-                        ?: candidates.lastOrNull {
-                            it.physicalWidth >= streamWidth &&
-                                it.physicalHeight >= streamHeight &&
-                                frameRateMatches(it.refreshRateRounded, streamRate)
-                        }
-                        // Fall back to largest resolution, exact frame rate
-                        ?: candidates
-                            .filter { it.refreshRateRounded == streamRate }
-                            .maxByOrNull { it.physicalWidth * it.physicalHeight }
-                        // Finally, just the highest resolution
-                        ?: candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
                 }
+
+                val exactResolution = oneToOne.firstOrNull { it.physicalWidth == streamWidth && it.physicalHeight == streamHeight }
+                return oneToOne.closestAtResolution(exactResolution, ::oneToOneError)
+                    ?: oneToOne.asReversed().closestAtResolution(oneToOne.lastOrNull(), ::oneToOneError)
+                    ?: compatible.asReversed().closestAtResolution(compatible.lastOrNull(), ::cadenceError)
+                    ?: candidates.takeUnless { refreshRateSwitch }?.largestMode()
+            }
+
+            private fun List<DisplayMode>.largestMode(): DisplayMode? = maxByOrNull { it.physicalWidth * it.physicalHeight }
+
+            private fun List<DisplayMode>.closestAtResolution(
+                preferred: DisplayMode?,
+                error: (DisplayMode) -> Double,
+            ): DisplayMode? {
+                if (preferred == null) return null
+                return asSequence()
+                    .filter { it.physicalWidth == preferred.physicalWidth && it.physicalHeight == preferred.physicalHeight }
+                    .minByOrNull(error)
             }
 
             fun frameRateMatches(
                 refreshRateRounded: Int,
                 streamRate: Int,
-            ): Boolean {
-                return refreshRateRounded % streamRate == 0 || // Exact multiple
-                    refreshRateRounded == (streamRate * 2.5).roundToInt() // eg 24 & 60fps
+            ): Boolean = cadenceError(refreshRateRounded, streamRate, FRAME_RATE_TOLERANCE).isFinite()
+
+            private fun cadenceError(
+                refreshRate: Int,
+                streamRate: Int,
+                tolerance: Double,
+            ): Double {
+                if (streamRate <= 0) return Double.POSITIVE_INFINITY
+                val multiple = (refreshRate.toDouble() / streamRate).roundToInt()
+                val integerTarget = streamRate.toDouble() * multiple
+                val pulldownTarget = (streamRate * 2.5).roundToLong().toDouble()
+                return minOf(
+                    frameRateError(refreshRate, integerTarget, tolerance),
+                    frameRateError(refreshRate, pulldownTarget, tolerance),
+                )
+            }
+
+            private fun frameRateError(
+                refreshRate: Int,
+                targetRate: Double,
+                tolerance: Double,
+            ): Double {
+                if (refreshRate <= 0 || targetRate <= 0) return Double.POSITIVE_INFINITY
+                val error = abs(refreshRate - targetRate)
+                return if (error <= targetRate * tolerance) error else Double.POSITIVE_INFINITY
             }
         }
     }
