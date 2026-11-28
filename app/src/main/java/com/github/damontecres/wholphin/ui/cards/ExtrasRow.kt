@@ -23,6 +23,7 @@ fun ExtrasRow(
         onLongClickItem = onLongClickItem,
         cardContent = { index, item, mod, onClick, onLongClick ->
             SeasonCard(
+                type = ItemCardImageType.UNKNOWN,
                 title = item?.title,
                 name = null,
                 subtitle = item?.subtitle,

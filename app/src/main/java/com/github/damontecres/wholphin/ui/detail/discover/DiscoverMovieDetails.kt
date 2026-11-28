@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
+import com.github.damontecres.wholphin.ui.cards.ItemCardImageType
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -395,6 +396,7 @@ fun TrailerRow(
                                 else -> null
                             }
                         SeasonCard(
+                            type = ItemCardImageType.UNKNOWN,
                             title = item.name,
                             subtitle = subtitle,
                             name = item.name,

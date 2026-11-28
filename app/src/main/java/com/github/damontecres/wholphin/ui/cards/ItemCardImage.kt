@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,10 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -35,13 +31,16 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.preferences.WatchedIndicatorType
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -81,6 +80,7 @@ fun ItemCardImage(
             }
         }
     ItemCardImage(
+        type = ItemCardImageType.from(item?.type),
         imageUrl = imageUrl,
         name = name,
         showOverlay = showOverlay,
@@ -97,6 +97,7 @@ fun ItemCardImage(
 
 @Composable
 fun ItemCardImage(
+    type: ItemCardImageType,
     imageUrl: String?,
     name: String?,
     showOverlay: Boolean,
@@ -140,6 +141,7 @@ fun ItemCardImage(
         }
         if (showOverlay) {
             ItemCardImageOverlay(
+                type = type,
                 favorite = favorite,
                 watched = watched,
                 unwatchedCount = unwatchedCount,
@@ -196,6 +198,7 @@ fun BoxScope.ItemCardImageFallback(
 
 @Composable
 fun ItemCardImageOverlay(
+    type: ItemCardImageType,
     favorite: Boolean,
     watched: Boolean,
     unwatchedCount: Int,
@@ -203,6 +206,7 @@ fun ItemCardImageOverlay(
     numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) {
+    val ic = LocalInterfaceCustomization.current
     Box(modifier = modifier.fillMaxSize()) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -212,7 +216,7 @@ fun ItemCardImageOverlay(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
         ) {
-            if (numberOfVersions > 1) {
+            if (numberOfVersions > 1 && ic.versionsIndicator) {
                 Box(
                     modifier =
                         Modifier
@@ -230,7 +234,7 @@ fun ItemCardImageOverlay(
                     )
                 }
             }
-            if (favorite) {
+            if (favorite && ic.favoriteIndicator) {
                 FavoriteIndicator()
             }
         }
@@ -242,10 +246,13 @@ fun ItemCardImageOverlay(
                     .padding(4.dp)
                     .align(Alignment.TopEnd),
         ) {
-            if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
+            if (watched &&
+                (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0) &&
+                ic.watchedIndicator.contains(type)
+            ) {
                 WatchedIcon(Modifier.size(24.dp))
             }
-            if (unwatchedCount > 0) {
+            if (unwatchedCount > 0 && ic.unwatchedCount) {
                 Box(
                     modifier =
                         Modifier
@@ -264,8 +271,8 @@ fun ItemCardImageOverlay(
                 }
             }
         }
-
-        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100) {
+        val showWatchProgress = ic.watchProgress.contains(type)
+        if (watchedPercent != null && watchedPercent > 0 && watchedPercent < 100 && showWatchProgress) {
             PlayedPercentBar(
                 percent = watchedPercent,
                 modifier = Modifier.align(Alignment.BottomStart),
@@ -285,3 +292,52 @@ fun FavoriteIndicator(
     fontFamily = FontAwesome,
     modifier = modifier,
 )
+
+enum class ItemCardImageType {
+    MOVIE,
+    TV_SHOW,
+    TV_SEASON,
+    EPISODE,
+    COLLECTION,
+    PERSON,
+    PLAYLIST,
+    DISCOVER_MOVIE,
+    DISCOVER_SERIES,
+    UNKNOWN,
+    ;
+
+    companion object {
+        fun from(type: BaseItemKind?): ItemCardImageType =
+            when (type) {
+                BaseItemKind.MOVIE -> MOVIE
+                BaseItemKind.SERIES -> TV_SHOW
+                BaseItemKind.SEASON -> TV_SEASON
+                BaseItemKind.EPISODE -> EPISODE
+                BaseItemKind.BOX_SET -> COLLECTION
+                BaseItemKind.PERSON -> PERSON
+                BaseItemKind.PLAYLIST -> PLAYLIST
+                else -> UNKNOWN
+            }
+
+        fun from(type: SeerrItemType?): ItemCardImageType =
+            when (type) {
+                SeerrItemType.MOVIE -> DISCOVER_MOVIE
+                SeerrItemType.TV -> DISCOVER_SERIES
+                SeerrItemType.PERSON -> UNKNOWN
+                SeerrItemType.UNKNOWN -> UNKNOWN
+                null -> UNKNOWN
+            }
+
+        fun from(type: WatchedIndicatorType): ItemCardImageType =
+            when (type) {
+                WatchedIndicatorType.MOVIE -> MOVIE
+                WatchedIndicatorType.TV_SHOW -> TV_SHOW
+                WatchedIndicatorType.TV_SEASON -> TV_SEASON
+                WatchedIndicatorType.EPISODE -> EPISODE
+                WatchedIndicatorType.COLLECTION -> COLLECTION
+                WatchedIndicatorType.PLAYLIST -> PLAYLIST
+                WatchedIndicatorType.OTHER -> UNKNOWN
+                WatchedIndicatorType.UNRECOGNIZED -> UNKNOWN
+            }
+    }
+}

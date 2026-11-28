@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
+import com.github.damontecres.wholphin.ui.cards.ItemCardImageType
 import com.github.damontecres.wholphin.ui.cards.PersonCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.personRowCardWidth
@@ -116,6 +117,7 @@ fun SearchPageCard(
                 }
 
             SeasonCard(
+                type = ItemCardImageType.from(item?.type),
                 title = item?.title,
                 subtitle = subtitle,
                 name = item?.name,

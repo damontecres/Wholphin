@@ -54,6 +54,9 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
+    data object CardSettings : Destination(true)
+
+    @Serializable
     data class Search(
         val query: String = "",
     ) : Destination()

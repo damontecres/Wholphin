@@ -18,6 +18,8 @@ import com.github.damontecres.wholphin.data.model.RememberedTab
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoice
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.CardInterfacePreferences
+import com.github.damontecres.wholphin.preferences.CardPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.HdrOverrideMode
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
@@ -503,6 +505,27 @@ class AppUpgradeHandler
                         val stcs = plcs.flatMap(SeriesTrackChoice::from)
                         Timber.i("Migrating %s PLC to %s STC", plcs.size, stcs.size)
                         seriesTrackChoiceDao.save(stcs)
+                    }
+                }
+            }
+
+            if (previous.isEqualOrBefore(Version.fromString("1.2.0-0-g0"))) {
+                // directPlayDolbyVisionEL was replaced by doviProfile7Override; carry the setting forward
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        cardInterfacePreferences =
+                            CardInterfacePreferences
+                                .newBuilder()
+                                .apply {
+                                    clearWatchedIndicator()
+                                    addAllWatchedIndicator(CardPreferences.ShowWatchIndicator.defaultValue)
+                                    addAllWatchedProgress(CardPreferences.ShowWatchProgress.defaultValue)
+                                    favoriteIndicator = CardPreferences.ShowFavoritesIndicator.defaultValue
+                                    unwatchedCount = CardPreferences.ShowUnwatchedCount.defaultValue
+                                    episodeEpisodeNumber = CardPreferences.ShowEpisodeNumber.defaultValue
+                                    episodeSeasonNumber = CardPreferences.ShowSeasonNumber.defaultValue
+                                    versionsIndicator = CardPreferences.ShowVersions.defaultValue
+                                }.build()
                     }
                 }
             }

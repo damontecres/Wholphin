@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.preferences.subtitle
+package com.github.damontecres.wholphin.ui.preferences
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -39,28 +39,35 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
-import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.ifElse
-import com.github.damontecres.wholphin.ui.preferences.ClickPreference
-import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
-import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
-import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
-import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
+/**
+ * Display a simple list of [PreferenceGroup] preferences
+ *
+ * [preferenceContent] is invoked for each preference with the default using [ComposablePreference]
+ */
 @Composable
-fun SubtitlePreferencesContent(
+fun <T : Any> SimplePreferencesContent(
     title: String,
-    preferences: SubtitlePreferences,
-    prefList: List<PreferenceGroup<SubtitlePreferences>>,
-    onPreferenceChange: suspend (SubtitlePreferences) -> Unit,
+    preferences: T,
+    prefList: List<PreferenceGroup<T>>,
+    onPreferenceChange: suspend (T) -> AppPreferences,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
+    preferenceContent: @Composable (
+        AppPreference<T, Any>,
+        MutableInteractionSource,
+        Modifier,
+        @Composable () -> Unit,
+    ) -> Unit = { _, _, _, defaultContent ->
+        defaultContent.invoke()
+    },
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -124,7 +131,7 @@ fun SubtitlePreferencesContent(
                                 .map { it.preferences }
                                 .flatten()
                     groupPreferences.forEachIndexed { prefIndex, pref ->
-                        pref as AppPreference<SubtitlePreferences, Any>
+                        pref as AppPreference<T, Any>
                         item {
                             val isFirst = groupIndex == 0 && prefIndex == 0
                             val isLast =
@@ -136,11 +143,6 @@ fun SubtitlePreferencesContent(
                                 if (focused) {
                                     focusedIndex = Pair(groupIndex, prefIndex)
                                     onFocus.invoke(groupIndex, prefIndex)
-                                }
-                            }
-                            if (preferences.useSeparateHdr && pref == SubtitleSettings.SeparateHdr) {
-                                LaunchedEffect(Unit) {
-                                    bringIntoViewRequester.bringIntoView()
                                 }
                             }
                             val focusModifier =
@@ -158,26 +160,11 @@ fun SubtitlePreferencesContent(
                                         lastFocusRequester,
                                     )
 
-                            when (pref) {
-                                SubtitleSettings.Reset -> {
-                                    ClickPreference(
-                                        title = stringResource(pref.title),
-                                        onClick = {
-                                            scope.launch(ExceptionHandler()) {
-                                                val newValue =
-                                                    SubtitlePreferences
-                                                        .newBuilder()
-                                                        .apply { resetSubtitles() }
-                                                        .build()
-                                                onPreferenceChange.invoke(newValue)
-                                            }
-                                        },
-                                        interactionSource = interactionSource,
-                                        modifier = focusModifier,
-                                    )
-                                }
-
-                                else -> {
+                            preferenceContent.invoke(
+                                pref,
+                                interactionSource,
+                                focusModifier,
+                                {
                                     val value = pref.getter.invoke(preferences)
                                     ComposablePreference(
                                         preference = pref,
@@ -211,8 +198,8 @@ fun SubtitlePreferencesContent(
                                         interactionSource = interactionSource,
                                         modifier = focusModifier,
                                     )
-                                }
-                            }
+                                },
+                            )
                         }
                     }
                 }

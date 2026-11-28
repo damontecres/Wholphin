@@ -211,6 +211,34 @@ message InterfacePreferences {
   bool show_logos = 13;
   SearchPreferences search_preferences = 14;
   repeated DisplayToggle display_toggles = 15;
+
+  CardInterfacePreferences card_interface_preferences = 16;
+}
+
+message CardInterfacePreferences {
+  // Progress
+  repeated WatchedIndicatorType watched_indicator = 1;
+  repeated WatchedIndicatorType watched_progress = 2;
+
+  // Other indicators
+  bool favorite_indicator = 3;
+  bool unwatched_count = 4;
+  bool versions_indicator = 5;
+
+  // Episodes
+  bool episode_season_number = 6;
+  bool episode_episode_number = 7;
+}
+
+enum WatchedIndicatorType {
+  MOVIE = 0;
+  TV_SHOW = 1;
+  TV_SEASON = 2;
+  EPISODE = 3;
+  COLLECTION = 4;
+  PLAYLIST = 5;
+  // Gap to add more later
+  OTHER = 100;
 }
 
 message AdvancedPreferences {

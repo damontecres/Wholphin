@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,31 +21,26 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.joinNotBlank
+import com.github.damontecres.wholphin.ui.util.LocalInterfaceCustomization
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -60,6 +54,7 @@ fun BannerCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cornerText: String? = null,
+    cornerTextAlt: String? = null,
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
@@ -69,7 +64,9 @@ fun BannerCard(
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = true,
+    numberOfVersions: Int = 0,
 ) {
+    val prefs = LocalInterfaceCustomization.current
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val fillHeight =
@@ -102,6 +99,8 @@ fun BannerCard(
     // Stabilize callbacks to prevent AsyncImage from recomposing
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
+
+    val cardImageType = ItemCardImageType.from(item?.type)
 
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
@@ -139,7 +138,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText != null) {
+            if (played || cornerText != null || cornerTextAlt != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -148,10 +147,24 @@ fun BannerCard(
                             .align(Alignment.TopEnd)
                             .padding(4.dp),
                 ) {
-                    if (played && (playPercent <= 0 || playPercent >= 100)) {
+                    if (played && (playPercent <= 0 || playPercent >= 100) && prefs.watchedIndicator.contains(cardImageType)) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
-                    if (cornerText != null) {
+                    val text =
+                        if (item?.type == BaseItemKind.EPISODE) {
+                            when {
+                                prefs.seasonNum && prefs.episodeNum -> listOf(cornerTextAlt, cornerText).joinNotBlank(" ")
+                                prefs.seasonNum -> cornerTextAlt
+                                prefs.episodeNum -> cornerText
+                                else -> null
+                            }
+                        } else if (prefs.unwatchedCount) {
+                            // TODO this is based on episodeUnplayedCornerText
+                            cornerText
+                        } else {
+                            null
+                        }
+                    if (text != null) {
                         Box(
                             modifier =
                                 Modifier
@@ -161,7 +174,7 @@ fun BannerCard(
                                     ),
                         ) {
                             Text(
-                                text = cornerText,
+                                text = text,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(4.dp),
@@ -170,19 +183,42 @@ fun BannerCard(
                     }
                 }
             }
-            if (favorite) {
-                Text(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp),
-                    color = colorResource(android.R.color.holo_red_light),
-                    text = stringResource(R.string.fa_heart),
-                    fontSize = 16.sp,
-                    fontFamily = FontAwesome,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp),
+            ) {
+                if (numberOfVersions > 1 && prefs.versionsIndicator) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(
+                                    AppColors.TransparentBlack50,
+                                    shape = RoundedCornerShape(25),
+                                ),
+                    ) {
+                        Text(
+                            text = numberOfVersions.toString(),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium,
+//                            fontSize = 16.sp,
+                            modifier = Modifier.padding(4.dp),
+                        )
+                    }
+                }
+                if (favorite && prefs.favoriteIndicator) {
+                    FavoriteIndicator()
+                }
             }
-            if (playPercent > 0 && playPercent < 100) {
+            val showProgress =
+                remember(playPercent, prefs, cardImageType) {
+                    val enabled = prefs.watchProgress.contains(cardImageType)
+                    enabled && playPercent > 0 && playPercent < 100
+                }
+            if (showProgress) {
                 PlayedPercentBar(
                     percent = playPercent,
                     modifier = Modifier.align(Alignment.BottomStart),
@@ -201,6 +237,7 @@ fun BannerCardWithTitle(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cornerText: String? = null,
+    cornerTextAlt: String? = null,
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
@@ -210,6 +247,7 @@ fun BannerCardWithTitle(
     imageType: ImageType = ImageType.PRIMARY,
     imageContentScale: ContentScale = ContentScale.FillBounds,
     useSeriesForPrimary: Boolean = item?.useSeriesForPrimary ?: true,
+    numberOfVersions: Int = 0,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
@@ -226,6 +264,7 @@ fun BannerCardWithTitle(
             onLongClick = onLongClick,
             modifier = Modifier,
             cornerText = cornerText,
+            cornerTextAlt = cornerTextAlt,
             played = played,
             favorite = favorite,
             playPercent = playPercent,
@@ -235,6 +274,7 @@ fun BannerCardWithTitle(
             imageType = imageType,
             imageContentScale = imageContentScale,
             useSeriesForPrimary = useSeriesForPrimary,
+            numberOfVersions = numberOfVersions,
         )
         SlidingCardText(focused) {
             Text(

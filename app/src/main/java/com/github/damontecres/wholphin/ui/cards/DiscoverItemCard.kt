@@ -98,6 +98,7 @@ fun DiscoverItemCard(
                         .fillMaxSize(),
             ) {
                 ItemCardImage(
+                    type = ItemCardImageType.from(item?.type),
                     imageUrl = item?.posterUrl,
                     name = item?.title,
                     showOverlay = false,

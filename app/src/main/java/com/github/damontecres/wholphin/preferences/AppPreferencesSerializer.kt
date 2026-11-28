@@ -149,6 +149,19 @@ class AppPreferencesSerializer
                                             addItemTypes(BaseItemKind.MOVIE.serialName)
                                             addItemTypes(BaseItemKind.SERIES.serialName)
                                         }.build()
+
+                                cardInterfacePreferences =
+                                    CardInterfacePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            addAllWatchedIndicator(CardPreferences.ShowWatchIndicator.defaultValue)
+                                            addAllWatchedProgress(CardPreferences.ShowWatchIndicator.defaultValue)
+                                            favoriteIndicator = CardPreferences.ShowFavoritesIndicator.defaultValue
+                                            unwatchedCount = CardPreferences.ShowUnwatchedCount.defaultValue
+                                            episodeEpisodeNumber = CardPreferences.ShowEpisodeNumber.defaultValue
+                                            episodeSeasonNumber = CardPreferences.ShowSeasonNumber.defaultValue
+                                            versionsIndicator = CardPreferences.ShowVersions.defaultValue
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -271,6 +284,9 @@ inline fun AppPreferences.updateExperimentalPreferences(block: ExperimentalPrefe
     update {
         experimentalPreferences = experimentalPreferences.toBuilder().apply(block).build()
     }
+
+inline fun CardInterfacePreferences.update(block: CardInterfacePreferences.Builder.() -> Unit): CardInterfacePreferences =
+    toBuilder().apply(block).build()
 
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()

@@ -166,6 +166,7 @@
     <string name="season_episode_number_padded_range">S%1$02dE%2$02d-E%3$02d</string>
     <string name="episode_number_short">E%1$d</string>
     <string name="season_number">Season %1$d</string>
+    <string name="season_number_short">S%1$d</string>
     <string name="tv_shows_title">TV Shows</string>
     <string name="ui_interface">Interface</string>
     <string name="unknown">Unknown</string>
@@ -987,4 +988,30 @@
     <string name="managed_by_server">Managed by server</string>
     <string name="error">Error</string>
     <string name="dolby_vision_invalid">Invalid Dolby Vision</string>
+    <string name="watch_indicator">Watched indicator</string>
+    <string-array name="watch_indicator_types">
+        <item>@string/movies_title</item>
+        <item>@string/tv_shows_title</item>
+        <item>@string/tv_seasons</item>
+        <item>@string/episodes</item>
+        <item>@string/collections</item>
+        <item>@string/playlists</item>
+        <item>@string/other_extras_title</item>
+    </string-array>
+    <string-array name="watch_progress_subtitles">
+        <item>@string/in_progress</item>
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
+        <item>@string/in_progress</item>
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
+        <item /> <!-- Intentionally blank -->
+    </string-array>
+    <string name="watch_progress">Watched progress</string>
+    <string name="unwatched_count">Unwatched count</string>
+    <string name="card_customization">Card customization</string>
+    <string name="episode_number_text">Episode number</string>
+    <string name="season_number_text">Season number</string>
+    <string name="versions_title">Versions</string>
+    <string name="unwatched">Unwatched</string>
 </resources>

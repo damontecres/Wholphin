@@ -903,6 +903,12 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.SubtitleSettings(false),
             )
 
+        val CardInterface =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.card_customization,
+                destination = Destination.CardSettings,
+            )
+
         val RefreshRateSwitching =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.refresh_rate_switching,
@@ -1177,6 +1183,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.PlayThemeMusic,
                     AppPreference.SubtitleStyle,
+                    AppPreference.CardInterface,
                     AppPreference.ThemeColors,
                     AppPreference.ScreensaverSettings,
                 ),
