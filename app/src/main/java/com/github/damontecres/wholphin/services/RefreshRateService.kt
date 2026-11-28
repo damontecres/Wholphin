@@ -31,10 +31,18 @@ class RefreshRateService
     constructor(
         @param:ApplicationContext private val context: Context,
     ) {
+        private val displayModeLeases = DisplayModeLeases { MainActivity.instance.changeDisplayMode(it) }
+
+        /**
+         * Open a lease for one playback to pass to [changeRefreshRate]. Close it when the playback ends.
+         */
+        fun openDisplayModeLease(): DisplayModeLeases.Lease = displayModeLeases.open()
+
         /**
          * Find the best display mode for the given stream and signal to change to it
          */
         suspend fun changeRefreshRate(
+            lease: DisplayModeLeases.Lease,
             stream: MediaStream,
             switchRefreshRate: Boolean,
             switchResolution: Boolean,
@@ -83,7 +91,7 @@ class RefreshRateService
                     Handler(Looper.myLooper() ?: Looper.getMainLooper()),
                 )
                 try {
-                    MainActivity.instance.changeDisplayMode(targetMode.modeId)
+                    lease.change(targetMode.modeId)
                     val result =
                         withTimeoutOrNull(5.seconds) {
                             listener.deferred.await()
@@ -112,14 +120,10 @@ class RefreshRateService
                     // Wait the recommended 2 seconds (https://developer.android.com/media/optimize/performance/frame-rate)
                     delay(2.seconds)
                 }
+            } else if (targetMode != null) {
+                // Already in the target mode, possibly set by an earlier playback that has yet to reset it
+                lease.change(targetMode.modeId)
             }
-        }
-
-        /**
-         * Reset the display mode to the original
-         */
-        fun resetRefreshRate() {
-            MainActivity.instance.changeDisplayMode(0)
         }
 
         /**
