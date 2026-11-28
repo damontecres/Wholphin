@@ -61,7 +61,7 @@ class TestHomeRowSamples {
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.GetItems(
-                    name = "Episodes by date created",
+                    title = "Episodes by date created",
                     filter =
                         HomeGetItemsFilter(
                             parentId = UUID.randomUUID(),
