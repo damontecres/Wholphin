@@ -177,7 +177,10 @@ class MediaCodecCapabilitiesTest(
         )
 
     private fun getAVCLevel(profile: Int): Int {
-        val level = getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_AVC, profile)
+        val level =
+            getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_AVC, profile, hardwareOnly = true)
+                .takeIf { it > 0 }
+                ?: getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_AVC, profile)
 
         return avcLevels
             .asReversed()
@@ -246,7 +249,10 @@ class MediaCodecCapabilitiesTest(
         )
 
     private fun getHevcLevel(profile: Int): Int {
-        val level = getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_HEVC, profile)
+        val level =
+            getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_HEVC, profile, hardwareOnly = true)
+                .takeIf { it > 0 }
+                ?: getDecoderLevel(MediaFormat.MIMETYPE_VIDEO_HEVC, profile)
 
         return hevcLevels
             .asReversed()
@@ -260,11 +266,13 @@ class MediaCodecCapabilitiesTest(
     private fun getDecoderLevel(
         mime: String,
         profile: Int,
+        hardwareOnly: Boolean = false,
     ): Int {
         var maxLevel = 0
 
         for (info in mediaCodecList.codecInfos) {
             if (info.isEncoder) continue
+            if (hardwareOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !info.isHardwareAccelerated) continue
 
             try {
                 val capabilities = info.getCapabilitiesForType(mime)

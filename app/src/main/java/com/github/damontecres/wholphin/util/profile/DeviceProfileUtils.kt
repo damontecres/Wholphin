@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.util.profile
 import android.media.MediaCodecInfo
 import android.util.Size
 import androidx.media3.common.MimeTypes
+import com.github.damontecres.wholphin.util.profile.KnownDefects.avcLevel51Cap
 import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
@@ -76,6 +77,7 @@ fun createDeviceProfile(
     forceEnabledHdr: Set<String>,
     forceDisabledHdr: Set<String>,
     maxResolution: Int,
+    maxAvcLevel: Int = 0,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -100,7 +102,14 @@ fun createDeviceProfile(
     val hevcMain10Level = mediaTest.getHevcMain10Level()
     val supportsAVC = mediaTest.supportsAVC()
     val supportsAVCHigh10 = mediaTest.supportsAVCHigh10() || supportsHi10P52
-    val avcMainLevel = mediaTest.getAVCMainLevel()
+    val detectedAvcMainLevel = mediaTest.getAVCMainLevel()
+    val avcMainLevel =
+        when {
+            detectedAvcMainLevel <= 0 -> detectedAvcMainLevel
+            maxAvcLevel > 0 -> minOf(detectedAvcMainLevel, maxAvcLevel)
+            avcLevel51Cap -> minOf(detectedAvcMainLevel, 51)
+            else -> detectedAvcMainLevel
+        }
     val avcHigh10Level =
         if (supportsHi10P52) {
             MediaCodecInfo.CodecProfileLevel.AVCLevel52

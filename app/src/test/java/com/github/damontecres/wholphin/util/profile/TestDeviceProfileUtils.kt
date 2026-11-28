@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.util.profile
 
+import android.os.Build
 import io.mockk.every
 import io.mockk.mockk
 import org.jellyfin.sdk.model.api.CodecType
@@ -10,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
 
 /**
  * Verifies that forceEnabledHdr/forceDisabledHdr correctly override the device's own
@@ -29,12 +31,29 @@ class TestDeviceProfileUtils {
             }.split("|")
             .toSet()
 
+    private fun videoLevelForCodec(
+        profile: DeviceProfile,
+        codec: String,
+        videoProfileContains: String,
+    ): String? =
+        profile.codecProfiles
+            .filter { it.type == CodecType.VIDEO && it.codec == codec }
+            .firstOrNull { codecProfile ->
+                codecProfile.applyConditions.any {
+                    it.property == ProfileConditionValue.VIDEO_PROFILE &&
+                        it.value?.contains(videoProfileContains) == true
+                }
+            }?.conditions
+            ?.firstOrNull { it.property == ProfileConditionValue.VIDEO_LEVEL }
+            ?.value
+
     private fun buildProfile(
         mediaTest: MediaCodecCapabilitiesTest,
         jellyfinTenEleven: Boolean = false,
         decodeAv1: Boolean = false,
         forceEnabledHdr: Set<String> = emptySet(),
         forceDisabledHdr: Set<String> = emptySet(),
+        maxAvcLevel: Int = 0,
     ): DeviceProfile =
         createDeviceProfile(
             mediaTest = mediaTest,
@@ -49,6 +68,7 @@ class TestDeviceProfileUtils {
             forceEnabledHdr = forceEnabledHdr,
             forceDisabledHdr = forceDisabledHdr,
             maxResolution = 0,
+            maxAvcLevel = maxAvcLevel,
         )
 
     @Test
@@ -137,5 +157,50 @@ class TestDeviceProfileUtils {
                 forceDisabledHdr = setOf(WholphinVideoRangeType.DOVI.serialName),
             )
         Assert.assertTrue(unsupportedRangeTypes(profile, Codec.Video.AV1).contains(WholphinVideoRangeType.DOVI.serialName))
+    }
+
+    @Test
+    fun `Test maxAvcLevel caps detected H264 level without affecting HEVC`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsAVC() } returns true
+        every { mediaTest.getAVCMainLevel() } returns 52
+        every { mediaTest.supportsHevc() } returns true
+        every { mediaTest.getHevcMainLevel() } returns 153
+
+        val profile = buildProfile(mediaTest, maxAvcLevel = 51)
+
+        Assert.assertEquals("51", videoLevelForCodec(profile, Codec.Video.H264, "main"))
+        Assert.assertEquals("153", videoLevelForCodec(profile, Codec.Video.HEVC, "main"))
+    }
+
+    @Test
+    fun `Test maxAvcLevel does not inflate lower detected H264 level`() {
+        val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+        every { mediaTest.supportsAVC() } returns true
+        every { mediaTest.getAVCMainLevel() } returns 41
+
+        val profile = buildProfile(mediaTest, maxAvcLevel = 51)
+
+        Assert.assertEquals("41", videoLevelForCodec(profile, Codec.Video.H264, "main"))
+    }
+
+    @Test
+    fun `Test SEI804HM caps H264 level to 51 in Auto mode and allows explicit override to 52`() {
+        val originalModel = Build.MODEL
+        try {
+            ReflectionHelpers.setStaticField(Build::class.java, "MODEL", "SEI804HM")
+
+            val mediaTest = mockk<MediaCodecCapabilitiesTest>(relaxed = true)
+            every { mediaTest.supportsAVC() } returns true
+            every { mediaTest.getAVCMainLevel() } returns 52
+
+            val autoProfile = buildProfile(mediaTest, maxAvcLevel = 0)
+            Assert.assertEquals("51", videoLevelForCodec(autoProfile, Codec.Video.H264, "main"))
+
+            val overrideProfile = buildProfile(mediaTest, maxAvcLevel = 52)
+            Assert.assertEquals("52", videoLevelForCodec(overrideProfile, Codec.Video.H264, "main"))
+        } finally {
+            ReflectionHelpers.setStaticField(Build::class.java, "MODEL", originalModel)
+        }
     }
 }

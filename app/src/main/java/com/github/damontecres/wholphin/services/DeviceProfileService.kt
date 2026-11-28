@@ -83,6 +83,7 @@ class DeviceProfileService
                                     appPrefs.getHdrRangeTypesFor(HdrOverrideMode.HDR_OVERRIDE_DISABLE, newConfig.jellyfinTenEleven),
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                                 maxResolution = newConfig.overrides.maxResolution,
+                                maxAvcLevel = newConfig.overrides.maxAvcLevel,
                             )
                     }
                     this@DeviceProfileService.deviceProfile!!
