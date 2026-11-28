@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.data.letterPosition
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
@@ -578,56 +579,55 @@ class CollectionFolderViewModel
          */
         override suspend fun positionOfLetter(letter: Char): Int? =
             withContext(WholphinDispatchers.IO) {
-                val filter = state.value.filter
-                when (filter.override) {
-                    GetItemsFilterOverride.ARTIST -> {
-                        when (artistSource) {
-                            ArtistSource.ARTIST -> {
-                                GetArtistsHandler.countMatching(
-                                    api = api,
-                                    request =
-                                        createGetArtistsRequest(filter).copy(
-                                            enableImageTypes = null,
-                                            fields = null,
-                                            nameLessThan = letter.toString(),
-                                            limit = 0,
-                                            enableTotalRecordCount = true,
-                                            enableUserData = false,
-                                        ),
-                                )
-                            }
+                val currentState = state.value
+                val before =
+                    when (currentState.filter.override) {
+                        GetItemsFilterOverride.ARTIST -> {
+                            when (artistSource) {
+                                ArtistSource.ARTIST -> {
+                                    GetArtistsHandler.countMatching(
+                                        api = api,
+                                        request =
+                                            createGetArtistsRequest(currentState.filter).copy(
+                                                enableImageTypes = null,
+                                                fields = null,
+                                                nameLessThan = letter.toString(),
+                                                limit = 0,
+                                                enableTotalRecordCount = true,
+                                                enableUserData = false,
+                                            ),
+                                    )
+                                }
 
-                            ArtistSource.ALBUM_ARTIST -> {
-                                GetAlbumArtistsHandler.countMatching(
-                                    api = api,
-                                    request =
-                                        createGetAlbumArtistsRequest(filter).copy(
-                                            enableImageTypes = null,
-                                            fields = null,
-                                            nameLessThan = letter.toString(),
-                                            limit = 0,
-                                            enableTotalRecordCount = true,
-                                            enableUserData = false,
-                                        ),
-                                )
+                                ArtistSource.ALBUM_ARTIST -> {
+                                    GetAlbumArtistsHandler.countMatching(
+                                        api = api,
+                                        request =
+                                            createGetAlbumArtistsRequest(currentState.filter).copy(
+                                                enableImageTypes = null,
+                                                fields = null,
+                                                nameLessThan = letter.toString(),
+                                                limit = 0,
+                                                enableTotalRecordCount = true,
+                                                enableUserData = false,
+                                            ),
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
-                    // counted up to a letter at all
-                    GetItemsFilterOverride.PERSON -> {
-                        null
-                    }
+                        // GetPersonsRequest has no nameLessThan or startIndex, so /Persons cannot be
+                        // counted up to a letter at all
+                        GetItemsFilterOverride.PERSON -> {
+                            null
+                        }
 
-                    GetItemsFilterOverride.NONE -> {
-                        GetItemsRequestHandler.countMatching(
-                            api = api,
-                            request =
+                        GetItemsFilterOverride.NONE -> {
+                            val request =
                                 createGetItemsRequest(
-                                    sortAndDirection = state.value.sortAndDirection,
+                                    sortAndDirection = currentState.sortAndDirection,
                                     recursive = recursive,
-                                    filter = filter,
+                                    filter = currentState.filter,
                                 ).copy(
                                     enableImageTypes = null,
                                     fields = null,
@@ -635,8 +635,13 @@ class CollectionFolderViewModel
                                     limit = 0,
                                     enableTotalRecordCount = true,
                                     enableUserData = false,
-                                ),
-                        )
+                                )
+                            GetItemsRequestHandler.countMatching(api, request)
+                        }
+                    }
+                before?.let { count ->
+                    currentState.items.successValue?.let { items ->
+                        currentState.sortAndDirection.letterPosition(count, items.size)
                     }
                 }
             }
